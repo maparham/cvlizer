@@ -1,0 +1,171 @@
+import React from 'react'
+import {
+  Paper,
+  Typography,
+  Button,
+  Tooltip,
+  Card,
+  CardContent,
+  Box,
+  List
+} from '@mui/material'
+import { Add as AddIcon, RestartAlt as ResetIcon } from '@mui/icons-material'
+import {
+  DndContext,
+  closestCenter,
+  DragOverlay
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
+import { CVSection } from '../types'
+import SortableSectionItem from './SortableSectionItem'
+import { AVAILABLE_SECTIONS } from '../constants'
+
+interface SectionManagerSidebarProps {
+  sections: CVSection[]
+  activeId: string | null
+  isDefaultOrder: boolean
+  availableSectionsToAdd: any[]
+  onToggleVisibility: (sectionId: string) => void
+  onRemove: (sectionId: string) => void
+  onResetClick: () => void
+  onAddNewSection: (sectionId: string) => void
+  onDragStart: (event: any) => void
+  onDragEnd: (event: any) => void
+}
+
+const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
+  sections,
+  activeId,
+  isDefaultOrder,
+  availableSectionsToAdd,
+  onToggleVisibility,
+  onRemove,
+  onResetClick,
+  onAddNewSection,
+  onDragStart,
+  onDragEnd
+}) => {
+  return (
+    <Paper sx={{ 
+      width: 350, 
+      p: 2, 
+      overflow: 'auto',
+      border: 'none',
+      boxShadow: 'none',
+      borderRight: '1px solid #e0e0e0'
+    }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6">Sections</Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title={isDefaultOrder ? "Reset to default section order" : "Reset to default section order (order has been changed)"}>
+            <Button
+              variant={isDefaultOrder ? "outlined" : "contained"}
+              size="small"
+              startIcon={<ResetIcon />}
+              onClick={onResetClick}
+              sx={{ 
+                minWidth: 'auto', 
+                px: 1,
+                ...(isDefaultOrder ? {} : { 
+                  bgcolor: 'warning.main',
+                  '&:hover': { bgcolor: 'warning.dark' }
+                })
+              }}
+            >
+              {isDefaultOrder ? 'Reset' : 'Reset*'}
+            </Button>
+          </Tooltip>
+        </Box>
+      </Box>
+      <Typography variant="body2" sx={{ color: '#666', mb: 2, fontStyle: 'italic' }}>
+        Drag sections to reorder them
+      </Typography>
+      
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+      >
+        <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+          <List>
+            {sections
+              .sort((a, b) => a.order - b.order)
+              .map((section) => (
+                <SortableSectionItem
+                  key={section.id}
+                  section={section}
+                  onToggleVisibility={onToggleVisibility}
+                  onRemove={onRemove}
+                />
+              ))}
+          </List>
+        </SortableContext>
+        <DragOverlay>
+          {activeId ? (
+            <SortableSectionItem
+              section={sections.find(s => s.id === activeId)!}
+              onToggleVisibility={() => {}}
+              isOverlay
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Available Sections */}
+      {availableSectionsToAdd.length > 0 && (
+        <>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 3, mb: 2, color: '#666' }}>
+            Available Sections
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {availableSectionsToAdd.map((section) => (
+              <Card 
+                key={section.id}
+                sx={{ 
+                  border: '1px solid #e0e0e0',
+                  '&:hover': {
+                    borderColor: '#1976d2',
+                    boxShadow: 1
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                      <Typography variant="h6" sx={{ mr: 1.5, flexShrink: 0 }}>
+                        {section.icon}
+                      </Typography>
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.8rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {section.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          {section.description}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Tooltip title="Add this section to your CV">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => onAddNewSection(section.id)}
+                        sx={{ ml: 1.5, minWidth: 'auto', px: 0.5, flexShrink: 0 }}
+                      >
+                        <AddIcon fontSize="small" />
+                      </Button>
+                    </Tooltip>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        </>
+      )}
+    </Paper>
+  )
+}
+
+export default SectionManagerSidebar

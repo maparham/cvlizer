@@ -1,0 +1,119 @@
+import React from 'react'
+import { Box, Typography } from '@mui/material'
+import { SectionProps } from '../types'
+import IndividualItemSection from '../core/IndividualItemSection'
+import { FormField, DateField } from '../core/formUtils'
+
+interface Publication {
+  title: string
+  authors: string
+  journal: string
+  date: string
+  url?: string
+}
+
+const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
+  const createNewPublication = (): Publication => ({
+    title: '',
+    authors: '',
+    journal: '',
+    date: '',
+    url: ''
+  })
+
+  const renderPublicationForm = (publication: Publication, index: number, updatePublication: (field: keyof Publication, value: any) => void) => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <FormField
+        config={{
+          name: 'title',
+          label: 'Publication Title',
+          placeholder: 'e.g., Machine Learning Applications in Healthcare',
+          required: true
+        }}
+        value={publication.title}
+        onChange={(value) => updatePublication('title', value)}
+      />
+      <FormField
+        config={{
+          name: 'authors',
+          label: 'Authors',
+          placeholder: 'e.g., John Doe, Jane Smith',
+          required: true
+        }}
+        value={publication.authors}
+        onChange={(value) => updatePublication('authors', value)}
+      />
+      <FormField
+        config={{
+          name: 'journal',
+          label: 'Journal/Conference',
+          placeholder: 'e.g., Nature Medicine, IEEE Conference',
+          required: true
+        }}
+        value={publication.journal}
+        onChange={(value) => updatePublication('journal', value)}
+      />
+      <DateField
+        config={{
+          name: 'date',
+          label: 'Publication Date',
+          required: true
+        }}
+        value={publication.date}
+        onChange={(value) => updatePublication('date', value)}
+      />
+      <FormField
+        config={{
+          name: 'url',
+          label: 'URL (Optional)',
+          placeholder: 'https://doi.org/10.1000/xyz123',
+          type: 'url'
+        }}
+        value={publication.url || ''}
+        onChange={(value) => updatePublication('url', value)}
+      />
+    </Box>
+  )
+
+  const renderPublicationDisplay = (publication: Publication, index: number) => (
+    <>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
+        📄 {publication.title}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        {publication.authors} • {publication.journal} • {publication.date}
+      </Typography>
+      {publication.url && (
+        <Typography variant="body2" color="primary">
+          🔗 <a href={publication.url} target="_blank" rel="noopener noreferrer">
+            View Publication
+          </a>
+        </Typography>
+      )}
+    </>
+  )
+
+  return (
+    <IndividualItemSection
+      data={data}
+      onUpdate={onUpdate}
+      onSave={onSave}
+      isEditing={isEditing}
+      onEdit={onEdit}
+      onClose={onClose}
+      onUnsavedChanges={onUnsavedChanges}
+      registerIndividualItemEditing={registerIndividualItemEditing}
+      unregisterIndividualItemEditing={unregisterIndividualItemEditing}
+      requestIndividualItemCancel={requestIndividualItemCancel}
+      title="Publications"
+      emptyMessage="No publications added yet."
+      createNewItem={createNewPublication}
+      requiredFields={['title', 'authors', 'journal', 'date']}
+      renderItemForm={renderPublicationForm}
+      renderItemDisplay={renderPublicationDisplay}
+      autoSaveMessage="Publication"
+    />
+  )
+}
+
+export default PublicationsSection

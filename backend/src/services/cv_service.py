@@ -1,0 +1,89 @@
+"""
+CV service for managing CV data and operations.
+
+This module provides functions for CRUD operations on CV records,
+including creation, retrieval, updates, deletion, and OpenAI-based parsing.
+"""
+from typing import List, Optional
+from sqlalchemy.orm import Session
+from ..models.cv import CV
+from ..models.user import User
+import uuid
+import json
+
+
+def create_cv(db: Session, user_id: str, original_filename: str, file_path: str, 
+              file_size: int, file_type: str, parsed_data: dict, is_parsed: bool = True) -> CV:
+    """Create a new CV record"""
+    cv = CV(
+        user_id=user_id,
+        original_filename=original_filename,
+        file_path=file_path,
+        file_size=file_size,
+        file_type=file_type,
+        parsed_data=parsed_data,
+        is_parsed=is_parsed
+    )
+    db.add(cv)
+    db.commit()
+    db.refresh(cv)
+    return cv
+
+
+def get_cv_by_id(db: Session, cv_id: str, user_id: str) -> Optional[CV]:
+    """Get a CV by ID for a specific user"""
+    return db.query(CV).filter(
+        CV.id == cv_id,
+        CV.user_id == user_id
+    ).first()
+
+
+def get_cvs_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 10) -> List[CV]:
+    """Get all CVs for a user with pagination"""
+    return db.query(CV).filter(
+        CV.user_id == user_id
+    ).offset(skip).limit(limit).all()
+
+
+def update_cv(db: Session, cv_id: str, user_id: str, parsed_data: dict) -> Optional[CV]:
+    """Update CV parsed data"""
+    cv = get_cv_by_id(db, cv_id, user_id)
+    if not cv:
+        return None
+    
+    cv.parsed_data = parsed_data
+    db.commit()
+    db.refresh(cv)
+    return cv
+
+
+def delete_cv(db: Session, cv_id: str, user_id: str) -> bool:
+    """Delete a CV"""
+    cv = get_cv_by_id(db, cv_id, user_id)
+    if not cv:
+        return False
+    
+    db.delete(cv)
+    db.commit()
+    return True
+
+
+def parse_cv_with_openai(file_content: bytes, filename: str, content_type: str) -> dict:
+    """Parse CV content using OpenAI"""
+    from .file_service import extract_text_from_file
+    from .ai_service import parse_cv_text_with_openai
+    
+    try:
+        # Extract text from file
+        text_content = extract_text_from_file(file_content, content_type)
+        
+        # Parse with OpenAI
+        parsed_data = parse_cv_text_with_openai(text_content)
+        
+        return parsed_data
+    except Exception as e:
+        # Return error structure if parsing fails
+        return {
+            "error": f"Failed to parse CV: {str(e)}",
+            "raw_text": file_content.decode('utf-8', errors='ignore')[:1000] + "..." if len(file_content) > 1000 else file_content.decode('utf-8', errors='ignore')
+        }
