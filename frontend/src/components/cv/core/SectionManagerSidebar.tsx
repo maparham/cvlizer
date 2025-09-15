@@ -29,7 +29,6 @@ interface SectionManagerSidebarProps {
   isDefaultOrder: boolean
   availableSectionsToAdd: any[]
   onToggleVisibility: (sectionId: string) => void
-  onRemove: (sectionId: string) => void
   onResetClick: () => void
   onAddNewSection: (sectionId: string) => void
   onDragStart: (event: any) => void
@@ -42,7 +41,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   isDefaultOrder,
   availableSectionsToAdd,
   onToggleVisibility,
-  onRemove,
   onResetClick,
   onAddNewSection,
   onDragStart,
@@ -92,13 +90,13 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
           <List>
             {sections
+              .filter(section => section.visible)
               .sort((a, b) => a.order - b.order)
               .map((section) => (
                 <SortableSectionItem
                   key={section.id}
                   section={section}
                   onToggleVisibility={onToggleVisibility}
-                  onRemove={onRemove}
                 />
               ))}
           </List>
@@ -113,6 +111,61 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Hidden Sections */}
+      {sections.filter(section => !section.visible).length > 0 && (
+        <>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 3, mb: 2, color: '#666' }}>
+            Hidden Sections
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {sections
+              .filter(section => !section.visible)
+              .sort((a, b) => a.order - b.order)
+              .map((section) => (
+                <Card 
+                  key={section.id}
+                  sx={{ 
+                    border: '1px solid #e0e0e0',
+                    bgcolor: '#f5f5f5',
+                    '&:hover': {
+                      borderColor: '#1976d2',
+                      boxShadow: 1
+                    }
+                  }}
+                >
+                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                        <Typography variant="h6" sx={{ mr: 1.5, flexShrink: 0 }}>
+                          {AVAILABLE_SECTIONS.find(s => s.id === section.id)?.icon || '📄'}
+                        </Typography>
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '0.8rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {section.title}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                            Content preserved
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Tooltip title="Restore this section">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => onAddNewSection(section.id)}
+                          sx={{ ml: 1.5, minWidth: 'auto', px: 0.5, flexShrink: 0 }}
+                        >
+                          <AddIcon fontSize="small" />
+                        </Button>
+                      </Tooltip>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+          </Box>
+        </>
+      )}
 
       {/* Available Sections */}
       {availableSectionsToAdd.length > 0 && (

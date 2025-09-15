@@ -1,11 +1,11 @@
 import React from 'react'
 import { ListItem, ListItemIcon, ListItemText, IconButton, Box, Tooltip } from '@mui/material'
-import { DragIndicator as DragIcon, Visibility as ViewIcon, VisibilityOff as HideIcon, Remove as RemoveIcon } from '@mui/icons-material'
+import { DragIndicator as DragIcon, Visibility as ViewIcon, VisibilityOff as HideIcon } from '@mui/icons-material'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { SortableSectionItemProps } from '../types'
 
-const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onToggleVisibility, onRemove, isOverlay = false }) => {
+const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onToggleVisibility, isOverlay = false }) => {
   const {
     attributes,
     listeners,
@@ -86,23 +86,6 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onTo
             {section.visible ? <ViewIcon /> : <HideIcon />}
           </IconButton>
         </Tooltip>
-        {onRemove && (
-          <Tooltip title="Remove this section">
-            <IconButton
-              onClick={() => onRemove(section.id)}
-              color="error"
-              size="small"
-              sx={{ 
-                '&:hover': { 
-                  bgcolor: 'error.light',
-                  color: 'error.contrastText'
-                }
-              }}
-            >
-              <RemoveIcon />
-            </IconButton>
-          </Tooltip>
-        )}
       </Box>
     </ListItem>
   )

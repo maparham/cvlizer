@@ -35,7 +35,8 @@ const CVEditor: React.FC = () => {
     loading,
     error,
     fetchCV,
-    updateCV
+    updateCV,
+    setCurrentCV
   } = useCVStore()
   
   const cvData = useMemo(() => currentCV?.parsed_data, [currentCV])
@@ -45,7 +46,7 @@ const CVEditor: React.FC = () => {
     if (cvId) {
       fetchCV(cvId)
     }
-  }, [cvId]) // Remove fetchCV from dependencies to prevent infinite loop
+  }, [cvId]) // Only depend on cvId to prevent infinite loops
   
   // Show error notifications
   useEffect(() => {
@@ -76,9 +77,17 @@ const CVEditor: React.FC = () => {
   }, [cvId, cvData, updateCV, showInfo, showSuccess, showError, removeNotification])
   
   const handleUpdateCV = useCallback((data: CVData) => {
-    // Update the local current CV state only
-    // Don't trigger API calls unless explicitly saving
-  }, [])
+    // Update the local current CV state in the store
+    if (currentCV) {
+      // Update the current CV in the store with the new data
+      const updatedCV = {
+        ...currentCV,
+        parsed_data: data
+      }
+      // Update the store's currentCV state to trigger re-render
+      setCurrentCV(updatedCV)
+    }
+  }, [currentCV, setCurrentCV])
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)

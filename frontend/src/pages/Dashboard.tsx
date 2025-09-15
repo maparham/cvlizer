@@ -279,7 +279,8 @@ const Dashboard: React.FC = () => {
           onSuccess={() => {
             setUploadOpen(false)
             showSuccess('Success', 'CV uploaded successfully and is being parsed')
-            // The store handles polling for parsing updates automatically
+            // The CV store already adds the new CV to the list, no need to fetch
+            // The store will handle polling for parsing updates automatically
           }}
         />
 

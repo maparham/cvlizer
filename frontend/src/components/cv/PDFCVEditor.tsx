@@ -33,7 +33,6 @@ const PDFCVEditor: React.FC = () => {
           isDefaultOrder={sections.isDefaultOrder}
           availableSectionsToAdd={sections.availableToAdd}
           onToggleVisibility={sections.toggleVisibility}
-          onRemove={sections.remove}
           onResetClick={reset.onResetClick}
           onAddNewSection={sections.add}
           onDragStart={dragDrop.onDragStart}

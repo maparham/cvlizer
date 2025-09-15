@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import { Upload as UploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material'
 import { cvApi } from '../../services/api'
+import { useCVStore } from '../../stores/cvStore'
 
 interface CVUploadProps {
   open: boolean
@@ -26,6 +27,9 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  
+  // Use the CV store's upload function
+  const { uploadCV: uploadCVToStore } = useCVStore()
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
@@ -90,8 +94,8 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         })
       }, 200)
 
-      // Call the real API
-      const response = await cvApi.uploadCV(file)
+      // Use the store's upload function which handles state updates
+      await uploadCVToStore(file)
       
       clearInterval(progressInterval)
       setUploadProgress(100)
@@ -104,7 +108,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         setUploadProgress(0)
         setSuccess(false)
         onClose() // Close the dialog after success callback
-      }, 500) // Shorter delay
+      }, 1000) // Give a moment to show success message
       
     } catch (err: any) {
       console.error('Upload error:', err)

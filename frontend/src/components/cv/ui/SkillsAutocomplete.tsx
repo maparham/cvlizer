@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import {
   TextField,
   Chip,
@@ -47,19 +47,27 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
   const [showCategories, setShowCategories] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const skillsList = skillType === 'technical' ? TECHNICAL_SKILLS : SOFT_SKILLS
+  const skillsList = useMemo(() => 
+    skillType === 'technical' ? TECHNICAL_SKILLS : SOFT_SKILLS, 
+    [skillType]
+  )
+
+  const existingSkillsSet = useMemo(() => 
+    new Set(existingSkills), 
+    [existingSkills]
+  )
 
   useEffect(() => {
     if (inputValue.trim()) {
       const filteredSkills = searchSkills(inputValue, skillsList, 15)
-        .filter(skill => !existingSkills.includes(skill))
+        .filter(skill => !existingSkillsSet.has(skill))
       setSuggestions(filteredSkills)
       setShowCategories(false)
     } else {
       setSuggestions([])
       setShowCategories(true)
     }
-  }, [inputValue, skillsList, existingSkills])
+  }, [inputValue, skillsList, existingSkillsSet]) // Now safe to include dependencies
 
   useEffect(() => {
     setInputValue(value)
@@ -78,7 +86,7 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
   }
 
   const handleDirectSkillAdd = (skill: string) => {
-    if (!existingSkills.includes(skill)) {
+    if (!existingSkillsSet.has(skill)) {
       onAddDirect?.(skill)
       clearInput()
     }
@@ -88,14 +96,14 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
   const handleKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       event.preventDefault()
-      if (inputValue.trim() && !existingSkills.includes(inputValue.trim())) {
+      if (inputValue.trim() && !existingSkillsSet.has(inputValue.trim())) {
         onAdd()
       }
     }
   }
 
   const handleAddClick = () => {
-    if (inputValue.trim() && !existingSkills.includes(inputValue.trim())) {
+    if (inputValue.trim() && !existingSkillsSet.has(inputValue.trim())) {
       onAdd()
     }
   }
@@ -126,7 +134,7 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {skillsList
-                .filter(skill => !existingSkills.includes(skill))
+                .filter(skill => !existingSkillsSet.has(skill))
                 .slice(0, 20)
                 .map((skill) => (
                   <Chip
@@ -238,28 +246,30 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
         </Box>
         
         <Tooltip title={`Add ${skillType} skill`}>
-          <IconButton
-            size="small"
-            onClick={handleAddClick}
-            disabled={disabled || !inputValue.trim() || existingSkills.includes(inputValue.trim())}
-            sx={{
-              bgcolor: skillType === 'technical' ? '#1976d2' : '#7b1fa2',
-              color: 'white',
-              '&:hover': {
-                bgcolor: skillType === 'technical' ? '#1565c0' : '#6a1b9a'
-              },
-              '&:disabled': {
-                bgcolor: 'action.disabledBackground',
-                color: 'action.disabled'
-              }
-            }}
-          >
-            <AddIcon fontSize="small" />
-          </IconButton>
+          <span>
+            <IconButton
+              size="small"
+              onClick={handleAddClick}
+              disabled={disabled || !inputValue.trim() || existingSkillsSet.has(inputValue.trim())}
+              sx={{
+                bgcolor: skillType === 'technical' ? '#1976d2' : '#7b1fa2',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: skillType === 'technical' ? '#1565c0' : '#6a1b9a'
+                },
+                '&:disabled': {
+                  bgcolor: 'action.disabledBackground',
+                  color: 'action.disabled'
+                }
+              }}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
       </Box>
       
-      {inputValue.trim() && existingSkills.includes(inputValue.trim()) && (
+      {inputValue.trim() && existingSkillsSet.has(inputValue.trim()) && (
         <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
           This skill is already added
         </Typography>

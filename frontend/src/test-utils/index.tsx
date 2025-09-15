@@ -128,7 +128,7 @@ export const createMockSection = (overrides = {}) => ({
 })
 
 // Mock API responses
-export const mockApiResponse = <T>(data: T) => ({
+export const mockApiResponse = <T,>(data: T) => ({
   data,
   success: true,
   message: 'Success'

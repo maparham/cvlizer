@@ -23,6 +23,24 @@ export const useSectionManagement = ({
   cvData, 
   onSave 
 }: UseSectionManagementProps): SectionManagementState => {
+  // Helper function to check if a section is empty
+  const isSectionEmpty = useCallback((sectionId: string, cvData: CVData): boolean => {
+    const data = cvData[sectionId as keyof CVData]
+    if (!data) return true
+    
+    // Check if array is empty
+    if (Array.isArray(data)) {
+      return data.length === 0
+    }
+    
+    // Check if object is empty
+    if (typeof data === 'object') {
+      return Object.keys(data).length === 0
+    }
+    
+    return false
+  }, [])
+
   // Function to create sections dynamically based on CV data
   const createSectionsFromCVData = useCallback((cvData: CVData): CVSection[] => {
     if (!cvData) return []
@@ -54,16 +72,6 @@ export const useSectionManagement = ({
     return sections
   }, [])
 
-  // Function to save section configuration
-  const saveSectionConfig = useCallback((updatedSections: CVSection[], message?: string) => {
-    const updatedCvData = {
-      ...cvData,
-      section_config: {
-        sections: updatedSections
-      }
-    }
-    onSave(updatedCvData, message)
-  }, [cvData, onSave])
 
   // Initialize sections from CV data or use defaults
   const [sections, setSections] = useState<CVSection[]>(() => {
@@ -73,55 +81,155 @@ export const useSectionManagement = ({
     return createSectionsFromCVData(cvData)
   })
 
-  // Update sections when cvData changes
+  // Update sections when cvData changes, but only on initial load
+  // Don't override user changes that are being saved
   useEffect(() => {
-    if (cvData?.section_config?.sections) {
-      setSections(cvData.section_config.sections)
-    } else if (cvData) {
-      const newSections = createSectionsFromCVData(cvData)
-      setSections(newSections)
-      // Don't automatically save section configuration on initial load
-      // Only save when user explicitly makes changes
+    // Only update sections if we don't have any sections yet (initial load)
+    if (sections.length === 0) {
+      if (cvData?.section_config?.sections) {
+        // Use the section configuration from the CV data
+        setSections(cvData.section_config.sections)
+      } else if (cvData) {
+        // Create sections from CV data (only sections with data)
+        const newSections = createSectionsFromCVData(cvData)
+        setSections(newSections)
+      }
     }
-  }, [cvData, createSectionsFromCVData])
+  }, [cvData, createSectionsFromCVData, sections.length])
 
   const toggleSectionVisibility = useCallback((sectionId: string) => {
-    const updatedSections = sections.map(section => 
-      section.id === sectionId 
-        ? { ...section, visible: !section.visible }
-        : section
-    )
+    const section = sections.find(s => s.id === sectionId)
+    if (!section) return
+
+    let updatedSections: CVSection[]
+    let updatedCvData: CVData
+    let message: string
+    
+    if (section.visible) {
+      // Hiding: check if section is empty
+      if (isSectionEmpty(sectionId, cvData)) {
+        // Empty section: delete it entirely
+        updatedSections = sections.filter(s => s.id !== sectionId)
+        
+        // Remove the section data from CV data
+        updatedCvData = { ...cvData }
+        delete (updatedCvData as any)[sectionId]
+        
+        message = 'Empty section deleted'
+      } else {
+        // Non-empty section: just hide it
+        updatedSections = sections.map(s => 
+          s.id === sectionId 
+            ? { ...s, visible: false }
+            : s
+        )
+        
+        updatedCvData = {
+          ...cvData,
+          section_config: {
+            sections: updatedSections
+          }
+        }
+        
+        message = 'Section hidden'
+      }
+    } else {
+      // Unhiding: make visible and move to end
+      const visibleSections = sections.filter(s => s.visible)
+      const maxOrder = visibleSections.length > 0 ? Math.max(...visibleSections.map(s => s.order)) : -1
+      
+      updatedSections = sections.map(s => 
+        s.id === sectionId 
+          ? { ...s, visible: true, order: maxOrder + 1 }
+          : s
+      )
+      
+      updatedCvData = {
+        ...cvData,
+        section_config: {
+          sections: updatedSections
+        }
+      }
+      
+      message = 'Section restored to end'
+    }
+    
     setSections(updatedSections)
-    saveSectionConfig(updatedSections, 'Section visibility updated')
-  }, [sections, saveSectionConfig])
+    onSave(updatedCvData, message)
+  }, [sections, cvData, onSave, isSectionEmpty])
 
   const addNewSection = useCallback((sectionId: string) => {
     const sectionDef = AVAILABLE_SECTIONS.find(s => s.id === sectionId)
     if (!sectionDef) return
 
-    const newSection: CVSection = {
-      id: sectionId,
-      type: sectionId as CVSectionType,
-      title: sectionDef.name,
-      visible: true,
-      order: sections.length
+    // Check if section already exists but is hidden (soft removed)
+    const existingSection = sections.find(s => s.id === sectionId)
+    let updatedSections: CVSection[]
+
+    if (existingSection) {
+      // Restore the existing section by making it visible and moving to end
+      const visibleSections = sections.filter(s => s.visible)
+      const maxOrder = visibleSections.length > 0 ? Math.max(...visibleSections.map(s => s.order)) : -1
+      
+      updatedSections = sections.map(section => 
+        section.id === sectionId 
+          ? { ...section, visible: true, order: maxOrder + 1 }
+          : section
+      )
+    } else {
+      // Create a new section at the end
+      const visibleSections = sections.filter(s => s.visible)
+      const maxOrder = visibleSections.length > 0 ? Math.max(...visibleSections.map(s => s.order)) : -1
+      
+      const newSection: CVSection = {
+        id: sectionId,
+        type: sectionId as CVSectionType,
+        title: sectionDef.name,
+        visible: true,
+        order: maxOrder + 1
+      }
+      updatedSections = [...sections, newSection]
     }
 
-    const updatedSections = [...sections, newSection]
     setSections(updatedSections)
-    saveSectionConfig(updatedSections, `${sectionDef.name} section added`)
-  }, [sections, saveSectionConfig])
+    
+    // Only initialize empty data if it's a completely new section
+    const updatedCvData = {
+      ...cvData,
+      section_config: {
+        sections: updatedSections
+      }
+    }
+
+    // If it's a new section, initialize empty data
+    if (!existingSection) {
+      (updatedCvData as any)[sectionId] = sectionId === 'skills' ? { technical: [], soft: [] } : []
+    }
+    
+    // Save both the section config and the updated CV data
+    onSave(updatedCvData, existingSection ? `${sectionDef.name} section restored` : `${sectionDef.name} section added`)
+  }, [sections, cvData, onSave])
 
   const removeSection = useCallback((sectionId: string) => {
-    const updatedSections = sections.filter(s => s.id !== sectionId)
-    // Update order property
-    const reorderedSections = updatedSections.map((section, index) => ({
-      ...section,
-      order: index
-    }))
-    setSections(reorderedSections)
-    saveSectionConfig(reorderedSections, 'Section removed')
-  }, [sections, saveSectionConfig])
+    // Soft remove: just hide the section, don't delete data
+    const updatedSections = sections.map(section => 
+      section.id === sectionId 
+        ? { ...section, visible: false }
+        : section
+    )
+    setSections(updatedSections)
+    
+    // Update the section configuration in CV data (preserve all content)
+    const updatedCvData = {
+      ...cvData,
+      section_config: {
+        sections: updatedSections
+      }
+      // Don't remove the actual data - keep it for restoration
+    }
+    
+    onSave(updatedCvData, 'Section hidden')
+  }, [sections, cvData, onSave])
 
   const reorderSections = useCallback((newSections: CVSection[]) => {
     // Update order property
@@ -131,14 +239,32 @@ export const useSectionManagement = ({
     }))
     
     setSections(updatedSections)
-    saveSectionConfig(updatedSections, 'Section order updated')
-  }, [saveSectionConfig])
+    
+    // Update the section configuration in CV data
+    const updatedCvData = {
+      ...cvData,
+      section_config: {
+        sections: updatedSections
+      }
+    }
+    
+    onSave(updatedCvData, 'Section order updated')
+  }, [cvData, onSave])
 
   const resetToDefaultOrder = useCallback(() => {
     const defaultSections = createSectionsFromCVData(cvData)
     setSections(defaultSections)
-    saveSectionConfig(defaultSections, 'Section order reset to default')
-  }, [cvData, createSectionsFromCVData, saveSectionConfig])
+    
+    // Update the section configuration in CV data
+    const updatedCvData = {
+      ...cvData,
+      section_config: {
+        sections: defaultSections
+      }
+    }
+    
+    onSave(updatedCvData, 'Section order reset to default')
+  }, [cvData, createSectionsFromCVData, onSave])
 
   const getAvailableSectionsToAdd = useCallback(() => {
     const existingSectionIds = sections.map(s => s.id)
@@ -146,7 +272,9 @@ export const useSectionManagement = ({
       .filter(section => !existingSectionIds.includes(section.id))
       .map(section => ({
         id: section.id,
-        name: section.name
+        name: section.name,
+        icon: section.icon,
+        description: section.description
       }))
   }, [sections])
 

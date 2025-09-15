@@ -104,6 +104,11 @@ class VolunteerExperienceSchema(BaseModel):
     description: Optional[str] = Field(None, description="Description of volunteer work")
 
 
+class SectionConfigSchema(BaseModel):
+    """Schema for section configuration."""
+    sections: List[dict] = Field(default_factory=list, description="Section configuration")
+
+
 class CVDataSchema(BaseModel):
     """Main schema for CV parsed data validation with proper type safety."""
     personal_info: Optional[PersonalInfoSchema] = None
@@ -116,6 +121,7 @@ class CVDataSchema(BaseModel):
     awards: List[AwardSchema] = Field(default_factory=list)
     publications: List[PublicationSchema] = Field(default_factory=list)
     volunteer_experience: List[VolunteerExperienceSchema] = Field(default_factory=list)
+    section_config: Optional[SectionConfigSchema] = None
 
     class Config:
         extra = "ignore"  # Ignore extra fields that don't match our schema
