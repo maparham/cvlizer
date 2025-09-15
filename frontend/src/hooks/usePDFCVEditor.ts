@@ -100,7 +100,8 @@ export const usePDFCVEditor = ({
     onSetPendingNavigation: () => {
       // Also hacky, but this shows why we might need a different architecture
       // The keyboard shortcuts hook needs better integration
-    }
+    },
+    onUnsavedChangesDialogClose: editingState.handleUnsavedChangesDialogClose
   })
 
   // Reset dialog handlers

@@ -181,7 +181,15 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
   const cancelIndividualItemEditing = useCallback(() => {
     const currentEditingItem = stateRef.current.editingIndividualItem
     if (currentEditingItem) {
-      stateRef.current.onCancel()
+      // Store the callback before clearing state
+      const onCancelCallback = stateRef.current.onCancel
+      
+      // Clear the global state first to prevent cascading dialogs
+      setEditingIndividualItem(null)
+      stateRef.current.onCancel = () => {}
+      
+      // Then call the registered cancel function
+      onCancelCallback()
     }
   }, [])
 
@@ -228,6 +236,11 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     
     // Clear pending changes for the section being discarded
     const currentEditingItem = stateRef.current.editingIndividualItem
+    
+    // Call the registered cancel function BEFORE clearing state
+    if (currentEditingItem && stateRef.current.onCancel) {
+      stateRef.current.onCancel()
+    }
     
     // Always clear pending changes for the current editing item when discarding
     if (currentEditingItem) {

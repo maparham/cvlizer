@@ -13,7 +13,7 @@ import {
   ListItemIcon
 } from '@mui/material'
 import {
-  Warning as WarningIcon,
+  Info as InfoIcon,
   Edit as EditIcon
 } from '@mui/icons-material'
 
@@ -65,13 +65,21 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
       fullWidth
       disableEscapeKeyDown
     >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <WarningIcon color="warning" />
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 1, 
+        pb: 1,
+        fontWeight: 500, 
+        color: '#1976d2',
+        fontSize: '1.25rem'
+      }}>
+        <InfoIcon color="info" sx={{ color: '#1976d2' }} />
         Unsaved Changes
       </DialogTitle>
       
       <DialogContent>
-        <Typography variant="body1" sx={{ mb: 2 }}>
+        <Typography variant="body1" sx={{ mb: 2, color: 'text.primary' }}>
           You have unsaved changes in the following sections:
         </Typography>
         
@@ -80,33 +88,49 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
             {changedSections.map((sectionId) => (
               <ListItem key={sectionId} sx={{ px: 0 }}>
                 <ListItemIcon sx={{ minWidth: 36 }}>
-                  <EditIcon fontSize="small" color="primary" />
+                  <EditIcon fontSize="small" sx={{ color: '#1976d2' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary={getSectionDisplayName(sectionId)}
                   secondary="Has pending changes"
+                  primaryTypographyProps={{ sx: { fontWeight: 500 } }}
+                  secondaryTypographyProps={{ sx: { color: 'text.secondary', fontSize: '0.875rem' } }}
                 />
               </ListItem>
             ))}
           </List>
         </Box>
         
-        <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
-          If you leave now, your changes will be lost. Are you sure you want to continue?
-        </Typography>
       </DialogContent>
       
-      <DialogActions>
+      <DialogActions sx={{ gap: 1, px: 3, pb: 3 }}>
         <Button
           onClick={onClose}
+          variant="contained"
           color="primary"
+          sx={{ 
+            fontWeight: 500,
+            px: 3,
+            py: 1
+          }}
         >
-          Stay
+          Continue Editing
         </Button>
         <Button
           onClick={onConfirm}
-          color="error"
-          variant="contained"
+          variant="outlined"
+          color="secondary"
+          sx={{ 
+            fontWeight: 500,
+            px: 3,
+            py: 1,
+            borderColor: '#e0e0e0',
+            color: '#666',
+            '&:hover': {
+              borderColor: '#bdbdbd',
+              backgroundColor: '#f5f5f5'
+            }
+          }}
         >
           Discard Changes
         </Button>

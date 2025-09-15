@@ -14,6 +14,7 @@ interface UseKeyboardShortcutsProps {
   showUnsavedChangesDialog: boolean
   onShowUnsavedChangesDialog: (show: boolean) => void
   onSetPendingNavigation: (navigation: (() => void) | null) => void
+  onUnsavedChangesDialogClose: () => void
 }
 
 export const useKeyboardShortcuts = ({
@@ -24,12 +25,14 @@ export const useKeyboardShortcuts = ({
   onIndividualItemCancel,
   showUnsavedChangesDialog,
   onShowUnsavedChangesDialog,
-  onSetPendingNavigation
+  onSetPendingNavigation,
+  onUnsavedChangesDialogClose
 }: UseKeyboardShortcutsProps): KeyboardShortcutsHook => {
 
   const handleEscapeKey = useCallback(() => {
-    // Don't handle escape if a dialog is already open
+    // If dialog is open, Escape should trigger "Stay" (close dialog without discarding)
     if (showUnsavedChangesDialog) {
+      onUnsavedChangesDialogClose()
       return
     }
 
