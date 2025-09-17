@@ -1,3 +1,13 @@
+/**
+ * API Service Module
+ * 
+ * This module provides centralized HTTP client configuration and API functions including:
+ * - Axios instance with base URL configuration
+ * - Request/response interceptors for authentication
+ * - Automatic token refresh handling
+ * - Error normalization utilities
+ * - CV-specific API endpoints (upload, CRUD operations)
+ */
 import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'

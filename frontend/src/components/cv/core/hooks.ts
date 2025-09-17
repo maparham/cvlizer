@@ -16,7 +16,9 @@ export const useSectionAutoSave = (
   const prevOriginalDataRef = useRef<any>()
 
   useEffect(() => {
-    if (!isEditing && editData && Object.keys(editData).length > 0) {
+    // Only auto-save when transitioning from editing to not editing
+    // Don't auto-save when data changes due to CV switching
+    if (!isEditing && editData && Object.keys(editData).length > 0 && prevIsEditingRef.current === true) {
       const hasChanges = JSON.stringify(editData) !== JSON.stringify(originalData)
       if (hasChanges) {
         onUpdate(editData)
@@ -68,7 +70,9 @@ export const useArraySectionAutoSave = (
   const prevOriginalDataRef = useRef<any[]>()
 
   useEffect(() => {
-    if (!isEditing && editingIndex !== null && editData && Object.keys(editData).length > 0) {
+    // Only auto-save when transitioning from editing to not editing
+    // Don't auto-save when data changes due to CV switching
+    if (!isEditing && editingIndex !== null && editData && Object.keys(editData).length > 0 && prevIsEditingRef.current === true) {
       // Check if we're editing an existing item (not adding a new one)
       if (editingIndex < (originalData || []).length) {
         const originalItem = originalData[editingIndex]

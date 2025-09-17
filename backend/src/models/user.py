@@ -26,3 +26,6 @@ class User(Base):
 
     # Relationships
     cvs = relationship("CV", back_populates="user", cascade="all, delete-orphan")
+    
+    def __str__(self):
+        return f"<User {self.email}>"

@@ -45,10 +45,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     verifyToken()
   }, [verifyToken])
 
+  // Create wrapper functions that match the expected interface
+  const loginWrapper = async (email: string, password: string) => {
+    await login({ email, password })
+  }
+
+  const registerWrapper = async (email: string, password: string) => {
+    await register({ email, password })
+  }
+
   const value: AuthContextType = {
     user,
-    login,
-    register,
+    login: loginWrapper,
+    register: registerWrapper,
     logout,
     loading,
     error,

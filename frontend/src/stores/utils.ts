@@ -54,7 +54,7 @@ export function withAsyncErrorHandling<T extends any[], R>(
   actionName: string,
   asyncFn: (...args: T) => Promise<R>
 ) {
-  return async (set: any, get: any, ...args: T): Promise<R | null> => {
+  return async (set: any, _get: any, ...args: T): Promise<R | null> => {
     set({ loading: true, error: null })
     
     try {

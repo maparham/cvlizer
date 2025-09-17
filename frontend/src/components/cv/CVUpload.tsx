@@ -1,3 +1,13 @@
+/**
+ * CV Upload Component
+ * 
+ * This module provides a drag-and-drop file upload interface for CV files including:
+ * - Drag and drop functionality with visual feedback
+ * - File type and size validation (PDF, DOC, DOCX up to 10MB)
+ * - Upload progress tracking with visual indicators
+ * - Integration with CV store for state management
+ * - Error handling and user feedback
+ */
 import React, { useState } from 'react'
 import {
   Dialog,
@@ -12,7 +22,6 @@ import {
   Paper
 } from '@mui/material'
 import { Upload as UploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material'
-import { cvApi } from '../../services/api'
 import { useCVStore } from '../../stores/cvStore'
 
 interface CVUploadProps {

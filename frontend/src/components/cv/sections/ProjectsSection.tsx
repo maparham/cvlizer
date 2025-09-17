@@ -1,8 +1,8 @@
 import React from 'react'
-import { Box, TextField, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateField } from '../core/formUtils'
+import { FormField, DateFieldComponent } from '../core/formUtils'
 
 interface Project {
   name: string
@@ -23,7 +23,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
     end_date: ''
   })
 
-  const renderProjectForm = (project: Project, index: number, updateProject: (field: keyof Project, value: any) => void) => {
+  const renderProjectForm = (project: Project, _index: number, updateProject: (field: keyof Project, value: any) => void) => {
     const updateTechnologies = (techString: string) => {
       const technologies = techString.split(',').map(tech => tech.trim()).filter(tech => tech)
       updateProject('technologies', technologies)
@@ -73,7 +73,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
           onChange={(value) => updateProject('url', value)}
         />
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <DateField
+          <DateFieldComponent
             config={{
               name: 'start_date',
               label: 'Start Date (Optional)'
@@ -82,7 +82,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
             onChange={(value) => updateProject('start_date', value)}
             sx={{ flex: 1 }}
           />
-          <DateField
+          <DateFieldComponent
             config={{
               name: 'end_date',
               label: 'End Date (Optional)'
@@ -96,7 +96,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
     )
   }
 
-  const renderProjectDisplay = (project: Project, index: number) => (
+  const renderProjectDisplay = (project: Project, _index: number) => (
     <>
       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
         {project.name}
@@ -158,6 +158,10 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
       renderItemForm={renderProjectForm}
       renderItemDisplay={renderProjectDisplay}
       autoSaveMessage="Project"
+      sortOptions={[
+        { field: 'start_date', label: 'Start Date' },
+        { field: 'end_date', label: 'End Date' }
+      ]}
     />
   )
 }

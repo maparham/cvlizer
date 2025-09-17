@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Box, Button, Typography } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import { Add as AddIcon } from '@mui/icons-material'
 import { SectionProps } from '../types'
 import { useSectionAutoSave } from './hooks'
 import BaseSection from './BaseSection'
-import { useArraySection, ArrayItem, createArrayItemValidator } from './arrayUtils'
-import { ArrayItemContainer, EmptyState, SaveCancelButtons } from './formUtils'
+import { useArraySection, ArrayItem } from './arrayUtils'
+import { ArrayItemContainer, EmptyState } from './formUtils'
 
 interface ArrayFormSectionProps<T extends ArrayItem> extends SectionProps {
   title: string
@@ -36,16 +36,16 @@ const ArrayFormSection = <T extends ArrayItem>({
   renderItemDisplay,
   autoSaveMessage
 }: ArrayFormSectionProps<T>) => {
-  const [editData, setEditData] = useState<T[]>(data || [])
+  const [editData, setEditData] = useState<T[]>(data as T[] || [])
 
   useEffect(() => {
-    setEditData(data || [])
+    setEditData(data as T[] || [])
   }, [data])
 
   // Use common auto-save hook
-  useSectionAutoSave(isEditing, editData, data, onUpdate, onSave, autoSaveMessage, onUnsavedChanges)
+  useSectionAutoSave(isEditing, editData, data, onUpdate, onSave, autoSaveMessage || 'Changes saved', title, onUnsavedChanges)
 
-  const validateItem = createArrayItemValidator(requiredFields as string[])
+  // const validateItem = createArrayItemValidator(requiredFields as string[])
 
   const {
     data: arrayData,
@@ -55,17 +55,16 @@ const ArrayFormSection = <T extends ArrayItem>({
     isFormValid,
     resetData
   } = useArraySection({
-    initialData: editData,
+    data: editData,
+    onUpdate: (newData: ArrayItem[]) => {
+      setEditData(newData as T[])
+      onUpdate(newData as T[])
+    },
+    onSave: (newData: ArrayItem[], message?: string) => {
+      onSave(newData as T[], message)
+    },
     createNewItem,
-    validateItem,
-    onUpdate: (newData) => {
-      setEditData(newData)
-      onUpdate(newData)
-    },
-    onSave: (newData, message) => {
-      onSave(newData, message)
-    },
-    autoSaveMessage
+    requiredFields: requiredFields as string[]
   })
 
   if (!data) return null
@@ -80,7 +79,7 @@ const ArrayFormSection = <T extends ArrayItem>({
   }
 
   const handleCancel = () => {
-    resetData(data)
+    resetData()
     onClose()
   }
 
@@ -93,7 +92,7 @@ const ArrayFormSection = <T extends ArrayItem>({
   }
 
   const handleUpdateItem = (index: number, field: keyof T, value: any) => {
-    updateItem(index, field, value)
+    updateItem(index, field as keyof ArrayItem, value)
   }
 
   // Helper function to convert plural titles to singular
@@ -124,7 +123,7 @@ const ArrayFormSection = <T extends ArrayItem>({
     >
       {isEditing ? (
         <Box>
-          {arrayData.map((item, index) => (
+          {arrayData.map((item: T, index: number) => (
             <ArrayItemContainer
               key={index}
               index={index}
@@ -149,7 +148,7 @@ const ArrayFormSection = <T extends ArrayItem>({
           {arrayData.length === 0 ? (
             <EmptyState message={emptyMessage} />
           ) : (
-            arrayData.map((item, index) => (
+            arrayData.map((item: T, index: number) => (
               <Box key={index} sx={{ mb: 0.25 }}>
                 {renderItemDisplay(item, index)}
               </Box>

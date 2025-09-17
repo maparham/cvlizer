@@ -1,3 +1,13 @@
+/**
+ * CV Store - Zustand State Management
+ * 
+ * This module provides centralized state management for CV operations including:
+ * - CV CRUD operations (fetch, upload, update, delete)
+ * - Background parsing status polling for uploaded CVs
+ * - Loading and error states management
+ * - Current CV selection and list management
+ * - Integration with API service layer
+ */
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { CV, CVUpdateRequest } from '../types'

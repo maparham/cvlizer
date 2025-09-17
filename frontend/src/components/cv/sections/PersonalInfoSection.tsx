@@ -1,3 +1,12 @@
+/**
+ * Personal Information Section Component
+ * 
+ * This module renders and manages the personal information section of a CV including:
+ * - Contact details (name, email, phone, location)
+ * - Social media links (LinkedIn, GitHub, website)
+ * - Location autocomplete functionality
+ * - Form validation and editing states
+ */
 import React from 'react'
 import { Box, TextField, InputAdornment, Typography } from '@mui/material'
 import { GitHub as GitHubIcon, LinkedIn as LinkedInIcon, Language as WebsiteIcon } from '@mui/icons-material'

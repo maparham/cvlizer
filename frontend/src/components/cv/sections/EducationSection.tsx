@@ -3,7 +3,7 @@ import { Box, TextField, Button, Typography, IconButton } from '@mui/material'
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateField } from '../core/formUtils'
+import { FormField, DateFieldComponent } from '../core/formUtils'
 import LocationAutocomplete from '../ui/LocationAutocomplete'
 import DegreeAutocomplete from '../ui/DegreeAutocomplete'
 
@@ -108,7 +108,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
           placeholder="e.g., Boston, MA"
         />
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <DateField
+          <DateFieldComponent
             config={{
               name: 'start_date',
               label: 'Start Date',
@@ -118,7 +118,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
             onChange={(value) => updateEducation('start_date', value)}
             sx={{ flex: 1 }}
           />
-          <DateField
+          <DateFieldComponent
             config={{
               name: 'end_date',
               label: 'End Date'
@@ -154,7 +154,14 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
             Achievements
           </Typography>
           {(edu.achievements || []).map((achievement: string, achievementIndex: number) => (
-            <Box key={achievementIndex} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+            <Box key={achievementIndex} sx={{ 
+              display: 'flex', 
+              gap: 1, 
+              mb: 1,
+              '&:hover .item-action-button': {
+                opacity: 1
+              }
+            }}>
               <TextField
                 fullWidth
                 size="small"
@@ -165,7 +172,17 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
               <IconButton
                 size="small"
                 onClick={() => removeAchievement(achievementIndex)}
-                color="error"
+                className="item-action-button"
+                sx={{
+                  color: 'text.secondary',
+                  opacity: 0.3,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    color: 'error.main',
+                    bgcolor: 'rgba(255, 235, 238, 0.5)',
+                    opacity: 1
+                  }
+                }}
               >
                 <DeleteIcon fontSize="small" />
               </IconButton>
@@ -181,7 +198,14 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
             Honors & Awards
           </Typography>
           {(edu.honors || []).map((honor: string, honorIndex: number) => (
-            <Box key={honorIndex} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+            <Box key={honorIndex} sx={{ 
+              display: 'flex', 
+              gap: 1, 
+              mb: 1,
+              '&:hover .item-action-button': {
+                opacity: 1
+              }
+            }}>
               <TextField
                 fullWidth
                 size="small"
@@ -192,7 +216,17 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
               <IconButton
                 size="small"
                 onClick={() => removeHonor(honorIndex)}
-                color="error"
+                className="item-action-button"
+                sx={{
+                  color: 'text.secondary',
+                  opacity: 0.3,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    color: 'error.main',
+                    bgcolor: 'rgba(255, 235, 238, 0.5)',
+                    opacity: 1
+                  }
+                }}
               >
                 <DeleteIcon fontSize="small" />
               </IconButton>
@@ -287,6 +321,10 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
       renderItemForm={renderEducationForm}
       renderItemDisplay={renderEducationDisplay}
       autoSaveMessage="Education"
+      sortOptions={[
+        { field: 'start_date', label: 'Start Date' },
+        { field: 'end_date', label: 'End Date' }
+      ]}
     />
   )
 }

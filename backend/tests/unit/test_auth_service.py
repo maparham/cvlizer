@@ -72,39 +72,39 @@ class TestAuthService:
         payload = verify_token(access_token, "refresh")
         assert payload is None
     
-    @patch('src.services.auth_service.get_user_by_email')
-    def test_authenticate_user_success(self, mock_get_user):
+    def test_authenticate_user_success(self):
         """Test successful user authentication"""
-        # Mock user with correct password
-        mock_user = Mock()
-        mock_user.password_hash = get_password_hash("testpassword123")
-        mock_get_user.return_value = mock_user
+        # Create a real user object with proper password hash
+        from src.models.user import User
+        user = User()
+        user.password_hash = get_password_hash("testpassword123")
         
         db = Mock()
+        db.query.return_value.filter.return_value.first.return_value = user
+        
         result = authenticate_user(db, "test@example.com", "testpassword123")
         
-        assert result == mock_user
-        mock_get_user.assert_called_once_with(db, "test@example.com")
+        assert result == user
     
-    @patch('src.services.auth_service.get_user_by_email')
-    def test_authenticate_user_wrong_password(self, mock_get_user):
+    def test_authenticate_user_wrong_password(self):
         """Test authentication with wrong password"""
-        # Mock user with different password
-        mock_user = Mock()
-        mock_user.password_hash = get_password_hash("differentpassword")
-        mock_get_user.return_value = mock_user
+        # Create a real user object with different password hash
+        from src.models.user import User
+        user = User()
+        user.password_hash = get_password_hash("differentpassword")
         
         db = Mock()
+        db.query.return_value.filter.return_value.first.return_value = user
+        
         result = authenticate_user(db, "test@example.com", "testpassword123")
         
         assert result is None
     
-    @patch('src.services.auth_service.get_user_by_email')
-    def test_authenticate_user_not_found(self, mock_get_user):
+    def test_authenticate_user_not_found(self):
         """Test authentication with non-existent user"""
-        mock_get_user.return_value = None
-        
         db = Mock()
+        db.query.return_value.filter.return_value.first.return_value = None
+        
         result = authenticate_user(db, "nonexistent@example.com", "testpassword123")
         
         assert result is None

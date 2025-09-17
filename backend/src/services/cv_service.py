@@ -1,8 +1,10 @@
 """
-CV service for managing CV data and operations.
+CV service for managing CV data and database operations.
 
-This module provides functions for CRUD operations on CV records,
-including creation, retrieval, updates, deletion, and OpenAI-based parsing.
+This module provides functions for CRUD operations on CV records:
+- CV creation, retrieval, updates, and deletion
+- User-specific CV filtering and pagination
+- Database transaction management
 """
 from typing import List, Optional
 from sqlalchemy.orm import Session
@@ -68,22 +70,9 @@ def delete_cv(db: Session, cv_id: str, user_id: str) -> bool:
     return True
 
 
+# Parsing functions have been moved to cv_parsing_service.py
+# Import them here to maintain backward compatibility
 def parse_cv_with_openai(file_content: bytes, filename: str, content_type: str) -> dict:
-    """Parse CV content using OpenAI"""
-    from .file_service import extract_text_from_file
-    from .ai_service import parse_cv_text_with_openai
-    
-    try:
-        # Extract text from file
-        text_content = extract_text_from_file(file_content, content_type)
-        
-        # Parse with OpenAI
-        parsed_data = parse_cv_text_with_openai(text_content)
-        
-        return parsed_data
-    except Exception as e:
-        # Return error structure if parsing fails
-        return {
-            "error": f"Failed to parse CV: {str(e)}",
-            "raw_text": file_content.decode('utf-8', errors='ignore')[:1000] + "..." if len(file_content) > 1000 else file_content.decode('utf-8', errors='ignore')
-        }
+    """Parse CV content using OpenAI - delegated to cv_parsing_service"""
+    from .cv_parsing_service import parse_cv_with_openai as parse_cv
+    return parse_cv(file_content, filename, content_type)

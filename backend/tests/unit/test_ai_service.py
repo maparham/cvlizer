@@ -7,7 +7,8 @@ import json
 class TestAIService:
     """Test cases for AI service"""
     
-    @patch('src.services.ai_service.openai.ChatCompletion.acreate')
+    @pytest.mark.asyncio
+    @patch('src.services.ai_service._openai_client.chat.completions.create')
     async def test_generate_cv_section_success(self, mock_openai):
         """Test successful AI section generation"""
         mock_response = Mock()
@@ -26,13 +27,14 @@ class TestAIService:
         result = await generate_cv_section(cv_data, job_description, "why_good_fit")
         
         assert result["title"] == "Why I'm a Good Fit"
-        assert result["content"] == "Generated content here"
+        assert result["section_content"] == "Generated content here"
         assert result["key_points"] == ["Point 1", "Point 2"]
         assert result["tokens_used"] == 150
-        assert result["ai_model"] == "gpt-4o-mini"
+        assert result["model_used"] == "gpt-4o-mini"
         assert "generation_time" in result
     
-    @patch('src.services.ai_service.openai.ChatCompletion.acreate')
+    @pytest.mark.asyncio
+    @patch('src.services.ai_service._openai_client.chat.completions.create')
     async def test_generate_cv_section_json_parse_error(self, mock_openai):
         """Test AI section generation with JSON parse error"""
         mock_response = Mock()
@@ -47,11 +49,12 @@ class TestAIService:
         result = await generate_cv_section(cv_data, job_description, "why_good_fit")
         
         assert result["title"] == "AI Generated Section"
-        assert result["content"] == "Invalid JSON content"
+        assert result["section_content"] == "Invalid JSON content"
         assert result["key_points"] == []
         assert result["tokens_used"] == 100
     
-    @patch('src.services.ai_service.openai.ChatCompletion.acreate')
+    @pytest.mark.asyncio
+    @patch('src.services.ai_service._openai_client.chat.completions.create')
     async def test_generate_cv_section_api_error(self, mock_openai):
         """Test AI section generation with API error"""
         mock_openai.side_effect = Exception("API Error")
@@ -67,7 +70,7 @@ class TestAIService:
         assert result["tokens_used"] == 0
         assert result["error"] == "API Error"
     
-    @patch('src.services.ai_service.openai.ChatCompletion.create')
+    @patch('src.services.ai_service._openai_client.chat.completions.create')
     def test_parse_cv_text_with_openai_success(self, mock_openai):
         """Test successful CV text parsing with OpenAI"""
         mock_response = Mock()
@@ -95,7 +98,7 @@ class TestAIService:
         assert len(result["work_experience"]) == 1
         assert result["work_experience"][0]["company"] == "Tech Corp"
     
-    @patch('src.services.ai_service.openai.ChatCompletion.create')
+    @patch('src.services.ai_service._openai_client.chat.completions.create')
     def test_parse_cv_text_with_openai_json_error(self, mock_openai):
         """Test CV text parsing with JSON parse error"""
         mock_response = Mock()
@@ -111,7 +114,7 @@ class TestAIService:
         assert "Failed to parse as JSON" in result["parse_error"]
         assert result["professional_summary"]["content"] == text_content[:500]
     
-    @patch('src.services.ai_service.openai.ChatCompletion.create')
+    @patch('src.services.ai_service._openai_client.chat.completions.create')
     def test_parse_cv_text_with_openai_api_error(self, mock_openai):
         """Test CV text parsing with API error"""
         mock_openai.side_effect = Exception("API Error")
@@ -128,7 +131,7 @@ class TestAIService:
         """Test CV text parsing with empty content"""
         text_content = ""
         
-        with patch('src.services.ai_service.openai.ChatCompletion.create') as mock_openai:
+        with patch('src.services.ai_service._openai_client.chat.completions.create') as mock_openai:
             mock_response = Mock()
             mock_response.choices = [Mock()]
             mock_response.choices[0].message.content = json.dumps({

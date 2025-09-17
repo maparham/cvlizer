@@ -15,7 +15,7 @@ export interface SuggestionData {
  * Get smart suggestions based on previous entries
  */
 export const getSmartSuggestions = (
-  fieldType: keyof SuggestionData,
+  _fieldType: keyof SuggestionData,
   currentValue: string,
   previousEntries: any[],
   maxSuggestions: number = 5

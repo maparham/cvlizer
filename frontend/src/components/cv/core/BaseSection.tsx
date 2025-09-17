@@ -10,6 +10,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   onCancel,
   children, 
   editButton,
+  headerActions,
   isEditing,
   isValid = true
 }) => {
@@ -38,22 +39,24 @@ const BaseSection: React.FC<BaseSectionProps> = ({
         <Box sx={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 0.5 }}>
           {onSave && (
             <Tooltip title="Save changes">
-              <IconButton
-                onClick={onSave}
-                disabled={!isValid}
-                sx={{
-                  opacity: 1,
-                  transition: 'opacity 0.2s',
-                  bgcolor: 'white',
-                  boxShadow: 1,
-                  '&:disabled': {
-                    opacity: 0.5
-                  }
-                }}
-                size="small"
-              >
-                <SaveIcon fontSize="small" />
-              </IconButton>
+              <span>
+                <IconButton
+                  onClick={onSave}
+                  disabled={!isValid}
+                  sx={{
+                    opacity: 1,
+                    transition: 'opacity 0.2s',
+                    bgcolor: 'white',
+                    boxShadow: 1,
+                    '&:disabled': {
+                      opacity: 0.5
+                    }
+                  }}
+                  size="small"
+                >
+                  <SaveIcon fontSize="small" />
+                </IconButton>
+              </span>
             </Tooltip>
           )}
           <Tooltip title="Cancel editing">
@@ -83,9 +86,13 @@ const BaseSection: React.FC<BaseSectionProps> = ({
                 top: 0,
                 right: 0,
                 opacity: 1,
-                transition: 'opacity 0.2s',
-                bgcolor: 'white',
-                boxShadow: 1
+                color: 'text.secondary',
+                bgcolor: 'transparent',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  color: 'primary.main',
+                  bgcolor: 'rgba(227, 242, 253, 0.5)'
+                }
               }}
               size="small"
             >
@@ -95,9 +102,12 @@ const BaseSection: React.FC<BaseSectionProps> = ({
         )
       )}
 
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2, color: '#1976d2' }}>
-        {title}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+          {title}
+        </Typography>
+        {headerActions}
+      </Box>
       
       {children}
       <Divider sx={{ my: 2 }} />

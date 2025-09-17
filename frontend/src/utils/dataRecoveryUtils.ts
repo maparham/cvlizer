@@ -118,7 +118,7 @@ export class DraftManager {
     
     if (drafts.length > this.MAX_DRAFTS) {
       // Keep only the most recent drafts
-      const draftsToKeep = drafts.slice(0, this.MAX_DRAFTS)
+      // const draftsToKeep = drafts.slice(0, this.MAX_DRAFTS)
       const draftsToRemove = drafts.slice(this.MAX_DRAFTS)
       
       draftsToRemove.forEach(draft => {

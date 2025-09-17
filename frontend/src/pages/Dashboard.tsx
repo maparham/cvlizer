@@ -53,7 +53,7 @@ const Dashboard: React.FC = () => {
     cvs,
     loading,
     error,
-    hasUnparsedCVs,
+    // hasUnparsedCVs,
     fetchCVs,
     deleteCV: deleteCVFromStore
   } = useCVStore()

@@ -1,13 +1,33 @@
-import React from 'react'
+/**
+ * Main Application Component
+ * 
+ * This module sets up the core application structure including:
+ * - React Router for client-side routing
+ * - Material-UI theme provider and styling
+ * - Authentication context provider
+ * - Lazy loading for code splitting and performance optimization
+ * - Global loading states and error boundaries
+ */
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import { Suspense, lazy } from 'react'
+import { Box, CircularProgress } from '@mui/material'
 import { AuthProvider } from './contexts/AuthContext'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import CVEditor from './pages/CVEditor'
-import Dashboard from './pages/Dashboard'
+
+// Lazy load pages for code splitting
+const Home = lazy(() => import('./pages/Home'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const CVEditor = lazy(() => import('./pages/CVEditor'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+
+// Loading component
+const PageLoader = () => (
+  <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+    <CircularProgress />
+  </Box>
+)
 
 const theme = createTheme({
   palette: {
@@ -32,13 +52,15 @@ function App() {
             v7_relativeSplatPath: true,
           }}
         >
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/cv/:cvId" element={<CVEditor />} />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/cv/:cvId" element={<CVEditor />} />
+            </Routes>
+          </Suspense>
         </Router>
       </AuthProvider>
     </ThemeProvider>

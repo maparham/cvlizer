@@ -20,7 +20,7 @@ class CV(Base):
     file_path = Column(String(500), nullable=False)
     file_size = Column(Integer, nullable=False)
     file_type = Column(String(50), nullable=False)
-    parsed_data = Column(JSON, nullable=False)
+    parsed_data = Column(JSON, nullable=True)
     is_parsed = Column(Boolean, default=False, nullable=False)
     parse_error = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -30,6 +30,9 @@ class CV(Base):
     user = relationship("User", back_populates="cvs")
     job_descriptions = relationship("JobDescription", back_populates="cv", cascade="all, delete-orphan")
     ai_sections = relationship("AISection", back_populates="cv", cascade="all, delete-orphan")
+    
+    def __str__(self):
+        return f"<CV {self.original_filename}>"
     
     def to_response_dict(self) -> dict:
         """

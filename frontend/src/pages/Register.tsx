@@ -7,8 +7,11 @@ import {
   Typography,
   Box,
   Link,
-  Alert
+  Alert,
+  InputAdornment,
+  IconButton
 } from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -18,9 +21,23 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const { register } = useAuth()
   const navigate = useNavigate()
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword)
+  }
+
+  const handleClickShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword)
+  }
+
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +56,7 @@ const Register: React.FC = () => {
     setLoading(true)
 
     try {
-      await register({ email, password })
+      await register(email, password)
       navigate('/dashboard')
     } catch (err) {
       setError('Registration failed. Please try again.')
@@ -93,12 +110,26 @@ const Register: React.FC = () => {
               fullWidth
               name="password"
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               helperText="Password must be at least 8 characters long"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      onMouseDown={handleMouseDownPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <TextField
               margin="normal"
@@ -106,11 +137,25 @@ const Register: React.FC = () => {
               fullWidth
               name="confirmPassword"
               label="Confirm Password"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               id="confirmPassword"
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle confirm password visibility"
+                      onClick={handleClickShowConfirmPassword}
+                      onMouseDown={handleMouseDownPassword}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Button
               type="submit"

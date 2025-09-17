@@ -1,8 +1,18 @@
+/**
+ * Work Experience Section Component
+ * 
+ * This module manages the work experience section of a CV including:
+ * - Multiple work experience entries with individual editing
+ * - Job position and location autocomplete functionality
+ * - Date range management with current job handling
+ * - Achievements and technologies tracking
+ * - Add, edit, delete, and reorder functionality
+ */
 import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateField } from '../core/formUtils'
+import { FormField, DateFieldComponent } from '../core/formUtils'
 import LocationAutocomplete from '../ui/LocationAutocomplete'
 import JobPositionAutocomplete from '../ui/JobPositionAutocomplete'
 
@@ -31,7 +41,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
     technologies: []
   })
 
-  const renderExperienceForm = (exp: WorkExperience, index: number, updateExperience: (field: keyof WorkExperience, value: any) => void) => (
+  const renderExperienceForm = (exp: WorkExperience, _index: number, updateExperience: (field: keyof WorkExperience, value: any) => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <JobPositionAutocomplete
         value={exp.position || ''}
@@ -56,7 +66,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         placeholder="e.g., San Francisco, CA"
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <DateField
+        <DateFieldComponent
           config={{
             name: 'start_date',
             label: 'Start Date',
@@ -66,7 +76,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
           onChange={(value) => updateExperience('start_date', value)}
           sx={{ flex: 1 }}
         />
-        <DateField
+        <DateFieldComponent
           config={{
             name: 'end_date',
             label: 'End Date'
@@ -90,7 +100,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
     </Box>
   )
 
-  const renderExperienceDisplay = (exp: WorkExperience, index: number) => (
+  const renderExperienceDisplay = (exp: WorkExperience, _index: number) => (
     <>
       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
         {exp.position || 'Position Title'}
@@ -127,6 +137,10 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
       renderItemForm={renderExperienceForm}
       renderItemDisplay={renderExperienceDisplay}
       autoSaveMessage="Work experience"
+      sortOptions={[
+        { field: 'start_date', label: 'Start Date' },
+        { field: 'end_date', label: 'End Date' }
+      ]}
     />
   )
 }

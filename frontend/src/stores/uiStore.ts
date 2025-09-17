@@ -44,6 +44,9 @@ interface UIState {
   openDialog: (dialog: keyof UIState['dialogs']) => void
   closeDialog: (dialog: keyof UIState['dialogs']) => void
   closeAllDialogs: () => void
+  
+  // Reset function for testing
+  reset: () => void
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9)
@@ -91,7 +94,7 @@ export const useUIStore = create<UIState>()(
           }))
 
           // Auto-remove notification after duration
-          if (newNotification.duration > 0) {
+          if (newNotification.duration && newNotification.duration > 0) {
             setTimeout(() => {
               get().removeNotification(id)
             }, newNotification.duration)
@@ -142,6 +145,31 @@ export const useUIStore = create<UIState>()(
               cvUpload: false
             }
           })
+        },
+
+        // Convenience methods
+        showSuccess: (title: string, message?: string) => 
+          get().addNotification({ type: 'success', title, message }),
+        showError: (title: string, message?: string) => 
+          get().addNotification({ type: 'error', title, message }),
+        showWarning: (title: string, message?: string) => 
+          get().addNotification({ type: 'warning', title, message }),
+        showInfo: (title: string, message?: string) => 
+          get().addNotification({ type: 'info', title, message }),
+        
+        // Reset function for testing
+        reset: () => {
+          set({
+            theme: 'auto',
+            sidebarOpen: true,
+            notifications: [],
+            globalLoading: false,
+            dialogs: {
+              confirmDelete: false,
+              unsavedChanges: false,
+              cvUpload: false
+            }
+          })
         }
       }),
       {
@@ -176,6 +204,21 @@ export const useNotifications = () => {
     showWarning: (title: string, message?: string) => 
       addNotification({ type: 'warning', title, message }),
     showInfo: (title: string, message?: string) => 
-      addNotification({ type: 'info', title, message })
+      addNotification({ type: 'info', title, message }),
+    
+    // Reset function for testing
+    reset: () => {
+      set({
+        theme: 'light',
+        sidebarOpen: true,
+        notifications: [],
+        globalLoading: false,
+        dialogs: {
+          confirmDelete: false,
+          unsavedChanges: false,
+          cvUpload: false
+        }
+      })
+    }
   }
 }

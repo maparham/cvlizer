@@ -6,8 +6,7 @@ import {
   Box,
   Card,
   CardContent,
-  Grid,
-  Paper
+  Grid
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'

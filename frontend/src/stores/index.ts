@@ -3,10 +3,13 @@ export { useAuthStore } from './authStore'
 export { useCVStore, cleanupCVStore } from './cvStore'
 export { useUIStore, useNotifications } from './uiStore'
 
+// Import the stores for internal use
+import { useAuthStore } from './authStore'
+import { useCVStore, cleanupCVStore } from './cvStore'
+import { useUIStore } from './uiStore'
+
 // Re-export types for convenience
-export type { 
-  AuthState 
-} from './authStore'
+// Note: AuthState is not exported from authStore, so we'll remove this
 
 // Store initialization and cleanup utilities
 export const initializeStores = async () => {
@@ -36,8 +39,7 @@ export const resetAllStores = () => {
     loading: false,
     uploading: false,
     error: null,
-    hasUnparsedCVs: false,
-    pollingInterval: null
+    hasUnparsedCVs: false
   })
   useUIStore.getState().clearNotifications()
   useUIStore.getState().closeAllDialogs()

@@ -1,13 +1,17 @@
 /**
  * Date utility functions for CV editor
  */
+import dayjs, { Dayjs } from 'dayjs'
 
 /**
- * Formats a Date object for backend storage (always YYYY-MM-DD format)
- * @param date - The Date object to format
+ * Formats a Date object or Dayjs object for backend storage (always YYYY-MM-DD format)
+ * @param date - The Date or Dayjs object to format
  * @returns Formatted date string in YYYY-MM-DD format
  */
-export const formatDateForBackend = (date: Date): string => {
+export const formatDateForBackend = (date: Date | Dayjs): string => {
+  if (dayjs.isDayjs(date)) {
+    return date.format('YYYY-MM-DD')
+  }
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -37,7 +41,7 @@ export const formatDateForDisplay = (dateString: string): string => {
 }
 
 /**
- * Converts a date string to a Date object for DatePicker components
+ * Converts a date string to a Date object for DatePicker components (legacy)
  * @param dateString - The date string to convert
  * @returns Date object or null if invalid
  */
@@ -51,6 +55,28 @@ export const parseDateForPicker = (dateString: string): Date | null => {
     
     // Check if date is valid
     if (isNaN(date.getTime())) {
+      return null
+    }
+    
+    return date
+  } catch (error) {
+    return null
+  }
+}
+
+/**
+ * Converts a date string to a Dayjs object for DateField components
+ * @param dateString - The date string to convert
+ * @returns Dayjs object or null if invalid
+ */
+export const parseDateForDateField = (dateString: string): Dayjs | null => {
+  if (!dateString) return null
+  
+  try {
+    const date = dayjs(dateString)
+    
+    // Check if date is valid
+    if (!date.isValid()) {
       return null
     }
     

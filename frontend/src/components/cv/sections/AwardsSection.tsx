@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateField } from '../core/formUtils'
+import { FormField, DateFieldComponent } from '../core/formUtils'
 
 interface Award {
   name: string
@@ -41,7 +41,7 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         value={award.issuer}
         onChange={(value) => updateAward('issuer', value)}
       />
-      <DateField
+      <DateFieldComponent
         config={{
           name: 'date',
           label: 'Date Received',
@@ -99,6 +99,9 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
       renderItemForm={renderAwardForm}
       renderItemDisplay={renderAwardDisplay}
       autoSaveMessage="Award"
+      sortOptions={[
+        { field: 'date', label: 'Date Received' }
+      ]}
     />
   )
 }

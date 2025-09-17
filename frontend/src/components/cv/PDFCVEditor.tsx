@@ -1,3 +1,13 @@
+/**
+ * PDF-Style CV Editor Component
+ * 
+ * This module provides the main CV editing interface with PDF-like layout including:
+ * - Section management sidebar for reordering and toggling visibility
+ * - PDF-style content area with real-time editing
+ * - Drag and drop functionality for section reordering
+ * - Unsaved changes detection and confirmation dialogs
+ * - Integration with CV editor context for state management
+ */
 import React from 'react'
 import { Box } from '@mui/material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -9,19 +19,19 @@ import {
   CVContentArea,
   PDFCVEditorDialogs
 } from './core'
-import { 
+import {
   useCVEditorControls,
-  useCVEditorState,
-  useCVEditor
+  useCVEditorState
+  // useCVEditor
 } from '../../contexts/CVEditorContext'
 
 const PDFCVEditor: React.FC = () => {
   // Use context instead of props
-  const { cvData } = useCVEditor()
+  // const { cvData } = useCVEditor()
   
   // Use consolidated context hooks
   const { sections, dragDrop, reset } = useCVEditorControls()
-  const { editing, changes } = useCVEditorState()
+  const { changes } = useCVEditorState()
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>

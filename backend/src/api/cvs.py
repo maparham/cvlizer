@@ -17,8 +17,9 @@ from ..models.base import get_db, SessionLocal
 from ..models.user import User
 from ..models.cv import CV
 from ..services.cv_service import (
-    create_cv, get_cv_by_id, get_cvs_by_user, update_cv, delete_cv, parse_cv_with_openai
+    create_cv, get_cv_by_id, get_cvs_by_user, update_cv, delete_cv
 )
+from ..services.cv_parsing_service import parse_cv_with_openai
 from ..services.file_service import validate_file, save_uploaded_file, delete_file
 from ..constants import DEFAULT_PARSED_CV
 from copy import deepcopy

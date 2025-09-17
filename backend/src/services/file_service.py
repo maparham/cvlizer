@@ -122,4 +122,4 @@ def extract_text_from_file(file_content: bytes, content_type: str) -> str:
     elif content_type == "application/msword":
         return extract_text_from_doc(file_content)
     else:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type: {content_type}")
+        raise HTTPException(status_code=400, detail="Unsupported file type: " + content_type)

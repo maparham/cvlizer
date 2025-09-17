@@ -5,7 +5,7 @@ import { ArraySectionProps } from '../types'
 import { useArraySectionAutoSave } from './hooks'
 import BaseSection from './BaseSection'
 
-const ArraySection: React.FC<ArraySectionProps> = ({
+const ArraySection: React.FC<ArraySectionProps<any>> = ({
   title,
   data,
   onUpdate,
@@ -76,7 +76,7 @@ const ArraySection: React.FC<ArraySectionProps> = ({
   }
 
   const handleDelete = (index: number) => {
-    const newData = (data || []).filter((_, i) => i !== index)
+    const newData = (data || []).filter((_: any, i: number) => i !== index)
     onUpdate(newData)
     onSave(newData, `${title} deleted`)
   }
@@ -149,7 +149,7 @@ const ArraySection: React.FC<ArraySectionProps> = ({
       {isEditing && editingIndex !== null ? (
         renderEditForm(editData, setEditData, handleSave, handleCancel)
       ) : (
-        data.map((item, index) => renderItem(item, index, handleEdit, handleDelete))
+        data.map((item: any, index: number) => renderItem(item, index, handleEdit, handleDelete))
       )}
     </BaseSection>
   )

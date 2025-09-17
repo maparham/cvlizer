@@ -61,10 +61,11 @@ export const usePDFCVEditor = ({
   const [showResetDialog, setShowResetDialog] = useState(false)
 
   // Wrap onSave to update CV data as well
-  const handleSave = useCallback((updatedData = cvData, message?: string) => {
-    onUpdateCV(updatedData)
-    return onSave(updatedData, message)
-  }, [cvData, onUpdateCV, onSave])
+  const handleSave = useCallback((updatedData, message?: string) => {
+    const dataToSave = updatedData || cvData
+    onUpdateCV(dataToSave)
+    return onSave(dataToSave, message)
+  }, [onUpdateCV, onSave])
 
   // Section management
   const sectionManagement = useSectionManagement({

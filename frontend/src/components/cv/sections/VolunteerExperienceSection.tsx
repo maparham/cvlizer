@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateField } from '../core/formUtils'
+import { FormField, DateFieldComponent } from '../core/formUtils'
 
 interface VolunteerExperience {
   organization: string
@@ -44,7 +44,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         onChange={(value) => updateVolunteer('role', value)}
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <DateField
+        <DateFieldComponent
           config={{
             name: 'start_date',
             label: 'Start Date',
@@ -54,7 +54,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
           onChange={(value) => updateVolunteer('start_date', value)}
           sx={{ flex: 1 }}
         />
-        <DateField
+        <DateFieldComponent
           config={{
             name: 'end_date',
             label: 'End Date (Optional)'
@@ -112,6 +112,10 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
       renderItemForm={renderVolunteerForm}
       renderItemDisplay={renderVolunteerDisplay}
       autoSaveMessage="Volunteer experience"
+      sortOptions={[
+        { field: 'start_date', label: 'Start Date' },
+        { field: 'end_date', label: 'End Date' }
+      ]}
     />
   )
 }

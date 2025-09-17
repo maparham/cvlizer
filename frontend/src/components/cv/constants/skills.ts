@@ -41,7 +41,7 @@ export const TECHNICAL_SKILLS = [
   'VS Code', 'IntelliJ IDEA', 'Eclipse', 'Sublime Text', 'Vim', 'Emacs',
   
   // Testing
-  'Jest', 'Mocha', 'Chai', 'Cypress', 'Selenium', 'Playwright', 'Puppeteer',
+  'Jest', 'Mocha', 'Chai', 'Cypress', 'Selenium', 'Puppeteer',
   'JUnit', 'TestNG', 'PyTest', 'RSpec', 'PHPUnit', 'XCTest',
   
   // Design & Graphics

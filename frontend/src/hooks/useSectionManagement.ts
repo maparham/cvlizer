@@ -68,7 +68,6 @@ export const useSectionManagement = ({
         order: order++
       })
     })
-    
     return sections
   }, [])
 
@@ -81,21 +80,19 @@ export const useSectionManagement = ({
     return createSectionsFromCVData(cvData)
   })
 
-  // Update sections when cvData changes, but only on initial load
-  // Don't override user changes that are being saved
+  // Update sections when cvData changes
   useEffect(() => {
-    // Only update sections if we don't have any sections yet (initial load)
-    if (sections.length === 0) {
-      if (cvData?.section_config?.sections) {
+    if (cvData) {
+      if (cvData.section_config?.sections) {
         // Use the section configuration from the CV data
         setSections(cvData.section_config.sections)
-      } else if (cvData) {
+      } else {
         // Create sections from CV data (only sections with data)
         const newSections = createSectionsFromCVData(cvData)
         setSections(newSections)
       }
     }
-  }, [cvData, createSectionsFromCVData, sections.length])
+  }, [cvData, createSectionsFromCVData])
 
   const toggleSectionVisibility = useCallback((sectionId: string) => {
     const section = sections.find(s => s.id === sectionId)
@@ -111,8 +108,13 @@ export const useSectionManagement = ({
         // Empty section: delete it entirely
         updatedSections = sections.filter(s => s.id !== sectionId)
         
-        // Remove the section data from CV data
-        updatedCvData = { ...cvData }
+        // Remove the section data from CV data and update section config
+        updatedCvData = { 
+          ...cvData,
+          section_config: {
+            sections: updatedSections
+          }
+        }
         delete (updatedCvData as any)[sectionId]
         
         message = 'Empty section deleted'
@@ -267,8 +269,10 @@ export const useSectionManagement = ({
   }, [cvData, createSectionsFromCVData, onSave])
 
   const getAvailableSectionsToAdd = useCallback(() => {
+    // Get all sections that exist (both visible and hidden) - they should not appear in available sections
     const existingSectionIds = sections.map(s => s.id)
-    return AVAILABLE_SECTIONS
+    
+    const available = AVAILABLE_SECTIONS
       .filter(section => !existingSectionIds.includes(section.id))
       .map(section => ({
         id: section.id,
@@ -276,6 +280,8 @@ export const useSectionManagement = ({
         icon: section.icon,
         description: section.description
       }))
+    
+    return available
   }, [sections])
 
   const isDefaultOrder = useCallback(() => {

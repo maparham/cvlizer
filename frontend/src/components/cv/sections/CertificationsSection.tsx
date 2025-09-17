@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateField } from '../core/formUtils'
+import { FormField, DateFieldComponent } from '../core/formUtils'
 
 interface Certification {
   name: string
@@ -21,7 +21,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
     description: ''
   })
 
-  const renderCertificationForm = (cert: Certification, index: number, updateCertification: (field: keyof Certification, value: any) => void) => (
+  const renderCertificationForm = (cert: Certification, _index: number, updateCertification: (field: keyof Certification, value: any) => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -44,7 +44,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         onChange={(value) => updateCertification('issuer', value)}
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <DateField
+        <DateFieldComponent
           config={{
             name: 'date',
             label: 'Issue Date',
@@ -54,7 +54,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
           onChange={(value) => updateCertification('date', value)}
           sx={{ flex: 1 }}
         />
-        <DateField
+        <DateFieldComponent
           config={{
             name: 'expiry_date',
             label: 'Expiry Date (Optional)'
@@ -78,7 +78,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
     </Box>
   )
 
-  const renderCertificationDisplay = (cert: Certification, index: number) => (
+  const renderCertificationDisplay = (cert: Certification, _index: number) => (
     <>
       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
         {cert.name}
@@ -114,6 +114,10 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
       renderItemForm={renderCertificationForm}
       renderItemDisplay={renderCertificationDisplay}
       autoSaveMessage="Certification"
+      sortOptions={[
+        { field: 'date', label: 'Issue Date' },
+        { field: 'expiry_date', label: 'Expiry Date' }
+      ]}
     />
   )
 }

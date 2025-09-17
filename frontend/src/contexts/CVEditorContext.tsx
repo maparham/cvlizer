@@ -1,3 +1,17 @@
+/**
+ * CV Editor Context
+ * 
+ * This module provides comprehensive state management for the CV editor including:
+ * - CV data management and updates
+ * - Section visibility and ordering controls
+ * - Drag and drop functionality for section reordering
+ * - Editing state management (section and individual item editing)
+ * - Unsaved changes detection and confirmation dialogs
+ * - Reset functionality with confirmation
+ * 
+ * Note: This is a large context that coordinates multiple editor features.
+ * Consider breaking into smaller contexts if complexity grows further.
+ */
 import React, { createContext, useContext, ReactNode } from 'react'
 import { CVData, CVSection, EditingIndividualItem } from '../types'
 import { usePDFCVEditor } from '../hooks/usePDFCVEditor'
@@ -115,7 +129,7 @@ export const useCVEditorControls = () => {
       add: context.addNewSection,
       remove: context.removeSection,
       resetToDefault: context.resetToDefaultOrder,
-      isDefaultOrder: context.isDefaultOrder(),
+      isDefaultOrder: context.isDefaultOrder,
       availableToAdd: context.getAvailableSectionsToAdd(),
     },
     

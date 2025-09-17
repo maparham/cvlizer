@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateField } from '../core/formUtils'
+import { FormField, DateFieldComponent } from '../core/formUtils'
 
 interface Publication {
   title: string
@@ -21,7 +21,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
     url: ''
   })
 
-  const renderPublicationForm = (publication: Publication, index: number, updatePublication: (field: keyof Publication, value: any) => void) => (
+  const renderPublicationForm = (publication: Publication, _index: number, updatePublication: (field: keyof Publication, value: any) => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -53,7 +53,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         value={publication.journal}
         onChange={(value) => updatePublication('journal', value)}
       />
-      <DateField
+      <DateFieldComponent
         config={{
           name: 'date',
           label: 'Publication Date',
@@ -75,7 +75,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
     </Box>
   )
 
-  const renderPublicationDisplay = (publication: Publication, index: number) => (
+  const renderPublicationDisplay = (publication: Publication, _index: number) => (
     <>
       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
         📄 {publication.title}
@@ -112,6 +112,9 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
       renderItemForm={renderPublicationForm}
       renderItemDisplay={renderPublicationDisplay}
       autoSaveMessage="Publication"
+      sortOptions={[
+        { field: 'date', label: 'Publication Date' }
+      ]}
     />
   )
 }

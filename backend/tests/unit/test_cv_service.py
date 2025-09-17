@@ -116,8 +116,8 @@ class TestCVService:
         
         assert result == False
     
-    @patch('src.services.cv_service.extract_text_from_file')
-    @patch('src.services.cv_service.parse_cv_text_with_openai')
+    @patch('src.services.file_service.extract_text_from_file')
+    @patch('src.services.ai_service.parse_cv_text_with_openai')
     def test_parse_cv_with_openai_success(self, mock_parse_text, mock_extract_text):
         """Test successful CV parsing with OpenAI"""
         mock_extract_text.return_value = "Extracted text content"
@@ -133,7 +133,7 @@ class TestCVService:
         mock_extract_text.assert_called_once_with(file_content, content_type)
         mock_parse_text.assert_called_once_with("Extracted text content")
     
-    @patch('src.services.cv_service.extract_text_from_file')
+    @patch('src.services.file_service.extract_text_from_file')
     def test_parse_cv_with_openai_error(self, mock_extract_text):
         """Test CV parsing with error"""
         mock_extract_text.side_effect = Exception("File parsing error")
