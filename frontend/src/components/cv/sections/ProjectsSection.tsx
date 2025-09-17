@@ -45,10 +45,11 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
           config={{
             name: 'description',
             label: 'Description',
-            placeholder: 'Brief description of the project...',
+            placeholder: 'Brief description of the project (minimum 10 characters)...',
             multiline: true,
             rows: 2,
-            required: true
+            required: true,
+            minLength: 10
           }}
           value={project.description}
           onChange={(value) => updateProject('description', value)}

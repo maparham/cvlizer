@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { SectionProps } from '../types'
 import { useSectionAutoSave } from './hooks'
@@ -34,26 +34,58 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   autoSaveMessage,
   autoSaveMode = false
 }) => {
-  const [editData, setEditData] = useState(data || {})
+  // Memoize default data to prevent unnecessary re-renders
+  const defaultData = useMemo(() => {
+    if (sectionId === 'professional_summary') {
+      return { content: "", keywords: [] }
+    } else if (sectionId === 'personal_info') {
+      return { full_name: "", email: "", phone: "", location: "", linkedin_url: "", website_url: "" }
+    } else if (sectionId === 'skills') {
+      return { technical: [], soft: [], languages: [] }
+    }
+    return {}
+  }, [sectionId])
+
+  const actualData = data || defaultData
+  const [editData, setEditData] = useState(actualData)
 
   useEffect(() => {
-    setEditData(data || {})
-  }, [data])
+    setEditData(data || defaultData)
+  }, [data, defaultData])
 
-  // Use common auto-save hook
-  useSectionAutoSave(isEditing, editData, data, onUpdate, onSave, autoSaveMessage, sectionId, onUnsavedChanges)
+  const validateForm = useCallback((data: any): boolean => {
+    // First check basic required fields
+    const basicValidation = createFormValidator(requiredFields)(data)
+    if (!basicValidation) return false
+    
+    // Section-specific validation
+    if (sectionId === 'professional_summary') {
+      return data.content && data.content.trim().length >= 10
+    }
+    
+    return true
+  }, [requiredFields, sectionId])
 
-  if (!data) return null
 
-  const validateForm = createFormValidator(requiredFields)
+  // Use common auto-save hook with validation
+  useSectionAutoSave(isEditing, editData, actualData, onUpdate, onSave, autoSaveMessage, sectionId, onUnsavedChanges, validateForm)
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm(editData)) {
       return
     }
     onUpdate(editData)
-    onClose()
-    onSave(editData)
+    try {
+      await onSave(editData)
+      // Clear unsaved changes after successful save
+      if (onUnsavedChanges) {
+        onUnsavedChanges(sectionId, false)
+      }
+      onClose()
+    } catch (error) {
+      console.error('Save failed:', error)
+      // Don't close on error so user can retry
+    }
   }
 
   const handleCancel = () => {
@@ -81,7 +113,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
           {renderForm(editData, updateData, handleSave, handleCancel)}
         </Box>
       ) : (
-        renderDisplay(data)
+        renderDisplay(actualData)
       )}
     </BaseSection>
   )

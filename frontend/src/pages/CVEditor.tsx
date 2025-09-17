@@ -8,7 +8,13 @@ import {
   Typography,
   Box,
   Snackbar,
-  Alert
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button
 } from '@mui/material'
 import {
   ArrowBack as ArrowBackIcon,
@@ -16,111 +22,46 @@ import {
 } from '@mui/icons-material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { CVEditorProvider } from '../contexts/CVEditorContext'
-import { PDFCVEditor } from '../components/cv'
+import { CVEditorProvider, useCVEditor } from '../contexts/CVEditorContext'
+import { PDFCVEditor, EditableTitle } from '../components/cv'
+import { ErrorBoundary } from '../components/common'
 import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
 import { CVData } from '../types'
 
-const CVEditor: React.FC = () => {
-  const { cvId } = useParams()
+// Component that handles back navigation with edit state checks
+const CVEditorHeader: React.FC<{ 
+  activeCV: any, 
+  onTitleSave: (title: string) => Promise<void>,
+  onLogout: () => void,
+  onMenuOpen: (event: React.MouseEvent<HTMLElement>) => void,
+  onMenuClose: () => void,
+  anchorEl: null | HTMLElement
+}> = ({ activeCV, onTitleSave, onLogout, onMenuOpen, onMenuClose, anchorEl }) => {
   const navigate = useNavigate()
-  const { logout } = useAuth()
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const { showSuccess, showError, showInfo, notifications, removeNotification } = useNotifications()
-  
-  // Use CV store instead of local state
-  const {
-    currentCV,
-    loading,
-    error,
-    fetchCV,
-    updateCV,
-    setCurrentCV
-  } = useCVStore()
-  
-  const cvData = useMemo(() => currentCV?.parsed_data, [currentCV])
+  const { editingSection, editingIndividualItem, hasUnsavedChanges } = useCVEditor()
+  const [showBackDialog, setShowBackDialog] = useState(false)
 
-  // Fetch CV data on component mount
-  useEffect(() => {
-    if (cvId) {
-      fetchCV(cvId)
+  const handleBackClick = () => {
+    // Check if any section is in edit mode or has unsaved changes
+    if (editingSection || editingIndividualItem || hasUnsavedChanges) {
+      setShowBackDialog(true)
+    } else {
+      navigate('/dashboard')
     }
-  }, [cvId]) // Only depend on cvId to prevent infinite loops
-  
-  // Show error notifications
-  useEffect(() => {
-    if (error) {
-      showError('Error', error)
-    }
-  }, [error]) // Remove showError from dependencies to prevent infinite loop
-
-
-  const handleSave = useCallback(async (updatedData?: CVData, message?: string) => {
-    const dataToSave = updatedData || cvData
-    if (!dataToSave || !cvId) return
-    
-    // Show immediate feedback that save is starting
-    const savingNotificationId = showInfo('Saving...', 'Your changes are being saved.')
-    
-    try {
-      await updateCV(cvId, { parsed_data: dataToSave })
-      // Remove the saving notification and show success
-      removeNotification(savingNotificationId)
-      showSuccess('Success', message || 'CV saved successfully')
-    } catch (error: any) {
-      console.error('Error saving CV:', error)
-      // Remove the saving notification and show error
-      removeNotification(savingNotificationId)
-      showError('Error', error?.response?.data?.message || 'Failed to save CV')
-    }
-  }, [cvId, cvData, updateCV, showInfo, showSuccess, showError, removeNotification])
-  
-  const handleUpdateCV = useCallback((data: CVData) => {
-    // Update the local current CV state in the store
-    if (currentCV) {
-      // Update the current CV in the store with the new data
-      const updatedCV = {
-        ...currentCV,
-        parsed_data: data
-      }
-      // Update the store's currentCV state to trigger re-render
-      setCurrentCV(updatedCV)
-    }
-  }, [currentCV, setCurrentCV])
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget)
   }
 
-  const handleMenuClose = () => {
-    setAnchorEl(null)
+  const handleBackDialogClose = () => {
+    setShowBackDialog(false)
   }
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-    handleMenuClose()
-  }
-
-  if (loading && !currentCV) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <Typography>Loading CV...</Typography>
-      </Box>
-    )
-  }
-
-  if (!cvData || !currentCV) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <Typography>CV not found</Typography>
-      </Box>
-    )
+  const handleBackDialogConfirm = () => {
+    setShowBackDialog(false)
+    navigate('/dashboard')
   }
 
   return (
-    <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <>
       <AppBar 
         position="static" 
         sx={{ 
@@ -132,7 +73,7 @@ const CVEditor: React.FC = () => {
         <Toolbar sx={{ minHeight: '48px !important', px: 2 }}>
           <IconButton
             edge="start"
-            onClick={() => navigate('/dashboard')}
+            onClick={handleBackClick}
             sx={{ 
               mr: 2,
               color: '#666',
@@ -143,14 +84,27 @@ const CVEditor: React.FC = () => {
           >
             <ArrowBackIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1 }} />
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', mx: 2 }}>
+            <EditableTitle
+              title={activeCV?.original_filename || 'Untitled CV'}
+              onSave={onTitleSave}
+              variant="h6"
+              sx={{
+                '& .MuiTypography-root': {
+                  color: '#333',
+                  fontSize: '1.1rem',
+                  fontWeight: 500
+                }
+              }}
+            />
+          </Box>
           <IconButton
             size="medium"
             edge="end"
             aria-label="account of current user"
             aria-controls="menu-appbar"
             aria-haspopup="true"
-            onClick={handleMenuOpen}
+            onClick={onMenuOpen}
             sx={{
               color: '#666',
               '&:hover': {
@@ -173,19 +127,214 @@ const CVEditor: React.FC = () => {
               horizontal: 'right',
             }}
             open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
+            onClose={onMenuClose}
           >
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            <MenuItem onClick={onLogout}>Logout</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <CVEditorProvider
+      {/* Back navigation confirmation dialog */}
+      <Dialog
+        open={showBackDialog}
+        onClose={handleBackDialogClose}
+        aria-labelledby="back-dialog-title"
+        aria-describedby="back-dialog-description"
+      >
+        <DialogTitle id="back-dialog-title">
+          Unsaved Changes
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="back-dialog-description">
+            You have unsaved changes. Are you sure you want to go back? Your changes will be lost.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleBackDialogClose}>
+            Stay
+          </Button>
+          <Button onClick={handleBackDialogConfirm} color="error" autoFocus>
+            Leave
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  )
+}
+
+const CVEditor: React.FC = () => {
+  const { cvId } = useParams()
+  const navigate = useNavigate()
+  const { logout } = useAuth()
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const { showSuccess, showError, showInfo, notifications, removeNotification } = useNotifications()
+  
+  // Use CV store instead of local state
+  const {
+    currentCV,
+    temporaryCV,
+    loading,
+    error,
+    fetchCV,
+    updateCV,
+    updateCVTitle,
+    saveTemporaryCV,
+    setCurrentCV,
+    setTemporaryCV
+  } = useCVStore()
+  
+  // Determine if this is a new/temporary CV
+  const isNewCV = cvId === 'new'
+  
+  // Get CV data from either current CV or temporary CV
+  const activeCV = isNewCV ? temporaryCV : currentCV
+  const cvData = useMemo(() => activeCV?.parsed_data, [activeCV])
+
+  // Fetch CV data on component mount (only for existing CVs)
+  useEffect(() => {
+    if (cvId && cvId !== 'new') {
+      fetchCV(cvId)
+    } else if (isNewCV && !temporaryCV) {
+      // If we're on the new CV route but no temporary CV exists, redirect to dashboard
+      navigate('/dashboard')
+    }
+  }, [cvId, isNewCV, temporaryCV, navigate]) // Only depend on cvId to prevent infinite loops
+  
+  // Show error notifications
+  useEffect(() => {
+    if (error) {
+      showError('Error', error)
+    }
+  }, [error]) // Remove showError from dependencies to prevent infinite loop
+
+
+  const handleSave = useCallback(async (updatedData?: CVData, message?: string) => {
+    const dataToSave = updatedData || cvData
+    if (!dataToSave) return
+    
+    // Show immediate feedback that save is starting
+    const savingNotificationId = showInfo('Saving...', 'Your changes are being saved.')
+    
+    try {
+      if (isNewCV) {
+        // Save temporary CV to the backend for the first time
+        const savedCV = await saveTemporaryCV({ parsed_data: dataToSave })
+        // Remove the saving notification and show success
+        removeNotification(savingNotificationId)
+        showSuccess('Success', message || 'CV created and saved successfully')
+        // Navigate to the saved CV's URL
+        navigate(`/cv/${savedCV.id}`, { replace: true })
+      } else {
+        // Update existing CV
+        if (!cvId) return
+        await updateCV(cvId, { parsed_data: dataToSave })
+        // Remove the saving notification and show success
+        removeNotification(savingNotificationId)
+        showSuccess('Success', message || 'CV saved successfully')
+      }
+    } catch (error: any) {
+      console.error('Error saving CV:', error)
+      // Remove the saving notification and show error
+      removeNotification(savingNotificationId)
+      showError('Error', error?.response?.data?.message || 'Failed to save CV')
+    }
+  }, [cvId, cvData, isNewCV, updateCV, saveTemporaryCV, showInfo, showSuccess, showError, removeNotification, navigate])
+  
+  const handleUpdateCV = useCallback((data: CVData) => {
+    // Update the local CV state in the store
+    if (isNewCV && temporaryCV) {
+      // Update temporary CV
+      const updatedTemporaryCV = {
+        ...temporaryCV,
+        parsed_data: data
+      }
+      setTemporaryCV(updatedTemporaryCV)
+    } else if (currentCV) {
+      // Update existing CV
+      const updatedCV = {
+        ...currentCV,
+        parsed_data: data
+      }
+      setCurrentCV(updatedCV)
+    }
+  }, [isNewCV, temporaryCV, currentCV, setCurrentCV, setTemporaryCV])
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+    handleMenuClose()
+  }
+
+  const handleTitleSave = async (newTitle: string) => {
+    if (isNewCV) {
+      // For temporary CVs, just update the local state
+      if (temporaryCV) {
+        const updatedTemporaryCV = {
+          ...temporaryCV,
+          original_filename: newTitle
+        }
+        setTemporaryCV(updatedTemporaryCV)
+        showSuccess('Success', 'Title updated (will be saved when you save the CV)')
+      }
+    } else {
+      // For existing CVs, save to backend
+      if (!cvId) {
+        showError('Error', 'Cannot update title: CV ID not found')
+        return
+      }
+      
+      try {
+        await updateCVTitle(cvId, newTitle)
+        showSuccess('Success', 'CV title updated successfully')
+      } catch (error: any) {
+        const errorMessage = error?.response?.data?.detail || 'Failed to update CV title'
+        showError('Error', errorMessage)
+        console.error('Error updating CV title:', error)
+      }
+    }
+  }
+
+  if (loading && !activeCV) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Typography>Loading CV...</Typography>
+      </Box>
+    )
+  }
+
+  if (!cvData || !activeCV) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Typography>CV not found</Typography>
+      </Box>
+    )
+  }
+
+  return (
+    <ErrorBoundary>
+      <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          <CVEditorProvider
           cvData={cvData}
           onUpdateCV={handleUpdateCV}
           onSave={handleSave}
         >
+          <CVEditorHeader
+            activeCV={activeCV}
+            onTitleSave={handleTitleSave}
+            onLogout={handleLogout}
+            onMenuOpen={handleMenuOpen}
+            onMenuClose={handleMenuClose}
+            anchorEl={anchorEl}
+          />
           <PDFCVEditor />
         </CVEditorProvider>
       </Box>
@@ -214,7 +363,8 @@ const CVEditor: React.FC = () => {
           </Alert>
         </Snackbar>
       ))}
-    </Box>
+      </Box>
+    </ErrorBoundary>
   )
 }
 

@@ -1,6 +1,7 @@
 // Main CV Components
 export { default as PDFCVEditor } from './PDFCVEditor'
 export { default as CVUpload } from './CVUpload'
+export { EditableTitle } from './EditableTitle'
 
 // Core Components
 export * from './core'

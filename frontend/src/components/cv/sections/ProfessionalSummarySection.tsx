@@ -12,8 +12,14 @@ const ProfessionalSummarySection: React.FC<SectionProps> = ({ data, onUpdate, on
       variant="standard"
       value={editData.content || ''}
       onChange={(e) => updateData('content', e.target.value)}
-      error={!editData.content?.trim()}
-      helperText={!editData.content?.trim() ? "Professional summary is required" : ""}
+      error={!editData.content?.trim() || editData.content.trim().length < 10}
+      helperText={
+        !editData.content?.trim() 
+          ? "Professional summary is required" 
+          : editData.content.trim().length < 10 
+            ? "Professional summary must be at least 10 characters long"
+            : ""
+      }
       placeholder="Your professional summary goes here... *"
       sx={{ 
         '& .MuiInputBase-input': { 

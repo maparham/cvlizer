@@ -24,17 +24,19 @@ import {
   Alert
 } from '@mui/material'
 import {
-  Add as AddIcon,
   AccountCircle as AccountCircleIcon,
   Upload as UploadIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Create as CreateIcon,
+  GetApp as DownloadIcon
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { CVUpload } from '../components/cv'
+import { CVUpload, EditableTitle } from '../components/cv'
 import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
+import { cvApi } from '../services/api'
 import { CV } from '../types'
 
 const Dashboard: React.FC = () => {
@@ -43,6 +45,7 @@ const Dashboard: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [cvToDelete, setCvToDelete] = useState<CV | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [creating, setCreating] = useState(false)
   
   const { logout } = useAuth()
   const navigate = useNavigate()
@@ -55,6 +58,8 @@ const Dashboard: React.FC = () => {
     error,
     // hasUnparsedCVs,
     fetchCVs,
+    createTemporaryCV,
+    updateCVTitle,
     deleteCV: deleteCVFromStore
   } = useCVStore()
 
@@ -109,6 +114,47 @@ const Dashboard: React.FC = () => {
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false)
     setCvToDelete(null)
+  }
+
+  const handleCreateBlankCV = () => {
+    setCreating(true)
+    try {
+      createTemporaryCV()
+      navigate(`/cv/new`)
+    } catch (error) {
+      showError('Error', 'Failed to create new CV')
+      console.error('Error creating temporary CV:', error)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleTitleSave = async (cv: CV, newTitle: string) => {
+    try {
+      await updateCVTitle(cv.id, newTitle)
+      showSuccess('Success', 'CV title updated successfully')
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.detail || 'Failed to update CV title'
+      showError('Error', errorMessage)
+      console.error('Error updating CV title:', error)
+    }
+  }
+
+  // Check if CV was uploaded (has file) vs created from scratch
+  const isUploadedCV = (cv: CV) => {
+    // For uploaded CVs, file_size should be > 0
+    // file_path might be undefined in some cases, so we check file_size as primary indicator
+    return cv.file_size > 0
+  }
+
+  const handleDownloadCV = async (cv: CV) => {
+    try {
+      await cvApi.downloadCV(cv.id, cv.original_filename)
+      showSuccess('Success', 'CV download started')
+    } catch (error) {
+      showError('Error', 'Failed to download CV')
+      console.error('Error downloading CV:', error)
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -166,33 +212,53 @@ const Dashboard: React.FC = () => {
           <Typography variant="h4" component="h1">
             My CVs
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setUploadOpen(true)}
-          >
-            Upload CV
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<CreateIcon />}
+              onClick={handleCreateBlankCV}
+              disabled={creating}
+            >
+              {creating ? 'Creating...' : 'Create New CV'}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<UploadIcon />}
+              onClick={() => setUploadOpen(true)}
+            >
+              Upload CV
+            </Button>
+          </Box>
         </Box>
 
         {loading ? (
           <Typography>Loading...</Typography>
         ) : cvs.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <UploadIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <CreateIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" gutterBottom>
-              No CVs uploaded yet
+              No CVs created yet
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Upload your first CV to get started with optimization
+              Create a new CV from scratch or upload an existing one to get started
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setUploadOpen(true)}
-            >
-              Upload CV
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                startIcon={<CreateIcon />}
+                onClick={handleCreateBlankCV}
+                disabled={creating}
+              >
+                {creating ? 'Creating...' : 'Create New CV'}
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<UploadIcon />}
+                onClick={() => setUploadOpen(true)}
+              >
+                Upload CV
+              </Button>
+            </Box>
           </Paper>
         ) : (
           <Grid container spacing={3}>
@@ -200,23 +266,35 @@ const Dashboard: React.FC = () => {
               <Grid item xs={12} md={6} lg={4} key={cv.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" component="h2" gutterBottom>
-                      {cv.original_filename}
-                    </Typography>
+                    <EditableTitle
+                      title={cv.original_filename}
+                      onSave={(newTitle) => handleTitleSave(cv, newTitle)}
+                      variant="h6"
+                      sx={{ mb: 2 }}
+                    />
                     <Box sx={{ mb: 2 }}>
-                      <Chip
-                        label={cv.file_type.split('/')[1].toUpperCase()}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
+                      {isUploadedCV(cv) && (
+                        <Chip
+                          label={cv.file_type.split('/')[1].toUpperCase()}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          icon={<DownloadIcon />}
+                          clickable
+                          onClick={(e) => {
+                            e.stopPropagation() // Prevent card click from interfering
+                            handleDownloadCV(cv)
+                          }}
+                          title="Download original file"
+                        />
+                      )}
                       {!cv.is_parsed && !cv.parse_error && (
                         <Chip
                           label="Parsing..."
                           size="small"
                           color="warning"
                           variant="outlined"
-                          sx={{ ml: 1 }}
+                          sx={{ ml: isUploadedCV(cv) ? 1 : 0 }}
                         />
                       )}
                       {cv.parse_error && (
@@ -225,11 +303,12 @@ const Dashboard: React.FC = () => {
                           size="small"
                           color="error"
                           variant="outlined"
-                          sx={{ ml: 1 }}
+                          sx={{ ml: isUploadedCV(cv) ? 1 : 0 }}
                         />
                       )}
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        {formatFileSize(cv.file_size)} • {formatDate(cv.created_at)}
+                        {isUploadedCV(cv) ? `${formatFileSize(cv.file_size)} • ` : ''}
+                        {formatDate(cv.created_at)}
                       </Typography>
                     </Box>
                     {!cv.is_parsed && !cv.parse_error && (

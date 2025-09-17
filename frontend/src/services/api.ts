@@ -109,7 +109,7 @@ export const cvApi = {
   },
 
   // Update CV data
-  updateCV: async (cvId: string, data: any) => {
+  updateCV: async (cvId: string, data: { parsed_data: any }) => {
     const response = await api.put(`/api/cvs/${cvId}`, data)
     return response.data
   },
@@ -125,6 +125,35 @@ export const cvApi = {
       },
     })
     return response.data
+  },
+
+  // Create blank CV from scratch
+  createBlankCV: async () => {
+    const response = await api.post('/api/cvs/create-blank')
+    return response.data
+  },
+
+  // Update CV title
+  updateCVTitle: async (cvId: string, title: string) => {
+    const response = await api.put(`/api/cvs/${cvId}/title`, { title })
+    return response.data
+  },
+
+  // Download CV file
+  downloadCV: async (cvId: string, filename: string) => {
+    const response = await api.get(`/api/cvs/${cvId}/download`, {
+      responseType: 'blob'
+    })
+    
+    // Create a download link
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
   }
 }
 

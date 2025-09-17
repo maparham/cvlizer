@@ -53,7 +53,6 @@ const CVContentArea: React.FC = () => {
     individualItem: editingIndividualItem,
     onSectionEdit: handleSectionEdit,
     onSectionClose: handleSectionClose,
-    onRequestSectionCancel: requestSectionCancel,
     onRegisterIndividualItem: registerIndividualItemEditing,
     onUnregisterIndividualItem: unregisterIndividualItemEditing,
     onRequestIndividualCancel: requestIndividualItemCancel,
@@ -82,7 +81,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, personal_info: data as PersonalInfo }, 'Personal information saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('personal_info')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
           />
         )
@@ -94,7 +93,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, professional_summary: data as ProfessionalSummary }, 'Professional summary saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('professional_summary')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
           />
         )
@@ -106,7 +105,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, work_experience: data as WorkExperience[] }, 'Work experience saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('work_experience')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
             registerIndividualItemEditing={registerIndividualItemEditing}
             unregisterIndividualItemEditing={unregisterIndividualItemEditing}
@@ -122,7 +121,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, education: data as Education[] }, 'Education saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('education')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
             registerIndividualItemEditing={registerIndividualItemEditing}
             unregisterIndividualItemEditing={unregisterIndividualItemEditing}
@@ -138,7 +137,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data, message) => onSave({ ...cvData, skills: data as Skills }, message)}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('skills')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
           />
         )
@@ -150,7 +149,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, certifications: data as Certification[] }, 'Certifications saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('certifications')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
             registerIndividualItemEditing={registerIndividualItemEditing}
             unregisterIndividualItemEditing={unregisterIndividualItemEditing}
@@ -166,7 +165,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, projects: data as Project[] }, 'Projects saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('projects')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
             registerIndividualItemEditing={registerIndividualItemEditing}
             unregisterIndividualItemEditing={unregisterIndividualItemEditing}
@@ -182,7 +181,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, awards: data as Award[] }, 'Awards saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('awards')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
             registerIndividualItemEditing={registerIndividualItemEditing}
             unregisterIndividualItemEditing={unregisterIndividualItemEditing}
@@ -198,7 +197,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, publications: data as Publication[] }, 'Publications saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('publications')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
             registerIndividualItemEditing={registerIndividualItemEditing}
             unregisterIndividualItemEditing={unregisterIndividualItemEditing}
@@ -214,7 +213,7 @@ const CVContentArea: React.FC = () => {
             onSave={(data) => onSave({ ...cvData, volunteer_experience: data as VolunteerExperience[] }, 'Volunteer experience saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('volunteer_experience')}
-            onClose={requestSectionCancel || handleSectionClose}
+            onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
             registerIndividualItemEditing={registerIndividualItemEditing}
             unregisterIndividualItemEditing={unregisterIndividualItemEditing}

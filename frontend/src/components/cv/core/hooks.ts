@@ -9,7 +9,8 @@ export const useSectionAutoSave = (
   onSave: (data: any, message?: string) => void,
   message: string,
   sectionId: string,
-  onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void
+  onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void,
+  validateData?: (data: any) => boolean
 ) => {
   const prevEditDataRef = useRef<any>()
   const prevIsEditingRef = useRef<boolean>()
@@ -21,11 +22,15 @@ export const useSectionAutoSave = (
     if (!isEditing && editData && Object.keys(editData).length > 0 && prevIsEditingRef.current === true) {
       const hasChanges = JSON.stringify(editData) !== JSON.stringify(originalData)
       if (hasChanges) {
-        onUpdate(editData)
-        onSave(editData, message)
+        // Validate data before auto-saving
+        const isValid = validateData ? validateData(editData) : true
+        if (isValid) {
+          onUpdate(editData)
+          onSave(editData, message)
+        }
       }
     }
-  }, [isEditing, editData, originalData, onUpdate, onSave, message])
+  }, [isEditing, editData, originalData, onUpdate, onSave, message, validateData])
 
   // Track unsaved changes - only call when values actually change
   useEffect(() => {

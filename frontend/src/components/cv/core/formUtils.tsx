@@ -20,6 +20,7 @@ export interface FormFieldConfig {
   multiline?: boolean
   rows?: number
   type?: 'text' | 'url' | 'email'
+  minLength?: number
 }
 
 export interface DateFieldConfig {
@@ -38,7 +39,7 @@ export const FormField: React.FC<{
   onSave?: () => void
   sx?: any
 }> = ({ config, value, onChange, onSave, sx }) => {
-  const { name, label, placeholder, required, multiline, rows, type } = config
+  const { name, label, placeholder, required, multiline, rows, type, minLength } = config
   
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' && !multiline) {
@@ -54,8 +55,9 @@ export const FormField: React.FC<{
   }
   
   const hasValue = value?.trim()
-  const isError = required && !hasValue
-  const isSuccess = required && hasValue
+  const meetsMinLength = !minLength || (hasValue && hasValue.length >= minLength)
+  const isError = Boolean((required && !hasValue) || (hasValue && !meetsMinLength))
+  const isSuccess = Boolean(required && hasValue && meetsMinLength)
   
   return (
     <TextField
@@ -67,7 +69,11 @@ export const FormField: React.FC<{
         onChange: (e) => onChange(e.target.value),
         onKeyDown: handleKeyDown,
         error: isError,
-        helperText: isError ? `${label} is required` : '',
+        helperText: isError ? (
+          !hasValue ? `${label} is required` 
+          : !meetsMinLength ? `${label} must be at least ${minLength} characters long`
+          : ''
+        ) : '',
         variant: 'standard',
         fullWidth: true,
         multiline,

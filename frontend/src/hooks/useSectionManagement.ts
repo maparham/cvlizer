@@ -35,6 +35,26 @@ export const useSectionManagement = ({
     
     // Check if object is empty
     if (typeof data === 'object') {
+      // Personal info should always be visible in new CVs (it's a core required section)
+      if (sectionId === 'personal_info') {
+        // Always show personal_info if it exists (even if fields are empty)
+        return false
+      }
+      
+      // For other object sections, check if they have meaningful content
+      if (sectionId === 'professional_summary') {
+        const summary = data as { content?: string; keywords?: string[] }
+        return !summary.content || summary.content.trim() === ''
+      }
+      
+      if (sectionId === 'skills') {
+        const skills = data as { technical?: string[]; soft?: string[]; languages?: string[] }
+        return (!skills.technical || skills.technical.length === 0) && 
+               (!skills.soft || skills.soft.length === 0) && 
+               (!skills.languages || skills.languages.length === 0)
+      }
+      
+      // Generic object check (fallback)
       return Object.keys(data).length === 0
     }
     
@@ -51,11 +71,7 @@ export const useSectionManagement = ({
     // Get sections that have data in the CV
     const sectionsWithData = getSectionsInDisplayOrder(
       AVAILABLE_SECTIONS.filter(section => {
-        const data = cvData[section.id as keyof CVData]
-        return data && (
-          (Array.isArray(data) && data.length > 0) ||
-          (typeof data === 'object' && Object.keys(data).length > 0)
-        )
+        return !isSectionEmpty(section.id, cvData)
       }).map(s => s.id)
     )
     
@@ -69,7 +85,7 @@ export const useSectionManagement = ({
       })
     })
     return sections
-  }, [])
+  }, [isSectionEmpty])
 
 
   // Initialize sections from CV data or use defaults
@@ -205,7 +221,23 @@ export const useSectionManagement = ({
 
     // If it's a new section, initialize empty data
     if (!existingSection) {
-      (updatedCvData as any)[sectionId] = sectionId === 'skills' ? { technical: [], soft: [] } : []
+      if (sectionId === 'skills') {
+        (updatedCvData as any)[sectionId] = { technical: [], soft: [], languages: [] }
+      } else if (sectionId === 'professional_summary') {
+        (updatedCvData as any)[sectionId] = { content: "", keywords: [] }
+      } else if (sectionId === 'personal_info') {
+        (updatedCvData as any)[sectionId] = { 
+          full_name: "", 
+          email: "", 
+          phone: "", 
+          location: "", 
+          linkedin_url: "", 
+          website_url: "" 
+        }
+      } else {
+        // All other sections are arrays (work_experience, education, etc.)
+        (updatedCvData as any)[sectionId] = []
+      }
     }
     
     // Save both the section config and the updated CV data
