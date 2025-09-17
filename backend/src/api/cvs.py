@@ -6,11 +6,13 @@ and provides endpoints for managing CV data including listing,
 retrieval, updates, and deletion.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, Field
 import uuid
 import asyncio
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 from ..models.base import get_db, SessionLocal
@@ -244,6 +246,105 @@ async def update_cv_data(
                 "errors": e.errors()
             }
         )
+
+
+@router.post("/create-blank", response_model=CVResponse)
+async def create_blank_cv(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new blank CV from scratch without file upload"""
+    try:
+        # Create CV record with default parsed data structure (deep copy)
+        default_parsed_data = deepcopy(DEFAULT_PARSED_CV)
+        
+        # Generate a default filename
+        cv_count = db.query(CV).filter(CV.user_id == current_user.id).count()
+        default_filename = f"New CV {cv_count + 1}.pdf"
+        
+        cv = create_cv(
+            db=db,
+            user_id=str(current_user.id),
+            original_filename=default_filename,
+            file_path="",  # No file path for blank CVs
+            file_size=0,   # No file size for blank CVs
+            file_type="application/pdf",  # Default to PDF
+            parsed_data=default_parsed_data,
+            is_parsed=True  # Already "parsed" since we're creating from scratch
+        )
+        
+        return CVResponse(**cv.to_response_dict())
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating blank CV: {str(e)}"
+        )
+
+
+class CVTitleUpdateRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255, description="New CV title")
+
+
+@router.put("/{cv_id}/title", response_model=CVResponse)
+async def update_cv_title(
+    cv_id: str,
+    title_request: CVTitleUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update CV title (original_filename)"""
+    # Get CV to verify ownership
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not cv:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="CV not found"
+        )
+    
+    # Update the original_filename
+    cv.original_filename = title_request.title.strip()
+    db.commit()
+    db.refresh(cv)
+    
+    return CVResponse(**cv.to_response_dict())
+
+
+@router.get("/{cv_id}/download")
+async def download_cv_file(
+    cv_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Download the original CV file"""
+    # Get CV to verify ownership and get file path
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not cv:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="CV not found"
+        )
+    
+    # Check if CV has a file (not created from scratch)
+    if not cv.file_path or cv.file_size == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This CV was created from scratch and has no original file to download"
+        )
+    
+    # Check if file exists on disk
+    if not os.path.exists(cv.file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Original file not found on server"
+        )
+    
+    # Return the file
+    return FileResponse(
+        path=cv.file_path,
+        filename=cv.original_filename,
+        media_type=cv.file_type
+    )
 
 
 @router.delete("/{cv_id}")
