@@ -32,12 +32,15 @@ import {
 import { CVSection } from '../types'
 import SortableSectionItem from './SortableSectionItem'
 import { AVAILABLE_SECTIONS } from '../constants'
+import { EditableTitle } from '../EditableTitle'
 
 interface SectionManagerSidebarProps {
   sections: CVSection[]
   activeId: string | null
   isDefaultOrder: boolean
   availableSectionsToAdd: any[]
+  title: string
+  onTitleSave: (newTitle: string) => Promise<void>
   onToggleVisibility: (sectionId: string) => void
   onResetClick: () => void
   onAddNewSection: (sectionId: string) => void
@@ -50,6 +53,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   activeId,
   isDefaultOrder,
   availableSectionsToAdd,
+  title,
+  onTitleSave,
   onToggleVisibility,
   onResetClick,
   onAddNewSection,
@@ -66,7 +71,20 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       borderRight: '1px solid #e0e0e0'
     }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">Sections</Typography>
+        <EditableTitle
+          title={title}
+          onSave={onTitleSave}
+          variant="h6"
+          sx={{
+            flexGrow: 1,
+            mr: 2,
+            '& .MuiTypography-root': {
+              color: '#333',
+              fontSize: '1.1rem',
+              fontWeight: 500
+            }
+          }}
+        />
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Tooltip title={isDefaultOrder ? "Reset to default section order" : "Reset to default section order (order has been changed)"}>
             <Button

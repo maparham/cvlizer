@@ -25,7 +25,12 @@ import {
   // useCVEditor
 } from '../../contexts/CVEditorContext'
 
-const PDFCVEditor: React.FC = () => {
+interface PDFCVEditorProps {
+  title?: string
+  onTitleSave?: (newTitle: string) => Promise<void>
+}
+
+const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave }) => {
   // Use context instead of props
   // const { cvData } = useCVEditor()
   
@@ -40,8 +45,10 @@ const PDFCVEditor: React.FC = () => {
         <SectionManagerSidebar
           sections={sections.items}
           activeId={dragDrop.activeId}
-          isDefaultOrder={sections.isDefaultOrder}
+          isDefaultOrder={sections.isDefaultOrder()}
           availableSectionsToAdd={sections.availableToAdd}
+          title={title || 'Untitled CV'}
+          onTitleSave={onTitleSave || (async () => {})}
           onToggleVisibility={sections.toggleVisibility}
           onResetClick={reset.onResetClick}
           onAddNewSection={sections.add}

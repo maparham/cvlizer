@@ -23,7 +23,7 @@ import {
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { CVEditorProvider, useCVEditor } from '../contexts/CVEditorContext'
-import { PDFCVEditor, EditableTitle } from '../components/cv'
+import { PDFCVEditor } from '../components/cv'
 import { ErrorBoundary } from '../components/common'
 import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
@@ -31,13 +31,11 @@ import { CVData } from '../types'
 
 // Component that handles back navigation with edit state checks
 const CVEditorHeader: React.FC<{ 
-  activeCV: any, 
-  onTitleSave: (title: string) => Promise<void>,
   onLogout: () => void,
   onMenuOpen: (event: React.MouseEvent<HTMLElement>) => void,
   onMenuClose: () => void,
   anchorEl: null | HTMLElement
-}> = ({ activeCV, onTitleSave, onLogout, onMenuOpen, onMenuClose, anchorEl }) => {
+}> = ({ onLogout, onMenuOpen, onMenuClose, anchorEl }) => {
   const navigate = useNavigate()
   const { editingSection, editingIndividualItem, hasUnsavedChanges } = useCVEditor()
   const [showBackDialog, setShowBackDialog] = useState(false)
@@ -71,33 +69,32 @@ const CVEditorHeader: React.FC<{
         }}
       >
         <Toolbar sx={{ minHeight: '48px !important', px: 2 }}>
-          <IconButton
-            edge="start"
-            onClick={handleBackClick}
-            sx={{ 
-              mr: 2,
-              color: '#666',
-              '&:hover': {
-                backgroundColor: 'rgba(0,0,0,0.04)'
-              }
-            }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', mx: 2 }}>
-            <EditableTitle
-              title={activeCV?.original_filename || 'Untitled CV'}
-              onSave={onTitleSave}
-              variant="h6"
-              sx={{
-                '& .MuiTypography-root': {
-                  color: '#333',
-                  fontSize: '1.1rem',
-                  fontWeight: 500
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton
+              edge="start"
+              onClick={handleBackClick}
+              sx={{ 
+                mr: 1,
+                color: '#666',
+                '&:hover': {
+                  backgroundColor: 'rgba(0,0,0,0.04)'
                 }
               }}
-            />
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#666',
+                fontSize: '0.875rem',
+                mr: 2
+              }}
+            >
+              Dashboard
+            </Typography>
           </Box>
+          <Box sx={{ flexGrow: 1 }} />
           <IconButton
             size="medium"
             edge="end"
@@ -328,14 +325,15 @@ const CVEditor: React.FC = () => {
           onSave={handleSave}
         >
           <CVEditorHeader
-            activeCV={activeCV}
-            onTitleSave={handleTitleSave}
             onLogout={handleLogout}
             onMenuOpen={handleMenuOpen}
             onMenuClose={handleMenuClose}
             anchorEl={anchorEl}
           />
-          <PDFCVEditor />
+          <PDFCVEditor 
+            title={activeCV?.original_filename || 'Untitled CV'}
+            onTitleSave={handleTitleSave}
+          />
         </CVEditorProvider>
       </Box>
 
