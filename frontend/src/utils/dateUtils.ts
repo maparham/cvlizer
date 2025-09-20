@@ -19,21 +19,16 @@ export const formatDateForBackend = (date: Date | Dayjs): string => {
 }
 
 /**
- * Formats a date string for display (handles both YYYY-MM-DD and YYYY-MM formats)
+ * Formats a date string for display (only supports YYYY-MM-DD format)
  * @param dateString - The date string to format
  * @returns Formatted date string for display
  */
 export const formatDateForDisplay = (dateString: string): string => {
   if (!dateString) return ''
   
-  // If it's already in YYYY-MM-DD format, return as is
+  // Only support YYYY-MM-DD format
   if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
     return dateString
-  }
-  
-  // If it's in YYYY-MM format, add the first day of the month
-  if (dateString.match(/^\d{4}-\d{2}$/)) {
-    return `${dateString}-01`
   }
   
   // Return original if format is unknown

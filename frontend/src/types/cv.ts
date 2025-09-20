@@ -10,6 +10,8 @@ export interface CV {
   is_parsed: boolean
   parse_error?: string
   parsed_data?: CVData
+  is_imported: boolean
+  has_been_edited: boolean
 }
 
 // CV Data Structure
@@ -47,7 +49,7 @@ export interface ProfessionalSummary {
 
 // Work Experience
 export interface WorkExperience {
-  id?: string
+  id: string
   company: string
   position: string
   location: string
@@ -62,7 +64,7 @@ export interface WorkExperience {
 
 // Education
 export interface Education {
-  id?: string
+  id: string
   institution: string
   degree: string
   field_of_study: string
@@ -86,13 +88,14 @@ export interface Skills {
 }
 
 export interface Language {
+  id: string
   language: string
   proficiency: 'Basic' | 'Intermediate' | 'Advanced' | 'Fluent' | 'Native'
 }
 
 // Certifications
 export interface Certification {
-  id?: string
+  id: string
   name: string
   issuing_organization: string
   issue_date: string
@@ -103,7 +106,7 @@ export interface Certification {
 
 // Projects
 export interface Project {
-  id?: string
+  id: string
   name: string
   description: string
   start_date: string
@@ -118,7 +121,7 @@ export interface Project {
 
 // Awards
 export interface Award {
-  id?: string
+  id: string
   name: string
   issuing_organization: string
   date: string
@@ -127,7 +130,7 @@ export interface Award {
 
 // Publications
 export interface Publication {
-  id?: string
+  id: string
   title: string
   authors: string[]
   publication_date: string
@@ -140,7 +143,7 @@ export interface Publication {
 
 // Volunteer Experience
 export interface VolunteerExperience {
-  id?: string
+  id: string
   organization: string
   position: string
   location: string
