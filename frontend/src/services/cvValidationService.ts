@@ -42,6 +42,157 @@ export class CVValidationService {
   }
 
   /**
+   * Validate complete CV data and return list of validation errors
+   */
+  static validateCVData(cvData: CVData): string[] {
+    const errors: string[] = []
+
+    // Validate Personal Information
+    const personalInfo = cvData.personal_info
+    if (personalInfo) {
+      if (!personalInfo.full_name?.trim()) {
+        errors.push('Personal Info: Full name is required')
+      }
+      if (!personalInfo.email?.trim()) {
+        errors.push('Personal Info: Email is required')
+      }
+      if (!personalInfo.location?.trim()) {
+        errors.push('Personal Info: Location is required')
+      }
+    }
+
+    // Validate Work Experience
+    if (cvData.work_experience) {
+      cvData.work_experience.forEach((exp, index) => {
+        if (!exp.position?.trim()) {
+          errors.push(`Work Experience #${index + 1}: Position is required`)
+        }
+        if (!exp.company?.trim()) {
+          errors.push(`Work Experience #${index + 1}: Company is required`)
+        }
+        if (!exp.start_date?.trim()) {
+          errors.push(`Work Experience #${index + 1}: Start date is required`)
+        }
+        
+        // Validate date order
+        const dateError = this.validateDateOrder(
+          exp.start_date, 
+          exp.end_date, 
+          'Work Experience', 
+          index + 1
+        )
+        if (dateError) {
+          errors.push(dateError)
+        }
+      })
+    }
+
+    // Validate Education
+    if (cvData.education) {
+      cvData.education.forEach((edu, index) => {
+        if (!edu.institution?.trim()) {
+          errors.push(`Education #${index + 1}: Institution is required`)
+        }
+        if (!edu.degree?.trim()) {
+          errors.push(`Education #${index + 1}: Degree is required`)
+        }
+        if (!edu.start_date?.trim()) {
+          errors.push(`Education #${index + 1}: Start date is required`)
+        }
+        
+        // Validate date order
+        const dateError = this.validateDateOrder(
+          edu.start_date,
+          edu.end_date,
+          'Education',
+          index + 1
+        )
+        if (dateError) {
+          errors.push(dateError)
+        }
+      })
+    }
+
+    // Validate Projects
+    if (cvData.projects) {
+      cvData.projects.forEach((project, index) => {
+        if (!project.name?.trim()) {
+          errors.push(`Project #${index + 1}: Name is required`)
+        }
+        if (!project.description?.trim()) {
+          errors.push(`Project #${index + 1}: Description is required`)
+        }
+        
+        // Validate date order
+        const dateError = this.validateDateOrder(
+          project.start_date,
+          project.end_date,
+          'Project',
+          index + 1
+        )
+        if (dateError) {
+          errors.push(dateError)
+        }
+      })
+    }
+
+    // Validate Certifications
+    if (cvData.certifications) {
+      cvData.certifications.forEach((cert, index) => {
+        if (!cert.name?.trim()) {
+          errors.push(`Certification #${index + 1}: Name is required`)
+        }
+        if (!cert.issuer?.trim()) {
+          errors.push(`Certification #${index + 1}: Issuer is required`)
+        }
+        if (!cert.date?.trim()) {
+          errors.push(`Certification #${index + 1}: Date is required`)
+        }
+      })
+    }
+
+    // Validate Awards
+    if (cvData.awards) {
+      cvData.awards.forEach((award, index) => {
+        if (!award.name?.trim()) {
+          errors.push(`Award #${index + 1}: Name is required`)
+        }
+        if (!award.issuer?.trim()) {
+          errors.push(`Award #${index + 1}: Issuer is required`)
+        }
+        if (!award.date?.trim()) {
+          errors.push(`Award #${index + 1}: Date is required`)
+        }
+      })
+    }
+
+    return errors
+  }
+
+  /**
+   * Validate that start_date is before end_date
+   */
+  private static validateDateOrder(startDate: string | undefined, endDate: string | undefined, itemName: string, itemIndex: number): string {
+    if (!startDate || !endDate) {
+      return '' // Skip validation if either date is missing
+    }
+
+    try {
+      // Parse dates - only support YYYY-MM-DD format
+      const startParsed = new Date(startDate)
+      const endParsed = new Date(endDate)
+
+      if (!isNaN(startParsed.getTime()) && !isNaN(endParsed.getTime()) && startParsed >= endParsed) {
+        return `${itemName} #${itemIndex}: Start date must be before end date`
+      }
+    } catch {
+      // If date parsing fails, skip validation
+    }
+
+    return ''
+  }
+
+  /**
    * Validate a CV section against its requirements
    */
   static validateSection(sectionName: string, data: any): ValidationResult {
@@ -126,6 +277,11 @@ class CVDataCleaner {
     
     // Clean array sections
     this.cleanArraySections(cleanedData)
+    
+    // Preserve section_config - this contains section visibility and ordering
+    if (this.data.section_config) {
+      cleanedData.section_config = this.data.section_config
+    }
 
     return cleanedData
   }
@@ -173,7 +329,9 @@ class CVDataCleaner {
     if (data.skills) {
       const technical = this.cleanArray(data.skills.technical)
       const soft = this.cleanArray(data.skills.soft)
-      const languages = this.cleanArray(data.skills.languages)
+      
+      // Clean languages array
+      const languages = this.cleanArray(data.skills.languages || [])
       
       // Backend requires at least one technical or soft skill
       if (technical.length === 0 && soft.length === 0) {
@@ -201,7 +359,7 @@ class CVDataCleaner {
 
     arraySections.forEach(section => {
       if (data[section]) {
-        const cleaned = this.cleanArray(data[section])
+        const cleaned = this.cleanArrayWithSectionType(data[section], section)
         if (cleaned.length === 0 && this.options.removeEmptyArrays) {
           delete data[section]
         } else {
@@ -233,8 +391,83 @@ class CVDataCleaner {
     return arr.filter(item => {
       if (item === null || item === undefined) return false
       if (typeof item === 'string') return this.cleanString(item) !== ''
-      if (typeof item === 'object') return Object.keys(item).length > 0
+      if (typeof item === 'object') {
+        // Preserve the id field even if other fields are empty
+        const hasId = item.id !== undefined && item.id !== null
+        const hasOtherFields = Object.keys(item).some(key => key !== 'id' && item[key] !== undefined && item[key] !== null && item[key] !== '')
+        return hasId || hasOtherFields
+      }
       return true
+    })
+  }
+
+  private cleanArrayWithSectionType(arr: any[], sectionType: string): any[] {
+    if (!Array.isArray(arr)) return []
+    
+    return arr.filter(item => {
+      if (item === null || item === undefined) return false
+      if (typeof item === 'string') return this.cleanString(item) !== ''
+      if (typeof item === 'object') {
+        // Remove fields that don't belong to this section type
+        this._removeInvalidFieldsForSection(item, sectionType)
+        
+        // Convert null dates to empty strings for valid fields only
+        this._normalizeValidDateFields(item, sectionType)
+        
+        // Preserve the id field even if other fields are empty
+        const hasId = item.id !== undefined && item.id !== null
+        const hasOtherFields = Object.keys(item).some(key => key !== 'id' && item[key] !== undefined && item[key] !== null && item[key] !== '')
+        return hasId || hasOtherFields
+      }
+      return true
+    })
+  }
+
+  private _removeInvalidFieldsForSection(item: any, sectionType: string): void {
+    /**
+     * Remove fields that don't belong to specific section schemas.
+     * This prevents "extra_forbidden" validation errors.
+     */
+    const validFieldsBySection = {
+      'work_experience': ['id', 'company', 'position', 'location', 'start_date', 'end_date', 'current', 'description', 'achievements', 'technologies'],
+      'education': ['id', 'institution', 'degree', 'field_of_study', 'location', 'start_date', 'end_date', 'gpa', 'description', 'achievements', 'honors'],
+      'projects': ['id', 'name', 'description', 'technologies', 'url', 'start_date', 'end_date'],
+      'certifications': ['id', 'name', 'issuer', 'date', 'expiry_date', 'description'],
+      'awards': ['id', 'name', 'issuer', 'date', 'description'],
+      'publications': ['id', 'title', 'authors', 'journal', 'date', 'url'],
+      'volunteer_experience': ['id', 'organization', 'role', 'location', 'start_date', 'end_date', 'description']
+    }
+
+    const validFields = validFieldsBySection[sectionType] || []
+    
+    // Remove any fields not in the valid list
+    Object.keys(item).forEach(key => {
+      if (!validFields.includes(key)) {
+        delete item[key]
+      }
+    })
+  }
+
+  private _normalizeValidDateFields(item: any, sectionType: string): void {
+    /**
+     * Convert null/undefined date values to empty strings for valid date fields only.
+     */
+    const dateFieldsBySection = {
+      'work_experience': ['start_date', 'end_date'],
+      'education': ['start_date', 'end_date'],
+      'projects': ['start_date', 'end_date'],
+      'certifications': ['date', 'expiry_date'],
+      'awards': ['date'],
+      'publications': ['date'],
+      'volunteer_experience': ['start_date', 'end_date']
+    }
+
+    const dateFields = dateFieldsBySection[sectionType] || []
+    
+    dateFields.forEach(field => {
+      if (item[field] === null || item[field] === undefined) {
+        item[field] = ''
+      }
     })
   }
 }

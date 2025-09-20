@@ -78,7 +78,14 @@ export const normalizeApiError = (error: any): string => {
   if (data.message) return data.message
   if (data.detail) {
     if (typeof data.detail === 'string') return data.detail
-    if (data.detail.message) return data.detail.message
+    if (data.detail.message) {
+      // Handle validation errors with detailed field information
+      if (data.detail.errors && Array.isArray(data.detail.errors)) {
+        const errorList = data.detail.errors.join('\n• ')
+        return `${data.detail.message}:\n• ${errorList}`
+      }
+      return data.detail.message
+    }
     try {
       return JSON.stringify(data.detail)
     } catch {
@@ -154,6 +161,12 @@ export const cvApi = {
     link.click()
     link.remove()
     window.URL.revokeObjectURL(url)
+  },
+
+  // Duplicate CV
+  duplicateCV: async (cvId: string) => {
+    const response = await api.post(`/api/cvs/${cvId}/duplicate`)
+    return response.data
   }
 }
 
