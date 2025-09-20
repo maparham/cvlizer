@@ -4,7 +4,7 @@ CV History model for storing version snapshots.
 This module defines the CV history database model for tracking changes
 and versions of CV documents over time.
 """
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON, Boolean, Integer
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON, Boolean, Integer, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .base import Base
@@ -14,6 +14,15 @@ from datetime import timezone
 
 class CVHistory(Base):
     __tablename__ = "cv_history"
+    
+    # Define indexes for optimal query performance
+    __table_args__ = (
+        Index('idx_cv_history_cv_timestamp', 'cv_id', 'created_at'),
+        Index('idx_cv_history_change_type', 'change_type'),
+        Index('idx_cv_history_is_automatic', 'is_automatic'),
+        Index('idx_cv_history_user_timestamp', 'user_id', 'created_at'),
+        Index('idx_cv_history_is_initial', 'is_initial'),
+    )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     cv_id = Column(String(36), ForeignKey("cvs.id", ondelete="CASCADE"), nullable=False, index=True)

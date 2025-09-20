@@ -12,6 +12,7 @@ import { useCVStore } from '../../stores/cvStore'
 import { useNotifications } from '../../stores/uiStore'
 import { CVHistoryEntry, CreateSnapshotOptions, HistoryStats } from '../../types'
 import { formatDateTime } from '../../utils/dateFormat'
+import { getErrorDisplayMessage } from '../../utils/errorHandling'
 
 interface ConnectedHistoryPanelProps {
   cvId: string
@@ -65,6 +66,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
       setHistoryStats(stats)
     } catch (error) {
       console.error('Failed to load history data:', error)
+      showError(getErrorDisplayMessage(error))
     } finally {
       setLoading(false)
     }
@@ -108,7 +110,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
     } catch (error: any) {
       showError(
         'Restore Failed',
-        error.message || 'Failed to restore version'
+        getErrorDisplayMessage(error)
       )
     }
   }
@@ -132,7 +134,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
     } catch (error: any) {
       showError(
         'Save Failed',
-        error.message || 'Failed to save version'
+        getErrorDisplayMessage(error)
       )
     }
   }
@@ -151,7 +153,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
     } catch (error: any) {
       showError(
         'Delete Failed',
-        error.message || 'Failed to delete version'
+        getErrorDisplayMessage(error)
       )
     }
   }
@@ -174,6 +176,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
         // Pass the actual data
         historyEntries={historyEntries}
         historyStats={historyStats}
+        loading={loading}
       />
       
       <VersionPreviewDialog

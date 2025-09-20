@@ -16,6 +16,7 @@ from datetime import datetime
 from ..models import get_db, CVHistory, CV, User
 from ..services.cv_diff_service import cv_diff_service
 from .auth import get_current_user
+from ..utils.history_validation import ValidatedCreateHistoryRequest, calculate_data_size
 
 
 router = APIRouter(prefix="/api/cvs", tags=["cv-history"])
@@ -79,7 +80,7 @@ class CVDiffResponse(BaseModel):
 @router.post("/{cv_id}/history", response_model=HistoryEntryResponse)
 async def create_history_entry(
     cv_id: str,
-    request: CreateHistoryRequest,
+    request: ValidatedCreateHistoryRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -96,8 +97,26 @@ async def create_history_entry(
             detail="CV not found"
         )
     
-    # Calculate data size
-    data_size = len(json.dumps(request.cv_data).encode('utf-8'))
+    # Rate limiting: Check for recent history entries to prevent spam
+    from datetime import datetime, timedelta
+    recent_cutoff = datetime.utcnow() - timedelta(minutes=1)
+    recent_entries = db.query(CVHistory).filter(
+        and_(
+            CVHistory.cv_id == cv_id,
+            CVHistory.user_id == current_user.id,
+            CVHistory.created_at > recent_cutoff
+        )
+    ).count()
+    
+    # Allow max 5 entries per minute (generous for MVP)
+    if recent_entries >= 5:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many history entries created recently. Please wait a moment."
+        )
+    
+    # Calculate data size using validation utility
+    data_size = calculate_data_size(request.cv_data)
     
     # Create history entry
     history_entry = CVHistory(

@@ -46,6 +46,8 @@ import {
   HistoryStats
 } from '../../types'
 import { formatRelativeTime, formatDateTimeWithSeconds, formatDateGroupHeader } from '../../utils/dateFormat'
+import { getErrorDisplayMessage } from '../../utils/errorHandling'
+import LoadingState from '../common/LoadingState'
 
 const DRAWER_WIDTH = 400
 
@@ -57,12 +59,14 @@ interface HistoryPanelState {
   snapshotLabel: string
   snapshotDescription: string
   loading: boolean
+  error: string | null
 }
 
 interface ExtendedHistoryPanelProps extends HistoryPanelProps {
   historyEntries: CVHistoryEntry[]
   historyStats: HistoryStats
   onDeleteEntry?: (entry: CVHistoryEntry) => Promise<void>
+  loading?: boolean
 }
 
 const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
@@ -73,7 +77,8 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
   onCreateSnapshot,
   historyEntries,
   historyStats,
-  onDeleteEntry
+  onDeleteEntry,
+  loading: externalLoading = false
 }) => {
   const [state, setState] = useState<HistoryPanelState>({
     createSnapshotDialog: false,
@@ -82,7 +87,8 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
     selectedEntry: null,
     snapshotLabel: '',
     snapshotDescription: '',
-    loading: false
+    loading: false,
+    error: null
   })
 
   // History data is passed as props
@@ -117,7 +123,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
   }, [historyEntries])
 
   const handleCreateSnapshot = async () => {
-    updateState({ loading: true })
+    updateState({ loading: true, error: null })
     
     try {
       const options: CreateSnapshotOptions = {
@@ -136,14 +142,17 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
       })
     } catch (error) {
       console.error('Failed to create snapshot:', error)
-      updateState({ loading: false })
+      updateState({ 
+        loading: false,
+        error: getErrorDisplayMessage(error)
+      })
     }
   }
 
   const handleRestoreVersion = async () => {
     if (!state.selectedEntry) return
     
-    updateState({ loading: true })
+    updateState({ loading: true, error: null })
     
     try {
       await onRestoreVersion(state.selectedEntry)
@@ -154,7 +163,10 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
       })
     } catch (error) {
       console.error('Failed to restore version:', error)
-      updateState({ loading: false })
+      updateState({ 
+        loading: false,
+        error: getErrorDisplayMessage(error)
+      })
     }
   }
 
@@ -174,7 +186,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
   const handleConfirmDelete = async () => {
     if (!state.selectedEntry) return
     
-    updateState({ loading: true })
+    updateState({ loading: true, error: null })
     
     try {
       // Use the onDeleteEntry prop if provided, otherwise use a default implementation
@@ -191,7 +203,10 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
       })
     } catch (error) {
       console.error('Failed to delete version:', error)
-      updateState({ loading: false })
+      updateState({ 
+        loading: false,
+        error: getErrorDisplayMessage(error)
+      })
     }
   }
 
@@ -226,6 +241,19 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
 
         </Box>
 
+        {/* Error Display */}
+        {state.error && (
+          <Box sx={{ px: 2, pb: 1 }}>
+            <Alert 
+              severity="error" 
+              onClose={() => updateState({ error: null })}
+              sx={{ mb: 1 }}
+            >
+              {state.error}
+            </Alert>
+          </Box>
+        )}
+
         {/* Retention Policy Info */}
         <Box sx={{ px: 2, pb: 1 }}>
           <Typography variant="caption" color="text.secondary">
@@ -235,7 +263,9 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
 
         {/* History List */}
         <Box sx={{ flex: 1, overflow: 'auto' }}>
-          {historyEntries.length === 0 ? (
+          {(state.loading || externalLoading) ? (
+            <LoadingState message="Loading history..." />
+          ) : historyEntries.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
               <HistoryIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
               <Typography variant="body2" color="text.secondary">
