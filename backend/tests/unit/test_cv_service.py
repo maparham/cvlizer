@@ -40,7 +40,7 @@ class TestCVService:
         """Test getting CV by ID"""
         db = Mock()
         mock_cv = Mock()
-        db.query.return_value.filter.return_value.first.return_value = mock_cv
+        db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_cv
         
         result = get_cv_by_id(db, "cv123", "user123")
         
@@ -50,7 +50,7 @@ class TestCVService:
     def test_get_cv_by_id_not_found(self):
         """Test getting CV by ID when not found"""
         db = Mock()
-        db.query.return_value.filter.return_value.first.return_value = None
+        db.query.return_value.options.return_value.filter.return_value.first.return_value = None
         
         result = get_cv_by_id(db, "cv123", "user123")
         
@@ -60,7 +60,7 @@ class TestCVService:
         """Test getting CVs by user with pagination"""
         db = Mock()
         mock_cvs = [Mock(), Mock()]
-        db.query.return_value.filter.return_value.offset.return_value.limit.return_value.all.return_value = mock_cvs
+        db.query.return_value.options.return_value.filter.return_value.offset.return_value.limit.return_value.all.return_value = mock_cvs
         
         result = get_cvs_by_user(db, "user123", skip=0, limit=10)
         
@@ -72,7 +72,7 @@ class TestCVService:
         db = Mock()
         mock_cv = Mock()
         mock_cv.parsed_data = {"old": "data"}
-        db.query.return_value.filter.return_value.first.return_value = mock_cv
+        db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_cv
         db.commit.return_value = None
         db.refresh.return_value = None
         
@@ -87,7 +87,7 @@ class TestCVService:
     def test_update_cv_not_found(self):
         """Test updating CV when not found"""
         db = Mock()
-        db.query.return_value.filter.return_value.first.return_value = None
+        db.query.return_value.options.return_value.filter.return_value.first.return_value = None
         
         result = update_cv(db, "cv123", "user123", {"new": "data"})
         
@@ -97,7 +97,7 @@ class TestCVService:
         """Test deleting CV"""
         db = Mock()
         mock_cv = Mock()
-        db.query.return_value.filter.return_value.first.return_value = mock_cv
+        db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_cv
         db.delete.return_value = None
         db.commit.return_value = None
         
@@ -110,7 +110,7 @@ class TestCVService:
     def test_delete_cv_not_found(self):
         """Test deleting CV when not found"""
         db = Mock()
-        db.query.return_value.filter.return_value.first.return_value = None
+        db.query.return_value.options.return_value.filter.return_value.first.return_value = None
         
         result = delete_cv(db, "cv123", "user123")
         
@@ -145,5 +145,6 @@ class TestCVService:
         result = parse_cv_with_openai(file_content, filename, content_type)
         
         assert "error" in result
-        assert "Failed to parse CV" in result["error"]
-        assert "raw_text" in result
+        assert "File parsing error" in result["error"]
+        # Error response includes default CV structure
+        assert "personal_info" in result

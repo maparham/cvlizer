@@ -100,18 +100,21 @@ class TestFileService:
         assert is_valid is False
         assert "File size" in message and "exceeds maximum" in message
 
-    def test_extract_text_from_pdf(self):
+    @patch('fitz.open')
+    def test_extract_text_from_pdf(self, mock_fitz_open):
         """Test text extraction from PDF file"""
         file_content = b"PDF content"
         
-        with patch('src.services.file_service.PyPDF2.PdfReader') as mock_reader:
-            mock_page = Mock()
-            mock_page.extract_text.return_value = "Extracted text"
-            mock_reader.return_value.pages = [mock_page]
-            
-            result = extract_text_from_pdf(file_content)
-            
-            assert result == "Extracted text"
+        mock_page = Mock()
+        mock_page.get_text.return_value = "Extracted text"
+        
+        mock_doc = Mock()
+        mock_doc.__iter__ = Mock(return_value=iter([mock_page]))
+        mock_fitz_open.return_value = mock_doc
+        
+        result = extract_text_from_pdf(file_content)
+        
+        assert result == "Extracted text"
 
     def test_extract_text_from_docx(self):
         """Test text extraction from DOCX file"""

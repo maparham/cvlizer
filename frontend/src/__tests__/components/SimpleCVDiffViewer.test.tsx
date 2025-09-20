@@ -12,12 +12,15 @@ import SimpleCVDiffViewer from '../../components/cv/SimpleCVDiffViewer'
 import { CVHistoryEntry } from '../../types'
 
 // Mock the backend history service
-const mockGetDiff = jest.fn()
 jest.mock('../../services/backendHistoryService', () => ({
   backendHistoryService: {
-    getDiff: mockGetDiff
+    getDiff: jest.fn()
   }
 }))
+
+// Import the mocked service to access the mock
+import { backendHistoryService } from '../../services/backendHistoryService'
+const mockGetDiff = backendHistoryService.getDiff as jest.MockedFunction<typeof backendHistoryService.getDiff>
 
 describe('SimpleCVDiffViewer', () => {
   const mockOldVersion: CVHistoryEntry = {
@@ -126,7 +129,7 @@ describe('SimpleCVDiffViewer', () => {
       expect(screen.getByText('Work Experience: Position changed from "Developer" to "Senior Developer"')).toBeInTheDocument()
     })
     
-    expect(mockGetDiff).toHaveBeenCalledWith('cv_123', 'history_new', 'history_old')
+    expect(mockGetDiff).toHaveBeenCalledWith('cv_123', 'history_new', 'history_old', false)
   })
 
   it('should display text diff with inline highlighting', async () => {

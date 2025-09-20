@@ -18,6 +18,7 @@ from datetime import datetime
 from main import app
 from src.models import get_db, CVHistory, CV, User
 from src.services.cv_diff_service import cv_diff_service
+from src.api.auth import get_current_user
 
 
 class TestCVHistoryAPI:
@@ -25,14 +26,21 @@ class TestCVHistoryAPI:
     
     def setup_method(self):
         """Set up test fixtures."""
-        self.client = TestClient(app)
-        
         # Mock data
         self.mock_user = User(
             id='user_123',
             email='test@example.com',
             password_hash='hashed_password'
         )
+        
+        # Mock database and auth dependencies
+        self.mock_db = MagicMock()
+        
+        # Override FastAPI dependencies
+        app.dependency_overrides[get_db] = lambda: self.mock_db
+        app.dependency_overrides[get_current_user] = lambda: self.mock_user
+        
+        self.client = TestClient(app)
         
         self.mock_cv = CV(
             id='cv_123',
@@ -61,17 +69,15 @@ class TestCVHistoryAPI:
             ]
         }
     
-    @patch('src.api.cv_history.get_current_user')
-    @patch('src.api.cv_history.get_db')
-    def test_create_history_entry_success(self, mock_get_db, mock_get_user):
+    def teardown_method(self):
+        """Clean up test fixtures."""
+        # Clear dependency overrides
+        app.dependency_overrides.clear()
+    
+    def test_create_history_entry_success(self):
         """Test successful history entry creation."""
-        # Setup mocks
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-        mock_get_user.return_value = self.mock_user
-        
         # Mock CV query
-        mock_db.query.return_value.filter.return_value.first.return_value = self.mock_cv
+        self.mock_db.query.return_value.filter.return_value.first.return_value = self.mock_cv
         
         # Mock history entry creation
         mock_history_entry = CVHistory(
@@ -83,9 +89,9 @@ class TestCVHistoryAPI:
             description='Test snapshot',
             data_size=1024
         )
-        mock_db.add.return_value = None
-        mock_db.commit.return_value = None
-        mock_db.refresh.return_value = None
+        self.mock_db.add.return_value = None
+        self.mock_db.commit.return_value = None
+        self.mock_db.refresh.return_value = None
         
         # Make request
         response = self.client.post(
@@ -104,17 +110,10 @@ class TestCVHistoryAPI:
         assert data['changeType'] == 'manual_save'
         assert data['description'] == 'Test snapshot'
     
-    @patch('src.api.cv_history.get_current_user')
-    @patch('src.api.cv_history.get_db')
-    def test_get_history_entries_success(self, mock_get_db, mock_get_user):
+    def test_get_history_entries_success(self):
         """Test successful retrieval of history entries."""
-        # Setup mocks
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-        mock_get_user.return_value = self.mock_user
-        
         # Mock CV query
-        mock_db.query.return_value.filter.return_value.first.return_value = self.mock_cv
+        self.mock_db.query.return_value.filter.return_value.first.return_value = self.mock_cv
         
         # Mock history entries
         mock_entries = [
@@ -139,7 +138,7 @@ class TestCVHistoryAPI:
                 created_at=datetime.now()
             )
         ]
-        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = mock_entries
+        self.mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = mock_entries
         
         # Make request
         response = self.client.get('/api/cvs/cv_123/history')
@@ -151,10 +150,8 @@ class TestCVHistoryAPI:
         assert data[0]['isInitial'] == True
         assert data[1]['description'] == 'Updated position'
     
-    @patch('src.api.cv_history.get_current_user')
-    @patch('src.api.cv_history.get_db')
     @patch('src.services.cv_diff_service.cv_diff_service.compute_diff')
-    def test_get_version_diff_success(self, mock_compute_diff, mock_get_db, mock_get_user):
+    def test_get_version_diff_success(self, mock_compute_diff):
         """Test successful diff computation between versions."""
         # Setup mocks
         mock_db = MagicMock()

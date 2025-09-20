@@ -29,6 +29,13 @@ export default {
       useESM: true,
     }],
   },
+  globals: {
+    'import.meta': {
+      env: {
+        VITE_API_BASE_URL: 'http://localhost:8000'
+      }
+    }
+  },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   coverageReporters: ['text', 'lcov', 'html'],

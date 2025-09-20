@@ -34,9 +34,9 @@ describe('dateUtils', () => {
       expect(result).toBe('2023-06-15')
     })
 
-    it('should convert YYYY-MM format to YYYY-MM-01', () => {
+    it('should return YYYY-MM format as is (no longer converts to YYYY-MM-01)', () => {
       const result = formatDateForDisplay(testDateStringMonth)
-      expect(result).toBe('2023-06-01')
+      expect(result).toBe('2023-06')
     })
 
     it('should handle empty string', () => {
