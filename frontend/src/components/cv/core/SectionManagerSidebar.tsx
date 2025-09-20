@@ -19,7 +19,7 @@ import {
   Box,
   List
 } from '@mui/material'
-import { Add as AddIcon, RestartAlt as ResetIcon } from '@mui/icons-material'
+import { Add as AddIcon } from '@mui/icons-material'
 import {
   DndContext,
   closestCenter,
@@ -42,7 +42,6 @@ interface SectionManagerSidebarProps {
   title: string
   onTitleSave: (newTitle: string) => Promise<void>
   onToggleVisibility: (sectionId: string) => void
-  onResetClick: () => void
   onAddNewSection: (sectionId: string) => void
   onDragStart: (event: any) => void
   onDragEnd: (event: any) => void
@@ -56,7 +55,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   title,
   onTitleSave,
   onToggleVisibility,
-  onResetClick,
   onAddNewSection,
   onDragStart,
   onDragEnd
@@ -70,14 +68,14 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       boxShadow: 'none',
       borderRight: '1px solid #e0e0e0'
     }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      {/* CV Title - At the top */}
+      <Box sx={{ mb: 2 }}>
         <EditableTitle
           title={title}
           onSave={onTitleSave}
           variant="h6"
           sx={{
-            flexGrow: 1,
-            mr: 2,
+            width: '100%',
             '& .MuiTypography-root': {
               color: '#333',
               fontSize: '1.1rem',
@@ -85,26 +83,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             }
           }}
         />
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title={isDefaultOrder ? "Reset to default section order" : "Reset to default section order (order has been changed)"}>
-            <Button
-              variant={isDefaultOrder ? "outlined" : "contained"}
-              size="small"
-              startIcon={<ResetIcon />}
-              onClick={onResetClick}
-              sx={{ 
-                minWidth: 'auto', 
-                px: 1,
-                ...(isDefaultOrder ? {} : { 
-                  bgcolor: 'warning.main',
-                  '&:hover': { bgcolor: 'warning.dark' }
-                })
-              }}
-            >
-              {isDefaultOrder ? 'Reset' : 'Reset*'}
-            </Button>
-          </Tooltip>
-        </Box>
       </Box>
       <Typography variant="body2" sx={{ color: '#666', mb: 2, fontStyle: 'italic' }}>
         Drag sections to reorder them

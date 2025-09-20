@@ -27,6 +27,8 @@ export interface DateFieldConfig {
   name: string
   label: string
   required?: boolean
+  minDate?: string // YYYY-MM-DD format
+  maxDate?: string // YYYY-MM-DD format
 }
 
 /**
@@ -154,9 +156,51 @@ export const DateFieldComponent: React.FC<{
   onSave?: () => void
   sx?: any
 }> = ({ config, value, onChange, onSave, sx }) => {
-  const { label, required } = config
+  const { label, required, minDate, maxDate } = config
   const [pickerOpen, setPickerOpen] = React.useState(false)
+  const [validationError, setValidationError] = React.useState<string>('')
   const anchorRef = React.useRef<HTMLButtonElement>(null)
+  
+  // Real-time validation function
+  const validateDateValue = React.useCallback((dateValue: string): string => {
+    if (!dateValue) {
+      return required ? `${label} is required` : ''
+    }
+
+    // Check date format
+    if (!dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return `${label} must be in YYYY-MM-DD format`
+    }
+
+    // Check if date is valid
+    const parsedDate = dayjs(dateValue)
+    if (!parsedDate.isValid()) {
+      return `${label} is not a valid date`
+    }
+
+    // Check min/max constraints
+    if (minDate) {
+      const minParsed = dayjs(minDate)
+      if (parsedDate.isBefore(minParsed)) {
+        return `${label} must be after ${minDate}`
+      }
+    }
+
+    if (maxDate) {
+      const maxParsed = dayjs(maxDate)
+      if (parsedDate.isAfter(maxParsed)) {
+        return `${label} must be before ${maxDate}`
+      }
+    }
+
+    return ''
+  }, [label, required, minDate, maxDate])
+  
+  // Validate on value change
+  React.useEffect(() => {
+    const error = validateDateValue(value)
+    setValidationError(error)
+  }, [value, validateDateValue])
   
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
@@ -175,13 +219,17 @@ export const DateFieldComponent: React.FC<{
   const dayjsValue = value ? dayjs(value) : null
   
   const handleDateChange = (date: any) => {
+    let newValue = ''
+    
     if (date && dayjs.isDayjs(date)) {
-      onChange(date.format('YYYY-MM-DD'))
+      newValue = date.format('YYYY-MM-DD')
     } else if (date && date instanceof Date) {
-      onChange(dayjs(date).format('YYYY-MM-DD'))
+      newValue = dayjs(date).format('YYYY-MM-DD')
     } else if (!date) {
-      onChange('')
+      newValue = ''
     }
+    
+    onChange(newValue)
   }
   
   const handlePickerDateChange = (date: any) => {
@@ -207,8 +255,8 @@ export const DateFieldComponent: React.FC<{
             textField: {
               fullWidth: true,
               variant: 'standard',
-              error: required && !value?.trim(),
-              helperText: required && !value?.trim() ? `${label} is required` : ' ', // Always reserve space for helper text
+              error: !!validationError,
+              helperText: validationError || ' ', // Always reserve space for helper text
               onKeyDown: handleKeyDown,
               sx: {
                 ...sx,
@@ -242,6 +290,8 @@ export const DateFieldComponent: React.FC<{
             onClose={() => setPickerOpen(false)}
             value={dayjsValue}
             onChange={handlePickerDateChange}
+            minDate={minDate ? dayjs(minDate) : undefined}
+            maxDate={maxDate ? dayjs(maxDate) : undefined}
             slotProps={{
               textField: {
                 sx: { display: 'none' } // Hide the DatePicker's text field since we're using DateField

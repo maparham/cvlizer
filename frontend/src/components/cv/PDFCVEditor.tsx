@@ -24,19 +24,28 @@ import {
   useCVEditorState
   // useCVEditor
 } from '../../contexts/CVEditorContext'
+import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from './index'
+import { useCVStore } from '../../stores/cvStore'
 
 interface PDFCVEditorProps {
   title?: string
   onTitleSave?: (newTitle: string) => Promise<void>
+  cvId?: string
 }
 
-const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave }) => {
+const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId }) => {
   // Use context instead of props
   // const { cvData } = useCVEditor()
   
   // Use consolidated context hooks
   const { sections, dragDrop, reset } = useCVEditorControls()
   const { changes } = useCVEditorState()
+  
+  // Get history store actions  
+  const handleHistoryClick = () => {
+    const { setHistoryPanelOpen } = useCVStore.getState()
+    setHistoryPanelOpen(true)
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -50,7 +59,6 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave }) => {
           title={title || 'Untitled CV'}
           onTitleSave={onTitleSave || (async () => {})}
           onToggleVisibility={sections.toggleVisibility}
-          onResetClick={reset.onResetClick}
           onAddNewSection={sections.add}
           onDragStart={dragDrop.onDragStart}
           onDragEnd={dragDrop.onDragEnd}
@@ -69,6 +77,12 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave }) => {
           onCloseUnsavedChangesDialog={changes.onCloseDialog}
           onConfirmUnsavedChanges={changes.onConfirmDialog}
         />
+
+        {/* History Panel */}
+        {cvId && <ConnectedHistoryPanel cvId={cvId} />}
+        
+        {/* History Panel Handle - Always visible when panel is closed */}
+        {cvId && <ConnectedHistoryPanelHandle cvId={cvId} />}
       </Box>
     </LocalizationProvider>
   )

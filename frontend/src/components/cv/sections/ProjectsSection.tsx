@@ -3,8 +3,10 @@ import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
+import { generateSectionId } from '../../../utils/idGenerator'
 
 interface Project {
+  id: string
   name: string
   description: string
   technologies: string[]
@@ -15,6 +17,7 @@ interface Project {
 
 const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
   const createNewProject = (): Project => ({
+    id: generateSectionId('projects'),
     name: '',
     description: '',
     technologies: [],
@@ -86,7 +89,8 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
           <DateFieldComponent
             config={{
               name: 'end_date',
-              label: 'End Date (Optional)'
+              label: 'End Date (Optional)',
+              minDate: project.start_date || undefined // End date must be after start date
             }}
             value={project.end_date || ''}
             onChange={(value) => updateProject('end_date', value)}

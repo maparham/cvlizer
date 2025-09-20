@@ -47,6 +47,7 @@ const CVContentArea: React.FC = () => {
   const { sections } = useCVEditorControls()
   const { editing, changes } = useCVEditorState()
   
+  
   // Extract editing-related functions for easier use
   const {
     section: editingSection,
@@ -102,7 +103,7 @@ const CVContentArea: React.FC = () => {
           <WorkExperienceSection 
             data={cvData?.work_experience} 
             onUpdate={(data) => onUpdateCV({ ...cvData, work_experience: data as WorkExperience[] })}
-            onSave={(data) => onSave({ ...cvData, work_experience: data as WorkExperience[] }, 'Work experience saved')}
+            onSave={(data, message) => onSave({ ...cvData, work_experience: data as WorkExperience[] }, message || 'Work experience saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('work_experience')}
             onClose={() => handleSectionClose()}
@@ -118,7 +119,7 @@ const CVContentArea: React.FC = () => {
           <EducationSection 
             data={cvData?.education} 
             onUpdate={(data) => onUpdateCV({ ...cvData, education: data as Education[] })}
-            onSave={(data) => onSave({ ...cvData, education: data as Education[] }, 'Education saved')}
+            onSave={(data, message) => onSave({ ...cvData, education: data as Education[] }, message || 'Education saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('education')}
             onClose={() => handleSectionClose()}
@@ -146,7 +147,7 @@ const CVContentArea: React.FC = () => {
           <CertificationsSection 
             data={cvData?.certifications || []} 
             onUpdate={(data) => onUpdateCV({ ...cvData, certifications: data as Certification[] })}
-            onSave={(data) => onSave({ ...cvData, certifications: data as Certification[] }, 'Certifications saved')}
+            onSave={(data, message) => onSave({ ...cvData, certifications: data as Certification[] }, message || 'Certifications saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('certifications')}
             onClose={() => handleSectionClose()}
@@ -162,7 +163,7 @@ const CVContentArea: React.FC = () => {
           <ProjectsSection 
             data={cvData?.projects || []} 
             onUpdate={(data) => onUpdateCV({ ...cvData, projects: data as Project[] })}
-            onSave={(data) => onSave({ ...cvData, projects: data as Project[] }, 'Projects saved')}
+            onSave={(data, message) => onSave({ ...cvData, projects: data as Project[] }, message || 'Projects saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('projects')}
             onClose={() => handleSectionClose()}
@@ -178,7 +179,7 @@ const CVContentArea: React.FC = () => {
           <AwardsSection 
             data={cvData?.awards || []} 
             onUpdate={(data) => onUpdateCV({ ...cvData, awards: data as Award[] })}
-            onSave={(data) => onSave({ ...cvData, awards: data as Award[] }, 'Awards saved')}
+            onSave={(data, message) => onSave({ ...cvData, awards: data as Award[] }, message || 'Awards saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('awards')}
             onClose={() => handleSectionClose()}
@@ -194,7 +195,7 @@ const CVContentArea: React.FC = () => {
           <PublicationsSection 
             data={cvData?.publications || []} 
             onUpdate={(data) => onUpdateCV({ ...cvData, publications: data as Publication[] })}
-            onSave={(data) => onSave({ ...cvData, publications: data as Publication[] }, 'Publications saved')}
+            onSave={(data, message) => onSave({ ...cvData, publications: data as Publication[] }, message || 'Publications saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('publications')}
             onClose={() => handleSectionClose()}
@@ -210,7 +211,7 @@ const CVContentArea: React.FC = () => {
           <VolunteerExperienceSection 
             data={cvData?.volunteer_experience || []} 
             onUpdate={(data) => onUpdateCV({ ...cvData, volunteer_experience: data as VolunteerExperience[] })}
-            onSave={(data) => onSave({ ...cvData, volunteer_experience: data as VolunteerExperience[] }, 'Volunteer experience saved')}
+            onSave={(data, message) => onSave({ ...cvData, volunteer_experience: data as VolunteerExperience[] }, message || 'Volunteer experience saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('volunteer_experience')}
             onClose={() => handleSectionClose()}

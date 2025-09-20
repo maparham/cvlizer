@@ -2,6 +2,12 @@
 export { default as PDFCVEditor } from './PDFCVEditor'
 export { default as CVUpload } from './CVUpload'
 export { EditableTitle } from './EditableTitle'
+export { default as HistoryPanel } from './HistoryPanel'
+export { default as ConnectedHistoryPanel } from './ConnectedHistoryPanel'
+export { default as HistoryPanelHandle } from './HistoryPanelHandle'
+export { default as ConnectedHistoryPanelHandle } from './ConnectedHistoryPanelHandle'
+export { default as SimpleCVDiffViewer } from './SimpleCVDiffViewer'
+export { default as VersionPreviewDialog } from './VersionPreviewDialog'
 
 // Core Components
 export * from './core'

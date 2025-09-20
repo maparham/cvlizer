@@ -159,6 +159,34 @@ const CVEditorHeader: React.FC<{
   )
 }
 
+// Inner component that has access to CVEditor context and can clear unsaved changes
+const CVEditorContent: React.FC<{
+  cvId: string | undefined
+  activeCV: any
+  onLogout: () => void
+  onMenuOpen: (event: React.MouseEvent<HTMLElement>) => void
+  onMenuClose: () => void
+  anchorEl: null | HTMLElement
+  onTitleSave: (title: string) => Promise<void>
+}> = ({ cvId, activeCV, onLogout, onMenuOpen, onMenuClose, anchorEl, onTitleSave }) => {
+  return (
+    <>
+      <CVEditorHeader
+        onLogout={onLogout}
+        onMenuOpen={onMenuOpen}
+        onMenuClose={onMenuClose}
+        anchorEl={anchorEl}
+      />
+      <PDFCVEditor 
+        title={activeCV?.original_filename || 'Untitled CV'}
+        onTitleSave={onTitleSave}
+        cvId={cvId !== 'new' ? cvId : undefined}
+      />
+    </>
+  )
+}
+
+
 const CVEditor: React.FC = () => {
   const { cvId } = useParams()
   const navigate = useNavigate()
@@ -177,7 +205,8 @@ const CVEditor: React.FC = () => {
     updateCVTitle,
     saveTemporaryCV,
     setCurrentCV,
-    setTemporaryCV
+    setTemporaryCV,
+    createSnapshotOnUserAction
   } = useCVStore()
   
   // Determine if this is a new/temporary CV
@@ -224,18 +253,45 @@ const CVEditor: React.FC = () => {
       } else {
         // Update existing CV
         if (!cvId) return
+        
         await updateCV(cvId, { parsed_data: dataToSave })
+        
+        // Create snapshot for user-initiated changes (when message is provided)
+        // or when we can detect actual changes through diff comparison
+        let shouldCreateSnapshot = false
+        
+        if (message) {
+          // If a message is provided, this is a user-initiated change (add, edit, delete, reorder)
+          shouldCreateSnapshot = true
+        } else {
+          // For saves without explicit messages, always create snapshot for now
+          // Backend diff computation will determine if there are actual changes
+          shouldCreateSnapshot = true
+        }
+        
+        if (shouldCreateSnapshot) {
+          try {
+            await createSnapshotOnUserAction(cvId, dataToSave, 'manual_save', message)
+          } catch (error) {
+            console.warn('Failed to create snapshot after save:', error)
+          }
+        }
+        
         // Remove the saving notification and show success
         removeNotification(savingNotificationId)
         showSuccess('Success', message || 'CV saved successfully')
+        
+        // Clear unsaved changes after successful save
+        // We'll dispatch a custom event that the context can listen to
+        window.dispatchEvent(new CustomEvent('cv-saved'))
       }
     } catch (error: any) {
       console.error('Error saving CV:', error)
       // Remove the saving notification and show error
       removeNotification(savingNotificationId)
-      showError('Error', error?.response?.data?.message || 'Failed to save CV')
+      showError('Error', error?.message || error?.response?.data?.message || 'Failed to save CV')
     }
-  }, [cvId, cvData, isNewCV, updateCV, saveTemporaryCV, showInfo, showSuccess, showError, removeNotification, navigate])
+  }, [cvId, cvData, isNewCV, updateCV, saveTemporaryCV, createSnapshotOnUserAction, showInfo, showSuccess, showError, removeNotification, navigate])
   
   const handleUpdateCV = useCallback((data: CVData) => {
     // Update the local CV state in the store
@@ -320,22 +376,21 @@ const CVEditor: React.FC = () => {
       <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ flex: 1, overflow: 'hidden' }}>
           <CVEditorProvider
-          cvData={cvData}
-          onUpdateCV={handleUpdateCV}
-          onSave={handleSave}
-        >
-          <CVEditorHeader
-            onLogout={handleLogout}
-            onMenuOpen={handleMenuOpen}
-            onMenuClose={handleMenuClose}
-            anchorEl={anchorEl}
-          />
-          <PDFCVEditor 
-            title={activeCV?.original_filename || 'Untitled CV'}
-            onTitleSave={handleTitleSave}
-          />
-        </CVEditorProvider>
-      </Box>
+            cvData={cvData}
+            onUpdateCV={handleUpdateCV}
+            onSave={handleSave}
+          >
+            <CVEditorContent
+              cvId={cvId}
+              activeCV={activeCV}
+              onLogout={handleLogout}
+              onMenuOpen={handleMenuOpen}
+              onMenuClose={handleMenuClose}
+              anchorEl={anchorEl}
+              onTitleSave={handleTitleSave}
+            />
+          </CVEditorProvider>
+        </Box>
 
       {/* Notifications */}
       {notifications.map((notification) => (

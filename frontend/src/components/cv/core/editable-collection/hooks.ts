@@ -17,6 +17,7 @@ export const useItemEditing = <T>(
   const [editData, setEditData] = useState<T | null>(null)
   const editingItemIndexRef = useRef<number | null>(null)
   
+  
   // Memoize section ID to avoid recalculation
   const sectionId = useMemo(() => getSectionId(title), [title])
 

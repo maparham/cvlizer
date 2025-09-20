@@ -3,8 +3,10 @@ import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
+import { generateSectionId } from '../../../utils/idGenerator'
 
 interface VolunteerExperience {
+  id: string
   organization: string
   role: string
   start_date: string
@@ -14,6 +16,7 @@ interface VolunteerExperience {
 
 const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
   const createNewVolunteerExperience = (): VolunteerExperience => ({
+    id: generateSectionId('volunteer_experience'),
     organization: '',
     role: '',
     start_date: '',
@@ -57,7 +60,8 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         <DateFieldComponent
           config={{
             name: 'end_date',
-            label: 'End Date (Optional)'
+            label: 'End Date (Optional)',
+            minDate: volunteer.start_date || undefined // End date must be after start date
           }}
           value={volunteer.end_date || ''}
           onChange={(value) => updateVolunteer('end_date', value)}

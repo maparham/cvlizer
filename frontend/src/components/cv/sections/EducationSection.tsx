@@ -6,8 +6,10 @@ import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
 import LocationAutocomplete from '../ui/LocationAutocomplete'
 import DegreeAutocomplete from '../ui/DegreeAutocomplete'
+import { generateSectionId } from '../../../utils/idGenerator'
 
 interface Education {
+  id: string
   institution: string
   degree: string
   field_of_study: string
@@ -22,6 +24,7 @@ interface Education {
 
 const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
   const createNewEducation = (): Education => ({
+    id: generateSectionId('education'),
     institution: '',
     degree: '',
     field_of_study: '',
@@ -121,7 +124,8 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
           <DateFieldComponent
             config={{
               name: 'end_date',
-              label: 'End Date'
+              label: 'End Date',
+              minDate: edu.start_date || undefined // End date must be after start date
             }}
             value={edu.end_date}
             onChange={(value) => updateEducation('end_date', value)}

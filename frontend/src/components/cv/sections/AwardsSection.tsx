@@ -3,8 +3,10 @@ import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
+import { generateSectionId } from '../../../utils/idGenerator'
 
 interface Award {
+  id: string
   name: string
   issuer: string
   date: string
@@ -13,6 +15,7 @@ interface Award {
 
 const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
   const createNewAward = (): Award => ({
+    id: generateSectionId('awards'),
     name: '',
     issuer: '',
     date: '',

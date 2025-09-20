@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 interface UnsavedChangesState {
   hasUnsavedChanges: boolean
@@ -74,6 +74,21 @@ export const useUnsavedChanges = () => {
   const hasSectionUnsavedChanges = useCallback((sectionId: string) => {
     return state.editingSections.has(sectionId) || state.pendingChanges.has(sectionId)
   }, [state.editingSections, state.pendingChanges])
+
+  // Listen for save events to clear unsaved changes
+  useEffect(() => {
+    const handleCVSaved = () => {
+      clearUnsavedChanges()
+      // Also dispatch an event to clear editing state
+      window.dispatchEvent(new CustomEvent('cv-editing-state-clear'))
+    }
+
+    window.addEventListener('cv-saved', handleCVSaved)
+    
+    return () => {
+      window.removeEventListener('cv-saved', handleCVSaved)
+    }
+  }, [clearUnsavedChanges])
 
   return {
     hasUnsavedChanges: state.hasUnsavedChanges,

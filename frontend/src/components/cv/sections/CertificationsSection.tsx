@@ -3,8 +3,10 @@ import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
+import { generateSectionId } from '../../../utils/idGenerator'
 
 interface Certification {
+  id: string
   name: string
   issuer: string
   date: string
@@ -14,6 +16,7 @@ interface Certification {
 
 const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
   const createNewCertification = (): Certification => ({
+    id: generateSectionId('certifications'),
     name: '',
     issuer: '',
     date: '',

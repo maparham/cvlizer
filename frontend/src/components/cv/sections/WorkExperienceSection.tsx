@@ -15,8 +15,10 @@ import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
 import LocationAutocomplete from '../ui/LocationAutocomplete'
 import JobPositionAutocomplete from '../ui/JobPositionAutocomplete'
+import { generateSectionId } from '../../../utils/idGenerator'
 
 interface WorkExperience {
+  id: string
   company: string
   position: string
   location: string
@@ -30,6 +32,7 @@ interface WorkExperience {
 
 const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
   const createNewExperience = (): WorkExperience => ({
+    id: generateSectionId('work_experience'),
     company: '',
     position: '',
     location: '',
@@ -79,7 +82,8 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         <DateFieldComponent
           config={{
             name: 'end_date',
-            label: 'End Date'
+            label: 'End Date',
+            minDate: exp.start_date || undefined // End date must be after start date
           }}
           value={exp.end_date}
           onChange={(value) => updateExperience('end_date', value)}

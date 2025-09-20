@@ -108,9 +108,10 @@ function IndividualItemSection<T>({
     if (registerIndividualItemEditing) {
       // Create a callback to start editing this specific item
       const onStartEdit = () => {
+        
         setEditingItemIndex(index)
         editingItemIndexRef.current = index
-        setEditData({ ...itemsData[index] })
+        setEditData(itemToEdit)
         onEdit()
       }
       
@@ -120,9 +121,11 @@ function IndividualItemSection<T>({
       // Only set local state if registration was successful (no dialog shown)
       // If a dialog is shown, onStartEdit will be called when user clicks "Discard Changes"
       if (registrationResult !== 'dialog_shown') {
+        const itemToEdit = { ...itemsData[index] }
+        
         setEditingItemIndex(index)
         editingItemIndexRef.current = index
-        setEditData({ ...itemsData[index] })
+        setEditData(itemToEdit)
         onEdit()
       }
     } else {
@@ -136,6 +139,7 @@ function IndividualItemSection<T>({
 
   const handleSaveItem = useCallback(() => {
     if (editingItemIndex !== null && editData) {
+      
       let newData = [...itemsData]
       
       // Check if we're adding a new item (editingItemIndex >= current array length)
@@ -149,6 +153,7 @@ function IndividualItemSection<T>({
         }
       } else {
         // Editing an existing item - update at the index
+        
         newData[editingItemIndex] = editData
         
         // If there's an active sort, re-sort the data in case the edited field affects sort order
@@ -156,6 +161,7 @@ function IndividualItemSection<T>({
           newData = sortItemsByDate(newData, sortField, sortDirection)
         }
       }
+      
       
       setItemsData(newData)
       onUpdate(newData)

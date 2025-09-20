@@ -3,8 +3,10 @@ import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
+import { generateSectionId } from '../../../utils/idGenerator'
 
 interface Publication {
+  id: string
   title: string
   authors: string
   journal: string
@@ -14,6 +16,7 @@ interface Publication {
 
 const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
   const createNewPublication = (): Publication => ({
+    id: generateSectionId('publications'),
     title: '',
     authors: '',
     journal: '',
