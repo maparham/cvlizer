@@ -9,6 +9,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .base import Base
 import uuid
+from datetime import timezone
 
 
 class CV(Base):
@@ -30,6 +31,7 @@ class CV(Base):
     user = relationship("User", back_populates="cvs")
     job_descriptions = relationship("JobDescription", back_populates="cv", cascade="all, delete-orphan")
     ai_sections = relationship("AISection", back_populates="cv", cascade="all, delete-orphan")
+    history = relationship("CVHistory", back_populates="cv", cascade="all, delete-orphan", order_by="CVHistory.created_at.desc()")
     
     def __str__(self):
         return f"<CV {self.original_filename}>"
@@ -41,6 +43,15 @@ class CV(Base):
         This centralizes the response formatting logic that was previously
         duplicated across multiple API endpoints.
         """
+        # Check if this CV has been edited (has non-initial history entries)
+        has_been_edited = False
+        if hasattr(self, 'history') and self.history:
+            # Check if there are any non-initial history entries
+            has_been_edited = any(not entry.is_initial for entry in self.history)
+        
+        # Check if this is an imported CV (has file_size > 0)
+        is_imported = self.file_size > 0
+        
         return {
             "id": str(self.id),
             "user_id": str(self.user_id),
@@ -50,6 +61,8 @@ class CV(Base):
             "parsed_data": self.parsed_data,
             "is_parsed": self.is_parsed,
             "parse_error": self.parse_error,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat()
+            "created_at": self.created_at.replace(tzinfo=timezone.utc).isoformat(),
+            "updated_at": self.updated_at.replace(tzinfo=timezone.utc).isoformat(),
+            "is_imported": is_imported,
+            "has_been_edited": has_been_edited
         }

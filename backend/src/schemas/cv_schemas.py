@@ -16,42 +16,62 @@ class PersonalInfoSchema(BaseModel):
     website_url: Optional[str] = Field(None, description="Personal website URL")
     github_url: Optional[str] = Field(None, description="GitHub profile URL")
 
+    class Config:
+        extra = "forbid"  # Reject any additional fields
+
 
 class ProfessionalSummarySchema(BaseModel):
     """Schema for professional summary section."""
     content: str = Field(..., min_length=10, description="Professional summary content")
     keywords: List[str] = Field(default_factory=list, description="Key skills/keywords")
 
+    class Config:
+        extra = "forbid"  # Reject any additional fields
+
 
 class WorkExperienceSchema(BaseModel):
     """Schema for work experience entries."""
+    id: Optional[str] = Field(None, description="Unique identifier for the work experience entry")
     company: str = Field(..., min_length=1, description="Company name is required")
     position: str = Field(..., min_length=1, description="Position title is required")
-    start_date: str = Field(..., description="Start date in YYYY-MM format")
-    end_date: Optional[str] = Field(None, description="End date in YYYY-MM format")
+    location: Optional[str] = Field(None, description="Work location")
+    start_date: str = Field(..., description="Start date in YYYY-MM-DD format")
+    end_date: Optional[str] = Field(None, description="End date in YYYY-MM-DD format")
     current: bool = Field(default=False, description="Currently working here")
     description: Optional[str] = Field(None, description="Job description")
     achievements: List[str] = Field(default_factory=list, description="Key achievements")
     technologies: List[str] = Field(default_factory=list, description="Technologies used")
 
+    class Config:
+        extra = "forbid"  # Reject any additional fields
+
 
 class EducationSchema(BaseModel):
     """Schema for education entries."""
+    id: Optional[str] = Field(None, description="Unique identifier for the education entry")
     institution: str = Field(..., min_length=1, description="Institution name is required")
     degree: str = Field(..., min_length=1, description="Degree name is required")
     field_of_study: Optional[str] = Field(None, description="Field of study")
-    start_date: str = Field(..., description="Start date in YYYY-MM format")
-    end_date: Optional[str] = Field(None, description="End date in YYYY-MM format")
+    location: Optional[str] = Field(None, description="Institution location")
+    start_date: str = Field(..., description="Start date in YYYY-MM-DD format")
+    end_date: Optional[str] = Field(None, description="End date in YYYY-MM-DD format")
     gpa: Optional[str] = Field(None, description="GPA or grade")
     description: Optional[str] = Field(None, description="Additional details")
     achievements: List[str] = Field(default_factory=list, description="Academic achievements")
     honors: List[str] = Field(default_factory=list, description="Honors and awards")
 
+    class Config:
+        extra = "forbid"  # Reject any additional fields
+
 
 class LanguageSchema(BaseModel):
     """Schema for language proficiency."""
+    id: Optional[str] = Field(None, description="Unique identifier for the language entry")
     language: str = Field(..., min_length=1, description="Language name")
     proficiency: str = Field(..., min_length=1, description="Proficiency level")
+
+    class Config:
+        extra = "forbid"  # Reject any additional fields
 
 
 class SkillsSchema(BaseModel):
@@ -60,53 +80,80 @@ class SkillsSchema(BaseModel):
     soft: List[str] = Field(default_factory=list, description="Soft skills")
     languages: List[LanguageSchema] = Field(default_factory=list, description="Language proficiencies")
 
+    class Config:
+        extra = "forbid"  # Reject any additional fields
+
 
 class CertificationSchema(BaseModel):
     """Schema for certification entries."""
+    id: Optional[str] = Field(None, description="Unique identifier for the certification entry")
     name: str = Field(..., min_length=1, description="Certification name is required")
     issuer: str = Field(..., min_length=1, description="Issuing organization is required")
-    date: str = Field(..., description="Issue date in YYYY-MM format")
-    expiry_date: Optional[str] = Field(None, description="Expiry date in YYYY-MM format")
+    date: str = Field(..., description="Issue date in YYYY-MM-DD format")
+    expiry_date: Optional[str] = Field(None, description="Expiry date in YYYY-MM-DD format")
     description: Optional[str] = Field(None, description="Certification description")
+
+    class Config:
+        extra = "forbid"  # Reject any additional fields
 
 
 class ProjectSchema(BaseModel):
     """Schema for project entries."""
+    id: Optional[str] = Field(None, description="Unique identifier for the project entry")
     name: str = Field(..., min_length=1, description="Project name is required")
     description: str = Field(..., min_length=10, description="Project description is required")
     technologies: List[str] = Field(default_factory=list, description="Technologies used")
     url: Optional[str] = Field(None, description="Project URL")
 
+    class Config:
+        extra = "forbid"  # Reject any additional fields
+
 
 class AwardSchema(BaseModel):
     """Schema for award entries."""
+    id: Optional[str] = Field(None, description="Unique identifier for the award entry")
     name: str = Field(..., min_length=1, description="Award name is required")
     issuer: str = Field(..., min_length=1, description="Issuing organization is required")
-    date: str = Field(..., description="Award date in YYYY-MM format")
+    date: str = Field(..., description="Award date in YYYY-MM-DD format")
     description: Optional[str] = Field(None, description="Award description")
+
+    class Config:
+        extra = "forbid"  # Reject any additional fields
 
 
 class PublicationSchema(BaseModel):
     """Schema for publication entries."""
+    id: Optional[str] = Field(None, description="Unique identifier for the publication entry")
     title: str = Field(..., min_length=1, description="Publication title is required")
     authors: str = Field(..., min_length=1, description="Authors are required")
     journal: str = Field(..., min_length=1, description="Journal/conference name is required")
-    date: str = Field(..., description="Publication date in YYYY-MM format")
+    date: str = Field(..., description="Publication date in YYYY-MM-DD format")
     url: Optional[str] = Field(None, description="Publication URL")
+
+    class Config:
+        extra = "forbid"  # Reject any additional fields
 
 
 class VolunteerExperienceSchema(BaseModel):
     """Schema for volunteer experience entries."""
+    id: Optional[str] = Field(None, description="Unique identifier for the volunteer experience entry")
     organization: str = Field(..., min_length=1, description="Organization name is required")
     role: str = Field(..., min_length=1, description="Role is required")
-    start_date: str = Field(..., description="Start date in YYYY-MM format")
-    end_date: Optional[str] = Field(None, description="End date in YYYY-MM format")
+    location: Optional[str] = Field(None, description="Volunteer location")
+    start_date: str = Field(..., description="Start date in YYYY-MM-DD format")
+    end_date: Optional[str] = Field(None, description="End date in YYYY-MM-DD format")
     description: Optional[str] = Field(None, description="Description of volunteer work")
+
+    class Config:
+        extra = "forbid"  # Reject any additional fields
 
 
 class SectionConfigSchema(BaseModel):
     """Schema for section configuration."""
     sections: List[dict] = Field(default_factory=list, description="Section configuration")
+
+    class Config:
+        extra = "forbid"  # Reject any additional fields
 
 
 class CVDataSchema(BaseModel):
@@ -124,7 +171,7 @@ class CVDataSchema(BaseModel):
     section_config: Optional[SectionConfigSchema] = None
 
     class Config:
-        extra = "ignore"  # Ignore extra fields that don't match our schema
+        extra = "forbid"  # Reject any additional fields for data integrity
 
 
 class CVUpdateRequestSchema(BaseModel):
@@ -132,4 +179,4 @@ class CVUpdateRequestSchema(BaseModel):
     parsed_data: CVDataSchema
 
     class Config:
-        extra = "forbid"  # Prevent additional fields
+        extra = "forbid"  # Reject any additional fields for data integrity
