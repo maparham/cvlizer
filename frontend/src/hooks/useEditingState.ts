@@ -33,6 +33,8 @@ interface EditingStateHook {
   hasUnsavedChanges: boolean
   editingSections: Set<string>
   pendingChanges: Map<string, unknown>
+  clearUnsavedChanges: () => void
+  clearEditingState: () => void
 }
 
 interface UseEditingStateProps {
@@ -47,7 +49,8 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     pendingChanges,
     startEditing,
     stopEditing,
-    updatePendingChanges
+    updatePendingChanges,
+    clearUnsavedChanges
   } = useUnsavedChanges()
 
   // State ref to hold latest values for callbacks, preventing stale closures
@@ -274,6 +277,27 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     }, 100)
   }, [pendingNavigation, pendingIndividualItemRegistration, stopEditing])
 
+  // Clear all editing state (e.g., after successful save)
+  const clearEditingState = useCallback(() => {
+    setEditingSection(null)
+    setEditingIndividualItem(null)
+    setPendingIndividualItemRegistration(null)
+    stateRef.current.onCancel = () => {}
+  }, [])
+
+  // Listen for editing state clear events
+  useEffect(() => {
+    const handleEditingStateClear = () => {
+      clearEditingState()
+    }
+
+    window.addEventListener('cv-editing-state-clear', handleEditingStateClear)
+    
+    return () => {
+      window.removeEventListener('cv-editing-state-clear', handleEditingStateClear)
+    }
+  }, [clearEditingState])
+
   return {
     // Section editing
     editingSection,
@@ -298,6 +322,8 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     onUnsavedChanges,
     hasUnsavedChanges,
     editingSections,
-    pendingChanges
+    pendingChanges,
+    clearUnsavedChanges,
+    clearEditingState
   }
 }

@@ -10,10 +10,20 @@
  */
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { CV, CVUpdateRequest, CVData } from '../types'
+import { 
+  CV, 
+  CVUpdateRequest, 
+  CVData,
+  CVHistoryEntry,
+  CreateSnapshotOptions,
+  RestoreVersionOptions,
+  HistoryStats
+} from '../types'
 import { cvApi, normalizeApiError } from '../services/api'
 import { PollingManager } from './utils'
 import { CVValidationService } from '../services/cvValidationService'
+import { backendHistoryService } from '../services/backendHistoryService'
+import { migrateCVIfNeeded } from '../utils/cvDataMigration'
 
 // Constants
 const DEFAULT_CV_FILENAME = 'New CV'
@@ -60,6 +70,11 @@ interface CVState {
   hasUnparsedCVs: boolean
   pollingManager: PollingManager | null
 
+  // History state
+  historyPanelOpen: boolean
+  autoSnapshotsEnabled: boolean
+  lastAutoSnapshot: string | null
+
   // Actions
   fetchCVs: () => Promise<void>
   fetchCV: (cvId: string) => Promise<CV | null>
@@ -69,6 +84,17 @@ interface CVState {
   updateCV: (cvId: string, data: CVUpdateRequest) => Promise<CV>
   updateCVTitle: (cvId: string, title: string) => Promise<CV>
   deleteCV: (cvId: string) => Promise<void>
+  duplicateCV: (cvId: string) => Promise<CV>
+  
+  // History actions
+  createSnapshot: (cvId: string, cvData: CVData, options: CreateSnapshotOptions) => Promise<CVHistoryEntry>
+  getHistoryEntries: (cvId: string) => Promise<CVHistoryEntry[]>
+  getHistoryEntry: (cvId: string, entryId: string) => Promise<CVHistoryEntry | null>
+  restoreVersion: (cvId: string, options: RestoreVersionOptions) => Promise<CV>
+  deleteHistoryEntry: (cvId: string, entryId: string) => Promise<boolean>
+  getHistoryStats: (cvId: string) => Promise<HistoryStats>
+  setHistoryPanelOpen: (open: boolean) => void
+  setAutoSnapshotsEnabled: (enabled: boolean) => void
   
   // Utility actions
   setCurrentCV: (cv: CV | null) => void
@@ -84,6 +110,11 @@ interface CVState {
   setLoading: (loading: boolean) => void
   setUploading: (uploading: boolean) => void
   setError: (error: string | null) => void
+  
+  // Internal history helpers
+  shouldCreateAutoSnapshot: (cvId: string) => Promise<boolean>
+  createAutoSnapshotIfNeeded: (cvId: string, cvData: CVData, changeType?: string) => Promise<void>
+  createSnapshotOnUserAction: (cvId: string, cvData: CVData, action: string, customDescription?: string) => Promise<void>
 }
 
 export const useCVStore = create<CVState>()(
@@ -98,6 +129,11 @@ export const useCVStore = create<CVState>()(
       error: null,
       hasUnparsedCVs: false,
       pollingManager: null,
+
+      // History state
+      historyPanelOpen: false,
+      autoSnapshotsEnabled: false,
+      lastAutoSnapshot: null,
 
       // Actions
       fetchCVs: async () => {
@@ -139,8 +175,27 @@ export const useCVStore = create<CVState>()(
         
         try {
           const cv = await cvApi.getCV(cvId)
+          
+          // Migrate CV data to ensure all items have IDs
+          let migratedCV = cv
+          if (cv.parsed_data) {
+            const { data: migratedData, migrated } = migrateCVIfNeeded(cv.parsed_data)
+            if (migrated) {
+              migratedCV = { ...cv, parsed_data: migratedData }
+              
+              // Save the migrated data back to the backend
+              try {
+                const cleanedData = CVValidationService.cleanForBackend(migratedData)
+                await cvApi.updateCV(cvId, { parsed_data: cleanedData })
+              } catch (error) {
+                console.warn('Failed to save migrated CV data:', error)
+                // Continue anyway with the migrated data in memory
+              }
+            }
+          }
+          
           set({ 
-            currentCV: cv,
+            currentCV: migratedCV,
             loading: false,
             error: null
           })
@@ -149,11 +204,14 @@ export const useCVStore = create<CVState>()(
           const existingIndex = get().cvs.findIndex(c => c.id === cvId)
           if (existingIndex !== -1) {
             const updatedCVs = [...get().cvs]
-            updatedCVs[existingIndex] = cv
+            updatedCVs[existingIndex] = migratedCV
             set({ cvs: updatedCVs })
           }
+
+          // Initial history entry is now created automatically by the backend after parsing
+          // No need to create it here to avoid duplicates
           
-          return cv
+          return migratedCV
         } catch (error: any) {
           const errorMessage = normalizeApiError(error) || 'Failed to fetch CV'
           set({ 
@@ -171,9 +229,30 @@ export const useCVStore = create<CVState>()(
         try {
           const cv = await cvApi.uploadCV(file)
           
+          
+          // Migrate CV data to ensure all items have IDs (same as fetchCV)
+          let migratedCV = cv
+          if (cv.parsed_data) {
+            const { data: migratedData, migrated } = migrateCVIfNeeded(cv.parsed_data)
+            
+            
+            if (migrated) {
+              migratedCV = { ...cv, parsed_data: migratedData }
+              
+              // Save the migrated data back to the backend
+              try {
+                const cleanedData = CVValidationService.cleanForBackend(migratedData)
+                await cvApi.updateCV(cv.id, { parsed_data: cleanedData })
+              } catch (error) {
+                console.warn('Failed to save migrated CV data after upload:', error)
+                // Continue anyway with the migrated data in memory
+              }
+            }
+          }
+          
           // Add to the CVs list
           set(state => ({ 
-            cvs: [...state.cvs, cv],
+            cvs: [...state.cvs, migratedCV],
             uploading: false,
             error: null,
             hasUnparsedCVs: true // New uploads typically need parsing
@@ -184,7 +263,7 @@ export const useCVStore = create<CVState>()(
             get().startPolling()
           }
           
-          return cv
+          return migratedCV
         } catch (error: any) {
           const errorMessage = normalizeApiError(error) || 'Failed to upload CV'
           set({ 
@@ -206,7 +285,9 @@ export const useCVStore = create<CVState>()(
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           is_parsed: true,
-          parsed_data: JSON.parse(JSON.stringify(DEFAULT_CV_DATA)) // Deep copy
+          parsed_data: JSON.parse(JSON.stringify(DEFAULT_CV_DATA)), // Deep copy
+          is_imported: false,
+          has_been_edited: false
         }
         
         set({ temporaryCV })
@@ -269,9 +350,19 @@ export const useCVStore = create<CVState>()(
         try {
           // Clean the CV data to remove sections that would fail backend validation
           const cleanedData = CVValidationService.cleanForBackend(data.parsed_data)
+          
+          // Pre-validate to catch issues before sending to backend
+          const validationErrors = CVValidationService.validateCVData(cleanedData)
+          if (validationErrors.length > 0) {
+            const errorMessage = `CV validation failed:\n• ${validationErrors.join('\n• ')}`
+            set({ loading: false })
+            throw new Error(errorMessage)
+          }
+          
           const cleanedRequest = { parsed_data: cleanedData }
           
           const updatedCV = await cvApi.updateCV(cvId, cleanedRequest)
+          
           
           // Update in both currentCV and CVs list
           set({ 
@@ -281,6 +372,9 @@ export const useCVStore = create<CVState>()(
           })
           
           get().updateCVInList(updatedCV)
+
+          // Only create snapshot for significant changes (manual saves)
+          // Auto-snapshots are disabled - snapshots only created when user explicitly saves or major changes occur
           
           return updatedCV
         } catch (error: any) {
@@ -341,6 +435,30 @@ export const useCVStore = create<CVState>()(
           })
         } catch (error: any) {
           const errorMessage = normalizeApiError(error) || 'Failed to delete CV'
+          set({ 
+            error: errorMessage,
+            loading: false
+          })
+          throw new Error(errorMessage)
+        }
+      },
+
+      duplicateCV: async (cvId: string): Promise<CV> => {
+        set({ loading: true, error: null })
+        
+        try {
+          const duplicatedCV = await cvApi.duplicateCV(cvId)
+          
+          // Add to the CVs list
+          set(state => ({ 
+            cvs: [...state.cvs, duplicatedCV],
+            loading: false,
+            error: null
+          }))
+          
+          return duplicatedCV
+        } catch (error: any) {
+          const errorMessage = normalizeApiError(error) || 'Failed to duplicate CV'
           set({ 
             error: errorMessage,
             loading: false
@@ -432,6 +550,142 @@ export const useCVStore = create<CVState>()(
 
       setError: (error: string | null) => {
         set({ error })
+      },
+
+      // History actions
+      createSnapshot: async (cvId: string, cvData: CVData, options: CreateSnapshotOptions): Promise<CVHistoryEntry> => {
+        try {
+          const entry = await backendHistoryService.createSnapshot(cvId, cvData, options)
+          
+          // Update last auto snapshot time if this was automatic
+          if (entry.isAutomatic) {
+            set({ lastAutoSnapshot: entry.timestamp })
+          }
+          
+          return entry
+        } catch (error: any) {
+          console.warn('Failed to create snapshot:', error.message)
+          throw error
+        }
+      },
+
+      getHistoryEntries: async (cvId: string): Promise<CVHistoryEntry[]> => {
+        return await backendHistoryService.getHistoryEntries(cvId)
+      },
+
+      getHistoryEntry: async (cvId: string, entryId: string): Promise<CVHistoryEntry | null> => {
+        return await backendHistoryService.getHistoryEntry(cvId, entryId)
+      },
+
+      restoreVersion: async (cvId: string, options: RestoreVersionOptions): Promise<CV> => {
+        set({ loading: true, error: null })
+
+        try {
+          // Use the backend restore endpoint which handles CV update
+          const result = await backendHistoryService.restoreVersion(
+            cvId, 
+            options.entryId
+          )
+
+          const updatedCV = result.cv
+
+          // Update local state
+          set({ 
+            currentCV: updatedCV,
+            loading: false,
+            error: null
+          })
+          
+          get().updateCVInList(updatedCV)
+
+          return updatedCV
+        } catch (error: any) {
+          set({ loading: false })
+          throw error
+        }
+      },
+
+      deleteHistoryEntry: async (cvId: string, entryId: string): Promise<boolean> => {
+        return await backendHistoryService.deleteHistoryEntry(cvId, entryId)
+      },
+
+      getHistoryStats: async (cvId: string): Promise<HistoryStats> => {
+        return await backendHistoryService.getHistoryStats(cvId)
+      },
+
+      setHistoryPanelOpen: (open: boolean) => {
+        set({ historyPanelOpen: open })
+      },
+
+      setAutoSnapshotsEnabled: (enabled: boolean) => {
+        set({ autoSnapshotsEnabled: enabled })
+      },
+
+      // Internal history helpers
+      shouldCreateAutoSnapshot: async (cvId: string): Promise<boolean> => {
+        const { autoSnapshotsEnabled } = get()
+        if (!autoSnapshotsEnabled) return false
+
+        try {
+          const historyEntries = await get().getHistoryEntries(cvId)
+          
+          // If no history at all, don't auto-create (initial load will handle this)
+          if (historyEntries.length === 0) return false
+
+          // Get the most recent entry
+          const lastEntry = historyEntries[0]
+          if (!lastEntry) return true
+
+          // Check if enough time has passed since last entry (30 seconds)
+          const timeSinceLastEntry = Date.now() - new Date(lastEntry.timestamp).getTime()
+          return timeSinceLastEntry >= 30000
+        } catch (error) {
+          console.warn('Failed to check history for auto-snapshot:', error)
+          return false
+        }
+      },
+
+      createAutoSnapshotIfNeeded: async (cvId: string, cvData: CVData, changeType: string = 'auto_save'): Promise<void> => {
+        if (!(await get().shouldCreateAutoSnapshot(cvId))) return
+
+        try {
+          const descriptions = {
+            'auto_save': 'Auto-saved changes',
+            'manual_save': 'CV saved',
+            'section_edit': 'Section edited'
+          }
+          
+          await get().createSnapshot(cvId, cvData, {
+            changeType: changeType as any,
+            description: descriptions[changeType as keyof typeof descriptions] || 'CV updated',
+            force: false
+          })
+        } catch (error: any) {
+          // Don't throw on auto-snapshot failures, just log
+          console.warn('Auto-snapshot failed:', error.message)
+        }
+      },
+
+      createSnapshotOnUserAction: async (cvId: string, cvData: CVData, action: string, customDescription?: string): Promise<void> => {
+        try {
+          const actionDescriptions = {
+            'section_completed': 'Section editing completed',
+            'bulk_edit': 'Multiple sections updated',
+            'major_change': 'Significant changes made',
+            'manual_save': 'CV saved by user'
+          }
+          
+          // Use custom description if provided, otherwise fall back to action descriptions
+          const description = customDescription || actionDescriptions[action as keyof typeof actionDescriptions] || 'CV updated'
+          
+          await get().createSnapshot(cvId, cvData, {
+            changeType: 'manual_save',
+            description: description,
+            force: false
+          })
+        } catch (error: any) {
+          console.warn('Failed to create user action snapshot:', error.message)
+        }
       }
     }),
     {

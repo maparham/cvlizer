@@ -57,6 +57,8 @@ interface CVEditorContextType {
   hasUnsavedChanges: boolean
   editingSections: Set<string>
   pendingChanges: Map<string, unknown>
+  clearUnsavedChanges: () => void
+  clearEditingState: () => void
 
   // Dialog state
   showUnsavedChangesDialog: boolean
@@ -85,6 +87,7 @@ export const CVEditorProvider: React.FC<CVEditorProviderProps> = ({
   onUpdateCV,
   onSave
 }) => {
+  
   const editorState = usePDFCVEditor({
     cvData,
     onUpdateCV,

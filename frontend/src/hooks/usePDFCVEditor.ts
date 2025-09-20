@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { PDFCVEditorProps, CVSection } from '../types'
+import { PDFCVEditorProps, CVSection, CVData } from '../types'
 import { useSectionManagement } from './useSectionManagement'
 import { useEditingState } from './useEditingState'
 import { useDragAndDrop } from './useDragAndDrop'
@@ -40,6 +40,8 @@ interface PDFCVEditorHook {
   hasUnsavedChanges: boolean
   editingSections: Set<string>
   pendingChanges: Map<string, unknown>
+  clearUnsavedChanges: () => void
+  clearEditingState: () => void
 
   // Dialog state
   showUnsavedChangesDialog: boolean
@@ -61,7 +63,7 @@ export const usePDFCVEditor = ({
   const [showResetDialog, setShowResetDialog] = useState(false)
 
   // Wrap onSave to update CV data as well
-  const handleSave = useCallback((updatedData, message?: string) => {
+  const handleSave = useCallback((updatedData?: CVData, message?: string) => {
     const dataToSave = updatedData || cvData
     onUpdateCV(dataToSave)
     return onSave(dataToSave, message)
@@ -145,6 +147,8 @@ export const usePDFCVEditor = ({
     hasUnsavedChanges: editingState.hasUnsavedChanges,
     editingSections: editingState.editingSections,
     pendingChanges: editingState.pendingChanges,
+    clearUnsavedChanges: editingState.clearUnsavedChanges,
+    clearEditingState: editingState.clearEditingState,
 
     // Dialog state
     showUnsavedChangesDialog: editingState.showUnsavedChangesDialog,
