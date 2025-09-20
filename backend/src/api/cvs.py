@@ -56,6 +56,37 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
                 cv.parse_error = parsed_data['error']
             db.commit()
             db.refresh(cv)
+            
+            # Create initial history entry after successful parsing (only if parsing succeeded and no error)
+            if not parsed_data.get('error'):
+                from ..models.cv_history import CVHistory
+                import json
+                
+                # Check if initial history entry already exists
+                existing_initial = db.query(CVHistory).filter(
+                    CVHistory.cv_id == cv_id,
+                    CVHistory.is_initial == True
+                ).first()
+                
+                if not existing_initial:
+                    # Calculate data size
+                    data_size = len(json.dumps(parsed_data).encode('utf-8'))
+                    
+                    # Create initial history entry
+                    initial_entry = CVHistory(
+                        cv_id=cv_id,
+                        user_id=cv.user_id,
+                        cv_data=parsed_data,
+                        change_type="initial_load",
+                        description="Original version",
+                        label="Initial CV",
+                        is_automatic=True,
+                        is_initial=True,
+                        data_size=data_size
+                    )
+                    
+                    db.add(initial_entry)
+                    db.commit()
         
         db.close()
     except Exception as e:
@@ -87,6 +118,8 @@ class CVResponse(BaseModel):
     parse_error: Optional[str]
     created_at: str
     updated_at: str
+    is_imported: bool
+    has_been_edited: bool
 
     class Config:
         from_attributes = True
@@ -345,6 +378,77 @@ async def download_cv_file(
         filename=cv.original_filename,
         media_type=cv.file_type
     )
+
+
+@router.post("/{cv_id}/duplicate", response_model=CVResponse)
+async def duplicate_cv(
+    cv_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Duplicate a CV - copies content but not version history"""
+    # Get the original CV
+    original_cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not original_cv:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="CV not found"
+        )
+    
+    try:
+        # Create a deep copy of the parsed data (excluding history)
+        duplicated_parsed_data = deepcopy(original_cv.parsed_data) if original_cv.parsed_data else deepcopy(DEFAULT_PARSED_CV)
+        
+        # Generate a new filename with "Copy" suffix
+        original_name = original_cv.original_filename
+        if original_name.endswith('.pdf'):
+            base_name = original_name[:-4]  # Remove .pdf extension
+            new_filename = f"{base_name} - Copy.pdf"
+        else:
+            new_filename = f"{original_name} - Copy"
+        
+        # Create the new CV with duplicated content
+        new_cv = create_cv(
+            db=db,
+            user_id=str(current_user.id),
+            original_filename=new_filename,
+            file_path="",  # No file path for duplicated CVs (they're not file-based)
+            file_size=0,   # No file size for duplicated CVs
+            file_type=original_cv.file_type,
+            parsed_data=duplicated_parsed_data,
+            is_parsed=True  # Already "parsed" since we're copying existing data
+        )
+        
+        # Create initial history entry for the duplicated CV
+        from ..models.cv_history import CVHistory
+        import json
+        
+        # Calculate data size
+        data_size = len(json.dumps(duplicated_parsed_data).encode('utf-8'))
+        
+        # Create initial history entry
+        initial_entry = CVHistory(
+            cv_id=str(new_cv.id),
+            user_id=str(current_user.id),
+            cv_data=duplicated_parsed_data,
+            change_type="initial_load",
+            description="Duplicated from original CV",
+            label="Initial CV (Copy)",
+            is_automatic=True,
+            is_initial=True,
+            data_size=data_size
+        )
+        
+        db.add(initial_entry)
+        db.commit()
+        
+        return CVResponse(**new_cv.to_response_dict())
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error duplicating CV: {str(e)}"
+        )
 
 
 @router.delete("/{cv_id}")

@@ -26,6 +26,7 @@ from src.api.auth import router as auth_router
 from src.api.cvs import router as cvs_router
 from src.api.job_descriptions import router as job_descriptions_router
 from src.api.ai import router as ai_router
+from src.api.cv_history import router as cv_history_router
 
 load_dotenv()
 
@@ -66,6 +67,7 @@ app.include_router(auth_router)
 app.include_router(cvs_router)
 app.include_router(job_descriptions_router)
 app.include_router(ai_router)
+app.include_router(cv_history_router)
 
 @app.get("/")
 async def root():
