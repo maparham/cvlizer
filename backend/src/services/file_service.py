@@ -9,7 +9,6 @@ import uuid
 from typing import Tuple, Optional
 from fastapi import UploadFile, HTTPException
 import aiofiles
-import PyPDF2
 import docx
 from io import BytesIO
 
@@ -72,15 +71,37 @@ def delete_file(file_path: str) -> bool:
 
 
 def extract_text_from_pdf(file_content: bytes) -> str:
-    """Extract text from PDF file"""
+    """Extract text from PDF file using PyMuPDF"""
     try:
-        pdf_reader = PyPDF2.PdfReader(BytesIO(file_content))
+        import fitz  # PyMuPDF
+        doc = fitz.open(stream=file_content, filetype="pdf")
         text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text() + "\n"
-        return text.strip()
+        
+        for page in doc:
+            page_text = page.get_text()
+            if page_text:
+                text += page_text + "\n"
+        
+        doc.close()
+        
+        if text.strip():
+            return text.strip()
+        else:
+            raise HTTPException(
+                status_code=400, 
+                detail="Unable to extract text from PDF. Please upload a PDF with selectable text."
+            )
+            
+    except ImportError:
+        raise HTTPException(
+            status_code=500, 
+            detail="PDF processing library not available."
+        )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error reading PDF file: {str(e)}")
+        raise HTTPException(
+            status_code=400, 
+            detail="Unable to extract text from PDF. Please upload a PDF with selectable text."
+        )
 
 
 def extract_text_from_docx(file_content: bytes) -> str:

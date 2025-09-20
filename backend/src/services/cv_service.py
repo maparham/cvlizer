@@ -7,7 +7,7 @@ This module provides functions for CRUD operations on CV records:
 - Database transaction management
 """
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from ..models.cv import CV
 from ..models.user import User
 import uuid
@@ -34,7 +34,7 @@ def create_cv(db: Session, user_id: str, original_filename: str, file_path: str,
 
 def get_cv_by_id(db: Session, cv_id: str, user_id: str) -> Optional[CV]:
     """Get a CV by ID for a specific user"""
-    return db.query(CV).filter(
+    return db.query(CV).options(joinedload(CV.history)).filter(
         CV.id == cv_id,
         CV.user_id == user_id
     ).first()
@@ -42,7 +42,7 @@ def get_cv_by_id(db: Session, cv_id: str, user_id: str) -> Optional[CV]:
 
 def get_cvs_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 10) -> List[CV]:
     """Get all CVs for a user with pagination"""
-    return db.query(CV).filter(
+    return db.query(CV).options(joinedload(CV.history)).filter(
         CV.user_id == user_id
     ).offset(skip).limit(limit).all()
 

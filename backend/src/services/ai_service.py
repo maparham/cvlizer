@@ -113,6 +113,23 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
 def parse_cv_text_with_openai(text_content: str) -> dict:
     """Parse CV text content using OpenAI to extract structured data"""
     
+    # Check if text content is empty or too short
+    if not text_content or len(text_content.strip()) < 10:
+        # Return error structure instead of fake data
+        return {
+            "error": "Unable to extract text from PDF. Please upload a PDF with selectable text.",
+            "personal_info": {"full_name": "", "email": "", "phone": "", "location": "", "linkedin_url": "", "website_url": "", "github_url": ""},
+            "professional_summary": {"content": "", "keywords": []},
+            "work_experience": [],
+            "education": [],
+            "skills": {"technical": [], "soft": [], "languages": []},
+            "certifications": [],
+            "projects": [],
+            "awards": [],
+            "publications": [],
+            "volunteer_experience": []
+        }
+    
     prompt = f"""
     Parse the following CV text and map the content to our predefined CV sections. You must organize the CV content into ONLY these standard section names:
 
@@ -155,8 +172,8 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
             {{
                 "company": "string",
                 "position": "string",
-                "start_date": "YYYY-MM",
-                "end_date": "YYYY-MM or null",
+                "start_date": "YYYY-MM-DD",
+                "end_date": "YYYY-MM-DD or null",
                 "current": boolean,
                 "description": "string",
                 "achievements": ["string1", "string2"],
@@ -168,8 +185,8 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
                 "institution": "string",
                 "degree": "string",
                 "field_of_study": "string",
-                "start_date": "YYYY-MM",
-                "end_date": "YYYY-MM or null",
+                "start_date": "YYYY-MM-DD",
+                "end_date": "YYYY-MM-DD or null",
                 "gpa": "string or null",
                 "description": "string",
                 "achievements": ["string1", "string2"],
@@ -187,8 +204,8 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
             {{
                 "name": "string",
                 "issuer": "string",
-                "date": "YYYY-MM",
-                "expiry_date": "YYYY-MM or null",
+                "date": "YYYY-MM-DD",
+                "expiry_date": "YYYY-MM-DD or null",
                 "description": "string"
             }}
         ],
@@ -204,7 +221,7 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
             {{
                 "name": "string",
                 "issuer": "string",
-                "date": "YYYY-MM",
+                "date": "YYYY-MM-DD",
                 "description": "string"
             }}
         ],
@@ -213,7 +230,7 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
                 "title": "string",
                 "authors": "string",
                 "journal": "string",
-                "date": "YYYY-MM",
+                "date": "YYYY-MM-DD",
                 "url": "string or null"
             }}
         ],
@@ -221,8 +238,8 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
             {{
                 "organization": "string",
                 "role": "string",
-                "start_date": "YYYY-MM",
-                "end_date": "YYYY-MM or null",
+                "start_date": "YYYY-MM-DD",
+                "end_date": "YYYY-MM-DD or null",
                 "description": "string"
             }}
         ]
