@@ -5,7 +5,7 @@ This module provides validation functions for CV history data to ensure
 data integrity and prevent invalid operations.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field, validator
 from enum import Enum
 
