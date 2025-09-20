@@ -25,6 +25,27 @@ class CVDataValidator:
         value = data.get(key, default)
         return value if value is not None else []
     
+    @staticmethod
+    def validate_date_order(start_date: str, end_date: str, item_name: str, item_index: int) -> str:
+        """Validate that start_date is before end_date. Returns error message if invalid, empty string if valid."""
+        if not start_date or not end_date:
+            return ''  # Skip validation if either date is missing (handled by required field validation)
+        
+        try:
+            from datetime import datetime
+            # Parse dates - only support YYYY-MM-DD format
+            start_parsed = datetime.strptime(start_date, '%Y-%m-%d')
+            end_parsed = datetime.strptime(end_date, '%Y-%m-%d')
+            
+            if start_parsed >= end_parsed:
+                return f"{item_name} #{item_index}: Start date must be before end date"
+                
+        except Exception:
+            # If date parsing fails, skip validation (invalid date format will be caught elsewhere)
+            pass
+        
+        return ''
+    
     @classmethod
     def clean_empty_entries(cls, cv_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -109,6 +130,16 @@ class CVDataValidator:
                 errors.append(f"Work experience #{i+1}: Company is required")
             if not cls.safe_get_str(exp, 'start_date'):
                 errors.append(f"Work experience #{i+1}: Start date is required")
+            
+            # Validate date order
+            date_error = cls.validate_date_order(
+                cls.safe_get_str(exp, 'start_date'),
+                cls.safe_get_str(exp, 'end_date'), 
+                'Work experience',
+                i + 1
+            )
+            if date_error:
+                errors.append(date_error)
         
         # Validate Education - all entries should have required fields since empty ones are filtered out
         education = cv_data.get('education', [])
@@ -119,6 +150,16 @@ class CVDataValidator:
                 errors.append(f"Education #{i+1}: Degree is required")
             if not cls.safe_get_str(edu, 'start_date'):
                 errors.append(f"Education #{i+1}: Start date is required")
+            
+            # Validate date order
+            date_error = cls.validate_date_order(
+                cls.safe_get_str(edu, 'start_date'),
+                cls.safe_get_str(edu, 'end_date'),
+                'Education', 
+                i + 1
+            )
+            if date_error:
+                errors.append(date_error)
         
         # Validate Projects
         projects = cv_data.get('projects', [])
@@ -127,6 +168,16 @@ class CVDataValidator:
                 errors.append(f"Project #{i+1}: Name is required")
             if not cls.safe_get_str(project, 'description'):
                 errors.append(f"Project #{i+1}: Description is required")
+            
+            # Validate date order
+            date_error = cls.validate_date_order(
+                cls.safe_get_str(project, 'start_date'),
+                cls.safe_get_str(project, 'end_date'),
+                'Project',
+                i + 1
+            )
+            if date_error:
+                errors.append(date_error)
         
         # Validate Awards
         awards = cv_data.get('awards', [])
