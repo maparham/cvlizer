@@ -14,6 +14,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { Suspense, lazy } from 'react'
 import { Box, CircularProgress } from '@mui/material'
 import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
@@ -21,6 +22,7 @@ const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 const CVEditor = lazy(() => import('./pages/CVEditor'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Profile = lazy(() => import('./pages/Profile'))
 
 // Loading component
 const PageLoader = () => (
@@ -57,8 +59,21 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/cv/:cvId" element={<CVEditor />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/cv/:cvId" element={
+                <ProtectedRoute>
+                  <CVEditor />
+                </ProtectedRoute>
+              } />
             </Routes>
           </Suspense>
         </Router>

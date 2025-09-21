@@ -10,6 +10,7 @@ import {
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react'
 
 const Home: React.FC = () => {
   const navigate = useNavigate()
@@ -51,39 +52,82 @@ const Home: React.FC = () => {
           <Typography variant="h5" sx={{ mb: 4, opacity: 0.9 }}>
             Upload, edit, and enhance your CV with AI-powered insights tailored to any job description
           </Typography>
-          {user ? (
-            <Button
-              variant="contained"
-              size="large"
-              onClick={() => navigate('/dashboard')}
-              sx={{ 
-                bgcolor: 'white', 
-                color: 'primary.main',
-                '&:hover': { bgcolor: 'grey.100' }
-              }}
-            >
-              Go to Dashboard
-            </Button>
-          ) : (
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          <SignedIn>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
               <Button
                 variant="contained"
                 size="large"
-                onClick={() => navigate('/register')}
-                sx={{ bgcolor: 'white', color: 'primary.main' }}
+                onClick={() => navigate('/dashboard')}
+                sx={{ 
+                  bgcolor: 'white', 
+                  color: 'primary.main',
+                  '&:hover': { bgcolor: 'grey.100' }
+                }}
               >
-                Get Started
+                Go to Dashboard
               </Button>
               <Button
                 variant="outlined"
                 size="large"
-                onClick={() => navigate('/login')}
-                sx={{ borderColor: 'white', color: 'white' }}
+                onClick={() => navigate('/profile')}
+                sx={{ 
+                  borderColor: 'white', 
+                  color: 'white',
+                  '&:hover': { borderColor: 'grey.300', bgcolor: 'rgba(255,255,255,0.1)' }
+                }}
               >
-                Sign In
+                My Profile
               </Button>
+              <UserButton 
+                appearance={{
+                  elements: {
+                    avatarBox: {
+                      width: '48px',
+                      height: '48px'
+                    }
+                  }
+                }}
+              />
             </Box>
-          )}
+          </SignedIn>
+          <SignedOut>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+              <SignUpButton mode="modal">
+                <button
+                  style={{
+                    backgroundColor: 'white',
+                    color: '#1976d2',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '12px 24px',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit'
+                  }}
+                >
+                  Get Started
+                </button>
+              </SignUpButton>
+              <SignInButton mode="modal">
+                <button
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: 'white',
+                    border: '1px solid white',
+                    borderRadius: '4px',
+                    padding: '12px 24px',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit'
+                  }}
+                >
+                  Sign In
+                </button>
+              </SignInButton>
+            </Box>
+          </SignedOut>
         </Container>
       </Box>
 
@@ -126,15 +170,25 @@ const Home: React.FC = () => {
           <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
             Join thousands of job seekers who have improved their chances with AI-enhanced CVs
           </Typography>
-          {!user && (
-            <Button
-              variant="contained"
-              size="large"
-              onClick={() => navigate('/register')}
-            >
-              Start Free Today
-            </Button>
-          )}
+          <SignedOut>
+            <SignUpButton mode="modal">
+              <button
+                style={{
+                  backgroundColor: '#1976d2',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
+              >
+                Start Free Today
+              </button>
+            </SignUpButton>
+          </SignedOut>
         </Container>
       </Box>
     </Box>

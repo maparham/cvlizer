@@ -4,6 +4,7 @@ import { useSectionManagement } from './useSectionManagement'
 import { useEditingState } from './useEditingState'
 import { useDragAndDrop } from './useDragAndDrop'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
+import { ValidationError } from '../utils/validationUtils'
 
 interface PDFCVEditorHook {
   // Section management
@@ -52,6 +53,11 @@ interface PDFCVEditorHook {
   showResetDialog: boolean
   handleResetClick: () => void
   setShowResetDialog: (show: boolean) => void
+
+  // Validation errors
+  validationErrors: ValidationError[]
+  setValidationErrors: (errors: ValidationError[]) => void
+  clearValidationErrors: () => void
 }
 
 export const usePDFCVEditor = ({ 
@@ -61,6 +67,13 @@ export const usePDFCVEditor = ({
 }: PDFCVEditorProps): PDFCVEditorHook => {
   // Reset dialog state (not managed by other hooks)
   const [showResetDialog, setShowResetDialog] = useState(false)
+  
+  // Validation errors state
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
+  
+  const clearValidationErrors = useCallback(() => {
+    setValidationErrors([])
+  }, [])
 
   // Wrap onSave to update CV data as well
   const handleSave = useCallback((updatedData?: CVData, message?: string) => {
@@ -158,6 +171,11 @@ export const usePDFCVEditor = ({
     // Reset dialog
     showResetDialog,
     handleResetClick,
-    setShowResetDialog
+    setShowResetDialog,
+
+    // Validation errors
+    validationErrors,
+    setValidationErrors,
+    clearValidationErrors
   }
 }

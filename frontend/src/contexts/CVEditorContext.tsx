@@ -15,6 +15,7 @@
 import React, { createContext, useContext, ReactNode } from 'react'
 import { CVData, CVSection, EditingIndividualItem } from '../types'
 import { usePDFCVEditor } from '../hooks/usePDFCVEditor'
+import { ValidationError } from '../utils/validationUtils'
 
 // Context type definition
 interface CVEditorContextType {
@@ -67,6 +68,11 @@ interface CVEditorContextType {
   showResetDialog: boolean
   handleResetClick: () => void
   setShowResetDialog: (show: boolean) => void
+
+  // Validation errors
+  validationErrors: ValidationError[]
+  setValidationErrors: (errors: ValidationError[]) => void
+  clearValidationErrors: () => void
 }
 
 // Create context

@@ -1,11 +1,17 @@
 import React from 'react'
-import { ListItem, ListItemIcon, ListItemText, IconButton, Box, Tooltip } from '@mui/material'
-import { DragIndicator as DragIcon, Visibility as ViewIcon, VisibilityOff as HideIcon } from '@mui/icons-material'
+import { ListItem, ListItemIcon, ListItemText, IconButton, Box, Tooltip, Badge } from '@mui/material'
+import { DragIndicator as DragIcon, Visibility as ViewIcon, VisibilityOff as HideIcon, Warning as WarningIcon } from '@mui/icons-material'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { SortableSectionItemProps } from '../types'
+import { useCVEditor } from '../../../contexts/CVEditorContext'
+import { hasSectionErrors, getSectionErrorCount } from '../../../utils/validationUtils'
 
 const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onToggleVisibility, isOverlay = false }) => {
+  const { validationErrors } = useCVEditor()
+  const hasErrors = hasSectionErrors(validationErrors, section.id)
+  const errorCount = getSectionErrorCount(validationErrors, section.id)
+  
   const {
     attributes,
     listeners,
@@ -66,11 +72,19 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onTo
             lineHeight: 1.2,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            textOverflow: 'ellipsis',
+            color: hasErrors ? '#d32f2f' : 'inherit'
           }
         }}
       />
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
+      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+        {hasErrors && (
+          <Tooltip title={`${errorCount} validation error${errorCount > 1 ? 's' : ''} in this section`}>
+            <Badge badgeContent={errorCount} color="error" sx={{ mr: 0.5 }}>
+              <WarningIcon fontSize="small" sx={{ color: '#d32f2f' }} />
+            </Badge>
+          </Tooltip>
+        )}
         <Tooltip title={section.visible ? "Hide this section" : "Show this section"}>
           <IconButton
             onClick={() => onToggleVisibility(section.id)}

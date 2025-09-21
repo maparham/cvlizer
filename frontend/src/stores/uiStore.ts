@@ -7,6 +7,7 @@ interface Notification {
   title: string
   message?: string
   duration?: number
+  persistent?: boolean // For validation errors that shouldn't auto-dismiss
 }
 
 interface UIState {
@@ -93,8 +94,8 @@ export const useUIStore = create<UIState>()(
             notifications: [...state.notifications, newNotification]
           }))
 
-          // Auto-remove notification after duration
-          if (newNotification.duration && newNotification.duration > 0) {
+          // Auto-remove notification after duration (unless persistent)
+          if (newNotification.duration && newNotification.duration > 0 && !newNotification.persistent) {
             setTimeout(() => {
               get().removeNotification(id)
             }, newNotification.duration)
@@ -152,6 +153,8 @@ export const useUIStore = create<UIState>()(
           get().addNotification({ type: 'success', title, message }),
         showError: (title: string, message?: string) => 
           get().addNotification({ type: 'error', title, message }),
+        showValidationError: (title: string, message?: string) => 
+          get().addNotification({ type: 'error', title, message, persistent: true }),
         showWarning: (title: string, message?: string) => 
           get().addNotification({ type: 'warning', title, message }),
         showInfo: (title: string, message?: string) => 
@@ -201,6 +204,8 @@ export const useNotifications = () => {
       addNotification({ type: 'success', title, message }),
     showError: (title: string, message?: string) => 
       addNotification({ type: 'error', title, message }),
+    showValidationError: (title: string, message?: string) => 
+      addNotification({ type: 'error', title, message, persistent: true }),
     showWarning: (title: string, message?: string) => 
       addNotification({ type: 'warning', title, message }),
     showInfo: (title: string, message?: string) => 

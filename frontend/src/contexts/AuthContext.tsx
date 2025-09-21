@@ -1,9 +1,8 @@
 import React, { createContext, useContext, ReactNode } from 'react'
-import { useAuthStore } from '../stores/authStore'
-import { User } from '../types'
+import { useUser, useClerk } from '@clerk/clerk-react'
 
 interface AuthContextType {
-  user: User | null
+  user: any | null
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<void>
   logout: () => void
@@ -11,6 +10,10 @@ interface AuthContextType {
   error: string | null
   clearError: () => void
   isAuthenticated: boolean
+}
+
+interface AuthProviderProps {
+  children: ReactNode
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -23,46 +26,46 @@ export const useAuth = () => {
   return context
 }
 
-interface AuthProviderProps {
-  children: ReactNode
-}
-
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const {
-    user,
-    login,
-    register,
-    logout,
-    loading,
-    error,
-    clearError,
-    isAuthenticated,
-    verifyToken
-  } = useAuthStore()
+  const { user, isLoaded } = useUser()
+  const { signOut } = useClerk()
 
-  // Initialize auth state on mount
-  React.useEffect(() => {
-    verifyToken()
-  }, [verifyToken])
-
-  // Create wrapper functions that match the expected interface
-  const loginWrapper = async (email: string, password: string) => {
-    await login({ email, password })
+  // For Clerk, login/register are handled by the UI components
+  // These are kept for compatibility but will redirect to Clerk pages
+  const login = async (email: string, password: string) => {
+    // Redirect to login page - Clerk handles the actual authentication
+    window.location.href = '/login'
   }
 
-  const registerWrapper = async (email: string, password: string) => {
-    await register({ email, password })
+  const register = async (email: string, password: string) => {
+    // Redirect to register page - Clerk handles the actual authentication
+    window.location.href = '/register'
+  }
+
+  const logout = () => {
+    signOut()
+  }
+
+  const clearError = () => {
+    // No-op for now since Clerk handles errors
   }
 
   const value: AuthContextType = {
-    user,
-    login: loginWrapper,
-    register: registerWrapper,
+    user: user ? {
+      id: user.id,
+      email: user.primaryEmailAddress?.emailAddress || '',
+      is_active: true,
+      email_verified: user.primaryEmailAddress?.verification?.status === 'verified',
+      created_at: user.createdAt?.toISOString() || '',
+      updated_at: user.updatedAt?.toISOString() || ''
+    } : null,
+    login,
+    register,
     logout,
-    loading,
-    error,
+    loading: !isLoaded,
+    error: null, // Clerk handles errors through its own UI
     clearError,
-    isAuthenticated
+    isAuthenticated: !!user && isLoaded
   }
 
   return (

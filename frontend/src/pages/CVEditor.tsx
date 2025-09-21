@@ -24,10 +24,13 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { CVEditorProvider, useCVEditor } from '../contexts/CVEditorContext'
 import { PDFCVEditor } from '../components/cv'
+import { SaveWithValidationErrors } from '../components/cv/SaveWithValidationErrors'
+import { InitialValidation } from '../components/cv/InitialValidation'
 import { ErrorBoundary } from '../components/common'
 import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
 import { CVData } from '../types'
+import { parseValidationErrors } from '../utils/validationUtils'
 
 // Component that handles back navigation with edit state checks
 const CVEditorHeader: React.FC<{ 
@@ -143,7 +146,7 @@ const CVEditorHeader: React.FC<{
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="back-dialog-description">
-            You have unsaved changes. Are you sure you want to go back? Your changes will be lost.
+            You have unsaved changes that will be lost if you go back. Are you sure you want to continue?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -192,7 +195,8 @@ const CVEditor: React.FC = () => {
   const navigate = useNavigate()
   const { logout } = useAuth()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const { showSuccess, showError, showInfo, notifications, removeNotification } = useNotifications()
+  const { showSuccess, showError, showValidationError, showInfo, notifications, removeNotification } = useNotifications()
+  
   
   // Use CV store instead of local state
   const {
@@ -226,9 +230,9 @@ const CVEditor: React.FC = () => {
     }
   }, [cvId, isNewCV, temporaryCV, navigate]) // Only depend on cvId to prevent infinite loops
   
-  // Show error notifications
+  // Show error notifications (but skip validation errors as they're handled separately)
   useEffect(() => {
-    if (error) {
+    if (error && !error.includes('CV validation failed:')) {
       showError('Error', error)
     }
   }, [error]) // Remove showError from dependencies to prevent infinite loop
@@ -286,10 +290,23 @@ const CVEditor: React.FC = () => {
         window.dispatchEvent(new CustomEvent('cv-saved'))
       }
     } catch (error: any) {
-      console.error('Error saving CV:', error)
-      // Remove the saving notification and show error
+      // Remove the saving notification
       removeNotification(savingNotificationId)
-      showError('Error', error?.message || error?.response?.data?.message || 'Failed to save CV')
+      
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to save CV'
+      
+      // Dispatch error event for validation error handler
+      window.dispatchEvent(new CustomEvent('cv-save-error', { detail: error }))
+      
+      // Check if this is a validation error
+      const validationErrors = parseValidationErrors(errorMessage)
+      if (validationErrors.length > 0) {
+        // For validation errors, show a persistent notification
+        showValidationError('Validation Error', 'Please fix the highlighted fields and try saving again.')
+      } else {
+        // For other errors, show normal error notification
+        showError('Error', errorMessage)
+      }
     }
   }, [cvId, cvData, isNewCV, updateCV, saveTemporaryCV, createSnapshotOnUserAction, showInfo, showSuccess, showError, removeNotification, navigate])
   
@@ -380,15 +397,19 @@ const CVEditor: React.FC = () => {
             onUpdateCV={handleUpdateCV}
             onSave={handleSave}
           >
-            <CVEditorContent
-              cvId={cvId}
-              activeCV={activeCV}
-              onLogout={handleLogout}
-              onMenuOpen={handleMenuOpen}
-              onMenuClose={handleMenuClose}
-              anchorEl={anchorEl}
-              onTitleSave={handleTitleSave}
-            />
+            <SaveWithValidationErrors onSaveError={() => {}}>
+              <InitialValidation>
+                <CVEditorContent
+                  cvId={cvId}
+                  activeCV={activeCV}
+                  onLogout={handleLogout}
+                  onMenuOpen={handleMenuOpen}
+                  onMenuClose={handleMenuClose}
+                  anchorEl={anchorEl}
+                  onTitleSave={handleTitleSave}
+                />
+              </InitialValidation>
+            </SaveWithValidationErrors>
           </CVEditorProvider>
         </Box>
 
@@ -397,7 +418,7 @@ const CVEditor: React.FC = () => {
         <Snackbar
           key={notification.id}
           open={true}
-          autoHideDuration={notification.duration}
+          autoHideDuration={notification.persistent ? null : notification.duration}
           onClose={() => removeNotification(notification.id)}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           sx={{ mt: 0 }} // Directly below app bar

@@ -1,257 +1,185 @@
 /**
- * Advanced validation utilities for CV components
+ * Validation utilities for parsing and handling CV validation errors
  */
 
-export interface ValidationRule {
+export interface ValidationError {
+  section: string
+  itemIndex?: number
   field: string
-  validator: (value: any, allData: any) => boolean
-  message: string
-}
-
-export interface CrossFieldValidation {
-  fields: string[]
-  validator: (data: any) => boolean
   message: string
 }
 
 /**
- * Common validation rules for CV fields
+ * Parse validation error message into structured errors
+ * Example: "CV validation failed:\n• Education #2: Start date is required"
  */
-export const createValidationRules = (): ValidationRule[] => [
-  {
-    field: 'email',
-    validator: (value) => {
-      if (!value) return true // Optional field
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return emailRegex.test(value)
-    },
-    message: 'Please enter a valid email address'
-  },
-  {
-    field: 'phone',
-    validator: (value) => {
-      if (!value) return true // Optional field
-      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
-      return phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))
-    },
-    message: 'Please enter a valid phone number'
-  },
-  {
-    field: 'linkedin_url',
-    validator: (value) => {
-      if (!value) return true // Optional field
-      const urlRegex = /^https?:\/\/.+\..+/
-      return urlRegex.test(value)
-    },
-    message: 'Please enter a valid LinkedIn URL'
-  },
-  {
-    field: 'github_url',
-    validator: (value) => {
-      if (!value) return true // Optional field
-      const urlRegex = /^https?:\/\/.+\..+/
-      return urlRegex.test(value)
-    },
-    message: 'Please enter a valid GitHub URL'
-  },
-  {
-    field: 'website_url',
-    validator: (value) => {
-      if (!value) return true // Optional field
-      const urlRegex = /^https?:\/\/.+\..+/
-      return urlRegex.test(value)
-    },
-    message: 'Please enter a valid website URL'
+export const parseValidationErrors = (errorMessage: string): ValidationError[] => {
+  if (!errorMessage.includes('CV validation failed:')) {
+    return []
   }
-]
 
-/**
- * Cross-field validation rules
- */
-export const createCrossFieldValidations = (): CrossFieldValidation[] => [
-  {
-    fields: ['start_date', 'end_date'],
-    validator: (data) => {
-      const startDate = data.start_date
-      const endDate = data.end_date
-      
-      if (!startDate || !endDate) return true // Skip if either is missing
-      
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      
-      return start <= end
-    },
-    message: 'End date must be after start date'
-  },
-  {
-    fields: ['current', 'end_date'],
-    validator: (data) => {
-      // If current is true, end_date should be empty or "Present"
-      if (data.current) {
-        return !data.end_date || data.end_date.toLowerCase() === 'present'
-      }
-      return true
-    },
-    message: 'End date should be empty when currently working'
-  }
-]
+  const lines = errorMessage.split('\n').slice(1) // Skip first line
+  const errors: ValidationError[] = []
 
-/**
- * Validate a single field
- */
-export const validateField = (
-  fieldName: string,
-  value: any,
-  allData: any,
-  rules: ValidationRule[] = createValidationRules()
-): { isValid: boolean; message?: string } => {
-  const rule = rules.find(r => r.field === fieldName)
-  if (!rule) return { isValid: true }
-  
-  const isValid = rule.validator(value, allData)
-  return {
-    isValid,
-    message: isValid ? undefined : rule.message
-  }
-}
+  for (const line of lines) {
+    const cleanLine = line.replace('• ', '').trim()
+    if (!cleanLine) continue
 
-/**
- * Validate all fields in data
- */
-export const validateAllFields = (
-  data: any,
-  rules: ValidationRule[] = createValidationRules()
-): { isValid: boolean; errors: Record<string, string> } => {
-  const errors: Record<string, string> = {}
-  let isValid = true
-  
-  rules.forEach(rule => {
-    const value = data[rule.field]
-    const validation = validateField(rule.field, value, data, rules)
+    // Parse patterns like "Education #2: Start date is required"
+    const sectionMatch = cleanLine.match(/^(\w+)\s*#?(\d+)?:\s*(.+)$/)
     
-    if (!validation.isValid) {
-      errors[rule.field] = validation.message || 'Invalid value'
-      isValid = false
-    }
-  })
-  
-  return { isValid, errors }
-}
-
-/**
- * Validate cross-field rules
- */
-export const validateCrossFields = (
-  data: any,
-  crossFieldRules: CrossFieldValidation[] = createCrossFieldValidations()
-): { isValid: boolean; errors: string[] } => {
-  const errors: string[] = []
-  
-  crossFieldRules.forEach(rule => {
-    if (!rule.validator(data)) {
-      errors.push(rule.message)
-    }
-  })
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  }
-}
-
-/**
- * Check for duplicate entries in array data
- */
-export const checkForDuplicates = (
-  items: any[],
-  keyFields: string[]
-): { hasDuplicates: boolean; duplicates: number[] } => {
-  const seen = new Set<string>()
-  const duplicates: number[] = []
-  
-  items.forEach((item, index) => {
-    const key = keyFields.map(field => item[field] || '').join('|')
-    if (seen.has(key)) {
-      duplicates.push(index)
-    } else {
-      seen.add(key)
-    }
-  })
-  
-  return {
-    hasDuplicates: duplicates.length > 0,
-    duplicates
-  }
-}
-
-/**
- * Comprehensive validation for CV data
- */
-export const validateCVData = (data: any): {
-  isValid: boolean
-  errors: Record<string, string>
-  crossFieldErrors: string[]
-  duplicates: { hasDuplicates: boolean; duplicates: number[] }
-} => {
-  // Validate individual fields
-  const fieldValidation = validateAllFields(data)
-  
-  // Validate cross-field rules
-  const crossFieldValidation = validateCrossFields(data)
-  
-  // Check for duplicates in array fields
-  const arrayFields = ['work_experience', 'education', 'projects', 'awards', 'certifications']
-  let duplicates = { hasDuplicates: false, duplicates: [] as number[] }
-  
-  arrayFields.forEach(field => {
-    if (Array.isArray(data[field])) {
-      const fieldDuplicates = checkForDuplicates(data[field], ['company', 'position'])
-      if (fieldDuplicates.hasDuplicates) {
-        duplicates.hasDuplicates = true
-        duplicates.duplicates.push(...fieldDuplicates.duplicates)
+    if (sectionMatch) {
+      const [, section, itemIndex, message] = sectionMatch
+      const field = extractFieldFromMessage(message)
+      
+      const error = {
+        section: section.toLowerCase(),
+        itemIndex: itemIndex ? parseInt(itemIndex) - 1 : undefined, // Convert to 0-based index
+        field: field,
+        message: message
       }
+      
+      errors.push(error)
     }
-  })
-  
-  return {
-    isValid: fieldValidation.isValid && crossFieldValidation.isValid && !duplicates.hasDuplicates,
-    errors: fieldValidation.errors,
-    crossFieldErrors: crossFieldValidation.errors,
-    duplicates
   }
+
+  return errors
 }
 
 /**
- * Get validation summary for display
+ * Extract field name from validation message
  */
-export const getValidationSummary = (validation: ReturnType<typeof validateCVData>): {
-  hasErrors: boolean
-  errorCount: number
-  summary: string
-} => {
-  const fieldErrorCount = Object.keys(validation.errors).length
-  const crossFieldErrorCount = validation.crossFieldErrors.length
-  const duplicateCount = validation.duplicates.duplicates.length
-  
-  const totalErrors = fieldErrorCount + crossFieldErrorCount + duplicateCount
-  
-  let summary = ''
-  if (fieldErrorCount > 0) {
-    summary += `${fieldErrorCount} field error${fieldErrorCount > 1 ? 's' : ''}`
-  }
-  if (crossFieldErrorCount > 0) {
-    summary += summary ? ', ' : ''
-    summary += `${crossFieldErrorCount} validation error${crossFieldErrorCount > 1 ? 's' : ''}`
-  }
-  if (duplicateCount > 0) {
-    summary += summary ? ', ' : ''
-    summary += `${duplicateCount} duplicate entr${duplicateCount > 1 ? 'ies' : 'y'}`
+const extractFieldFromMessage = (message: string): string => {
+  // Common patterns: "Start date is required", "End date is invalid"
+  const fieldMatch = message.toLowerCase().match(/^(\w+(?:\s+\w+)*)\s+(?:is|are)\s+/)
+  if (fieldMatch) {
+    return fieldMatch[1].replace(' ', '_') // Convert "start date" to "start_date"
   }
   
-  return {
-    hasErrors: totalErrors > 0,
-    errorCount: totalErrors,
-    summary: summary || 'All fields are valid'
+  // Fallback: return first word
+  return message.split(' ')[0].toLowerCase()
+}
+
+/**
+ * Create error key for form field identification
+ */
+export const createErrorKey = (section: string, itemIndex?: number, field?: string): string => {
+  if (itemIndex !== undefined && field) {
+    return `${section}.${itemIndex}.${field}`
   }
+  if (field) {
+    return `${section}.${field}`
+  }
+  return section
+}
+
+/**
+ * Check if a specific field has validation errors
+ */
+export const hasFieldError = (errors: ValidationError[], section: string, itemIndex?: number, field?: string): boolean => {
+  return errors.some(error => 
+    error.section === section &&
+    (itemIndex === undefined || error.itemIndex === itemIndex) &&
+    (field === undefined || error.field === field)
+  )
+}
+
+/**
+ * Get error message for a specific field
+ */
+export const getFieldError = (errors: ValidationError[], section: string, itemIndex?: number, field?: string): string | undefined => {
+  const error = errors.find(error => 
+    error.section === section &&
+    (itemIndex === undefined || error.itemIndex === itemIndex) &&
+    (field === undefined || error.field === field)
+  )
+  return error?.message
+}
+
+/**
+ * Check if a section has any validation errors
+ */
+export const hasSectionErrors = (errors: ValidationError[], section: string): boolean => {
+  return errors.some(error => error.section === section)
+}
+
+/**
+ * Get count of validation errors for a section
+ */
+export const getSectionErrorCount = (errors: ValidationError[], section: string): number => {
+  return errors.filter(error => error.section === section).length
+}
+
+/**
+ * Validate CV data client-side and return validation errors
+ */
+export const validateCVData = (cvData: any): ValidationError[] => {
+  const errors: ValidationError[] = []
+  
+  // Validate education section
+  if (cvData.education && Array.isArray(cvData.education)) {
+    cvData.education.forEach((edu: any, index: number) => {
+      // Check required fields
+      if (!edu.start_date || edu.start_date.trim() === '') {
+        errors.push({
+          section: 'education',
+          itemIndex: index,
+          field: 'start_date',
+          message: 'Start date is required'
+        })
+      }
+      
+      if (!edu.degree || edu.degree.trim() === '') {
+        errors.push({
+          section: 'education',
+          itemIndex: index,
+          field: 'degree',
+          message: 'Degree is required'
+        })
+      }
+      
+      if (!edu.institution || edu.institution.trim() === '') {
+        errors.push({
+          section: 'education',
+          itemIndex: index,
+          field: 'institution',
+          message: 'Institution is required'
+        })
+      }
+    })
+  }
+  
+  // Validate work experience section
+  if (cvData.work_experience && Array.isArray(cvData.work_experience)) {
+    cvData.work_experience.forEach((work: any, index: number) => {
+      if (!work.start_date || work.start_date.trim() === '') {
+        errors.push({
+          section: 'work_experience',
+          itemIndex: index,
+          field: 'start_date',
+          message: 'Start date is required'
+        })
+      }
+      
+      if (!work.position || work.position.trim() === '') {
+        errors.push({
+          section: 'work_experience',
+          itemIndex: index,
+          field: 'position',
+          message: 'Position is required'
+        })
+      }
+      
+      if (!work.company || work.company.trim() === '') {
+        errors.push({
+          section: 'work_experience',
+          itemIndex: index,
+          field: 'company',
+          message: 'Company is required'
+        })
+      }
+    })
+  }
+  
+  return errors
 }

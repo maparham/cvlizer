@@ -365,6 +365,7 @@ const Dashboard: React.FC = () => {
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
           >
+            <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }}>Profile</MenuItem>
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Toolbar>
@@ -794,11 +795,11 @@ const Dashboard: React.FC = () => {
 
         {/* Notifications */}
         {notifications.map((notification) => (
-          <Snackbar
-            key={notification.id}
-            open={true}
-            autoHideDuration={notification.duration}
-            onClose={() => removeNotification(notification.id)}
+        <Snackbar
+          key={notification.id}
+          open={true}
+          autoHideDuration={notification.persistent ? null : notification.duration}
+          onClose={() => removeNotification(notification.id)}
             anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             sx={{ mt: 0 }} // Directly below app bar
           >

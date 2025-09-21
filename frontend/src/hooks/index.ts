@@ -4,6 +4,7 @@ export { useEditingState } from './useEditingState'
 export { useDragAndDrop } from './useDragAndDrop'
 export { useKeyboardShortcuts } from './useKeyboardShortcuts'
 export { usePDFCVEditor } from './usePDFCVEditor'
+export { useFieldValidation } from './useFieldValidation'
 
 // Re-export commonly used types for hooks
 export type {

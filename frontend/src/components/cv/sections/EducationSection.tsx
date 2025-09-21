@@ -7,6 +7,7 @@ import { FormField, DateFieldComponent } from '../core/formUtils'
 import LocationAutocomplete from '../ui/LocationAutocomplete'
 import DegreeAutocomplete from '../ui/DegreeAutocomplete'
 import { generateSectionId } from '../../../utils/idGenerator'
+import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface Education {
   id: string
@@ -37,7 +38,10 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
     honors: []
   })
 
-  const renderEducationForm = (edu: Education, _index: number, updateEducation: (field: keyof Education, value: any) => void) => {
+  const renderEducationForm = (edu: Education, index: number, updateEducation: (field: keyof Education, value: any) => void) => {
+    // Get validation errors for this education item
+    const startDateValidation = useFieldValidation('education', index, 'start_date')
+    const endDateValidation = useFieldValidation('education', index, 'end_date')
     const addHonor = () => {
       const currentHonors = edu.honors || []
       const newHonors = [...currentHonors, '']
@@ -120,6 +124,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
             value={edu.start_date}
             onChange={(value) => updateEducation('start_date', value)}
             sx={{ flex: 1 }}
+            {...startDateValidation.fieldProps}
           />
           <DateFieldComponent
             config={{
@@ -130,6 +135,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
             value={edu.end_date}
             onChange={(value) => updateEducation('end_date', value)}
             sx={{ flex: 1 }}
+            {...endDateValidation.fieldProps}
           />
         </Box>
         <FormField
@@ -244,24 +250,51 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
     )
   }
 
-  const renderEducationDisplay = (edu: Education, _index: number) => (
-    <>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
-        {edu.degree || 'Degree'}
-      </Typography>
-      <Typography variant="subtitle1" sx={{ color: '#1976d2', mb: 1 }}>
-        {edu.institution || 'Institution'}
-        {edu.location && ` • ${edu.location}`}
-      </Typography>
-      {edu.field_of_study && (
-        <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-          {edu.field_of_study}
+  const renderEducationDisplay = (edu: Education, index: number) => {
+    // Get validation errors for this education item
+    const startDateValidation = useFieldValidation('education', index, 'start_date')
+    const endDateValidation = useFieldValidation('education', index, 'end_date')
+    
+    return (
+      <>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
+          {edu.degree || 'Degree'}
         </Typography>
-      )}
-      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-        {edu.start_date} - {edu.end_date || 'PRESENT'}
-      </Typography>
-      {edu.gpa && (
+        <Typography variant="subtitle1" sx={{ color: '#1976d2', mb: 1 }}>
+          {edu.institution || 'Institution'}
+          {edu.location && ` • ${edu.location}`}
+        </Typography>
+        {edu.field_of_study && (
+          <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
+            {edu.field_of_study}
+          </Typography>
+        )}
+        <Box sx={{ mb: 1 }}>
+          {(startDateValidation.hasError || endDateValidation.hasError) && (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1, 
+              mb: 0.5, 
+              p: 1,
+              backgroundColor: '#ffebee',
+              border: '1px solid #f44336',
+              borderRadius: 1,
+              borderLeft: '4px solid #f44336'
+            }}>
+              <Box sx={{ color: '#f44336', display: 'flex', alignItems: 'center' }}>
+                ⚠
+              </Box>
+              <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 500 }}>
+                {startDateValidation.errorMessage || endDateValidation.errorMessage}
+              </Typography>
+            </Box>
+          )}
+          <Typography variant="body2" sx={{ color: '#666' }}>
+            {edu.start_date || 'Start date required'} - {edu.end_date || 'PRESENT'}
+          </Typography>
+        </Box>
+        {edu.gpa && (
         <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
           GPA: {edu.gpa}
         </Typography>
@@ -304,7 +337,8 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
         </Box>
       )}
     </>
-  )
+    )
+  }
 
   return (
     <IndividualItemSection

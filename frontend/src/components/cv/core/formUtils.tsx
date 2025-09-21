@@ -159,6 +159,7 @@ export const DateFieldComponent: React.FC<{
   const { label, required, minDate, maxDate } = config
   const [pickerOpen, setPickerOpen] = React.useState(false)
   const [validationError, setValidationError] = React.useState<string>('')
+  const [inputValue, setInputValue] = React.useState<string>('')
   const anchorRef = React.useRef<HTMLButtonElement>(null)
   
   // Real-time validation function
@@ -215,29 +216,56 @@ export const DateFieldComponent: React.FC<{
     }
   }
   
-  // Convert string value to dayjs object, handling various date formats
-  const dayjsValue = value ? dayjs(value) : null
+  // Initialize inputValue from prop value
+  React.useEffect(() => {
+    if (value && dayjs(value).isValid()) {
+      setInputValue(dayjs(value).format('DD.MM.YYYY'))
+    } else {
+      setInputValue('')
+    }
+  }, [value])
   
   const handleDateChange = (date: any) => {
-    let newValue = ''
-    
-    if (date && dayjs.isDayjs(date)) {
-      newValue = date.format('YYYY-MM-DD')
-    } else if (date && date instanceof Date) {
-      newValue = dayjs(date).format('YYYY-MM-DD')
-    } else if (!date) {
-      newValue = ''
+    if (!date) {
+      setInputValue('')
+      onChange('')
+      return
     }
     
-    onChange(newValue)
+    // Always update the display value
+    if (dayjs.isDayjs(date)) {
+      const displayValue = date.format('DD.MM.YYYY')
+      setInputValue(displayValue)
+      
+      // Only update backend if valid
+      if (date.isValid()) {
+        const newValue = date.format('YYYY-MM-DD')
+        onChange(newValue)
+      }
+    } else if (date instanceof Date && !isNaN(date.getTime())) {
+      const dayjsDate = dayjs(date)
+      const displayValue = dayjsDate.format('DD.MM.YYYY')
+      const newValue = dayjsDate.format('YYYY-MM-DD')
+      setInputValue(displayValue)
+      onChange(newValue)
+    }
   }
+  
   
   const handlePickerDateChange = (date: any) => {
     if (date && dayjs.isDayjs(date)) {
-      onChange(date.format('YYYY-MM-DD'))
+      const displayValue = date.format('DD.MM.YYYY')
+      const backendValue = date.format('YYYY-MM-DD')
+      setInputValue(displayValue)
+      onChange(backendValue)
     } else if (date && date instanceof Date) {
-      onChange(dayjs(date).format('YYYY-MM-DD'))
+      const dayjsDate = dayjs(date)
+      const displayValue = dayjsDate.format('DD.MM.YYYY')
+      const backendValue = dayjsDate.format('YYYY-MM-DD')
+      setInputValue(displayValue)
+      onChange(backendValue)
     } else if (!date) {
+      setInputValue('')
       onChange('')
     }
     setPickerOpen(false)
@@ -248,7 +276,7 @@ export const DateFieldComponent: React.FC<{
       <Box sx={{ position: 'relative', minHeight: '48px' }}>
         <MUIDateField
           label={required ? `${label} *` : label}
-          value={dayjsValue}
+          value={inputValue ? dayjs(inputValue, 'DD.MM.YYYY') : null}
           onChange={handleDateChange}
           format="DD.MM.YYYY"
           slotProps={{
@@ -288,13 +316,13 @@ export const DateFieldComponent: React.FC<{
           <DatePicker
             open={pickerOpen}
             onClose={() => setPickerOpen(false)}
-            value={dayjsValue}
+            value={inputValue ? dayjs(inputValue, 'DD.MM.YYYY') : null}
             onChange={handlePickerDateChange}
             minDate={minDate ? dayjs(minDate) : undefined}
             maxDate={maxDate ? dayjs(maxDate) : undefined}
             slotProps={{
               textField: {
-                sx: { display: 'none' } // Hide the DatePicker's text field since we're using DateField
+                sx: { display: 'none' } // Hide the DatePicker's text field since we're using TextField
               },
               popper: {
                 placement: 'bottom-start',

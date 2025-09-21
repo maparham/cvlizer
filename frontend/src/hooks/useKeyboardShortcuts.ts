@@ -166,8 +166,8 @@ export const useKeyboardShortcuts = ({
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (pendingChanges.size > 0) {
         event.preventDefault()
-        event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
-        return 'You have unsaved changes. Are you sure you want to leave?'
+        event.returnValue = 'You have unsaved changes that will be lost if you leave this page.'
+        return 'You have unsaved changes that will be lost if you leave this page.'
       }
     }
 

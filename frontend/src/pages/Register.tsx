@@ -1,70 +1,15 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   Container,
   Paper,
-  TextField,
-  Button,
   Typography,
   Box,
-  Link,
-  Alert,
-  InputAdornment,
-  IconButton
+  Link
 } from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
-import { useNavigate, Link as RouterLink } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { Link as RouterLink } from 'react-router-dom'
+import { SignUp } from '@clerk/clerk-react'
 
 const Register: React.FC = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  
-  const { register } = useAuth()
-  const navigate = useNavigate()
-
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword)
-  }
-
-  const handleClickShowConfirmPassword = () => {
-    setShowConfirmPassword(!showConfirmPassword)
-  }
-
-  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      await register(email, password)
-      navigate('/dashboard')
-    } catch (err) {
-      setError('Registration failed. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <Container component="main" maxWidth="sm">
       <Box
@@ -85,95 +30,22 @@ const Register: React.FC = () => {
             </Typography>
           </Box>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <SignUp 
+              routing="path" 
+              path="/register"
+              signInUrl="/login"
+              redirectUrl="/dashboard"
+            />
+          </Box>
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              helperText="Password must be at least 8 characters long"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={handleClickShowPassword}
-                      onMouseDown={handleMouseDownPassword}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirmPassword"
-              label="Confirm Password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              id="confirmPassword"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle confirm password visibility"
-                      onClick={handleClickShowConfirmPassword}
-                      onMouseDown={handleMouseDownPassword}
-                      edge="end"
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-            >
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </Button>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="body2">
-                Already have an account?{' '}
-                <Link component={RouterLink} to="/login">
-                  Sign in here
-                </Link>
-              </Typography>
-            </Box>
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Typography variant="body2">
+              Already have an account?{' '}
+              <Link component={RouterLink} to="/login">
+                Sign in here
+              </Link>
+            </Typography>
           </Box>
         </Paper>
       </Box>
