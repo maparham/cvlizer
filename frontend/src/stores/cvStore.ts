@@ -188,7 +188,6 @@ export const useCVStore = create<CVState>()(
                 const cleanedData = CVValidationService.cleanForBackend(migratedData)
                 await cvApi.updateCV(cvId, { parsed_data: cleanedData })
               } catch (error) {
-                console.warn('Failed to save migrated CV data:', error)
                 // Continue anyway with the migrated data in memory
               }
             }
@@ -244,7 +243,6 @@ export const useCVStore = create<CVState>()(
                 const cleanedData = CVValidationService.cleanForBackend(migratedData)
                 await cvApi.updateCV(cv.id, { parsed_data: cleanedData })
               } catch (error) {
-                console.warn('Failed to save migrated CV data after upload:', error)
                 // Continue anyway with the migrated data in memory
               }
             }
@@ -564,7 +562,6 @@ export const useCVStore = create<CVState>()(
           
           return entry
         } catch (error: any) {
-          console.warn('Failed to create snapshot:', error.message)
           throw error
         }
       },
@@ -640,7 +637,6 @@ export const useCVStore = create<CVState>()(
           const timeSinceLastEntry = Date.now() - new Date(lastEntry.timestamp).getTime()
           return timeSinceLastEntry >= 30000
         } catch (error) {
-          console.warn('Failed to check history for auto-snapshot:', error)
           return false
         }
       },
@@ -661,8 +657,7 @@ export const useCVStore = create<CVState>()(
             force: false
           })
         } catch (error: any) {
-          // Don't throw on auto-snapshot failures, just log
-          console.warn('Auto-snapshot failed:', error.message)
+          // Don't throw on auto-snapshot failures
         }
       },
 
@@ -684,7 +679,7 @@ export const useCVStore = create<CVState>()(
             force: false
           })
         } catch (error: any) {
-          console.warn('Failed to create user action snapshot:', error.message)
+          // Snapshot creation failed
         }
       }
     }),

@@ -77,7 +77,6 @@ export class BackendCVHistoryService {
     } catch (error: any) {
       // If the API is not available yet, create a mock entry to prevent crashes
       if (error.response?.status === 404 || error.response?.status === 500 || error.code === 'ERR_NETWORK') {
-        console.warn('History API not available yet, creating mock entry')
         return {
           id: `mock_${Date.now()}`,
           timestamp: new Date().toISOString(),
@@ -104,10 +103,8 @@ export class BackendCVHistoryService {
     } catch (error: any) {
       // If the endpoint doesn't exist yet (404), return empty array
       if (error.response?.status === 404 || error.response?.status === 500) {
-        console.warn('History API not available yet, returning empty history')
         return []
       }
-      console.warn('Failed to fetch history entries:', error)
       return []
     }
   }
@@ -120,7 +117,6 @@ export class BackendCVHistoryService {
       const response = await api.get(`/api/cvs/${cvId}/history/${entryId}`)
       return response.data
     } catch (error) {
-      console.warn('Failed to fetch history entry:', error)
       return null
     }
   }
@@ -133,7 +129,6 @@ export class BackendCVHistoryService {
       await api.delete(`/api/cvs/${cvId}/history/${entryId}`)
       return true
     } catch (error) {
-      console.error('Failed to delete history entry:', error)
       return false
     }
   }
@@ -160,7 +155,6 @@ export class BackendCVHistoryService {
         try {
           await this.deleteHistoryEntry(cvId, entry.id)
         } catch (error) {
-          console.warn(`Failed to delete history entry ${entry.id}:`, error)
           // Continue with other deletions even if one fails
         }
       }
@@ -168,7 +162,6 @@ export class BackendCVHistoryService {
       if (entriesToDelete.length > 0) {
       }
     } catch (error) {
-      console.warn('Automatic history cleanup failed:', error)
       // Don't throw - cleanup failure shouldn't break snapshot creation
     }
   }
@@ -181,7 +174,6 @@ export class BackendCVHistoryService {
       const response = await api.get(`/api/cvs/${cvId}/history-stats`)
       return response.data
     } catch (error) {
-      console.warn('Failed to fetch history stats:', error)
       return {
         totalEntries: 0,
         autoSnapshots: 0,
@@ -292,7 +284,7 @@ export class BackendCVHistoryService {
           })
           migratedCount++
         } catch (error) {
-          console.warn('Failed to migrate entry:', entry.id, error)
+          // Skip failed entries during migration
         }
       }
 
@@ -304,7 +296,6 @@ export class BackendCVHistoryService {
 
       return migratedCount
     } catch (error) {
-      console.error('Failed to migrate localStorage history:', error)
       return 0
     }
   }
@@ -394,7 +385,6 @@ export class BackendCVHistoryService {
       const response = await api.get(url)
       return response.data
     } catch (error) {
-      console.error('Error fetching diff from backend:', error)
       throw new Error(`Failed to compute diff: ${error}`)
     }
   }

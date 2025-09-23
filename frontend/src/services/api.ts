@@ -30,7 +30,7 @@ api.interceptors.request.use(
           config.headers.Authorization = `Bearer ${token}`
         }
       } catch (error) {
-        console.error('Failed to get Clerk authentication token:', error)
+        // Authentication token not available
       }
     }
     return config
@@ -46,14 +46,12 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized errors - user needs to re-authenticate
-      console.warn('Authentication required. Please sign in.')
-      
       // Redirect to sign-in if Clerk is available
       if (typeof window !== 'undefined' && (window as any).Clerk) {
         try {
           (window as any).Clerk.redirectToSignIn()
         } catch (redirectError) {
-          console.error('Failed to redirect to sign-in:', redirectError)
+          // Redirect failed
         }
       }
     }

@@ -94,7 +94,7 @@ export class CVHistoryService {
         }
       }
     } catch (error) {
-      console.warn('Failed to load history state:', error)
+      // Failed to load history state
     }
 
     // Return default state
@@ -114,7 +114,6 @@ export class CVHistoryService {
     try {
       localStorage.setItem(HISTORY_STORAGE_KEYS.ENTRIES(cvId), JSON.stringify(state))
     } catch (error) {
-      console.error('Failed to save history state:', error)
       // If localStorage is full, try cleanup and retry
       this.emergencyCleanup(cvId, state)
     }
@@ -276,7 +275,6 @@ export class CVHistoryService {
    * Emergency cleanup when localStorage is full
    */
   private emergencyCleanup(cvId: string, state: CVHistoryState): void {
-    console.warn('Emergency cleanup: localStorage full')
     
     // Keep only the most recent 5 entries
     state.entries = state.entries.slice(0, 5)
@@ -284,7 +282,7 @@ export class CVHistoryService {
     try {
       this.saveHistoryState(cvId, state)
     } catch (error) {
-      console.error('Emergency cleanup failed:', error)
+      // Emergency cleanup failed
     }
   }
 

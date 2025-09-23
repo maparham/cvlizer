@@ -54,7 +54,19 @@ def sync_clerk_user_to_local_db(
                 
                 # Update last login
                 if 'last_sign_in_at' in additional_data:
-                    user.last_login = datetime.fromisoformat(additional_data['last_sign_in_at'].replace('Z', '+00:00'))
+                    last_sign_in = additional_data['last_sign_in_at']
+                    if isinstance(last_sign_in, int):
+                        # Check if it's milliseconds (13 digits) or seconds (10 digits)
+                        if last_sign_in > 1e12:  # Millisecond timestamp
+                            user.last_login = datetime.fromtimestamp(last_sign_in / 1000)
+                        else:  # Second timestamp
+                            user.last_login = datetime.fromtimestamp(last_sign_in)
+                    elif isinstance(last_sign_in, str):
+                        # ISO string format
+                        user.last_login = datetime.fromisoformat(last_sign_in.replace('Z', '+00:00'))
+                    else:
+                        # Try to convert to datetime directly
+                        user.last_login = last_sign_in
                     updated = True
             
             if updated:
@@ -104,7 +116,19 @@ def sync_clerk_user_to_local_db(
             if 'email_verified' in additional_data:
                 user_data['email_verified'] = additional_data['email_verified']
             if 'last_sign_in_at' in additional_data:
-                user_data['last_login'] = datetime.fromisoformat(additional_data['last_sign_in_at'].replace('Z', '+00:00'))
+                last_sign_in = additional_data['last_sign_in_at']
+                if isinstance(last_sign_in, int):
+                    # Check if it's milliseconds (13 digits) or seconds (10 digits)
+                    if last_sign_in > 1e12:  # Millisecond timestamp
+                        user_data['last_login'] = datetime.fromtimestamp(last_sign_in / 1000)
+                    else:  # Second timestamp
+                        user_data['last_login'] = datetime.fromtimestamp(last_sign_in)
+                elif isinstance(last_sign_in, str):
+                    # ISO string format
+                    user_data['last_login'] = datetime.fromisoformat(last_sign_in.replace('Z', '+00:00'))
+                else:
+                    # Try to convert to datetime directly
+                    user_data['last_login'] = last_sign_in
         
         new_user = User(**user_data)
         db.add(new_user)
@@ -154,13 +178,7 @@ def get_or_create_user_from_clerk(
     Returns:
         User: The local user record
     """
-    # Try to get existing user first
-    user = get_user_by_clerk_id(db, clerk_user_id)
-    
-    if user:
-        return user
-    
-    # Create/sync user
+    # Create/sync user with additional data
     additional_data = {}
     if clerk_user_data:
         # Extract relevant fields from Clerk user data

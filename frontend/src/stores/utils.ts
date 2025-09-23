@@ -104,7 +104,7 @@ export class PollingManager {
       try {
         await this.pollingFn()
       } catch (error) {
-        console.warn('Polling error:', error)
+        // Polling error occurred
       }
     }, this.intervalMs)
   }

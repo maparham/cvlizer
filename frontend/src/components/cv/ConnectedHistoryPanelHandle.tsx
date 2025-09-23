@@ -33,7 +33,6 @@ const ConnectedHistoryPanelHandle: React.FC<ConnectedHistoryPanelHandleProps> = 
           setEntryCount(entries.length)
         }
       } catch (error) {
-        console.warn('Failed to load history count for handle:', error)
         if (mounted) {
           setEntryCount(0)
         }

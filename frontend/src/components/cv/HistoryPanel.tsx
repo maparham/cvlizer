@@ -141,7 +141,6 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
         loading: false
       })
     } catch (error) {
-      console.error('Failed to create snapshot:', error)
       updateState({ 
         loading: false,
         error: getErrorDisplayMessage(error)
@@ -162,7 +161,6 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
         loading: false
       })
     } catch (error) {
-      console.error('Failed to restore version:', error)
       updateState({ 
         loading: false,
         error: getErrorDisplayMessage(error)
@@ -192,8 +190,6 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
       // Use the onDeleteEntry prop if provided, otherwise use a default implementation
       if (onDeleteEntry) {
         await onDeleteEntry(state.selectedEntry)
-      } else {
-        console.warn('Delete functionality not implemented - onDeleteEntry prop missing')
       }
       
       updateState({ 
@@ -202,7 +198,6 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
         loading: false
       })
     } catch (error) {
-      console.error('Failed to delete version:', error)
       updateState({ 
         loading: false,
         error: getErrorDisplayMessage(error)

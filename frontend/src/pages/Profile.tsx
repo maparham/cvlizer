@@ -19,6 +19,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useUser, UserProfile } from '@clerk/clerk-react'
 import { Person, Email, CalendarToday, Settings, Edit, Verified, CheckCircle, Warning } from '@mui/icons-material'
+import { formatDate } from '../utils/dateFormat'
 
 const Profile: React.FC = () => {
   const { user, isLoaded } = useUser()
@@ -82,11 +83,7 @@ const Profile: React.FC = () => {
                   )}
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  Member since {user.createdAt?.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+                  Member since {user.createdAt ? formatDate(user.createdAt) : 'Unknown'}
                 </Typography>
               </Box>
             </Box>
@@ -213,22 +210,14 @@ const Profile: React.FC = () => {
                   Account Created
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
-                  {user.createdAt?.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {user.createdAt ? formatDate(user.createdAt) : 'Unknown'}
                 </Typography>
                 
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Last Updated
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
-                  {user.updatedAt?.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {user.updatedAt ? formatDate(user.updatedAt) : 'Unknown'}
                 </Typography>
                 
                 <Typography variant="body2" color="text.secondary" gutterBottom>

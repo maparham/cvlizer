@@ -92,7 +92,6 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({
       setIsEditing(false)
     } catch (error) {
       // Error handling is done by the parent component
-      console.error('Failed to save title:', error)
     } finally {
       setIsSaving(false)
     }

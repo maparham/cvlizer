@@ -120,7 +120,6 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
       }, 1000) // Give a moment to show success message
       
     } catch (err: any) {
-      console.error('Upload error:', err)
       setError(err.response?.data?.detail || 'Upload failed. Please try again.')
       setUploading(false)
       setUploadProgress(0)

@@ -31,10 +31,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   Divider,
   Badge
 } from '@mui/material'
@@ -48,18 +44,16 @@ import {
   Visibility,
   TrendingUp,
   CheckCircle,
-  Warning,
   ArrowBack,
   Block,
   CheckCircleOutline,
   Email,
-  GetApp,
-  Delete,
-  Edit
+  GetApp
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import { formatDate, formatDateTime } from '../utils/dateFormat'
 
 // Types
 interface SystemStats {
@@ -193,7 +187,6 @@ const AdminDashboard: React.FC = () => {
       setSelectedUser(response.data)
       setUserDetailOpen(true)
     } catch (err: any) {
-      console.error('Error loading user detail:', err)
       setError(err.response?.data?.detail || 'Failed to load user details')
     } finally {
       setActionLoading(null)
@@ -207,7 +200,6 @@ const AdminDashboard: React.FC = () => {
       setUserCVs(response.data.cvs)
       setUserCVsOpen(true)
     } catch (err: any) {
-      console.error('Error loading user CVs:', err)
       setError(err.response?.data?.detail || 'Failed to load user CVs')
     } finally {
       setActionLoading(null)
@@ -230,7 +222,6 @@ const AdminDashboard: React.FC = () => {
         setSelectedUser({ ...selectedUser, is_active: !currentStatus })
       }
     } catch (err: any) {
-      console.error('Error toggling user status:', err)
       setError(err.response?.data?.detail || 'Failed to update user status')
     } finally {
       setActionLoading(null)
@@ -544,7 +535,7 @@ const AdminDashboard: React.FC = () => {
                     <TableCell>{user.cv_count}</TableCell>
                     <TableCell>{user.ai_sections_count}</TableCell>
                     <TableCell>
-                      {new Date(user.created_at).toLocaleDateString()}
+                      {formatDate(user.created_at)}
                     </TableCell>
                     <TableCell>
                       <Box display="flex" gap={1}>
@@ -640,14 +631,14 @@ const AdminDashboard: React.FC = () => {
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="textSecondary">Created</Typography>
                   <Typography variant="body2">
-                    {new Date(selectedUser.created_at).toLocaleString()}
+                    {formatDateTime(selectedUser.created_at)}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="textSecondary">Last Login</Typography>
                   <Typography variant="body2">
                     {selectedUser.last_login 
-                      ? new Date(selectedUser.last_login).toLocaleString()
+                      ? formatDate(selectedUser.last_login)
                       : 'Never'
                     }
                   </Typography>
@@ -765,7 +756,7 @@ const AdminDashboard: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {new Date(cv.created_at).toLocaleDateString()}
+                        {formatDate(cv.created_at)}
                       </TableCell>
                       <TableCell>
                         <Box display="flex" gap={1}>

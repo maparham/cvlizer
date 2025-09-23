@@ -276,7 +276,7 @@ const CVEditor: React.FC = () => {
           try {
             await createSnapshotOnUserAction(cvId, dataToSave, 'manual_save', message)
           } catch (error) {
-            console.warn('Failed to create snapshot after save:', error)
+            // Snapshot creation failed
           }
         }
         
@@ -366,7 +366,6 @@ const CVEditor: React.FC = () => {
       } catch (error: any) {
         const errorMessage = error?.response?.data?.detail || 'Failed to update CV title'
         showError('Error', errorMessage)
-        console.error('Error updating CV title:', error)
       }
     }
   }

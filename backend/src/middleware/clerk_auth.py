@@ -167,11 +167,29 @@ def get_current_user_from_clerk(
         )
     
     try:
-        # Get or create user in local database
+        # Get additional user data from Clerk API to include last sign-in
+        additional_data = {}
+        clerk_user_info = get_clerk_user_info(clerk_user_id)
+        
+        if clerk_user_info:
+            # Extract last sign-in time
+            if 'last_sign_in_at' in clerk_user_info:
+                additional_data['last_sign_in_at'] = clerk_user_info['last_sign_in_at']
+            
+            # Extract email verification status
+            if 'email_addresses' in clerk_user_info and clerk_user_info['email_addresses']:
+                primary_email_id = clerk_user_info.get('primary_email_address_id')
+                for email_addr in clerk_user_info['email_addresses']:
+                    if email_addr.get('id') == primary_email_id and 'verification' in email_addr:
+                        additional_data['email_verified'] = email_addr['verification'].get('status') == 'verified'
+                        break
+        
+        # Get or create user in local database with additional data
         user = sync_clerk_user_to_local_db(
             clerk_user_id=clerk_user_id,
             email=email,
-            db=db
+            db=db,
+            additional_data=additional_data
         )
         
         if not user.is_active:

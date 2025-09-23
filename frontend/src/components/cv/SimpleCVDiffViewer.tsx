@@ -70,7 +70,6 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
         setChanges(diffResult.changes)
         setSummary(diffResult.summary)
       } catch (err) {
-        console.error('Error fetching diff:', err)
         setError('Failed to load changes')
       } finally {
         setLoading(false)

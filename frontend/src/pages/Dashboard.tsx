@@ -44,9 +44,6 @@ import {
   Sort as SortIcon,
   Description as DocumentIcon,
   Schedule as ScheduleIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-  HourglassEmpty as ProcessingIcon,
   EditNote as EditedIcon,
   ContentCopy as DuplicateIcon
 } from '@mui/icons-material'
@@ -57,6 +54,8 @@ import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
 import api, { cvApi } from '../services/api'
 import { CV } from '../types'
+import { isUploadedCV, hasBeenEdited, getCVStatusIcon, getSectionCount } from '../utils/dashboardUtils'
+import { formatDateTime } from '../utils/dateFormat'
 
 const Dashboard: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -147,7 +146,6 @@ const Dashboard: React.FC = () => {
       setCvToDelete(null)
     } catch (error) {
       showError('Error', 'Failed to delete CV')
-      console.error('Error deleting CV:', error)
     } finally {
       setDeleting(false)
     }
@@ -165,7 +163,6 @@ const Dashboard: React.FC = () => {
       navigate(`/cv/new`)
     } catch (error) {
       showError('Error', 'Failed to create new CV')
-      console.error('Error creating temporary CV:', error)
     } finally {
       setCreating(false)
     }
@@ -178,25 +175,10 @@ const Dashboard: React.FC = () => {
     } catch (error: any) {
       const errorMessage = error?.response?.data?.detail || 'Failed to update CV title'
       showError('Error', errorMessage)
-      console.error('Error updating CV title:', error)
     }
   }
 
-  // Check if CV was uploaded (has file) vs created from scratch
-  const isUploadedCV = (cv: CV) => {
-    // Use the new is_imported field if available, otherwise fall back to file_size check
-    return cv.is_imported ?? cv.file_size > 0
-  }
 
-  // Check if any CV has been edited
-  const hasBeenEdited = (cv: CV) => {
-    return cv.has_been_edited ?? false
-  }
-
-  // Check if an imported CV has been edited (for backward compatibility)
-  const isImportedAndEdited = (cv: CV) => {
-    return isUploadedCV(cv) && (cv.has_been_edited ?? false)
-  }
 
   const handleDownloadCV = async (cv: CV) => {
     try {
@@ -204,7 +186,6 @@ const Dashboard: React.FC = () => {
       showSuccess('Success', 'CV download started')
     } catch (error) {
       showError('Error', 'Failed to download CV')
-      console.error('Error downloading CV:', error)
     }
   }
 
@@ -217,22 +198,12 @@ const Dashboard: React.FC = () => {
       showSuccess('Success', `CV "${cv.original_filename}" duplicated successfully`)
     } catch (error) {
       showError('Error', 'Failed to duplicate CV')
-      console.error('Error duplicating CV:', error)
     } finally {
       setDuplicating(false)
     }
   }
 
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const day = date.getDate().toString().padStart(2, '0')
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const year = date.getFullYear()
-    const hours = date.getHours().toString().padStart(2, '0')
-    const minutes = date.getMinutes().toString().padStart(2, '0')
-    return `${day}.${month}.${year} ${hours}:${minutes}`
-  }
 
   // Filter and sort CVs
   const filteredAndSortedCVs = React.useMemo(() => {
@@ -282,70 +253,6 @@ const Dashboard: React.FC = () => {
     return counts
   }, [cvs])
 
-  // Get CV status icon and color
-  const getCVStatusIcon = (cv: CV) => {
-    if (cv.parse_error) {
-      return <ErrorIcon color="error" fontSize="small" />
-    } else if (cv.is_parsed) {
-      return <CheckCircleIcon color="success" fontSize="small" />
-    } else {
-      return <ProcessingIcon color="warning" fontSize="small" />
-    }
-  }
-
-  // Get sections count from parsed data (only visible sections)
-  const getSectionCount = (cv: CV) => {
-    if (!cv.parsed_data) return 0
-    
-    // Helper function to check if section has data
-    const hasData = (sectionType: string) => {
-      switch (sectionType) {
-        case 'personal_info':
-          return cv.parsed_data?.personal_info?.full_name
-        case 'professional_summary':
-          return cv.parsed_data?.professional_summary?.content
-        case 'work_experience':
-          return cv.parsed_data?.work_experience?.length
-        case 'education':
-          return cv.parsed_data?.education?.length
-        case 'skills':
-          return cv.parsed_data?.skills?.technical?.length || cv.parsed_data?.skills?.soft?.length
-        case 'certifications':
-          return cv.parsed_data?.certifications?.length
-        case 'projects':
-          return cv.parsed_data?.projects?.length
-        case 'awards':
-          return cv.parsed_data?.awards?.length
-        case 'publications':
-          return cv.parsed_data?.publications?.length
-        case 'volunteer_experience':
-          return cv.parsed_data?.volunteer_experience?.length
-        default:
-          return false
-      }
-    }
-    
-    // If there's no section config, fall back to counting all sections with data
-    if (!cv.parsed_data.section_config?.sections) {
-      let count = 0
-      if (cv.parsed_data.personal_info?.full_name) count++
-      if (cv.parsed_data.professional_summary?.content) count++
-      if (cv.parsed_data.work_experience?.length) count++
-      if (cv.parsed_data.education?.length) count++
-      if (cv.parsed_data.skills?.technical?.length || cv.parsed_data.skills?.soft?.length) count++
-      if (cv.parsed_data.certifications?.length) count++
-      if (cv.parsed_data.projects?.length) count++
-      if (cv.parsed_data.awards?.length) count++
-      if (cv.parsed_data.publications?.length) count++
-      if (cv.parsed_data.volunteer_experience?.length) count++
-      return count
-    }
-    
-    // Count only visible sections that have data
-    return cv.parsed_data.section_config.sections
-      .filter(section => section.visible && hasData(section.type))
-      .length
-  }
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -680,14 +587,14 @@ const Dashboard: React.FC = () => {
                       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                         <ScheduleIcon fontSize="small" color="action" />
                         <Typography variant="body2" color="text.secondary">
-                          Created {formatDate(cv.created_at)}
+                          Created {formatDateTime(cv.created_at)}
                         </Typography>
                       </Stack>
                       {cv.updated_at && cv.updated_at !== cv.created_at && (
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <EditIcon fontSize="small" color="action" />
                           <Typography variant="body2" color="text.secondary">
-                            Modified {formatDate(cv.updated_at)}
+                            Modified {formatDateTime(cv.updated_at)}
                           </Typography>
                         </Stack>
                       )}

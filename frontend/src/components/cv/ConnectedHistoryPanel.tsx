@@ -59,7 +59,6 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
       setHistoryEntries(entries)
       setHistoryStats(stats)
     } catch (error) {
-      console.error('Failed to load history data:', error)
       showError(getErrorDisplayMessage(error))
     } finally {
       setLoading(false)

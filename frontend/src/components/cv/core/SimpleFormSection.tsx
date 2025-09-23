@@ -83,7 +83,6 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       }
       onClose()
     } catch (error) {
-      console.error('Save failed:', error)
       // Don't close on error so user can retry
     }
   }
