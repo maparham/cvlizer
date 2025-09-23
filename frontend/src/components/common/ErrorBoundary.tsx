@@ -33,7 +33,7 @@ interface ErrorBoundaryState {
 interface ErrorBoundaryProps {
   children: React.ReactNode
   fallback?: React.ComponentType<ErrorFallbackProps>
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void // eslint-disable-line no-unused-vars
   isolate?: boolean // If true, only catches errors in this boundary
 }
 

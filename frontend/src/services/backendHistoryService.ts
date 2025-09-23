@@ -166,7 +166,6 @@ export class BackendCVHistoryService {
       }
       
       if (entriesToDelete.length > 0) {
-        console.log(`Automatic cleanup: removed ${entriesToDelete.length} old history entries for CV ${cvId}`)
       }
     } catch (error) {
       console.warn('Automatic history cleanup failed:', error)

@@ -1,0 +1,30 @@
+---
+alwaysApply: true
+description: Careful problem-solving and fix verification rule
+---
+
+# Careful Fixes Rule
+
+**Be very careful with your solution** when fixing issues:
+
+## Problem-Solving Approach
+- Analyze the issue thoroughly before implementing a solution
+- Consider edge cases and potential side effects
+- Implement the minimal necessary changes to fix the problem
+- Test the solution when possible before claiming it's fixed
+
+## Fix Verification
+- **DO NOT claim an issue is fixed until the user tests and confirms it**
+- Unless you can test the fix directly and verify it works
+- Always ask the user to test the solution and report back
+- Be prepared to iterate on the solution based on user feedback
+
+## Exception
+- Only claim a fix is complete if you can directly test it and verify it works
+- This applies to code that can be validated through static analysis, compilation, or automated testing
+
+## Communication
+- Clearly explain what you've changed and why
+- Provide specific testing instructions for the user
+- Acknowledge that user verification is required
+- Be ready to address any issues that arise during testing

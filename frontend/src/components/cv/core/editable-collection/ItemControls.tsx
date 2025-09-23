@@ -27,6 +27,7 @@ function ItemControls<T>({
           <IconButton
             onClick={() => onDelete(index)}
             className="item-action-button"
+            data-testid={`delete-${title.toLowerCase().replace(/ /g, '-')}-item-${index}`}
             sx={{ 
               color: 'text.secondary',
               bgcolor: 'transparent',
@@ -49,6 +50,7 @@ function ItemControls<T>({
               onClick={() => onEdit(index)}
               disabled={isAnotherItemBeingEdited}
               className="item-action-button"
+              data-testid={`edit-${title.toLowerCase().replace(/ /g, '-')}-item-${index}`}
               sx={{
                 opacity: isAnotherItemBeingEdited ? 0.5 : 0.3,
                 color: 'text.secondary',

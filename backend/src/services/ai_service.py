@@ -15,12 +15,24 @@ from copy import deepcopy
 load_dotenv()
 
 # Set OpenAI API key and create a singleton client
-openai.api_key = os.getenv("OPENAI_API_KEY")
-_openai_client = openai.OpenAI()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if openai_api_key and openai_api_key != "your-openai-key-here":
+    openai.api_key = openai_api_key
+    _openai_client = openai.OpenAI()
+else:
+    _openai_client = None
+    print("⚠️  OpenAI API key not configured. AI features will be disabled.")
 
 
 async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, section_type: str = "why_good_fit") -> Dict[str, Any]:
     """Generate AI-enhanced CV section based on job description"""
+    
+    if not _openai_client:
+        return {
+            "error": "OpenAI API key not configured. AI features are disabled.",
+            "section_content": "",
+            "suggestions": []
+        }
     
     # Create prompt based on section type
     if section_type == "why_good_fit":

@@ -15,9 +15,10 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    clerk_id = Column(String(255), unique=True, nullable=True, index=True)  # Clerk user ID
     email = Column(String(255), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=True)
-    google_id = Column(String(255), nullable=True, unique=True, index=True)
+    password_hash = Column(String(255), nullable=True)  # Keep for backward compatibility
+    google_id = Column(String(255), nullable=True, unique=True, index=True)  # Keep for backward compatibility
     is_active = Column(Boolean, default=True, nullable=False)
     email_verified = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -5,7 +5,7 @@
  * all the data fetching and state management automatically.
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import HistoryPanel from './HistoryPanel'
 import VersionPreviewDialog from './VersionPreviewDialog'
 import { useCVStore } from '../../stores/cvStore'
@@ -28,7 +28,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
     createSnapshot,
     restoreVersion,
     deleteHistoryEntry
-  } = useCVStore()
+  }, [cvId, cvStore, notifications]) = useCVStore()
 
   const { showSuccess, showError } = useNotifications()
 
@@ -41,7 +41,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
     totalStorageUsed: 0,
     oldestEntry: null,
     newestEntry: null
-  })
+  }, [cvId, cvStore, notifications]))
   const [loading, setLoading] = useState(false)
   
   // Preview dialog state
@@ -52,10 +52,10 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
   useEffect(() => {
     if (historyPanelOpen && cvId) {
       loadHistoryData()
-    }
-  }, [historyPanelOpen, cvId])
+    }, [cvId, cvStore, notifications])
+  }, [cvId, cvStore, notifications]), [historyPanelOpen, cvId])
 
-  const loadHistoryData = async () => {
+  const loadHistoryData = useCallback(async () => {
     setLoading(true)
     try {
       const [entries, stats] = await Promise.all([
@@ -64,27 +64,27 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
       ])
       setHistoryEntries(entries)
       setHistoryStats(stats)
-    } catch (error) {
+    }, [cvId, cvStore, notifications]) catch (error) {
       console.error('Failed to load history data:', error)
       showError(getErrorDisplayMessage(error))
-    } finally {
+    }, [cvId, cvStore, notifications]) finally {
       setLoading(false)
-    }
-  }
+    }, [cvId, cvStore, notifications])
+  }, [cvId, cvStore, notifications])
 
   const handleClose = () => {
     setHistoryPanelOpen(false)
-  }
+  }, [cvId, cvStore, notifications])
 
   const handlePreviewVersion = (entry: CVHistoryEntry) => {
     setSelectedVersionForPreview(entry)
     setPreviewDialogOpen(true)
-  }
+  }, [cvId, cvStore, notifications])
 
   const handleClosePreview = () => {
     setPreviewDialogOpen(false)
     setSelectedVersionForPreview(null)
-  }
+  }, [cvId, cvStore, notifications])
 
   const handleRestoreFromPreview = async (entry: CVHistoryEntry) => {
     // Close preview dialog first
@@ -92,13 +92,13 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
     
     // Use the existing restore handler
     await handleRestoreVersion(entry)
-  }
+  }, [cvId, cvStore, notifications])
 
   const handleRestoreVersion = async (entry: CVHistoryEntry) => {
     try {
       await restoreVersion(cvId, {
         entryId: entry.id
-      })
+      }, [cvId, cvStore, notifications]))
       
       // Refresh history data after restore
       await loadHistoryData()
@@ -107,19 +107,19 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
         'Version Restored',
         `Successfully restored to version from ${formatDateTime(entry.timestamp)}`
       )
-    } catch (error: any) {
+    }, [cvId, cvStore, notifications]) catch (error: any) {
       showError(
         'Restore Failed',
         getErrorDisplayMessage(error)
       )
-    }
-  }
+    }, [cvId, cvStore, notifications])
+  }, [cvId, cvStore, notifications])
 
   const handleCreateSnapshot = async (options: CreateSnapshotOptions) => {
     if (!currentCV?.parsed_data) {
       showError('Error', 'No CV data available to snapshot')
       return
-    }
+    }, [cvId, cvStore, notifications])
 
     try {
       await createSnapshot(cvId, currentCV.parsed_data, options)
@@ -131,13 +131,13 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
         'Version Saved',
         options.label || 'Version saved successfully'
       )
-    } catch (error: any) {
+    }, [cvId, cvStore, notifications]) catch (error: any) {
       showError(
         'Save Failed',
         getErrorDisplayMessage(error)
       )
-    }
-  }
+    }, [cvId, cvStore, notifications])
+  }, [cvId, cvStore, notifications])
 
   const handleDeleteEntry = async (entry: CVHistoryEntry) => {
     try {
@@ -150,18 +150,18 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
         'Version Deleted',
         `Successfully deleted version from ${formatDateTime(entry.timestamp)}`
       )
-    } catch (error: any) {
+    }, [cvId, cvStore, notifications]) catch (error: any) {
       showError(
         'Delete Failed',
         getErrorDisplayMessage(error)
       )
-    }
-  }
+    }, [cvId, cvStore, notifications])
+  }, [cvId, cvStore, notifications])
 
   // Don't render if no current CV
   if (!currentCV) {
     return null
-  }
+  }, [cvId, cvStore, notifications])
 
   return (
     <>

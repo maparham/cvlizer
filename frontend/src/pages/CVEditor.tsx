@@ -76,6 +76,7 @@ const CVEditorHeader: React.FC<{
             <IconButton
               edge="start"
               onClick={handleBackClick}
+              data-testid="cv-editor-back-button"
               sx={{ 
                 mr: 1,
                 color: '#666',
@@ -105,6 +106,7 @@ const CVEditorHeader: React.FC<{
             aria-controls="menu-appbar"
             aria-haspopup="true"
             onClick={onMenuOpen}
+            data-testid="cv-editor-user-menu-button"
             sx={{
               color: '#666',
               '&:hover': {
@@ -140,6 +142,7 @@ const CVEditorHeader: React.FC<{
         onClose={handleBackDialogClose}
         aria-labelledby="back-dialog-title"
         aria-describedby="back-dialog-description"
+        data-testid="unsaved-changes-dialog"
       >
         <DialogTitle id="back-dialog-title">
           Unsaved Changes
@@ -150,12 +153,8 @@ const CVEditorHeader: React.FC<{
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleBackDialogClose}>
-            Stay
-          </Button>
-          <Button onClick={handleBackDialogConfirm} color="error" autoFocus>
-            Leave
-          </Button>
+          <Button onClick={handleBackDialogClose} data-testid="unsaved-changes-stay-button">Stay</Button>
+          <Button onClick={handleBackDialogConfirm} color="error" autoFocus data-testid="unsaved-changes-leave-button">Leave</Button>
         </DialogActions>
       </Dialog>
     </>

@@ -15,7 +15,7 @@ from datetime import datetime
 
 from ..models import get_db, CVHistory, CV, User
 from ..services.cv_diff_service import cv_diff_service
-from .auth import get_current_user
+from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
 from ..utils.history_validation import ValidatedCreateHistoryRequest, calculate_data_size
 
 

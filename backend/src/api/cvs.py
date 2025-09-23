@@ -27,7 +27,7 @@ from ..constants import DEFAULT_PARSED_CV
 from copy import deepcopy
 from ..schemas.cv_schemas import CVUpdateRequestSchema, CVDataSchema
 from ..utils.validation import CVDataValidator
-from .auth import get_current_user
+from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
 
 router = APIRouter(prefix="/api/cvs", tags=["cvs"])
 

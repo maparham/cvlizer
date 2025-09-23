@@ -13,8 +13,8 @@ export interface LoginCredentials {
  * Default test user credentials
  */
 export const DEFAULT_TEST_USER: LoginCredentials = {
-  email: 'mahmoud.shahrood@gmail.com',
-  password: 'testpassword123'
+  email: 'mahmoud.shahrud@gmail.com',
+  password: 'pNm6h@n@q@fnHFM'
 };
 
 /**

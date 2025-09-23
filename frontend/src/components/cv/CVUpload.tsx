@@ -137,7 +137,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth data-testid="cv-upload-dialog">
       <DialogTitle>Upload CV</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
@@ -164,6 +164,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
 
           <Paper
             variant="outlined"
+            data-testid="cv-upload-dropzone"
             sx={{
               p: 4,
               textAlign: 'center',
@@ -195,12 +196,13 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
               onChange={handleFileInput}
               style={{ display: 'none' }}
               disabled={uploading}
+              data-testid="cv-file-input"
             />
           </Paper>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={uploading}>
+        <Button onClick={handleClose} disabled={uploading} data-testid="cv-upload-dialog-close-button">
           {success ? 'Close' : 'Cancel'}
         </Button>
       </DialogActions>

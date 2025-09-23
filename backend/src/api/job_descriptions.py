@@ -14,7 +14,7 @@ from ..models.base import get_db
 from ..models.user import User
 from ..models.cv import CV
 from ..models.job_description import JobDescription
-from .auth import get_current_user
+from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
 
 router = APIRouter(prefix="/api", tags=["job-descriptions"])
 

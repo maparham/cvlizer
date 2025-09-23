@@ -16,7 +16,7 @@ from ..models.cv import CV
 from ..models.job_description import JobDescription
 from ..models.ai_section import AISection
 from ..services.ai_service import generate_cv_section
-from .auth import get_current_user
+from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
 
 router = APIRouter(prefix="/api", tags=["ai"])
 

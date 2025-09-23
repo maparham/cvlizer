@@ -1,0 +1,2 @@
+- git commit and push
+- mention only important and major changes in the commit message

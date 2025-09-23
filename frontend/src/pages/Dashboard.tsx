@@ -55,7 +55,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { CVUpload, EditableTitle } from '../components/cv'
 import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
-import { cvApi } from '../services/api'
+import api, { cvApi } from '../services/api'
 import { CV } from '../types'
 
 const Dashboard: React.FC = () => {
@@ -66,6 +66,7 @@ const Dashboard: React.FC = () => {
   const [deleting, setDeleting] = useState(false)
   const [creating, setCreating] = useState(false)
   const [duplicating, setDuplicating] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('')
@@ -94,6 +95,20 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchCVs()
   }, []) // Empty dependency array - only run once on mount
+
+  // Check admin status
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        await api.get('/admin/check-access')
+        setIsAdmin(true)
+      } catch (error) {
+        setIsAdmin(false)
+      }
+    }
+    
+    checkAdminStatus()
+  }, [])
 
   // Show error notifications
   useEffect(() => {
@@ -347,6 +362,7 @@ const Dashboard: React.FC = () => {
             aria-haspopup="true"
             onClick={handleMenuOpen}
             color="inherit"
+            data-testid="user-menu-button"
           >
             <AccountCircleIcon />
           </IconButton>
@@ -364,10 +380,14 @@ const Dashboard: React.FC = () => {
             }}
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
-          >
-            <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }}>Profile</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
+            data-testid="user-menu"
+            >
+              <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }} data-testid="profile-menu-item">Profile</MenuItem>
+              {isAdmin && (
+                <MenuItem onClick={() => { navigate('/admin'); handleMenuClose(); }} data-testid="admin-menu-item">Admin</MenuItem>
+              )}
+              <MenuItem onClick={handleLogout} data-testid="logout-menu-item">Logout</MenuItem>
+            </Menu>
         </Toolbar>
       </AppBar>
 
@@ -390,6 +410,7 @@ const Dashboard: React.FC = () => {
                 startIcon={<CreateIcon />}
                 onClick={handleCreateBlankCV}
                 disabled={creating}
+                data-testid="create-new-cv-button"
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
@@ -402,6 +423,7 @@ const Dashboard: React.FC = () => {
                 variant="outlined"
                 startIcon={<UploadIcon />}
                 onClick={() => setUploadOpen(true)}
+                data-testid="upload-cv-button"
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
@@ -424,6 +446,7 @@ const Dashboard: React.FC = () => {
                 placeholder="Search CVs by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                data-testid="search-cvs-input"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -532,6 +555,7 @@ const Dashboard: React.FC = () => {
                 startIcon={<CreateIcon />}
                 onClick={handleCreateBlankCV}
                 disabled={creating}
+                data-testid="create-new-cv-empty-state-button"
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
@@ -547,6 +571,7 @@ const Dashboard: React.FC = () => {
                 size="large"
                 startIcon={<UploadIcon />}
                 onClick={() => setUploadOpen(true)}
+                data-testid="upload-cv-empty-state-button"
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
@@ -696,6 +721,7 @@ const Dashboard: React.FC = () => {
                       startIcon={<EditIcon />}
                       onClick={() => navigate(`/cv/${cv.id}`)}
                       disabled={!cv.is_parsed}
+                      data-testid={`edit-cv-button-${cv.id}`}
                       sx={{ 
                         borderRadius: 2,
                         textTransform: 'none',
@@ -714,6 +740,7 @@ const Dashboard: React.FC = () => {
                             size="small"
                             onClick={() => handleDuplicateCV(cv)}
                             disabled={duplicating || !cv.is_parsed}
+                            data-testid={`duplicate-cv-button-${cv.id}`}
                             sx={{ 
                               border: 1,
                               borderColor: 'divider',
@@ -732,6 +759,7 @@ const Dashboard: React.FC = () => {
                         <IconButton
                           size="small"
                           onClick={() => handleDeleteClick(cv)}
+                          data-testid={`delete-cv-button-${cv.id}`}
                           sx={{ 
                             border: 1,
                             borderColor: 'divider',
@@ -769,6 +797,7 @@ const Dashboard: React.FC = () => {
           onClose={handleDeleteCancel}
           aria-labelledby="delete-dialog-title"
           aria-describedby="delete-dialog-description"
+          data-testid="delete-cv-dialog"
         >
           <DialogTitle id="delete-dialog-title">
             Delete CV
@@ -779,7 +808,7 @@ const Dashboard: React.FC = () => {
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleDeleteCancel} disabled={deleting}>
+            <Button onClick={handleDeleteCancel} disabled={deleting} data-testid="delete-dialog-cancel-button">
               Cancel
             </Button>
             <Button 
@@ -787,6 +816,7 @@ const Dashboard: React.FC = () => {
               color="error" 
               autoFocus
               disabled={deleting}
+              data-testid="delete-dialog-confirm-button"
             >
               {deleting ? 'Deleting...' : 'Delete'}
             </Button>

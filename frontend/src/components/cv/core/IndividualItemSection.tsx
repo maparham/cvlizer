@@ -321,6 +321,7 @@ function IndividualItemSection<T>({
                 <IconButton
                   onClick={handleAddItem}
                   disabled={isAnotherItemBeingEdited}
+                  data-testid={`add-new-${title.toLowerCase().replace(/ /g, '-')}-button`}
                   sx={{
                     opacity: isAnotherItemBeingEdited ? 0.5 : 1,
                     transition: 'opacity 0.2s',

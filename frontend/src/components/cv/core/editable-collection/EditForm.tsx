@@ -35,6 +35,7 @@ function EditForm<T>({
               <IconButton
                 onClick={onSave}
                 disabled={!isFormValid}
+                data-testid={`save-${title.toLowerCase().replace(/ /g, '-')}-button`}
                 sx={{
                   bgcolor: 'white',
                   boxShadow: 1,
@@ -51,6 +52,7 @@ function EditForm<T>({
           <Tooltip title="Cancel editing">
             <IconButton
               onClick={onCancel}
+              data-testid={`cancel-${title.toLowerCase().replace(/ /g, '-')}-button`}
               sx={{
                 bgcolor: 'white',
                 boxShadow: 1

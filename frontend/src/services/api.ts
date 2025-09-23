@@ -19,12 +19,19 @@ const api = axios.create({
   },
 })
 
-// Request interceptor to add auth token
+// Request interceptor to add Clerk auth token
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+  async (config) => {
+    // Get Clerk token from the global Clerk instance
+    if (typeof window !== 'undefined' && (window as any).Clerk) {
+      try {
+        const token = await (window as any).Clerk.session?.getToken()
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`
+        }
+      } catch (error) {
+        console.error('Failed to get Clerk authentication token:', error)
+      }
     }
     return config
   },
@@ -33,33 +40,21 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle auth errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      try {
-        const refreshToken = localStorage.getItem('refresh_token')
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refresh_token: refreshToken,
-          })
-
-          const { access_token, refresh_token: newRefreshToken } = response.data
-          localStorage.setItem('access_token', access_token)
-          localStorage.setItem('refresh_token', newRefreshToken)
-
-          originalRequest.headers.Authorization = `Bearer ${access_token}`
-          return api(originalRequest)
+    if (error.response?.status === 401) {
+      // Handle unauthorized errors - user needs to re-authenticate
+      console.warn('Authentication required. Please sign in.')
+      
+      // Redirect to sign-in if Clerk is available
+      if (typeof window !== 'undefined' && (window as any).Clerk) {
+        try {
+          (window as any).Clerk.redirectToSignIn()
+        } catch (redirectError) {
+          console.error('Failed to redirect to sign-in:', redirectError)
         }
-      } catch (refreshError) {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        window.location.href = '/login'
       }
     }
 

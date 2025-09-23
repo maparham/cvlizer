@@ -1,0 +1,500 @@
+"""
+Admin management API endpoints.
+
+This module provides administrative endpoints for user management,
+system statistics, and dashboard functionality.
+"""
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
+from sqlalchemy import desc
+from typing import List, Optional
+from pydantic import BaseModel
+from datetime import datetime, timedelta
+import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from ..models.base import get_db
+from ..models.user import User
+from ..models.cv import CV
+from ..models.ai_section import AISection
+from ..models.job_description import JobDescription
+from ..middleware.clerk_auth import get_current_user
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+# Response Models
+class UserSummary(BaseModel):
+    id: str
+    clerk_id: Optional[str]
+    email: str
+    is_active: bool
+    email_verified: bool
+    created_at: datetime
+    updated_at: datetime
+    last_login: Optional[datetime]
+    cv_count: int
+    ai_sections_count: int
+    is_clerk_user: bool
+    
+    class Config:
+        from_attributes = True
+
+
+class SystemStats(BaseModel):
+    total_users: int
+    active_users: int
+    clerk_users: int
+    legacy_users: int
+    total_cvs: int
+    total_ai_sections: int
+    total_job_descriptions: int
+    users_last_7_days: int
+    users_last_30_days: int
+    cvs_last_7_days: int
+    cvs_last_30_days: int
+
+
+class UserDetail(BaseModel):
+    id: str
+    clerk_id: Optional[str]
+    email: str
+    is_active: bool
+    email_verified: bool
+    created_at: datetime
+    updated_at: datetime
+    last_login: Optional[datetime]
+    cvs: List[dict]
+    ai_sections_count: int
+    job_descriptions_count: int
+    
+    class Config:
+        from_attributes = True
+
+
+class DashboardData(BaseModel):
+    stats: SystemStats
+    recent_users: List[UserSummary]
+    top_users_by_cvs: List[UserSummary]
+
+
+# Helper function to check if user is admin
+def is_admin_user(user: User) -> bool:
+    """
+    Check if the current user has admin privileges.
+    Admin user is configured via ADMIN_EMAIL environment variable.
+    """
+    admin_email = os.getenv("ADMIN_EMAIL")
+    
+    if not admin_email:
+        logger.warning("ADMIN_EMAIL environment variable not set. No admin access available.")
+        return False
+    
+    # Strict email matching (case insensitive)
+    is_admin = user.email.lower().strip() == admin_email.lower().strip()
+    
+    if not is_admin:
+        logger.warning(f"Admin access denied for {user.email} (expected: {admin_email})")
+    else:
+        logger.info(f"Admin access granted for {user.email}")
+    
+    return is_admin
+
+
+def require_admin(current_user: User = Depends(get_current_user)):
+    """Dependency to require admin access"""
+    if not is_admin_user(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user
+
+
+@router.get("/check-access")
+async def check_admin_access(admin_user: User = Depends(require_admin)):
+    """
+    Check if the current user has admin access.
+    Returns 200 for admin users, 403 for non-admin users.
+    """
+    return {
+        "message": "Admin access confirmed",
+        "user_id": admin_user.id,
+        "email": admin_user.email,
+        "is_admin": True
+    }
+
+
+@router.get("/dashboard", response_model=DashboardData)
+async def get_dashboard_data(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin)
+):
+    """
+    Get comprehensive dashboard data including stats and recent activity.
+    """
+    try:
+        # Calculate date ranges
+        now = datetime.utcnow()
+        seven_days_ago = now - timedelta(days=7)
+        thirty_days_ago = now - timedelta(days=30)
+        
+        # Basic counts
+        total_users = db.query(User).count()
+        active_users = db.query(User).filter(User.is_active == True).count()
+        clerk_users = db.query(User).filter(User.clerk_id.isnot(None)).count()
+        legacy_users = db.query(User).filter(User.clerk_id.is_(None)).count()
+        
+        total_cvs = db.query(CV).count()
+        total_ai_sections = db.query(AISection).count()
+        total_job_descriptions = db.query(JobDescription).count()
+        
+        # Recent activity counts
+        users_last_7_days = db.query(User).filter(User.created_at >= seven_days_ago).count()
+        users_last_30_days = db.query(User).filter(User.created_at >= thirty_days_ago).count()
+        cvs_last_7_days = db.query(CV).filter(CV.created_at >= seven_days_ago).count()
+        cvs_last_30_days = db.query(CV).filter(CV.created_at >= thirty_days_ago).count()
+        
+        # System stats
+        stats = SystemStats(
+            total_users=total_users,
+            active_users=active_users,
+            clerk_users=clerk_users,
+            legacy_users=legacy_users,
+            total_cvs=total_cvs,
+            total_ai_sections=total_ai_sections,
+            total_job_descriptions=total_job_descriptions,
+            users_last_7_days=users_last_7_days,
+            users_last_30_days=users_last_30_days,
+            cvs_last_7_days=cvs_last_7_days,
+            cvs_last_30_days=cvs_last_30_days
+        )
+        
+        # Recent users (last 10) - simplified query
+        recent_users_data = db.query(User).order_by(desc(User.created_at)).limit(10).all()
+        
+        recent_users = []
+        for user in recent_users_data:
+            cv_count = db.query(CV).filter(CV.user_id == user.id).count()
+            ai_count = db.query(AISection).join(CV).filter(CV.user_id == user.id).count()
+            
+            recent_users.append(UserSummary(
+                id=user.id,
+                clerk_id=user.clerk_id,
+                email=user.email,
+                is_active=user.is_active,
+                email_verified=user.email_verified,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+                last_login=user.last_login,
+                cv_count=cv_count,
+                ai_sections_count=ai_count,
+                is_clerk_user=user.clerk_id is not None
+            ))
+        
+        # Top users by CV count - simplified approach
+        all_users = db.query(User).all()
+        users_with_cvs = []
+        
+        for user in all_users:
+            cv_count = db.query(CV).filter(CV.user_id == user.id).count()
+            if cv_count > 0:  # Only include users with CVs
+                ai_count = db.query(AISection).join(CV).filter(CV.user_id == user.id).count()
+                users_with_cvs.append((user, cv_count, ai_count))
+        
+        # Sort by CV count and take top 10
+        users_with_cvs.sort(key=lambda x: x[1], reverse=True)
+        top_users_by_cvs = []
+        
+        for user, cv_count, ai_count in users_with_cvs[:10]:
+            top_users_by_cvs.append(UserSummary(
+                id=user.id,
+                clerk_id=user.clerk_id,
+                email=user.email,
+                is_active=user.is_active,
+                email_verified=user.email_verified,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+                last_login=user.last_login,
+                cv_count=cv_count,
+                ai_sections_count=ai_count,
+                is_clerk_user=user.clerk_id is not None
+            ))
+        
+        return DashboardData(
+            stats=stats,
+            recent_users=recent_users,
+            top_users_by_cvs=top_users_by_cvs
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting dashboard data: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving dashboard data"
+        )
+
+
+@router.get("/users", response_model=List[UserSummary])
+async def get_all_users(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    clerk_only: Optional[bool] = Query(None),
+    active_only: Optional[bool] = Query(None),
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin)
+):
+    """
+    Get all users with optional filtering and pagination.
+    """
+    try:
+        # Get all users first
+        query = db.query(User)
+        
+        # Apply filters
+        if search:
+            query = query.filter(User.email.contains(search))
+        
+        if clerk_only is not None:
+            if clerk_only:
+                query = query.filter(User.clerk_id.isnot(None))
+            else:
+                query = query.filter(User.clerk_id.is_(None))
+        
+        if active_only is not None:
+            query = query.filter(User.is_active == active_only)
+        
+        # Apply pagination and ordering
+        users_data = query.order_by(desc(User.created_at)).offset(skip).limit(limit).all()
+        
+        users = []
+        for user in users_data:
+            # Count CVs and AI sections separately for each user
+            cv_count = db.query(CV).filter(CV.user_id == user.id).count()
+            ai_count = db.query(AISection).join(CV).filter(CV.user_id == user.id).count()
+            
+            users.append(UserSummary(
+                id=user.id,
+                clerk_id=user.clerk_id,
+                email=user.email,
+                is_active=user.is_active,
+                email_verified=user.email_verified,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+                last_login=user.last_login,
+                cv_count=cv_count,
+                ai_sections_count=ai_count,
+                is_clerk_user=user.clerk_id is not None
+            ))
+        
+        return users
+        
+    except Exception as e:
+        logger.error(f"Error getting users: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving users: {str(e)}"
+        )
+
+
+
+
+@router.get("/users/{user_id}", response_model=UserDetail)
+async def get_user_detail(
+    user_id: str,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin)
+):
+    """
+    Get detailed information about a specific user.
+    """
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Get user's CVs with basic info
+        cvs = db.query(CV).filter(CV.user_id == user_id).all()
+        cvs_data = []
+        for cv in cvs:
+            cvs_data.append({
+                "id": cv.id,
+                "original_filename": cv.original_filename,
+                "file_size": cv.file_size,
+                "file_type": cv.file_type,
+                "is_parsed": cv.is_parsed,
+                "created_at": cv.created_at.isoformat(),
+                "updated_at": cv.updated_at.isoformat()
+            })
+        
+        # Count AI sections and job descriptions
+        ai_sections_count = db.query(AISection).join(CV).filter(CV.user_id == user_id).count()
+        job_descriptions_count = db.query(JobDescription).join(CV).filter(CV.user_id == user_id).count()
+        
+        return UserDetail(
+            id=user.id,
+            clerk_id=user.clerk_id,
+            email=user.email,
+            is_active=user.is_active,
+            email_verified=user.email_verified,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            last_login=user.last_login,
+            cvs=cvs_data,
+            ai_sections_count=ai_sections_count,
+            job_descriptions_count=job_descriptions_count
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting user detail: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving user details"
+        )
+
+
+@router.put("/users/{user_id}/toggle-active")
+async def toggle_user_active(
+    user_id: str,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin)
+):
+    """
+    Toggle a user's active status.
+    """
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Don't allow deactivating admin users
+        if is_admin_user(user) and user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot deactivate admin users"
+            )
+        
+        user.is_active = not user.is_active
+        user.updated_at = datetime.utcnow()
+        db.commit()
+        
+        return {
+            "message": f"User {'activated' if user.is_active else 'deactivated'} successfully",
+            "user_id": user_id,
+            "is_active": user.is_active
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error toggling user active status: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error updating user status"
+        )
+
+
+@router.get("/users/{user_id}/cvs")
+async def get_user_cvs(
+    user_id: str,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin)
+):
+    """
+    Get all CVs for a specific user.
+    """
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        cvs = db.query(CV).filter(CV.user_id == user_id).order_by(CV.created_at.desc()).all()
+        
+        cvs_data = []
+        for cv in cvs:
+            # Get AI sections count for this CV
+            ai_sections_count = db.query(AISection).filter(AISection.cv_id == cv.id).count()
+            job_descriptions_count = db.query(JobDescription).filter(JobDescription.cv_id == cv.id).count()
+            
+            cvs_data.append({
+                "id": cv.id,
+                "original_filename": cv.original_filename,
+                "file_size": cv.file_size,
+                "file_type": cv.file_type,
+                "is_parsed": cv.is_parsed,
+                "parsing_status": getattr(cv, 'parsing_status', 'unknown'),
+                "ai_sections_count": ai_sections_count,
+                "job_descriptions_count": job_descriptions_count,
+                "created_at": cv.created_at.isoformat(),
+                "updated_at": cv.updated_at.isoformat()
+            })
+        
+        return {
+            "user_id": user_id,
+            "user_email": user.email,
+            "cvs": cvs_data,
+            "total_cvs": len(cvs_data)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting user CVs: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving user CVs"
+        )
+
+
+@router.get("/stats", response_model=SystemStats)
+async def get_system_stats(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin)
+):
+    """
+    Get system statistics.
+    """
+    try:
+        now = datetime.utcnow()
+        seven_days_ago = now - timedelta(days=7)
+        thirty_days_ago = now - timedelta(days=30)
+        
+        stats = SystemStats(
+            total_users=db.query(User).count(),
+            active_users=db.query(User).filter(User.is_active == True).count(),
+            clerk_users=db.query(User).filter(User.clerk_id.isnot(None)).count(),
+            legacy_users=db.query(User).filter(User.clerk_id.is_(None)).count(),
+            total_cvs=db.query(CV).count(),
+            total_ai_sections=db.query(AISection).count(),
+            total_job_descriptions=db.query(JobDescription).count(),
+            users_last_7_days=db.query(User).filter(User.created_at >= seven_days_ago).count(),
+            users_last_30_days=db.query(User).filter(User.created_at >= thirty_days_ago).count(),
+            cvs_last_7_days=db.query(CV).filter(CV.created_at >= seven_days_ago).count(),
+            cvs_last_30_days=db.query(CV).filter(CV.created_at >= thirty_days_ago).count()
+        )
+        
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Error getting system stats: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving system statistics"
+        )

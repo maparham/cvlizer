@@ -1,0 +1,17 @@
+---
+alwaysApply: true
+description: Server management rule for development environment
+---
+
+# Server Management Rule
+
+**DO NOT start new servers (frontend or backend) and DO NOT kill existing servers** because:
+
+When making code changes:
+- Simply save the files - changes will be applied automatically
+- The development servers will hot-reload the changes
+- No manual server management is required
+
+This applies to both:
+- Frontend development server (typically running on port 3000 or similar)
+- Backend development server (typically running on port 8000 or similar)

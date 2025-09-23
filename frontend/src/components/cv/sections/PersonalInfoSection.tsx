@@ -35,6 +35,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         }}
         error={!editData.full_name?.trim()}
         helperText={!editData.full_name?.trim() ? "Full name is required" : ""}
+        data-testid="personal-info-full-name-input"
         sx={{ 
           '& .MuiInputBase-input': { 
             fontSize: '2rem', 
@@ -63,6 +64,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
           error={!editData.email?.trim()}
           helperText={!editData.email?.trim() ? "Email is required" : ""}
           placeholder="Email *"
+          data-testid="personal-info-email-input"
           sx={{ 
             minWidth: 200,
             '& .MuiInputBase-input': {
@@ -88,6 +90,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
           error={false}
           helperText=""
           placeholder="Phone"
+          data-testid="personal-info-phone-input"
           sx={{ 
             minWidth: 200,
             '& .MuiInputBase-input': {
