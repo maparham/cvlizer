@@ -176,7 +176,6 @@ URL: ${window.location.href}
     try {
       await navigator.clipboard.writeText(errorDetails)
       // You could show a toast notification here
-      console.log('Error details copied to clipboard')
     } catch (err) {
       console.error('Failed to copy error details:', err)
     }

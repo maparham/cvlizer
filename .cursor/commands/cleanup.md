@@ -7,3 +7,5 @@
 
 You primary goal should be a clean and minimal code base.
 At the end, report your changes briefly, the total number of new lines in the git working directory, and the number of lines you added removed.
+
+3- run all tests again to make sure nothing is broken.

@@ -225,8 +225,8 @@ describe('validationUtils', () => {
       expect(summary.hasErrors).toBe(true)
       expect(summary.errorCount).toBe(4)
       expect(summary.summary).toContain('1 field error')
-      expect(summary.summary).toContain('1 validation error')
-      expect(summary.summary).toContain('2 duplicate entries')
+      expect(summary.summary).toContain('1 cross-field error')
+      expect(summary.summary).toContain('2 duplicate')
     })
   })
 

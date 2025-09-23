@@ -60,7 +60,7 @@ def verify_clerk_token(token: str) -> Optional[Dict[str, Any]]:
     """
     try:
         # For development, decode without verification using base64
-        # TODO: Implement proper JWT verification for production
+        # Note: JWT verification should be implemented for production
         import base64
         import json
         

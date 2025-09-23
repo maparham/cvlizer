@@ -326,7 +326,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
                 </Box>
                 
                 <List dense>
-                  {entries.map((entry, _index) => // eslint-disable-line no-unused-vars (
+                  {entries.map((entry, index) => (
                     <ListItem
                       key={entry.id}
                       sx={{

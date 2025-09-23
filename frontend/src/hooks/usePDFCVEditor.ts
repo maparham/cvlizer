@@ -106,7 +106,7 @@ export const usePDFCVEditor = ({
     onIndividualItemCancel: editingState.cancelIndividualItemEditing,
     showUnsavedChangesDialog: editingState.showUnsavedChangesDialog,
     onShowUnsavedChangesDialog: (show: boolean) => {
-      // This is a bit hacky, but needed for the keyboard shortcuts
+      // Note: This approach is needed for keyboard shortcuts integration
       // In a real implementation, we might want to refactor this
       if (show) {
         // Trigger the dialog through the editing state
@@ -114,7 +114,7 @@ export const usePDFCVEditor = ({
       }
     },
     onSetPendingNavigation: () => {
-      // Also hacky, but this shows why we might need a different architecture
+      // Note: This shows why we might need a different architecture
       // The keyboard shortcuts hook needs better integration
     },
     onUnsavedChangesDialogClose: editingState.handleUnsavedChangesDialogClose
