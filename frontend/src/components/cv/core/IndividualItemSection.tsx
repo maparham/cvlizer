@@ -111,7 +111,7 @@ function IndividualItemSection<T>({
         
         setEditingItemIndex(index)
         editingItemIndexRef.current = index
-        setEditData(itemToEdit)
+        setEditData(data[index])
         onEdit()
       }
       

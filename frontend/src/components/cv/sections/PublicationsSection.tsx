@@ -98,16 +98,16 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
 
   return (
     <IndividualItemSection
-      data={data}
+      data={data as Publication[]}
       onUpdate={onUpdate}
       onSave={onSave}
       isEditing={isEditing}
       onEdit={onEdit}
       onClose={onClose}
       onUnsavedChanges={onUnsavedChanges}
-      registerIndividualItemEditing={registerIndividualItemEditing}
-      unregisterIndividualItemEditing={unregisterIndividualItemEditing}
-      requestIndividualItemCancel={requestIndividualItemCancel}
+      registerIndividualItemEditing={registerIndividualItemEditing as any}
+      unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
+      requestIndividualItemCancel={requestIndividualItemCancel as any}
       title="Publications"
       emptyMessage="No publications added yet."
       createNewItem={createNewPublication}

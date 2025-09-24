@@ -5,7 +5,6 @@
  * including text diffs, change icons, and error handling.
  */
 
-import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import SimpleCVDiffViewer from '../../components/cv/SimpleCVDiffViewer'
@@ -73,7 +72,7 @@ describe('SimpleCVDiffViewer', () => {
     description: 'Updated position',
     isAutomatic: false,
     isInitial: false,
-    label: null,
+    label: undefined,
     dataSize: 1100
   }
 
@@ -321,7 +320,7 @@ describe('SimpleCVDiffViewer', () => {
           description: 'Professional Summary: Content text updated',
           details: [],
           text_diff: {
-            inline_diff: null, // No inline diff for large text
+            inline_diff: undefined, // No inline diff for large text
             word_diff: ['Added: many', 'Added: words'],
             old_text: longText,
             new_text: longText + ' with additions',

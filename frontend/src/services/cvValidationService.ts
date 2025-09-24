@@ -142,11 +142,11 @@ export class CVValidationService {
         if (!cert.name?.trim()) {
           errors.push(`Certification #${index + 1}: Name is required`)
         }
-        if (!cert.issuer?.trim()) {
-          errors.push(`Certification #${index + 1}: Issuer is required`)
+        if (!cert.issuing_organization?.trim()) {
+          errors.push(`Certification #${index + 1}: Issuing organization is required`)
         }
-        if (!cert.date?.trim()) {
-          errors.push(`Certification #${index + 1}: Date is required`)
+        if (!cert.issue_date?.trim()) {
+          errors.push(`Certification #${index + 1}: Issue date is required`)
         }
       })
     }
@@ -157,8 +157,8 @@ export class CVValidationService {
         if (!award.name?.trim()) {
           errors.push(`Award #${index + 1}: Name is required`)
         }
-        if (!award.issuer?.trim()) {
-          errors.push(`Award #${index + 1}: Issuer is required`)
+        if (!award.issuing_organization?.trim()) {
+          errors.push(`Award #${index + 1}: Issuing organization is required`)
         }
         if (!award.date?.trim()) {
           errors.push(`Award #${index + 1}: Date is required`)
@@ -206,7 +206,7 @@ export class CVValidationService {
   static validateItem<T>(
     item: T | null,
     requiredFields: (keyof T)[],
-    sectionTitle: string
+    _sectionTitle: string
   ): boolean {
     if (!item) return false
 
@@ -438,7 +438,7 @@ class CVDataCleaner {
       'volunteer_experience': ['id', 'organization', 'role', 'location', 'start_date', 'end_date', 'description']
     }
 
-    const validFields = validFieldsBySection[sectionType] || []
+    const validFields = (validFieldsBySection as any)[sectionType] || []
     
     // Remove any fields not in the valid list
     Object.keys(item).forEach(key => {
@@ -462,9 +462,9 @@ class CVDataCleaner {
       'volunteer_experience': ['start_date', 'end_date']
     }
 
-    const dateFields = dateFieldsBySection[sectionType] || []
+    const dateFields = (dateFieldsBySection as any)[sectionType] || []
     
-    dateFields.forEach(field => {
+    dateFields.forEach((field: string) => {
       if (item[field] === null || item[field] === undefined) {
         item[field] = ''
       }
@@ -615,7 +615,7 @@ class SectionValidatorFactory {
  * Default validator for sections without specific validation rules
  */
 class DefaultValidator extends SectionValidator {
-  validate(data: any): ValidationResult {
+  validate(_data: any): ValidationResult {
     return this.createResult(true) // Always valid for sections without specific rules
   }
 }

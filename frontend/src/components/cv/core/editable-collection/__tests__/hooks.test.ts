@@ -131,7 +131,7 @@ describe('editable-collection hooks', () => {
       })
 
       act(() => {
-        result.current.handleUpdateItem('name', 'Updated', itemsData)
+        result.current.handleUpdateItem('name' as never, 'Updated', itemsData)
       })
 
       expect(result.current.editData).toEqual({ name: 'Updated', description: 'Test' })

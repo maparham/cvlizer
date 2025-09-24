@@ -30,7 +30,7 @@ const DEFAULT_CV_FILENAME = 'New CV'
 const TEMP_CV_ID_PREFIX = 'temp-'
 
 // Default CV structure for new CVs - only includes sections that can be empty
-const DEFAULT_CV_DATA: CVData = {
+export const DEFAULT_CV_DATA: CVData = {
   personal_info: {
     full_name: "",
     email: "",

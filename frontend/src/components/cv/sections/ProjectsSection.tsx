@@ -146,16 +146,16 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
 
   return (
     <IndividualItemSection
-      data={data}
+      data={data as Project[]}
       onUpdate={onUpdate}
       onSave={onSave}
       isEditing={isEditing}
       onEdit={onEdit}
       onClose={onClose}
       onUnsavedChanges={onUnsavedChanges}
-      registerIndividualItemEditing={registerIndividualItemEditing}
-      unregisterIndividualItemEditing={unregisterIndividualItemEditing}
-      requestIndividualItemCancel={requestIndividualItemCancel}
+      registerIndividualItemEditing={registerIndividualItemEditing as any}
+      unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
+      requestIndividualItemCancel={requestIndividualItemCancel as any}
       title="Projects"
       emptyMessage="No projects added yet."
       createNewItem={createNewProject}

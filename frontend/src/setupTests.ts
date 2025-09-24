@@ -35,7 +35,7 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
 }))
 
 // Mock FileReader
-global.FileReader = jest.fn().mockImplementation(() => ({
+const FileReaderMock = jest.fn().mockImplementation(() => ({
   readAsText: jest.fn(),
   readAsDataURL: jest.fn(),
   readAsArrayBuffer: jest.fn(),
@@ -53,6 +53,15 @@ global.FileReader = jest.fn().mockImplementation(() => ({
   removeEventListener: jest.fn(),
   dispatchEvent: jest.fn(),
 }))
+
+// Add static properties
+Object.assign(FileReaderMock, {
+  EMPTY: 0,
+  LOADING: 1,
+  DONE: 2
+})
+
+global.FileReader = FileReaderMock as any
 
 // Mock URL.createObjectURL
 Object.defineProperty(URL, 'createObjectURL', {

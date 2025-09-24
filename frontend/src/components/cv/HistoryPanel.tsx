@@ -76,7 +76,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
   onRestoreVersion,
   onCreateSnapshot,
   historyEntries,
-  historyStats,
+  historyStats: _historyStats,
   onDeleteEntry,
   loading: externalLoading = false
 }) => {

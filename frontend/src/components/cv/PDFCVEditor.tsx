@@ -25,7 +25,6 @@ import {
   // useCVEditor
 } from '../../contexts/CVEditorContext'
 import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from './index'
-import { useCVStore } from '../../stores/cvStore'
 
 interface PDFCVEditorProps {
   title?: string
@@ -35,17 +34,10 @@ interface PDFCVEditorProps {
 
 const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId }) => {
   // Use context instead of props
-  // const { cvData } = useCVEditor()
-  
   // Use consolidated context hooks
   const { sections, dragDrop, reset } = useCVEditorControls()
   const { changes } = useCVEditorState()
   
-  // Get history store actions  
-  const handleHistoryClick = () => {
-    const { setHistoryPanelOpen } = useCVStore.getState()
-    setHistoryPanelOpen(true)
-  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>

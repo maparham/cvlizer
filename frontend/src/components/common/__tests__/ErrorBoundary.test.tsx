@@ -2,7 +2,7 @@
  * Unit tests for ErrorBoundary component
  */
 import React from 'react'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { ErrorBoundary, CompactErrorFallback, useErrorHandler, withErrorBoundary } from '../ErrorBoundary'
 

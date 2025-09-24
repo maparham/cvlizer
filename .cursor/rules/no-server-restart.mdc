@@ -5,13 +5,27 @@ description: Server management rule for development environment
 
 # Server Management Rule
 
-**DO NOT start new servers (frontend or backend) and DO NOT kill existing servers** because:
+**CRITICAL: The agent must NEVER start or kill services/servers, whether frontend or backend servers, unless specifically instructed by the user.**
 
+## Prohibited Actions
+- **DO NOT start new servers** (frontend or backend)
+- **DO NOT kill existing servers** (frontend or backend)
+- **DO NOT restart services** (frontend or backend)
+- **DO NOT manage server processes** in any way
+
+## Why This Rule Exists
 When making code changes:
 - Simply save the files - changes will be applied automatically
 - The development servers will hot-reload the changes
 - No manual server management is required
 
-This applies to both:
+## What This Applies To
+This prohibition applies to ALL types of servers and services:
 - Frontend development server (typically running on port 3000 or similar)
 - Backend development server (typically running on port 8000 or similar)
+- Any other development or production servers
+- Database services
+- Any background processes or services
+
+## Important Note
+The development environment is configured for hot-reloading, so code changes are automatically applied without any server intervention needed.

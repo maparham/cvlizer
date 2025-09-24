@@ -5,6 +5,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '../contexts/AuthContext'
 import { CVEditorProvider } from '../contexts/CVEditorContext'
+import { DEFAULT_CV_DATA } from '../stores/cvStore'
 
 // Create a test theme
 const testTheme = createTheme({
@@ -31,7 +32,11 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
       <ThemeProvider theme={testTheme}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <CVEditorProvider>
+            <CVEditorProvider
+              cvData={DEFAULT_CV_DATA}
+              onUpdateCV={jest.fn()}
+              onSave={jest.fn()}
+            >
               {children}
             </CVEditorProvider>
           </AuthProvider>
@@ -103,9 +108,9 @@ export const mockFile = (name: string, type: string, content: string = 'test con
 
 export const mockFileList = (files: File[]) => {
   const fileList = {
-    length: files.length,
     item: (index: number) => files[index] || null,
     ...files,
+    length: files.length,
   }
   
   return fileList as FileList
@@ -203,7 +208,7 @@ export const mockIntersectionObserver = () => {
 
 // Mock FileReader
 export const mockFileReader = () => {
-  global.FileReader = jest.fn().mockImplementation(() => ({
+  const FileReaderMock = jest.fn().mockImplementation(() => ({
     readAsText: jest.fn(),
     readAsDataURL: jest.fn(),
     readAsArrayBuffer: jest.fn(),
@@ -221,6 +226,15 @@ export const mockFileReader = () => {
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
   }))
+
+  // Add static properties
+  Object.assign(FileReaderMock, {
+    EMPTY: 0,
+    LOADING: 1,
+    DONE: 2
+  })
+
+  global.FileReader = FileReaderMock as any
 }
 
 // Mock URL.createObjectURL and URL.revokeObjectURL

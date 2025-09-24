@@ -18,7 +18,7 @@ interface EditingStateHook {
     onStartEdit?: () => void,
     skipDialog?: boolean
   ) => 'success' | 'dialog_shown'
-  unregisterIndividualItemEditing: () => void
+  unregisterIndividualItemEditing: (sectionId: string, itemIndex: number) => void
   cancelIndividualItemEditing: () => void
   requestIndividualItemCancel: (sectionId: string, onCancel: () => void) => void
 
@@ -170,12 +170,17 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     }
     
     // Register the new edit
-    setEditingIndividualItem({ sectionId, itemIndex })
+    setEditingIndividualItem({ 
+      id: `${sectionId}-${itemIndex}`, 
+      section: sectionId, 
+      sectionId, 
+      data: null 
+    })
     stateRef.current.onCancel = onCancel
     return 'success'
   }, [pendingChanges])
 
-  const unregisterIndividualItemEditing = useCallback(() => {
+  const unregisterIndividualItemEditing = useCallback((_sectionId: string, _itemIndex: number) => {
     setEditingIndividualItem(null)
     stateRef.current.onCancel = () => {}
   }, [])
@@ -259,8 +264,10 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     // Register the pending individual item if there is one
     if (pendingIndividualItemRegistration) {
       setEditingIndividualItem({ 
+        id: `${pendingIndividualItemRegistration.sectionId}-${pendingIndividualItemRegistration.itemIndex}`,
+        section: pendingIndividualItemRegistration.sectionId, 
         sectionId: pendingIndividualItemRegistration.sectionId, 
-        itemIndex: pendingIndividualItemRegistration.itemIndex 
+        data: null 
       })
       stateRef.current.onCancel = pendingIndividualItemRegistration.onCancel
       // Call onStartEdit to trigger the local edit mode

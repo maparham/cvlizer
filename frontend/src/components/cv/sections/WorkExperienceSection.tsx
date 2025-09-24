@@ -124,16 +124,16 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
 
   return (
     <IndividualItemSection
-      data={data}
+      data={data as WorkExperience[]}
       onUpdate={onUpdate}
       onSave={onSave}
       isEditing={isEditing}
       onEdit={onEdit}
       onClose={onClose}
       onUnsavedChanges={onUnsavedChanges}
-      registerIndividualItemEditing={registerIndividualItemEditing}
-      unregisterIndividualItemEditing={unregisterIndividualItemEditing}
-      requestIndividualItemCancel={requestIndividualItemCancel}
+      registerIndividualItemEditing={registerIndividualItemEditing as any}
+      unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
+      requestIndividualItemCancel={requestIndividualItemCancel as any}
       title="Work Experience"
       emptyMessage="Click the + button to add your first work experience"
       createNewItem={createNewExperience}

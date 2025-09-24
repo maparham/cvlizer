@@ -4,7 +4,7 @@
  * Provides sorting options for items in a section, including manual ordering
  * and date-based sorting (newest/oldest first).
  */
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Box, IconButton, Tooltip, MenuItem, Menu } from '@mui/material'
 import { DragIndicator as DragIcon, Sort as SortIcon } from '@mui/icons-material'
 import type { SortMenuProps } from './types'

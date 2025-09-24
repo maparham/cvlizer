@@ -3,7 +3,6 @@
  * 
  * Renders the edit and delete controls for an individual item.
  */
-import React from 'react'
 import { Box, IconButton, Tooltip } from '@mui/material'
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material'
 import { getSingularTitle } from './utils'

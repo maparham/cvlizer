@@ -3,7 +3,6 @@
  * 
  * Renders the editing form for an item with save/cancel controls.
  */
-import React from 'react'
 import { Box, IconButton, Tooltip } from '@mui/material'
 import { Save as SaveIcon, Cancel as CancelIcon } from '@mui/icons-material'
 import type { EditFormProps } from './types'

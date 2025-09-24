@@ -4,9 +4,9 @@ import { CVSection } from '../../types'
 
 describe('useDragAndDrop', () => {
   const mockSections: CVSection[] = [
-    { id: '1', type: 'personal_info', title: 'Personal Information' },
-    { id: '2', type: 'work_experience', title: 'Work Experience' },
-    { id: '3', type: 'education', title: 'Education' }
+    { id: '1', type: 'personal_info', title: 'Personal Information', visible: true, order: 1 },
+    { id: '2', type: 'work_experience', title: 'Work Experience', visible: true, order: 2 },
+    { id: '3', type: 'education', title: 'Education', visible: true, order: 3 }
   ]
   const mockOnReorderSections = jest.fn()
 
@@ -58,9 +58,9 @@ describe('useDragAndDrop', () => {
     })
 
     expect(mockOnReorderSections).toHaveBeenCalledWith([
-      { id: '2', type: 'work_experience', title: 'Work Experience' },
-      { id: '3', type: 'education', title: 'Education' },
-      { id: '1', type: 'personal_info', title: 'Personal Information' }
+      { id: '2', type: 'work_experience', title: 'Work Experience', visible: true, order: 2 },
+      { id: '3', type: 'education', title: 'Education', visible: true, order: 3 },
+      { id: '1', type: 'personal_info', title: 'Personal Information', visible: true, order: 1 }
     ])
     expect(result.current.activeId).toBeNull()
   })
@@ -159,9 +159,9 @@ describe('useDragAndDrop', () => {
     })
 
     expect(mockOnReorderSections).toHaveBeenCalledWith([
-      { id: '2', type: 'work_experience', title: 'Work Experience' },
-      { id: '3', type: 'education', title: 'Education' },
-      { id: '1', type: 'personal_info', title: 'Personal Information' }
+      { id: '2', type: 'work_experience', title: 'Work Experience', visible: true, order: 2 },
+      { id: '3', type: 'education', title: 'Education', visible: true, order: 3 },
+      { id: '1', type: 'personal_info', title: 'Personal Information', visible: true, order: 1 }
     ])
   })
 
@@ -182,9 +182,9 @@ describe('useDragAndDrop', () => {
     })
 
     expect(mockOnReorderSections).toHaveBeenCalledWith([
-      { id: '2', type: 'work_experience', title: 'Work Experience' },
-      { id: '1', type: 'personal_info', title: 'Personal Information' },
-      { id: '3', type: 'education', title: 'Education' }
+      { id: '2', type: 'work_experience', title: 'Work Experience', visible: true, order: 2 },
+      { id: '1', type: 'personal_info', title: 'Personal Information', visible: true, order: 1 },
+      { id: '3', type: 'education', title: 'Education', visible: true, order: 3 }
     ])
   })
 
@@ -209,8 +209,8 @@ describe('useDragAndDrop', () => {
 
   it('should handle sections with same id', () => {
     const duplicateSections: CVSection[] = [
-      { id: '1', type: 'personal_info', title: 'Personal Information' },
-      { id: '1', type: 'work_experience', title: 'Work Experience' }
+      { id: '1', type: 'personal_info', title: 'Personal Information', visible: true, order: 1 },
+      { id: '1', type: 'work_experience', title: 'Work Experience', visible: true, order: 2 }
     ]
 
     const { result } = renderHook(() => useDragAndDrop({

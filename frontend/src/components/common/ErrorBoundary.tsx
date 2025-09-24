@@ -113,9 +113,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     })
   }
 
-  private handleReload = () => {
-    window.location.reload()
-  }
 
   render() {
     if (this.state.hasError) {

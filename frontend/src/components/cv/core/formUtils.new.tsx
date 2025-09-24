@@ -171,7 +171,7 @@ export const DateFieldComponent: React.FC<{
       <MUIDateField
         label={required ? `${label} *` : label}
         value={dayjsValue}
-        onChange={(date) => onChange(date ? date.format('YYYY-MM-DD') : '')}
+        onChange={(date) => onChange(date ? (date as any).format('YYYY-MM-DD') : '')}
         format="MM-DD-YYYY"
         slotProps={{
           textField: {

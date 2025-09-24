@@ -28,25 +28,21 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
     isEditing,
     editingIndex, 
     editData, 
-    data, 
+    data || [], 
     onUpdate, 
     onSave, 
-    autoSaveMessage,
-    onUnsavedChanges
+    autoSaveMessage || '',
+    onUnsavedChanges ? (hasChanges: boolean) => onUnsavedChanges('', hasChanges) : undefined
   )
 
   const handleAdd = () => {
+    if (!createNewItem) return
     const newItem = createNewItem()
     setEditingIndex((data || []).length)
     setEditData(newItem)
     onEdit()
   }
 
-  const handleEdit = (index: number) => {
-    setEditingIndex(index)
-    setEditData(data[index])
-    onEdit()
-  }
 
   const handleSave = () => {
     if (editingIndex !== null) {
@@ -62,7 +58,7 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
       }
       
       onUpdate(newData)
-      onSave(newData, autoSaveMessage)
+      onSave(newData, autoSaveMessage || '')
     }
     onClose()
     setEditingIndex(null)
@@ -75,11 +71,6 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
     setEditData({})
   }
 
-  const handleDelete = (index: number) => {
-    const newData = (data || []).filter((_: any, i: number) => i !== index)
-    onUpdate(newData)
-    onSave(newData, `${title} deleted`)
-  }
 
   if (!data || data.length === 0) {
     return (
@@ -89,7 +80,7 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
         onEdit={onEdit}
         onClose={onClose}
         editButton={
-          <Tooltip title={`Add new ${title.toLowerCase()}`}>
+          <Tooltip title={`Add new ${(title || 'item').toLowerCase()}`}>
             <IconButton
               className="edit-button"
               onClick={handleAdd}
@@ -126,7 +117,7 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
       onCancel={isEditing && editingIndex !== null ? handleCancel : undefined}
       isValid={true}
       editButton={
-        <Tooltip title={`Add new ${title.toLowerCase()}`}>
+        <Tooltip title={`Add new ${(title || 'item').toLowerCase()}`}>
           <IconButton
             className="edit-button"
             onClick={handleAdd}
@@ -147,9 +138,9 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
       }
     >
       {isEditing && editingIndex !== null ? (
-        renderEditForm(editData, setEditData, handleSave, handleCancel)
+        renderEditForm?.(editData, editingIndex, setEditData)
       ) : (
-        data.map((item: any, index: number) => renderItem(item, index, handleEdit, handleDelete))
+        data.map((item: any, index: number) => renderItem?.(item, index))
       )}
     </BaseSection>
   )

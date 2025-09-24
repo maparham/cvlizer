@@ -7,10 +7,23 @@ import { SortableSectionItemProps } from '../types'
 import { useCVEditor } from '../../../contexts/CVEditorContext'
 import { hasSectionErrors, getSectionErrorCount } from '../../../utils/validationUtils'
 
-const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onToggleVisibility, isOverlay = false }) => {
+const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ 
+  id, 
+  title, 
+  visible, 
+  section, 
+  onToggleVisibility, 
+  isOverlay = false 
+}) => {
   const { validationErrors } = useCVEditor()
-  const hasErrors = hasSectionErrors(validationErrors, section.id)
-  const errorCount = getSectionErrorCount(validationErrors, section.id)
+  
+  // Use individual props if provided, otherwise fall back to section object
+  const sectionId = id || section?.id || ''
+  const sectionTitle = title || section?.title || ''
+  const sectionVisible = visible !== undefined ? visible : (section?.visible ?? false)
+  
+  const hasErrors = sectionId ? hasSectionErrors(validationErrors, sectionId) : false
+  const errorCount = sectionId ? getSectionErrorCount(validationErrors, sectionId) : 0
   
   const {
     attributes,
@@ -19,7 +32,7 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onTo
     transform,
     transition,
     isDragging
-  } = useSortable({ id: section.id })
+  } = useSortable({ id: sectionId })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -35,7 +48,7 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onTo
         border: '1px solid #e0e0e0',
         borderRadius: 1,
         mb: 1,
-        bgcolor: section.visible ? 'white' : '#f5f5f5',
+        bgcolor: sectionVisible ? 'white' : '#f5f5f5',
         cursor: isOverlay ? 'grabbing' : 'grab',
         transition: 'all 0.2s ease',
         '&:hover': {
@@ -62,12 +75,12 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onTo
         </Tooltip>
       </ListItemIcon>
       <ListItemText 
-        primary={section.title}
+        primary={sectionTitle}
         sx={{ 
           flexGrow: 1,
           minWidth: 0,
           '& .MuiListItemText-primary': { 
-            fontWeight: section.visible ? 600 : 400,
+            fontWeight: sectionVisible ? 600 : 400,
             fontSize: '0.85rem',
             lineHeight: 1.2,
             whiteSpace: 'nowrap',
@@ -85,19 +98,19 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ section, onTo
             </Badge>
           </Tooltip>
         )}
-        <Tooltip title={section.visible ? "Hide this section" : "Show this section"}>
+        <Tooltip title={sectionVisible ? "Hide this section" : "Show this section"}>
           <IconButton
-            onClick={() => onToggleVisibility(section.id)}
-            color={section.visible ? 'primary' : 'default'}
+            onClick={() => sectionId && onToggleVisibility?.(sectionId)}
+            color={sectionVisible ? 'primary' : 'default'}
             size="small"
             sx={{ 
               '&:hover': { 
-                bgcolor: section.visible ? 'primary.light' : 'action.hover',
-                color: section.visible ? 'primary.contrastText' : 'text.primary'
+                bgcolor: sectionVisible ? 'primary.light' : 'action.hover',
+                color: sectionVisible ? 'primary.contrastText' : 'text.primary'
               }
             }}
           >
-            {section.visible ? <ViewIcon /> : <HideIcon />}
+            {sectionVisible ? <ViewIcon /> : <HideIcon />}
           </IconButton>
         </Tooltip>
       </Box>

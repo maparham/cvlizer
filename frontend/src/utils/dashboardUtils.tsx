@@ -1,7 +1,6 @@
 /**
  * Utility functions for the Dashboard component
  */
-import React from 'react'
 import { Error as ErrorIcon, CheckCircle as CheckCircleIcon, HourglassEmpty as ProcessingIcon } from '@mui/icons-material'
 import { CV } from '../types'
 
@@ -34,34 +33,38 @@ export const getCVStatusIcon = (cv: CV) => {
 }
 
 /**
- * Get sections count from parsed data (only visible sections)
+ * Get sections count from parsed data (only visible sections with data)
  */
 export const getSectionCount = (cv: CV): number => {
   if (!cv.parsed_data) return 0
   
   // Helper function to check if section has data
-  const hasData = (sectionType: string) => {
+  const hasData = (sectionType: string): boolean => {
     switch (sectionType) {
       case 'personal_info':
-        return cv.parsed_data?.personal_info?.full_name
+        return !!(cv.parsed_data?.personal_info?.full_name?.trim())
       case 'professional_summary':
-        return cv.parsed_data?.professional_summary?.content
+        return !!(cv.parsed_data?.professional_summary?.content?.trim())
       case 'work_experience':
-        return cv.parsed_data?.work_experience?.length
+        return !!(cv.parsed_data?.work_experience?.length)
       case 'education':
-        return cv.parsed_data?.education?.length
+        return !!(cv.parsed_data?.education?.length)
       case 'skills':
-        return cv.parsed_data?.skills?.technical?.length || cv.parsed_data?.skills?.soft?.length
+        return !!(
+          cv.parsed_data?.skills?.technical?.length || 
+          cv.parsed_data?.skills?.soft?.length ||
+          cv.parsed_data?.skills?.languages?.length
+        )
       case 'certifications':
-        return cv.parsed_data?.certifications?.length
+        return !!(cv.parsed_data?.certifications?.length)
       case 'projects':
-        return cv.parsed_data?.projects?.length
+        return !!(cv.parsed_data?.projects?.length)
       case 'awards':
-        return cv.parsed_data?.awards?.length
+        return !!(cv.parsed_data?.awards?.length)
       case 'publications':
-        return cv.parsed_data?.publications?.length
+        return !!(cv.parsed_data?.publications?.length)
       case 'volunteer_experience':
-        return cv.parsed_data?.volunteer_experience?.length
+        return !!(cv.parsed_data?.volunteer_experience?.length)
       default:
         return false
     }
@@ -70,19 +73,21 @@ export const getSectionCount = (cv: CV): number => {
   // If there's no section config, fall back to counting all sections with data
   if (!cv.parsed_data.section_config?.sections) {
     let count = 0
-    if (cv.parsed_data.personal_info?.full_name) count++
-    if (cv.parsed_data.professional_summary?.content) count++
-    if (cv.parsed_data.work_experience?.length) count++
-    if (cv.parsed_data.education?.length) count++
-    if (cv.parsed_data.skills?.technical?.length || cv.parsed_data.skills?.soft?.length) count++
-    if (cv.parsed_data.certifications?.length) count++
-    if (cv.parsed_data.projects?.length) count++
-    if (cv.parsed_data.awards?.length) count++
-    if (cv.parsed_data.publications?.length) count++
-    if (cv.parsed_data.volunteer_experience?.length) count++
+    const sectionTypes = [
+      'personal_info', 'professional_summary', 'work_experience', 'education', 
+      'skills', 'certifications', 'projects', 'awards', 'publications', 'volunteer_experience'
+    ]
+    
+    for (const sectionType of sectionTypes) {
+      if (hasData(sectionType)) {
+        count++
+      }
+    }
     return count
   }
 
   // Count only visible sections that have data
-  return cv.parsed_data.section_config.sections.filter(hasData).length
+  return cv.parsed_data.section_config.sections
+    .filter(section => section.visible && hasData(section.type))
+    .length
 }

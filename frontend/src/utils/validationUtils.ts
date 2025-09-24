@@ -182,7 +182,7 @@ export interface FieldValidationResult {
   message?: string
 }
 
-export const validateField = (fieldName: string, value: string, data: any): FieldValidationResult => {
+export const validateField = (fieldName: string, value: string, _data: any): FieldValidationResult => {
   switch (fieldName) {
     case 'email':
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

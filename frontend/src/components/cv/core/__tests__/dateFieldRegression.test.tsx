@@ -115,7 +115,7 @@ describe('DateFieldComponent - Regression Prevention', () => {
       await user.click(dateInputContainer)
       
       // Type rapidly
-      await user.type(dateInputContainer, '25122023', { delay: 10 })
+      await user.type(dateInputContainer, '25122023')
       
       // Should handle rapid input without crashing or resetting
       expect(dateInputContainer).toBeInTheDocument()

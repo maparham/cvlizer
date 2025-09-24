@@ -9,12 +9,10 @@ import {
   Grid
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react'
 
 const Home: React.FC = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
 
   const features = [
     {

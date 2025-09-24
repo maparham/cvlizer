@@ -7,8 +7,8 @@ describe('jwt utils', () => {
     it('should decode a valid JWT token', () => {
       const decoded = decodeJWT(mockToken)
       expect(decoded).toBeDefined()
-      expect(decoded.sub).toBe('1234567890')
-      expect(decoded.name).toBe('John Doe')
+      expect(decoded?.sub).toBe('1234567890')
+      expect(decoded?.name).toBe('John Doe')
     })
 
     it('should return null for invalid token', () => {

@@ -88,7 +88,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   }
 
   const handleCancel = () => {
-    setEditData(data)
+    setEditData(data as any)
     onClose()
   }
 

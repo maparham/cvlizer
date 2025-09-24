@@ -30,12 +30,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
 
-  const login = async (email: string, password: string) => {
+  const login = async (_email: string, _password: string) => {
     // Redirect to login page - Clerk handles the actual authentication
     window.location.href = '/login'
   }
 
-  const register = async (email: string, password: string) => {
+  const register = async (_email: string, _password: string) => {
     // Redirect to register page - Clerk handles the actual authentication
     window.location.href = '/register'
   }

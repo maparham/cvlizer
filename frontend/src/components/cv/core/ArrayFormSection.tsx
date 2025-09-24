@@ -45,7 +45,6 @@ const ArrayFormSection = <T extends ArrayItem>({
   // Use common auto-save hook
   useSectionAutoSave(isEditing, editData, data, onUpdate, onSave, autoSaveMessage || 'Changes saved', title, onUnsavedChanges)
 
-  // const validateItem = createArrayItemValidator(requiredFields as string[])
 
   const {
     data: arrayData,

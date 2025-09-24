@@ -12,7 +12,7 @@ interface SaveWithValidationErrorsProps {
 
 export const SaveWithValidationErrors: React.FC<SaveWithValidationErrorsProps> = ({ 
   children, 
-  onSaveError 
+  onSaveError: _onSaveError 
 }) => {
   const { setValidationErrors, clearValidationErrors } = useCVEditor()
 

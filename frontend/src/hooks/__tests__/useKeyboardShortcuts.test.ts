@@ -42,7 +42,7 @@ describe('useKeyboardShortcuts', () => {
   it('should handle escape key when editing individual item with no changes', () => {
     const propsWithEditing = {
       ...mockProps,
-      editingIndividualItem: { sectionId: 'work_experience', itemIndex: 0 }
+      editingIndividualItem: { id: 'work_1', section: 'work_experience', sectionId: 'work_experience', data: {} }
     }
     
     renderHook(() => useKeyboardShortcuts(propsWithEditing))
@@ -60,7 +60,7 @@ describe('useKeyboardShortcuts', () => {
     
     const propsWithEditing = {
       ...mockProps,
-      editingIndividualItem: { sectionId: 'work_experience', itemIndex: 0 },
+      editingIndividualItem: { id: 'work_1', section: 'work_experience', sectionId: 'work_experience', data: {} },
       pendingChanges
     }
     

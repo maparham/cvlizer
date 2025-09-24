@@ -73,8 +73,10 @@ describe('useEditingState', () => {
 
     expect(returnValue!).toBe('success')
     expect(result.current.editingIndividualItem).toEqual({
+      id: 'work_experience-0',
+      section: 'work_experience',
       sectionId: 'work_experience',
-      itemIndex: 0
+      data: null
     })
   })
 
@@ -95,7 +97,7 @@ describe('useEditingState', () => {
 
     // Then unregister
     act(() => {
-      result.current.unregisterIndividualItemEditing()
+      result.current.unregisterIndividualItemEditing('work_experience', 0)
     })
 
     expect(result.current.editingIndividualItem).toBeNull()

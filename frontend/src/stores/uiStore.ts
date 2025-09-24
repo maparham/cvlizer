@@ -46,6 +46,13 @@ interface UIState {
   closeDialog: (dialog: keyof UIState['dialogs']) => void
   closeAllDialogs: () => void
   
+  // Convenience methods
+  showSuccess: (title: string, message?: string) => void
+  showError: (title: string, message?: string) => void
+  showWarning: (title: string, message?: string) => void
+  showInfo: (title: string, message?: string) => void
+  showValidationError: (title: string, message?: string) => void
+  
   // Reset function for testing
   reset: () => void
 }
@@ -209,21 +216,6 @@ export const useNotifications = () => {
     showWarning: (title: string, message?: string) => 
       addNotification({ type: 'warning', title, message }),
     showInfo: (title: string, message?: string) => 
-      addNotification({ type: 'info', title, message }),
-    
-    // Reset function for testing
-    reset: () => {
-      set({
-        theme: 'light',
-        sidebarOpen: true,
-        notifications: [],
-        globalLoading: false,
-        dialogs: {
-          confirmDelete: false,
-          unsavedChanges: false,
-          cvUpload: false
-        }
-      })
-    }
+      addNotification({ type: 'info', title, message })
   }
 }

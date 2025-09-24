@@ -289,6 +289,8 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
         import json
         try:
             parsed_content = json.loads(content)
+            # Add section_config to the parsed content
+            parsed_content = _add_section_config(parsed_content)
             return parsed_content
         except json.JSONDecodeError:
             # If JSON parsing fails, return a basic structure
@@ -297,6 +299,8 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
             content_preview = text_content[:500] + "..." if len(text_content) > 500 else text_content
             fallback["professional_summary"] = {"content": content_preview, "keywords": []}
             fallback["parse_error"] = "Failed to parse as JSON, using raw text"
+            # Add section_config to fallback
+            fallback = _add_section_config(fallback)
             return fallback
         
     except Exception as e:
@@ -305,4 +309,55 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
         content_preview = text_content[:500] + "..." if len(text_content) > 500 else text_content
         fallback["professional_summary"] = {"content": content_preview, "keywords": []}
         fallback["parse_error"] = f"OpenAI API error: {str(e)}"
+        # Add section_config to fallback
+        fallback = _add_section_config(fallback)
         return fallback
+
+
+def _add_section_config(parsed_content: dict) -> dict:
+    """Add section_config to parsed CV content based on available sections"""
+    
+    # Define all possible sections with their metadata
+    section_definitions = [
+        {"id": "personal_info", "type": "personal_info", "title": "Personal Information", "visible": True, "order": 1},
+        {"id": "professional_summary", "type": "professional_summary", "title": "Professional Summary", "visible": True, "order": 2},
+        {"id": "work_experience", "type": "work_experience", "title": "Work Experience", "visible": True, "order": 3},
+        {"id": "education", "type": "education", "title": "Education", "visible": True, "order": 4},
+        {"id": "skills", "type": "skills", "title": "Skills", "visible": True, "order": 5},
+        {"id": "certifications", "type": "certifications", "title": "Certifications", "visible": True, "order": 6},
+        {"id": "projects", "type": "projects", "title": "Projects", "visible": True, "order": 7},
+        {"id": "awards", "type": "awards", "title": "Awards", "visible": True, "order": 8},
+        {"id": "publications", "type": "publications", "title": "Publications", "visible": True, "order": 9},
+        {"id": "volunteer_experience", "type": "volunteer_experience", "title": "Volunteer Experience", "visible": True, "order": 10}
+    ]
+    
+    # Helper function to check if section has data
+    def has_section_data(section_type: str) -> bool:
+        if section_type not in parsed_content:
+            return False
+            
+        section_data = parsed_content[section_type]
+        
+        if section_type == "personal_info":
+            return bool(section_data.get("full_name"))
+        elif section_type == "professional_summary":
+            return bool(section_data.get("content"))
+        elif section_type == "skills":
+            return bool(section_data.get("technical") or section_data.get("soft") or section_data.get("languages"))
+        elif section_type in ["work_experience", "education", "certifications", "projects", "awards", "publications", "volunteer_experience"]:
+            return bool(section_data and len(section_data) > 0)
+        
+        return False
+    
+    # Filter sections to only include those with data
+    sections_with_data = []
+    for section_def in section_definitions:
+        if has_section_data(section_def["type"]):
+            sections_with_data.append(section_def)
+    
+    # Add section_config to parsed content
+    parsed_content["section_config"] = {
+        "sections": sections_with_data
+    }
+    
+    return parsed_content

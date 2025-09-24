@@ -20,18 +20,26 @@ describe('CVValidationService', () => {
     },
     work_experience: [
       {
+        id: "work_1",
         company: "Tech Corp",
         position: "Senior Developer",
+        location: "San Francisco, CA",
         start_date: "2020-01",
         end_date: "2023-12",
-        description: "Led development team"
+        current: false,
+        description: "Led development team",
+        achievements: [],
+        technologies: []
       }
     ],
     education: [],
     skills: {
       technical: ["JavaScript", "React", "Python"],
       soft: ["Leadership", "Communication"],
-      languages: ["English", "Spanish"]
+      languages: [
+        { id: "lang_1", language: "English", proficiency: "Native" as const },
+        { id: "lang_2", language: "Spanish", proficiency: "Intermediate" as const }
+      ]
     },
     certifications: [],
     projects: [],
@@ -96,7 +104,7 @@ describe('CVValidationService', () => {
         skills: {
           technical: [],
           soft: [],
-          languages: ["English"]
+          languages: [{ id: "lang_1", language: "English", proficiency: "Native" as const }]
         }
       }
       
@@ -178,7 +186,7 @@ describe('CVValidationService', () => {
 
   describe('validateItem', () => {
     const mockItem = {
-      title: "Test Project",
+      name: "Test Project",
       description: "A test project description",
       start_date: "2023-01"
     }
@@ -186,7 +194,7 @@ describe('CVValidationService', () => {
     it('should validate item with all required fields', () => {
       const result = CVValidationService.validateItem(
         mockItem, 
-        ['title', 'description'], 
+        ['name', 'description'] as (keyof typeof mockItem)[], 
         'Projects'
       )
       
@@ -195,13 +203,13 @@ describe('CVValidationService', () => {
 
     it('should return false for item with missing required fields', () => {
       const invalidItem = {
-        title: "",
+        name: "",
         description: "A test project description"
       }
       
       const result = CVValidationService.validateItem(
         invalidItem, 
-        ['title', 'description'], 
+        ['name', 'description'] as (keyof typeof invalidItem)[], 
         'Projects'
       )
       
@@ -211,7 +219,7 @@ describe('CVValidationService', () => {
     it('should return false for null item', () => {
       const result = CVValidationService.validateItem(
         null, 
-        ['title'], 
+        ['name'] as never[], 
         'Projects'
       )
       

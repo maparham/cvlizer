@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material'
 
 import { CVHistoryEntry } from '../../types'
-import { backendHistoryService, DiffChange, TextDiffData } from '../../services/backendHistoryService'
+import { backendHistoryService, DiffChange } from '../../services/backendHistoryService'
 
 interface SimpleCVDiffViewerProps {
   oldVersion: CVHistoryEntry | null // null means let backend decide comparison

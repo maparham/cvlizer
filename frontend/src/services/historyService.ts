@@ -51,6 +51,7 @@ export class CVHistoryService {
       changeType: options.changeType,
       description: options.description || this.generateDescription(options.changeType),
       isAutomatic: options.changeType !== 'manual_save' && options.changeType !== 'restore_point',
+      isInitial: options.changeType === 'initial_load',
       label: options.label,
       dataSize
     }
@@ -230,15 +231,18 @@ export class CVHistoryService {
       }
     })
 
-    // Generate summary
-    const summary = this.generateDiffSummary(changes)
-
-    return { 
+    // Create the result object first
+    const result = { 
       added: changes.added,
       modified: changes.modified,
       removed: changes.removed,
-      summary 
+      summary: '' // Will be set below
     }
+
+    // Generate summary
+    result.summary = this.generateDiffSummary(result)
+
+    return result
   }
 
   /**

@@ -85,16 +85,16 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
 
   return (
     <IndividualItemSection
-      data={data}
+      data={data as Award[]}
       onUpdate={onUpdate}
       onSave={onSave}
       isEditing={isEditing}
       onEdit={onEdit}
       onClose={onClose}
       onUnsavedChanges={onUnsavedChanges}
-      registerIndividualItemEditing={registerIndividualItemEditing}
-      unregisterIndividualItemEditing={unregisterIndividualItemEditing}
-      requestIndividualItemCancel={requestIndividualItemCancel}
+      registerIndividualItemEditing={registerIndividualItemEditing as any}
+      unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
+      requestIndividualItemCancel={requestIndividualItemCancel as any}
       title="Awards & Recognition"
       emptyMessage="No awards added yet."
       createNewItem={createNewAward}

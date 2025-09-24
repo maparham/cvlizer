@@ -50,7 +50,7 @@ interface CVEditorContextType {
     onCancel: () => void, 
     onStartEdit?: () => void
   ) => 'success' | 'dialog_shown'
-  unregisterIndividualItemEditing: () => void
+  unregisterIndividualItemEditing: (sectionId: string, itemIndex: number) => void
   requestIndividualItemCancel: (sectionId: string, onCancel: () => void) => void
 
   // Unsaved changes

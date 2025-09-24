@@ -50,7 +50,6 @@ interface SectionManagerSidebarProps {
 const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   sections,
   activeId,
-  isDefaultOrder,
   availableSectionsToAdd,
   title,
   onTitleSave,
@@ -173,7 +172,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         </>
       )}
 
-      {/* Available Sections - Always show for debugging */}
+      {/* Available Sections */}
       <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 3, mb: 2, color: '#666' }}>
         Available Sections ({availableSectionsToAdd.length})
       </Typography>

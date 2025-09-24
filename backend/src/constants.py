@@ -31,7 +31,10 @@ DEFAULT_PARSED_CV = {
     "projects": [],
     "awards": [],
     "publications": [],
-    "volunteer_experience": []
+    "volunteer_experience": [],
+    "section_config": {
+        "sections": []
+    }
 }
 
 

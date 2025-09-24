@@ -178,7 +178,7 @@ describe('validationUtils', () => {
 
     it('should validate CV data even with missing fields (validation is optional)', () => {
       const invalidData = { ...validCVData }
-      delete invalidData.personal_info.full_name
+      invalidData.personal_info.full_name = undefined as any
       
       const result = validateCVData(invalidData)
       expect(result.isValid).toBe(true) // The current implementation doesn't validate required fields

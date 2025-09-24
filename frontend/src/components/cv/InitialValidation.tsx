@@ -16,9 +16,14 @@ export const InitialValidation: React.FC<InitialValidationProps> = ({ children }
     // Only run initial validation if we don't already have validation errors
     // (to avoid overriding errors from save attempts)
     if (cvData && validationErrors.length === 0) {
-      const errors = validateCVData(cvData)
-      if (errors.length > 0) {
-        setValidationErrors(errors)
+      const validationResult = validateCVData(cvData)
+      if (!validationResult.isValid) {
+        const errorArray = Object.values(validationResult.errors).concat(validationResult.crossFieldErrors)
+        setValidationErrors(errorArray.map((error: string) => ({ 
+          section: 'general', 
+          field: 'general', 
+          message: error 
+        })))
       }
     }
   }, [cvData, setValidationErrors, validationErrors.length])
