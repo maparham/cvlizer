@@ -1,3 +1,20 @@
+/**
+ * UI Store - Zustand State Management
+ * 
+ * This module provides centralized state management for UI-related operations including:
+ * - Theme management (light/dark/auto)
+ * - Sidebar state and navigation
+ * - Notification system with different types and persistence
+ * - Global loading states for operations
+ * - Dialog state management for modals and confirmations
+ * - Convenience methods for common UI operations
+ * 
+ * Usage:
+ * - Import useUIStore hook to access UI state and actions
+ * - Use notification methods for user feedback
+ * - Manage theme and sidebar state across components
+ * - Control dialog visibility and global loading states
+ */
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 

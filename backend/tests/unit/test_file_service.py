@@ -31,8 +31,8 @@ class TestFileService:
         mock_file = Mock(spec=UploadFile)
         mock_file.filename = "test.pdf"
         mock_file.content_type = "application/pdf"
-        mock_file.size = 1024
         mock_file.read = AsyncMock(return_value=b"Test PDF content")
+        mock_file.seek = AsyncMock()
         return mock_file
 
     @pytest.mark.asyncio
@@ -71,31 +71,38 @@ class TestFileService:
         
         assert result is False
 
-    def test_validate_file_valid(self, mock_upload_file):
+    @pytest.mark.asyncio
+    async def test_validate_file_valid(self, mock_upload_file):
         """Test file validation with valid file"""
-        is_valid, message = validate_file(mock_upload_file)
+        is_valid, message = await validate_file(mock_upload_file)
         
         assert is_valid is True
         assert message == ""
 
-    def test_validate_file_invalid_type(self):
+    @pytest.mark.asyncio
+    async def test_validate_file_invalid_type(self):
         """Test file validation with invalid file type"""
         mock_file = Mock(spec=UploadFile)
         mock_file.content_type = "text/plain"
-        mock_file.size = 1024
+        mock_file.read = AsyncMock(return_value=b"Test content")
+        mock_file.seek = AsyncMock()
         
-        is_valid, message = validate_file(mock_file)
+        is_valid, message = await validate_file(mock_file)
         
         assert is_valid is False
         assert "File type text/plain not allowed" in message
 
-    def test_validate_file_too_large(self):
+    @pytest.mark.asyncio
+    async def test_validate_file_too_large(self):
         """Test file validation with file too large"""
         mock_file = Mock(spec=UploadFile)
         mock_file.content_type = "application/pdf"
-        mock_file.size = 11 * 1024 * 1024  # 11MB
+        # Create content larger than 10MB
+        large_content = b"x" * (11 * 1024 * 1024)
+        mock_file.read = AsyncMock(return_value=large_content)
+        mock_file.seek = AsyncMock()
         
-        is_valid, message = validate_file(mock_file)
+        is_valid, message = await validate_file(mock_file)
         
         assert is_valid is False
         assert "File size" in message and "exceeds maximum" in message

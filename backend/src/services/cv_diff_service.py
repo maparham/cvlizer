@@ -4,10 +4,9 @@ CV Diff Service for computing semantic differences between CV versions.
 This service provides robust diff computation using Python's built-in difflib,
 handling move+edit scenarios, phantom changes, and providing structured diff results.
 """
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 import json
 import difflib
-import re
 
 
 class CVDiffService:
@@ -34,7 +33,7 @@ class CVDiffService:
         
         # Check if data is identical after cleaning (should not happen with real changes)
         if cleaned_old == cleaned_new:
-            print(f"⚠️  DIFF WARNING - Data is identical after cleaning, but input data was different")
+            pass
         
         # Compute the diff using simple comparison
         changes = self._compute_simple_diff(cleaned_old, cleaned_new)

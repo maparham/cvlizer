@@ -85,6 +85,13 @@ async def generate_ai_section(
             section_type=request.section_type
         )
         
+        # Check if AI generation failed
+        if ai_result.get("error"):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"AI service error: {ai_result['error']}"
+            )
+        
         # Save AI section to database
         ai_section = AISection(
             cv_id=cv_id,
@@ -92,7 +99,7 @@ async def generate_ai_section(
             section_content=ai_result["section_content"],
             section_type=request.section_type,
             generation_prompt=f"Generate {request.section_type} section",
-            ai_model=ai_result.get("ai_model", "gpt-4o-mini"),
+            ai_model=ai_result.get("model_used", "gpt-4o-mini"),
             tokens_used=ai_result.get("tokens_used", 0),
             generation_time=ai_result.get("generation_time", 0)
         )
@@ -113,6 +120,9 @@ async def generate_ai_section(
             created_at=ai_section.created_at.isoformat()
         )
         
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -1,3 +1,20 @@
+/**
+ * Home Page Component
+ * 
+ * This module provides the landing page for the CV Optimizer application.
+ * It showcases the main features and provides authentication options for users.
+ * 
+ * Key responsibilities:
+ * - Display application hero section with call-to-action
+ * - Showcase main features (upload, edit, AI enhancement)
+ * - Provide authentication buttons for signed-in and signed-out users
+ * - Handle navigation to dashboard and profile pages
+ * 
+ * Usage:
+ * - Rendered as the root route ("/") in the application
+ * - Uses Clerk authentication components for user state management
+ * - Provides responsive design with Material-UI components
+ */
 import React from 'react'
 import {
   Container,

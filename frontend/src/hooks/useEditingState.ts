@@ -1,3 +1,22 @@
+/**
+ * Editing State Management Hook
+ * 
+ * This module provides comprehensive editing state management for CV sections and individual items.
+ * It handles editing modes, unsaved changes detection, and navigation protection.
+ * 
+ * Key responsibilities:
+ * - Manage section-level editing state and transitions
+ * - Handle individual item editing with conflict resolution
+ * - Detect and prevent navigation with unsaved changes
+ * - Provide dialog management for unsaved changes warnings
+ * - Coordinate between different editing modes
+ * 
+ * Usage:
+ * - Use in CV editor components for state management
+ * - Provides editing state and handlers for UI components
+ * - Integrates with unsaved changes detection system
+ * - Handles complex editing state transitions and conflicts
+ */
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { EditingIndividualItem } from '../types'
 import { useUnsavedChanges } from '../components/cv/core/useUnsavedChanges'

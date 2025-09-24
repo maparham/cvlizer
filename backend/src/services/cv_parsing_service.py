@@ -8,10 +8,9 @@ This module provides specialized functions for:
 """
 
 
-def parse_cv_with_openai(file_content: bytes, filename: str, content_type: str) -> dict:
+async def parse_cv_with_openai(file_content: bytes, filename: str, content_type: str) -> dict:
     """Parse CV content using OpenAI"""
     from .file_service import extract_text_from_file
-    from .ai_service import parse_cv_text_with_openai
     import uuid
     
     try:
@@ -19,7 +18,8 @@ def parse_cv_with_openai(file_content: bytes, filename: str, content_type: str) 
         text_content = extract_text_from_file(file_content, content_type)
         
         # Parse with OpenAI
-        parsed_data = parse_cv_text_with_openai(text_content)
+        from .ai_service import parse_cv_text_with_openai
+        parsed_data = await parse_cv_text_with_openai(text_content)
         
         # Check if parsing resulted in an error
         if parsed_data.get('error'):
@@ -123,15 +123,3 @@ def _normalize_dates_in_cv_data(cv_data: dict) -> dict:
                             item[date_field] = normalize_date_value(item[date_field])
     
     return cv_data
-
-
-def parse_cv_text_with_openai(text_content: str) -> dict:
-    """Parse CV text content using OpenAI - wrapper for ai_service function"""
-    from .ai_service import parse_cv_text_with_openai as ai_parse
-    return ai_parse(text_content)
-
-
-def extract_text_from_file(file_content: bytes, content_type: str) -> str:
-    """Extract text from file content - wrapper for file_service function"""
-    from .file_service import extract_text_from_file as file_extract
-    return file_extract(file_content, content_type)

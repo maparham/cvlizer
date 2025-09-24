@@ -1,3 +1,23 @@
+/**
+ * Dashboard Page Component
+ * 
+ * This module provides the main CV management interface where users can view,
+ * manage, and organize their CV collection. It includes search, filtering,
+ * and CRUD operations for CVs.
+ * 
+ * Key responsibilities:
+ * - Display user's CV collection with status indicators
+ * - Provide search and filtering capabilities
+ * - Handle CV creation, editing, deletion, and duplication
+ * - Show CV processing status and error states
+ * - Manage user authentication and admin access
+ * 
+ * Usage:
+ * - Rendered as the "/dashboard" route for authenticated users
+ * - Uses CV store for state management and API operations
+ * - Integrates with notification system for user feedback
+ * - Provides responsive grid layout for CV cards
+ */
 import React, { useState, useEffect } from 'react'
 import {
   Container,

@@ -68,11 +68,3 @@ def delete_cv(db: Session, cv_id: str, user_id: str) -> bool:
     db.delete(cv)
     db.commit()
     return True
-
-
-# Parsing functions have been moved to cv_parsing_service.py
-# Import them here to maintain backward compatibility
-def parse_cv_with_openai(file_content: bytes, filename: str, content_type: str) -> dict:
-    """Parse CV content using OpenAI - delegated to cv_parsing_service"""
-    from .cv_parsing_service import parse_cv_with_openai as parse_cv
-    return parse_cv(file_content, filename, content_type)

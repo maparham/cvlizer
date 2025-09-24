@@ -21,15 +21,25 @@ ALLOWED_FILE_TYPES = {
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
-def validate_file(file: UploadFile) -> Tuple[bool, str]:
+async def validate_file(file: UploadFile) -> Tuple[bool, str]:
     """Validate uploaded file"""
     # Check file type
     if file.content_type not in ALLOWED_FILE_TYPES:
         return False, f"File type {file.content_type} not allowed. Allowed types: {', '.join(ALLOWED_FILE_TYPES)}"
     
-    # Check file size
-    if file.size and file.size > MAX_FILE_SIZE:
-        return False, f"File size {file.size} exceeds maximum allowed size of {MAX_FILE_SIZE} bytes"
+    # Check file size by reading the file content
+    try:
+        # Read file content to get actual size
+        content = await file.read()
+        file_size = len(content)
+        
+        # Reset file pointer to beginning for subsequent reads
+        await file.seek(0)
+        
+        if file_size > MAX_FILE_SIZE:
+            return False, f"File size {file_size} exceeds maximum allowed size of {MAX_FILE_SIZE} bytes"
+    except Exception as e:
+        return False, f"Error reading file: {str(e)}"
     
     return True, ""
 

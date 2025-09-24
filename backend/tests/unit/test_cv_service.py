@@ -2,8 +2,9 @@ import pytest
 from unittest.mock import Mock, patch
 from src.services.cv_service import (
     create_cv, get_cv_by_id, get_cvs_by_user, 
-    update_cv, delete_cv, parse_cv_with_openai
+    update_cv, delete_cv
 )
+from src.services.cv_parsing_service import parse_cv_with_openai
 from src.models.cv import CV
 
 
@@ -118,7 +119,8 @@ class TestCVService:
     
     @patch('src.services.file_service.extract_text_from_file')
     @patch('src.services.ai_service.parse_cv_text_with_openai')
-    def test_parse_cv_with_openai_success(self, mock_parse_text, mock_extract_text):
+    @pytest.mark.asyncio
+    async def test_parse_cv_with_openai_success(self, mock_parse_text, mock_extract_text):
         """Test successful CV parsing with OpenAI"""
         mock_extract_text.return_value = "Extracted text content"
         mock_parse_text.return_value = {"parsed": "data"}
@@ -127,14 +129,15 @@ class TestCVService:
         filename = "test.pdf"
         content_type = "application/pdf"
         
-        result = parse_cv_with_openai(file_content, filename, content_type)
+        result = await parse_cv_with_openai(file_content, filename, content_type)
         
         assert result == {"parsed": "data"}
         mock_extract_text.assert_called_once_with(file_content, content_type)
         mock_parse_text.assert_called_once_with("Extracted text content")
     
     @patch('src.services.file_service.extract_text_from_file')
-    def test_parse_cv_with_openai_error(self, mock_extract_text):
+    @pytest.mark.asyncio
+    async def test_parse_cv_with_openai_error(self, mock_extract_text):
         """Test CV parsing with error"""
         mock_extract_text.side_effect = Exception("File parsing error")
         
@@ -142,7 +145,7 @@ class TestCVService:
         filename = "test.pdf"
         content_type = "application/pdf"
         
-        result = parse_cv_with_openai(file_content, filename, content_type)
+        result = await parse_cv_with_openai(file_content, filename, content_type)
         
         assert "error" in result
         assert "File parsing error" in result["error"]

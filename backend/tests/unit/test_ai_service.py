@@ -71,7 +71,8 @@ class TestAIService:
         assert result["error"] == "API Error"
     
     @patch('src.services.ai_service._openai_client.chat.completions.create')
-    def test_parse_cv_text_with_openai_success(self, mock_openai):
+    @pytest.mark.asyncio
+    async def test_parse_cv_text_with_openai_success(self, mock_openai):
         """Test successful CV text parsing with OpenAI"""
         mock_response = Mock()
         mock_response.choices = [Mock()]
@@ -91,7 +92,7 @@ class TestAIService:
         
         text_content = "John Doe\nDeveloper at Tech Corp"
         
-        result = parse_cv_text_with_openai(text_content)
+        result = await parse_cv_text_with_openai(text_content)
         
         assert result["personal_info"]["full_name"] == "John Doe"
         assert result["personal_info"]["email"] == "john@example.com"
@@ -99,7 +100,8 @@ class TestAIService:
         assert result["work_experience"][0]["company"] == "Tech Corp"
     
     @patch('src.services.ai_service._openai_client.chat.completions.create')
-    def test_parse_cv_text_with_openai_json_error(self, mock_openai):
+    @pytest.mark.asyncio
+    async def test_parse_cv_text_with_openai_json_error(self, mock_openai):
         """Test CV text parsing with JSON parse error"""
         mock_response = Mock()
         mock_response.choices = [Mock()]
@@ -108,26 +110,28 @@ class TestAIService:
         
         text_content = "John Doe\nDeveloper at Tech Corp"
         
-        result = parse_cv_text_with_openai(text_content)
+        result = await parse_cv_text_with_openai(text_content)
         
         assert "parse_error" in result
         assert "Failed to parse as JSON" in result["parse_error"]
         assert result["professional_summary"]["content"] == text_content[:500]
     
     @patch('src.services.ai_service._openai_client.chat.completions.create')
-    def test_parse_cv_text_with_openai_api_error(self, mock_openai):
+    @pytest.mark.asyncio
+    async def test_parse_cv_text_with_openai_api_error(self, mock_openai):
         """Test CV text parsing with API error"""
         mock_openai.side_effect = Exception("API Error")
         
         text_content = "John Doe\nDeveloper at Tech Corp"
         
-        result = parse_cv_text_with_openai(text_content)
+        result = await parse_cv_text_with_openai(text_content)
         
         assert "parse_error" in result
         assert "OpenAI API error" in result["parse_error"]
         assert result["professional_summary"]["content"] == text_content[:500]
     
-    def test_parse_cv_text_with_openai_empty_content(self):
+    @pytest.mark.asyncio
+    async def test_parse_cv_text_with_openai_empty_content(self):
         """Test CV text parsing with empty content"""
         text_content = ""
         
@@ -140,7 +144,7 @@ class TestAIService:
             })
             mock_openai.return_value = mock_response
             
-            result = parse_cv_text_with_openai(text_content)
+            result = await parse_cv_text_with_openai(text_content)
             
             assert result["personal_info"]["full_name"] == ""
             assert result["professional_summary"]["content"] == ""

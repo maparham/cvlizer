@@ -5,7 +5,7 @@ This module handles CV file uploads, background parsing with OpenAI,
 and provides endpoints for managing CV data including listing,
 retrieval, updates, and deletion.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -44,8 +44,8 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
         # Create dedicated database session for background thread
         db = SessionLocal()
         
-        # Parse CV content
-        parsed_data = parse_cv_with_openai(file_content, filename, content_type)
+        # Parse CV content (run async function in sync context)
+        parsed_data = asyncio.run(parse_cv_with_openai(file_content, filename, content_type))
         
         # Update CV record with parsed data
         cv = db.query(CV).filter(CV.id == cv_id).first()  # Direct query for background task
@@ -144,7 +144,7 @@ async def upload_cv(
 ):
     """Upload a CV file and start background parsing"""
     # Validate file
-    is_valid, error_message = validate_file(file)
+    is_valid, error_message = await validate_file(file)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

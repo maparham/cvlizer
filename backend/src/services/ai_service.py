@@ -7,6 +7,7 @@ and generating AI-enhanced CV sections tailored to job descriptions.
 import openai
 import os
 import time
+import asyncio
 from typing import Dict, Any
 from dotenv import load_dotenv
 from ..constants import DEFAULT_PARSED_CV
@@ -21,7 +22,6 @@ if openai_api_key and openai_api_key != "your-openai-key-here":
     _openai_client = openai.OpenAI()
 else:
     _openai_client = None
-    print("⚠️  OpenAI API key not configured. AI features will be disabled.")
 
 
 async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, section_type: str = "why_good_fit") -> Dict[str, Any]:
@@ -74,7 +74,9 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
     try:
         start_time = time.time()
         
-        response = _openai_client.chat.completions.create(
+        # Run the synchronous OpenAI call in a thread pool to avoid blocking
+        response = await asyncio.to_thread(
+            _openai_client.chat.completions.create,
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a professional CV optimization expert. Generate compelling, tailored content that helps candidates stand out."},
@@ -122,7 +124,7 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
         }
 
 
-def parse_cv_text_with_openai(text_content: str) -> dict:
+async def parse_cv_text_with_openai(text_content: str) -> dict:
     """Parse CV text content using OpenAI to extract structured data"""
     
     # Check if text content is empty or too short
@@ -264,7 +266,9 @@ def parse_cv_text_with_openai(text_content: str) -> dict:
     """
     
     try:
-        response = _openai_client.chat.completions.create(
+        # Run the synchronous OpenAI call in a thread pool to avoid blocking
+        response = await asyncio.to_thread(
+            _openai_client.chat.completions.create,
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are an expert CV parser. Extract structured information from CV text and return valid JSON."},

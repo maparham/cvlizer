@@ -1,3 +1,21 @@
+/**
+ * Protected Route Component
+ * 
+ * This module provides route protection for authenticated users using Clerk authentication.
+ * It ensures only signed-in users can access protected pages and redirects unauthenticated
+ * users to the login page.
+ * 
+ * Key responsibilities:
+ * - Check user authentication status using Clerk
+ * - Show loading state while authentication is being verified
+ * - Redirect unauthenticated users to login page
+ * - Render protected content for authenticated users
+ * 
+ * Usage:
+ * - Wrap protected routes with this component
+ * - Automatically handles authentication state management
+ * - Provides consistent loading and redirect behavior
+ */
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
