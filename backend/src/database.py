@@ -12,11 +12,13 @@ from dotenv import load_dotenv
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Reuse the shared engine/Base from models.base; import models to register metadata
-from models.base import Base, engine  # type: ignore
-from models.user import User  # noqa: F401
-from models.cv import CV  # noqa: F401
-from models.job_description import JobDescription  # noqa: F401
-from models.ai_section import AISection  # noqa: F401
+from .models.base import Base, engine  # type: ignore
+from .models.user import User  # noqa: F401
+from .models.cv import CV  # noqa: F401
+from .models.job_description import JobDescription  # noqa: F401
+from .models.ai_section import AISection  # noqa: F401
+from .models.audit_log import AuditLog  # noqa: F401
+from .models.user_activity import UserActivity, UserSession  # noqa: F401
 
 load_dotenv()
 

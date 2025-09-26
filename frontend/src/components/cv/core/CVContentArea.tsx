@@ -10,7 +10,7 @@
  */
 import React from 'react'
 import { Box, Paper } from '@mui/material'
-import { CVSection } from '../types'
+import { CVSection } from '../../../types'
 import { 
   PersonalInfo, 
   ProfessionalSummary, 
@@ -230,6 +230,7 @@ const CVContentArea: React.FC = () => {
   return (
     <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#f5f5f5', p: 2 }}>
       <Paper
+        id="cv-print-page"
         sx={{
           width: '210mm',
           minHeight: '297mm',

@@ -18,6 +18,5 @@ export * from './ui'
 // Sections
 export * from './sections'
 
-// Types and Constants
-export * from './types'
+// Constants
 export * from './constants'

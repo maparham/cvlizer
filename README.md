@@ -102,11 +102,24 @@ Create a `.env` file in the `backend` directory:
 # Database Configuration
 DATABASE_URL=sqlite:///./cv_optimizer.db
 
-# JWT Configuration
+# Auth & Security
+DEV_MODE=true
 JWT_SECRET_KEY=your-secret-key-here-change-in-production
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# Clerk Backend API (used to enrich user info)
+# Obtain from Clerk Dashboard → API Keys → Secret Key (starts with sk_)
+# Required to call Clerk Backend API (e.g., fetch user email/metadata).
+# If omitted in local dev, the app will skip API calls and use placeholders.
+CLERK_SECRET_KEY=sk_test_your_secret_key_from_clerk_dashboard
+
+# Clerk JWT Verification (required in staging/production)
+CLERK_VERIFY_TOKENS=true
+CLERK_JWKS_URL=https://YOUR-CLERK-DOMAIN/.well-known/jwks.json
+CLERK_ISSUER=https://YOUR-CLERK-DOMAIN
+CLERK_AUDIENCE=YOUR_BACKEND_AUDIENCE
 
 # OpenAI Configuration
 OPENAI_API_KEY=your-openai-key-here
@@ -115,7 +128,15 @@ OPENAI_API_KEY=your-openai-key-here
 DEBUG=true
 MAX_FILE_SIZE=10485760
 ALLOWED_FILE_TYPES=application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document
+CV_PARSE_WORKERS=2
 ```
+
+Notes:
+- Local development: you can leave `CLERK_SECRET_KEY` unset and either:
+  - set `CLERK_VERIFY_TOKENS=false` to allow insecure decode bypass, or
+  - provide the JWKS config (`CLERK_JWKS_URL`, `CLERK_ISSUER`, `CLERK_AUDIENCE`) to verify tokens properly.
+- Staging/Production: set `CLERK_VERIFY_TOKENS=true` and configure JWKS variables; do not rely on the dev bypass.
+- When `CLERK_SECRET_KEY` is not set, backend will not call Clerk’s API, avoiding 401 errors during local dev.
 
 ### Frontend Environment Variables
 

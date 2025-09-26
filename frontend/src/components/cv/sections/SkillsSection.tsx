@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Box, Typography, Chip } from '@mui/material'
-import { SectionProps } from '../types'
+import { SectionProps } from '../../../types'
 import SimpleFormSection from '../core/SimpleFormSection'
 import SkillsAutocomplete from '../ui/SkillsAutocomplete'
 

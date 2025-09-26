@@ -10,7 +10,7 @@
 import React from 'react'
 import { Box, TextField, InputAdornment, Typography } from '@mui/material'
 import { GitHub as GitHubIcon, LinkedIn as LinkedInIcon, Language as WebsiteIcon } from '@mui/icons-material'
-import { SectionProps } from '../types'
+import { SectionProps } from '../../../types'
 import SimpleFormSection from '../core/SimpleFormSection'
 import LocationAutocomplete from '../ui/LocationAutocomplete'
 

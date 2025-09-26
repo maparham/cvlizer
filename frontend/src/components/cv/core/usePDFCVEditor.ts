@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
-import { CVSection, PDFCVEditorProps } from '../types'
+import { CVSection, PDFCVEditorProps } from '../../../types'
 import { AVAILABLE_SECTIONS, getSectionsInDisplayOrder } from '../constants'
 import { useUnsavedChanges } from './useUnsavedChanges'
 

@@ -14,6 +14,12 @@ from ..models.base import get_db
 from ..models.user import User
 from ..models.cv import CV
 from ..models.job_description import JobDescription
+from ..services.job_description_service import (
+    get_cv_owned_by,
+    create_job_description_for_cv,
+    list_job_descriptions_for_cv,
+    delete_job_description_owned_by,
+)
 from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
 
 router = APIRouter(prefix="/api", tags=["job-descriptions"])
@@ -54,10 +60,7 @@ async def create_job_description(
 ):
     """Add a job description for a CV"""
     # Verify CV exists and belongs to user
-    cv = db.query(CV).filter(
-        CV.id == cv_id,
-        CV.user_id == current_user.id
-    ).first()
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
     
     if not cv:
         raise HTTPException(
@@ -66,18 +69,15 @@ async def create_job_description(
         )
     
     # Create job description
-    jd = JobDescription(
-        cv_id=cv_id,
+    jd = create_job_description_for_cv(
+        db,
+        cv,
         content=job_description.content,
         source_url=job_description.source_url,
         title=job_description.title,
         company=job_description.company,
-        location=job_description.location
+        location=job_description.location,
     )
-    
-    db.add(jd)
-    db.commit()
-    db.refresh(jd)
     
     return JobDescriptionResponse(
         id=str(jd.id),
@@ -99,10 +99,7 @@ async def get_job_descriptions(
 ):
     """Get all job descriptions for a CV"""
     # Verify CV exists and belongs to user
-    cv = db.query(CV).filter(
-        CV.id == cv_id,
-        CV.user_id == current_user.id
-    ).first()
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
     
     if not cv:
         raise HTTPException(
@@ -111,9 +108,7 @@ async def get_job_descriptions(
         )
     
     # Get job descriptions
-    job_descriptions = db.query(JobDescription).filter(
-        JobDescription.cv_id == cv_id
-    ).all()
+    job_descriptions = list_job_descriptions_for_cv(db, cv)
     
     jd_responses = [
         JobDescriptionResponse(
@@ -140,18 +135,11 @@ async def delete_job_description(
 ):
     """Delete a job description"""
     # Get job description and verify ownership through CV
-    jd = db.query(JobDescription).join(CV).filter(
-        JobDescription.id == jd_id,
-        CV.user_id == current_user.id
-    ).first()
-    
-    if not jd:
+    success = delete_job_description_owned_by(db, jd_id, str(current_user.id))
+    if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job description not found"
         )
-    
-    db.delete(jd)
-    db.commit()
     
     return {"message": "Job description deleted successfully"}

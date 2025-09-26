@@ -1,6 +1,6 @@
 import React from 'react'
 import { TextField, Typography } from '@mui/material'
-import { SectionProps } from '../types'
+import { SectionProps } from '../../../types'
 import SimpleFormSection from '../core/SimpleFormSection'
 
 const ProfessionalSummarySection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges }) => {

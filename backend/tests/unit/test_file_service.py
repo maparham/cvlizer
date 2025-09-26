@@ -10,8 +10,7 @@ from src.services.file_service import (
     extract_text_from_file,
     validate_file,
     extract_text_from_pdf,
-    extract_text_from_docx,
-    extract_text_from_doc
+    extract_text_from_docx
 )
 
 
@@ -110,7 +109,7 @@ class TestFileService:
     @patch('fitz.open')
     def test_extract_text_from_pdf(self, mock_fitz_open):
         """Test text extraction from PDF file"""
-        file_content = b"PDF content"
+        file_content = b"%PDF-1.4\nPDF content"
         
         mock_page = Mock()
         mock_page.get_text.return_value = "Extracted text"
@@ -125,7 +124,7 @@ class TestFileService:
 
     def test_extract_text_from_docx(self):
         """Test text extraction from DOCX file"""
-        file_content = b"DOCX content"
+        file_content = b"PK\x03\x04DOCX content"
         
         with patch('src.services.file_service.docx.Document') as mock_doc:
             mock_paragraph = Mock()
@@ -136,18 +135,6 @@ class TestFileService:
             
             assert result == "Extracted text"
 
-    def test_extract_text_from_doc(self):
-        """Test text extraction from DOC file"""
-        file_content = b"DOC content"
-        
-        with patch('src.services.file_service.docx.Document') as mock_doc:
-            mock_paragraph = Mock()
-            mock_paragraph.text = "Extracted text"
-            mock_doc.return_value.paragraphs = [mock_paragraph]
-            
-            result = extract_text_from_doc(file_content)
-            
-            assert result == "Extracted text"
 
     def test_extract_text_from_file_pdf(self):
         """Test text extraction from file with PDF content type"""
@@ -173,17 +160,6 @@ class TestFileService:
             assert result == "Extracted DOCX text"
             mock_extract.assert_called_once_with(file_content)
 
-    def test_extract_text_from_file_doc(self):
-        """Test text extraction from file with DOC content type"""
-        file_content = b"DOC content"
-        
-        with patch('src.services.file_service.extract_text_from_doc') as mock_extract:
-            mock_extract.return_value = "Extracted DOC text"
-            
-            result = extract_text_from_file(file_content, "application/msword")
-            
-            assert result == "Extracted DOC text"
-            mock_extract.assert_called_once_with(file_content)
 
     def test_extract_text_from_file_unsupported_type(self):
         """Test text extraction from file with unsupported content type"""

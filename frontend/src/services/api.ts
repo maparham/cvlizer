@@ -10,27 +10,31 @@
  */
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 })
 
-// Request interceptor to add Clerk auth token
+// Request interceptor to add authentication token
 api.interceptors.request.use(
   async (config) => {
-    // Get Clerk token from the global Clerk instance
-    if (typeof window !== 'undefined' && (window as any).Clerk) {
-      try {
-        const token = await (window as any).Clerk.session?.getToken()
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`
+    // Use Clerk token
+    if (!config.headers.Authorization) {
+      // Fall back to Clerk token from the global Clerk instance
+      if (typeof window !== 'undefined' && (window as any).Clerk) {
+        try {
+          const token = await (window as any).Clerk.session?.getToken()
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+          }
+        } catch (error) {
+          // Authentication token not available
         }
-      } catch (error) {
-        // Authentication token not available
       }
     }
     return config
@@ -50,8 +54,8 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined' && (window as any).Clerk) {
         try {
           (window as any).Clerk.redirectToSignIn()
-        } catch (redirectError) {
-          // Redirect failed
+        } catch {
+          // Redirect failed - ignore error
         }
       }
     }
@@ -160,7 +164,19 @@ export const cvApi = {
   duplicateCV: async (cvId: string) => {
     const response = await api.post(`/api/cvs/${cvId}/duplicate`)
     return response.data
-  }
+  },
+
+  // Export CV as PDF (LaTeX compiled) and open in a new tab
+  exportCVAsPDF: async (cvId: string) => {
+    const response = await api.get(`/api/cvs/${cvId}/export/pdf`, {
+      responseType: 'blob'
+    })
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    setTimeout(() => window.URL.revokeObjectURL(url), 30000)
+  },
+
 }
 
 export default api

@@ -18,10 +18,12 @@ import {
 } from '@mui/material'
 import {
   ArrowBack as ArrowBackIcon,
-  AccountCircle as AccountCircleIcon
+  AccountCircle as AccountCircleIcon,
+  PictureAsPdf as PictureAsPdfIcon
 } from '@mui/icons-material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { cvApi } from '../services/api'
 import { CVEditorProvider, useCVEditor } from '../contexts/CVEditorContext'
 import { PDFCVEditor } from '../components/cv'
 import { SaveWithValidationErrors } from '../components/cv/SaveWithValidationErrors'
@@ -37,8 +39,10 @@ const CVEditorHeader: React.FC<{
   onLogout: () => void,
   onMenuOpen: (event: React.MouseEvent<HTMLElement>) => void,
   onMenuClose: () => void,
-  anchorEl: null | HTMLElement
-}> = ({ onLogout, onMenuOpen, onMenuClose, anchorEl }) => {
+  anchorEl: null | HTMLElement,
+  onExport: () => void,
+  isAdmin: boolean
+}> = ({ onLogout, onMenuOpen, onMenuClose, anchorEl, onExport, isAdmin }) => {
   const navigate = useNavigate()
   const { editingSection, editingIndividualItem, hasUnsavedChanges } = useCVEditor()
   const [showBackDialog, setShowBackDialog] = useState(false)
@@ -99,6 +103,21 @@ const CVEditorHeader: React.FC<{
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={onExport}
+            sx={{
+              mr: 1,
+              textTransform: 'none',
+              borderColor: '#ccc',
+              color: '#444',
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' }
+            }}
+          >
+            Export
+          </Button>
           <IconButton
             size="medium"
             edge="end"
@@ -131,6 +150,10 @@ const CVEditorHeader: React.FC<{
             open={Boolean(anchorEl)}
             onClose={onMenuClose}
           >
+            <MenuItem onClick={() => { onExport(); onMenuClose(); }}>Export as PDF</MenuItem>
+            {isAdmin && (
+              <MenuItem onClick={() => { navigate('/admin'); onMenuClose(); }}>Admin</MenuItem>
+            )}
             <MenuItem onClick={onLogout}>Logout</MenuItem>
           </Menu>
         </Toolbar>
@@ -170,7 +193,21 @@ const CVEditorContent: React.FC<{
   onMenuClose: () => void
   anchorEl: null | HTMLElement
   onTitleSave: (title: string) => Promise<void>
-}> = ({ cvId, activeCV, onLogout, onMenuOpen, onMenuClose, anchorEl, onTitleSave }) => {
+  isAdmin: boolean
+}> = ({ cvId, activeCV, onLogout, onMenuOpen, onMenuClose, anchorEl, onTitleSave, isAdmin }) => {
+  const { showError } = useNotifications()
+
+  const handleExport = async () => {
+    try {
+      if (!cvId || cvId === 'new') {
+        showError('Export Unavailable', 'Please save your CV before exporting.')
+        return
+      }
+      await cvApi.exportCVAsPDF(cvId)
+    } catch (e) {
+      showError('Export Failed', 'Could not open PDF export in a new tab.')
+    }
+  }
   return (
     <>
       <CVEditorHeader
@@ -178,6 +215,8 @@ const CVEditorContent: React.FC<{
         onMenuOpen={onMenuOpen}
         onMenuClose={onMenuClose}
         anchorEl={anchorEl}
+        onExport={handleExport}
+        isAdmin={isAdmin}
       />
       <PDFCVEditor 
         title={activeCV?.original_filename || 'Untitled CV'}
@@ -192,7 +231,7 @@ const CVEditorContent: React.FC<{
 const CVEditor: React.FC = () => {
   const { cvId } = useParams()
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { logout, isAdmin } = useAuth()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const { showSuccess, showError, showValidationError, showInfo, notifications, removeNotification } = useNotifications()
   
@@ -405,6 +444,7 @@ const CVEditor: React.FC = () => {
                   onMenuClose={handleMenuClose}
                   anchorEl={anchorEl}
                   onTitleSave={handleTitleSave}
+                  isAdmin={isAdmin}
                 />
               </InitialValidation>
             </SaveWithValidationErrors>

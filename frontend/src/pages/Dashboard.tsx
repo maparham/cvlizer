@@ -18,7 +18,7 @@
  * - Integrates with notification system for user feedback
  * - Provides responsive grid layout for CV cards
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   Container,
   Typography,
@@ -72,7 +72,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { CVUpload, EditableTitle } from '../components/cv'
 import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
-import api, { cvApi } from '../services/api'
+import { useActivityLogger } from '../hooks/useActivityLogger'
+import { cvApi } from '../services/api'
 import { CV } from '../types'
 import { isUploadedCV, hasBeenEdited, getCVStatusIcon, getSectionCount } from '../utils/dashboardUtils'
 import { formatDateTime } from '../utils/dateFormat'
@@ -85,7 +86,6 @@ const Dashboard: React.FC = () => {
   const [deleting, setDeleting] = useState(false)
   const [creating, setCreating] = useState(false)
   const [duplicating, setDuplicating] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('')
@@ -93,16 +93,16 @@ const Dashboard: React.FC = () => {
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'modified'>('modified')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   
-  const { logout } = useAuth()
+  const { logout, isAdmin: authIsAdmin } = useAuth()
   const navigate = useNavigate()
   const { showSuccess, showError, notifications, removeNotification } = useNotifications()
+  const { logUserAction, logPageView } = useActivityLogger()
   
   // Use CV store instead of local state
   const {
     cvs,
     loading,
     error,
-    // hasUnparsedCVs,
     fetchCVs,
     createTemporaryCV,
     updateCVTitle,
@@ -113,21 +113,10 @@ const Dashboard: React.FC = () => {
   // Fetch CVs on component mount
   useEffect(() => {
     fetchCVs()
+    // Log dashboard view
+    logPageView()
+    logUserAction('dashboard_view', 'User viewed dashboard')
   }, []) // Empty dependency array - only run once on mount
-
-  // Check admin status
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        await api.get('/admin/check-access')
-        setIsAdmin(true)
-      } catch (error) {
-        setIsAdmin(false)
-      }
-    }
-    
-    checkAdminStatus()
-  }, [])
 
   // Show error notifications
   useEffect(() => {
@@ -161,6 +150,11 @@ const Dashboard: React.FC = () => {
     setDeleting(true)
     try {
       await deleteCVFromStore(cvToDelete.id)
+      // Log CV deletion
+      logUserAction('cv_delete', `User deleted CV: ${cvToDelete.original_filename}`, {
+        cvId: cvToDelete.id,
+        filename: cvToDelete.original_filename
+      })
       showSuccess('Success', `${cvToDelete.original_filename} deleted successfully`)
       setDeleteDialogOpen(false)
       setCvToDelete(null)
@@ -226,7 +220,7 @@ const Dashboard: React.FC = () => {
 
 
   // Filter and sort CVs
-  const filteredAndSortedCVs = React.useMemo(() => {
+  const filteredAndSortedCVs = useMemo(() => {
     let filtered = cvs.filter((cv) => {
       // Search filter
       const matchesSearch = cv.original_filename.toLowerCase().includes(searchTerm.toLowerCase())
@@ -263,7 +257,7 @@ const Dashboard: React.FC = () => {
   }, [cvs, searchTerm, filterStatus, sortBy, sortOrder])
 
   // Get status counts for filter badges
-  const statusCounts = React.useMemo(() => {
+  const statusCounts = useMemo(() => {
     const counts = {
       all: cvs.length,
       parsed: cvs.filter(cv => cv.is_parsed && !cv.parse_error).length,
@@ -310,7 +304,7 @@ const Dashboard: React.FC = () => {
             data-testid="user-menu"
             >
               <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }} data-testid="profile-menu-item">Profile</MenuItem>
-              {isAdmin && (
+              {authIsAdmin && (
                 <MenuItem onClick={() => { navigate('/admin'); handleMenuClose(); }} data-testid="admin-menu-item">Admin</MenuItem>
               )}
               <MenuItem onClick={handleLogout} data-testid="logout-menu-item">Logout</MenuItem>

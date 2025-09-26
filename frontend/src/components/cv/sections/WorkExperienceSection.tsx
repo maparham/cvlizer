@@ -10,7 +10,7 @@
  */
 import React from 'react'
 import { Box, Typography } from '@mui/material'
-import { SectionProps } from '../types'
+import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
 import LocationAutocomplete from '../ui/LocationAutocomplete'

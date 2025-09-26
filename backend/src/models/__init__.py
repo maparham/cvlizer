@@ -10,6 +10,8 @@ from .cv import CV
 from .cv_history import CVHistory
 from .job_description import JobDescription
 from .ai_section import AISection
+from .audit_log import AuditLog
+from .user_activity import UserActivity, UserSession
 
 __all__ = [
     "Base",
@@ -19,5 +21,9 @@ __all__ = [
     "CV",
     "CVHistory",
     "JobDescription",
-    "AISection"
+    "AISection",
+    "AuditLog",
+    "UserActivity",
+    "UserSession",
+    "ImpersonationSession"
 ]

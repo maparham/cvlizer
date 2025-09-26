@@ -1,56 +1,79 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import { ClerkProvider } from '@clerk/clerk-react'
+/**
+ * Application Entry Point - React Bootstrap and Authentication Setup
+ * 
+ * This module serves as the main entry point for the CV Lator React application.
+ * It handles application initialization, authentication provider setup, and error
+ * handling for missing environment configuration.
+ * 
+ * Key responsibilities:
+ * - Bootstrap React application with StrictMode for development
+ * - Initialize Clerk authentication provider with publishable key
+ * - Handle missing environment configuration gracefully
+ * - Provide user-friendly error UI for configuration issues
+ * - Mount the main App component to the DOM
+ * 
+ * Usage context:
+ * - This module is loaded by Vite as the application entry point
+ * - Environment variables are loaded from .env files
+ * - Authentication is required for all application functionality
+ * - Graceful degradation when configuration is missing
+ * 
+ * Dependencies:
+ * - Clerk React for authentication management
+ * - React DOM for application mounting
+ * - Environment variables for configuration
+ */
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import { ClerkProvider } from "@clerk/clerk-react";
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-// Error component for missing Clerk key
-const ClerkSetupError = () => (
-  <div style={{ 
-    padding: '40px', 
-    textAlign: 'center', 
+// Error component for missing publishable key
+const MissingKeyError = () => (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100vh',
     fontFamily: 'Arial, sans-serif',
-    maxWidth: '600px',
-    margin: '100px auto',
-    border: '2px solid #ff6b6b',
-    borderRadius: '8px',
-    backgroundColor: '#fff5f5'
+    backgroundColor: '#f5f5f5'
   }}>
-    <h2 style={{ color: '#d63031', marginBottom: '20px' }}>⚠️ Clerk Setup Required</h2>
-    <p style={{ color: '#2d3436', marginBottom: '20px', lineHeight: '1.6' }}>
-      To use this application, you need to set up Clerk authentication:
-    </p>
-    <ol style={{ textAlign: 'left', color: '#2d3436', lineHeight: '1.8' }}>
-      <li>Go to <a href="https://clerk.com" target="_blank" rel="noopener noreferrer">clerk.com</a> and create a free account</li>
-      <li>Create a new React application</li>
-      <li>Copy your Publishable Key from the API Keys page</li>
-      <li>Add it to <code style={{ backgroundColor: '#f8f9fa', padding: '2px 6px', borderRadius: '4px' }}>frontend/.env.local</code>:</li>
-    </ol>
-    <pre style={{ 
-      backgroundColor: '#f8f9fa', 
-      padding: '15px', 
-      borderRadius: '4px', 
-      textAlign: 'left',
-      marginTop: '15px',
-      border: '1px solid #e9ecef'
+    <div style={{
+      padding: '2rem',
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+      maxWidth: '500px',
+      textAlign: 'center'
     }}>
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_key_here
-    </pre>
-    <p style={{ color: '#636e72', marginTop: '20px', fontSize: '14px' }}>
-      Current key: <code>{PUBLISHABLE_KEY || 'undefined'}</code>
-    </p>
+      <h2 style={{ color: '#d32f2f', marginBottom: '1rem' }}>Configuration Error</h2>
+      <p style={{ color: '#666', marginBottom: '1rem' }}>
+        Missing Clerk Publishable Key. Please check your environment configuration.
+      </p>
+      <p style={{ color: '#888', fontSize: '0.9rem' }}>
+        Set VITE_CLERK_PUBLISHABLE_KEY in your .env file
+      </p>
+    </div>
   </div>
-)
+);
 
-if (!PUBLISHABLE_KEY || PUBLISHABLE_KEY === 'YOUR_PUBLISHABLE_KEY' || PUBLISHABLE_KEY === 'pk_test_') {
-  ReactDOM.createRoot(document.getElementById('root')!).render(<ClerkSetupError />)
-} else {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
+// Log missing key for diagnostics but don't throw
+if (!PUBLISHABLE_KEY) {
+  console.error("Missing Clerk Publishable Key - VITE_CLERK_PUBLISHABLE_KEY not set");
+}
+
+// Ensure your index.html contains a <div id="root"></div> element for React to mount the app.
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    {PUBLISHABLE_KEY ? (
       <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
         <App />
       </ClerkProvider>
-    </React.StrictMode>,
-  )
-}
+    ) : (
+      <MissingKeyError />
+    )}
+  </StrictMode>
+);

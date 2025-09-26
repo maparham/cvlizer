@@ -35,7 +35,6 @@ const Login: React.FC = () => {
               routing="path" 
               path="/login"
               signUpUrl="/register"
-              redirectUrl="/dashboard"
             />
           </Box>
 

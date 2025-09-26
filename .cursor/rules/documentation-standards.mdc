@@ -79,6 +79,11 @@ Usage:
 """
 ```
 
+## File Creation Guidelines
+- **NEVER create markdown (.md) files unless specifically instructed by the user**
+- **Only create code files when explicitly requested**
+- **Prefer editing existing files over creating new ones**
+
 ## Enforcement
 - **All new files must include proper documentation**
 - **Existing files should be updated with documentation when modified**

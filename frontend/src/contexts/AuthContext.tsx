@@ -29,6 +29,7 @@ interface AuthContextType {
   error: string | null
   clearError: () => void
   isAuthenticated: boolean
+  isAdmin: boolean
 }
 
 interface AuthProviderProps {
@@ -114,6 +115,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // No-op for now since Clerk handles errors
   }
 
+  // Check if user is admin based on email
+  const isAdmin = user ? user.primaryEmailAddress?.emailAddress === import.meta.env.VITE_ADMIN_EMAIL : false
+
   const value: AuthContextType = {
     user: user ? {
       id: user.id,
@@ -129,7 +133,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading: !isLoaded,
     error: null, // Clerk handles errors through its own UI
     clearError,
-    isAuthenticated: !!user && isLoaded
+    isAuthenticated: !!user && isLoaded,
+    isAdmin
   }
 
   return (

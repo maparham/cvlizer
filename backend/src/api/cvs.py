@@ -1,12 +1,34 @@
 """
-CV management API endpoints for upload, parsing, and CRUD operations.
+CV Management API - File Upload, Parsing, and Data Management
 
-This module handles CV file uploads, background parsing with OpenAI,
-and provides endpoints for managing CV data including listing,
-retrieval, updates, and deletion.
+This module provides comprehensive API endpoints for CV file management including
+upload, background parsing, CRUD operations, and data export. It handles file
+processing workflows, AI-powered content extraction, and secure data management
+with proper HTML escaping and user isolation.
+
+Key responsibilities:
+- Handle CV file uploads with validation and storage
+- Manage background parsing workflows with OpenAI integration
+- Provide CRUD operations for CV data with user ownership validation
+- Support PDF export via LaTeX compilation for CV documents
+- Handle CV history tracking and version management
+- Manage temporary CV creation and validation workflows
+
+Usage context:
+- Used by frontend CV management interfaces
+- Integrates with AI services for content parsing
+- Provides secure data access with user authentication
+- Handles complex file processing and export workflows
+
+Dependencies:
+- FastAPI for REST endpoint management
+- SQLAlchemy for database operations
+- OpenAI API for AI-powered content parsing
+- File management utilities for upload handling
+- LaTeX export services for PDF document generation
 """
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel, ValidationError, Field
@@ -28,11 +50,13 @@ from copy import deepcopy
 from ..schemas.cv_schemas import CVUpdateRequestSchema, CVDataSchema
 from ..utils.validation import CVDataValidator
 from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
+from ..services.latex_export_service import generate_cv_latex, compile_pdf_from_latex, is_latex_available
 
 router = APIRouter(prefix="/api/cvs", tags=["cvs"])
 
-# Thread pool for background parsing
-executor = ThreadPoolExecutor(max_workers=2)
+# Thread pool for background parsing (configurable)
+_workers = int(os.getenv("CV_PARSE_WORKERS", "2"))
+executor = ThreadPoolExecutor(max_workers=max(1, _workers))
 
 
 
@@ -478,3 +502,27 @@ async def delete_cv_data(
         )
     
     return {"message": "CV deleted successfully"}
+
+
+
+
+@router.get("/{cv_id}/export/pdf")
+async def export_cv_pdf(
+    cv_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Export CV as PDF via LaTeX (pdflatex)."""
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    if not is_latex_available():
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LaTeX toolchain (pdflatex) not available on server")
+    try:
+        tex_source = generate_cv_latex(cv.parsed_data or {}, cv.original_filename or "My CV")
+        pdf_bytes = compile_pdf_from_latex(tex_source)
+        filename = (cv.original_filename or "cv").rsplit(".", 1)[0] + ".pdf"
+        headers = {"Content-Disposition": f"inline; filename=\"{filename}\""}
+        return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate PDF: {str(e)}")

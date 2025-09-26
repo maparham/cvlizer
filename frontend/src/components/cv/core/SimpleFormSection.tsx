@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box } from '@mui/material'
-import { SectionProps } from '../types'
+import { SectionProps } from '../../../types'
 import { useSectionAutoSave } from './hooks'
 import BaseSection from './BaseSection'
 import { createFormValidator } from './formUtils'

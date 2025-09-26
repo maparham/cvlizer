@@ -24,10 +24,25 @@ else:
     _openai_client = None
 
 
+def is_ai_enabled() -> bool:
+    return _openai_client is not None
+
+
+async def _with_retries(coro_factory, attempts: int = 2, delay: float = 0.5):
+    last_exc = None
+    for i in range(attempts):
+        try:
+            return await coro_factory()
+        except Exception as e:
+            last_exc = e
+            if i < attempts - 1:
+                await asyncio.sleep(delay * (2 ** i))
+    raise last_exc
+
+
 async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, section_type: str = "why_good_fit") -> Dict[str, Any]:
     """Generate AI-enhanced CV section based on job description"""
-    
-    if not _openai_client:
+    if not is_ai_enabled():
         return {
             "error": "OpenAI API key not configured. AI features are disabled.",
             "section_content": "",
@@ -75,16 +90,19 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
         start_time = time.time()
         
         # Run the synchronous OpenAI call in a thread pool to avoid blocking
-        response = await asyncio.to_thread(
-            _openai_client.chat.completions.create,
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a professional CV optimization expert. Generate compelling, tailored content that helps candidates stand out."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=500,
-            temperature=0.7
-        )
+        async def _call():
+            return await asyncio.to_thread(
+                _openai_client.chat.completions.create,
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a professional CV optimization expert. Generate compelling, tailored content that helps candidates stand out."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.7
+            )
+
+        response = await _with_retries(_call, attempts=2, delay=0.5)
         
         generation_time = int((time.time() - start_time) * 1000)  # Convert to milliseconds
         
@@ -266,17 +284,21 @@ async def parse_cv_text_with_openai(text_content: str) -> dict:
     """
     
     try:
-        # Run the synchronous OpenAI call in a thread pool to avoid blocking
-        response = await asyncio.to_thread(
-            _openai_client.chat.completions.create,
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are an expert CV parser. Extract structured information from CV text and return valid JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=2000,
-            temperature=0.1
-        )
+        if not is_ai_enabled():
+            raise RuntimeError("OpenAI disabled")
+
+        async def _call():
+            return await asyncio.to_thread(
+                _openai_client.chat.completions.create,
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are an expert CV parser. Extract structured information from CV text and return valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.1
+            )
+        response = await _with_retries(_call, attempts=2, delay=0.5)
         
         content = response.choices[0].message.content
         

@@ -2,7 +2,7 @@
  * Protected Route Component
  * 
  * This module provides route protection for authenticated users using Clerk authentication.
- * It ensures only signed-in users can access protected pages and redirects unauthenticated
+ * It ensures only signed-in users can access protected pages and redirects unauthenticated 
  * users to the login page.
  * 
  * Key responsibilities:
@@ -42,13 +42,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     )
   }
 
-  // Redirect to login if user is not signed in
-  if (!isSignedIn) {
-    return <Navigate to="/login" replace />
+  // Allow access if user is signed in with Clerk
+  if (isSignedIn) {
+    return <>{children}</>
   }
 
-  // Render the protected component if user is authenticated
-  return <>{children}</>
+  // Redirect to login if user is not authenticated
+  return <Navigate to="/login" replace />
 }
 
 export default ProtectedRoute

@@ -14,8 +14,9 @@ from ..models.base import get_db
 from ..models.user import User
 from ..models.cv import CV
 from ..models.job_description import JobDescription
+from ..services.job_description_service import get_cv_owned_by, get_job_description_for_cv
 from ..models.ai_section import AISection
-from ..services.ai_service import generate_cv_section
+from ..services.ai_service import generate_cv_section, is_ai_enabled
 from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
 
 router = APIRouter(prefix="/api", tags=["ai"])
@@ -54,10 +55,7 @@ async def generate_ai_section(
 ):
     """Generate AI-enhanced section for CV based on job description"""
     # Verify CV exists and belongs to user
-    cv = db.query(CV).filter(
-        CV.id == cv_id,
-        CV.user_id == current_user.id
-    ).first()
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
     
     if not cv:
         raise HTTPException(
@@ -66,10 +64,7 @@ async def generate_ai_section(
         )
     
     # Verify job description exists and belongs to CV
-    job_description = db.query(JobDescription).filter(
-        JobDescription.id == request.job_description_id,
-        JobDescription.cv_id == cv_id
-    ).first()
+    job_description = get_job_description_for_cv(db, request.job_description_id, cv_id)
     
     if not job_description:
         raise HTTPException(
@@ -78,6 +73,11 @@ async def generate_ai_section(
         )
     
     try:
+        if not is_ai_enabled():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="AI features are disabled"
+            )
         # Generate AI section
         ai_result = await generate_cv_section(
             cv_data=cv.parsed_data,

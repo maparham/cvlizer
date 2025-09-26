@@ -24,6 +24,7 @@ const CVEditor = lazy(() => import('./pages/CVEditor'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Profile = lazy(() => import('./pages/Profile'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const LoginRedirect = lazy(() => import('./components/LoginRedirect'))
 
 // Loading component
 const PageLoader = () => (
@@ -60,6 +61,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/login-redirect" element={<LoginRedirect />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />

@@ -29,7 +29,7 @@ import {
   SortableContext,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
-import { CVSection } from '../types'
+import { CVSection } from '../../../types'
 import SortableSectionItem from './SortableSectionItem'
 import { AVAILABLE_SECTIONS } from '../constants'
 import { EditableTitle } from '../EditableTitle'

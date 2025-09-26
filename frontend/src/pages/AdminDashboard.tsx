@@ -1,3 +1,27 @@
+/**
+ * Admin Dashboard - Administrative Interface and User Management
+ * 
+ * This module provides a comprehensive administrative interface for managing users,
+ * monitoring system statistics, and performing administrative actions such as
+ * activity tracking.
+ * 
+ * Key responsibilities:
+ * - Display system statistics and user overview data
+ * - Provide user search, filtering, and management capabilities
+ * - Monitor user activities and CV processing status
+ * - Manage user error states and provide administrative actions
+ * - Display detailed user information and CV data
+ * 
+ * Usage context:
+ * - Accessible only to authenticated admin users
+ * - Provides comprehensive user management functionality
+ * - Integrates with backend admin API endpoints
+ * 
+ * Dependencies:
+ * - Admin API services for user and system data
+ * - Authentication utilities for admin verification
+ * - UI components for data display and interaction
+ */
 import React, { useState, useEffect } from 'react'
 import {
   Container,
@@ -31,7 +55,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Divider,
   Badge
 } from '@mui/material'
 import {
@@ -50,76 +73,19 @@ import {
   Email,
   GetApp
 } from '@mui/icons-material'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNotifications } from '../stores/uiStore'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import { formatDate, formatDateTime } from '../utils/dateFormat'
+import { SystemStats, UserSummary, UserDetail, UserCV } from '../types/admin'
+import UserActivitiesDialog from '../components/admin/UserActivitiesDialog'
+import UserErrorsDialog from '../components/admin/UserErrorsDialog'
+import UserDetailDialog from '../components/admin/UserDetailDialog'
 
-// Types
-interface SystemStats {
-  total_users: number
-  active_users: number
-  clerk_users: number
-  legacy_users: number
-  total_cvs: number
-  total_ai_sections: number
-  total_job_descriptions: number
-  users_last_7_days: number
-  users_last_30_days: number
-  cvs_last_7_days: number
-  cvs_last_30_days: number
-}
-
-interface UserSummary {
-  id: string
-  clerk_id: string | null
-  email: string
-  is_active: boolean
-  email_verified: boolean
-  created_at: string
-  updated_at: string
-  last_login: string | null
-  cv_count: number
-  ai_sections_count: number
-  is_clerk_user: boolean
-}
-
-interface UserDetail {
-  id: string
-  clerk_id: string | null
-  email: string
-  is_active: boolean
-  email_verified: boolean
-  created_at: string
-  updated_at: string
-  last_login: string | null
-  cvs: Array<{
-    id: string
-    original_filename: string
-    file_size: number
-    file_type: string
-    is_parsed: boolean
-    created_at: string
-    updated_at: string
-  }>
-  ai_sections_count: number
-  job_descriptions_count: number
-}
-
-interface UserCV {
-  id: string
-  original_filename: string
-  file_size: number
-  file_type: string
-  is_parsed: boolean
-  parsing_status: string
-  ai_sections_count: number
-  job_descriptions_count: number
-  created_at: string
-  updated_at: string
-}
 
 const AdminDashboard: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState<SystemStats | null>(null)
@@ -136,8 +102,32 @@ const AdminDashboard: React.FC = () => {
   const [userCVsOpen, setUserCVsOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   
+  const [userActivities, setUserActivities] = useState<any[]>([])
+  const [userErrors, setUserErrors] = useState<any[]>([])
+  const [activitiesOpen, setActivitiesOpen] = useState(false)
+  const [errorsOpen, setErrorsOpen] = useState(false)
+  
+  // Activity view pagination and filtering
+  const [activitiesPage, setActivitiesPage] = useState(0)
+  const [activitiesLimit, setActivitiesLimit] = useState(50)
+  const [activitiesTotal, setActivitiesTotal] = useState(0)
+  const [activitiesLoading, setActivitiesLoading] = useState(false)
+  const [activityTypeFilter, setActivityTypeFilter] = useState<string>('')
+  const [selectedUserId, setSelectedUserId] = useState<string>('')
+  
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  const { showSuccess } = useNotifications()
+
+  // Initialize tab from URL parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'users') {
+      setCurrentTab(1)
+    } else if (tabParam === 'overview') {
+      setCurrentTab(0)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -227,6 +217,62 @@ const AdminDashboard: React.FC = () => {
       setActionLoading(null)
     }
   }
+
+
+  const loadUserActivities = async (userId: string, page: number = 0, limit: number = 50, activityType?: string) => {
+    try {
+      setActionLoading(userId)
+      setActivitiesLoading(true)
+      setSelectedUserId(userId)
+      setActivitiesPage(page)
+      setActivitiesLimit(limit)
+      
+      const params = new URLSearchParams()
+      params.append('limit', limit.toString())
+      params.append('offset', (page * limit).toString())
+      if (activityType) {
+        params.append('activity_type', activityType)
+      }
+      
+      const response = await api.get(`/admin/users/${userId}/activities?${params.toString()}`)
+      setUserActivities(response.data.activities)
+      setActivitiesTotal(response.data.total || 0)
+      setActivitiesOpen(true)
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to load user activities')
+    } finally {
+      setActionLoading(null)
+      setActivitiesLoading(false)
+    }
+  }
+
+  const loadUserErrors = async (userId: string) => {
+    try {
+      setActionLoading(userId)
+      const response = await api.get(`/admin/users/${userId}/errors`)
+      setUserErrors(response.data.errors)
+      setErrorsOpen(true)
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to load user errors')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const fixPlaceholderEmails = async () => {
+    try {
+      setActionLoading('fix-emails')
+      const response = await api.post('/admin/fix-placeholder-emails')
+      showSuccess('Success', `Fixed ${response.data.updated_count} users with placeholder emails`)
+      // Refresh the users list to show updated emails
+      loadUsers()
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to fix placeholder emails')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
@@ -322,9 +368,21 @@ const AdminDashboard: React.FC = () => {
             variant="contained"
             startIcon={<Refresh />}
             onClick={() => currentTab === 0 ? loadStats() : loadUsers()}
+            sx={{ mr: 1 }}
           >
             Refresh
           </Button>
+          {currentTab === 1 && (
+            <Button
+              variant="outlined"
+              color="warning"
+              startIcon={<Email />}
+              onClick={fixPlaceholderEmails}
+              disabled={actionLoading === 'fix-emails'}
+            >
+              {actionLoading === 'fix-emails' ? 'Fixing...' : 'Fix Placeholder Emails'}
+            </Button>
+          )}
         </Box>
       </Box>
 
@@ -336,7 +394,20 @@ const AdminDashboard: React.FC = () => {
 
       {/* Tabs */}
       <Paper sx={{ mb: 3 }}>
-        <Tabs value={currentTab} onChange={(_, newValue) => setCurrentTab(newValue)}>
+        <Tabs 
+          value={currentTab} 
+          onChange={(_, newValue) => {
+            setCurrentTab(newValue)
+            // Update URL parameter
+            const newSearchParams = new URLSearchParams(searchParams)
+            if (newValue === 1) {
+              newSearchParams.set('tab', 'users')
+            } else {
+              newSearchParams.set('tab', 'overview')
+            }
+            setSearchParams(newSearchParams)
+          }}
+        >
           <Tab icon={<Dashboard />} label="Overview" />
           <Tab icon={<People />} label="Users" />
         </Tabs>
@@ -567,6 +638,25 @@ const AdminDashboard: React.FC = () => {
                             {user.is_active ? <Block /> : <CheckCircleOutline />}
                           </IconButton>
                         </Tooltip>
+                        <Tooltip title="View Activities">
+                          <IconButton 
+                            size="small"
+                            onClick={() => loadUserActivities(user.id)}
+                            disabled={actionLoading === user.id}
+                          >
+                            <TrendingUp />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="View Errors">
+                          <IconButton 
+                            size="small"
+                            onClick={() => loadUserErrors(user.id)}
+                            disabled={actionLoading === user.id}
+                            color="error"
+                          >
+                            <Block />
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title="Contact User">
                           <IconButton 
                             size="small"
@@ -586,110 +676,11 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {/* User Detail Dialog */}
-      <Dialog 
-        open={userDetailOpen} 
+      <UserDetailDialog
+        open={userDetailOpen}
         onClose={() => setUserDetailOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          User Details
-          {selectedUser && (
-            <Typography variant="body2" color="textSecondary">
-              {selectedUser.email}
-            </Typography>
-          )}
-        </DialogTitle>
-        <DialogContent>
-          {selectedUser && (
-            <Box>
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={6}>
-                  <Typography variant="subtitle2" color="textSecondary">User ID</Typography>
-                  <Typography variant="body2">{selectedUser.id}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="subtitle2" color="textSecondary">Clerk ID</Typography>
-                  <Typography variant="body2">{selectedUser.clerk_id || 'N/A'}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="subtitle2" color="textSecondary">Status</Typography>
-                  <Chip
-                    label={selectedUser.is_active ? 'Active' : 'Inactive'}
-                    color={selectedUser.is_active ? 'success' : 'error'}
-                    size="small"
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="subtitle2" color="textSecondary">Email Verified</Typography>
-                  <Chip
-                    label={selectedUser.email_verified ? 'Verified' : 'Unverified'}
-                    color={selectedUser.email_verified ? 'success' : 'warning'}
-                    size="small"
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="subtitle2" color="textSecondary">Created</Typography>
-                  <Typography variant="body2">
-                    {formatDateTime(selectedUser.created_at)}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="subtitle2" color="textSecondary">Last Login</Typography>
-                  <Typography variant="body2">
-                    {selectedUser.last_login 
-                      ? formatDate(selectedUser.last_login)
-                      : 'Never'
-                    }
-                  </Typography>
-                </Grid>
-              </Grid>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="h6" gutterBottom>Activity Summary</Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={4}>
-                  <Card variant="outlined">
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Typography variant="h4">{selectedUser.cvs.length}</Typography>
-                      <Typography variant="body2" color="textSecondary">CVs</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={4}>
-                  <Card variant="outlined">
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Typography variant="h4">{selectedUser.ai_sections_count}</Typography>
-                      <Typography variant="body2" color="textSecondary">AI Sections</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={4}>
-                  <Card variant="outlined">
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Typography variant="h4">{selectedUser.job_descriptions_count}</Typography>
-                      <Typography variant="body2" color="textSecondary">Job Descriptions</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUserDetailOpen(false)}>Close</Button>
-          {selectedUser && (
-            <Button
-              variant="contained"
-              startIcon={<Email />}
-              onClick={() => window.open(`mailto:${selectedUser.email}`, '_blank')}
-            >
-              Contact User
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        userDetail={selectedUser}
+      />
 
       {/* User CVs Dialog */}
       <Dialog 
@@ -783,6 +774,46 @@ const AdminDashboard: React.FC = () => {
           <Button onClick={() => setUserCVsOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* User Activities Dialog */}
+      <UserActivitiesDialog
+        open={activitiesOpen}
+        onClose={() => setActivitiesOpen(false)}
+        activities={userActivities}
+        activitiesTotal={activitiesTotal}
+        activitiesPage={activitiesPage}
+        activitiesLimit={activitiesLimit}
+        activityTypeFilter={activityTypeFilter}
+        activitiesLoading={activitiesLoading}
+        selectedUserId={selectedUserId}
+        onPageChange={(page) => {
+          setActivitiesPage(page)
+          if (selectedUserId) {
+            loadUserActivities(selectedUserId, page, activitiesLimit, activityTypeFilter)
+          }
+        }}
+        onLimitChange={(limit) => {
+          setActivitiesLimit(limit)
+          if (selectedUserId) {
+            loadUserActivities(selectedUserId, 0, limit, activityTypeFilter)
+          }
+        }}
+        onFilterChange={(filter) => {
+          setActivityTypeFilter(filter)
+          if (selectedUserId) {
+            loadUserActivities(selectedUserId, 0, activitiesLimit, filter)
+          }
+        }}
+        formatDateTime={formatDateTime}
+      />
+
+      {/* User Errors Dialog */}
+      <UserErrorsDialog
+        open={errorsOpen}
+        onClose={() => setErrorsOpen(false)}
+        errors={userErrors}
+        formatDateTime={formatDateTime}
+      />
     </Container>
   )
 }

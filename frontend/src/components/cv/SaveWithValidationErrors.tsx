@@ -7,7 +7,7 @@ import { parseValidationErrors } from '../../utils/validationUtils'
 
 interface SaveWithValidationErrorsProps {
   children: React.ReactNode
-  onSaveError: (error: any) => void
+  onSaveError: (_error: any) => void
 }
 
 export const SaveWithValidationErrors: React.FC<SaveWithValidationErrorsProps> = ({ 

@@ -3,7 +3,7 @@ import { ListItem, ListItemIcon, ListItemText, IconButton, Box, Tooltip, Badge }
 import { DragIndicator as DragIcon, Visibility as ViewIcon, VisibilityOff as HideIcon, Warning as WarningIcon } from '@mui/icons-material'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { SortableSectionItemProps } from '../types'
+import { SortableSectionItemProps } from '../../../types'
 import { useCVEditor } from '../../../contexts/CVEditorContext'
 import { hasSectionErrors, getSectionErrorCount } from '../../../utils/validationUtils'
 

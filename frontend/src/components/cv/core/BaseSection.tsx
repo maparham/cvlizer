@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { Box, Typography, IconButton, Divider, Tooltip } from '@mui/material'
 import { Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon } from '@mui/icons-material'
-import { BaseSectionProps } from '../types'
+import { BaseSectionProps } from '../../../types'
 
 const BaseSection: React.FC<BaseSectionProps> = ({ 
   title, 

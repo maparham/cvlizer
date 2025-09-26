@@ -1,12 +1,30 @@
 /**
- * CV Store - Zustand State Management
+ * CV Store - Centralized State Management for CV Operations
  * 
- * This module provides centralized state management for CV operations including:
- * - CV CRUD operations (fetch, upload, update, delete)
- * - Background parsing status polling for uploaded CVs
- * - Loading and error states management
- * - Current CV selection and list management
- * - Integration with API service layer
+ * This module provides comprehensive state management for CV operations using Zustand,
+ * including CRUD operations, background parsing monitoring, and real-time status updates.
+ * It serves as the single source of truth for CV data throughout the application.
+ * 
+ * Key responsibilities:
+ * - Manage CV CRUD operations (fetch, upload, update, delete) with API integration
+ * - Handle background parsing status polling and real-time updates
+ * - Maintain loading states, error handling, and user feedback
+ * - Manage current CV selection and temporary CV workflows
+ * - Provide CV history tracking and auto-snapshot functionality
+ * - Handle file upload progress and parsing status monitoring
+ * - Integrate with polling manager for background job tracking
+ * 
+ * Usage context:
+ * - Used by CV management components throughout the application
+ * - Provides reactive state updates for UI components
+ * - Handles complex async workflows with proper error handling
+ * - Manages temporary CV creation and validation processes
+ * 
+ * Dependencies:
+ * - Zustand for state management with devtools integration
+ * - CV API services for backend communication
+ * - Polling manager for background job monitoring
+ * - CV data types and schemas for type safety
  */
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
@@ -65,6 +83,8 @@ interface CVState {
   loading: boolean
   uploading: boolean
   error: string | null
+  saving: boolean
+  lastSavedAt: string | null
   
   // Polling state
   hasUnparsedCVs: boolean
@@ -110,6 +130,7 @@ interface CVState {
   setLoading: (loading: boolean) => void
   setUploading: (uploading: boolean) => void
   setError: (error: string | null) => void
+  setSaving: (saving: boolean) => void
   
   // Internal history helpers
   shouldCreateAutoSnapshot: (cvId: string) => Promise<boolean>
@@ -127,6 +148,8 @@ export const useCVStore = create<CVState>()(
       loading: false,
       uploading: false,
       error: null,
+      saving: false,
+      lastSavedAt: null,
       hasUnparsedCVs: false,
       pollingManager: null,
 
@@ -343,45 +366,28 @@ export const useCVStore = create<CVState>()(
       },
 
       updateCV: async (cvId: string, data: CVUpdateRequest): Promise<CV> => {
-        set({ loading: true, error: null })
-        
+        // Debounced save UX: do not toggle heavy loading; mark saving
+        set({ error: null, saving: true })
         try {
-          // Clean the CV data to remove sections that would fail backend validation
           const cleanedData = CVValidationService.cleanForBackend(data.parsed_data)
-          
-          // Pre-validate to catch issues before sending to backend
           const validationErrors = CVValidationService.validateCVData(cleanedData)
           if (validationErrors.length > 0) {
-            const errorMessage = `CV validation failed:\n• ${validationErrors.join('\n• ')}`
-            set({ loading: false })
-            throw new Error(errorMessage)
+            set({ saving: false })
+            throw new Error(`CV validation failed:\n• ${validationErrors.join('\n• ')}`)
           }
-          
           const cleanedRequest = { parsed_data: cleanedData }
-          
           const updatedCV = await cvApi.updateCV(cvId, cleanedRequest)
-          
-          
-          // Update in both currentCV and CVs list
-          set({ 
+          set({
             currentCV: get().currentCV?.id === cvId ? updatedCV : get().currentCV,
-            loading: false,
-            error: null
+            error: null,
+            saving: false,
+            lastSavedAt: new Date().toISOString()
           })
-          
           get().updateCVInList(updatedCV)
-
-          // Only create snapshot for significant changes (manual saves)
-          // Auto-snapshots are disabled - snapshots only created when user explicitly saves or major changes occur
-          
           return updatedCV
         } catch (error: any) {
           const errorMessage = normalizeApiError(error) || 'Failed to update CV'
-          
-          set({ 
-            error: errorMessage,
-            loading: false
-          })
+          set({ error: errorMessage, saving: false })
           throw new Error(errorMessage)
         }
       },
@@ -548,6 +554,10 @@ export const useCVStore = create<CVState>()(
 
       setError: (error: string | null) => {
         set({ error })
+      },
+
+      setSaving: (saving: boolean) => {
+        set({ saving })
       },
 
       // History actions

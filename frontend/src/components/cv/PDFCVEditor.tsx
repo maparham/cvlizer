@@ -28,7 +28,7 @@ import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from './index'
 
 interface PDFCVEditorProps {
   title?: string
-  onTitleSave?: (newTitle: string) => Promise<void>
+  onTitleSave?: (_newTitle: string) => Promise<void>
   cvId?: string
 }
 

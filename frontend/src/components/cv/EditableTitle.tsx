@@ -14,7 +14,7 @@ import {
 
 interface EditableTitleProps {
   title: string
-  onSave: (newTitle: string) => Promise<void>
+  onSave: (newTitle: string) => Promise<void> // eslint-disable-line no-unused-vars
   variant?: 'h6' | 'h5' | 'h4'
   disabled?: boolean
   maxLength?: number

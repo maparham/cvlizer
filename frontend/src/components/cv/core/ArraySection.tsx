@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { IconButton, Typography, Tooltip } from '@mui/material'
 import { Add as AddIcon } from '@mui/icons-material'
-import { ArraySectionProps } from '../types'
+import { ArraySectionProps } from '../../../types'
 import { useArraySectionAutoSave } from './hooks'
 import BaseSection from './BaseSection'
 

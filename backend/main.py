@@ -5,12 +5,15 @@ This module sets up the FastAPI application with CORS middleware,
 static file serving, and includes all API routers for authentication,
 CV management, job descriptions, and AI features.
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.staticfiles import StaticFiles
 import os
 from dotenv import load_dotenv
+import logging
+import asyncio
+import contextlib
 
 # Optional rate limiting - only import if available
 try:
@@ -28,9 +31,18 @@ from src.api.job_descriptions import router as job_descriptions_router
 from src.api.ai import router as ai_router
 from src.api.cv_history import router as cv_history_router
 from src.api.admin import router as admin_router
-# from src.api.clerk_webhooks import router as clerk_webhooks_router
+from src.api.user_activities import router as user_activities_router
+
+# Import services for startup cleanup
+# Note: Impersonation service removed - cleanup functionality no longer needed
 
 load_dotenv()
+logger = logging.getLogger("uvicorn.error")
+
+def _is_truthy(val: str) -> bool:
+    return str(val).lower() in {"1", "true", "yes", "on"}
+
+DEV_MODE = _is_truthy(os.getenv("DEV_MODE", "true"))
 
 app = FastAPI(
     title="CV Optimization API",
@@ -49,9 +61,13 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # CORS middleware (configurable origins)
 cors_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+cors_origins = [origin.strip() for origin in cors_origins if origin.strip()]
+if not DEV_MODE and any(o == "*" for o in cors_origins):
+    raise RuntimeError("Unsafe CORS origin '*' is not allowed in non-dev mode")
+logger.info(f"CORS allow_origins: {cors_origins}")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in cors_origins if origin.strip()],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],
@@ -61,8 +77,7 @@ app.add_middleware(
 # Create uploads directory if it doesn't exist
 os.makedirs("uploads", exist_ok=True)
 
-# Mount static files for uploaded CVs with caching headers
-app.mount("/uploads", StaticFiles(directory="uploads", html=True), name="uploads")
+# Do NOT mount uploads publicly; serve via authenticated endpoints only
 
 # Include API routers
 app.include_router(auth_router)
@@ -71,7 +86,7 @@ app.include_router(job_descriptions_router)
 app.include_router(ai_router)
 app.include_router(cv_history_router)
 app.include_router(admin_router)
-# app.include_router(clerk_webhooks_router)
+app.include_router(user_activities_router)
 
 @app.get("/")
 async def root():
@@ -80,6 +95,47 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.on_event("startup")
+async def startup_event():
+    """Startup tasks: config validation, initial cleanup, schedule periodic jobs."""
+    # Fail fast on missing/placeholder secrets in non-dev
+    if not DEV_MODE:
+        jwt_secret = os.getenv("JWT_SECRET_KEY")
+        openai_key = os.getenv("OPENAI_API_KEY")
+        clerk_key = os.getenv("CLERK_SECRET_KEY")
+        if not jwt_secret or jwt_secret in {"your-secret-key-here", "your-secret-key-here-change-in-production"}:
+            raise RuntimeError("JWT_SECRET_KEY is missing or placeholder in non-dev mode")
+        if not openai_key:
+            raise RuntimeError("OPENAI_API_KEY is missing in non-dev mode")
+        if not clerk_key or clerk_key == "sk_test_your_secret_key_from_clerk_dashboard":
+            raise RuntimeError("CLERK_SECRET_KEY is missing or placeholder in non-dev mode")
+    try:
+        # Database initialization check
+        from src.models.base import get_db
+        db = next(get_db())
+        db.close()
+        logger.info("Database connection verified successfully")
+    except Exception as e:
+        logger.warning(f"Database initialization check failed: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on application shutdown"""
+    logger.info("Application shutting down")
+
+
+# Global error handlers
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    logger.warning(f"HTTP {exc.status_code} {request.method} {request.url.path}: {exc.detail}")
+    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error {request.method} {request.url.path}: {exc}")
+    return JSONResponse(status_code=500, content={"message": "Internal server error"})
 
 if __name__ == "__main__":
     import uvicorn

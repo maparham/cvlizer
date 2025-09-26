@@ -15,8 +15,8 @@ from io import BytesIO
 
 ALLOWED_FILE_TYPES = {
     "application/pdf",
-    "application/msword", 
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    # Dropping legacy .doc for reliability/security; keep DOCX only
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
@@ -83,6 +83,9 @@ def delete_file(file_path: str) -> bool:
 def extract_text_from_pdf(file_content: bytes) -> str:
     """Extract text from PDF file using PyMuPDF"""
     try:
+        # Magic sniff for PDF header
+        if not file_content.startswith(b"%PDF"):
+            raise HTTPException(status_code=400, detail="Invalid PDF file signature")
         import fitz  # PyMuPDF
         doc = fitz.open(stream=file_content, filetype="pdf")
         text = ""
@@ -117,6 +120,9 @@ def extract_text_from_pdf(file_content: bytes) -> str:
 def extract_text_from_docx(file_content: bytes) -> str:
     """Extract text from DOCX file"""
     try:
+        # DOCX is a ZIP: must begin with PK\x03\x04
+        if not file_content.startswith(b"PK\x03\x04"):
+            raise HTTPException(status_code=400, detail="Invalid DOCX file signature")
         doc = docx.Document(BytesIO(file_content))
         text = ""
         for paragraph in doc.paragraphs:
@@ -126,31 +132,11 @@ def extract_text_from_docx(file_content: bytes) -> str:
         raise HTTPException(status_code=400, detail=f"Error reading DOCX file: {str(e)}")
 
 
-def extract_text_from_doc(file_content: bytes) -> str:
-    """Extract text from DOC file (basic implementation)"""
-    try:
-        # For DOC files, we'll use a simple approach
-        # In production, you might want to use python-docx2txt or antiword
-        doc = docx.Document(BytesIO(file_content))
-        text = ""
-        for paragraph in doc.paragraphs:
-            text += paragraph.text + "\n"
-        return text.strip()
-    except Exception as e:
-        # Fallback: try to extract as plain text
-        try:
-            return file_content.decode('utf-8', errors='ignore')
-        except:
-            raise HTTPException(status_code=400, detail=f"Error reading DOC file: {str(e)}")
-
-
 def extract_text_from_file(file_content: bytes, content_type: str) -> str:
     """Extract text from uploaded file based on content type"""
     if content_type == "application/pdf":
         return extract_text_from_pdf(file_content)
     elif content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         return extract_text_from_docx(file_content)
-    elif content_type == "application/msword":
-        return extract_text_from_doc(file_content)
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type: " + content_type)
