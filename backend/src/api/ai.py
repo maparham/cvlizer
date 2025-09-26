@@ -17,7 +17,7 @@ from ..models.job_description import JobDescription
 from ..services.job_description_service import get_cv_owned_by, get_job_description_for_cv
 from ..models.ai_section import AISection
 from ..services.ai_service import generate_cv_section, is_ai_enabled
-from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
+from ..middleware.clerk_auth import get_effective_user
 
 router = APIRouter(prefix="/api", tags=["ai"])
 
@@ -51,7 +51,7 @@ async def generate_ai_section(
     cv_id: str,
     request: AIGenerationRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Generate AI-enhanced section for CV based on job description"""
     # Verify CV exists and belongs to user
@@ -134,7 +134,7 @@ async def generate_ai_section(
 async def get_ai_sections(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Get all AI-generated sections for a CV"""
     # Verify CV exists and belongs to user

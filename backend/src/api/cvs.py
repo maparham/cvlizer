@@ -49,7 +49,7 @@ from ..constants import DEFAULT_PARSED_CV
 from copy import deepcopy
 from ..schemas.cv_schemas import CVUpdateRequestSchema, CVDataSchema
 from ..utils.validation import CVDataValidator
-from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
+from ..middleware.clerk_auth import get_effective_user
 from ..services.latex_export_service import generate_cv_latex, compile_pdf_from_latex, is_latex_available
 
 router = APIRouter(prefix="/api/cvs", tags=["cvs"])
@@ -164,7 +164,7 @@ class CVListResponse(BaseModel):
 async def upload_cv(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Upload a CV file and start background parsing"""
     # Validate file
@@ -220,7 +220,7 @@ async def list_cvs(
     page: int = 1,
     limit: int = 10,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Get all CVs for the current user"""
     skip = (page - 1) * limit
@@ -246,7 +246,7 @@ async def list_cvs(
 async def get_cv(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Get a specific CV by ID"""
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
@@ -265,7 +265,7 @@ async def update_cv_data(
     cv_id: str,
     cv_update: CVUpdateRequestSchema,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Update CV parsed data with comprehensive validation"""
     try:
@@ -308,7 +308,7 @@ async def update_cv_data(
 @router.post("/create-blank", response_model=CVResponse)
 async def create_blank_cv(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Create a new blank CV from scratch without file upload"""
     try:
@@ -348,7 +348,7 @@ async def update_cv_title(
     cv_id: str,
     title_request: CVTitleUpdateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Update CV title (original_filename)"""
     # Get CV to verify ownership
@@ -371,7 +371,7 @@ async def update_cv_title(
 async def download_cv_file(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Download the original CV file"""
     # Get CV to verify ownership and get file path
@@ -408,7 +408,7 @@ async def download_cv_file(
 async def duplicate_cv(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Duplicate a CV - copies content but not version history"""
     # Get the original CV
@@ -479,7 +479,7 @@ async def duplicate_cv(
 async def delete_cv_data(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Delete a CV"""
     # Get CV to find file path
@@ -510,7 +510,7 @@ async def delete_cv_data(
 async def export_cv_pdf(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Export CV as PDF via LaTeX (pdflatex)."""
     cv = get_cv_by_id(db, cv_id, str(current_user.id))

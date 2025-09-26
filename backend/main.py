@@ -32,9 +32,13 @@ from src.api.ai import router as ai_router
 from src.api.cv_history import router as cv_history_router
 from src.api.admin import router as admin_router
 from src.api.user_activities import router as user_activities_router
+from src.api.impersonation import router as impersonation_router, auth_router as impersonation_auth_router
 
 # Import services for startup cleanup
-# Note: Impersonation service removed - cleanup functionality no longer needed
+from src.services.cleanup_service import start_cleanup_service, stop_cleanup_service
+
+# Import middleware
+from src.middleware.impersonation_headers import ImpersonationHeadersMiddleware
 
 load_dotenv()
 logger = logging.getLogger("uvicorn.error")
@@ -58,6 +62,9 @@ if SLOWAPI_AVAILABLE:
 
 # Add compression middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Add impersonation headers middleware
+app.add_middleware(ImpersonationHeadersMiddleware)
 
 # CORS middleware (configurable origins)
 cors_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
@@ -87,6 +94,8 @@ app.include_router(ai_router)
 app.include_router(cv_history_router)
 app.include_router(admin_router)
 app.include_router(user_activities_router)
+app.include_router(impersonation_router)
+app.include_router(impersonation_auth_router)
 
 @app.get("/")
 async def root():
@@ -111,17 +120,37 @@ async def startup_event():
         if not clerk_key or clerk_key == "sk_test_your_secret_key_from_clerk_dashboard":
             raise RuntimeError("CLERK_SECRET_KEY is missing or placeholder in non-dev mode")
     try:
-        # Database initialization check
+        # Database initialization and table creation
+        from src.database import create_tables
         from src.models.base import get_db
+        
+        # Ensure all tables are created
+        create_tables()
+        logger.info("Database tables created/verified successfully")
+        
+        # Verify database connection
         db = next(get_db())
         db.close()
         logger.info("Database connection verified successfully")
     except Exception as e:
         logger.warning(f"Database initialization check failed: {e}")
+    
+    # Start cleanup service for background maintenance
+    try:
+        await start_cleanup_service()
+        logger.info("Cleanup service started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start cleanup service: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on application shutdown"""
+    try:
+        await stop_cleanup_service()
+        logger.info("Cleanup service stopped")
+    except Exception as e:
+        logger.error(f"Error stopping cleanup service: {e}")
+    
     logger.info("Application shutting down")
 
 

@@ -15,7 +15,7 @@ from datetime import datetime
 
 from ..models import get_db, CVHistory, CV, User
 from ..services.cv_diff_service import cv_diff_service
-from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
+from ..middleware.clerk_auth import get_effective_user, get_current_user
 from ..utils.history_validation import ValidatedCreateHistoryRequest, calculate_data_size
 
 
@@ -82,7 +82,7 @@ async def create_history_entry(
     cv_id: str,
     request: ValidatedCreateHistoryRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Create a new history entry for a CV."""
     
@@ -148,7 +148,7 @@ async def get_cv_history(
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Get history entries for a CV."""
     
@@ -176,7 +176,7 @@ async def get_history_entry(
     cv_id: str,
     entry_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Get a specific history entry."""
     
@@ -210,7 +210,7 @@ async def delete_history_entry(
     cv_id: str,
     entry_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Delete a specific history entry."""
     
@@ -253,7 +253,7 @@ async def delete_history_entry(
 async def clear_cv_history(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Clear all history entries for a CV."""
     
@@ -281,7 +281,7 @@ async def clear_cv_history(
 async def get_history_stats(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Get statistics about CV history."""
     
@@ -334,7 +334,7 @@ async def restore_cv_version(
     cv_id: str,
     entry_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Restore CV to a previous version."""
     
@@ -398,7 +398,7 @@ async def get_version_diff(
     compare_to: Optional[str] = None,  # If not provided, compare to original version or previous version
     force_previous: bool = False,  # If true, always compare to previous version (ignore original)
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """
     Get semantic diff between two CV versions.

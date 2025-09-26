@@ -19,6 +19,7 @@ from .models.job_description import JobDescription  # noqa: F401
 from .models.ai_section import AISection  # noqa: F401
 from .models.audit_log import AuditLog  # noqa: F401
 from .models.user_activity import UserActivity, UserSession  # noqa: F401
+from .models.impersonation_session import ImpersonationSession  # noqa: F401
 
 load_dotenv()
 

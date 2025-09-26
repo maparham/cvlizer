@@ -22,8 +22,8 @@ from ..models.cv import CV
 from ..models.ai_section import AISection
 from ..models.job_description import JobDescription
 from ..models.user_activity import UserActivity
-from ..middleware.clerk_auth import get_current_user
-from ..services.user_activity_service import get_user_activities, get_user_recent_errors
+from ..middleware.clerk_auth import get_current_user, require_admin_not_impersonating
+from ..services.user_activity_service import get_user_activities, get_user_recent_errors, clear_user_activities
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -85,31 +85,12 @@ class DashboardData(BaseModel):
     top_users_by_cvs: List[UserSummary]
 
 
-# Helper function to check if user is admin
-def is_admin_user(user: User) -> bool:
-    """
-    Check if the current user has admin privileges.
-    Admin user is configured via ADMIN_EMAIL environment variable.
-    """
-    admin_email = os.getenv("ADMIN_EMAIL")
-    
-    if not admin_email:
-        logger.warning("ADMIN_EMAIL environment variable not set. No admin access available.")
-        return False
-    
-    # Strict email matching (case insensitive)
-    is_admin = user.email.lower().strip() == admin_email.lower().strip()
-    
-    if not is_admin:
-        logger.warning(f"Admin access denied for {user.email} (expected: {admin_email})")
-    else:
-        logger.info(f"Admin access granted for {user.email}")
-    
-    return is_admin
+# Import admin check from middleware
+from ..middleware.clerk_auth import is_admin_user
 
 
 def require_admin(current_user: User = Depends(get_current_user)):
-    """Dependency to require admin access"""
+    """Dependency to require admin access (allows during impersonation)"""
     if not is_admin_user(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -119,7 +100,7 @@ def require_admin(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/check-access")
-async def check_admin_access(admin_user: User = Depends(require_admin)):
+async def check_admin_access(admin_user: User = Depends(require_admin_not_impersonating)):
     """
     Check if the current user has admin access.
     Returns 200 for admin users, 403 for non-admin users.
@@ -135,7 +116,7 @@ async def check_admin_access(admin_user: User = Depends(require_admin)):
 @router.get("/dashboard", response_model=DashboardData)
 async def get_dashboard_data(
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin)
+    admin_user: User = Depends(require_admin_not_impersonating)
 ):
     """
     Get comprehensive dashboard data including stats and recent activity.
@@ -250,7 +231,7 @@ async def get_all_users(
     clerk_only: Optional[bool] = Query(None),
     active_only: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin)
+    admin_user: User = Depends(require_admin_not_impersonating)
 ):
     """
     Get all users with optional filtering and pagination.
@@ -311,7 +292,7 @@ async def get_all_users(
 async def get_user_detail(
     user_id: str,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin)
+    admin_user: User = Depends(require_admin_not_impersonating)
 ):
     """
     Get detailed information about a specific user.
@@ -382,7 +363,7 @@ async def get_user_detail(
 async def toggle_user_active(
     user_id: str,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin)
+    admin_user: User = Depends(require_admin_not_impersonating)
 ):
     """
     Toggle a user's active status.
@@ -427,7 +408,7 @@ async def toggle_user_active(
 async def get_user_cvs(
     user_id: str,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin)
+    admin_user: User = Depends(require_admin_not_impersonating)
 ):
     """
     Get all CVs for a specific user.
@@ -481,7 +462,7 @@ async def get_user_cvs(
 @router.get("/stats", response_model=SystemStats)
 async def get_system_stats(
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin)
+    admin_user: User = Depends(require_admin_not_impersonating)
 ):
     """
     Get system statistics.
@@ -522,7 +503,7 @@ async def get_user_activities_admin(
     offset: int = Query(0, ge=0),
     activity_type: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin)
+    admin_user: User = Depends(require_admin_not_impersonating)
 ):
     """
     Get user activities for admin debugging and support.
@@ -583,7 +564,7 @@ async def get_user_errors_admin(
     user_id: str,
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin)
+    admin_user: User = Depends(require_admin_not_impersonating)
 ):
     """
     Get user errors for admin debugging and support.
@@ -631,4 +612,44 @@ async def get_user_errors_admin(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving user errors"
+        )
+
+
+@router.delete("/users/{user_id}/activities")
+async def clear_user_activities_admin(
+    user_id: str,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin_not_impersonating)
+):
+    """
+    Clear all activities for a specific user.
+    """
+    try:
+        # Verify user exists
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Clear activities using the service
+        deleted_count = clear_user_activities(
+            db=db,
+            user_id=user_id
+        )
+        
+        return {
+            "message": f"Successfully cleared {deleted_count} activities for user {user.email}",
+            "user_id": user_id,
+            "deleted_count": deleted_count
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error clearing user activities: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error clearing user activities"
         )

@@ -20,7 +20,7 @@ from ..services.job_description_service import (
     list_job_descriptions_for_cv,
     delete_job_description_owned_by,
 )
-from ..middleware.clerk_auth import get_current_user_from_clerk as get_current_user
+from ..middleware.clerk_auth import get_effective_user
 
 router = APIRouter(prefix="/api", tags=["job-descriptions"])
 
@@ -56,7 +56,7 @@ async def create_job_description(
     cv_id: str,
     job_description: JobDescriptionCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Add a job description for a CV"""
     # Verify CV exists and belongs to user
@@ -95,7 +95,7 @@ async def create_job_description(
 async def get_job_descriptions(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Get all job descriptions for a CV"""
     # Verify CV exists and belongs to user
@@ -131,7 +131,7 @@ async def get_job_descriptions(
 async def delete_job_description(
     jd_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_effective_user)
 ):
     """Delete a job description"""
     # Get job description and verify ownership through CV
