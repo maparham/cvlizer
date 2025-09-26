@@ -34,7 +34,7 @@ interface UserErrorsDialogProps {
   open: boolean
   onClose: () => void
   errors: UserError[]
-  formatDateTime: (date: string) => string
+  formatDateTime: (_date: string) => string
 }
 
 const UserErrorsDialog: React.FC<UserErrorsDialogProps> = ({

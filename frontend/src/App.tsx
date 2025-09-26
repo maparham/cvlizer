@@ -8,13 +8,18 @@
  * - Lazy loading for code splitting and performance optimization
  * - Global loading states and error boundaries
  */
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useCallback, useEffect } from 'react'
 import { Box, CircularProgress } from '@mui/material'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ImpersonationProvider } from './contexts/ImpersonationContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import { ImpersonationBanner } from './components/common'
+import { useCVStore } from './stores/cvStore'
+import { useImpersonation } from './hooks/useImpersonation'
+import { useActivityLogger } from './hooks/useActivityLogger'
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
@@ -33,6 +38,77 @@ const PageLoader = () => (
   </Box>
 )
 
+// Inner app component that can use hooks
+const AppContent = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { fetchCVs } = useCVStore()
+  useImpersonation() // For side effects only
+  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { logPageView } = useActivityLogger()
+
+  // Log page views when route changes
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      logPageView(location.pathname)
+    }
+  }, [location.pathname, isAuthenticated, authLoading, logPageView])
+
+  const handleImpersonationEnd = useCallback(async () => {
+    // Only refresh CV data if authenticated
+    if (isAuthenticated && !authLoading) {
+      await fetchCVs()
+    }
+    
+    // Only redirect to admin if we're not already on an admin page
+    // This prevents redirecting away from the current page when impersonation ends
+    if (!location.pathname.startsWith('/admin')) {
+      navigate('/admin?tab=users')
+    }
+  }, [fetchCVs, navigate, isAuthenticated, authLoading, location.pathname])
+
+  return (
+    <>
+      {/* Impersonation banner - shows when admin is impersonating */}
+      <ImpersonationBanner onImpersonationEnd={handleImpersonationEnd} />
+      
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login-redirect" element={<LoginRedirect />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/cv/:cvId" element={
+            <ProtectedRoute>
+              <CVEditor />
+            </ProtectedRoute>
+          } />
+          <Route path="/cv/new" element={
+            <ProtectedRoute>
+              <CVEditor />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Suspense>
+    </>
+  )
+}
+
 const theme = createTheme({
   palette: {
     mode: 'light',
@@ -50,41 +126,16 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/login-redirect" element={<LoginRedirect />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/cv/:cvId" element={
-                <ProtectedRoute>
-                  <CVEditor />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </Suspense>
-        </Router>
+        <ImpersonationProvider>
+          <Router
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <AppContent />
+          </Router>
+        </ImpersonationProvider>
       </AuthProvider>
     </ThemeProvider>
   )

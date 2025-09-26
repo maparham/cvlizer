@@ -35,7 +35,7 @@ interface VersionPreviewDialogProps {
   originalVersion: CVHistoryEntry | null
   versionNumber?: number
   cvId: string
-  onRestore?: (version: CVHistoryEntry) => void
+  onRestore?: (_version: CVHistoryEntry) => void
   loading?: boolean
 }
 

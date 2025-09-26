@@ -93,10 +93,10 @@ const Dashboard: React.FC = () => {
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'modified'>('modified')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   
-  const { logout, isAdmin: authIsAdmin } = useAuth()
+  const { logout, isAdmin: authIsAdmin, isAuthenticated, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const { showSuccess, showError, notifications, removeNotification } = useNotifications()
-  const { logUserAction, logPageView } = useActivityLogger()
+  const { logUserAction } = useActivityLogger()
   
   // Use CV store instead of local state
   const {
@@ -110,13 +110,14 @@ const Dashboard: React.FC = () => {
     duplicateCV: duplicateCVFromStore
   } = useCVStore()
 
-  // Fetch CVs on component mount
+  // Fetch CVs on component mount (only if authenticated)
   useEffect(() => {
-    fetchCVs()
-    // Log dashboard view
-    logPageView()
-    logUserAction('dashboard_view', 'User viewed dashboard')
-  }, []) // Empty dependency array - only run once on mount
+    if (isAuthenticated && !authLoading) {
+      fetchCVs()
+      // Log dashboard view (page view is already logged by useActivityLogger)
+      logUserAction('dashboard_view', 'User viewed dashboard')
+    }
+  }, [isAuthenticated, authLoading, fetchCVs]) // Depend on auth state
 
   // Show error notifications
   useEffect(() => {
@@ -176,6 +177,7 @@ const Dashboard: React.FC = () => {
       createTemporaryCV()
       navigate(`/cv/new`)
     } catch (error) {
+      console.error('Error creating blank CV:', error)
       showError('Error', 'Failed to create new CV')
     } finally {
       setCreating(false)

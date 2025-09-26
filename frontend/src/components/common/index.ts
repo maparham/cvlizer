@@ -11,3 +11,5 @@ export {
   withErrorBoundary 
 } from './ErrorBoundary'
 export type { ErrorFallbackProps } from './ErrorBoundary'
+
+export { default as ImpersonationBanner } from './ImpersonationBanner'

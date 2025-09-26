@@ -446,7 +446,10 @@ export const EmptyState: React.FC<{
  */
 export const createFormValidator = (requiredFields: string[]) => {
   return (data: Record<string, any>): boolean => {
-    return requiredFields.every(field => data[field]?.toString().trim())
+    return requiredFields.every(field => {
+      const value = data[field]
+      return value !== null && value !== undefined && value.toString().trim()
+    })
   }
 }
 
@@ -455,6 +458,9 @@ export const createFormValidator = (requiredFields: string[]) => {
  */
 export const createArrayItemValidator = (requiredFields: string[]) => {
   return (item: Record<string, any>): boolean => {
-    return requiredFields.every(field => item[field]?.toString().trim())
+    return requiredFields.every(field => {
+      const value = item[field]
+      return value !== null && value !== undefined && value.toString().trim()
+    })
   }
 }

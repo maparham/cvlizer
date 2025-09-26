@@ -135,7 +135,7 @@ function IndividualItemSection<T>({
       setEditData({ ...itemsData[index] })
       onEdit()
     }
-  }, [title, registerIndividualItemEditing, handleCancelEdit, setEditingItemIndex, editingItemIndexRef, setEditData, itemsData, onEdit])
+  }, [title, registerIndividualItemEditing, handleCancelEdit, setEditingItemIndex, editingItemIndexRef, setEditData, itemsData, onEdit, data, sectionId])
 
   const handleSaveItem = useCallback(() => {
     if (editingItemIndex !== null && editData) {
@@ -260,7 +260,7 @@ function IndividualItemSection<T>({
     setItemsData(newData)
     onUpdate(newData)
     onSave(newData, `${autoSaveMessage} moved down`)
-  }, [itemsData.length, sortField, clearSort, handleManualReorder, itemsData, setItemsData, onUpdate, onSave, autoSaveMessage])
+  }, [sortField, clearSort, handleManualReorder, itemsData, setItemsData, onUpdate, onSave, autoSaveMessage])
 
   // Sort handlers
   const handleSortItems = useCallback((field: keyof T, direction: 'asc' | 'desc') => {

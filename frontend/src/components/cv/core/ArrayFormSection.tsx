@@ -12,8 +12,8 @@ interface ArrayFormSectionProps<T extends ArrayItem> extends SectionProps {
   emptyMessage: string
   createNewItem: () => T
   requiredFields: (keyof T)[]
-  renderItemForm: (item: T, index: number, updateItem: (field: keyof T, value: any) => void) => React.ReactNode
-  renderItemDisplay: (item: T, index: number) => React.ReactNode
+  renderItemForm: (_item: T, _index: number, _updateItem: (_field: keyof T, _value: any) => void) => React.ReactNode
+  renderItemDisplay: (_item: T, _index: number) => React.ReactNode
   autoSaveMessage: string
 }
 

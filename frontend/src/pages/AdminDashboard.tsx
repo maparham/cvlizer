@@ -71,17 +71,20 @@ import {
   Block,
   CheckCircleOutline,
   Email,
-  GetApp
+  GetApp,
+  SwitchAccount,
 } from '@mui/icons-material'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useNotifications } from '../stores/uiStore'
 import { useAuth } from '../contexts/AuthContext'
+import { useImpersonation } from '../hooks/useImpersonation'
 import api from '../services/api'
 import { formatDate, formatDateTime } from '../utils/dateFormat'
 import { SystemStats, UserSummary, UserDetail, UserCV } from '../types/admin'
 import UserActivitiesDialog from '../components/admin/UserActivitiesDialog'
 import UserErrorsDialog from '../components/admin/UserErrorsDialog'
 import UserDetailDialog from '../components/admin/UserDetailDialog'
+import { impersonationService, ImpersonationError } from '../services/impersonationService'
 
 
 const AdminDashboard: React.FC = () => {
@@ -115,7 +118,14 @@ const AdminDashboard: React.FC = () => {
   const [activityTypeFilter, setActivityTypeFilter] = useState<string>('')
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   
+  // Impersonation state
+  const [impersonationDialogOpen, setImpersonationDialogOpen] = useState(false)
+  const [impersonationTarget, setImpersonationTarget] = useState<UserSummary | null>(null)
+  const [impersonationJustification, setImpersonationJustification] = useState('')
+  
+  
   const { isAuthenticated } = useAuth()
+  const { isImpersonating, forceStatusCheck } = useImpersonation()
   const navigate = useNavigate()
   const { showSuccess } = useNotifications()
 
@@ -246,6 +256,24 @@ const AdminDashboard: React.FC = () => {
     }
   }
 
+  const clearUserActivities = async (userId: string) => {
+    try {
+      const response = await api.delete(`/admin/users/${userId}/activities`)
+      showSuccess('Success', response.data.message)
+      
+      // Refresh the activities list
+      if (selectedUserId === userId) {
+        loadUserActivities(userId, activitiesPage, activitiesLimit, activityTypeFilter)
+      }
+      
+      // Refresh the users list to update any activity counts
+      loadUsers()
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to clear user activities')
+      throw err // Re-throw so the dialog can handle the error state
+    }
+  }
+
   const loadUserErrors = async (userId: string) => {
     try {
       setActionLoading(userId)
@@ -259,19 +287,42 @@ const AdminDashboard: React.FC = () => {
     }
   }
 
-  const fixPlaceholderEmails = async () => {
+
+  const startImpersonation = async (user: UserSummary) => {
+    setImpersonationTarget(user)
+    setImpersonationDialogOpen(true)
+  }
+
+  const confirmImpersonation = async () => {
+    if (!impersonationTarget) return
+
     try {
-      setActionLoading('fix-emails')
-      const response = await api.post('/admin/fix-placeholder-emails')
-      showSuccess('Success', `Fixed ${response.data.updated_count} users with placeholder emails`)
-      // Refresh the users list to show updated emails
-      loadUsers()
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fix placeholder emails')
+      setActionLoading(impersonationTarget.id)
+      await impersonationService.startImpersonation({
+        target_user_id: impersonationTarget.id,
+        justification: impersonationJustification || undefined
+      })
+      
+      setImpersonationDialogOpen(false)
+      setImpersonationJustification('')
+      showSuccess('Success', `Started impersonating ${impersonationTarget.email}`)
+      
+      // Force immediate status check to update the banner
+      await forceStatusCheck()
+      
+      // Redirect to dashboard to start using the impersonated account
+      navigate('/dashboard')
+    } catch (error) {
+      if (error instanceof ImpersonationError) {
+        setError(error.message)
+      } else {
+        setError('Failed to start impersonation session')
+      }
     } finally {
       setActionLoading(null)
     }
   }
+
 
 
   const formatFileSize = (bytes: number) => {
@@ -302,6 +353,24 @@ const AdminDashboard: React.FC = () => {
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           Admin access required. You don't have permission to view this page.
+        </Alert>
+        <Button
+          variant="contained"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/dashboard')}
+        >
+          Back to Dashboard
+        </Button>
+      </Container>
+    )
+  }
+
+  // Prevent access to admin dashboard during impersonation
+  if (isImpersonating) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Admin dashboard is not available during impersonation. Please end the impersonation session to access admin features.
         </Alert>
         <Button
           variant="contained"
@@ -372,17 +441,6 @@ const AdminDashboard: React.FC = () => {
           >
             Refresh
           </Button>
-          {currentTab === 1 && (
-            <Button
-              variant="outlined"
-              color="warning"
-              startIcon={<Email />}
-              onClick={fixPlaceholderEmails}
-              disabled={actionLoading === 'fix-emails'}
-            >
-              {actionLoading === 'fix-emails' ? 'Fixing...' : 'Fix Placeholder Emails'}
-            </Button>
-          )}
         </Box>
       </Box>
 
@@ -665,6 +723,16 @@ const AdminDashboard: React.FC = () => {
                             <Email />
                           </IconButton>
                         </Tooltip>
+                        <Tooltip title="Impersonate User">
+                          <IconButton 
+                            size="small"
+                            onClick={() => startImpersonation(user)}
+                            disabled={actionLoading === user.id || !user.is_active}
+                            color="warning"
+                          >
+                            <SwitchAccount />
+                          </IconButton>
+                        </Tooltip>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -805,6 +873,8 @@ const AdminDashboard: React.FC = () => {
           }
         }}
         formatDateTime={formatDateTime}
+        onClearActivities={clearUserActivities}
+        userEmail={users.find(user => user.id === selectedUserId)?.email}
       />
 
       {/* User Errors Dialog */}
@@ -814,6 +884,77 @@ const AdminDashboard: React.FC = () => {
         errors={userErrors}
         formatDateTime={formatDateTime}
       />
+
+      {/* Impersonation Confirmation Dialog */}
+      <Dialog 
+        open={impersonationDialogOpen} 
+        onClose={() => setImpersonationDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Confirm User Impersonation
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Alert severity="warning">
+              You are about to impersonate user <strong>{impersonationTarget?.email}</strong>. 
+              This action will be logged for audit purposes. The session will automatically 
+              expire in 30 minutes.
+            </Alert>
+          </Box>
+          
+          <TextField
+            fullWidth
+            label="Justification (optional)"
+            placeholder="Reason for impersonation..."
+            value={impersonationJustification}
+            onChange={(e) => setImpersonationJustification(e.target.value)}
+            multiline
+            rows={3}
+            variant="outlined"
+            sx={{ mt: 2 }}
+          />
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            During impersonation:
+          </Typography>
+          <Box component="ul" sx={{ mt: 1, pl: 2 }}>
+            <Typography component="li" variant="body2" color="text.secondary">
+              You will see the application as this user
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              A banner will indicate you are impersonating
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              Admin functions will be disabled
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All actions will be attributed to the target user
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setImpersonationDialogOpen(false)
+              setImpersonationJustification('')
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmImpersonation}
+            variant="contained"
+            color="warning"
+            disabled={!impersonationTarget || actionLoading === impersonationTarget?.id}
+            startIcon={actionLoading === impersonationTarget?.id ? <CircularProgress size={16} /> : <SwitchAccount />}
+          >
+            {actionLoading === impersonationTarget?.id ? 'Starting...' : 'Start Impersonation'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Container>
   )
 }

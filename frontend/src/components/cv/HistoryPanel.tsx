@@ -65,7 +65,7 @@ interface HistoryPanelState {
 interface ExtendedHistoryPanelProps extends HistoryPanelProps {
   historyEntries: CVHistoryEntry[]
   historyStats: HistoryStats
-  onDeleteEntry?: (entry: CVHistoryEntry) => Promise<void>
+  onDeleteEntry?: (_entry: CVHistoryEntry) => Promise<void>
   loading?: boolean
 }
 

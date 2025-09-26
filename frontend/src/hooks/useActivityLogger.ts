@@ -22,11 +22,11 @@ export const useActivityLogger = () => {
       // Initialize activity logger with user ID
       activityLogger.init(user.id)
       
-      // Log page view on initialization
+      // Log page view on initialization (only once per session)
       activityLogger.logPageView()
     }
 
-    // Cleanup on unmount
+    // Cleanup on unmount - only end session if user was authenticated
     return () => {
       if (isAuthenticated && user?.id) {
         activityLogger.endSession()

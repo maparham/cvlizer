@@ -40,11 +40,11 @@ interface SectionManagerSidebarProps {
   isDefaultOrder: boolean
   availableSectionsToAdd: any[]
   title: string
-  onTitleSave: (newTitle: string) => Promise<void>
-  onToggleVisibility: (sectionId: string) => void
-  onAddNewSection: (sectionId: string) => void
-  onDragStart: (event: any) => void
-  onDragEnd: (event: any) => void
+  onTitleSave: (_newTitle: string) => Promise<void>
+  onToggleVisibility: (_sectionId: string) => void
+  onAddNewSection: (_sectionId: string) => void
+  onDragStart: (_event: any) => void
+  onDragEnd: (_event: any) => void
 }
 
 const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({

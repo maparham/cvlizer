@@ -5,7 +5,7 @@
  * It provides a scalable interface for viewing user activity logs with proper pagination
  * and filtering capabilities.
  */
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -26,8 +26,12 @@ import {
   Chip,
   CircularProgress,
   Button,
-  Pagination
+  Pagination,
+  Alert,
+  IconButton,
+  Tooltip
 } from '@mui/material'
+import { DeleteSweep } from '@mui/icons-material'
 
 interface UserActivity {
   id: string
@@ -48,10 +52,12 @@ interface UserActivitiesDialogProps {
   activityTypeFilter: string
   activitiesLoading: boolean
   selectedUserId: string
-  onPageChange: (page: number) => void
-  onLimitChange: (limit: number) => void
-  onFilterChange: (filter: string) => void
-  formatDateTime: (date: string) => string
+  onPageChange: (_page: number) => void
+  onLimitChange: (_limit: number) => void
+  onFilterChange: (_filter: string) => void
+  formatDateTime: (_date: string) => string
+  onClearActivities?: (_userId: string) => Promise<void>
+  userEmail?: string
 }
 
 const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
@@ -63,12 +69,31 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
   activitiesLimit,
   activityTypeFilter,
   activitiesLoading,
-  selectedUserId: _selectedUserId,
+  selectedUserId,
   onPageChange,
   onLimitChange,
   onFilterChange,
-  formatDateTime
+  formatDateTime,
+  onClearActivities,
+  userEmail
 }) => {
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
+
+  const handleClearActivities = async () => {
+    if (!onClearActivities || !selectedUserId) return
+
+    try {
+      setClearing(true)
+      await onClearActivities(selectedUserId)
+      setClearConfirmOpen(false)
+    } catch (error) {
+      // Error handling is done in the parent component
+    } finally {
+      setClearing(false)
+    }
+  }
+
   return (
     <Dialog 
       open={open} 
@@ -85,12 +110,33 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
       }}
     >
       <DialogTitle>
-        User Activities
-        {activitiesTotal > 0 && (
-          <Typography variant="body2" color="textSecondary">
-            {activitiesTotal} total activities found (Page {activitiesPage + 1} of {Math.max(1, Math.ceil(activitiesTotal / activitiesLimit))})
-          </Typography>
-        )}
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box>
+            <Typography variant="h6">User Activities</Typography>
+            {userEmail && (
+              <Typography variant="body2" color="textSecondary">
+                {userEmail}
+              </Typography>
+            )}
+            {activitiesTotal > 0 && (
+              <Typography variant="body2" color="textSecondary">
+                {activitiesTotal} total activities found (Page {activitiesPage + 1} of {Math.max(1, Math.ceil(activitiesTotal / activitiesLimit))})
+              </Typography>
+            )}
+          </Box>
+          {onClearActivities && activitiesTotal > 0 && (
+            <Tooltip title="Clear Activity Log">
+              <IconButton 
+                onClick={() => setClearConfirmOpen(true)}
+                disabled={clearing}
+                color="error"
+                size="small"
+              >
+                {clearing ? <CircularProgress size={20} /> : <DeleteSweep />}
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
       </DialogTitle>
       <DialogContent sx={{ 
         flex: 1, 
@@ -240,6 +286,65 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+
+      {/* Clear Activities Confirmation Dialog */}
+      <Dialog 
+        open={clearConfirmOpen} 
+        onClose={() => setClearConfirmOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Clear Activity Log
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Alert severity="warning">
+              You are about to permanently delete all activity logs for user <strong>{userEmail}</strong>. 
+              This action cannot be undone and will remove all historical activity data for this user.
+            </Alert>
+          </Box>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            This will delete:
+          </Typography>
+          <Box component="ul" sx={{ mt: 1, pl: 2 }}>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All page views and user interactions
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All API call logs and error records
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All session tracking data
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All debugging and support information
+            </Typography>
+          </Box>
+          
+          <Typography variant="body2" color="error.main" sx={{ mt: 2, fontWeight: 'bold' }}>
+            This action is irreversible. Are you sure you want to proceed?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setClearConfirmOpen(false)}
+            disabled={clearing}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleClearActivities}
+            variant="contained"
+            color="error"
+            disabled={clearing}
+            startIcon={clearing ? <CircularProgress size={16} /> : <DeleteSweep />}
+          >
+            {clearing ? 'Clearing...' : 'Clear Activity Log'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   )
 }

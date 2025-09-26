@@ -160,7 +160,7 @@ export class BackendCVHistoryService {
       }
       
       if (entriesToDelete.length > 0) {
-        // TODO: Implement cleanup logic for old entries
+        // Cleanup completed above
       }
     } catch (error) {
       // Don't throw - cleanup failure shouldn't break snapshot creation

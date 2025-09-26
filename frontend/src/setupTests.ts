@@ -125,6 +125,7 @@ Object.defineProperty(globalThis, 'import', {
     meta: {
       env: {
         VITE_API_URL: 'http://localhost:8000',
+        VITE_ADMIN_EMAIL: 'admin@example.com',
         MODE: 'test'
       }
     }

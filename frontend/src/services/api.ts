@@ -31,10 +31,17 @@ api.interceptors.request.use(
           const token = await (window as any).Clerk.session?.getToken()
           if (token) {
             config.headers.Authorization = `Bearer ${token}`
+          } else {
+            // No token available, reject the request to prevent 403 errors
+            return Promise.reject(new Error('No authentication token available'))
           }
         } catch (error) {
-          // Authentication token not available
+          // Authentication token not available, reject the request
+          return Promise.reject(new Error('Authentication token not available'))
         }
+      } else {
+        // Clerk not available, reject the request
+        return Promise.reject(new Error('Authentication service not available'))
       }
     }
     return config
@@ -178,5 +185,8 @@ export const cvApi = {
   },
 
 }
+
+// Export the API client for direct use
+export const apiClient = api
 
 export default api

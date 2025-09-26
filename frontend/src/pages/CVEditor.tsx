@@ -252,11 +252,12 @@ const CVEditor: React.FC = () => {
   } = useCVStore()
   
   // Determine if this is a new/temporary CV
-  const isNewCV = cvId === 'new'
+  const isNewCV = cvId === 'new' || cvId === undefined
   
   // Get CV data from either current CV or temporary CV
   const activeCV = isNewCV ? temporaryCV : currentCV
   const cvData = useMemo(() => activeCV?.parsed_data, [activeCV])
+
 
   // Fetch CV data on component mount (only for existing CVs)
   useEffect(() => {
@@ -418,6 +419,7 @@ const CVEditor: React.FC = () => {
   }
 
   if (!cvData || !activeCV) {
+    
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <Typography>CV not found</Typography>

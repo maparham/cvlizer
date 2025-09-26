@@ -9,8 +9,8 @@ interface SimpleFormSectionProps extends SectionProps {
   title: string
   sectionId: string
   requiredFields: string[]
-  renderForm: (data: any, updateData: (field: string, value: any) => void, onSave: () => void, onCancel: () => void) => React.ReactNode
-  renderDisplay: (data: any) => React.ReactNode
+  renderForm: (_data: any, _updateData: (_field: string, _value: any) => void, _onSave: () => void, _onCancel: () => void) => React.ReactNode
+  renderDisplay: (_data: any) => React.ReactNode
   autoSaveMessage: string
   autoSaveMode?: boolean // If true, don't show Save/Cancel buttons
 }

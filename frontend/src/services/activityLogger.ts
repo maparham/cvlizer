@@ -51,12 +51,15 @@ class ActivityLogger {
   private activityQueue: UserActivity[] = []
   private flushInterval: number = 10000 // 10 seconds
   private maxQueueSize: number = 100
+  private lastPageView: string | null = null
+  private lastActivityTime: number = 0
+  private activityThrottleMs: number = 1000 // 1 second throttle
 
   constructor() {
     this.sessionId = this.generateSessionId()
     this.setupErrorHandling()
     this.setupActivityFlushing()
-    this.logPageView()
+    // Don't log page view in constructor - wait for user authentication
   }
 
   /**
@@ -94,10 +97,19 @@ class ActivityLogger {
   }
 
   /**
-   * Log a user action
+   * Log a user action with throttling
    */
   logUserAction(action: string, description?: string, details?: ActivityDetails) {
     if (!this.isEnabled || !this.userId) return
+
+    const now = Date.now()
+    
+    // Throttle identical actions within 1 second
+    if (now - this.lastActivityTime < this.activityThrottleMs) {
+      return
+    }
+    
+    this.lastActivityTime = now
 
     const activity: UserActivity = {
       activityType: 'user_action',
@@ -116,15 +128,24 @@ class ActivityLogger {
   }
 
   /**
-   * Log a page view
+   * Log a page view with deduplication
    */
   logPageView(pageUrl?: string) {
     if (!this.isEnabled) return
 
+    const currentUrl = pageUrl || window.location.pathname
+    
+    // Skip if same page as last page view
+    if (this.lastPageView === currentUrl) {
+      return
+    }
+    
+    this.lastPageView = currentUrl
+
     const activity: UserActivity = {
       activityType: 'page_view',
       action: 'page_view',
-      description: `Viewed page: ${pageUrl || window.location.pathname}`,
+      description: `Viewed page: ${currentUrl}`,
       details: {
         pathname: window.location.pathname,
         search: window.location.search,

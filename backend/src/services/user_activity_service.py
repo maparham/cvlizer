@@ -360,6 +360,42 @@ def cleanup_old_activities(
         raise
 
 
+def clear_user_activities(
+    db: Session,
+    user_id: str
+) -> int:
+    """
+    Clear all activities and sessions for a specific user.
+    
+    Args:
+        db: Database session
+        user_id: ID of the user whose activities and sessions should be cleared
+    
+    Returns:
+        int: Number of activities deleted
+    """
+    try:
+        # Delete all activities for the user
+        deleted_count = db.query(UserActivity)\
+            .filter(UserActivity.user_id == user_id)\
+            .delete()
+        
+        # Delete all sessions for the user
+        sessions_deleted_count = db.query(UserSession)\
+            .filter(UserSession.user_id == user_id)\
+            .delete()
+        
+        db.commit()
+        
+        logger.info(f"Cleared {deleted_count} activities and {sessions_deleted_count} sessions for user {user_id}")
+        return deleted_count
+        
+    except Exception as e:
+        logger.error(f"Failed to clear user activities: {str(e)}")
+        db.rollback()
+        raise
+
+
 def get_activity_stats(db: Session) -> Dict[str, Any]:
     """
     Get statistics about user activities.
