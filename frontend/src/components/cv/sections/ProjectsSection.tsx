@@ -26,7 +26,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
     end_date: ''
   })
 
-  const renderProjectForm = (project: Project, _index: number, updateProject: (field: keyof Project, value: any) => void) => {
+  const renderProjectForm = (project: Project, _index: number, updateProject: (field: keyof Project, value: any) => void, onSave?: () => void) => {
     const updateTechnologies = (techString: string) => {
       const technologies = techString.split(',').map(tech => tech.trim()).filter(tech => tech)
       updateProject('technologies', technologies)
@@ -43,6 +43,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
           }}
           value={project.name}
           onChange={(value) => updateProject('name', value)}
+          onSave={onSave}
         />
         <FormField
           config={{
@@ -56,6 +57,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
           }}
           value={project.description}
           onChange={(value) => updateProject('description', value)}
+          onSave={onSave}
         />
         <FormField
           config={{
@@ -65,6 +67,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
           }}
           value={project.technologies.join(', ')}
           onChange={updateTechnologies}
+          onSave={onSave}
         />
         <FormField
           config={{
@@ -75,6 +78,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
           }}
           value={project.url || ''}
           onChange={(value) => updateProject('url', value)}
+          onSave={onSave}
         />
         <Box sx={{ display: 'flex', gap: 2 }}>
           <DateFieldComponent
@@ -84,6 +88,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
             }}
             value={project.start_date || ''}
             onChange={(value) => updateProject('start_date', value)}
+            onSave={onSave}
             sx={{ flex: 1 }}
           />
           <DateFieldComponent
@@ -94,6 +99,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
             }}
             value={project.end_date || ''}
             onChange={(value) => updateProject('end_date', value)}
+            onSave={onSave}
             sx={{ flex: 1 }}
           />
         </Box>

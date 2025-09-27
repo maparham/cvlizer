@@ -53,6 +53,13 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
     setEditData(data || defaultData)
   }, [data, defaultData])
 
+  // Reset local state when exiting edit mode
+  useEffect(() => {
+    if (!isEditing) {
+      setEditData(actualData)
+    }
+  }, [isEditing, actualData])
+
   const validateForm = useCallback((data: any): boolean => {
     // First check basic required fields
     const basicValidation = createFormValidator(requiredFields)(data)
@@ -70,6 +77,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   // Use common auto-save hook with validation
   useSectionAutoSave(isEditing, editData, actualData, onUpdate, onSave, autoSaveMessage, sectionId, onUnsavedChanges, validateForm)
 
+
   const handleSave = async () => {
     if (!validateForm(editData)) {
       return
@@ -81,14 +89,17 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       if (onUnsavedChanges) {
         onUnsavedChanges(sectionId, false)
       }
-      onClose()
+      // Don't close for Skills section in auto-save mode
+      if (sectionId !== 'skills' || !autoSaveMode) {
+        onClose()
+      }
     } catch (error) {
       // Don't close on error so user can retry
     }
   }
 
   const handleCancel = () => {
-    setEditData(data as any)
+    setEditData(actualData)
     onClose()
   }
 
@@ -103,7 +114,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       onEdit={onEdit}
       onClose={onClose}
       onSave={!autoSaveMode ? handleSave : undefined}
-      onCancel={handleCancel} // Always show cancel button in edit mode
+      onCancel={handleCancel}
       isValid={!autoSaveMode ? validateForm(editData) : true}
       editButton={null}
     >

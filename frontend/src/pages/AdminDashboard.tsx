@@ -68,9 +68,6 @@ import {
   TrendingUp,
   CheckCircle,
   ArrowBack,
-  Block,
-  CheckCircleOutline,
-  Email,
   GetApp,
   SwitchAccount,
 } from '@mui/icons-material'
@@ -84,6 +81,7 @@ import { SystemStats, UserSummary, UserDetail, UserCV } from '../types/admin'
 import UserActivitiesDialog from '../components/admin/UserActivitiesDialog'
 import UserErrorsDialog from '../components/admin/UserErrorsDialog'
 import UserDetailDialog from '../components/admin/UserDetailDialog'
+import UserActionsMenu from '../components/admin/UserActionsMenu'
 import { impersonationService, ImpersonationError } from '../services/impersonationService'
 
 
@@ -667,62 +665,7 @@ const AdminDashboard: React.FC = () => {
                       {formatDate(user.created_at)}
                     </TableCell>
                     <TableCell>
-                      <Box display="flex" gap={1}>
-                        <Tooltip title="View Details">
-                          <IconButton 
-                            size="small"
-                            onClick={() => loadUserDetail(user.id)}
-                            disabled={actionLoading === user.id}
-                          >
-                            {actionLoading === user.id ? <CircularProgress size={16} /> : <Visibility />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="View CVs">
-                          <IconButton 
-                            size="small"
-                            onClick={() => loadUserCVs(user.id)}
-                            disabled={actionLoading === user.id}
-                          >
-                            <Description />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={user.is_active ? 'Deactivate User' : 'Activate User'}>
-                          <IconButton 
-                            size="small"
-                            onClick={() => toggleUserActive(user.id, user.is_active)}
-                            disabled={actionLoading === user.id}
-                            color={user.is_active ? 'error' : 'success'}
-                          >
-                            {user.is_active ? <Block /> : <CheckCircleOutline />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="View Activities">
-                          <IconButton 
-                            size="small"
-                            onClick={() => loadUserActivities(user.id)}
-                            disabled={actionLoading === user.id}
-                          >
-                            <TrendingUp />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="View Errors">
-                          <IconButton 
-                            size="small"
-                            onClick={() => loadUserErrors(user.id)}
-                            disabled={actionLoading === user.id}
-                            color="error"
-                          >
-                            <Block />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Contact User">
-                          <IconButton 
-                            size="small"
-                            onClick={() => window.open(`mailto:${user.email}`, '_blank')}
-                          >
-                            <Email />
-                          </IconButton>
-                        </Tooltip>
+                      <Box display="flex" gap={1} alignItems="center">
                         <Tooltip title="Impersonate User">
                           <IconButton 
                             size="small"
@@ -733,6 +676,16 @@ const AdminDashboard: React.FC = () => {
                             <SwitchAccount />
                           </IconButton>
                         </Tooltip>
+                        <UserActionsMenu
+                          user={user}
+                          actionLoading={actionLoading}
+                          onViewDetails={loadUserDetail}
+                          onViewCVs={loadUserCVs}
+                          onToggleActive={toggleUserActive}
+                          onViewActivities={loadUserActivities}
+                          onViewErrors={loadUserErrors}
+                          onContactUser={(email) => window.open(`mailto:${email}`, '_blank')}
+                        />
                       </Box>
                     </TableCell>
                   </TableRow>

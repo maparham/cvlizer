@@ -1,4 +1,22 @@
-// Core CV Entity Types
+/**
+ * CV Type Definitions
+ * 
+ * This module defines the core TypeScript interfaces and types for CV-related data structures.
+ * It includes the main CV entity, section types, validation schemas, and utility types used
+ * throughout the CV editor application.
+ * 
+ * Key types:
+ * - CV: Main CV entity with metadata and parsed data
+ * - CVSection: Individual sections within a CV (work experience, education, etc.)
+ * - CVData: The structured data content of a CV
+ * - Validation types: Field validation results and error handling
+ * - History types: CV version history and snapshot management
+ * 
+ * Usage:
+ * - Import these types in components and services that work with CV data
+ * - Used for type safety in API calls and data transformations
+ * - Provides IntelliSense support for CV-related operations
+ */
 export interface CV {
   id: string
   user_id: string

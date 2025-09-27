@@ -135,7 +135,7 @@ function IndividualItemSection<T>({
       setEditData({ ...itemsData[index] })
       onEdit()
     }
-  }, [title, registerIndividualItemEditing, handleCancelEdit, setEditingItemIndex, editingItemIndexRef, setEditData, itemsData, onEdit, data, sectionId])
+  }, [registerIndividualItemEditing, handleCancelEdit, setEditingItemIndex, editingItemIndexRef, setEditData, itemsData, onEdit, data, sectionId])
 
   const handleSaveItem = useCallback(() => {
     if (editingItemIndex !== null && editData) {

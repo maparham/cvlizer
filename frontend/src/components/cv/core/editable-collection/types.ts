@@ -20,7 +20,7 @@ export interface IndividualItemSectionProps<T> {
   emptyMessage: string
   createNewItem: () => T
   requiredFields: (keyof T)[]
-  renderItemForm: (item: T, index: number, updateItem: (field: keyof T, value: any) => void) => React.ReactNode
+  renderItemForm: (item: T, index: number, updateItem: (field: keyof T, value: any) => void, onSave?: () => void) => React.ReactNode
   renderItemDisplay: (item: T, index: number) => React.ReactNode
   autoSaveMessage: string
   registerIndividualItemEditing?: (sectionId: string, itemIndex: number, onCancel: () => void, onStartEdit?: () => void) => 'success' | 'dialog_shown'
@@ -66,6 +66,6 @@ export interface EditFormProps<T> {
   isFormValid: boolean
   onSave: () => void
   onCancel: () => void
-  renderItemForm: (item: T, index: number, updateItem: (field: keyof T, value: any) => void) => React.ReactNode
+  renderItemForm: (item: T, index: number, updateItem: (field: keyof T, value: any) => void, onSave?: () => void) => React.ReactNode
   updateItem: (field: keyof T, value: any) => void
 }

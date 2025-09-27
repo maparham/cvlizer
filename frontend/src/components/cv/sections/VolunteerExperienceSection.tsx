@@ -24,7 +24,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
     description: ''
   })
 
-  const renderVolunteerForm = (volunteer: VolunteerExperience, _index: number, updateVolunteer: (field: keyof VolunteerExperience, value: any) => void) => (
+  const renderVolunteerForm = (volunteer: VolunteerExperience, _index: number, updateVolunteer: (field: keyof VolunteerExperience, value: any) => void, onSave?: () => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -35,6 +35,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         }}
         value={volunteer.organization}
         onChange={(value) => updateVolunteer('organization', value)}
+        onSave={onSave}
       />
       <FormField
         config={{
@@ -45,6 +46,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         }}
         value={volunteer.role}
         onChange={(value) => updateVolunteer('role', value)}
+        onSave={onSave}
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
         <DateFieldComponent
@@ -55,6 +57,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
           }}
           value={volunteer.start_date}
           onChange={(value) => updateVolunteer('start_date', value)}
+          onSave={onSave}
           sx={{ flex: 1 }}
         />
         <DateFieldComponent
@@ -65,6 +68,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
           }}
           value={volunteer.end_date || ''}
           onChange={(value) => updateVolunteer('end_date', value)}
+          onSave={onSave}
           sx={{ flex: 1 }}
         />
       </Box>
@@ -78,6 +82,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         }}
         value={volunteer.description}
         onChange={(value) => updateVolunteer('description', value)}
+        onSave={onSave}
       />
     </Box>
   )

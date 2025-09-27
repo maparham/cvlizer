@@ -160,6 +160,9 @@ export const useCVStore = create<CVState>()(
 
       // Actions
       fetchCVs: async () => {
+        const state = get()
+        if (state.loading) return // Prevent concurrent fetches
+        
         set({ loading: true, error: null })
         
         try {
@@ -562,18 +565,14 @@ export const useCVStore = create<CVState>()(
 
       // History actions
       createSnapshot: async (cvId: string, cvData: CVData, options: CreateSnapshotOptions): Promise<CVHistoryEntry> => {
-        try {
-          const entry = await backendHistoryService.createSnapshot(cvId, cvData, options)
-          
-          // Update last auto snapshot time if this was automatic
-          if (entry.isAutomatic) {
-            set({ lastAutoSnapshot: entry.timestamp })
-          }
-          
-          return entry
-        } catch (error: any) {
-          throw error
+        const entry = await backendHistoryService.createSnapshot(cvId, cvData, options)
+        
+        // Update last auto snapshot time if this was automatic
+        if (entry.isAutomatic) {
+          set({ lastAutoSnapshot: entry.timestamp })
         }
+        
+        return entry
       },
 
       getHistoryEntries: async (cvId: string): Promise<CVHistoryEntry[]> => {

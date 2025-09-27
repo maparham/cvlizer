@@ -24,7 +24,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
     url: ''
   })
 
-  const renderPublicationForm = (publication: Publication, _index: number, updatePublication: (field: keyof Publication, value: any) => void) => (
+  const renderPublicationForm = (publication: Publication, _index: number, updatePublication: (field: keyof Publication, value: any) => void, onSave?: () => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -35,6 +35,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         }}
         value={publication.title}
         onChange={(value) => updatePublication('title', value)}
+        onSave={onSave}
       />
       <FormField
         config={{
@@ -45,6 +46,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         }}
         value={publication.authors}
         onChange={(value) => updatePublication('authors', value)}
+        onSave={onSave}
       />
       <FormField
         config={{
@@ -55,6 +57,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         }}
         value={publication.journal}
         onChange={(value) => updatePublication('journal', value)}
+        onSave={onSave}
       />
       <DateFieldComponent
         config={{
@@ -64,6 +67,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         }}
         value={publication.date}
         onChange={(value) => updatePublication('date', value)}
+        onSave={onSave}
       />
       <FormField
         config={{
@@ -74,6 +78,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         }}
         value={publication.url || ''}
         onChange={(value) => updatePublication('url', value)}
+        onSave={onSave}
       />
     </Box>
   )

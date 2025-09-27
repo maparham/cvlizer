@@ -24,7 +24,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
     description: ''
   })
 
-  const renderCertificationForm = (cert: Certification, _index: number, updateCertification: (field: keyof Certification, value: any) => void) => (
+  const renderCertificationForm = (cert: Certification, _index: number, updateCertification: (field: keyof Certification, value: any) => void, onSave?: () => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -35,6 +35,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         }}
         value={cert.name}
         onChange={(value) => updateCertification('name', value)}
+        onSave={onSave}
       />
       <FormField
         config={{
@@ -45,6 +46,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         }}
         value={cert.issuer}
         onChange={(value) => updateCertification('issuer', value)}
+        onSave={onSave}
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
         <DateFieldComponent
@@ -55,6 +57,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
           }}
           value={cert.date}
           onChange={(value) => updateCertification('date', value)}
+          onSave={onSave}
           sx={{ flex: 1 }}
         />
         <DateFieldComponent
@@ -64,6 +67,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
           }}
           value={cert.expiry_date || ''}
           onChange={(value) => updateCertification('expiry_date', value)}
+          onSave={onSave}
           sx={{ flex: 1 }}
         />
       </Box>
@@ -77,6 +81,7 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         }}
         value={cert.description || ''}
         onChange={(value) => updateCertification('description', value)}
+        onSave={onSave}
       />
     </Box>
   )

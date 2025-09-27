@@ -259,6 +259,12 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     // Set flag to prevent cascading dialog triggers
     setIsDiscardingChanges(true)
     isDiscardingChangesRef.current = true  // Update ref immediately
+    
+    // Dispatch event to notify auto-save hooks that changes are being discarded
+    window.dispatchEvent(new CustomEvent('is-discarding-changes', { 
+      detail: { isDiscarding: true } 
+    }))
+    
     setShowUnsavedChangesDialog(false)
     
     // Clear pending changes for the section being discarded
@@ -274,6 +280,7 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
       // Force clear the pending changes immediately
       stopEditing(currentEditingItem.sectionId)
     }
+    
     
     if (pendingNavigation) {
       pendingNavigation()
@@ -300,6 +307,11 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     setTimeout(() => {
       setIsDiscardingChanges(false)
       isDiscardingChangesRef.current = false  // Update ref immediately
+      
+      // Dispatch event to notify auto-save hooks that discarding is complete
+      window.dispatchEvent(new CustomEvent('is-discarding-changes', { 
+        detail: { isDiscarding: false } 
+      }))
     }, 100)
   }, [pendingNavigation, pendingIndividualItemRegistration, stopEditing])
 

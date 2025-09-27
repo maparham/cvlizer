@@ -62,7 +62,7 @@ function EditForm<T>({
             </IconButton>
           </Tooltip>
         </Box>
-        {renderItemForm(editData, editingItemIndex, updateItem)}
+        {renderItemForm(editData, editingItemIndex, updateItem, onSave)}
       </Box>
     </Box>
   )

@@ -123,7 +123,8 @@ export const useKeyboardShortcuts = ({
     onRequestSectionCancel,
     onIndividualItemCancel,
     onShowUnsavedChangesDialog,
-    onSetPendingNavigation
+    onSetPendingNavigation,
+    onUnsavedChangesDialogClose
   ])
 
   const handleSaveShortcut = useCallback((event: KeyboardEvent) => {

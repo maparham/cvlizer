@@ -210,7 +210,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
     } else {
       handleSectionClose()
     }
-  }, [editingSection])
+  }, [editingSection, pendingChanges])
 
   // Handle unsaved changes dialog
   const handleUnsavedChangesDialogClose = () => {

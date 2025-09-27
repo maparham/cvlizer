@@ -184,37 +184,41 @@ export interface FieldValidationResult {
 
 export const validateField = (fieldName: string, value: string, _data: any): FieldValidationResult => {
   switch (fieldName) {
-    case 'email':
+    case 'email': {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!value) return { isValid: true } // Optional field
       return {
         isValid: emailRegex.test(value),
         message: 'Please enter a valid email address'
       }
+    }
     
-    case 'phone':
-      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+    case 'phone': {
+      const phoneRegex = /^[+]?[1-9][\d]{0,15}$/
       if (!value) return { isValid: true } // Optional field
       return {
-        isValid: phoneRegex.test(value.replace(/[\s\-\(\)]/g, '')),
+        isValid: phoneRegex.test(value.replace(/[\s\-()]/g, '')),
         message: 'Please enter a valid phone number'
       }
+    }
     
-    case 'linkedin_url':
+    case 'linkedin_url': {
       if (!value) return { isValid: true } // Optional field
-      const linkedinRegex = /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-]+\/?$/
+      const linkedinRegex = /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+\/?$/
       return {
         isValid: linkedinRegex.test(value),
         message: 'Please enter a valid LinkedIn URL'
       }
+    }
     
-    case 'github_url':
+    case 'github_url': {
       if (!value) return { isValid: true } // Optional field
-      const githubRegex = /^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9\-]+\/?$/
+      const githubRegex = /^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9-]+\/?$/
       return {
         isValid: githubRegex.test(value),
         message: 'Please enter a valid GitHub URL'
       }
+    }
     
     default:
       return { isValid: true }

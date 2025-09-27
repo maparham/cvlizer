@@ -15,11 +15,31 @@ export const useSectionAutoSave = (
   const prevEditDataRef = useRef<any>()
   const prevIsEditingRef = useRef<boolean>()
   const prevOriginalDataRef = useRef<any>()
+  const isDiscardingRef = useRef<boolean>(false)
+
+  // Listen for the discarding changes flag to prevent auto-save during discard
+  useEffect(() => {
+    const handleDiscardingChanges = (event: CustomEvent) => {
+      isDiscardingRef.current = event.detail?.isDiscarding ?? false
+    }
+
+    window.addEventListener('is-discarding-changes', handleDiscardingChanges as EventListener)
+    
+    return () => {
+      window.removeEventListener('is-discarding-changes', handleDiscardingChanges as EventListener)
+    }
+  }, [])
 
   useEffect(() => {
     // Only auto-save when transitioning from editing to not editing
     // Don't auto-save when data changes due to CV switching
+    // Don't auto-save when changes are being discarded
     if (!isEditing && editData && Object.keys(editData).length > 0 && prevIsEditingRef.current === true) {
+      // Skip auto-save if we're currently discarding changes
+      if (isDiscardingRef.current) {
+        return
+      }
+      
       const hasChanges = JSON.stringify(editData) !== JSON.stringify(originalData)
       if (hasChanges) {
         // Validate data before auto-saving

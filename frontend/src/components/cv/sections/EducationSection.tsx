@@ -38,7 +38,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
     honors: []
   })
 
-  const renderEducationForm = (edu: Education, index: number, updateEducation: (field: keyof Education, value: any) => void) => {
+  const renderEducationForm = (edu: Education, index: number, updateEducation: (field: keyof Education, value: any) => void, onSave?: () => void) => {
     // Get validation errors for this education item
     const startDateValidation = useFieldValidation('education', index, 'start_date')
     const endDateValidation = useFieldValidation('education', index, 'end_date')
@@ -85,6 +85,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
         <DegreeAutocomplete
           value={edu.degree || ''}
           onChange={(value) => updateEducation('degree', value)}
+          onSave={onSave}
           placeholder="e.g., Bachelor of Science"
           label="Degree"
           error={!edu.degree?.trim()}
@@ -99,6 +100,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
           }}
           value={edu.institution}
           onChange={(value) => updateEducation('institution', value)}
+          onSave={onSave}
         />
         <FormField
           config={{
@@ -108,10 +110,12 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
           }}
           value={edu.field_of_study}
           onChange={(value) => updateEducation('field_of_study', value)}
+          onSave={onSave}
         />
         <LocationAutocomplete
           value={edu.location || ''}
           onChange={(value) => updateEducation('location', value)}
+          onSave={onSave}
           placeholder="e.g., Boston, MA"
         />
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -123,6 +127,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
             }}
             value={edu.start_date}
             onChange={(value) => updateEducation('start_date', value)}
+            onSave={onSave}
             sx={{ flex: 1 }}
             {...startDateValidation.fieldProps}
           />
@@ -134,6 +139,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
             }}
             value={edu.end_date}
             onChange={(value) => updateEducation('end_date', value)}
+            onSave={onSave}
             sx={{ flex: 1 }}
             {...endDateValidation.fieldProps}
           />
@@ -146,6 +152,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
           }}
           value={edu.gpa}
           onChange={(value) => updateEducation('gpa', value)}
+          onSave={onSave}
         />
         <FormField
           config={{
@@ -157,6 +164,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
           }}
           value={edu.description}
           onChange={(value) => updateEducation('description', value)}
+          onSave={onSave}
         />
         
         <Box>

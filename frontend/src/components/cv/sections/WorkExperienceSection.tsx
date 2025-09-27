@@ -44,11 +44,12 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
     technologies: []
   })
 
-  const renderExperienceForm = (exp: WorkExperience, _index: number, updateExperience: (field: keyof WorkExperience, value: any) => void) => (
+  const renderExperienceForm = (exp: WorkExperience, _index: number, updateExperience: (field: keyof WorkExperience, value: any) => void, onSave?: () => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <JobPositionAutocomplete
         value={exp.position || ''}
         onChange={(value) => updateExperience('position', value)}
+        onSave={onSave}
         error={!exp.position?.trim()}
         helperText={!exp.position?.trim() ? "Position is required" : ""}
         placeholder="e.g., Software Engineer"
@@ -62,10 +63,12 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         }}
         value={exp.company}
         onChange={(value) => updateExperience('company', value)}
+        onSave={onSave}
       />
       <LocationAutocomplete
         value={exp.location || ''}
         onChange={(value) => updateExperience('location', value)}
+        onSave={onSave}
         placeholder="e.g., San Francisco, CA"
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
@@ -77,6 +80,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
           }}
           value={exp.start_date}
           onChange={(value) => updateExperience('start_date', value)}
+          onSave={onSave}
           sx={{ flex: 1 }}
         />
         <DateFieldComponent
@@ -87,6 +91,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
           }}
           value={exp.end_date}
           onChange={(value) => updateExperience('end_date', value)}
+          onSave={onSave}
           sx={{ flex: 1 }}
         />
       </Box>
@@ -100,6 +105,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         }}
         value={exp.description}
         onChange={(value) => updateExperience('description', value)}
+        onSave={onSave}
       />
     </Box>
   )

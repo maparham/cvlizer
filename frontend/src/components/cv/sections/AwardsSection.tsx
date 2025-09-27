@@ -22,7 +22,7 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
     description: ''
   })
 
-  const renderAwardForm = (award: Award, _index: number, updateAward: (field: keyof Award, value: any) => void) => (
+  const renderAwardForm = (award: Award, _index: number, updateAward: (field: keyof Award, value: any) => void, onSave?: () => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -33,6 +33,7 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         }}
         value={award.name}
         onChange={(value) => updateAward('name', value)}
+        onSave={onSave}
       />
       <FormField
         config={{
@@ -43,6 +44,7 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         }}
         value={award.issuer}
         onChange={(value) => updateAward('issuer', value)}
+        onSave={onSave}
       />
       <DateFieldComponent
         config={{
@@ -52,6 +54,7 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         }}
         value={award.date}
         onChange={(value) => updateAward('date', value)}
+        onSave={onSave}
       />
       <FormField
         config={{
@@ -63,6 +66,7 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         }}
         value={award.description}
         onChange={(value) => updateAward('description', value)}
+        onSave={onSave}
       />
     </Box>
   )

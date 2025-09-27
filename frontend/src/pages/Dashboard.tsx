@@ -117,7 +117,7 @@ const Dashboard: React.FC = () => {
       // Log dashboard view (page view is already logged by useActivityLogger)
       logUserAction('dashboard_view', 'User viewed dashboard')
     }
-  }, [isAuthenticated, authLoading, fetchCVs]) // Depend on auth state
+  }, [isAuthenticated, authLoading]) // Depend on auth state only
 
   // Show error notifications
   useEffect(() => {
