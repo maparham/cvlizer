@@ -62,19 +62,18 @@ export const generateDeterministicId = (item: any, sectionType: string, index: n
   } else if (sectionType === 'education' && item.institution && item.start_date) {
     // Use institution + start_date (stable identifiers) 
     contentHash = `${item.institution}_${item.start_date}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
-  } else if (sectionType === 'projects' && item.name && item.start_date) {
-    // Use name + start_date (stable identifiers)
-    contentHash = `${item.name}_${item.start_date}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
-  } else if (sectionType === 'certifications' && item.name && item.issuing_organization && (item.issue_date || item.date)) {
-    // Use name + organization + date (stable identifiers)
-    const date = item.issue_date || item.date
-    contentHash = `${item.name}_${item.issuing_organization}_${date}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
+  } else if (sectionType === 'projects' && item.name) {
+    // Use name (stable identifier)
+    contentHash = `${item.name}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
+  } else if (sectionType === 'certifications' && item.name && item.issuer && item.date) {
+    // Use name + issuer + date (stable identifiers)
+    contentHash = `${item.name}_${item.issuer}_${item.date}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
   } else if (sectionType === 'awards' && item.name && item.date) {
     // Use name + date (stable identifiers)
     contentHash = `${item.name}_${item.date}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
-  } else if (sectionType === 'publications' && item.title && (item.publication_date || item.date)) {
+  } else if (sectionType === 'publications' && item.title && item.date) {
     // Use title + date (stable identifiers)
-    const date = item.publication_date || item.date
+    const date = item.date
     contentHash = `${item.title}_${date}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
   } else if (sectionType === 'volunteer_experience' && item.organization && item.start_date) {
     // Use organization + start_date (stable identifiers)

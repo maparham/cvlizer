@@ -1,3 +1,21 @@
+/**
+ * CV Editor Page Component
+ * 
+ * This module provides the main CV editing interface where users can modify their CV content.
+ * It includes section-based editing, validation, and integration with the CV store.
+ * 
+ * Key responsibilities:
+ * - Display CV content in editable sections
+ * - Handle section-based editing and validation
+ * - Manage unsaved changes and navigation warnings
+ * - Provide export and delete functionality
+ * - Integrate with CV store for data persistence
+ * 
+ * Usage:
+ * - Rendered as the "/cv/:id" route for CV editing
+ * - Uses CVEditorContext for state management
+ * - Provides responsive editing interface with Material-UI
+ */
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   AppBar,
@@ -19,7 +37,8 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
   AccountCircle as AccountCircleIcon,
-  PictureAsPdf as PictureAsPdfIcon
+  PictureAsPdf as PictureAsPdfIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -41,8 +60,10 @@ const CVEditorHeader: React.FC<{
   onMenuClose: () => void,
   anchorEl: null | HTMLElement,
   onExport: () => void,
-  isAdmin: boolean
-}> = ({ onLogout, onMenuOpen, onMenuClose, anchorEl, onExport, isAdmin }) => {
+  onDelete: () => void,
+  isAdmin: boolean,
+  isNewCV: boolean
+}> = ({ onLogout, onMenuOpen, onMenuClose, anchorEl, onExport, onDelete, isAdmin, isNewCV }) => {
   const navigate = useNavigate()
   const { editingSection, editingIndividualItem, hasUnsavedChanges } = useCVEditor()
   const [showBackDialog, setShowBackDialog] = useState(false)
@@ -103,6 +124,26 @@ const CVEditorHeader: React.FC<{
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
+          {!isNewCV && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<DeleteIcon />}
+              onClick={onDelete}
+              sx={{
+                mr: 1,
+                textTransform: 'none',
+                borderColor: 'error.main',
+                color: 'error.main',
+                '&:hover': { 
+                  backgroundColor: 'error.light',
+                  color: 'error.contrastText'
+                }
+              }}
+            >
+              Delete
+            </Button>
+          )}
           <Button
             variant="outlined"
             size="small"
@@ -193,8 +234,10 @@ const CVEditorContent: React.FC<{
   onMenuClose: () => void
   anchorEl: null | HTMLElement
   onTitleSave: (title: string) => Promise<void>
+  onDelete: () => void
   isAdmin: boolean
-}> = ({ cvId, activeCV, onLogout, onMenuOpen, onMenuClose, anchorEl, onTitleSave, isAdmin }) => {
+  isNewCV: boolean
+}> = ({ cvId, activeCV, onLogout, onMenuOpen, onMenuClose, anchorEl, onTitleSave, onDelete, isAdmin, isNewCV }) => {
   const { showError } = useNotifications()
 
   const handleExport = async () => {
@@ -216,7 +259,9 @@ const CVEditorContent: React.FC<{
         onMenuClose={onMenuClose}
         anchorEl={anchorEl}
         onExport={handleExport}
+        onDelete={onDelete}
         isAdmin={isAdmin}
+        isNewCV={isNewCV}
       />
       <PDFCVEditor 
         title={activeCV?.original_filename || 'Untitled CV'}
@@ -233,6 +278,7 @@ const CVEditor: React.FC = () => {
   const navigate = useNavigate()
   const { logout, isAdmin } = useAuth()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { showSuccess, showError, showValidationError, showInfo, notifications, removeNotification } = useNotifications()
   
   
@@ -248,11 +294,12 @@ const CVEditor: React.FC = () => {
     saveTemporaryCV,
     setCurrentCV,
     setTemporaryCV,
-    createSnapshotOnUserAction
+    createSnapshotOnUserAction,
+    deleteCV
   } = useCVStore()
   
   // Determine if this is a new/temporary CV
-  const isNewCV = cvId === 'new' || cvId === undefined
+  const isNewCV = Boolean(cvId === 'new' || cvId === undefined || (cvId && cvId.startsWith('temp-')))
   
   // Get CV data from either current CV or temporary CV
   const activeCV = isNewCV ? temporaryCV : currentCV
@@ -261,7 +308,7 @@ const CVEditor: React.FC = () => {
 
   // Fetch CV data on component mount (only for existing CVs)
   useEffect(() => {
-    if (cvId && cvId !== 'new') {
+    if (cvId && cvId !== 'new' && !cvId.startsWith('temp-')) {
       fetchCV(cvId)
     } else if (isNewCV && !temporaryCV) {
       // If we're on the new CV route but no temporary CV exists, redirect to dashboard
@@ -382,6 +429,28 @@ const CVEditor: React.FC = () => {
     handleMenuClose()
   }
 
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!cvId || isNewCV) return
+    
+    try {
+      await deleteCV(cvId)
+      showSuccess('Success', 'CV deleted successfully')
+      setDeleteDialogOpen(false)
+      navigate('/dashboard')
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.detail || 'Failed to delete CV'
+      showError('Error', errorMessage)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false)
+  }
+
   const handleTitleSave = async (newTitle: string) => {
     if (isNewCV) {
       // For temporary CVs, just update the local state
@@ -446,7 +515,9 @@ const CVEditor: React.FC = () => {
                   onMenuClose={handleMenuClose}
                   anchorEl={anchorEl}
                   onTitleSave={handleTitleSave}
+                  onDelete={handleDeleteClick}
                   isAdmin={isAdmin}
+                  isNewCV={isNewCV}
                 />
               </InitialValidation>
             </SaveWithValidationErrors>
@@ -477,6 +548,41 @@ const CVEditor: React.FC = () => {
           </Alert>
         </Snackbar>
       ))}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ fontWeight: 600, fontSize: '1.25rem', color: 'error.main' }}>
+            Delete CV
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete "{activeCV?.original_filename}"? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button onClick={handleDeleteCancel} sx={{ borderRadius: 2 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: 2 }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
       </Box>
     </ErrorBoundary>
   )

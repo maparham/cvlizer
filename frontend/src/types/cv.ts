@@ -91,7 +91,6 @@ export interface Education {
   current: boolean
   gpa?: string
   honors: string[]
-  relevant_coursework?: string[]
   thesis_title?: string
 }
 
@@ -115,11 +114,10 @@ export interface Language {
 export interface Certification {
   id: string
   name: string
-  issuing_organization: string
-  issue_date: string
-  expiration_date?: string
-  credential_id?: string
-  credential_url?: string
+  issuer: string
+  date: string
+  expiry_date?: string
+  description?: string
 }
 
 // Projects
@@ -127,21 +125,15 @@ export interface Project {
   id: string
   name: string
   description: string
-  start_date: string
-  end_date?: string
-  current: boolean
   technologies: string[]
   url?: string
-  github_url?: string
-  achievements?: string[]
-  role?: string
 }
 
 // Awards
 export interface Award {
   id: string
   name: string
-  issuing_organization: string
+  issuer: string
   date: string
   description?: string
 }
@@ -150,13 +142,10 @@ export interface Award {
 export interface Publication {
   id: string
   title: string
-  authors: string[]
-  publication_date: string
-  journal?: string
-  conference?: string
+  authors: string
+  journal: string
+  date: string
   url?: string
-  doi?: string
-  abstract?: string
 }
 
 // Volunteer Experience

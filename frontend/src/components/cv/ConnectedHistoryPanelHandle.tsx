@@ -27,6 +27,14 @@ const ConnectedHistoryPanelHandle: React.FC<ConnectedHistoryPanelHandleProps> = 
     let mounted = true
     
     const loadEntryCount = async () => {
+      // Skip history loading for temporary CVs (they don't exist on backend yet)
+      if (cvId.startsWith('temp-')) {
+        if (mounted) {
+          setEntryCount(0)
+        }
+        return
+      }
+      
       try {
         const entries = await getHistoryEntries(cvId)
         if (mounted) {

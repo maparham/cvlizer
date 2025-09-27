@@ -122,17 +122,6 @@ export class CVValidationService {
         if (!project.description?.trim()) {
           errors.push(`Project #${index + 1}: Description is required`)
         }
-        
-        // Validate date order
-        const dateError = this.validateDateOrder(
-          project.start_date,
-          project.end_date,
-          'Project',
-          index + 1
-        )
-        if (dateError) {
-          errors.push(dateError)
-        }
       })
     }
 
@@ -142,11 +131,11 @@ export class CVValidationService {
         if (!cert.name?.trim()) {
           errors.push(`Certification #${index + 1}: Name is required`)
         }
-        if (!cert.issuing_organization?.trim()) {
-          errors.push(`Certification #${index + 1}: Issuing organization is required`)
+        if (!cert.issuer?.trim()) {
+          errors.push(`Certification #${index + 1}: Issuer is required`)
         }
-        if (!cert.issue_date?.trim()) {
-          errors.push(`Certification #${index + 1}: Issue date is required`)
+        if (!cert.date?.trim()) {
+          errors.push(`Certification #${index + 1}: Date is required`)
         }
       })
     }
@@ -157,8 +146,8 @@ export class CVValidationService {
         if (!award.name?.trim()) {
           errors.push(`Award #${index + 1}: Name is required`)
         }
-        if (!award.issuing_organization?.trim()) {
-          errors.push(`Award #${index + 1}: Issuing organization is required`)
+        if (!award.issuer?.trim()) {
+          errors.push(`Award #${index + 1}: Issuer is required`)
         }
         if (!award.date?.trim()) {
           errors.push(`Award #${index + 1}: Date is required`)
@@ -431,7 +420,7 @@ class CVDataCleaner {
     const validFieldsBySection = {
       'work_experience': ['id', 'company', 'position', 'location', 'start_date', 'end_date', 'current', 'description', 'achievements', 'technologies'],
       'education': ['id', 'institution', 'degree', 'field_of_study', 'location', 'start_date', 'end_date', 'gpa', 'description', 'achievements', 'honors'],
-      'projects': ['id', 'name', 'description', 'technologies', 'url', 'start_date', 'end_date'],
+      'projects': ['id', 'name', 'description', 'technologies', 'url'],
       'certifications': ['id', 'name', 'issuer', 'date', 'expiry_date', 'description'],
       'awards': ['id', 'name', 'issuer', 'date', 'description'],
       'publications': ['id', 'title', 'authors', 'journal', 'date', 'url'],
@@ -455,7 +444,6 @@ class CVDataCleaner {
     const dateFieldsBySection = {
       'work_experience': ['start_date', 'end_date'],
       'education': ['start_date', 'end_date'],
-      'projects': ['start_date', 'end_date'],
       'certifications': ['date', 'expiry_date'],
       'awards': ['date'],
       'publications': ['date'],

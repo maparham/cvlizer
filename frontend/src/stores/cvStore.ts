@@ -97,7 +97,7 @@ interface CVState {
 
   // Actions
   fetchCVs: () => Promise<void>
-  fetchCV: (cvId: string) => Promise<CV | null>
+  fetchCV: (_cvId: string) => Promise<CV | null>
   uploadCV: (file: File) => Promise<CV>
   createTemporaryCV: () => CV
   saveTemporaryCV: (cvData: CVUpdateRequest) => Promise<CV>

@@ -1,16 +1,36 @@
+/**
+ * Form Utilities and Components
+ * 
+ * This module provides reusable form components and utilities for CV sections.
+ * It includes form fields, date pickers, and validation components with consistent styling.
+ * 
+ * Key responsibilities:
+ * - Provide reusable form field components (FormField, DateFieldComponent)
+ * - Handle date picker integration with proper formatting
+ * - Provide validation display components
+ * - Ensure consistent form styling across CV sections
+ * 
+ * Usage:
+ * - Import FormField for standard text inputs
+ * - Use DateFieldComponent for date inputs with validation
+ * - Integrate with CV section components for consistent form behavior
+ */
 import React from 'react'
 import { Box, TextField, Button, Typography, IconButton, InputAdornment } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { DateField as MUIDateField } from '@mui/x-date-pickers/DateField'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
-import { Save as SaveIcon, Cancel as CancelIcon, Delete as DeleteIcon, CheckCircle as CheckIcon, Warning as WarningIcon, CalendarToday as CalendarIcon } from '@mui/icons-material'
+import { 
+  Save as SaveIcon, 
+  Cancel as CancelIcon, 
+  Delete as DeleteIcon, 
+  CheckCircle as CheckIcon, 
+  Warning as WarningIcon, 
+  CalendarToday as CalendarIcon 
+} from '@mui/icons-material'
 import { formatDateForBackend, parseDateForPicker } from '../../../utils/dateUtils'
 import dayjs from 'dayjs'
-
-/**
- * Common form components and utilities for CV sections
- */
 
 export interface FormFieldConfig {
   name: string

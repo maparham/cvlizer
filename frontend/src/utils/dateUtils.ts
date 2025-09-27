@@ -1,5 +1,19 @@
 /**
- * Date utility functions for CV editor
+ * Date Utilities
+ * 
+ * This module provides date formatting and manipulation utilities specifically designed
+ * for the CV editor. It handles date formatting for backend storage and user display.
+ * 
+ * Key responsibilities:
+ * - Format dates for backend storage (YYYY-MM-DD format)
+ * - Parse dates from various formats
+ * - Provide date validation utilities
+ * - Handle date comparisons and calculations
+ * 
+ * Usage:
+ * - Use formatDateForBackend() when saving dates to the backend
+ * - Use parseDateFromBackend() when loading dates from the backend
+ * - Import date validation functions for form validation
  */
 import dayjs, { Dayjs } from 'dayjs'
 

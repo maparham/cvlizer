@@ -34,11 +34,6 @@ import {
   MenuItem,
   Paper,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   LinearProgress,
   Snackbar,
   Alert,
@@ -51,13 +46,17 @@ import {
   Tooltip,
   CardActions,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material'
 import {
   AccountCircle as AccountCircleIcon,
   Upload as UploadIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Create as CreateIcon,
   GetApp as DownloadIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
@@ -65,11 +64,14 @@ import {
   Description as DocumentIcon,
   Schedule as ScheduleIcon,
   EditNote as EditedIcon,
-  ContentCopy as DuplicateIcon
+  Article as TemplateIcon,
+  Add as AddIcon
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { CVUpload, EditableTitle } from '../components/cv'
+import CVTemplateSelector from '../components/cv/CVTemplateSelector'
+import CVQuickActions from '../components/cv/CVQuickActions'
 import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
 import { useActivityLogger } from '../hooks/useActivityLogger'
@@ -80,12 +82,15 @@ import { formatDateTime } from '../utils/dateFormat'
 
 const Dashboard: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [cvToDelete, setCvToDelete] = useState<CV | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [creating, setCreating] = useState(false)
   const [duplicating, setDuplicating] = useState(false)
+  const [creatingSimilar, setCreatingSimilar] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [cvToDelete, setCvToDelete] = useState<CV | null>(null)
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('')
@@ -105,6 +110,7 @@ const Dashboard: React.FC = () => {
     error,
     fetchCVs,
     createTemporaryCV,
+    saveTemporaryCV,
     updateCVTitle,
     deleteCV: deleteCVFromStore,
     duplicateCV: duplicateCVFromStore
@@ -145,9 +151,14 @@ const Dashboard: React.FC = () => {
     setDeleteDialogOpen(true)
   }
 
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false)
+    setCvToDelete(null)
+  }
+
   const handleDeleteConfirm = async () => {
     if (!cvToDelete) return
-
+    
     setDeleting(true)
     try {
       await deleteCVFromStore(cvToDelete.id)
@@ -166,16 +177,40 @@ const Dashboard: React.FC = () => {
     }
   }
 
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false)
-    setCvToDelete(null)
+  const handleCreateFromTemplate = () => {
+    setTemplateSelectorOpen(true)
   }
 
-  const handleCreateBlankCV = () => {
+  const handleStartFromScratch = async () => {
+    if (creating) return
+    
     setCreating(true)
     try {
-      createTemporaryCV()
-      navigate(`/cv/new`)
+      const newCV = await createTemporaryCV()
+      navigate(`/cv/${newCV.id}`)
+    } catch (error) {
+      console.error('Error creating blank CV:', error)
+      showError('Error', 'Failed to create new CV')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleTemplateSelect = async (template: any) => {
+    if (creating) return
+    
+    setCreating(true)
+    try {
+      const newCV = await createTemporaryCV()
+      
+      // If a template was selected, apply its data
+      if (template) {
+        // Update the temporary CV with template data
+        newCV.parsed_data = { ...newCV.parsed_data, ...template.sampleData }
+        newCV.original_filename = `${template.name} - New CV`
+      }
+      
+      navigate(`/cv/${newCV.id}`)
     } catch (error) {
       console.error('Error creating blank CV:', error)
       showError('Error', 'Failed to create new CV')
@@ -197,11 +232,16 @@ const Dashboard: React.FC = () => {
 
 
   const handleDownloadCV = async (cv: CV) => {
+    if (downloading) return
+    
+    setDownloading(true)
     try {
       await cvApi.downloadCV(cv.id, cv.original_filename)
       showSuccess('Success', 'CV download started')
     } catch (error) {
       showError('Error', 'Failed to download CV')
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -216,6 +256,32 @@ const Dashboard: React.FC = () => {
       showError('Error', 'Failed to duplicate CV')
     } finally {
       setDuplicating(false)
+    }
+  }
+
+  const handleCreateSimilarCV = async (cv: CV) => {
+    if (creatingSimilar) return
+    
+    setCreatingSimilar(true)
+    try {
+      // Create a new CV based on the existing one
+      const newCV = await createTemporaryCV()
+      
+      // Copy the parsed data from the existing CV
+      if (cv.parsed_data) {
+        newCV.parsed_data = JSON.parse(JSON.stringify(cv.parsed_data))
+        newCV.original_filename = `Similar to ${cv.original_filename}`
+      }
+      
+      // Save the temporary CV to the backend
+      const savedCV = await saveTemporaryCV({ parsed_data: newCV.parsed_data! })
+      
+      navigate(`/cv/${savedCV.id}`)
+      showSuccess('Success', `Created similar CV based on "${cv.original_filename}"`)
+    } catch (error) {
+      showError('Error', 'Failed to create similar CV')
+    } finally {
+      setCreatingSimilar(false)
     }
   }
 
@@ -329,18 +395,32 @@ const Dashboard: React.FC = () => {
           {cvs.length > 0 && (
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
-                variant="contained"
-                startIcon={<CreateIcon />}
-                onClick={handleCreateBlankCV}
+                variant="outlined"
+                startIcon={<TemplateIcon />}
+                onClick={handleCreateFromTemplate}
                 disabled={creating}
-                data-testid="create-new-cv-button"
+                data-testid="create-cv-from-template-button"
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600
                 }}
               >
-                {creating ? 'Creating...' : 'Create New CV'}
+                {creating ? 'Creating...' : 'Create CV from Template'}
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={handleStartFromScratch}
+                disabled={creating}
+                data-testid="start-from-scratch-button"
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600
+                }}
+              >
+                {creating ? 'Creating...' : 'Start from Scratch'}
               </Button>
               <Button
                 variant="outlined"
@@ -473,12 +553,12 @@ const Dashboard: React.FC = () => {
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="center">
               <Button
-                variant="contained"
+                variant="outlined"
                 size="large"
-                startIcon={<CreateIcon />}
-                onClick={handleCreateBlankCV}
+                startIcon={<TemplateIcon />}
+                onClick={handleCreateFromTemplate}
                 disabled={creating}
-                data-testid="create-new-cv-empty-state-button"
+                data-testid="create-cv-from-template-empty-state-button"
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
@@ -487,7 +567,24 @@ const Dashboard: React.FC = () => {
                   py: 1.5
                 }}
               >
-                {creating ? 'Creating...' : 'Create New CV'}
+                {creating ? 'Creating...' : 'Create CV from Template'}
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<AddIcon />}
+                onClick={handleStartFromScratch}
+                disabled={creating}
+                data-testid="start-from-scratch-empty-state-button"
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1.5
+                }}
+              >
+                {creating ? 'Creating...' : 'Start from Scratch'}
               </Button>
               <Button
                 variant="outlined"
@@ -640,7 +737,7 @@ const Dashboard: React.FC = () => {
                   <CardActions sx={{ p: 2, pt: 0, justifyContent: 'space-between' }}>
                     <Button
                       size="medium"
-                      variant="contained"
+                      variant="outlined"
                       startIcon={<EditIcon />}
                       onClick={() => navigate(`/cv/${cv.id}`)}
                       disabled={!cv.is_parsed}
@@ -656,46 +753,31 @@ const Dashboard: React.FC = () => {
                       {cv.is_parsed ? 'Edit CV' : 'Processing...'}
                     </Button>
                     
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Tooltip title="Duplicate CV">
-                        <span>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDuplicateCV(cv)}
-                            disabled={duplicating || !cv.is_parsed}
-                            data-testid={`duplicate-cv-button-${cv.id}`}
-                            sx={{ 
-                              border: 1,
-                              borderColor: 'divider',
-                              '&:hover': {
-                                borderColor: 'primary.main',
-                                color: 'primary.main'
-                              }
-                            }}
-                          >
-                            <DuplicateIcon fontSize="small" />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                      
-                      <Tooltip title="Delete CV">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteClick(cv)}
-                          data-testid={`delete-cv-button-${cv.id}`}
-                          sx={{ 
-                            border: 1,
-                            borderColor: 'divider',
-                            '&:hover': {
-                              borderColor: 'error.main',
-                              color: 'error.main'
-                            }
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteClick(cv)}
+                      disabled={deleting}
+                      color="error"
+                      sx={{
+                        opacity: 0.7,
+                        '&:hover': { opacity: 1 },
+                        transition: 'opacity 0.2s'
+                      }}
+                      data-testid={`delete-cv-button-${cv.id}`}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                    
+                    <CVQuickActions
+                      cv={cv}
+                      onDuplicate={handleDuplicateCV}
+                      onRename={handleTitleSave}
+                      onDownload={handleDownloadCV}
+                      onCreateSimilar={handleCreateSimilarCV}
+                      duplicating={duplicating}
+                      downloading={downloading}
+                      creatingSimilar={creatingSimilar}
+                    />
                   </CardActions>
                 </Card>
               </Grid>
@@ -714,32 +796,44 @@ const Dashboard: React.FC = () => {
           }}
         />
 
+
+        {/* Template Selector */}
+        <CVTemplateSelector
+          open={templateSelectorOpen}
+          onClose={() => setTemplateSelectorOpen(false)}
+          onSelectTemplate={handleTemplateSelect}
+        />
+
         {/* Delete Confirmation Dialog */}
         <Dialog
           open={deleteDialogOpen}
           onClose={handleDeleteCancel}
-          aria-labelledby="delete-dialog-title"
-          aria-describedby="delete-dialog-description"
-          data-testid="delete-cv-dialog"
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: { borderRadius: 2 }
+          }}
         >
-          <DialogTitle id="delete-dialog-title">
-            Delete CV
+          <DialogTitle sx={{ pb: 1 }}>
+            <Box sx={{ fontWeight: 600, fontSize: '1.25rem', color: 'error.main' }}>
+              Delete CV
+            </Box>
           </DialogTitle>
           <DialogContent>
-            <DialogContentText id="delete-dialog-description">
+            <DialogContentText>
               Are you sure you want to delete "{cvToDelete?.original_filename}"? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleDeleteCancel} disabled={deleting} data-testid="delete-dialog-cancel-button">
+          <DialogActions sx={{ p: 3, pt: 1 }}>
+            <Button onClick={handleDeleteCancel} sx={{ borderRadius: 2 }}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleDeleteConfirm} 
-              color="error" 
-              autoFocus
+            <Button
+              onClick={handleDeleteConfirm}
+              variant="contained"
+              color="error"
               disabled={deleting}
-              data-testid="delete-dialog-confirm-button"
+              sx={{ borderRadius: 2 }}
             >
               {deleting ? 'Deleting...' : 'Delete'}
             </Button>

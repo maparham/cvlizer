@@ -1,5 +1,18 @@
 /**
- * Validation utilities for parsing and handling CV validation errors
+ * Validation Utilities
+ * 
+ * This module provides utilities for parsing and handling CV validation errors from the backend.
+ * It includes error parsing, formatting, and display utilities for user-friendly error messages.
+ * 
+ * Key responsibilities:
+ * - Parse backend validation error messages into structured format
+ * - Format validation errors for display in the UI
+ * - Provide utilities for error handling and user feedback
+ * 
+ * Usage:
+ * - Import parseValidationErrors to convert backend errors to structured format
+ * - Use error formatting functions for consistent error display
+ * - Integrate with validation error display components
  */
 
 export interface ValidationError {

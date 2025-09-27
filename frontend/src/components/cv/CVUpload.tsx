@@ -4,6 +4,7 @@
  * This module provides a drag-and-drop file upload interface for CV files including:
  * - Drag and drop functionality with visual feedback
  * - File type and size validation (PDF, DOC, DOCX up to 10MB)
+ * - Visual file preview before upload
  * - Upload progress tracking with visual indicators
  * - Integration with CV store for state management
  * - Error handling and user feedback
@@ -23,6 +24,8 @@ import {
 } from '@mui/material'
 import { Upload as UploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material'
 import { useCVStore } from '../../stores/cvStore'
+import FilePreview from './FilePreview'
+import { validateCVFile } from '../../utils/fileValidation'
 
 interface CVUploadProps {
   open: boolean
@@ -36,6 +39,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   
   // Use the CV store's upload function
   const { uploadCV: uploadCVToStore } = useCVStore()
@@ -66,27 +70,25 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
     }
   }
 
-  const handleFile = async (file: File) => {
+  const handleFile = (file: File) => {
     setError('')
     setSuccess(false)
     
-    // Validate file type
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ]
-    
-    if (!allowedTypes.includes(file.type)) {
-      setError('Please upload a PDF, DOC, or DOCX file')
-      return
+    // Validate the file before setting it
+    try {
+      const validation = validateCVFile(file)
+      if (!validation.isValid) {
+        setError(validation.error || 'Invalid file')
+        return
+      }
+      setSelectedFile(file)
+    } catch (err: any) {
+      setError(err.message || 'File validation failed')
     }
-    
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File size must be less than 10MB')
-      return
-    }
+  }
+
+  const handleUpload = async () => {
+    if (!selectedFile) return
 
     setUploading(true)
     setUploadProgress(0)
@@ -104,7 +106,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
       }, 200)
 
       // Use the store's upload function which handles state updates
-      await uploadCVToStore(file)
+      await uploadCVToStore(selectedFile)
       
       clearInterval(progressInterval)
       setUploadProgress(100)
@@ -116,6 +118,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         setUploading(false)
         setUploadProgress(0)
         setSuccess(false)
+        setSelectedFile(null)
         onClose() // Close the dialog after success callback
       }, 1000) // Give a moment to show success message
       
@@ -126,12 +129,19 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
     }
   }
 
+  const handleRemoveFile = () => {
+    setSelectedFile(null)
+    setError('')
+    setSuccess(false)
+  }
+
   const handleClose = () => {
     if (!uploading) {
       onClose()
       setError('')
       setSuccess(false)
       setUploadProgress(0)
+      setSelectedFile(null)
     }
   }
 
@@ -161,43 +171,53 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
             </Box>
           )}
 
-          <Paper
-            variant="outlined"
-            data-testid="cv-upload-dropzone"
-            sx={{
-              p: 4,
-              textAlign: 'center',
-              border: dragActive ? '2px dashed #1976d2' : '2px dashed #ccc',
-              backgroundColor: dragActive ? '#f5f5f5' : 'transparent',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            onClick={() => document.getElementById('file-input')?.click()}
-          >
-            <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              {dragActive ? 'Drop your CV here' : 'Drag & drop your CV here'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              or click to browse files
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Supported formats: PDF, DOC, DOCX (max 10MB)
-            </Typography>
-            <input
-              id="file-input"
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleFileInput}
-              style={{ display: 'none' }}
-              disabled={uploading}
-              data-testid="cv-file-input"
+          {selectedFile ? (
+            <FilePreview
+              file={selectedFile}
+              onRemove={handleRemoveFile}
+              onUpload={handleUpload}
+              uploading={uploading}
+              error={error}
             />
-          </Paper>
+          ) : (
+            <Paper
+              variant="outlined"
+              data-testid="cv-upload-dropzone"
+              sx={{
+                p: 4,
+                textAlign: 'center',
+                border: dragActive ? '2px dashed #1976d2' : '2px dashed #ccc',
+                backgroundColor: dragActive ? '#f5f5f5' : 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('file-input')?.click()}
+            >
+              <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                {dragActive ? 'Drop your CV here' : 'Drag & drop your CV here'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                or click to browse files
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Supported formats: PDF, DOC, DOCX (max 10MB)
+              </Typography>
+              <input
+                id="file-input"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleFileInput}
+                style={{ display: 'none' }}
+                disabled={uploading}
+                data-testid="cv-file-input"
+              />
+            </Paper>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>

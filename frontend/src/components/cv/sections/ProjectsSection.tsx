@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateFieldComponent } from '../core/formUtils'
+import { FormField } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
 
 interface Project {
@@ -11,8 +11,6 @@ interface Project {
   description: string
   technologies: string[]
   url?: string
-  start_date?: string
-  end_date?: string
 }
 
 const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
@@ -21,9 +19,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
     name: '',
     description: '',
     technologies: [],
-    url: '',
-    start_date: '',
-    end_date: ''
+    url: ''
   })
 
   const renderProjectForm = (project: Project, _index: number, updateProject: (field: keyof Project, value: any) => void, onSave?: () => void) => {
@@ -80,29 +76,6 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
           onChange={(value) => updateProject('url', value)}
           onSave={onSave}
         />
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <DateFieldComponent
-            config={{
-              name: 'start_date',
-              label: 'Start Date (Optional)'
-            }}
-            value={project.start_date || ''}
-            onChange={(value) => updateProject('start_date', value)}
-            onSave={onSave}
-            sx={{ flex: 1 }}
-          />
-          <DateFieldComponent
-            config={{
-              name: 'end_date',
-              label: 'End Date (Optional)',
-              minDate: project.start_date || undefined // End date must be after start date
-            }}
-            value={project.end_date || ''}
-            onChange={(value) => updateProject('end_date', value)}
-            onSave={onSave}
-            sx={{ flex: 1 }}
-          />
-        </Box>
       </Box>
     )
   }
@@ -111,12 +84,6 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
     <>
       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
         {project.name}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {project.start_date && project.end_date 
-          ? `${project.start_date} - ${project.end_date}`
-          : project.start_date || 'Date not specified'
-        }
       </Typography>
       <Typography variant="body1" sx={{ mb: 1 }}>
         {project.description}
@@ -170,8 +137,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
       renderItemDisplay={renderProjectDisplay}
       autoSaveMessage="Project"
       sortOptions={[
-        { field: 'start_date', label: 'Start Date' },
-        { field: 'end_date', label: 'End Date' }
+        { field: 'name', label: 'Name' }
       ]}
     />
   )

@@ -1,0 +1,1 @@
+Create a prompt block that is easy to copy and paste usable for AI code generation.
