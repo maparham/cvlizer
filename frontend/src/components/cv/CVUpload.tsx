@@ -82,8 +82,9 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         return
       }
       setSelectedFile(file)
-    } catch (err: any) {
-      setError(err.message || 'File validation failed')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'File validation failed'
+      setError(errorMessage)
     }
   }
 
@@ -122,8 +123,9 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         onClose() // Close the dialog after success callback
       }, 1000) // Give a moment to show success message
       
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Upload failed. Please try again.')
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Upload failed. Please try again.'
+      setError(errorMessage)
       setUploading(false)
       setUploadProgress(0)
     }

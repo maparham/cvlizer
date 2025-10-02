@@ -52,11 +52,11 @@ interface UserActivitiesDialogProps {
   activityTypeFilter: string
   activitiesLoading: boolean
   selectedUserId: string
-  onPageChange: (_page: number) => void
-  onLimitChange: (_limit: number) => void
-  onFilterChange: (_filter: string) => void
-  formatDateTime: (_date: string) => string
-  onClearActivities?: (_userId: string) => Promise<void>
+  onPageChange: (page: number) => void
+  onLimitChange: (limit: number) => void
+  onFilterChange: (filter: string) => void
+  formatDateTime: (date: string) => string
+  onClearActivities?: (userId: string) => Promise<void>
   userEmail?: string
 }
 

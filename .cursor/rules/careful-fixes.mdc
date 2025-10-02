@@ -5,26 +5,34 @@ description: Careful problem-solving and fix verification rule
 
 # Careful Fixes Rule
 
-**Be very careful with your solution** when fixing issues:
+Be careful and precise when fixing issues.
 
 ## Problem-Solving Approach
-- Analyze the issue thoroughly before implementing a solution
-- Consider edge cases and potential side effects
-- Implement the minimal necessary changes to fix the problem
-- Test the solution when possible before claiming it's fixed
+- **ANALYZE EXISTING ARCHITECTURE FIRST**: Search the codebase for existing functionality before implementing.
+- Fix problems at the source; avoid band-aids:
+  - If frontend fails due to unclean backend data, fix backend validation.
+  - If UI breaks due to malformed API responses, fix the API response format.
+  - If errors occur due to missing validation, add validation at the data entry point.
+- Consider edge cases and side effects.
+- Implement the minimum necessary change.
+- **END-TO-END FLOW TESTING** for data/event flows:
+  - Trace user action → API → backend → DB → response → UI update.
+  - Test each step; verify data integrity and state consistency.
+  - Ensure no breaking changes; test success and error paths.
+- Test before claiming a fix.
 
 ## Fix Verification
-- **DO NOT claim an issue is fixed until the user tests and confirms it**
-- Unless you can test the fix directly and verify it works
-- Always ask the user to test the solution and report back
-- Be prepared to iterate on the solution based on user feedback
+- Do not claim fixed until the user tests and confirms, unless you verified directly.
+- Ask the user to test and be ready to iterate.
 
 ## Exception
-- Only claim a fix is complete if you can directly test it and verify it works
-- This applies to code that can be validated through static analysis, compilation, or automated testing
+- You may claim complete only if you directly verified via static analysis, compilation, or automated tests.
 
 ## Communication
-- Clearly explain what you've changed and why
-- Provide specific testing instructions for the user
-- Acknowledge that user verification is required
-- Be ready to address any issues that arise during testing
+- Explain what changed and why; provide testing instructions; acknowledge user verification; address follow-ups.
+
+## Debug Logging
+- When uncertain, add diagnostic logs and request user logs after testing.
+- For browser logs, always stringify objects/arrays:
+- Use `console.log('Debug info:', JSON.stringify(object, null, 2))` for objects
+- Use `console.log('Debug info:', JSON.stringify(array, null, 2))` for arrays

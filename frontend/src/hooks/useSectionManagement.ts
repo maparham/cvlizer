@@ -28,6 +28,11 @@ export const useSectionManagement = ({
     const data = cvData[sectionId as keyof CVData]
     if (!data) return true
     
+    // Special case for why_good_fit - if it's null, it should be considered empty/deleted
+    if (sectionId === 'why_good_fit' && data === null) {
+      return true
+    }
+    
     // Check if array is empty
     if (Array.isArray(data)) {
       return data.length === 0
@@ -84,6 +89,18 @@ export const useSectionManagement = ({
         order: order++
       })
     })
+    
+    // Also include AI-generated sections that have data
+    if (cvData.why_good_fit && !isSectionEmpty('why_good_fit', cvData)) {
+      sections.push({
+        id: 'why_good_fit',
+        type: 'why_good_fit' as CVSectionType,
+        title: 'Why I\'m a Good Fit',
+        visible: true,
+        order: order++
+      })
+    }
+    
     return sections
   }, [isSectionEmpty])
 
@@ -100,15 +117,22 @@ export const useSectionManagement = ({
   useEffect(() => {
     if (cvData) {
       if (cvData.section_config?.sections) {
-        // Use the section configuration from the CV data
-        setSections(cvData.section_config.sections)
+        // Use the section configuration from the CV data, but filter out deleted sections
+        const filteredSections = cvData.section_config.sections.filter(section => {
+          // Keep the section if it's not why_good_fit or if why_good_fit has data
+          if (section.id === 'why_good_fit') {
+            return !isSectionEmpty('why_good_fit', cvData)
+          }
+          return true
+        })
+        setSections(filteredSections)
       } else {
         // Create sections from CV data (only sections with data)
         const newSections = createSectionsFromCVData(cvData)
         setSections(newSections)
       }
     }
-  }, [cvData, createSectionsFromCVData])
+  }, [cvData, createSectionsFromCVData, isSectionEmpty])
 
   const toggleSectionVisibility = useCallback((sectionId: string) => {
     const section = sections.find(s => s.id === sectionId)
@@ -178,7 +202,18 @@ export const useSectionManagement = ({
 
   const addNewSection = useCallback((sectionId: string) => {
     const sectionDef = AVAILABLE_SECTIONS.find(s => s.id === sectionId)
-    if (!sectionDef) return
+    
+    // Handle AI-generated sections that are not in AVAILABLE_SECTIONS
+    let sectionName = sectionDef?.name
+    if (!sectionDef) {
+      // Special handling for AI-generated sections
+      if (sectionId === 'why_good_fit') {
+        sectionName = 'Why I\'m a Good Fit'
+      } else {
+        // For unknown sections, use a generic name
+        sectionName = sectionId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      }
+    }
 
     // Check if section already exists but is hidden (soft removed)
     const existingSection = sections.find(s => s.id === sectionId)
@@ -202,7 +237,7 @@ export const useSectionManagement = ({
       const newSection: CVSection = {
         id: sectionId,
         type: sectionId as CVSectionType,
-        title: sectionDef.name,
+        title: sectionName || sectionId,
         visible: true,
         order: maxOrder + 1
       }
@@ -234,6 +269,10 @@ export const useSectionManagement = ({
           linkedin_url: "", 
           website_url: "" 
         }
+      } else if (sectionId === 'why_good_fit') {
+        // AI-generated section - don't initialize empty data, let it be null
+        // The section will only be visible if there's actual data
+        (updatedCvData as any)[sectionId] = null
       } else {
         // All other sections are arrays (work_experience, education, etc.)
         (updatedCvData as any)[sectionId] = []
@@ -241,7 +280,7 @@ export const useSectionManagement = ({
     }
     
     // Save both the section config and the updated CV data
-    onSave(updatedCvData, existingSection ? `${sectionDef.name} section restored` : `${sectionDef.name} section added`)
+    onSave(updatedCvData, existingSection ? `${sectionName} section restored` : `${sectionName} section added`)
   }, [sections, cvData, onSave])
 
   const removeSection = useCallback((sectionId: string) => {

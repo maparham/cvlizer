@@ -108,7 +108,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
         'Version Restored',
         `Successfully restored to version from ${formatDateTime(entry.timestamp)}`
       )
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError(
         'Restore Failed',
         getErrorDisplayMessage(error)
@@ -132,7 +132,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
         'Version Saved',
         options.label || 'Version saved successfully'
       )
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError(
         'Save Failed',
         getErrorDisplayMessage(error)
@@ -151,7 +151,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
         'Version Deleted',
         `Successfully deleted version from ${formatDateTime(entry.timestamp)}`
       )
-    } catch (error: any) {
+    } catch (error: unknown) {
       showError(
         'Delete Failed',
         getErrorDisplayMessage(error)

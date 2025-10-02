@@ -42,6 +42,6 @@ export default {
   coverageReporters: ['text', 'lcov', 'html'],
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$))',
+    'node_modules/(?!(.*\\.mjs$|react-markdown))',
   ],
 };

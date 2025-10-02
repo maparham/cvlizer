@@ -5,35 +5,35 @@ description: Software development paradigms and best practices rule
 
 # Software Development Paradigms Rule
 
-Follow the most important software development paradigms and best practices:
+Follow core paradigms and best practices.
 
 ## SOLID Principles
-- **Single Responsibility Principle (SRP)**: Each class/component should have one reason to change
-- **Open/Closed Principle (OCP)**: Open for extension, closed for modification
-- **Liskov Substitution Principle (LSP)**: Derived classes must be substitutable for their base classes
-- **Interface Segregation Principle (ISP)**: No client should depend on methods it doesn't use
-- **Dependency Inversion Principle (DIP)**: Depend on abstractions, not concretions
+- SRP: One reason to change per class/component
+- OCP: Open to extend, closed to modify
+- LSP: Subtypes must be substitutable
+- ISP: No client depends on unused methods
+- DIP: Depend on abstractions, not concretions
 
-## React-Specific Best Practices
-- **Component Composition**: Prefer composition over inheritance
-- **Single Responsibility Components**: Each component should have one clear purpose
-- **Custom Hooks**: Extract reusable logic into custom hooks
-- **Props Interface**: Define clear TypeScript interfaces for props
-- **State Management**: Use appropriate state management (local, context, or external store)
-- **Performance**: Use React.memo, useMemo, useCallback when appropriate
-- **Error Boundaries**: Implement proper error handling
+## React Best Practices
+- Prefer composition over inheritance
+- Keep components single-purpose
+- Extract reusable logic into custom hooks
+- Define clear props interfaces (TypeScript)
+- Choose appropriate state management (local/context/store)
+- Use React.memo/useMemo/useCallback when appropriate
+- Add error boundaries and handling
 
 ## Code Organization
-- **Keep modules small**: Break large modules into meaningful sub-modules
-- **Minimal changes**: Make the smallest necessary changes to fix issues
-- **Incremental approach**: When large changes are needed, propose incremental steps
-- **Clear separation of concerns**: Separate business logic from presentation logic
-- **Separate styling from logic**: Keep CSS/styling separate from component logic and business rules
-- **Consistent naming**: Use descriptive, consistent naming conventions
+- Keep modules small; split into meaningful sub-modules
+- Make minimal necessary changes
+- Use incremental steps for large changes
+- Separate concerns: business vs presentation
+- Separate styling from logic
+- Use consistent, descriptive naming
 
-## When Refactoring
-- Identify the smallest unit of change
+## Refactoring
+- Identify smallest unit of change
 - Propose incremental improvements
 - Maintain backward compatibility when possible
 - Test each incremental change
-- Document the reasoning behind architectural decisions
+- Document architectural decisions

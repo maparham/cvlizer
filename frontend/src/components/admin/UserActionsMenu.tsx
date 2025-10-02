@@ -40,12 +40,12 @@ import { UserSummary } from '../../types/admin'
 interface UserActionsMenuProps {
   user: UserSummary
   actionLoading: string | null
-  onViewDetails: (_userId: string) => void
-  onViewCVs: (_userId: string) => void
-  onToggleActive: (_userId: string, _currentStatus: boolean) => void
-  onViewActivities: (_userId: string) => void
-  onViewErrors: (_userId: string) => void
-  onContactUser: (_email: string) => void
+  onViewDetails: (userId: string) => void
+  onViewCVs: (userId: string) => void
+  onToggleActive: (userId: string, currentStatus: boolean) => void
+  onViewActivities: (userId: string) => void
+  onViewErrors: (userId: string) => void
+  onContactUser: (email: string) => void
 }
 
 const UserActionsMenu: React.FC<UserActionsMenuProps> = ({

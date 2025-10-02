@@ -3,6 +3,7 @@
  * This file is run before each test file
  */
 
+import React from 'react'
 import '@testing-library/jest-dom'
 
 // Mock window.matchMedia
@@ -129,6 +130,13 @@ Object.defineProperty(globalThis, 'import', {
         MODE: 'test'
       }
     }
+  }
+})
+
+// Mock react-markdown
+jest.mock('react-markdown', () => {
+  return function MockReactMarkdown({ children }: { children: string }) {
+    return React.createElement('div', { 'data-testid': 'react-markdown' }, children)
   }
 })
 

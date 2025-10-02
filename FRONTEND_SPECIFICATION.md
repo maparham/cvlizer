@@ -150,6 +150,7 @@ frontend/
   - Real-time preview and validation
   - Auto-save functionality
   - Export and delete operations
+  - AI Tools shortcut button for quick access
   - Unsaved changes warning
   - Navigation with edit state checks
 
@@ -201,7 +202,8 @@ frontend/
 - **Purpose**: Job description input and management
 - **Features**:
   - Text input for job descriptions
-  - URL-based job posting extraction
+  - URL-based job posting extraction with browser automation
+  - Support for JavaScript-heavy job sites
   - Multiple job descriptions per CV
   - AI-powered matching suggestions
 
@@ -281,16 +283,19 @@ frontend/
 #### PDFCVEditor (`src/components/cv/PDFCVEditor.tsx`)
 - **Purpose**: Main CV editing interface with PDF-like layout
 - **Features**:
-  - Section management sidebar
+  - Section management sidebar with tab navigation
   - PDF-style content area
   - Drag and drop functionality
+  - AI Tools tab integration
+  - External tab state management
   - Unsaved changes detection
   - Integration with CV editor context
 
 #### Section Management
-- **SectionManagerSidebar**: Section reordering and visibility controls
+- **SectionManagerSidebar**: Section reordering and visibility controls with tab navigation
 - **CVContentArea**: PDF-style content rendering
 - **Individual CV Sections**: Modular section components for different CV parts
+- **AI Tools Tab**: Job description management and AI suggestions interface
 
 ## Services
 
@@ -319,6 +324,7 @@ frontend/
   - `generateSection(cvId, jobDescription)`: Generate AI section
   - `getAISections(cvId)`: Get AI-generated sections
   - `deleteAISection(sectionId)`: Delete AI section
+  - `generateAllSuggestions(cvId, jobDescriptionId)`: Generate AI suggestions for all CV sections
 
 ### Job Description Service (`src/services/jobDescriptionService.ts`)
 - **Purpose**: Job description management
@@ -326,6 +332,7 @@ frontend/
   - `createJobDescription(cvId, data)`: Create job description
   - `getJobDescriptions(cvId)`: Get job descriptions
   - `deleteJobDescription(id)`: Delete job description
+  - `parseJobUrl(url)`: Parse job posting URL with browser automation
 
 ## Type Definitions
 

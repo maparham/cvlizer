@@ -38,7 +38,8 @@ import {
   ArrowBack as ArrowBackIcon,
   AccountCircle as AccountCircleIcon,
   PictureAsPdf as PictureAsPdfIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  AutoAwesome as AutoAwesomeIcon
 } from '@mui/icons-material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -53,6 +54,13 @@ import { useNotifications } from '../stores/uiStore'
 import { CVData } from '../types'
 import { parseValidationErrors } from '../utils/validationUtils'
 
+// Extend window interface to include switchToAITools function
+declare global {
+  interface Window {
+    switchToAITools?: () => void
+  }
+}
+
 // Component that handles back navigation with edit state checks
 const CVEditorHeader: React.FC<{ 
   onLogout: () => void,
@@ -61,9 +69,10 @@ const CVEditorHeader: React.FC<{
   anchorEl: null | HTMLElement,
   onExport: () => void,
   onDelete: () => void,
+  onAITools: () => void,
   isAdmin: boolean,
-  isNewCV: boolean
-}> = ({ onLogout, onMenuOpen, onMenuClose, anchorEl, onExport, onDelete, isAdmin, isNewCV }) => {
+  isNewCV: boolean,
+}> = ({ onLogout, onMenuOpen, onMenuClose, anchorEl, onExport, onDelete, onAITools, isAdmin, isNewCV }) => {
   const navigate = useNavigate()
   const { editingSection, editingIndividualItem, hasUnsavedChanges } = useCVEditor()
   const [showBackDialog, setShowBackDialog] = useState(false)
@@ -124,6 +133,8 @@ const CVEditorHeader: React.FC<{
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
+          
+          
           {!isNewCV && (
             <Button
               variant="outlined"
@@ -142,6 +153,26 @@ const CVEditorHeader: React.FC<{
               }}
             >
               Delete
+            </Button>
+          )}
+          {!isNewCV && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<AutoAwesomeIcon />}
+              onClick={onAITools}
+              sx={{
+                mr: 1,
+                textTransform: 'none',
+                borderColor: '#1976d2',
+                color: '#1976d2',
+                '&:hover': { 
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                  borderColor: '#1565c0'
+                }
+              }}
+            >
+              AI Tools
             </Button>
           )}
           <Button
@@ -235,9 +266,10 @@ const CVEditorContent: React.FC<{
   anchorEl: null | HTMLElement
   onTitleSave: (title: string) => Promise<void>
   onDelete: () => void
+  onAITools: () => void
   isAdmin: boolean
   isNewCV: boolean
-}> = ({ cvId, activeCV, onLogout, onMenuOpen, onMenuClose, anchorEl, onTitleSave, onDelete, isAdmin, isNewCV }) => {
+}> = ({ cvId, activeCV, onLogout, onMenuOpen, onMenuClose, anchorEl, onTitleSave, onDelete, onAITools, isAdmin, isNewCV }) => {
   const { showError } = useNotifications()
 
   const handleExport = async () => {
@@ -251,6 +283,13 @@ const CVEditorContent: React.FC<{
       showError('Export Failed', 'Could not open PDF export in a new tab.')
     }
   }
+
+  const handleAITools = () => {
+    // Call the global function to switch to AI Tools tab
+    if (window.switchToAITools) {
+      window.switchToAITools()
+    }
+  }
   return (
     <>
       <CVEditorHeader
@@ -260,6 +299,7 @@ const CVEditorContent: React.FC<{
         anchorEl={anchorEl}
         onExport={handleExport}
         onDelete={onDelete}
+        onAITools={handleAITools}
         isAdmin={isAdmin}
         isNewCV={isNewCV}
       />
@@ -267,6 +307,7 @@ const CVEditorContent: React.FC<{
         title={activeCV?.original_filename || 'Untitled CV'}
         onTitleSave={onTitleSave}
         cvId={cvId !== 'new' ? cvId : undefined}
+        onAIToolsRequest={onAITools}
       />
     </>
   )
@@ -315,6 +356,7 @@ const CVEditor: React.FC = () => {
       navigate('/dashboard')
     }
   }, [cvId, isNewCV, temporaryCV, navigate]) // Only depend on cvId to prevent infinite loops
+  
   
   // Show error notifications (but skip validation errors as they're handled separately)
   useEffect(() => {
@@ -373,7 +415,17 @@ const CVEditor: React.FC = () => {
         
         // Clear unsaved changes after successful save
         // We'll dispatch a custom event that the context can listen to
-        window.dispatchEvent(new CustomEvent('cv-saved'))
+        // But skip for skills section auto-saves to prevent edit mode from closing
+        const isSkillsAutoSave = message && (
+          message.includes('skill added') || 
+          message.includes('skill removed') || 
+          message.includes('AI suggested skill') ||
+          message.includes('All AI suggested skills applied')
+        )
+        
+        if (!isSkillsAutoSave) {
+          window.dispatchEvent(new CustomEvent('cv-saved'))
+        }
       }
     } catch (error: any) {
       // Remove the saving notification
@@ -451,6 +503,10 @@ const CVEditor: React.FC = () => {
     setDeleteDialogOpen(false)
   }
 
+  const handleAITools = () => {
+    // This will be handled by the child component
+  }
+
   const handleTitleSave = async (newTitle: string) => {
     if (isNewCV) {
       // For temporary CVs, just update the local state
@@ -478,6 +534,7 @@ const CVEditor: React.FC = () => {
       }
     }
   }
+  
 
   if (loading && !activeCV) {
     return (
@@ -516,6 +573,7 @@ const CVEditor: React.FC = () => {
                   anchorEl={anchorEl}
                   onTitleSave={handleTitleSave}
                   onDelete={handleDeleteClick}
+                  onAITools={handleAITools}
                   isAdmin={isAdmin}
                   isNewCV={isNewCV}
                 />

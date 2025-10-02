@@ -8,7 +8,7 @@
  * - Reset to default order option
  * - Visual indicators for section states and order changes
  */
-import React from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Paper,
   Typography,
@@ -17,9 +17,16 @@ import {
   Card,
   CardContent,
   Box,
-  List
+  List,
+  Tabs,
+  Tab,
+  Stack
 } from '@mui/material'
-import { Add as AddIcon } from '@mui/icons-material'
+import { 
+  Add as AddIcon,
+  AutoAwesome as AutoAwesomeIcon,
+  Edit as EditIcon
+} from '@mui/icons-material'
 import {
   DndContext,
   closestCenter,
@@ -33,6 +40,11 @@ import { CVSection } from '../../../types'
 import SortableSectionItem from './SortableSectionItem'
 import { AVAILABLE_SECTIONS } from '../constants'
 import { EditableTitle } from '../EditableTitle'
+import { 
+  JobDescriptionSummary
+} from '../ai'
+import { useAISuggestionsStore } from '../../../stores/aiSuggestionsStore'
+import { useActiveJobDescription, useAIStore } from '../../../stores/aiStore'
 
 interface SectionManagerSidebarProps {
   sections: CVSection[]
@@ -40,11 +52,16 @@ interface SectionManagerSidebarProps {
   isDefaultOrder: boolean
   availableSectionsToAdd: any[]
   title: string
+  cvId?: string
+  cvData?: any
   onTitleSave: (_newTitle: string) => Promise<void>
   onToggleVisibility: (_sectionId: string) => void
   onAddNewSection: (_sectionId: string) => void
   onDragStart: (_event: any) => void
   onDragEnd: (_event: any) => void
+  onContentUpdate?: (content: string, sectionType: string) => void
+  activeTab?: number
+  onTabChange?: (tab: number) => void
 }
 
 const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
@@ -52,23 +69,73 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   activeId,
   availableSectionsToAdd,
   title,
+  cvId,
+  cvData: _cvData,
   onTitleSave,
   onToggleVisibility,
   onAddNewSection,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  onContentUpdate,
+  activeTab: externalActiveTab,
+  onTabChange
 }) => {
+  const [internalActiveTab, setInternalActiveTab] = useState(0);
+  const activeTab = externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
+  
+  // AI Suggestions store
+  const {
+    suggestionsLoading,
+    generateAllSuggestions,
+    clearAllSuggestions
+  } = useAISuggestionsStore()
+  
+  // AI store for job description management
+  const { setActiveJobDescription } = useAIStore()
+  
+  // Active job description from existing AI store
+  const activeJobDescription = useActiveJobDescription()
+  const prevJobDescriptionId = useRef<string | undefined>(activeJobDescription?.id)
+  
+  // Handle job description selection
+  const handleJobDescriptionSelect = useCallback((jobDescription: any) => {
+    if (jobDescription) {
+      setActiveJobDescription(jobDescription.id);
+    } else {
+      setActiveJobDescription(undefined);
+    }
+  }, [setActiveJobDescription])
+  
+  // Handle generating AI suggestions
+  const handleGenerateSuggestions = useCallback(async () => {
+    if (activeJobDescription && cvId) {
+      await generateAllSuggestions(cvId, activeJobDescription.id)
+    }
+  }, [activeJobDescription, cvId, generateAllSuggestions])
+  
+  // Clear suggestions when job description changes (only when ID actually changes)
+  useEffect(() => {
+    const currentId = activeJobDescription?.id
+    if (currentId !== prevJobDescriptionId.current) {
+      clearAllSuggestions()
+      prevJobDescriptionId.current = currentId
+    }
+  }, [activeJobDescription?.id])
   return (
     <Paper sx={{ 
       width: 350, 
-      p: 2, 
-      overflow: 'auto',
+      p: 0, 
+      overflow: 'hidden',
       border: 'none',
       boxShadow: 'none',
-      borderRight: '1px solid #e0e0e0'
+      borderRight: '1px solid #e0e0e0',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      maxHeight: '100vh'
     }}>
       {/* CV Title - At the top */}
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
         <EditableTitle
           title={title}
           onSave={onTitleSave}
@@ -83,56 +150,161 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           }}
         />
       </Box>
-      <Typography variant="body2" sx={{ color: '#666', mb: 2, fontStyle: 'italic' }}>
-        Drag sections to reorder them
-      </Typography>
-      
-      <DndContext
-        collisionDetection={closestCenter}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-      >
-        <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-          <List>
-            {sections
-              .filter(section => section.visible)
-              .sort((a, b) => a.order - b.order)
-              .map((section) => (
-                <SortableSectionItem
-                  key={section.id}
-                  section={section}
-                  onToggleVisibility={onToggleVisibility}
-                />
-              ))}
-          </List>
-        </SortableContext>
-        <DragOverlay>
-          {activeId ? (
-            <SortableSectionItem
-              section={sections.find(s => s.id === activeId)!}
-              onToggleVisibility={() => {}}
-              isOverlay
-            />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
 
-      {/* Hidden Sections */}
-      {sections.filter(section => !section.visible).length > 0 && (
-        <>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 3, mb: 2, color: '#666' }}>
-            Hidden Sections
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {sections
-              .filter(section => !section.visible)
-              .sort((a, b) => a.order - b.order)
-              .map((section) => (
+      {/* Tabs for different views */}
+      <Box sx={{ borderBottom: '1px solid #e0e0e0' }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={(_, newValue) => {
+            if (onTabChange) {
+              onTabChange(newValue);
+            } else {
+              setInternalActiveTab(newValue);
+            }
+          }}
+          variant="fullWidth"
+        >
+          <Tab 
+            label="Sections" 
+            icon={<EditIcon />} 
+            iconPosition="start"
+            sx={{ minHeight: 48 }}
+          />
+          {cvId && (
+            <Tab 
+              label="AI Tools" 
+              icon={<AutoAwesomeIcon />} 
+              iconPosition="start"
+              sx={{ minHeight: 48 }}
+            />
+          )}
+        </Tabs>
+      </Box>
+
+      {/* Tab Content */}
+      <Box sx={{ 
+        flex: 1, 
+        overflow: 'auto',
+        p: 2,
+        pb: 4,
+        height: 'calc(100vh - 140px)',
+        maxHeight: 'calc(100vh - 140px)',
+        scrollBehavior: 'smooth',
+        '&::-webkit-scrollbar': {
+          width: '6px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: '#f1f1f1',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#c1c1c1',
+          borderRadius: '3px',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: '#a8a8a8',
+        }
+      }}>
+        {activeTab === 0 && (
+          <>
+            <Typography variant="body2" sx={{ color: '#666', mb: 2, fontStyle: 'italic' }}>
+              Drag sections to reorder them
+            </Typography>
+      
+            <DndContext
+              collisionDetection={closestCenter}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+            >
+              <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                <List>
+                  {sections
+                    .filter(section => section.visible)
+                    .sort((a, b) => a.order - b.order)
+                    .map((section) => (
+                      <SortableSectionItem
+                        key={section.id}
+                        section={section}
+                        onToggleVisibility={onToggleVisibility}
+                      />
+                    ))}
+                </List>
+              </SortableContext>
+              <DragOverlay>
+                {activeId ? (
+                  <SortableSectionItem
+                    section={sections.find(s => s.id === activeId)!}
+                    onToggleVisibility={() => {}}
+                    isOverlay
+                  />
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+
+            {/* Hidden Sections */}
+            {sections.filter(section => !section.visible).length > 0 && (
+              <>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 3, mb: 2, color: '#666' }}>
+                  Hidden Sections
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {sections
+                    .filter(section => !section.visible)
+                    .sort((a, b) => a.order - b.order)
+                    .map((section) => (
+                      <Card 
+                        key={section.id}
+                        sx={{ 
+                          border: '1px solid #e0e0e0',
+                          bgcolor: '#f5f5f5',
+                          '&:hover': {
+                            borderColor: '#1976d2',
+                            boxShadow: 1
+                          }
+                        }}
+                      >
+                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                              <Typography variant="h6" sx={{ mr: 1.5, flexShrink: 0 }}>
+                                {AVAILABLE_SECTIONS.find(s => s.id === section.id)?.icon || '📄'}
+                              </Typography>
+                              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '0.8rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {section.title}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                  Content preserved
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <Tooltip title="Restore this section">
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => onAddNewSection(section.id)}
+                                sx={{ ml: 1.5, minWidth: 'auto', px: 0.5, flexShrink: 0 }}
+                              >
+                                <AddIcon fontSize="small" />
+                              </Button>
+                            </Tooltip>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </Box>
+              </>
+            )}
+
+            {/* Available Sections */}
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 3, mb: 2, color: '#666' }}>
+              Available Sections ({availableSectionsToAdd.length})
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 4 }}>
+              {availableSectionsToAdd.length > 0 ? availableSectionsToAdd.map((section) => (
                 <Card 
                   key={section.id}
                   sx={{ 
                     border: '1px solid #e0e0e0',
-                    bgcolor: '#f5f5f5',
                     '&:hover': {
                       borderColor: '#1976d2',
                       boxShadow: 1
@@ -143,18 +315,18 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                         <Typography variant="h6" sx={{ mr: 1.5, flexShrink: 0 }}>
-                          {AVAILABLE_SECTIONS.find(s => s.id === section.id)?.icon || '📄'}
+                          {section.icon}
                         </Typography>
                         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '0.8rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {section.title}
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.8rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {section.name}
                           </Typography>
                           <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                            Content preserved
+                            {section.description}
                           </Typography>
                         </Box>
                       </Box>
-                      <Tooltip title="Restore this section">
+                      <Tooltip title="Add this section to your CV">
                         <Button
                           size="small"
                           variant="outlined"
@@ -167,59 +339,28 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                     </Box>
                   </CardContent>
                 </Card>
-              ))}
-          </Box>
-        </>
-      )}
+              )) : (
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+                  No available sections to add (all sections already present)
+                </Typography>
+              )}
+            </Box>
+          </>
+        )}
 
-      {/* Available Sections */}
-      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 3, mb: 2, color: '#666' }}>
-        Available Sections ({availableSectionsToAdd.length})
-      </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {availableSectionsToAdd.length > 0 ? availableSectionsToAdd.map((section) => (
-          <Card 
-            key={section.id}
-            sx={{ 
-              border: '1px solid #e0e0e0',
-              '&:hover': {
-                borderColor: '#1976d2',
-                boxShadow: 1
-              }
-            }}
-          >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-                  <Typography variant="h6" sx={{ mr: 1.5, flexShrink: 0 }}>
-                    {section.icon}
-                  </Typography>
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.8rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {section.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                      {section.description}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Tooltip title="Add this section to your CV">
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => onAddNewSection(section.id)}
-                    sx={{ ml: 1.5, minWidth: 'auto', px: 0.5, flexShrink: 0 }}
-                  >
-                    <AddIcon fontSize="small" />
-                  </Button>
-                </Tooltip>
-              </Box>
-            </CardContent>
-          </Card>
-        )) : (
-          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 2 }}>
-            No available sections to add (all sections already present)
-          </Typography>
+        {/* AI Tools Tab */}
+        {activeTab === 1 && cvId && (
+          <>
+            <Stack spacing={3}>
+              <JobDescriptionSummary 
+                cvId={cvId}
+                onJobDescriptionSelect={handleJobDescriptionSelect}
+                onGenerateSuggestions={handleGenerateSuggestions}
+                suggestionsLoading={suggestionsLoading}
+                onAddToCV={onContentUpdate}
+              />
+            </Stack>
+          </>
         )}
       </Box>
     </Paper>

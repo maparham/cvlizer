@@ -36,6 +36,7 @@ export interface CV {
 export interface CVData {
   personal_info: PersonalInfo
   professional_summary: ProfessionalSummary
+  why_good_fit?: WhyGoodFit
   work_experience: WorkExperience[]
   education: Education[]
   skills: Skills
@@ -63,6 +64,15 @@ export interface PersonalInfo {
 export interface ProfessionalSummary {
   content: string
   keywords: string[]
+}
+
+// Why I'm a Good Fit (AI Generated)
+export interface WhyGoodFit {
+  content: string
+  confidence_score: number
+  key_matches: string[]
+  generated_at: string
+  job_description_id?: string
 }
 
 // Work Experience
@@ -177,6 +187,7 @@ export interface CVSection {
 export type CVSectionType = 
   | 'personal_info' 
   | 'professional_summary' 
+  | 'why_good_fit'
   | 'work_experience' 
   | 'education' 
   | 'skills' 
@@ -190,6 +201,7 @@ export type CVSectionType =
 export type CVSectionData = 
   | PersonalInfo 
   | ProfessionalSummary 
+  | WhyGoodFit
   | WorkExperience[] 
   | Education[] 
   | Skills 

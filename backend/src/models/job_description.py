@@ -31,6 +31,9 @@ class JobDescription(Base):
     # Relationships
     cv = relationship("CV", back_populates="job_descriptions")
     ai_sections = relationship("AISection", back_populates="job_description", cascade="all, delete-orphan")
+    ai_drafts = relationship("AIDraft", back_populates="job_description", cascade="all, delete-orphan")
+    ai_suggestions = relationship("AISuggestion", back_populates="job_description", cascade="all, delete-orphan")
+    optimization_history = relationship("OptimizationHistory", back_populates="job_description", cascade="all, delete-orphan")
     
     def __str__(self):
         return f"<JobDescription {self.title} at {self.company}>"

@@ -74,8 +74,19 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   }, [requiredFields, sectionId])
 
 
-  // Use common auto-save hook with validation
-  useSectionAutoSave(isEditing, editData, actualData, onUpdate, onSave, autoSaveMessage, sectionId, onUnsavedChanges, validateForm)
+  // Use common auto-save hook with validation (skip for skills section as it handles its own saving)
+  useSectionAutoSave(
+    isEditing, 
+    editData, 
+    actualData, 
+    onUpdate, 
+    onSave, 
+    autoSaveMessage, 
+    sectionId, 
+    onUnsavedChanges, 
+    validateForm, 
+    autoSaveMode && sectionId !== 'skills' // Disable immediate save for skills as it handles its own saving
+  )
 
 
   const handleSave = async () => {

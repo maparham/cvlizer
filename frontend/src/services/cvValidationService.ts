@@ -264,6 +264,9 @@ class CVDataCleaner {
     // Clean skills
     this.cleanSkills(cleanedData)
     
+    // Clean why_good_fit section
+    this.cleanWhyGoodFit(cleanedData)
+    
     // Clean array sections
     this.cleanArraySections(cleanedData)
     
@@ -331,6 +334,20 @@ class CVDataCleaner {
           soft,
           languages
         }
+      }
+    }
+  }
+
+  private cleanWhyGoodFit(data: any): void {
+    if (data.why_good_fit) {
+      const content = this.cleanString(data.why_good_fit.content)
+      
+      // Backend requires min 10 characters for why_good_fit content
+      // If content is empty or too short, delete the entire section
+      if (!content || content.length < 10) {
+        delete data.why_good_fit
+      } else {
+        data.why_good_fit.content = content
       }
     }
   }

@@ -80,7 +80,7 @@ export const usePDFCVEditor = ({
     const dataToSave = updatedData || cvData
     onUpdateCV(dataToSave)
     return onSave(dataToSave, message)
-  }, [onUpdateCV, onSave])
+  }, [onUpdateCV, onSave, cvData])
 
   // Section management
   const sectionManagement = useSectionManagement({

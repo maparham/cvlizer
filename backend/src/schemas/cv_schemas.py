@@ -29,6 +29,26 @@ class ProfessionalSummarySchema(BaseModel):
         extra = "forbid"  # Reject any additional fields
 
 
+class WhyGoodFitSchema(BaseModel):
+    """Schema for AI-generated 'Why I'm a Good Fit' section."""
+    content: str = Field(..., min_length=10, description="Why I'm a good fit content")
+    confidence_score: int = Field(..., ge=0, le=100, description="Confidence score (0-100)")
+    fit_analysis: str = Field(..., min_length=10, description="Detailed fit analysis")
+    key_matches: List[str] = Field(default_factory=list, description="Key matches with job requirements")
+    missing_skills: List[str] = Field(default_factory=list, description="Missing skills from job requirements")
+    suggested_improvements: List[str] = Field(default_factory=list, description="Suggested improvements")
+    strengths: List[str] = Field(default_factory=list, description="Candidate strengths")
+    weaknesses: List[str] = Field(default_factory=list, description="Areas for improvement")
+    tokens_used: int = Field(0, description="Tokens used in generation")
+    generation_time: int = Field(0, description="Generation time in milliseconds")
+    model_used: str = Field("gpt-4o-mini", description="AI model used")
+    generated_at: str = Field(..., description="Generation timestamp")
+    job_description_id: Optional[str] = Field(None, description="Associated job description ID")
+
+    class Config:
+        extra = "forbid"  # Reject any additional fields
+
+
 class WorkExperienceSchema(BaseModel):
     """Schema for work experience entries."""
     id: Optional[str] = Field(None, description="Unique identifier for the work experience entry")
@@ -156,10 +176,19 @@ class SectionConfigSchema(BaseModel):
         extra = "forbid"  # Reject any additional fields
 
 
+class DraftSectionsSchema(BaseModel):
+    """Schema for draft sections that haven't been committed yet."""
+    why_good_fit: Optional[WhyGoodFitSchema] = None
+
+    class Config:
+        extra = "forbid"  # Reject any additional fields
+
+
 class CVDataSchema(BaseModel):
     """Main schema for CV parsed data validation with proper type safety."""
     personal_info: Optional[PersonalInfoSchema] = None
     professional_summary: Optional[ProfessionalSummarySchema] = None
+    why_good_fit: Optional[WhyGoodFitSchema] = None
     work_experience: List[WorkExperienceSchema] = Field(default_factory=list)
     education: List[EducationSchema] = Field(default_factory=list)
     skills: Optional[SkillsSchema] = None
@@ -169,6 +198,7 @@ class CVDataSchema(BaseModel):
     publications: List[PublicationSchema] = Field(default_factory=list)
     volunteer_experience: List[VolunteerExperienceSchema] = Field(default_factory=list)
     section_config: Optional[SectionConfigSchema] = None
+    draft_sections: Optional[DraftSectionsSchema] = None
 
     class Config:
         extra = "forbid"  # Reject any additional fields for data integrity

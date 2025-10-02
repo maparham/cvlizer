@@ -82,3 +82,38 @@ def delete_job_description_owned_by(db: Session, jd_id: str, user_id: str) -> bo
     db.commit()
     return True
 
+
+def create_job_description_for_user(
+    db: Session,
+    user_id: str,
+    *,
+    content: str,
+    source_url: Optional[str] = None,
+    title: Optional[str] = None,
+    company: Optional[str] = None,
+    location: Optional[str] = None,
+) -> JobDescription:
+    """Create a job description for a user (not bound to any specific CV)"""
+    jd = JobDescription(
+        cv_id=None,  # No CV binding
+        content=content,
+        source_url=source_url,
+        title=title,
+        company=company,
+        location=location,
+    )
+    db.add(jd)
+    db.commit()
+    db.refresh(jd)
+    return jd
+
+
+def list_job_descriptions_for_user(db: Session, user_id: str) -> List[JobDescription]:
+    """Get all job descriptions for a user (global, not CV-specific)"""
+    return db.query(JobDescription).filter(JobDescription.cv_id.is_(None)).all()
+
+
+def get_job_description_by_id(db: Session, jd_id: str) -> Optional[JobDescription]:
+    """Get a job description by ID (for user-scoped operations)"""
+    return db.query(JobDescription).filter(JobDescription.id == jd_id).first()
+

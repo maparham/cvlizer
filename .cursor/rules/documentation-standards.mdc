@@ -5,87 +5,38 @@ description: Documentation standards for new code and modules
 
 # Documentation Standards Rule
 
-**Always add comprehensive documentation for new code and modules.**
+Always add comprehensive documentation for new code and modules.
 
 ## File-Level Documentation
-- **Every new file must have a header comment block** explaining what the module does
-- Place documentation at the very top of each file, before imports
-- Use clear, descriptive language that explains the module's purpose and responsibility
-- Include any important context about when and how the module should be used
+- Every new file must start with a header comment explaining the module.
+- Place it before imports; use clear language on purpose and responsibilities.
+- Include when/how the module should be used.
 
 ## Documentation Format
-- **Prefer text blocks over inline (same-line) comments** for better readability
-- Use multi-line comment blocks for complex explanations
-- Keep inline comments minimal and only for brief clarifications
-- Use JSDoc format for TypeScript/JavaScript files
-- Use docstring format for Python files
+- Prefer text blocks over inline comments; use multi-line blocks for complex parts.
+- Keep inline comments minimal.
+- Use JSDoc for TS/JS; docstrings for Python.
 
 ## Required Documentation Elements
-- **Module purpose**: What the module does and why it exists
-- **Key responsibilities**: Main functions or classes provided
-- **Usage context**: When and how the module should be used
-- **Dependencies**: Any important external dependencies or requirements
-- **Examples**: Include usage examples for complex modules
+- Module purpose and rationale
+- Key responsibilities (main functions/classes)
+- Usage context (when/how to use)
+- Dependencies/requirements
+- Examples for complex modules
 
 ## Code Documentation Standards
-- Document all public functions, classes, and methods
-- Explain complex algorithms or business logic
-- Document any non-obvious implementation details
-- Include parameter descriptions and return value explanations
-- Add TODO comments for known limitations or future improvements
-
-## Examples
-
-### Good File Header (TypeScript/JavaScript):
-```typescript
-/**
- * CV Validation Service
- * 
- * This module provides comprehensive validation for CV data structures,
- * ensuring data integrity and business rule compliance before saving.
- * 
- * Key responsibilities:
- * - Validates CV section data against business rules
- * - Performs cross-field validation and consistency checks
- * - Provides detailed error messages for validation failures
- * - Supports both individual field and full CV validation
- * 
- * Usage:
- * - Import and use validateCV() for full CV validation
- * - Use validateSection() for individual section validation
- * - Check validation results and display errors to users
- */
-```
-
-### Good File Header (Python):
-```python
-"""
-CV Parsing Service
-
-This module handles the parsing and extraction of data from uploaded CV files.
-It supports multiple file formats and converts unstructured CV content into
-structured data that can be used by the CV editor.
-
-Key responsibilities:
-- Parse PDF and DOCX CV files
-- Extract text content and structure
-- Convert unstructured data to structured format
-- Handle various CV layouts and formats
-
-Usage:
-- Use parse_cv_file() to process uploaded files
-- Returns structured CV data ready for editing
-- Handles errors gracefully with detailed error messages
-"""
-```
+- Document all public functions/classes/methods.
+- Explain complex algorithms or business logic.
+- Document non-obvious implementation details.
+- Include parameter and return descriptions.
+- Add TODOs for known limitations or future improvements.
 
 ## File Creation Guidelines
-- **NEVER create markdown (.md) files unless specifically instructed by the user**
-- **Only create code files when explicitly requested**
-- **Prefer editing existing files over creating new ones**
+- Do not create .md files unless the user instructs.
+- Only create code files when explicitly requested.
+- Prefer editing existing files.
 
 ## Enforcement
-- **All new files must include proper documentation**
-- **Existing files should be updated with documentation when modified**
-- **Documentation should be updated when functionality changes**
-- **Review documentation quality during code reviews**
+- All new files must include proper documentation.
+- Update documentation when files are modified or functionality changes.
+- Review documentation quality during code reviews.

@@ -10,7 +10,8 @@ export const useSectionAutoSave = (
   message: string,
   sectionId: string,
   onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void,
-  validateData?: (data: any) => boolean
+  validateData?: (data: any) => boolean,
+  immediateSave?: boolean // New parameter for immediate saving
 ) => {
   const prevEditDataRef = useRef<any>()
   const prevIsEditingRef = useRef<boolean>()
@@ -31,6 +32,25 @@ export const useSectionAutoSave = (
   }, [])
 
   useEffect(() => {
+    // Handle immediate save mode (for skills section)
+    if (immediateSave && isEditing && editData && Object.keys(editData).length > 0) {
+      // Skip auto-save if we're currently discarding changes
+      if (isDiscardingRef.current) {
+        return
+      }
+      
+      const hasChanges = JSON.stringify(editData) !== JSON.stringify(originalData)
+      if (hasChanges) {
+        // Validate data before auto-saving
+        const isValid = validateData ? validateData(editData) : true
+        if (isValid) {
+          onUpdate(editData)
+          onSave(editData, message)
+        }
+      }
+      return
+    }
+    
     // Only auto-save when transitioning from editing to not editing
     // Don't auto-save when data changes due to CV switching
     // Don't auto-save when changes are being discarded
@@ -50,7 +70,7 @@ export const useSectionAutoSave = (
         }
       }
     }
-  }, [isEditing, editData, originalData, onUpdate, onSave, message, validateData])
+  }, [isEditing, editData, originalData, onUpdate, onSave, message, validateData, immediateSave])
 
   // Track unsaved changes - only call when values actually change
   useEffect(() => {

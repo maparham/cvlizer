@@ -1,0 +1,372 @@
+/**
+ * Content Enhancement Component
+ * 
+ * This component provides AI-powered content enhancement functionality including
+ * enhancement buttons for editable content and a suggestions modal for reviewing
+ * and accepting AI-generated improvements.
+ * 
+ * Key responsibilities:
+ * - Render enhancement buttons for any editable content
+ * - Display enhancement suggestions modal with before/after comparison
+ * - Show 3-4 improved versions with confidence scores
+ * - Allow one-click accept/reject for each suggestion
+ * - Maintain original text as fallback option
+ * - Integrate with CV sections for content updates
+ * 
+ * Usage:
+ * - EnhancementButton can be used inline with any editable content
+ * - EnhancementModal is used to display and manage suggestions
+ * - Integrates with AI store for state management
+ */
+
+import React, { useState, useCallback } from 'react';
+import {
+  Box,
+  Button,
+  IconButton,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Card,
+  CardContent,
+  Chip,
+  Stack,
+  Tooltip,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  Alert,
+} from '@mui/material';
+import {
+  AutoAwesome as AutoAwesomeIcon,
+  Check as CheckIcon,
+  ContentCopy as CopyIcon,
+  TrendingUp as TrendingUpIcon,
+  Refresh as RefreshIcon,
+} from '@mui/icons-material';
+import { useAIStore, useSuggestions } from '../../../stores/aiStore';
+import { ContentSuggestion } from '../../../types/ai';
+import { useNotifications } from '../../../stores/uiStore';
+
+interface EnhancementButtonProps {
+  content: string;
+  contentType?: string;
+  cvId: string;
+  onContentUpdate?: (newContent: string) => void;
+  size?: 'small' | 'medium' | 'large';
+  variant?: 'text' | 'outlined' | 'contained';
+  disabled?: boolean;
+  className?: string;
+}
+
+interface EnhancementModalProps {
+  open: boolean;
+  onClose: () => void;
+  originalContent: string;
+  suggestions: ContentSuggestion[];
+  isLoading: boolean;
+  error?: string;
+  onAccept: (suggestion: ContentSuggestion) => void;
+  onReject: () => void;
+  onRegenerate?: () => void;
+}
+
+const EnhancementButton: React.FC<EnhancementButtonProps> = ({
+  content,
+  contentType = 'bullet_point',
+  cvId,
+  onContentUpdate,
+  size = 'small',
+  variant: _variant = 'outlined',
+  disabled = false,
+  className,
+}) => {
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const { enhanceContent } = useAIStore();
+  const { showError } = useNotifications();
+
+  const handleEnhance = useCallback(async () => {
+    if (!content.trim()) {
+      showError('Error', 'No content to enhance');
+      return;
+    }
+
+    setIsEnhancing(true);
+    try {
+      await enhanceContent(cvId, content, contentType);
+      setShowModal(true);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to enhance content';
+      showError('Error', errorMessage);
+    } finally {
+      setIsEnhancing(false);
+    }
+  }, [content, contentType, cvId, enhanceContent, showError]);
+
+  const handleAccept = useCallback((suggestion: ContentSuggestion) => {
+    if (onContentUpdate) {
+      onContentUpdate(suggestion.content);
+    }
+    setShowModal(false);
+  }, [onContentUpdate]);
+
+  const handleReject = useCallback(() => {
+    setShowModal(false);
+  }, []);
+
+  const suggestions = useSuggestions();
+  const suggestionId = `${cvId}-${content.substring(0, 50)}`;
+  const suggestion = suggestions[suggestionId];
+
+  return (
+    <>
+      <Tooltip title="Enhance with AI">
+        <span>
+          <IconButton
+            onClick={handleEnhance}
+            disabled={disabled || isEnhancing || !content.trim()}
+            size={size}
+            className={className}
+          >
+            {isEnhancing ? (
+              <CircularProgress size={20} />
+            ) : (
+              <AutoAwesomeIcon />
+            )}
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      {suggestion && (
+        <EnhancementModal
+          open={showModal}
+          onClose={handleReject}
+          originalContent={content}
+          suggestions={suggestion.suggestions}
+          isLoading={suggestion.isLoading}
+          error={suggestion.error}
+          onAccept={handleAccept}
+          onReject={handleReject}
+        />
+      )}
+    </>
+  );
+};
+
+const EnhancementModal: React.FC<EnhancementModalProps> = ({
+  open,
+  onClose,
+  originalContent,
+  suggestions,
+  isLoading,
+  error,
+  onAccept,
+  onReject,
+  onRegenerate,
+}) => {
+  const [selectedSuggestion, setSelectedSuggestion] = useState<number>(0);
+  const { showSuccess } = useNotifications();
+
+  const handleAccept = useCallback(() => {
+    if (suggestions[selectedSuggestion]) {
+      onAccept(suggestions[selectedSuggestion]);
+      showSuccess('Content enhanced successfully');
+    }
+  }, [suggestions, selectedSuggestion, onAccept, showSuccess]);
+
+  const copyToClipboard = useCallback((text: string) => {
+    navigator.clipboard.writeText(text);
+    showSuccess('Copied to clipboard');
+  }, [showSuccess]);
+
+  const getConfidenceColor = (score: number) => {
+    if (score >= 85) return 'success';
+    if (score >= 70) return 'warning';
+    return 'error';
+  };
+
+  const getConfidenceLabel = (score: number) => {
+    if (score >= 85) return 'Excellent';
+    if (score >= 70) return 'Good';
+    if (score >= 55) return 'Fair';
+    return 'Poor';
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: { minHeight: '60vh' }
+      }}
+    >
+      <DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">
+            Enhance Content
+          </Typography>
+          {onRegenerate && (
+            <Tooltip title="Regenerate Suggestions">
+              <span>
+                <IconButton onClick={onRegenerate} disabled={isLoading}>
+                  <RefreshIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
+        </Box>
+      </DialogTitle>
+
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {isLoading ? (
+          <Box display="flex" flexDirection="column" alignItems="center" py={4}>
+            <CircularProgress size={48} />
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              Generating enhancement suggestions...
+            </Typography>
+          </Box>
+        ) : (
+          <Stack spacing={3}>
+            {/* Original Content */}
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom color="text.secondary">
+                  Original Content
+                </Typography>
+                <Typography variant="body1" sx={{ 
+                  p: 2, 
+                  bgcolor: 'grey.50', 
+                  borderRadius: 1,
+                  fontStyle: 'italic'
+                }}>
+                  {originalContent}
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Suggestions */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                AI Suggestions
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Choose the best enhancement for your content:
+              </Typography>
+
+              <FormControl component="fieldset">
+                <RadioGroup
+                  value={selectedSuggestion}
+                  onChange={(e) => setSelectedSuggestion(Number(e.target.value))}
+                >
+                  {suggestions.map((suggestion, index) => (
+                    <Card
+                      key={index}
+                      variant="outlined"
+                      sx={{
+                        mb: 2,
+                        border: selectedSuggestion === index ? 2 : 1,
+                        borderColor: selectedSuggestion === index ? 'primary.main' : 'divider',
+                      }}
+                    >
+                      <CardContent>
+                        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                          <FormControlLabel
+                            value={index}
+                            control={<Radio />}
+                            label={`Suggestion ${index + 1}`}
+                            sx={{ m: 0 }}
+                          />
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Chip
+                              label={`${suggestion.confidence_score}%`}
+                              color={getConfidenceColor(suggestion.confidence_score)}
+                              size="small"
+                            />
+                            <Chip
+                              label={getConfidenceLabel(suggestion.confidence_score)}
+                              color={getConfidenceColor(suggestion.confidence_score)}
+                              variant="outlined"
+                              size="small"
+                            />
+                          </Box>
+                        </Box>
+
+                        <Typography variant="body1" paragraph>
+                          {suggestion.content}
+                        </Typography>
+
+                        {suggestion.improvements.length > 0 && (
+                          <Box>
+                            <Typography variant="subtitle2" gutterBottom>
+                              Improvements:
+                            </Typography>
+                            <List dense>
+                              {suggestion.improvements.map((improvement, impIndex) => (
+                                <ListItem key={impIndex} sx={{ py: 0 }}>
+                                  <ListItemIcon>
+                                    <TrendingUpIcon color="success" fontSize="small" />
+                                  </ListItemIcon>
+                                  <ListItemText 
+                                    primary={improvement}
+                                    primaryTypographyProps={{ variant: 'body2' }}
+                                  />
+                                </ListItem>
+                              ))}
+                            </List>
+                          </Box>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+            </Box>
+          </Stack>
+        )}
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={onReject} disabled={isLoading}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => copyToClipboard(suggestions[selectedSuggestion]?.content || '')}
+          startIcon={<CopyIcon />}
+          disabled={isLoading || suggestions.length === 0}
+        >
+          Copy
+        </Button>
+        <Button
+          onClick={handleAccept}
+          variant="contained"
+          startIcon={<CheckIcon />}
+          disabled={isLoading || suggestions.length === 0}
+        >
+          Use This Version
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+// Export both components
+export { EnhancementButton, EnhancementModal };
+export default EnhancementButton;

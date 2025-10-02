@@ -13,6 +13,7 @@ The CV Lator backend is a FastAPI-based REST API service that provides comprehen
 - **Authentication**: Clerk JWT token verification with JWKS support
 - **AI Integration**: OpenAI GPT-4o-mini
 - **File Processing**: PyMuPDF 1.26.4, python-docx 1.1.0
+- **Web Scraping**: Selenium 4.15.0 for JavaScript-heavy job sites
 - **Background Processing**: ThreadPoolExecutor for CV parsing
 - **PDF Export**: LaTeX compilation for professional CV formatting
 - **Testing**: pytest with comprehensive coverage
@@ -53,7 +54,8 @@ backend/
 │   │   ├── clerk_sync_service.py # Clerk integration
 │   │   ├── cv_diff_service.py # CV comparison logic
 │   │   ├── impersonation_service.py # Admin impersonation
-│   │   └── user_activity_service.py # User activity tracking
+│   │   ├── user_activity_service.py # User activity tracking
+│   │   └── url_parsing_service.py # Job URL parsing with browser automation
 │   ├── schemas/               # Pydantic schemas
 │   │   └── cv_schemas.py      # CV data validation schemas
 │   ├── middleware/            # Custom middleware
@@ -180,6 +182,7 @@ backend/
 - `POST /api/cvs/{cv_id}/generate-section` - Generate AI section
 - `GET /api/cvs/{cv_id}/ai-sections` - Get AI-generated sections
 - `DELETE /api/ai-sections/{section_id}` - Delete AI section
+- `POST /api/cvs/{cv_id}/generate-all-suggestions` - Generate AI suggestions for all sections
 
 ### CV History Endpoints (`/api/cvs/{cv_id}/history`)
 - `GET /api/cvs/{cv_id}/history` - Get CV version history
@@ -234,9 +237,16 @@ backend/
 
 ### Job Description Service
 - Job description management
-- URL-based job posting extraction
+- URL-based job posting extraction with browser automation
 - Requirements parsing and structuring
 - CV-job matching logic
+
+### URL Parsing Service
+- Job posting URL parsing and content extraction
+- Selenium-based browser automation for JavaScript-heavy sites
+- Fallback logic between standard scraping and browser automation
+- Content quality validation and formatting preservation
+- Support for complex job sites like jobs.wien.gv.at
 
 ### LaTeX Export Service
 - PDF generation from CV data via LaTeX compilation
@@ -326,6 +336,11 @@ ADMIN_EMAIL=your-admin@email.com
 
 # OpenAI Configuration
 OPENAI_API_KEY=your-openai-key-here
+
+# Browser Automation Configuration
+# Selenium browser automation is used for JavaScript-heavy job sites
+# No additional configuration required - runs locally without API keys
+# Chrome browser must be installed on the system
 
 # Application Settings
 DEBUG=true
@@ -434,6 +449,9 @@ CORS_ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173
 - OpenAI 1.3.7 - AI integration
 - PyMuPDF 1.26.4 - PDF processing
 - python-docx 1.1.0 - DOCX processing
+- Selenium 4.15.0 - Browser automation for web scraping
+- requests 2.31.0 - HTTP client for web scraping
+- beautifulsoup4 4.12.2 - HTML parsing
 
 ### Development Dependencies
 - pytest 7.4.3 - Testing framework

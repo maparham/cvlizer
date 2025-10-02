@@ -466,6 +466,10 @@ export const EmptyState: React.FC<{
  */
 export const createFormValidator = (requiredFields: string[]) => {
   return (data: Record<string, any>): boolean => {
+    // Safety check: if requiredFields is undefined or not an array, return true
+    if (!requiredFields || !Array.isArray(requiredFields)) {
+      return true
+    }
     return requiredFields.every(field => {
       const value = data[field]
       return value !== null && value !== undefined && value.toString().trim()
@@ -478,6 +482,10 @@ export const createFormValidator = (requiredFields: string[]) => {
  */
 export const createArrayItemValidator = (requiredFields: string[]) => {
   return (item: Record<string, any>): boolean => {
+    // Safety check: if requiredFields is undefined or not an array, return true
+    if (!requiredFields || !Array.isArray(requiredFields)) {
+      return true
+    }
     return requiredFields.every(field => {
       const value = item[field]
       return value !== null && value !== undefined && value.toString().trim()

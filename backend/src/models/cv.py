@@ -31,6 +31,9 @@ class CV(Base):
     user = relationship("User", back_populates="cvs")
     job_descriptions = relationship("JobDescription", back_populates="cv", cascade="all, delete-orphan")
     ai_sections = relationship("AISection", back_populates="cv", cascade="all, delete-orphan")
+    ai_drafts = relationship("AIDraft", back_populates="cv", cascade="all, delete-orphan")
+    ai_suggestions = relationship("AISuggestion", back_populates="cv", cascade="all, delete-orphan")
+    optimization_history = relationship("OptimizationHistory", back_populates="cv", cascade="all, delete-orphan", order_by="OptimizationHistory.created_at.desc()")
     history = relationship("CVHistory", back_populates="cv", cascade="all, delete-orphan", order_by="CVHistory.created_at.desc()")
     
     def __str__(self):

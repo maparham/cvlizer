@@ -96,6 +96,16 @@ The CV Lator UI/UX specification defines the visual design system, user interfac
 - **Border Radius**: 4px
 - **Hover**: Light blue background
 
+##### AI Tools Button
+- **Background**: Transparent
+- **Text**: Primary blue (#1976d2)
+- **Border**: 1px solid primary blue
+- **Padding**: 12px 24px
+- **Border Radius**: 4px
+- **Icon**: AutoAwesome icon (sparkle)
+- **Hover**: Light blue background with darker border
+- **Disabled**: Hidden for new CVs (not saved)
+
 ##### Text Button
 - **Background**: Transparent
 - **Text**: Primary blue
@@ -193,8 +203,9 @@ The CV Lator UI/UX specification defines the visual design system, user interfac
 #### Header
 - **App Bar**: Light gray background (#f5f5f5)
 - **Navigation**: Back button with breadcrumb
-- **Actions**: Export, delete, user menu
+- **Actions**: AI Tools, Export, delete, user menu
 - **Height**: 48px for compact design
+- **Button Layout**: AI Tools button positioned before Export button
 
 #### Main Content
 - **Layout**: Two-column layout (editor + preview)
@@ -209,6 +220,17 @@ The CV Lator UI/UX specification defines the visual design system, user interfac
 - **Validation**: Real-time validation with error messages
 
 ## Component Specifications
+
+### CV Editor Header Components
+
+#### AI Tools Shortcut Button
+- **Position**: Located in CV editor header, positioned before Export button
+- **Visibility**: Only visible for saved CVs (hidden for new/unsaved CVs)
+- **Icon**: AutoAwesome (sparkle) icon with "AI Tools" label
+- **Styling**: Secondary button style with primary blue color scheme
+- **Functionality**: Single click switches sidebar to AI Tools tab
+- **User Feedback**: Immediate tab switch with visual indication
+- **Accessibility**: Proper ARIA labels and keyboard navigation support
 
 ### CV Upload Component
 
@@ -359,12 +381,14 @@ The CV Lator UI/UX specification defines the visual design system, user interfac
 9. **History**: Version tracking and restoration capabilities
 
 ### AI Enhancement Flow
-1. **Job Description**: User adds job description via text or URL
-2. **Analysis**: AI analyzes CV and job requirements
-3. **Generation**: AI generates tailored "Why I'm a Good Fit" content
-4. **Review**: User reviews generated content
-5. **Accept/Reject**: User accepts or rejects suggestions
-6. **Integration**: Accepted content integrated into CV sections
+1. **Quick Access**: User clicks AI Tools button in CV editor header for instant access
+2. **Job Description**: User adds job description via text or URL
+3. **URL Parsing**: For URL inputs, browser automation extracts content from JavaScript-heavy sites
+4. **Analysis**: AI analyzes CV and job requirements
+5. **Generation**: AI generates tailored "Why I'm a Good Fit" content
+6. **Review**: User reviews generated content
+7. **Accept/Reject**: User accepts or rejects suggestions
+8. **Integration**: Accepted content integrated into CV sections
 
 ### Admin Impersonation Flow
 1. **Admin Access**: Admin user accesses admin dashboard
@@ -380,6 +404,7 @@ The CV Lator UI/UX specification defines the visual design system, user interfac
 ### Loading States
 - **Skeleton Screens**: For content loading
 - **Progress Indicators**: For file uploads and AI processing
+- **Browser Automation Loading**: For JavaScript-heavy job site parsing
 - **Lazy Loading**: For images and heavy components
 - **Optimistic Updates**: Immediate UI feedback
 - **Background Processing**: Thread pool for CV parsing
@@ -417,5 +442,13 @@ The CV Lator UI/UX specification defines the visual design system, user interfac
 - **JWKS Verification**: Production-ready token verification
 - **Development Modes**: Flexible development authentication
 - **User Synchronization**: Automatic user data sync
+
+### Browser Automation Features
+- **JavaScript Site Support**: Automatic handling of JavaScript-heavy job sites
+- **URL Parsing**: Seamless extraction from complex job posting URLs
+- **Content Quality**: High-quality content extraction with formatting preservation
+- **Error Handling**: Graceful fallback for unsupported or problematic sites
+- **Loading States**: Clear progress indicators during browser automation
+- **Performance**: Optimized browser automation with headless Chrome
 
 This UI/UX specification provides comprehensive guidelines for creating a consistent, accessible, and user-friendly interface for the CV Lator application, ensuring a professional and intuitive user experience across all devices and user types, with advanced features for admin management and version control.

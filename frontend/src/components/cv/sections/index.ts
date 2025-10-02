@@ -1,5 +1,6 @@
 export { default as PersonalInfoSection } from './PersonalInfoSection'
 export { default as ProfessionalSummarySection } from './ProfessionalSummarySection'
+export { default as WhyGoodFitSection } from './WhyGoodFitSection'
 export { default as WorkExperienceSection } from './WorkExperienceSection'
 export { default as EducationSection } from './EducationSection'
 export { default as SkillsSection } from './SkillsSection'

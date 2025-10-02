@@ -14,6 +14,7 @@ import { CVSection } from '../../../types'
 import { 
   PersonalInfo, 
   ProfessionalSummary, 
+  WhyGoodFit,
   WorkExperience, 
   Education, 
   Skills, 
@@ -23,30 +24,32 @@ import {
   Publication, 
   VolunteerExperience 
 } from '../../../types/cv'
-import {
-  PersonalInfoSection,
-  ProfessionalSummarySection,
-  WorkExperienceSection,
-  EducationSection,
-  SkillsSection,
-  CertificationsSection,
-  ProjectsSection,
-  AwardsSection,
-  PublicationsSection,
-  VolunteerExperienceSection
-} from '../sections'
+import SectionFactory from '../sections/SectionFactory'
 import { 
   useCVEditorControls,
   useCVEditorState,
   useCVEditor
 } from '../../../contexts/CVEditorContext'
+import { useInlineDrafts } from '../../../hooks/useInlineDrafts'
+import InlineDraftSection from '../ai/InlineDraftSection'
 
-const CVContentArea: React.FC = () => {
+interface CVContentAreaProps {
+  cvId?: string
+}
+
+const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   // Get data from context instead of props
   const { cvData, onUpdateCV, onSave } = useCVEditor()
   const { sections } = useCVEditorControls()
   const { editing, changes } = useCVEditorState()
   
+  // Get inline drafts functionality
+  const {
+    getDraftsAfterSection,
+    getDraftsBeforeSection,
+    handleDraftApproved,
+    handleDraftRejected,
+  } = useInlineDrafts(cvId || '', cvData)
   
   // Extract editing-related functions for easier use
   const {
@@ -73,10 +76,18 @@ const CVContentArea: React.FC = () => {
     // Check if another individual item is being edited in a DIFFERENT section
     const isAnotherItemBeingEdited = safeEditingIndividualItem !== null && safeEditingIndividualItem.sectionId !== section.type
 
-    switch (section.type) {
+    // Get drafts that should appear before this section
+    const draftsBefore = getDraftsBeforeSection(section.type)
+
+    // Get drafts that should appear after this section
+    const draftsAfter = getDraftsAfterSection(section.type)
+
+    const renderSectionContent = () => {
+      switch (section.type) {
       case 'personal_info':
         return (
-          <PersonalInfoSection 
+          <SectionFactory
+            sectionType="personal_info"
             data={cvData?.personal_info} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, personal_info: data as PersonalInfo })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, personal_info: data as PersonalInfo }, message || 'Personal information saved')}
@@ -88,7 +99,8 @@ const CVContentArea: React.FC = () => {
         )
       case 'professional_summary':
         return (
-          <ProfessionalSummarySection 
+          <SectionFactory
+            sectionType="professional_summary"
             data={cvData?.professional_summary} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, professional_summary: data as ProfessionalSummary })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, professional_summary: data as ProfessionalSummary }, message || 'Professional summary saved')}
@@ -98,9 +110,36 @@ const CVContentArea: React.FC = () => {
             onUnsavedChanges={onUnsavedChanges}
           />
         )
+      case 'why_good_fit':
+        return (
+          <SectionFactory
+            sectionType="why_good_fit"
+            data={cvData?.why_good_fit} 
+            onUpdate={(data: unknown) => onUpdateCV({ ...cvData, why_good_fit: data as WhyGoodFit })}
+            onSave={async (data: unknown, message?: string) => {
+              const whyGoodFitData = data as WhyGoodFit | null
+              const updatedCvData = { ...cvData, why_good_fit: whyGoodFitData }
+              
+              // If the section is being deleted (set to null), also remove it from section config
+              if (whyGoodFitData === null) {
+                const updatedSections = sections.items.filter(s => s.id !== 'why_good_fit')
+                updatedCvData.section_config = {
+                  sections: updatedSections
+                }
+              }
+              
+              await onSave(updatedCvData as any, message || 'Why I\'m a Good Fit section saved')
+            }}
+            isEditing={isEditing}
+            onEdit={() => handleSectionEdit('why_good_fit')}
+            onClose={() => handleSectionClose()}
+            onUnsavedChanges={onUnsavedChanges}
+          />
+        )
       case 'work_experience':
         return (
-          <WorkExperienceSection 
+          <SectionFactory
+            sectionType="work_experience"
             data={cvData?.work_experience} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, work_experience: data as WorkExperience[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, work_experience: data as WorkExperience[] }, message || 'Work experience saved')}
@@ -116,7 +155,8 @@ const CVContentArea: React.FC = () => {
         )
       case 'education':
         return (
-          <EducationSection 
+          <SectionFactory
+            sectionType="education"
             data={cvData?.education} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, education: data as Education[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, education: data as Education[] }, message || 'Education saved')}
@@ -132,7 +172,8 @@ const CVContentArea: React.FC = () => {
         )
       case 'skills':
         return (
-          <SkillsSection 
+          <SectionFactory
+            sectionType="skills"
             data={cvData?.skills} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, skills: data as Skills })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, skills: data as Skills }, message || 'Skills saved')}
@@ -140,11 +181,13 @@ const CVContentArea: React.FC = () => {
             onEdit={() => handleSectionEdit('skills')}
             onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
+            cvId={cvId}
           />
         )
       case 'certifications':
         return (
-          <CertificationsSection 
+          <SectionFactory
+            sectionType="certifications"
             data={cvData?.certifications || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, certifications: data as Certification[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, certifications: data as Certification[] }, message || 'Certifications saved')}
@@ -160,7 +203,8 @@ const CVContentArea: React.FC = () => {
         )
       case 'projects':
         return (
-          <ProjectsSection 
+          <SectionFactory
+            sectionType="projects"
             data={cvData?.projects || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, projects: data as Project[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, projects: data as Project[] }, message || 'Projects saved')}
@@ -176,7 +220,8 @@ const CVContentArea: React.FC = () => {
         )
       case 'awards':
         return (
-          <AwardsSection 
+          <SectionFactory
+            sectionType="awards"
             data={cvData?.awards || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, awards: data as Award[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, awards: data as Award[] }, message || 'Awards saved')}
@@ -192,7 +237,8 @@ const CVContentArea: React.FC = () => {
         )
       case 'publications':
         return (
-          <PublicationsSection 
+          <SectionFactory
+            sectionType="publications"
             data={cvData?.publications || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, publications: data as Publication[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, publications: data as Publication[] }, message || 'Publications saved')}
@@ -208,7 +254,8 @@ const CVContentArea: React.FC = () => {
         )
       case 'volunteer_experience':
         return (
-          <VolunteerExperienceSection 
+          <SectionFactory
+            sectionType="volunteer_experience"
             data={cvData?.volunteer_experience || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, volunteer_experience: data as VolunteerExperience[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, volunteer_experience: data as VolunteerExperience[] }, message || 'Volunteer experience saved')}
@@ -224,7 +271,37 @@ const CVContentArea: React.FC = () => {
         )
       default:
         return null
+      }
     }
+
+    return (
+      <Box>
+        {/* Render drafts before this section */}
+        {draftsBefore.map((draft) => (
+          <InlineDraftSection
+            key={`draft-before-${draft.id}`}
+            cvId={cvId || ''}
+            draft={draft}
+            onApproved={() => handleDraftApproved(draft.id)}
+            onRejected={() => handleDraftRejected(draft.id)}
+          />
+        ))}
+
+        {/* Render the section content */}
+        {renderSectionContent()}
+
+        {/* Render drafts after this section */}
+        {draftsAfter.map((draft) => (
+          <InlineDraftSection
+            key={`draft-after-${draft.id}`}
+            cvId={cvId || ''}
+            draft={draft}
+            onApproved={() => handleDraftApproved(draft.id)}
+            onRejected={() => handleDraftRejected(draft.id)}
+          />
+        ))}
+      </Box>
+    )
   }
 
   return (
