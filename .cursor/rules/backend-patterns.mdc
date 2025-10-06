@@ -1,0 +1,45 @@
+---
+globs: backend/**/*.py
+description: Backend development patterns and conventions for FastAPI, SQLAlchemy, and Python
+---
+
+# Backend Development Patterns
+
+## FastAPI & API Development
+- Use dependency injection: `db: Session = Depends(get_db)`
+- Proper HTTP status codes, Pydantic models for validation
+- Always use `get_effective_user` for authentication
+- Validate user ownership for all resources
+
+## SQLAlchemy & Database
+- Inherit from [Base](mdc:backend/src/models/base.py)
+- UUID primary keys, foreign keys with CASCADE deletes
+- Add timestamps, index frequently queried fields
+- Use service layer for all DB operations, `joinedload` for eager loading
+
+## Service Layer
+- Place logic in [services/](mdc:backend/src/services/)
+- Stateless pure functions with dependency injection
+- Return typed objects, not raw queries
+
+## File Handling & AI Integration
+- Use [file_service.py](mdc:backend/src/services/file_service.py)
+- Validate file types and sizes before processing
+- Use [ai_service.py](mdc:backend/src/services/ai_service.py)
+- Handle API rate limits and errors, log AI usage
+
+## Error Handling & Validation
+- Use FastAPI's `HTTPException` for API errors
+- Pydantic models for validation, custom validators in [utils/validation.py](mdc:backend/src/utils/validation.py)
+- Sanitize inputs to prevent injection
+
+## Background Tasks
+- Use ThreadPoolExecutor for CPU-intensive tasks
+- Manage database sessions properly, use asyncio for I/O-bound
+- Always close sessions in finally blocks
+
+## Code Quality
+- PEP 8 with Black (88 chars), type hints for all parameters
+- Comprehensive docstrings, meaningful names
+- Import organization: stdlib, third-party, local
+- Module docstrings for all files

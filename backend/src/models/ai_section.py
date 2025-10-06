@@ -26,7 +26,7 @@ class AISection(Base):
     optimized_data = Column(JSON, nullable=True)
     section_type = Column(String(50), default="why_good_fit", nullable=False)
     generation_prompt = Column(Text, nullable=True)
-    ai_model = Column(String(50), default="gpt-4o-mini", nullable=False)
+    ai_model = Column(String(50), nullable=True)  # Default set by application layer from config
     confidence_score = Column(Integer, nullable=True)
     tokens_used = Column(Integer, nullable=True)
     generation_time = Column(Integer, nullable=True)

@@ -31,6 +31,7 @@ from src.api.job_descriptions import router as job_descriptions_router
 from src.api.ai import router as ai_router
 from src.api.cv_history import router as cv_history_router
 from src.api.admin import router as admin_router
+from src.api.admin_ai_usage import router as admin_ai_usage_router
 from src.api.user_activities import router as user_activities_router
 from src.api.impersonation import router as impersonation_router, auth_router as impersonation_auth_router
 
@@ -93,6 +94,7 @@ app.include_router(job_descriptions_router)
 app.include_router(ai_router)
 app.include_router(cv_history_router)
 app.include_router(admin_router)
+app.include_router(admin_ai_usage_router)
 app.include_router(user_activities_router)
 app.include_router(impersonation_router)
 app.include_router(impersonation_auth_router)

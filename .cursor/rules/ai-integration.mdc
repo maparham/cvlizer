@@ -1,0 +1,37 @@
+---
+description: AI integration patterns and OpenAI service conventions
+---
+
+# AI Integration & OpenAI Service Patterns
+
+## OpenAI Service Architecture
+- Use [ai_service.py](mdc:backend/src/services/ai_service.py) for all operations
+- Implement async and sync versions
+- Check `is_ai_enabled()` before operations
+- Log all usage with [ai_usage_service.py](mdc:backend/src/services/ai_usage_service.py)
+
+## Key Responsibilities
+- CV parsing with structured prompts
+- Job fit analysis and scoring
+- Content generation tailored to jobs
+- Error handling with fallbacks
+
+## Background Task Processing
+- Use ThreadPoolExecutor for AI processing
+- Use SessionLocal() in background threads, close in finally blocks
+- Update task status in database, log errors with context
+
+## Error Handling & Resilience
+- Handle API rate limits and timeouts
+- Exponential backoff (max 3 retries, 2^attempt seconds)
+- Provide fallback responses, return structured error objects
+
+## Prompt Engineering
+- Clear, structured prompts with JSON output format
+- Request JSON-only responses, specify required fields
+- Test with various inputs, keep in service layer
+
+## Security & Privacy
+- Sanitize inputs before AI processing
+- Don't log sensitive data, use secure API key management
+- Never expose API keys to frontend

@@ -1,0 +1,48 @@
+---
+alwaysApply: true
+description: MVP-focused development guidelines and best practices
+---
+
+# CV Optimizer - MVP Development Guidelines
+
+## Rule Precedence
+- `alwaysApply: true` rules override others
+- Deeper/nested rules override parent ones
+- `globs`-scoped rules apply only to matched files
+
+## Quick Reference
+1. [Project Structure](mdc:.cursor/rules/project-structure.mdc) - Architecture and directory organization
+2. [Backend Patterns](mdc:.cursor/rules/backend-patterns.mdc) - FastAPI, SQLAlchemy, Python
+3. [Frontend Patterns](mdc:.cursor/rules/frontend-patterns.mdc) - React, TypeScript, Material-UI
+4. [Testing Patterns](mdc:.cursor/rules/testing-patterns.mdc) - Testing strategies (MVP focus)
+5. [AI Integration](mdc:.cursor/rules/ai-integration.mdc) - OpenAI service patterns
+6. [Security Patterns](mdc:.cursor/rules/security-patterns.mdc) - Essential security only
+
+## MVP Development Focus
+- **Backend**: PEP 8, Black (88 chars), type hints, basic docstrings
+- **Frontend**: TypeScript strict mode, ESLint, Prettier
+- **Testing**: 80% backend, 70% frontend coverage (MVP targets)
+- **Security**: Essential auth and data protection only
+- **Performance**: Basic optimization, defer advanced patterns
+
+## Common Patterns
+- **API Endpoint**: Dependency injection, Pydantic models, `get_effective_user` for auth
+- **React Component**: TypeScript interfaces, React.FC, proper state management
+- **Service Function**: Stateless pure functions, proper validation, type hints
+
+## Deferred to Future (Production Scale)
+- Advanced deployment patterns (Docker, CI/CD, monitoring)
+- Performance optimization (caching, load testing, scaling)
+- Advanced security (compliance, monitoring, auditing)
+- Comprehensive testing (load testing, security scanning)
+
+## Resources
+- FastAPI: https://fastapi.tiangolo.com/
+- React: https://react.dev/
+- Material-UI: https://mui.com/
+- SQLAlchemy: https://docs.sqlalchemy.org/
+
+## Tools
+- **Backend**: Black, Flake8, MyPy, Pytest
+- **Frontend**: ESLint, Prettier, TypeScript, Jest, Playwright
+- **DevOps**: Basic Docker for local development

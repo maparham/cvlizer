@@ -21,15 +21,29 @@ Be careful and precise when fixing issues.
   - Ensure no breaking changes; test success and error paths.
 - Test before claiming a fix.
 
+## NEVER BREAK EXISTING FUNCTIONALITY
+- **PRESERVE ALL EXISTING BEHAVIOR** - Never change working functionality when fixing issues
+- **MINIMAL CHANGES ONLY** - Make the smallest possible change to fix the specific issue
+- **UNDERSTAND BEFORE CHANGING** - Fully analyze existing code before making any modifications
+- **ADDITIVE FIXES PREFERRED** - Add new code rather than changing existing logic when possible
+- **ISOLATE THE PROBLEM** - Fix only the specific issue, not related functionality
+- **PRESERVE WORKING PATHS** - Don't modify code paths that already work correctly
+
 ## Fix Verification
 - Do not claim fixed until the user tests and confirms, unless you verified directly.
 - Ask the user to test and be ready to iterate.
+- **EXISTING FUNCTIONALITY MUST WORK** - All current features must continue working exactly as before
+- **NO REGRESSIONS** - Never introduce new problems while fixing existing ones
+- **USER CONFIRMS FIX** - Don't claim fixed until user verifies it works
 
 ## Exception
 - You may claim complete only if you directly verified via static analysis, compilation, or automated tests.
 
 ## Communication
 - Explain what changed and why; provide testing instructions; acknowledge user verification; address follow-ups.
+- **EXPLAIN IMPACT** - Clearly state what will change and what will remain the same
+- **GET APPROVAL** - Confirm the approach before implementing changes
+- **WHEN IN DOUBT** - Ask for clarification if unsure about existing behavior
 
 ## Debug Logging
 - When uncertain, add diagnostic logs and request user logs after testing.

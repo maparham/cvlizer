@@ -16,6 +16,9 @@ from .optimization_history import OptimizationHistory
 from .audit_log import AuditLog
 from .user_activity import UserActivity, UserSession
 from .impersonation_session import ImpersonationSession
+from .ai_usage_log import AIUsageLog
+from .content_enhancement import ContentEnhancement
+from .ai_enhancement import AIEnhancement
 
 __all__ = [
     "Base",
@@ -32,5 +35,8 @@ __all__ = [
     "AuditLog",
     "UserActivity",
     "UserSession",
-    "ImpersonationSession"
+    "ImpersonationSession",
+    "AIUsageLog",
+    "ContentEnhancement",
+    "AIEnhancement"
 ]

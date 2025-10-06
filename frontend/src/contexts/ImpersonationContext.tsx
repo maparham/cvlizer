@@ -17,7 +17,7 @@
  * - Use useImpersonationContext hook in components that need impersonation state
  * - Components can subscribe to status changes without making their own API calls
  */
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react'
 import { impersonationService, ImpersonationStatus } from '../services/impersonationService'
 import { useAuth } from './AuthContext'
 
@@ -172,14 +172,14 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
     }
   }, [fetchStatus, fallbackInterval, isAuthenticated, authLoading])
 
-  const contextValue: ImpersonationContextType = {
+  const contextValue: ImpersonationContextType = useMemo(() => ({
     isImpersonating: status.active,
     status,
     loading,
     refreshStatus,
     forceStatusCheck,
     endImpersonation
-  }
+  }), [status.active, status, loading, refreshStatus, forceStatusCheck, endImpersonation])
 
   return (
     <ImpersonationContext.Provider value={contextValue}>

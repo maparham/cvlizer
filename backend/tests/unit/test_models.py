@@ -228,9 +228,24 @@ class TestJobDescriptionModel:
         yield session
         session.close()
 
-    def test_job_description_creation(self, db_session):
+    @pytest.fixture(scope="function")
+    def test_user(self, db_session):
+        """Create a test user for JobDescription foreign key"""
+        user = User(
+            email="testuser@example.com",
+            password_hash=get_password_hash("password123"),
+            is_active=True,
+            email_verified=True
+        )
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+        return user
+
+    def test_job_description_creation(self, db_session, test_user):
         """Test job description creation with valid data"""
         job_desc = JobDescription(
+            user_id=test_user.id,
             title="Senior Software Engineer",
             company="Tech Company",
             description="We are looking for a senior software engineer...",
@@ -243,12 +258,13 @@ class TestJobDescriptionModel:
             salary_range="$100,000 - $150,000",
             employment_type="Full-time"
         )
-        
+
         db_session.add(job_desc)
         db_session.commit()
         db_session.refresh(job_desc)
-        
+
         assert job_desc.id is not None
+        assert job_desc.user_id == test_user.id
         assert job_desc.title == "Senior Software Engineer"
         assert job_desc.company == "Tech Company"
         assert job_desc.description == "We are looking for a senior software engineer..."
@@ -263,54 +279,65 @@ class TestJobDescriptionModel:
         assert job_desc.created_at is not None
         assert job_desc.updated_at is not None
 
-    def test_job_description_default_values(self, db_session):
+    def test_job_description_default_values(self, db_session, test_user):
         """Test job description default values"""
         job_desc = JobDescription(
+            user_id=test_user.id,
             title="Software Engineer",
             company="Tech Company"
         )
-        
+
         db_session.add(job_desc)
         db_session.commit()
         db_session.refresh(job_desc)
-        
+
+        assert job_desc.user_id == test_user.id
         assert job_desc.description is None  # Default value
         assert job_desc.requirements is None  # Default value
         assert job_desc.location is None  # Default value
         assert job_desc.salary_range is None  # Default value
         assert job_desc.employment_type is None  # Default value
+        assert job_desc.hidden is False  # Default value
+        assert job_desc.is_parsing is False  # Default value
+        assert job_desc.parse_error is None  # Default value
+        assert job_desc.created_at is not None
+        assert job_desc.updated_at is not None
 
-    def test_job_description_string_representation(self, db_session):
+    def test_job_description_string_representation(self, db_session, test_user):
         """Test job description string representation"""
         job_desc = JobDescription(
+            user_id=test_user.id,
             title="Software Engineer",
             company="Tech Company"
         )
-        
+
         db_session.add(job_desc)
         db_session.commit()
         db_session.refresh(job_desc)
-        
+
+        assert job_desc.user_id == test_user.id
         assert str(job_desc) == f"<JobDescription {job_desc.title} at {job_desc.company}>"
 
-    def test_job_description_requirements_json(self, db_session):
+    def test_job_description_requirements_json(self, db_session, test_user):
         """Test job description requirements as JSON"""
         requirements = [
             "5+ years of experience",
             "Strong communication skills",
             "Team player"
         ]
-        
+
         job_desc = JobDescription(
+            user_id=test_user.id,
             title="Software Engineer",
             company="Tech Company",
             requirements=requirements
         )
-        
+
         db_session.add(job_desc)
         db_session.commit()
         db_session.refresh(job_desc)
-        
+
+        assert job_desc.user_id == test_user.id
         assert job_desc.requirements == requirements
         assert isinstance(job_desc.requirements, list)
 

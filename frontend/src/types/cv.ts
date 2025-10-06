@@ -68,10 +68,15 @@ export interface ProfessionalSummary {
 
 // Why I'm a Good Fit (AI Generated)
 export interface WhyGoodFit {
-  content: string
+  content?: string
+  fit_analysis?: string
   confidence_score: number
   key_matches: string[]
-  generated_at: string
+  missing_skills?: string[]
+  suggested_improvements?: string[]
+  strengths?: string[]
+  weaknesses?: string[]
+  generated_at?: string
   job_description_id?: string
 }
 

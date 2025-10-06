@@ -1,0 +1,35 @@
+---
+description: Security patterns and authentication conventions
+---
+
+# Security & Authentication Patterns
+
+## Authentication & Authorization
+- Use Clerk with JWT verification
+- Always use `get_effective_user` dependency
+- Validate user ownership before data access
+- Filter all queries by user_id
+
+## Data Protection
+- Validate all inputs with Pydantic schemas
+- Sanitize data, validate files (type, size)
+- HTML escape user content
+- Never trust user inputs
+
+## API Security
+- CORS for production, rate limiting per endpoint
+- Validate request parameters, use HTTPS
+- Log suspicious requests
+
+## Database Security
+- Use SQLAlchemy ORM (no raw SQL)
+- Always filter by user_id, audit operations
+
+## Error Handling
+- Generic error messages for users
+- Log detailed errors server-side only
+- Don't expose stack traces or system info
+
+## Best Practices
+- Never commit secrets, use env vars
+- Regular security updates, HTTPS only

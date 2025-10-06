@@ -17,7 +17,7 @@
  * - Use useAuth hook in components to access authentication state
  * - Provides consistent authentication interface across the app
  */
-import React, { createContext, useContext, ReactNode } from 'react'
+import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react'
 import { useUser, useClerk } from '@clerk/clerk-react'
 
 interface AuthContextType {
@@ -56,11 +56,12 @@ export const useAuth = () => {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const { user, isLoaded } = useUser()
-  const { signOut } = useClerk()
+  try {
+    const { user, isLoaded } = useUser()
+    const { signOut } = useClerk()
 
-  /**
-   * Initiates user login process
+    /**
+     * Initiates user login process
    * 
    * Redirects the user to the login page where Clerk handles the actual authentication.
    * The email and password parameters are kept for interface compatibility but are not used
@@ -70,10 +71,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * @param {string} _password - User password (unused, kept for interface compatibility)
    * @returns {Promise<void>} Promise that resolves when redirect is initiated
    */
-  const login = async (_email: string, _password: string) => {
+  const login = useCallback(async (_email: string, _password: string) => {
     // Redirect to login page - Clerk handles the actual authentication
     window.location.href = '/login'
-  }
+  }, [])
 
   /**
    * Initiates user registration process
@@ -86,10 +87,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * @param {string} _password - User password (unused, kept for interface compatibility)
    * @returns {Promise<void>} Promise that resolves when redirect is initiated
    */
-  const register = async (_email: string, _password: string) => {
+  const register = useCallback(async (_email: string, _password: string) => {
     // Redirect to register page - Clerk handles the actual authentication
     window.location.href = '/register'
-  }
+  }, [])
 
   /**
    * Logs out the current user
@@ -99,9 +100,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * 
    * @returns {void}
    */
-  const logout = () => {
+  const logout = useCallback(() => {
     signOut()
-  }
+  }, [signOut])
 
   /**
    * Clears authentication errors
@@ -111,14 +112,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * 
    * @returns {void}
    */
-  const clearError = () => {
+  const clearError = useCallback(() => {
     // No-op for now since Clerk handles errors
-  }
+  }, [])
 
   // Check if user is admin based on email
   const isAdmin = user ? user.primaryEmailAddress?.emailAddress === import.meta.env.VITE_ADMIN_EMAIL : false
 
-  const value: AuthContextType = {
+  const value: AuthContextType = useMemo(() => ({
     user: user ? {
       id: user.id,
       email: user.primaryEmailAddress?.emailAddress || '',
@@ -135,11 +136,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     clearError,
     isAuthenticated: !!user && isLoaded,
     isAdmin
-  }
+  }), [user, isLoaded, isAdmin, login, register, logout, clearError])
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+    return (
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
+    )
+  } catch (error) {
+    console.error('AuthProvider error:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    
+    // Return a fallback provider with error state
+    const errorValue: AuthContextType = {
+      user: null,
+      login: async () => {},
+      register: async () => {},
+      logout: () => {},
+      loading: false,
+      error: 'Authentication error occurred',
+      clearError: () => {},
+      isAuthenticated: false,
+      isAdmin: false
+    }
+    
+    return (
+      <AuthContext.Provider value={errorValue}>
+        {children}
+      </AuthContext.Provider>
+    )
+  }
 }

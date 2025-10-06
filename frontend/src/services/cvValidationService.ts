@@ -340,14 +340,45 @@ class CVDataCleaner {
 
   private cleanWhyGoodFit(data: any): void {
     if (data.why_good_fit) {
+      // Store the original object to preserve all fields
+      const original = { ...data.why_good_fit };
+
       const content = this.cleanString(data.why_good_fit.content)
-      
+      const fitAnalysis = this.cleanString(data.why_good_fit.fit_analysis)
+
       // Backend requires min 10 characters for why_good_fit content
-      // If content is empty or too short, delete the entire section
-      if (!content || content.length < 10) {
+      // Check both content and fit_analysis fields
+      const hasValidContent = content && content.length >= 10
+      const hasValidFitAnalysis = fitAnalysis && fitAnalysis.length >= 10
+
+      // If neither content nor fit_analysis is valid, delete the entire section
+      if (!hasValidContent && !hasValidFitAnalysis) {
         delete data.why_good_fit
       } else {
-        data.why_good_fit.content = content
+        // IMPORTANT: Keep the original object and only update specific fields
+        // This preserves ALL backend fields like confidence_score, key_matches, etc.
+
+        // Update cleaned content
+        if (!content && fitAnalysis) {
+          data.why_good_fit.content = fitAnalysis
+        } else if (content) {
+          data.why_good_fit.content = content
+        }
+
+        // Update cleaned fit_analysis
+        if (fitAnalysis) {
+          data.why_good_fit.fit_analysis = fitAnalysis
+        }
+
+        // Ensure generated_at field exists (required by backend)
+        if (!data.why_good_fit.generated_at) {
+          data.why_good_fit.generated_at = new Date().toISOString()
+        }
+
+        // Add validation helper fields (these are frontend-only helpers)
+        data.why_good_fit.hasContent = !!data.why_good_fit.content;
+        data.why_good_fit.hasFitAnalysis = !!data.why_good_fit.fit_analysis;
+        data.why_good_fit.hasGeneratedAt = !!data.why_good_fit.generated_at;
       }
     }
   }

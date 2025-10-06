@@ -1,0 +1,34 @@
+---
+globs: **/*.test.ts,**/*.test.tsx,**/*.test.py,**/test_*.py
+description: Testing patterns and conventions for both frontend and backend
+---
+
+# Testing Patterns & Conventions
+
+## Backend Testing (Python/Pytest)
+- Place in [tests/](mdc:backend/tests/), use `test_` prefix
+- FastAPI TestClient for endpoints, test success/error scenarios
+- Test database: isolation, CRUD operations
+- Service tests: mock dependencies, test edge cases
+- Target 80%+ coverage (MVP)
+
+## Frontend Testing (React/Jest)
+- React Testing Library for components, test user interactions
+- Hook tests with renderHook, mock external dependencies
+- Service tests: mock API calls, test error handling
+- Target 70%+ coverage (MVP)
+
+## Integration Testing
+- API: complete request/response cycles, auth validation
+- E2E: Playwright for critical workflows
+- Place E2E in [tests/e2e/](mdc:frontend/tests/e2e/)
+
+## Test Data & Fixtures
+- Use factories for test data, keep minimal
+- Mock external APIs, file operations
+- Clean up after tests
+
+## Test Quality
+- Descriptive test names, test one thing per case
+- Focus on critical business logic
+- Test happy path and main error scenarios

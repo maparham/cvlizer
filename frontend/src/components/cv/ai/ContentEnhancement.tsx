@@ -19,7 +19,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -55,6 +55,7 @@ import {
 import { useAIStore, useSuggestions } from '../../../stores/aiStore';
 import { ContentSuggestion } from '../../../types/ai';
 import { useNotifications } from '../../../stores/uiStore';
+import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
 
 interface EnhancementButtonProps {
   content: string;
@@ -95,6 +96,26 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
   const { enhanceContent } = useAIStore();
   const { showError } = useNotifications();
 
+  // Use global AI task polling for content enhancement
+  const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
+
+  // Monitor active tasks for content enhancement completion
+  useEffect(() => {
+    for (const [taskId, task] of activeTasks) {
+      if (task.type === 'content_enhancement' && task.cvId === cvId && !task.isGenerating) {
+        if (task.generationError) {
+          showError('Error', `Content enhancement failed: ${task.generationError}`);
+          setIsEnhancing(false);
+        } else {
+          // Task completed successfully, show the modal
+          setShowModal(true);
+          setIsEnhancing(false);
+        }
+        removeTask(taskId);
+      }
+    }
+  }, [activeTasks, cvId, showError, removeTask]);
+
   const handleEnhance = useCallback(async () => {
     if (!content.trim()) {
       showError('Error', 'No content to enhance');
@@ -103,15 +124,28 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
 
     setIsEnhancing(true);
     try {
-      await enhanceContent(cvId, content, contentType);
-      setShowModal(true);
+      const enhancementResponse = await enhanceContent(cvId, content, contentType);
+      
+      // Add the task to polling if it's still generating
+      if (enhancementResponse.is_generating && enhancementResponse.enhancement_id) {
+        addTask({
+          id: enhancementResponse.enhancement_id,
+          type: 'content_enhancement',
+          cvId: cvId,
+          isGenerating: true,
+          data: enhancementResponse,
+        });
+      } else {
+        // Task completed immediately
+        setShowModal(true);
+        setIsEnhancing(false);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to enhance content';
       showError('Error', errorMessage);
-    } finally {
       setIsEnhancing(false);
     }
-  }, [content, contentType, cvId, enhanceContent, showError]);
+  }, [content, contentType, cvId, enhanceContent, showError, addTask]);
 
   const handleAccept = useCallback((suggestion: ContentSuggestion) => {
     if (onContentUpdate) {

@@ -67,28 +67,29 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
   onUnsavedChanges,
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [editContent, setEditContent] = useState(data?.content || '');
+  const [editContent, setEditContent] = useState(data?.content || data?.fit_analysis || '');
   const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
 
   const handleEdit = () => {
-    setEditContent(data?.content || '');
+    setEditContent(data?.content || data?.fit_analysis || '');
     onEdit();
   };
 
   const handleSave = () => {
     if (!data) return;
-    
+
     const updatedData: WhyGoodFit = {
       ...data,
       content: editContent,
+      fit_analysis: editContent, // Backend requires both content and fit_analysis
     };
-    
+
     onSave(updatedData, 'Why I\'m a Good Fit section updated');
     onClose();
   };
 
   const handleCancel = () => {
-    setEditContent(data?.content || '');
+    setEditContent(data?.content || data?.fit_analysis || '');
     onClose();
   };
 
@@ -113,7 +114,8 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
     return 'Poor Match';
   };
 
-  if (!data || !data.content) {
+  
+  if (!data || (!data.content && !data.fit_analysis)) {
     return null;
   }
 
@@ -193,7 +195,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
                   value={editContent}
                   onChange={(e) => {
                     setEditContent(e.target.value);
-                    onUnsavedChanges(e.target.value !== data?.content);
+                    onUnsavedChanges(e.target.value !== (data?.content || data?.fit_analysis));
                   }}
                   style={{
                     width: '100%',
@@ -265,7 +267,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
                 }
               }}
             >
-              <ReactMarkdown>{data.content}</ReactMarkdown>
+              <ReactMarkdown>{data.content || data.fit_analysis}</ReactMarkdown>
             </Box>
 
             {/* Key Matches */}

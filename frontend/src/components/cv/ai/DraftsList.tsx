@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useAIStore, useCVDrafts } from '../../../stores/aiStore';
 import { useNotifications } from '../../../stores/uiStore';
+import { aiService } from '../../../services/aiService';
 import DraftSection from './DraftSection';
 
 interface DraftsListProps {
@@ -56,6 +57,9 @@ const DraftsList: React.FC<DraftsListProps> = ({
 
   const loadDrafts = useCallback(async () => {
     try {
+      // Clear cache before fetching to ensure we get fresh data from backend
+      // This is especially important for drafts that complete in background
+      aiService.clearCacheForCV(cvId);
       await getCVDrafts(cvId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load drafts';
@@ -64,6 +68,8 @@ const DraftsList: React.FC<DraftsListProps> = ({
   }, [cvId, getCVDrafts, showError]);
 
   const handleDraftChange = useCallback(() => {
+    // The store already updates the drafts list when approve/discard is called
+    // Just trigger the parent callback if provided
     onDraftChange?.();
   }, [onDraftChange]);
 

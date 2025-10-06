@@ -44,6 +44,7 @@ import {
   JobDescriptionSummary
 } from '../ai'
 import { useAISuggestionsStore } from '../../../stores/aiSuggestionsStore'
+import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext'
 import { useActiveJobDescription, useAIStore } from '../../../stores/aiStore'
 
 interface SectionManagerSidebarProps {
@@ -60,6 +61,8 @@ interface SectionManagerSidebarProps {
   onDragStart: (_event: any) => void
   onDragEnd: (_event: any) => void
   onContentUpdate?: (content: string, sectionType: string) => void
+  onUpdateCV?: (cvData: any) => void
+  onSave?: (cvData: any, message?: string) => Promise<void>
   activeTab?: number
   onTabChange?: (tab: number) => void
 }
@@ -77,6 +80,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   onDragStart,
   onDragEnd,
   onContentUpdate,
+  onUpdateCV,
+  onSave,
   activeTab: externalActiveTab,
   onTabChange
 }) => {
@@ -87,8 +92,12 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const {
     suggestionsLoading,
     generateAllSuggestions,
-    clearAllSuggestions
+    clearAllSuggestions,
+    setSuggestionsLoading
   } = useAISuggestionsStore()
+  
+  // Global polling context
+  const { addTask, removeTask, activeTasks } = useAITaskPollingContext()
   
   // AI store for job description management
   const { setActiveJobDescription } = useAIStore()
@@ -109,18 +118,66 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   // Handle generating AI suggestions
   const handleGenerateSuggestions = useCallback(async () => {
     if (activeJobDescription && cvId) {
-      await generateAllSuggestions(cvId, activeJobDescription.id)
+      try {
+        // Create AI enhancement task using background task API
+        const enhancementId = await generateAllSuggestions(cvId, activeJobDescription.id);
+        
+        if (enhancementId) {
+          // Add the task to global polling system
+          addTask({
+            id: enhancementId,
+            type: 'ai_enhancement',
+            cvId: cvId,
+            isGenerating: true
+          });
+        }
+        
+      } catch (error) {
+        console.error('Error generating suggestions:', error);
+      }
     }
-  }, [activeJobDescription, cvId, generateAllSuggestions])
+  }, [activeJobDescription, cvId, generateAllSuggestions, addTask])
   
-  // Clear suggestions when job description changes (only when ID actually changes)
+  // Clear suggestions when job description changes (only when switching between different JDs)
   useEffect(() => {
     const currentId = activeJobDescription?.id
-    if (currentId !== prevJobDescriptionId.current) {
+    // Only clear if we're switching from one job description to another
+    // Don't clear on initial load (undefined -> job description) or when unselecting (job description -> undefined)
+    if (currentId !== prevJobDescriptionId.current && prevJobDescriptionId.current !== undefined && currentId !== undefined) {
       clearAllSuggestions()
-      prevJobDescriptionId.current = currentId
     }
-  }, [activeJobDescription?.id])
+    prevJobDescriptionId.current = currentId
+  }, [activeJobDescription?.id, clearAllSuggestions])
+
+  // Monitor global polling tasks for AI enhancements and restore button state
+  useEffect(() => {
+    // Check if there's an active generating task for this CV and restore button state
+    const hasGeneratingTask = Array.from(activeTasks.values()).some(
+      task => task.type === 'ai_enhancement' && task.cvId === cvId && task.isGenerating
+    );
+    
+    if (hasGeneratingTask && !suggestionsLoading) {
+      setSuggestionsLoading(true);
+    }
+    
+    // Check for completed AI enhancement tasks
+    for (const [taskId, task] of activeTasks) {
+      if (task.type === 'ai_enhancement' && task.cvId === cvId && !task.isGenerating) {
+        if (task.generationError) {
+          // Clear loading state on error
+          setSuggestionsLoading(false);
+        } else {
+          // Ensure loading state is cleared when task completes
+          if (suggestionsLoading) {
+            setSuggestionsLoading(false);
+          }
+        }
+        
+        // Remove the completed task from global polling
+        removeTask(taskId);
+      }
+    }
+  }, [activeTasks, cvId, suggestionsLoading, setSuggestionsLoading, removeTask])
   return (
     <Paper sx={{ 
       width: 350, 
@@ -358,6 +415,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                 onGenerateSuggestions={handleGenerateSuggestions}
                 suggestionsLoading={suggestionsLoading}
                 onAddToCV={onContentUpdate}
+                onUpdateCV={onUpdateCV}
+                onSave={onSave}
               />
             </Stack>
           </>

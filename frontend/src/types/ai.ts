@@ -41,6 +41,62 @@ export interface ContentEnhancementResponse {
   tokens_used: number;
   generation_time: number;
   model_used: string;
+  is_generating: boolean;
+  generation_error?: string;
+}
+
+export interface ContentEnhancementCreateResponse {
+  enhancement_id: string;
+  is_generating: boolean;
+}
+
+// AI Enhancement Types (for Enhance CV functionality)
+export interface AIEnhancementRequest {
+  job_description_id: string;
+}
+
+/**
+ * Enhanced skills suggestion data structure
+ */
+export interface EnhancementSkillsData {
+  technical: Array<{ skill: string; reasoning: string }>;
+  soft: Array<{ skill: string; reasoning: string }>;
+}
+
+/**
+ * Enhanced professional summary data structure
+ */
+export interface EnhancementSummaryData {
+  suggested_text: string;
+  original_text: string;
+  key_changes: string[];
+}
+
+/**
+ * Complete AI enhancement data structure
+ */
+export interface AIEnhancementData {
+  skills?: EnhancementSkillsData;
+  professional_summary?: EnhancementSummaryData;
+  [key: string]: unknown; // Allow for future enhancement types
+}
+
+export interface AIEnhancementResponse {
+  id: string;
+  cv_id: string;
+  job_description_id: string;
+  enhancement_data?: AIEnhancementData;
+  tokens_used: number;
+  generation_time: number;
+  model_used?: string;
+  is_generating: boolean;
+  generation_error?: string;
+  created_at: string;
+}
+
+export interface AIEnhancementCreateResponse {
+  enhancement_id: string;
+  is_generating: boolean;
 }
 
 // ATS Optimization Types
@@ -109,6 +165,8 @@ export interface JobDescription {
   source_url?: string;
   created_at: string;
   updated_at: string;
+  is_parsing?: boolean;
+  parse_error?: string;
 }
 
 export interface JobDescriptionRequest {
@@ -189,6 +247,7 @@ export interface InlineDiffState {
   isPanelOpen: boolean;
   highlightMode: 'all' | 'pending' | 'approved';
   error?: string;
+  cvId?: string; // Track which CV is being edited for cache clearing
 }
 
 // AI Store State
@@ -199,6 +258,8 @@ export interface AIStoreState {
   suggestions: Record<string, AISuggestionState>; // keyed by content hash
   jobDescriptions: JobDescription[];
   activeJobDescriptionId?: string;
+  activeJobDescriptionIdPerCV: Record<string, string>; // Map of cvId -> activeJobDescriptionId
+  hiddenJobDescriptionIds: string[]; // IDs of job descriptions hidden from sidebar
   inlineDiff: InlineDiffState;
   drafts: DraftState;
 }
@@ -236,6 +297,8 @@ export interface DraftResponse {
   tokens_used: number;
   generation_time: number;
   created_at: string;
+  is_generating: boolean;
+  generation_error?: string;
 }
 
 export interface DraftListResponse {

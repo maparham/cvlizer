@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from src.services.ai_service import generate_cv_section, parse_cv_text_with_openai
+from src.services.ai_usage_service import calculate_cost
 import json
 
 
@@ -30,7 +31,7 @@ class TestAIService:
         assert result["section_content"] == "Generated content here"
         assert result["key_points"] == ["Point 1", "Point 2"]
         assert result["tokens_used"] == 150
-        assert result["model_used"] == "gpt-4o-mini"
+        assert result["model_used"] == "gpt-5-nano"
         assert "generation_time" in result
     
     @pytest.mark.asyncio
@@ -148,3 +149,46 @@ class TestAIService:
             
             assert result["personal_info"]["full_name"] == ""
             assert result["professional_summary"]["content"] == ""
+
+
+class TestAIUsageService:
+    """Test cases for AI usage service pricing calculations"""
+    
+    def test_calculate_cost_gpt_4o_mini(self):
+        """Test cost calculation for GPT-4o Mini"""
+        # 1000 input tokens + 500 output tokens
+        cost = calculate_cost("gpt-4o-mini", 1000, 500)
+        expected = (1000 / 1_000_000) * 0.150 + (500 / 1_000_000) * 0.600
+        assert abs(cost - expected) < 0.000001  # Allow for floating point precision
+    
+    def test_calculate_cost_gpt_5_mini(self):
+        """Test cost calculation for GPT-5 Mini"""
+        # 1000 input tokens + 500 output tokens
+        cost = calculate_cost("gpt-5-mini", 1000, 500)
+        expected = (1000 / 1_000_000) * 0.250 + (500 / 1_000_000) * 2.000
+        assert abs(cost - expected) < 0.000001  # Allow for floating point precision
+    
+    def test_calculate_cost_gpt_5_nano(self):
+        """Test cost calculation for GPT-5 Nano"""
+        # 1000 input tokens + 500 output tokens
+        cost = calculate_cost("gpt-5-nano", 1000, 500)
+        expected = (1000 / 1_000_000) * 0.050 + (500 / 1_000_000) * 0.400
+        assert abs(cost - expected) < 0.000001  # Allow for floating point precision
+    
+    def test_calculate_cost_unknown_model(self):
+        """Test cost calculation for unknown model (should use default pricing)"""
+        cost = calculate_cost("unknown-model", 1000, 500)
+        expected = (1000 / 1_000_000) * 0.150 + (500 / 1_000_000) * 0.600
+        assert abs(cost - expected) < 0.000001  # Allow for floating point precision
+    
+    def test_calculate_cost_zero_tokens(self):
+        """Test cost calculation with zero tokens"""
+        cost = calculate_cost("gpt-5-nano", 0, 0)
+        assert cost == 0.0
+    
+    def test_calculate_cost_large_numbers(self):
+        """Test cost calculation with large token numbers"""
+        # 1 million input tokens + 500k output tokens for GPT-5 Mini
+        cost = calculate_cost("gpt-5-mini", 1_000_000, 500_000)
+        expected = 1.0 * 0.250 + 0.5 * 2.000  # $0.25 + $1.00 = $1.25
+        assert abs(cost - 1.25) < 0.000001

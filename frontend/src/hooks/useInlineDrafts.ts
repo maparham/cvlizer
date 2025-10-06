@@ -56,18 +56,15 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
   // Update state when drafts change - use a more stable comparison
   useEffect(() => {
     if (drafts && drafts.length >= 0) {
-      // Filter out drafts for sections that already exist in the CV
+      // Filter out drafts that are still generating - wait for completion
       const filteredDrafts = drafts.filter(draft => {
-        // For why_good_fit drafts, check if the section already exists in CV data
-        if (draft.section_type === 'why_good_fit') {
-          // Check if why_good_fit section exists and has content
-          const hasWhyGoodFitSection = cvData?.why_good_fit && 
-            (cvData.why_good_fit.content || cvData.why_good_fit.fit_analysis);
-          
-          if (hasWhyGoodFitSection) {
-            return false; // Don't show draft if section already exists with content
-          }
+        // Don't show drafts that are still generating - wait for completion
+        if (draft.is_generating) {
+          return false;
         }
+
+        // Show all completed drafts, even if the section already exists
+        // This allows users to regenerate sections multiple times
         return true;
       });
       
@@ -170,26 +167,20 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
     });
   }, [state.drafts, state.draftPositions]);
 
-  // Handle draft approval
+  // Handle draft approval - no need to update local state,
+  // the effect will sync from Zustand store automatically
   const handleDraftApproved = useCallback((draftId: string) => {
-    setState(prev => ({
-      ...prev,
-      drafts: prev.drafts.filter(draft => draft.id !== draftId),
-      draftPositions: new Map(
-        Array.from(prev.draftPositions.entries()).filter(([id]) => id !== draftId)
-      ),
-    }));
+    // The store has already been updated by InlineDraftSection
+    // This is just a placeholder callback for parent components
+    // The useEffect watching 'drafts' will handle the UI update
   }, []);
 
-  // Handle draft rejection
+  // Handle draft rejection - no need to update local state,
+  // the effect will sync from Zustand store automatically
   const handleDraftRejected = useCallback((draftId: string) => {
-    setState(prev => ({
-      ...prev,
-      drafts: prev.drafts.filter(draft => draft.id !== draftId),
-      draftPositions: new Map(
-        Array.from(prev.draftPositions.entries()).filter(([id]) => id !== draftId)
-      ),
-    }));
+    // The store has already been updated by InlineDraftSection
+    // This is just a placeholder callback for parent components
+    // The useEffect watching 'drafts' will handle the UI update
   }, []);
 
   return {

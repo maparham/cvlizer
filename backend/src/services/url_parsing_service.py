@@ -46,7 +46,7 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 logger = logging.getLogger(__name__)
 
 
-def parse_job_url(url: str) -> Dict[str, Any]:
+def parse_job_url(url: str, user_id: str = None, db_session = None) -> Dict[str, Any]:
     """
     Parse a job posting URL and extract job description content using OpenAI.
     
@@ -74,7 +74,7 @@ def parse_job_url(url: str) -> Dict[str, Any]:
             }
         
         # Use OpenAI to intelligently parse and structure the content
-        return _parse_with_openai(raw_content, url)
+        return _parse_with_openai(raw_content, url, user_id, db_session)
             
     except ValueError as e:
         # These are user-friendly error messages from _extract_raw_content
@@ -335,7 +335,7 @@ def _extract_raw_content(url: str) -> str:
         raise ValueError("Unable to extract content from this URL. Please copy and paste the job description manually using the 'Text' tab.")
 
 
-def _parse_with_openai(raw_content: str, url: str) -> Dict[str, Any]:
+def _parse_with_openai(raw_content: str, url: str, user_id: str = None, db_session = None) -> Dict[str, Any]:
     """Parse job description content using OpenAI AI service."""
     try:
         # Import here to avoid circular imports
@@ -346,7 +346,7 @@ def _parse_with_openai(raw_content: str, url: str) -> Dict[str, Any]:
             from src.services.ai_service import extract_job_description_with_ai
         
         # Use the AI service to parse the content
-        result = extract_job_description_with_ai(raw_content, url)
+        result = extract_job_description_with_ai(raw_content, url, user_id=user_id, db_session=db_session)
         
         # Check if AI service returned an error
         if result.get("error"):

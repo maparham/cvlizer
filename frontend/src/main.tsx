@@ -51,10 +51,13 @@ const MissingKeyError = () => (
     }}>
       <h2 style={{ color: '#d32f2f', marginBottom: '1rem' }}>Configuration Error</h2>
       <p style={{ color: '#666', marginBottom: '1rem' }}>
-        Missing Clerk Publishable Key. Please check your environment configuration.
+        Missing or invalid Clerk Publishable Key. Please check your environment configuration.
       </p>
       <p style={{ color: '#888', fontSize: '0.9rem' }}>
-        Set VITE_CLERK_PUBLISHABLE_KEY in your .env file
+        Set VITE_CLERK_PUBLISHABLE_KEY in your .env.local file with a valid Clerk publishable key
+      </p>
+      <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+        Get your key from: https://dashboard.clerk.com/
       </p>
     </div>
   </div>
@@ -63,17 +66,18 @@ const MissingKeyError = () => (
 // Log missing key for diagnostics but don't throw
 if (!PUBLISHABLE_KEY) {
   console.error("Missing Clerk Publishable Key - VITE_CLERK_PUBLISHABLE_KEY not set");
+  console.error("Please set VITE_CLERK_PUBLISHABLE_KEY in your .env file");
 }
 
 // Ensure your index.html contains a <div id="root"></div> element for React to mount the app.
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {PUBLISHABLE_KEY ? (
+    {PUBLISHABLE_KEY && PUBLISHABLE_KEY !== 'pk_test_placeholder' ? (
       <ClerkProvider 
         publishableKey={PUBLISHABLE_KEY} 
         afterSignOutUrl="/"
-        afterSignInUrl="/login-redirect"
-        afterSignUpUrl="/login-redirect"
+        signInFallbackRedirectUrl="/login-redirect"
+        signUpFallbackRedirectUrl="/login-redirect"
       >
         <App />
       </ClerkProvider>

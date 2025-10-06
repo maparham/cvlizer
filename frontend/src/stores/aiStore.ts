@@ -27,7 +27,7 @@ import {
   AIFeatureStatus,
   JobDescription,
   TempCVState,
-  JobFitAnalysisResponse,
+  DraftResponse,
   // InlineDiffState - unused import removed
 } from '../types/ai';
 import { aiService } from '../services/aiService';
@@ -38,11 +38,10 @@ interface AIStoreActions {
   setFeatureStatus: (status: Partial<AIFeatureStatus>) => void;
 
   // Job fit analysis actions
-  analyzeJobFit: (cvId: string, jobDescriptionId: string) => Promise<JobFitAnalysisResponse>;
+  analyzeJobFit: (cvId: string, jobDescriptionId: string) => Promise<DraftResponse>;
   clearJobFitAnalysis: () => void;
 
   // Draft management actions
-  createJobFitDraft: (cvId: string, jobDescriptionId: string) => Promise<any>;
   getCVDrafts: (cvId: string) => Promise<any[]>;
   approveWhyGoodFitDraft: (cvId: string, draftId: string) => Promise<any>;
   deleteWhyGoodFitDraft: (cvId: string) => Promise<void>;
@@ -53,16 +52,29 @@ interface AIStoreActions {
   clearATSOptimization: () => void;
 
   // Content enhancement actions
-  enhanceContent: (cvId: string, content: string, contentType: string) => Promise<any>;
   clearSuggestions: () => void;
   acceptSuggestion: (suggestionId: string, suggestionIndex: number) => void;
   rejectSuggestion: (suggestionId: string) => void;
 
   // Job description actions
-  loadJobDescriptions: () => Promise<void>;
-  createJobDescription: (jobDescription: Omit<JobDescription, 'id' | 'cv_id' | 'created_at' | 'updated_at'>) => Promise<JobDescription>;
+  loadJobDescriptions: (cvId: string) => Promise<void>;
+  createJobDescription: (cvId: string, jobDescription: Omit<JobDescription, 'id' | 'cv_id' | 'created_at' | 'updated_at'>) => Promise<JobDescription>;
+  updateJobDescription: (jobDescriptionId: string, jobDescription: Partial<Omit<JobDescription, 'id' | 'cv_id' | 'created_at' | 'updated_at'>>) => Promise<JobDescription>;
   deleteJobDescription: (jobDescriptionId: string) => Promise<void>;
   setActiveJobDescription: (jobDescriptionId: string | undefined) => void;
+  hideJobDescriptionFromSidebar: (jobDescriptionId: string) => void;
+  showJobDescriptionInSidebar: (jobDescriptionId: string) => void;
+  clearJobDescriptionsForCV: (cvId: string) => void;
+  clearDraftsForCV: (cvId: string) => void;
+  clearAllDrafts: () => void;
+
+  // Background task actions
+  parseJobDescriptionUrl: (cvId: string, url: string) => Promise<any>;
+  enhanceContent: (cvId: string, content: string, contentType: string) => Promise<any>;
+  createJobFitDraft: (cvId: string, jobDescriptionId: string) => Promise<any>;
+  updateJobDescriptionStatus: (jobDescriptionId: string) => Promise<JobDescription>;
+  updateDraftStatus: (draftId: string) => Promise<any>;
+  updateContentEnhancementStatus: (enhancementId: string) => Promise<any>;
 
   // Inline diff actions
   generateInlineSuggestions: (cvId: string, jobDescriptionId: string) => Promise<void>;
@@ -96,7 +108,9 @@ const initialState: AIStoreState = {
   },
   suggestions: {},
   jobDescriptions: [],
-  activeJobDescriptionId: typeof window !== 'undefined' ? localStorage.getItem('activeJobDescriptionId') || undefined : undefined,
+  activeJobDescriptionId: undefined, // This will be set per CV when loading
+  activeJobDescriptionIdPerCV: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('activeJobDescriptionIdPerCV') || '{}') : {},
+  hiddenJobDescriptionIds: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('hiddenJobDescriptionIds') || '[]') : [],
   inlineDiff: {
     tempCV: null,
     suggestions: [],
@@ -146,21 +160,38 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       },
 
       // Job fit analysis actions
-      analyzeJobFit: async (cvId: string, jobDescriptionId: string): Promise<JobFitAnalysisResponse> => {
+      analyzeJobFit: async (cvId: string, jobDescriptionId: string): Promise<DraftResponse> => {
         set((state) => ({
           jobFitAnalysis: { ...state.jobFitAnalysis, isAnalyzing: true, error: undefined },
         }));
 
         try {
           const result = await aiService.analyzeJobFit(cvId, { job_description_id: jobDescriptionId });
+          
+          // Extract job fit analysis data from draft_data
+          const analysisData = result.draft_data || {};
+          
           set((state) => ({
             jobFitAnalysis: {
               ...state.jobFitAnalysis,
               isAnalyzing: false,
-              lastAnalysis: result,
+              lastAnalysis: {
+                ...result,
+                confidence_score: analysisData.confidence_score || 0,
+                fit_analysis: analysisData.fit_analysis || '',
+                key_matches: analysisData.key_matches || [],
+                missing_skills: analysisData.missing_skills || [],
+                strengths: analysisData.strengths || [],
+                weaknesses: analysisData.weaknesses || [],
+                suggested_improvements: analysisData.suggested_improvements || [],
+                tokens_used: result.tokens_used || 0,
+                generation_time: result.generation_time || 0,
+                model_used: result.ai_model || 'gpt-4o-mini',
+              },
               error: undefined,
             },
           }));
+          
           return result;
         } catch (error) {
           set((state) => ({
@@ -181,35 +212,6 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       },
 
       // Draft management actions
-      createJobFitDraft: async (cvId: string, jobDescriptionId: string) => {
-        set((state) => ({
-          drafts: { ...state.drafts, isLoading: true, error: undefined },
-        }));
-
-        try {
-          const draft = await aiService.createJobFitDraft(cvId, jobDescriptionId);
-          
-          set((state) => ({
-            drafts: {
-              ...state.drafts,
-              drafts: [...state.drafts.drafts, draft],
-              isLoading: false,
-              error: undefined,
-            },
-          }));
-          
-          return draft;
-        } catch (error) {
-          set((state) => ({
-            drafts: {
-              ...state.drafts,
-              isLoading: false,
-              error: error instanceof Error ? error.message : 'Failed to create draft',
-            },
-          }));
-          throw error;
-        }
-      },
 
       getCVDrafts: async (cvId: string) => {
         set((state) => ({
@@ -219,14 +221,20 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
         try {
           const drafts = await aiService.getCVDrafts(cvId);
           
-          set((state) => ({
-            drafts: {
-              ...state.drafts,
-              drafts,
-              isLoading: false,
-              error: undefined,
-            },
-          }));
+          set((state) => {
+            // Clear existing drafts for this CV and add new ones
+            // This ensures we don't accumulate drafts from different CVs
+            const otherCVDrafts = state.drafts.drafts.filter(draft => draft.cv_id !== cvId);
+            
+            return {
+              drafts: {
+                ...state.drafts,
+                drafts: [...otherCVDrafts, ...drafts],
+                isLoading: false,
+                error: undefined,
+              },
+            };
+          });
           
           return drafts;
         } catch (error) {
@@ -244,7 +252,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       approveWhyGoodFitDraft: async (cvId: string, draftId: string) => {
         try {
           const result = await aiService.approveWhyGoodFitDraft(cvId, draftId);
-          
+
           // Remove the approved draft from the drafts list
           set((state) => ({
             drafts: {
@@ -252,7 +260,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               drafts: state.drafts.drafts.filter(draft => draft.id !== draftId),
             },
           }));
-          
+
           // Return the full result including updated CV data
           return result;
         } catch (error) {
@@ -269,12 +277,12 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       deleteWhyGoodFitDraft: async (cvId: string) => {
         try {
           await aiService.deleteWhyGoodFitDraft(cvId);
-          
+
           // Remove the draft from the drafts list
           set((state) => ({
             drafts: {
               ...state.drafts,
-              drafts: state.drafts.drafts.filter(draft => 
+              drafts: state.drafts.drafts.filter(draft =>
                 !(draft.cv_id === cvId && draft.section_type === 'why_good_fit')
               ),
             },
@@ -330,55 +338,6 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       },
 
       // Content enhancement actions
-      enhanceContent: async (cvId: string, content: string, contentType: string) => {
-        const suggestionId = `${cvId}-${content.substring(0, 50)}`;
-        
-        set((state) => ({
-          suggestions: {
-            ...state.suggestions,
-            [suggestionId]: {
-              id: suggestionId,
-              originalContent: content,
-              suggestions: [],
-              isLoading: true,
-              error: undefined,
-            },
-          },
-        }));
-
-        try {
-          const result = await aiService.enhanceContent(cvId, {
-            original_content: content,
-            content_type: contentType,
-          });
-
-          set((state) => ({
-            suggestions: {
-              ...state.suggestions,
-              [suggestionId]: {
-                ...state.suggestions[suggestionId],
-                suggestions: result.suggestions,
-                isLoading: false,
-                error: undefined,
-              },
-            },
-          }));
-
-          return result;
-        } catch (error) {
-          set((state) => ({
-            suggestions: {
-              ...state.suggestions,
-              [suggestionId]: {
-                ...state.suggestions[suggestionId],
-                isLoading: false,
-                error: error instanceof Error ? error.message : 'Failed to enhance content',
-              },
-            },
-          }));
-          throw error;
-        }
-      },
 
       clearSuggestions: () => {
         set({ suggestions: {} });
@@ -423,18 +382,33 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       },
 
       // Job description actions
-      loadJobDescriptions: async () => {
+      loadJobDescriptions: async (cvId: string) => {
         try {
-          const jobDescriptions = await aiService.getJobDescriptions();
-          set({ jobDescriptions });
+          const jobDescriptions = await aiService.getJobDescriptions(cvId);
+          
+          // Replace job descriptions for this CV only (CV-scoped)
+          set((state) => {
+            // Remove old job descriptions for this CV and add new ones
+            const otherCVJobDescriptions = state.jobDescriptions.filter(jd => jd.cv_id !== cvId);
+            const newJobDescriptions = [...otherCVJobDescriptions, ...jobDescriptions];
+            
+            // Restore the CV-specific active job description selection
+            const activeIdForCV = state.activeJobDescriptionIdPerCV[cvId];
+            const isActiveIdValid = activeIdForCV && jobDescriptions.some(jd => jd.id === activeIdForCV);
+            
+            return {
+              jobDescriptions: newJobDescriptions,
+              activeJobDescriptionId: isActiveIdValid ? activeIdForCV : state.activeJobDescriptionId,
+            };
+          });
         } catch (error) {
           console.error('Failed to load job descriptions:', error);
         }
       },
 
-      createJobDescription: async (jobDescription) => {
+      createJobDescription: async (cvId: string, jobDescription) => {
         try {
-          const newJobDescription = await aiService.createJobDescription(jobDescription);
+          const newJobDescription = await aiService.createJobDescription(cvId, jobDescription);
           set((state) => ({
             jobDescriptions: [...state.jobDescriptions, newJobDescription],
           }));
@@ -445,15 +419,44 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
         }
       },
 
+      updateJobDescription: async (jobDescriptionId: string, jobDescription) => {
+        try {
+          const updatedJobDescription = await aiService.updateJobDescription(jobDescriptionId, jobDescription);
+          set((state) => ({
+            jobDescriptions: state.jobDescriptions.map(jd =>
+              jd.id === jobDescriptionId ? updatedJobDescription : jd
+            ),
+          }));
+          return updatedJobDescription;
+        } catch (error) {
+          console.error('Failed to update job description:', error);
+          throw error;
+        }
+      },
+
       deleteJobDescription: async (jobDescriptionId: string) => {
         try {
           await aiService.deleteJobDescription(jobDescriptionId);
-          set((state) => ({
-            jobDescriptions: state.jobDescriptions.filter(jd => jd.id !== jobDescriptionId),
-            activeJobDescriptionId: state.activeJobDescriptionId === jobDescriptionId 
-              ? undefined 
-              : state.activeJobDescriptionId,
-          }));
+          set((state) => {
+            // Find the CV this job description belongs to
+            const jobDescription = state.jobDescriptions.find(jd => jd.id === jobDescriptionId);
+            const cvId = jobDescription?.cv_id;
+            
+            // Clean up per-CV map if this was the active selection for that CV
+            const newMap = { ...state.activeJobDescriptionIdPerCV };
+            if (cvId && newMap[cvId] === jobDescriptionId) {
+              delete newMap[cvId];
+              localStorage.setItem('activeJobDescriptionIdPerCV', JSON.stringify(newMap));
+            }
+            
+            return {
+              jobDescriptions: state.jobDescriptions.filter(jd => jd.id !== jobDescriptionId),
+              activeJobDescriptionId: state.activeJobDescriptionId === jobDescriptionId 
+                ? undefined 
+                : state.activeJobDescriptionId,
+              activeJobDescriptionIdPerCV: newMap,
+            };
+          });
         } catch (error) {
           console.error('Failed to delete job description:', error);
           throw error;
@@ -461,19 +464,330 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       },
 
       setActiveJobDescription: (jobDescriptionId) => {
-        set({ activeJobDescriptionId: jobDescriptionId });
-        // Persist active job description to localStorage
-        if (jobDescriptionId) {
-          localStorage.setItem('activeJobDescriptionId', jobDescriptionId);
-        } else {
-          localStorage.removeItem('activeJobDescriptionId');
+        set((state) => {
+          // Find the CV this job description belongs to
+          let cvId: string | undefined;
+
+          if (jobDescriptionId) {
+            // Setting a new active job description - find its CV
+            const jobDescription = state.jobDescriptions.find(jd => jd.id === jobDescriptionId);
+            cvId = jobDescription?.cv_id;
+          } else {
+            // Clearing active job description - find CV from current active
+            const currentActive = state.jobDescriptions.find(jd => jd.id === state.activeJobDescriptionId);
+            cvId = currentActive?.cv_id;
+          }
+
+          // Update both the current active and the per-CV map
+          const newMap = { ...state.activeJobDescriptionIdPerCV };
+          if (jobDescriptionId && cvId) {
+            newMap[cvId] = jobDescriptionId;
+          } else if (!jobDescriptionId && cvId) {
+            delete newMap[cvId];
+          }
+
+          // Persist per-CV map to localStorage
+          localStorage.setItem('activeJobDescriptionIdPerCV', JSON.stringify(newMap));
+
+          return {
+            activeJobDescriptionId: jobDescriptionId,
+            activeJobDescriptionIdPerCV: newMap,
+          };
+        });
+      },
+
+      hideJobDescriptionFromSidebar: (jobDescriptionId: string) => {
+        set((state) => {
+          // Prevent duplicates - return early if already hidden
+          if (state.hiddenJobDescriptionIds.includes(jobDescriptionId)) {
+            return state;
+          }
+
+          const newHiddenIds = [...state.hiddenJobDescriptionIds, jobDescriptionId];
+          // Persist to localStorage
+          localStorage.setItem('hiddenJobDescriptionIds', JSON.stringify(newHiddenIds));
+          return { hiddenJobDescriptionIds: newHiddenIds };
+        });
+      },
+
+      showJobDescriptionInSidebar: (jobDescriptionId: string) => {
+        set((state) => {
+          const newHiddenIds = state.hiddenJobDescriptionIds.filter(id => id !== jobDescriptionId);
+          // Persist to localStorage
+          localStorage.setItem('hiddenJobDescriptionIds', JSON.stringify(newHiddenIds));
+          return { hiddenJobDescriptionIds: newHiddenIds };
+        });
+      },
+
+      // Background task actions
+      parseJobDescriptionUrl: async (cvId: string, url: string) => {
+        try {
+          const response = await aiService.parseJobDescriptionUrl(cvId, url);
+          
+          // Clear cache to ensure fresh data on next load
+          aiService.clearCacheForCV(cvId);
+          aiService.clearAllCache(); // Clear global job descriptions cache
+          
+          // Always create a placeholder job description immediately
+          if (response.job_description_id) {
+            const placeholderJobDescription: JobDescription = {
+              id: response.job_description_id,
+              title: 'Parsing job description...',
+              company: 'Unknown Company',
+              location: 'Unknown Location',
+              content: 'Parsing job description from URL...',
+              source_url: url,
+              is_parsing: true,
+              parse_error: undefined,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              cv_id: cvId
+            };
+
+            set((state) => {
+              // Update per-CV map
+              const newMap = { ...state.activeJobDescriptionIdPerCV };
+              newMap[cvId] = placeholderJobDescription.id;
+              localStorage.setItem('activeJobDescriptionIdPerCV', JSON.stringify(newMap));
+              
+              return {
+                jobDescriptions: [...state.jobDescriptions, placeholderJobDescription],
+                activeJobDescriptionId: placeholderJobDescription.id,
+                activeJobDescriptionIdPerCV: newMap,
+              };
+            });
+
+            // If parsing is complete immediately, update the placeholder
+            if (!response.is_parsing) {
+              const jobDescription = await aiService.getJobDescriptionStatus(response.job_description_id);
+              set((state) => ({
+                jobDescriptions: state.jobDescriptions.map(jd => 
+                  jd.id === response.job_description_id ? jobDescription : jd
+                ),
+              }));
+            }
+          }
+          
+          return response;
+        } catch (error) {
+          console.error('Failed to parse job description URL:', error);
+          throw error;
         }
+      },
+
+      enhanceContent: async (cvId: string, content: string, contentType: string) => {
+        try {
+          const response = await aiService.enhanceContent(cvId, { 
+            original_content: content, 
+            content_type: contentType 
+          });
+          
+          // If generation is complete immediately, add to suggestions
+          if (!response.is_generating && response.enhancement_id) {
+            const enhancement = await aiService.getContentEnhancementStatus(response.enhancement_id);
+            const suggestionId = `${contentType}-${content.substring(0, 20)}`;
+            set((state) => ({
+              suggestions: {
+                ...state.suggestions,
+                [suggestionId]: {
+                  id: suggestionId,
+                  originalContent: content,
+                  suggestions: enhancement.suggestions || [],
+                  overall_improvements: enhancement.overall_improvements || [],
+                  isLoading: false,
+                  error: undefined,
+                },
+              },
+            }));
+          }
+          
+          return response;
+        } catch (error) {
+          console.error('Failed to enhance content:', error);
+          throw error;
+        }
+      },
+
+      createJobFitDraft: async (cvId: string, jobDescriptionId: string) => {
+        try {
+          const response = await aiService.createJobFitDraft(cvId, jobDescriptionId);
+
+          // Backend deletes any existing why_good_fit draft before creating a new one
+          // So we need to remove any existing why_good_fit drafts from the store
+          set((state) => {
+            // Remove any existing why_good_fit drafts for this CV
+            const filteredDrafts = state.drafts.drafts.filter(
+              draft => !(draft.cv_id === cvId && draft.section_type === 'why_good_fit')
+            );
+
+            // If generation is complete immediately, add the new draft
+            const newDrafts = response.is_generating
+              ? filteredDrafts
+              : [...filteredDrafts, response];
+
+            return {
+              drafts: {
+                ...state.drafts,
+                drafts: newDrafts,
+              },
+            };
+          });
+
+          return response;
+        } catch (error) {
+          console.error('Failed to create job fit draft:', error);
+          throw error;
+        }
+      },
+
+      updateJobDescriptionStatus: async (jobDescriptionId: string) => {
+        try {
+          const updatedJobDescription = await aiService.getJobDescriptionStatus(jobDescriptionId);
+          
+          // If parsing failed, delete the job description from backend and remove from store
+          if (updatedJobDescription.parse_error) {
+            try {
+              // Delete from backend
+              await aiService.deleteJobDescription(jobDescriptionId);
+            } catch (deleteError) {
+              console.error('Failed to delete failed job description from backend:', deleteError);
+              // Continue with frontend cleanup even if backend deletion fails
+            }
+            
+            // Remove from store
+            set((state) => {
+              // Find the CV this job description belongs to
+              const jobDescription = state.jobDescriptions.find(jd => jd.id === jobDescriptionId);
+              const cvId = jobDescription?.cv_id;
+              
+              // Clean up per-CV map if this was the active selection for that CV
+              const newMap = { ...state.activeJobDescriptionIdPerCV };
+              if (cvId && newMap[cvId] === jobDescriptionId) {
+                delete newMap[cvId];
+                localStorage.setItem('activeJobDescriptionIdPerCV', JSON.stringify(newMap));
+              }
+              
+              return {
+                jobDescriptions: state.jobDescriptions.filter(jd => jd.id !== jobDescriptionId),
+                activeJobDescriptionId: state.activeJobDescriptionId === jobDescriptionId 
+                  ? undefined 
+                  : state.activeJobDescriptionId,
+                activeJobDescriptionIdPerCV: newMap,
+              };
+            });
+          } else {
+            // Update the job description in the store
+            set((state) => ({
+              jobDescriptions: state.jobDescriptions.map(jd => 
+                jd.id === jobDescriptionId ? updatedJobDescription : jd
+              ),
+            }));
+          }
+          
+          return updatedJobDescription;
+        } catch (error) {
+          console.error('Failed to update job description status:', error);
+          throw error;
+        }
+      },
+
+      updateDraftStatus: async (draftId: string) => {
+        try {
+          const updatedDraft = await aiService.getDraftStatus(draftId);
+
+          // Update or add the draft in the store
+          set((state) => {
+            const existingDraftIndex = state.drafts.drafts.findIndex(draft => draft.id === draftId);
+
+            let newDrafts;
+            if (existingDraftIndex >= 0) {
+              // Draft exists - update it
+              newDrafts = state.drafts.drafts.map(draft =>
+                draft.id === draftId ? updatedDraft : draft
+              );
+            } else {
+              // Draft doesn't exist - add it (this happens when background task completes)
+              newDrafts = [...state.drafts.drafts, updatedDraft];
+            }
+
+            return {
+              drafts: {
+                ...state.drafts,
+                drafts: newDrafts,
+              },
+            };
+          });
+
+          return updatedDraft;
+        } catch (error) {
+          console.error('Failed to update draft status:', error);
+          throw error;
+        }
+      },
+
+      updateContentEnhancementStatus: async (enhancementId: string) => {
+        try {
+          const updatedEnhancement = await aiService.getContentEnhancementStatus(enhancementId);
+          
+          // Update the enhancement in the store if it exists
+          set((state) => ({
+            suggestions: {
+              ...state.suggestions,
+              [enhancementId]: {
+                ...state.suggestions[enhancementId],
+                isLoading: updatedEnhancement.is_generating,
+                error: updatedEnhancement.generation_error,
+                suggestions: updatedEnhancement.suggestions || [],
+                overall_improvements: updatedEnhancement.overall_improvements || [],
+              },
+            },
+          }));
+          
+          return updatedEnhancement;
+        } catch (error) {
+          console.error('Failed to update content enhancement status:', error);
+          throw error;
+        }
+      },
+
+      clearJobDescriptionsForCV: (cvId: string) => {
+        set((state) => {
+          // Check if current active job description belongs to this CV
+          const currentActiveJD = state.jobDescriptions.find(jd => jd.id === state.activeJobDescriptionId);
+          const shouldClearActive = currentActiveJD?.cv_id === cvId;
+          
+          // Don't remove from activeJobDescriptionIdPerCV - keep it for restoration later
+          return {
+            jobDescriptions: state.jobDescriptions.filter(jd => jd.cv_id !== cvId),
+            activeJobDescriptionId: shouldClearActive ? undefined : state.activeJobDescriptionId,
+          };
+        });
+      },
+
+      clearDraftsForCV: (cvId: string) => {
+        set((state) => ({
+          drafts: {
+            ...state.drafts,
+            drafts: state.drafts.drafts.filter(draft => draft.cv_id !== cvId),
+          },
+        }));
+      },
+
+      clearAllDrafts: () => {
+        set((state) => ({
+          drafts: {
+            ...state.drafts,
+            drafts: [],
+          },
+        }));
       },
 
       // Utility actions
       clearAllData: () => {
         set(initialState);
         aiService.clearAllCache();
+        // Clear per-CV map from localStorage
+        localStorage.removeItem('activeJobDescriptionIdPerCV');
       },
 
       clearCacheForCV: (cvId: string) => {
@@ -481,6 +795,9 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
         set((state) => ({
           jobFitAnalysis: { ...state.jobFitAnalysis, lastAnalysis: undefined },
           atsOptimization: { ...state.atsOptimization, lastAnalysis: undefined },
+          jobDescriptions: state.jobDescriptions.filter(jd => jd.cv_id !== cvId),
+          // Don't clear drafts here to allow background tasks to complete
+          // Drafts will be refreshed from backend when loading the CV
         }));
       },
 
@@ -727,6 +1044,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
             ...state.inlineDiff,
             tempCV,
             isPanelOpen: true,
+            cvId, // Store cvId for cache clearing when exiting
           },
         }));
       },
@@ -744,13 +1062,19 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
           // Update temp CV with accepted changes
           let updatedTempData = state.inlineDiff.tempCV?.tempData;
           const acceptedSuggestion = updatedSuggestions.find(s => s.id === suggestionId);
-          
+
           if (acceptedSuggestion && updatedTempData) {
             // Apply the accepted suggestion to temp data
             if (acceptedSuggestion.type === 'add_keyword' && acceptedSuggestion.section === 'skills') {
+              // Ensure skills object exists before accessing it
+              if (!updatedTempData.skills) {
+                updatedTempData.skills = { technical: [], soft: [] };
+              }
+              // Ensure field path array exists
               if (acceptedSuggestion.fieldPath && !updatedTempData.skills[acceptedSuggestion.fieldPath]) {
                 updatedTempData.skills[acceptedSuggestion.fieldPath] = [];
               }
+              // Add the skill if not already present
               if (acceptedSuggestion.fieldPath && !updatedTempData.skills[acceptedSuggestion.fieldPath].includes(acceptedSuggestion.suggestedValue)) {
                 updatedTempData.skills[acceptedSuggestion.fieldPath].push(acceptedSuggestion.suggestedValue);
               }
@@ -819,6 +1143,13 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       },
 
       exitDiffMode: () => {
+        // Clear ATS optimization cache when exiting diff mode
+        // This prevents suggestions from reappearing after rejection
+        const cvId = get().inlineDiff.cvId;
+        if (cvId) {
+          aiService.clearCacheForCV(cvId);
+        }
+
         set(() => ({
           inlineDiff: {
             ...initialState.inlineDiff,
@@ -874,9 +1205,27 @@ export const useAIFeatureStatus = () => useAIStore((state) => state.featureStatu
 export const useJobFitAnalysis = () => useAIStore((state) => state.jobFitAnalysis);
 export const useATSOptimization = () => useAIStore((state) => state.atsOptimization);
 export const useJobDescriptions = () => useAIStore((state) => state.jobDescriptions);
-export const useActiveJobDescription = () => useAIStore((state) => 
-  state.jobDescriptions.find(jd => jd.id === state.activeJobDescriptionId)
+export const useCVJobDescriptions = (cvId: string) => useAIStore((state) => 
+  state.jobDescriptions.filter(jd => jd.cv_id === cvId), shallow
 );
+export const useVisibleJobDescriptions = () => useAIStore((state) => 
+  state.jobDescriptions.filter(jd => !state.hiddenJobDescriptionIds.includes(jd.id))
+);
+export const useVisibleCVJobDescriptions = (cvId: string) => useAIStore((state) => 
+  state.jobDescriptions.filter(jd => jd.cv_id === cvId && !state.hiddenJobDescriptionIds.includes(jd.id)), shallow
+);
+export const useActiveJobDescription = () => useAIStore((state) => {
+  const activeId = state.activeJobDescriptionId;
+  if (!activeId) return undefined;
+  
+  const jobDescription = state.jobDescriptions.find(jd => jd.id === activeId);
+  // If the active job description is hidden, return undefined
+  if (jobDescription && state.hiddenJobDescriptionIds.includes(activeId)) {
+    return undefined;
+  }
+  
+  return jobDescription;
+});
 export const useSuggestions = () => useAIStore((state) => state.suggestions);
 
 // Inline diff selectors
@@ -888,9 +1237,12 @@ export const useSuggestionPanel = () => useAIStore((state) => state.inlineDiff.i
 
 // Draft selectors
 export const useDrafts = () => useAIStore((state) => state.drafts);
-export const useCVDrafts = (cvId: string) => useAIStore((state) => 
-  state.drafts.drafts.filter(draft => draft.cv_id === cvId)
-, shallow);
+export const useCVDrafts = (cvId: string) => {
+  const drafts = useAIStore((state) => 
+    state.drafts.drafts.filter(draft => draft.cv_id === cvId)
+  , shallow);
+  return drafts;
+};
 export const useWhyGoodFitDraft = (cvId: string) => useAIStore((state) => 
   state.drafts.drafts.find(draft => draft.cv_id === cvId && draft.section_type === 'why_good_fit')
 );

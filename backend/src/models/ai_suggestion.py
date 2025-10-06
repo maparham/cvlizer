@@ -4,7 +4,7 @@ AI suggestion model for storing content enhancement suggestions.
 This module defines the AISuggestion database model for storing
 AI-generated content enhancement suggestions with confidence scores.
 """
-from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, JSON
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .base import Base
@@ -26,10 +26,15 @@ class AISuggestion(Base):
     improvements = Column(JSON, nullable=True)  # List of improvement descriptions
     confidence_score = Column(Integer, nullable=True)
     section_path = Column(String(200), nullable=True)  # Path to the section in CV (e.g., "work_experience.0.achievements.1")
-    ai_model = Column(String(50), default="gpt-4o-mini", nullable=False)
+    ai_model = Column(String(50), nullable=True)  # Default set by application layer from config
     tokens_used = Column(Integer, nullable=True)
     generation_time = Column(Integer, nullable=True)
     is_accepted = Column(String(10), nullable=True)  # "accepted", "rejected", or null
+    
+    # Background task status
+    is_generating = Column(Boolean, default=False, nullable=False)
+    generation_error = Column(Text, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

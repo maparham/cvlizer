@@ -8,7 +8,7 @@
  * - Unsaved changes detection and confirmation dialogs
  * - Integration with CV editor context for state management
  */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -27,6 +27,7 @@ import {
 } from '../../contexts/CVEditorContext'
 import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from './index'
 import { useAIStore } from '../../stores/aiStore'
+import { useAISuggestionsStore } from '../../stores/aiSuggestionsStore'
 
 interface PDFCVEditorProps {
   title?: string
@@ -41,15 +42,34 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
   const { sections, dragDrop, reset } = useCVEditorControls()
   const { changes } = useCVEditorState()
   const { cvData, onUpdateCV, onSave } = useCVEditor()
-  const { loadJobDescriptions } = useAIStore()
-  
+  const { loadJobDescriptions, getCVDrafts } = useAIStore()
+  const { loadLatestAIEnhancement, clearAllSuggestions } = useAISuggestionsStore()
+
+  // Debug wrapper for onUpdateCV
+  const debugOnUpdateCV = useCallback((newCvData: any) => {
+    onUpdateCV(newCvData);
+  }, [onUpdateCV, cvData]);
+
+  // Debug wrapper for onSave
+  const debugOnSave = useCallback(async (newCvData: any, message?: string) => {
+    await onSave(newCvData, message);
+  }, [onSave]);
+
   // Tab state management
   const [sidebarTab, setSidebarTab] = useState(0)
 
-  // Load job descriptions when component mounts
+  // Load job descriptions, drafts, and AI enhancements when CV changes
   useEffect(() => {
-    loadJobDescriptions()
-  }, [loadJobDescriptions])
+    if (cvId) {
+      // Clear suggestions first to prevent showing wrong CV's suggestions
+      clearAllSuggestions()
+
+      // Then load data for the new CV
+      loadJobDescriptions(cvId)
+      getCVDrafts(cvId)
+      loadLatestAIEnhancement(cvId)
+    }
+  }, [cvId, loadJobDescriptions, getCVDrafts, loadLatestAIEnhancement, clearAllSuggestions])
   
   // Handle AI Tools request from header
   useEffect(() => {
@@ -80,37 +100,15 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
           onDragEnd={dragDrop.onDragEnd}
           activeTab={sidebarTab}
           onTabChange={setSidebarTab}
+          onUpdateCV={debugOnUpdateCV}
+          onSave={debugOnSave}
           onContentUpdate={(content, sectionType) => {
             if (sectionType === 'why_good_fit') {
-              try {
-                const whyGoodFitData = JSON.parse(content);
-                const updatedCvData = {
-                  ...cvData,
-                  why_good_fit: whyGoodFitData
-                };
-                
-                // Add the section to the section config if it doesn't exist
-                if (!sections.items.find(s => s.type === 'why_good_fit')) {
-                  const maxOrder = sections.items.length > 0 ? Math.max(...sections.items.map(s => s.order)) : -1;
-                  const newSection = {
-                    id: 'why_good_fit',
-                    type: 'why_good_fit' as const,
-                    title: 'Why I\'m a Good Fit',
-                    visible: true,
-                    order: maxOrder + 1
-                  };
-                  
-                  const updatedSections = [...sections.items, newSection];
-                  updatedCvData.section_config = {
-                    sections: updatedSections
-                  };
-                }
-                
-                onUpdateCV(updatedCvData);
-                onSave(updatedCvData, 'Why I\'m a Good Fit section added');
-              } catch (error) {
-                console.error('Error parsing why_good_fit content:', error);
-              }
+              // Prevent client-side reconstruction of why_good_fit to avoid 422 validation errors
+              // The backend is the source of truth for why_good_fit data structure
+              // This prevents sending incomplete objects missing required fields like confidence_score
+              console.warn('onContentUpdate: Skipping why_good_fit reconstruction to prevent validation errors');
+              return;
             } else if (sectionType && content && (sectionType.includes('skills') || sectionType.includes('professional_summary') || sectionType.includes('work_experience'))) {
               // Handle adding keywords to various sections
               try {
@@ -243,7 +241,6 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                   }
                 }
               } catch (error) {
-                console.error('Error adding keyword:', error);
               }
             }
           }}

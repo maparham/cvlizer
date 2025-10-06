@@ -59,6 +59,14 @@ export const useSectionManagement = ({
                (!skills.languages || skills.languages.length === 0)
       }
       
+      if (sectionId === 'why_good_fit') {
+        const whyGoodFit = data as { content?: string; fit_analysis?: string }
+        // Section is empty if neither content nor fit_analysis exists or is populated
+        const isEmpty = (!whyGoodFit.content || whyGoodFit.content.trim() === '') && 
+               (!whyGoodFit.fit_analysis || whyGoodFit.fit_analysis.trim() === '');
+        return isEmpty;
+      }
+      
       // Generic object check (fallback)
       return Object.keys(data).length === 0
     }
@@ -91,6 +99,7 @@ export const useSectionManagement = ({
     })
     
     // Also include AI-generated sections that have data
+    
     if (cvData.why_good_fit && !isSectionEmpty('why_good_fit', cvData)) {
       sections.push({
         id: 'why_good_fit',

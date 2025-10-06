@@ -1,0 +1,54 @@
+---
+globs: frontend/**/*.ts,frontend/**/*.tsx
+description: Frontend development patterns and conventions for React, TypeScript, and Material-UI
+---
+
+# Frontend Development Patterns
+
+## React & TypeScript
+- Functional components with TypeScript interfaces
+- Use React.FC for type annotations, prefer composition
+- Keep components single-purpose
+
+## State Management
+- Use Zustand stores for global state
+- Custom hooks for reusable state logic
+- Use selectors to prevent unnecessary re-renders
+
+## Material-UI & Styling
+- Use Material-UI components consistently
+- Use sx prop for component-specific styling
+- Mobile-first design with Material-UI breakpoints
+
+## API Integration & Services
+- Use Axios for HTTP requests with error handling
+- TypeScript interfaces for responses
+- Place services in [services/](mdc:frontend/src/services/)
+- Global error handling with interceptors
+
+## Custom Hooks & Utilities
+- Create custom hooks for reusable logic
+- Place in [hooks/](mdc:frontend/src/hooks/) and [utils/](mdc:frontend/src/utils/)
+- Use TypeScript for type safety
+
+## Form Handling & File Upload
+- Use controlled components with validation
+- Material-UI form components
+- Drag-and-drop file upload with validation
+- Show upload progress and clear error messages
+
+## Performance & Optimization
+- React.memo for expensive components
+- useMemo and useCallback for calculations
+- Dynamic imports for code splitting
+- Lazy loading for routes
+
+## Testing
+- React Testing Library for components
+- Test user interactions and accessibility
+- Mock external dependencies
+
+## Code Organization
+- Group related components, use index files
+- Import organization: React, third-party, local, types
+- TypeScript strict mode, avoid `any` type

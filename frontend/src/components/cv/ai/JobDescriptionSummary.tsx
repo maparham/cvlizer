@@ -16,7 +16,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -40,12 +40,15 @@ import {
   Work as WorkIcon,
   Link as LinkIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
+  Close as CloseIcon,
   Check as CheckIcon,
 } from '@mui/icons-material';
-import { useAIStore, useJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
+import { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
 import { JobDescription } from '../../../types/ai';
 import { useNotifications } from '../../../stores/uiStore';
+import { formatRelativeTime } from '../../../utils/formatters';
+import { useJobDescriptionPolling } from '../../../hooks/useJobDescriptionPolling';
+import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
 import JobDescriptionsModal from './JobDescriptionsModal';
 
 interface JobDescriptionSummaryProps {
@@ -75,21 +78,85 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [isGeneratingJobFit, setIsGeneratingJobFit] = useState(false);
 
-  const { deleteJobDescription, setActiveJobDescription, createJobDescription, createJobFitDraft } = useAIStore();
+  const { hideJobDescriptionFromSidebar, setActiveJobDescription, updateJobDescription, createJobFitDraft } = useAIStore();
   const { showSuccess, showError } = useNotifications();
+  const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
 
-  const jobDescriptions = useJobDescriptions();
+  // Use refs to store notification functions to prevent infinite loops
+  const showSuccessRef = useRef(showSuccess);
+  const showErrorRef = useRef(showError);
+  const removeTaskRef = useRef(removeTask);
+  const processedTasksRef = useRef<Set<string>>(new Set());
+
+  // Update refs when functions change
+  useEffect(() => {
+    showSuccessRef.current = showSuccess;
+    showErrorRef.current = showError;
+    removeTaskRef.current = removeTask;
+  }, [showSuccess, showError, removeTask]);
+
+  const jobDescriptions = useVisibleJobDescriptions();
+  const allJobDescriptions = useJobDescriptions();
   const activeJobDescription = useActiveJobDescription();
 
-  const handleJobDescriptionDelete = async (jobDescriptionId: string) => {
-    try {
-      await deleteJobDescription(jobDescriptionId);
-      showSuccess('Job description deleted successfully');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete job description';
-      showError('Error', errorMessage);
+  // Debug log when component mounts and restore button state from global polling
+  useEffect(() => {
+    
+    // Check if there's an active generating task for this CV and restore button state
+    const hasGeneratingTask = Array.from(activeTasks.values()).some(
+      task => task.type === 'draft' && task.cvId === cvId && task.isGenerating
+    );
+    if (hasGeneratingTask && !isGeneratingJobFit) {
+      setIsGeneratingJobFit(true);
     }
-  };
+    
+    // Clear processed tasks when cvId changes
+    processedTasksRef.current.clear();
+  }, [cvId, activeJobDescription, addTask, activeTasks, isGeneratingJobFit]);
+
+  // Use the centralized polling hook for job descriptions
+  useJobDescriptionPolling(allJobDescriptions, {
+    onParsingComplete: () => {
+      showSuccess('Job description parsed successfully');
+    },
+    onParsingError: (_, error) => {
+      showError('URL Parsing Failed', `Failed to parse the job description URL: ${error}`);
+    },
+  });
+
+  // Monitor active tasks for job fit analysis completion
+  useEffect(() => {
+    for (const [taskId, task] of activeTasks) {
+      
+      if (task.type === 'draft' && task.cvId === cvId && !task.isGenerating) {
+        // Check if we've already processed this task to prevent duplicate notifications
+        if (processedTasksRef.current.has(taskId)) {
+          continue;
+        }
+        
+        // Mark task as processed
+        processedTasksRef.current.add(taskId);
+        
+        if (task.generationError) {
+          showErrorRef.current('Error', `Job fit analysis failed: ${task.generationError}`);
+          setIsGeneratingJobFit(false);
+        } else {
+          // Task completed successfully
+          showSuccessRef.current('Job fit analysis completed! Please review and approve the draft in the CV editor.');
+          setIsGeneratingJobFit(false);
+          
+          // Note: No need to reload drafts here - the polling mechanism already updated the draft in the store
+          // Calling getCVDrafts here would remove the just-updated draft and replace with potentially stale API data
+        }
+        removeTaskRef.current(taskId);
+      }
+    }
+  }, [activeTasks, cvId]); // Remove notification functions from dependencies to prevent infinite loops
+
+  const handleJobDescriptionHide = useCallback((jobDescriptionId: string) => {
+    hideJobDescriptionFromSidebar(jobDescriptionId);
+    showSuccess('Job description removed from sidebar');
+  }, [hideJobDescriptionFromSidebar, showSuccess]);
 
   const handleEditJobDescription = useCallback((jobDescription: JobDescription) => {
     setEditingJobDescription(jobDescription);
@@ -110,23 +177,14 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     setIsEditLoading(true);
 
     try {
-      // Store the old job description ID to clear active selection
-      const oldJobDescriptionId = editingJobDescription.id;
-      
-      // Delete the old job description and create a new one
-      await deleteJobDescription(oldJobDescriptionId);
-      const newJobDescription = await createJobDescription({
+      // Update the job description using the proper update API
+      await updateJobDescription(editingJobDescription.id, {
         content: editForm.content,
         title: editForm.title || 'Manual Job Description',
         company: editForm.company || 'Unknown Company',
         location: editForm.location || 'Unknown Location',
       });
-      
-      // Set the new job description as active to maintain selection
-      if (newJobDescription) {
-        setActiveJobDescription(newJobDescription.id);
-      }
-      
+
       setEditDialogOpen(false);
       setEditingJobDescription(null);
       setEditForm({ title: '', company: '', location: '', content: '' });
@@ -137,51 +195,45 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     } finally {
       setIsEditLoading(false);
     }
-  }, [editingJobDescription, editForm, deleteJobDescription, createJobDescription, setActiveJobDescription, showSuccess, showError]);
+  }, [editingJobDescription, editForm, updateJobDescription, showSuccess, showError]);
 
   const handleGenerateJobFit = useCallback(async () => {
     if (!activeJobDescription) {
       showError('Error', 'Please select a job description first');
       return;
     }
-
     setIsGeneratingJobFit(true);
     try {
-      // Create a draft instead of directly saving
-      await createJobFitDraft(cvId, activeJobDescription.id);
-      
-      showSuccess('Job fit analysis draft created successfully');
+      // Backend automatically deletes existing why_good_fit draft and store mirrors this
+      const response = await createJobFitDraft(cvId, activeJobDescription.id);
+
+      // Add the task to global polling if it's still generating
+      if (response.is_generating) {
+        const taskToAdd = {
+          id: response.id,
+          type: 'draft' as const,
+          cvId: cvId,
+          isGenerating: true,
+          data: response,
+        };
+        addTask(taskToAdd);
+        showSuccess('Job fit analysis started, generating in background...');
+      } else {
+        // Task completed immediately
+        setIsGeneratingJobFit(false);
+        showSuccess('Job fit analysis completed successfully');
+      }
     } catch (err) {
+      console.error('Error in handleGenerateJobFit:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate job fit analysis';
       showError('Error', errorMessage);
-    } finally {
       setIsGeneratingJobFit(false);
     }
-  }, [activeJobDescription, cvId, createJobFitDraft, showSuccess, showError]);
+  }, [activeJobDescription, cvId, createJobFitDraft, showSuccess, showError, addTask]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else if (diffInHours < 48) {
-      return 'Yesterday';
-    } else if (diffInHours < 168) { // 7 days
-      const days = Math.floor(diffInHours / 24);
-      return `${days}d ago`;
-    } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-  };
+  const formatDate = useCallback((dateString: string) => {
+    return formatRelativeTime(dateString);
+  }, []);
 
   return (
     <>
@@ -197,7 +249,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
             onClick={() => setModalOpen(true)}
             sx={{ textTransform: 'none' }}
           >
-            Manage ({jobDescriptions.length})
+            Manage ({allJobDescriptions.length})
           </Button>
         </Box>
 
@@ -252,21 +304,55 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
               <Card 
                 variant="outlined" 
                 sx={{ 
-                  border: 1, 
-                  borderColor: 'primary.main',
-                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  border: activeJobDescription.is_parsing || activeJobDescription.parse_error ? 2 : 1, 
+                  borderColor: activeJobDescription.parse_error 
+                    ? 'error.main' 
+                    : activeJobDescription.is_parsing 
+                      ? 'warning.main' 
+                      : 'primary.main',
+                  backgroundColor: activeJobDescription.parse_error 
+                    ? 'rgba(244, 67, 54, 0.04)' 
+                    : activeJobDescription.is_parsing 
+                      ? 'rgba(255, 193, 7, 0.04)' 
+                      : 'rgba(25, 118, 210, 0.04)',
+                  boxShadow: activeJobDescription.parse_error 
+                    ? '0 2px 8px rgba(244, 67, 54, 0.2)' 
+                    : activeJobDescription.is_parsing 
+                      ? '0 2px 8px rgba(255, 193, 7, 0.2)' 
+                      : '0 2px 8px rgba(0,0,0,0.08)',
                   transition: 'all 0.2s ease-in-out',
                   '&:hover': {
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                    boxShadow: activeJobDescription.parse_error 
+                      ? '0 4px 12px rgba(244, 67, 54, 0.3)' 
+                      : activeJobDescription.is_parsing 
+                        ? '0 4px 12px rgba(255, 193, 7, 0.3)' 
+                        : '0 4px 12px rgba(0,0,0,0.12)',
                     transform: 'translateY(-1px)'
                   }
                 }}
               >
                 <CardContent sx={{ pb: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, flex: 1, mr: 1, color: 'primary.main' }}>
-                      {activeJobDescription.title || 'Untitled Job Description'}
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontWeight: 700, 
+                        flex: 1, 
+                        mr: 1, 
+                        color: activeJobDescription.parse_error 
+                          ? 'error.main' 
+                          : activeJobDescription.is_parsing 
+                            ? 'warning.main' 
+                            : 'primary.main',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}
+                    >
+                      {activeJobDescription.is_parsing && !activeJobDescription.parse_error && (
+                        <CircularProgress size={16} sx={{ color: 'warning.main' }} />
+                      )}
+                      {activeJobDescription.parse_error ? 'Parsing Failed' : (activeJobDescription.is_parsing ? 'Loading...' : (activeJobDescription.title || 'Untitled Job Description'))}
                     </Typography>
                     <Box>
                       <Tooltip title="Edit">
@@ -283,56 +369,87 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Delete">
+                      <Tooltip title="Remove from sidebar">
                         <IconButton
                           size="small"
-                          onClick={() => handleJobDescriptionDelete(activeJobDescription.id)}
-                          color="error"
+                          onClick={() => handleJobDescriptionHide(activeJobDescription.id)}
                           sx={{
                             '&:hover': {
-                              backgroundColor: 'error.light',
-                              color: 'error.contrastText'
+                              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              color: 'text.secondary'
                             }
                           }}
                         >
-                          <DeleteIcon fontSize="small" />
+                          <CloseIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>
                   </Box>
                   
                   {/* Company, Location, and URL as Chips */}
-                  {(activeJobDescription.company || activeJobDescription.location || activeJobDescription.source_url) && (
+                  {(activeJobDescription.company || activeJobDescription.location || activeJobDescription.source_url || activeJobDescription.is_parsing) && (
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
-                      {activeJobDescription.company && (
+                      {activeJobDescription.is_parsing ? (
                         <Chip
-                          icon={<WorkIcon />}
-                          label={activeJobDescription.company}
+                          icon={<CircularProgress size={16} />}
+                          label="Parsing job description..."
                           size="small"
                           variant="outlined"
                           sx={{ 
-                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                            borderColor: 'primary.light',
+                            backgroundColor: 'rgba(255, 193, 7, 0.08)',
+                            borderColor: 'warning.light',
                             '& .MuiChip-icon': {
                               fontSize: '16px'
                             }
                           }}
                         />
-                      )}
-                      {activeJobDescription.location && (
+                      ) : activeJobDescription.parse_error ? (
                         <Chip
-                          icon={<LinkIcon />}
-                          label={activeJobDescription.location}
+                          icon={<CloseIcon />}
+                          label={`Parsing failed: ${activeJobDescription.parse_error}`}
                           size="small"
                           variant="outlined"
                           sx={{ 
-                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                            borderColor: 'primary.light',
+                            backgroundColor: 'rgba(244, 67, 54, 0.08)',
+                            borderColor: 'error.light',
                             '& .MuiChip-icon': {
                               fontSize: '16px'
                             }
                           }}
                         />
+                      ) : (
+                        <>
+                          {activeJobDescription.company && (
+                            <Chip
+                              icon={<WorkIcon />}
+                              label={activeJobDescription.company}
+                              size="small"
+                              variant="outlined"
+                              sx={{ 
+                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                borderColor: 'primary.light',
+                                '& .MuiChip-icon': {
+                                  fontSize: '16px'
+                                }
+                              }}
+                            />
+                          )}
+                          {activeJobDescription.location && (
+                            <Chip
+                              icon={<LinkIcon />}
+                              label={activeJobDescription.location}
+                              size="small"
+                              variant="outlined"
+                              sx={{ 
+                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                borderColor: 'primary.light',
+                                '& .MuiChip-icon': {
+                                  fontSize: '16px'
+                                }
+                              }}
+                            />
+                          )}
+                        </>
                       )}
                       {activeJobDescription.source_url && (
                         <Chip
@@ -366,17 +483,28 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   
                   <Typography
                     variant="body2"
-                    color="text.secondary"
+                    color={activeJobDescription.parse_error 
+                      ? 'error.main' 
+                      : activeJobDescription.is_parsing 
+                        ? 'warning.main' 
+                        : 'text.secondary'
+                    }
                     sx={{
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                       mb: 1.5,
-                      lineHeight: 1.6
+                      lineHeight: 1.6,
+                      fontStyle: activeJobDescription.is_parsing || activeJobDescription.parse_error ? 'italic' : 'normal'
                     }}
                   >
-                    {activeJobDescription.content}
+                    {activeJobDescription.parse_error 
+                      ? `Failed to parse URL: ${activeJobDescription.parse_error}` 
+                      : activeJobDescription.is_parsing 
+                        ? 'Parsing job description from URL...' 
+                        : activeJobDescription.content
+                    }
                   </Typography>
                 </CardContent>
                 
@@ -413,7 +541,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                         )
                       }
                       onClick={onGenerateSuggestions}
-                      disabled={suggestionsLoading}
+                      disabled={suggestionsLoading || activeJobDescription?.is_parsing}
                       sx={{
                         textTransform: 'none',
                         backgroundColor: 'transparent',
@@ -460,7 +588,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                         )
                       }
                       onClick={handleGenerateJobFit}
-                      disabled={isGeneratingJobFit}
+                      disabled={isGeneratingJobFit || activeJobDescription?.is_parsing}
                       sx={{
                         textTransform: 'none',
                         backgroundColor: 'transparent',

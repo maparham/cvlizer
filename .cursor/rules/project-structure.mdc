@@ -1,0 +1,70 @@
+---
+alwaysApply: true
+description: Project structure and architecture guide for CV Optimizer
+---
+
+# CV Optimizer - Project Structure & Architecture
+
+Full-stack AI-powered CV optimization SaaS: FastAPI backend + React/TypeScript frontend.
+
+## Tech Stack
+- **Backend**: FastAPI, SQLAlchemy ORM, SQLite/PostgreSQL, OpenAI integration
+- **Frontend**: React 18, TypeScript, Material-UI, Zustand state management
+- **AI**: OpenAI GPT-4o-mini for parsing and content generation
+- **Auth**: Clerk with JWT tokens
+- **Files**: PDF/DOCX extraction and processing
+
+## Directory Structure
+
+### Backend (`/backend/`)
+- [main.py](mdc:backend/main.py) - Application entry point
+- [src/api/](mdc:backend/src/api/) - API endpoints
+- [src/models/](mdc:backend/src/models/) - Database models
+- [src/services/](mdc:backend/src/services/) - Business logic layer
+- [src/schemas/](mdc:backend/src/schemas/) - Pydantic validation schemas
+- [src/middleware/](mdc:backend/src/middleware/) - Auth and request middleware
+- [src/utils/](mdc:backend/src/utils/) - Utility functions
+- [tests/](mdc:backend/tests/) - Test suite (MVP coverage targets)
+
+### Frontend (`/frontend/`)
+- [src/App.tsx](mdc:frontend/src/App.tsx) - Main application
+- [src/components/](mdc:frontend/src/components/) - Reusable UI components
+- [src/pages/](mdc:frontend/src/pages/) - Page components
+- [src/stores/](mdc:frontend/src/stores/) - Zustand state stores
+- [src/services/](mdc:frontend/src/services/) - API service layer
+- [src/hooks/](mdc:frontend/src/hooks/) - Custom hooks
+- [src/contexts/](mdc:frontend/src/contexts/) - React contexts
+- [src/types/](mdc:frontend/src/types/) - TypeScript types
+- [src/utils/](mdc:frontend/src/utils/) - Utilities
+
+## Architecture Layers
+
+### Backend
+- **API Layer**: FastAPI routers with dependency injection
+- **Service Layer**: Business logic separated from endpoints
+- **Model Layer**: SQLAlchemy ORM with relationships
+- **Middleware**: Auth, CORS, request processing
+- **Background Tasks**: ThreadPoolExecutor for AI processing
+
+### Frontend
+- **Components**: Reusable, composable React components
+- **State**: Zustand stores for global state
+- **Services**: Axios-based API with error handling
+- **Hooks**: Reusable logic and side effects
+- **Types**: Comprehensive TypeScript interfaces
+
+## Core Features
+- CV upload & AI parsing (PDF/DOCX)
+- Job description integration (URL/manual)
+- AI-enhanced content generation
+- Real-time preview with drag-and-drop
+- Clerk authentication
+- Secure file management
+
+## Database Models
+- **Users**: Auth and user management
+- **CVs**: File storage and parsed data
+- **Job Descriptions**: Job requirements
+- **AI Sections**: Generated content
+- **CV History**: Version tracking
+- **AI Usage Logs**: Usage analytics

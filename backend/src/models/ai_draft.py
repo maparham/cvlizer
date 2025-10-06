@@ -26,9 +26,14 @@ class AIDraft(Base):
     draft_data = Column(JSON, nullable=False)
     
     # Metadata
-    ai_model = Column(String(50), default="gpt-4o-mini", nullable=False)
+    ai_model = Column(String(50), nullable=True)  # Default set by application layer from config
     tokens_used = Column(Integer, nullable=True)
     generation_time = Column(Integer, nullable=True)
+    
+    # Background task status fields
+    is_generating = Column(Boolean, default=False, nullable=False)
+    generation_error = Column(Text, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

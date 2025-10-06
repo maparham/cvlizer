@@ -4,6 +4,7 @@ Comprehensive Pydantic schemas for CV data validation with proper type safety.
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import date
+from ..config import AIConfig
 
 
 class PersonalInfoSchema(BaseModel):
@@ -31,6 +32,8 @@ class ProfessionalSummarySchema(BaseModel):
 
 class WhyGoodFitSchema(BaseModel):
     """Schema for AI-generated 'Why I'm a Good Fit' section."""
+    model_config = {"protected_namespaces": (), "extra": "forbid"}
+
     content: str = Field(..., min_length=10, description="Why I'm a good fit content")
     confidence_score: int = Field(..., ge=0, le=100, description="Confidence score (0-100)")
     fit_analysis: str = Field(..., min_length=10, description="Detailed fit analysis")
@@ -41,12 +44,9 @@ class WhyGoodFitSchema(BaseModel):
     weaknesses: List[str] = Field(default_factory=list, description="Areas for improvement")
     tokens_used: int = Field(0, description="Tokens used in generation")
     generation_time: int = Field(0, description="Generation time in milliseconds")
-    model_used: str = Field("gpt-4o-mini", description="AI model used")
+    model_used: str = Field(AIConfig.DEFAULT_MODEL, description="AI model used")
     generated_at: str = Field(..., description="Generation timestamp")
     job_description_id: Optional[str] = Field(None, description="Associated job description ID")
-
-    class Config:
-        extra = "forbid"  # Reject any additional fields
 
 
 class WorkExperienceSchema(BaseModel):

@@ -10,7 +10,7 @@
  * - Provides methods for logging common activities
  * - Handles session management and cleanup
  */
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { activityLogger } from '../services/activityLogger'
 
@@ -34,8 +34,8 @@ export const useActivityLogger = () => {
     }
   }, [isAuthenticated, user?.id])
 
-  // Return logger methods for manual use
-  return {
+  // Return logger methods for manual use - memoized to prevent re-renders
+  return useMemo(() => ({
     logUserAction: activityLogger.logUserAction.bind(activityLogger),
     logError: activityLogger.logError.bind(activityLogger),
     logFormSubmission: activityLogger.logFormSubmission.bind(activityLogger),
@@ -44,5 +44,5 @@ export const useActivityLogger = () => {
     logPageView: activityLogger.logPageView.bind(activityLogger),
     getSessionId: activityLogger.getSessionId.bind(activityLogger),
     setEnabled: activityLogger.setEnabled.bind(activityLogger)
-  }
+  }), [])
 }

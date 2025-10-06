@@ -4,30 +4,33 @@ import { TextField, Typography, Box, Button, Chip, Tooltip, IconButton } from '@
 import { Add as AddIcon, Close as CloseIcon, InfoOutlined as InfoIcon } from '@mui/icons-material'
 import { SectionProps } from '../../../types'
 import SimpleFormSection from '../core/SimpleFormSection'
-import { useAISuggestionsStore } from '../../../stores/aiSuggestionsStore'
+import { useAISuggestionsStore, useValidatedSuggestions } from '../../../stores/aiSuggestionsStore'
 import { useNotifications } from '../../../stores/uiStore'
 
 interface ProfessionalSummarySectionProps extends SectionProps {
+  cvId?: string;
 }
 
-const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges }) => {
+const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, cvId }) => {
   const [showMarkdownPreview, setShowMarkdownPreview] = useState(false)
-  
-  // Get unified AI suggestions store
+
+  // Get unified AI suggestions store with CV validation
   const {
-    allSuggestions,
     dismissSummarySuggestion
   } = useAISuggestionsStore()
-  
+
+  // Use CV-validated selector to prevent cross-CV contamination
+  const allSuggestions = useValidatedSuggestions(cvId || '')
+
   // Get notifications for user feedback
   const { showSuccess } = useNotifications()
-  
+
   // Extract professional summary suggestion from unified store
   const summarySuggestion = allSuggestions?.professional_summary
   const hasSummarySuggestion = summarySuggestion && summarySuggestion.suggested_text
 
   const renderForm = (editData: any, updateData: (field: string, value: any) => void) => {
-    const handleApplySummarySuggestion = () => {
+    const handleApplySummarySuggestion = async () => {
       if (summarySuggestion?.suggested_text) {
         updateData('content', summarySuggestion.suggested_text)
         // Update the editData with the new content for saving
@@ -36,7 +39,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           content: summarySuggestion.suggested_text
         }
         onSave?.(updatedEditData)
-        dismissSummarySuggestion()
+        await dismissSummarySuggestion()
         showSuccess('Professional summary updated with AI suggestion')
       }
     }
@@ -302,7 +305,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
               variant="contained"
               size="small"
               startIcon={<AddIcon />}
-              onClick={() => {
+              onClick={async () => {
                 // Apply the suggestion by updating the CV data
                 // Fix the corrupted data structure by ensuring professional_summary is an object
                 const updatedData = {
@@ -311,7 +314,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
                 }
                 onUpdate(updatedData)
                 onSave?.(updatedData)
-                dismissSummarySuggestion()
+                await dismissSummarySuggestion()
                 showSuccess('Professional summary updated with AI suggestion')
               }}
               sx={{

@@ -37,3 +37,10 @@ Follow core paradigms and best practices.
 - Maintain backward compatibility when possible
 - Test each incremental change
 - Document architectural decisions
+
+## Avoid Unused Code
+- Follow YAGNI: Only implement what you need now
+- Throw explicit errors for unsupported cases instead of generic fallbacks
+- Use specific names that reflect current capabilities
+- Don't add "future-proofing" code without concrete use cases
+- Make limitations clear in error messages and comments

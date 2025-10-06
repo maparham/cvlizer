@@ -45,7 +45,7 @@ export interface BaseSectionProps {
 /**
  * Properties for simple form sections that edit single data objects.
  * Used by sections like PersonalInfo, ProfessionalSummary, and Skills.
- * 
+ *
  * @interface SectionProps
  * @template T - The type of data being edited
  * @property {T} data - The current data object
@@ -54,6 +54,7 @@ export interface BaseSectionProps {
  * @property {boolean} isEditing - Whether the section is in edit mode
  * @property {() => void} onEdit - Callback to enter edit mode
  * @property {() => void} onClose - Callback to exit edit mode
+ * @property {string} [cvId] - CV ID for AI features validation (prevents cross-CV contamination)
  * @property {(sectionId: string, hasChanges: boolean) => void} [onUnsavedChanges] - Track unsaved changes
  * @property {(sectionId: string, itemIndex: number, onCancel: () => void, onStartEdit?: () => void) => 'success' | 'dialog_shown'} [registerIndividualItemEditing] - Register individual item editing
  * @property {() => void} [unregisterIndividualItemEditing] - Unregister individual item editing
@@ -67,6 +68,7 @@ export interface SectionProps<T = unknown> {
   isEditing: boolean
   onEdit: () => void
   onClose: () => void
+  cvId?: string
   onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void
   registerIndividualItemEditing?: (sectionId: string, itemIndex: number, onCancel: () => void, onStartEdit?: () => void) => 'success' | 'dialog_shown'
   unregisterIndividualItemEditing?: () => void

@@ -60,7 +60,7 @@ const DraftSection: React.FC<DraftSectionProps> = ({
 }) => {
   const [isApproving, setIsApproving] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
-  
+
   const { approveWhyGoodFitDraft, deleteWhyGoodFitDraft } = useAIStore();
   const { showSuccess, showError } = useNotifications();
 

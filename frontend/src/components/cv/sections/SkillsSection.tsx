@@ -4,26 +4,29 @@ import { Add as AddIcon, InfoOutlined as InfoIcon } from '@mui/icons-material'
 import { SectionProps } from '../../../types'
 import SimpleFormSection from '../core/SimpleFormSection'
 import SkillsAutocomplete from '../ui/SkillsAutocomplete'
-import { useAISuggestionsStore } from '../../../stores/aiSuggestionsStore'
+import { useAISuggestionsStore, useValidatedSuggestions } from '../../../stores/aiSuggestionsStore'
 import { useNotifications } from '../../../stores/uiStore'
 
 interface SkillsSectionProps extends SectionProps {
+  cvId?: string;
 }
 
-const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose }) => {
+const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, cvId }) => {
   const [newTechnicalSkill, setNewTechnicalSkill] = useState('')
   const [newSoftSkill, setNewSoftSkill] = useState('')
-  
-  // Get unified AI suggestions store
+
+  // Get unified AI suggestions store with CV validation
   const {
-    allSuggestions,
     dismissSkillSuggestion,
     dismissAllSkillSuggestions
   } = useAISuggestionsStore()
-  
+
+  // Use CV-validated selector to prevent cross-CV contamination
+  const allSuggestions = useValidatedSuggestions(cvId || '')
+
   // Get notifications for user feedback
   const { showSuccess } = useNotifications()
-  
+
   // Extract skills suggestions from unified store
   const skillsSuggestions = allSuggestions?.skills || null
   const hasSuggestions = skillsSuggestions && (skillsSuggestions.technical.length > 0 || skillsSuggestions.soft.length > 0)
@@ -96,50 +99,63 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
     }
     
     // AI Suggestions handlers
-    const handleAddSuggestedSkill = (skill: string, type: 'technical' | 'soft') => {
+    const handleAddSuggestedSkill = async (skill: string, type: 'technical' | 'soft') => {
       const updatedData = {
         ...editData,
         [type]: [...(editData[type] || []), skill]
       }
       updateData(type, updatedData[type])
       saveDataImmediately(updatedData, `AI suggested skill "${skill}" added`)
-      dismissSkillSuggestion(skill, type)
+      await dismissSkillSuggestion(skill, type)
     }
-    
-    const handleApplyAllSuggestions = () => {
-      if (!skillsSuggestions) return
-      
+
+    const handleApplyAllSuggestions = async () => {
+      console.log('🎯 [SkillsSection.handleApplyAllSuggestions] Starting apply all');
+      if (!skillsSuggestions) {
+        console.log('⚠️ [SkillsSection.handleApplyAllSuggestions] No suggestions found');
+        return;
+      }
+
+      console.log('📊 [SkillsSection.handleApplyAllSuggestions] Suggestions:', skillsSuggestions);
+
       const updatedData = { ...editData }
-      
+
       // Add all technical skills
       if (skillsSuggestions.technical.length > 0) {
         updatedData.technical = [
           ...(updatedData.technical || []),
           ...skillsSuggestions.technical.map(s => s.skill)
         ]
+        console.log('✅ [SkillsSection.handleApplyAllSuggestions] Added technical skills:', skillsSuggestions.technical.map(s => s.skill));
       }
-      
+
       // Add all soft skills
       if (skillsSuggestions.soft.length > 0) {
         updatedData.soft = [
           ...(updatedData.soft || []),
           ...skillsSuggestions.soft.map(s => s.skill)
         ]
+        console.log('✅ [SkillsSection.handleApplyAllSuggestions] Added soft skills:', skillsSuggestions.soft.map(s => s.skill));
       }
-      
+
       // Update both technical and soft skills
       updateData('technical', updatedData.technical)
       updateData('soft', updatedData.soft)
       saveDataImmediately(updatedData, 'All AI suggested skills applied')
-      
-      // Dismiss all suggestions
-      dismissAllSkillSuggestions()
-      
+      console.log('💾 [SkillsSection.handleApplyAllSuggestions] CV data saved');
+
+      // Dismiss all suggestions - this will DELETE the enhancement from backend since all are applied
+      console.log('🗑️ [SkillsSection.handleApplyAllSuggestions] Dismissing all suggestions');
+      await dismissAllSkillSuggestions()
+      console.log('✅ [SkillsSection.handleApplyAllSuggestions] Suggestions dismissed');
+
       showSuccess('All AI suggested skills have been applied')
     }
-    
-    const handleRejectAllSuggestions = () => {
-      dismissAllSkillSuggestions()
+
+    const handleRejectAllSuggestions = async () => {
+      console.log('❌ [SkillsSection.handleRejectAllSuggestions] Starting reject all');
+      await dismissAllSkillSuggestions()
+      console.log('✅ [SkillsSection.handleRejectAllSuggestions] All suggestions rejected');
       showSuccess('All AI suggestions have been rejected')
     }
     
@@ -378,39 +394,52 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
 
   const renderDisplay = (data: any) => {
     // Handler functions for display mode
-    const handleApplyAllSuggestionsDisplay = () => {
-      if (!skillsSuggestions) return
-      
+    const handleApplyAllSuggestionsDisplay = async () => {
+      console.log('🎯 [SkillsSection.handleApplyAllSuggestionsDisplay] Starting apply all (display mode)');
+      if (!skillsSuggestions) {
+        console.log('⚠️ [SkillsSection.handleApplyAllSuggestionsDisplay] No suggestions found');
+        return;
+      }
+
+      console.log('📊 [SkillsSection.handleApplyAllSuggestionsDisplay] Suggestions:', skillsSuggestions);
+
       const updatedData = { ...data }
-      
+
       // Add all technical skills
       if (skillsSuggestions.technical.length > 0) {
         updatedData.technical = [
           ...(updatedData.technical || []),
           ...skillsSuggestions.technical.map(s => s.skill)
         ]
+        console.log('✅ [SkillsSection.handleApplyAllSuggestionsDisplay] Added technical skills:', skillsSuggestions.technical.map(s => s.skill));
       }
-      
+
       // Add all soft skills
       if (skillsSuggestions.soft.length > 0) {
         updatedData.soft = [
           ...(updatedData.soft || []),
           ...skillsSuggestions.soft.map(s => s.skill)
         ]
+        console.log('✅ [SkillsSection.handleApplyAllSuggestionsDisplay] Added soft skills:', skillsSuggestions.soft.map(s => s.skill));
       }
-      
+
       // Update the data
       onUpdate(updatedData)
       onSave?.(updatedData, 'All AI suggested skills applied')
-      
-      // Dismiss all suggestions
-      dismissAllSkillSuggestions()
-      
+      console.log('💾 [SkillsSection.handleApplyAllSuggestionsDisplay] CV data saved');
+
+      // Dismiss all suggestions - this will DELETE the enhancement from backend since all are applied
+      console.log('🗑️ [SkillsSection.handleApplyAllSuggestionsDisplay] Dismissing all suggestions');
+      await dismissAllSkillSuggestions()
+      console.log('✅ [SkillsSection.handleApplyAllSuggestionsDisplay] Suggestions dismissed');
+
       showSuccess('All AI suggested skills have been applied')
     }
-    
-    const handleRejectAllSuggestionsDisplay = () => {
-      dismissAllSkillSuggestions()
+
+    const handleRejectAllSuggestionsDisplay = async () => {
+      console.log('❌ [SkillsSection.handleRejectAllSuggestionsDisplay] Starting reject all (display mode)');
+      await dismissAllSkillSuggestions()
+      console.log('✅ [SkillsSection.handleRejectAllSuggestionsDisplay] All suggestions rejected');
       showSuccess('All AI suggestions have been rejected')
     }
 

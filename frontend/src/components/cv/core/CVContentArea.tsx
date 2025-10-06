@@ -69,7 +69,10 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   const safeEditingIndividualItem = editingIndividualItem || null
 
   const renderSection = (section: CVSection) => {
-    if (!section.visible) return null
+    
+    if (!section.visible) {
+      return null;
+    }
 
     const isEditing = editingSection === section.type
     
@@ -108,18 +111,19 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             onEdit={() => handleSectionEdit('professional_summary')}
             onClose={() => handleSectionClose()}
             onUnsavedChanges={onUnsavedChanges}
+            cvId={cvId}
           />
         )
       case 'why_good_fit':
         return (
           <SectionFactory
             sectionType="why_good_fit"
-            data={cvData?.why_good_fit} 
+            data={cvData?.why_good_fit}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, why_good_fit: data as WhyGoodFit })}
             onSave={async (data: unknown, message?: string) => {
               const whyGoodFitData = data as WhyGoodFit | null
               const updatedCvData = { ...cvData, why_good_fit: whyGoodFitData }
-              
+
               // If the section is being deleted (set to null), also remove it from section config
               if (whyGoodFitData === null) {
                 const updatedSections = sections.items.filter(s => s.id !== 'why_good_fit')
@@ -127,7 +131,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
                   sections: updatedSections
                 }
               }
-              
+
               await onSave(updatedCvData as any, message || 'Why I\'m a Good Fit section saved')
             }}
             isEditing={isEditing}
@@ -304,6 +308,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
     )
   }
 
+  
   return (
     <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#f5f5f5', p: 2 }}>
       <Paper

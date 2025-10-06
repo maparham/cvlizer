@@ -51,9 +51,10 @@ import {
   Check as CheckIcon,
   Work as WorkIcon,
 } from '@mui/icons-material';
-import { useAIStore, useJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
+import { useAIStore, useCVJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
 import { JobDescription } from '../../../types/ai';
 import { useNotifications } from '../../../stores/uiStore';
+import { formatRelativeTime } from '../../../utils/formatters';
 import { aiService } from '../../../services/aiService';
 
 interface JobDescriptionInputProps {
@@ -102,17 +103,18 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
   const {
     loadJobDescriptions,
     createJobDescription,
+    updateJobDescription,
     deleteJobDescription,
     setActiveJobDescription,
   } = useAIStore();
 
-  const jobDescriptions = useJobDescriptions();
+  const jobDescriptions = useCVJobDescriptions(cvId);
   const activeJobDescription = useActiveJobDescription();
 
   // Load job descriptions on mount
   useEffect(() => {
     if (cvId) {
-      loadJobDescriptions();
+      loadJobDescriptions(cvId);
     }
   }, [cvId, loadJobDescriptions]);
 
@@ -153,7 +155,7 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
         source_url: urlInput,
       };
 
-      const newJobDescription = await createJobDescription(jobDescription);
+      const newJobDescription = await createJobDescription(cvId, jobDescription);
       
       // Automatically select the newly created job description
       setActiveJobDescription(newJobDescription.id);
@@ -193,7 +195,7 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
         location: location || 'Unknown Location',
       };
 
-      const newJobDescription = await createJobDescription(jobDescription);
+      const newJobDescription = await createJobDescription(cvId, jobDescription);
       
       // Automatically select the newly created job description
       setActiveJobDescription(newJobDescription.id);
@@ -247,16 +249,14 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
     setError(null);
 
     try {
-      // TODO: Implement update job description API
-      // For now, we'll delete and recreate
-      await deleteJobDescription(editingJobDescription.id);
-      await createJobDescription({
+      // Update the job description using the proper update API
+      await updateJobDescription(editingJobDescription.id, {
         content: textInput,
         title: title || 'Manual Job Description',
         company: company || 'Unknown Company',
         location: location || 'Unknown Location',
       });
-      
+
       setShowEditDialog(false);
       setEditingJobDescription(null);
       setTextInput('');
@@ -271,7 +271,7 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [editingJobDescription, textInput, title, company, location, deleteJobDescription, createJobDescription, showSuccess, showError]);
+  }, [editingJobDescription, textInput, title, company, location, updateJobDescription, showSuccess, showError]);
 
   const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
@@ -279,14 +279,7 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
   }, [showSuccess]);
 
   const formatDate = useCallback((dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatRelativeTime(dateString);
   }, []);
 
   return (
@@ -349,7 +342,7 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
             startIcon={isLoading ? <CircularProgress size={20} /> : <AddIcon />}
             fullWidth
           >
-            {isLoading ? 'Parsing...' : 'Parse & Save Job Description'}
+            {isLoading ? 'Loading...' : 'LOAD & SAVE'}
           </Button>
         </Stack>
       </TabPanel>
@@ -421,7 +414,7 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
                 <CardContent>
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                     <Typography variant="h6" component="div">
-                      {jobDescription.title || 'Untitled Job Description'}
+                      {jobDescription.is_parsing ? 'Loading...' : (jobDescription.title || 'Untitled Job Description')}
                     </Typography>
                     <Box>
                       <Tooltip title="Edit">

@@ -51,6 +51,7 @@ import { InitialValidation } from '../components/cv/InitialValidation'
 import { ErrorBoundary } from '../components/common'
 import { useCVStore } from '../stores/cvStore'
 import { useNotifications } from '../stores/uiStore'
+import { useAIStore } from '../stores/aiStore'
 import { CVData } from '../types'
 import { parseValidationErrors } from '../utils/validationUtils'
 
@@ -284,12 +285,6 @@ const CVEditorContent: React.FC<{
     }
   }
 
-  const handleAITools = () => {
-    // Call the global function to switch to AI Tools tab
-    if (window.switchToAITools) {
-      window.switchToAITools()
-    }
-  }
   return (
     <>
       <CVEditorHeader
@@ -299,7 +294,7 @@ const CVEditorContent: React.FC<{
         anchorEl={anchorEl}
         onExport={handleExport}
         onDelete={onDelete}
-        onAITools={handleAITools}
+        onAITools={onAITools}
         isAdmin={isAdmin}
         isNewCV={isNewCV}
       />
@@ -347,6 +342,8 @@ const CVEditor: React.FC = () => {
   const cvData = useMemo(() => activeCV?.parsed_data, [activeCV])
 
 
+  const { clearCacheForCV } = useAIStore()
+  
   // Fetch CV data on component mount (only for existing CVs)
   useEffect(() => {
     if (cvId && cvId !== 'new' && !cvId.startsWith('temp-')) {
@@ -356,6 +353,18 @@ const CVEditor: React.FC = () => {
       navigate('/dashboard')
     }
   }, [cvId, isNewCV, temporaryCV, navigate]) // Only depend on cvId to prevent infinite loops
+  
+  // Clean up CV-specific state when leaving the editor
+  useEffect(() => {
+    return () => {
+      if (cvId && cvId !== 'new' && !cvId.startsWith('temp-')) {
+        // Clear CV-specific job descriptions when navigating away
+        // Note: We don't clear drafts here to allow background tasks to complete
+        // Drafts will be refreshed from backend when loading the CV
+        clearCacheForCV(cvId)
+      }
+    }
+  }, [cvId, clearCacheForCV])
   
   
   // Show error notifications (but skip validation errors as they're handled separately)
@@ -449,6 +458,7 @@ const CVEditor: React.FC = () => {
   }, [cvId, cvData, isNewCV, updateCV, saveTemporaryCV, createSnapshotOnUserAction, showInfo, showSuccess, showError, removeNotification, navigate])
   
   const handleUpdateCV = useCallback((data: CVData) => {
+    
     // Update the local CV state in the store
     if (isNewCV && temporaryCV) {
       // Update temporary CV
@@ -464,6 +474,7 @@ const CVEditor: React.FC = () => {
         parsed_data: data
       }
       setCurrentCV(updatedCV)
+    } else {
     }
   }, [isNewCV, temporaryCV, currentCV, setCurrentCV, setTemporaryCV])
 
@@ -479,6 +490,13 @@ const CVEditor: React.FC = () => {
     logout()
     navigate('/')
     handleMenuClose()
+  }
+
+  const handleAITools = () => {
+    // Call the global function to switch to AI Tools tab
+    if (window.switchToAITools) {
+      window.switchToAITools()
+    }
   }
 
   const handleDeleteClick = () => {
@@ -503,9 +521,6 @@ const CVEditor: React.FC = () => {
     setDeleteDialogOpen(false)
   }
 
-  const handleAITools = () => {
-    // This will be handled by the child component
-  }
 
   const handleTitleSave = async (newTitle: string) => {
     if (isNewCV) {

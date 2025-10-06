@@ -11,33 +11,264 @@ import asyncio
 import re
 import json
 import logging
-from typing import Dict, Any, List, Tuple
-from dotenv import load_dotenv
+from datetime import datetime, timezone
+from typing import Dict, Any, List, Tuple, Optional
 from ..constants import DEFAULT_PARSED_CV
+from ..config import AIConfig
 from copy import deepcopy
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
-
 # Set OpenAI API key and create a singleton client
-openai_api_key = os.getenv("OPENAI_API_KEY")
-if openai_api_key and openai_api_key != "your-openai-key-here":
-    openai.api_key = openai_api_key
+if AIConfig.is_enabled():
+    openai.api_key = AIConfig.OPENAI_API_KEY
     _openai_client = openai.OpenAI()
 else:
     _openai_client = None
 
 
 def is_ai_enabled() -> bool:
+    """Check if AI features are enabled"""
     return _openai_client is not None
+
+
+def analyze_job_fit_sync(cv_data: Dict[str, Any], job_description: str, user_id: Optional[str] = None, cv_id: Optional[str] = None, db_session: Optional[Any] = None) -> Dict[str, Any]:
+    """
+    Synchronous version of job fit analysis to avoid async/sync issues in background tasks.
+
+    Returns:
+        - confidence_score: 1-100% match confidence (always present)
+        - fit_analysis: Detailed analysis of matches
+        - generated_at: ISO timestamp (always present)
+        - key_matches: List of key matching points
+        - missing_skills: Skills mentioned in JD but not in CV
+        - suggested_improvements: Areas for improvement
+    """
+
+    if not is_ai_enabled():
+        return {
+            "error": "OpenAI API key not configured. AI features are disabled.",
+            "confidence_score": 0,
+            "fit_analysis": "",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "key_matches": [],
+            "missing_skills": [],
+            "suggested_improvements": [],
+            "strengths": [],
+            "weaknesses": []
+        }
+    
+    prompt = f"""Analyze CV vs job description match. Return JSON with honest analysis but positive fit_analysis text.
+
+CV: {json.dumps(cv_data, indent=2)}
+Job: {job_description}
+
+Rules:
+- confidence_score: honest 1-100 match score
+- fit_analysis: "Why I'm a Good Fit" text in first person (2-3 paragraphs + Job Requirements Analysis)
+- Extract ACTUAL job requirements from the job description
+- Keep requirements in their original language from the job description
+- If job description is very long, summarize requirements but keep them specific and real
+- Be concise and to the point, don't be overzealous
+- Other fields: honest assessment
+
+JSON format:
+{{
+    "confidence_score": 85,
+    "fit_analysis": "**Why I'm a Good Fit**\\n\\n[2-3 paragraphs highlighting relevant experience]\\n\\n**Job Requirements Analysis**\\n\\n**[ACTUAL REQUIREMENT FROM JD]**\\n[explanation of how CV matches this requirement]\\n\\n**[ANOTHER ACTUAL REQUIREMENT FROM JD]**\\n[explanation of how CV matches this requirement]",
+    "key_matches": ["genuine matches only"],
+    "missing_skills": ["skills in JD not in CV"],
+    "suggested_improvements": ["constructive recommendations"],
+    "strengths": ["candidate strengths"],
+    "weaknesses": ["honest gaps"]
+}}
+"""
+    
+    try:
+        start_time = time.time()
+
+        # Make synchronous OpenAI API call
+        response = _openai_client.chat.completions.create(
+            model=AIConfig.OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": "Expert CV analyst who can analyze job descriptions in any language. Return only valid JSON. fit_analysis must be positive candidate defense text written in first person. Extract ACTUAL job requirements from the job description text and use them as bold headers (**Actual Requirement Text**), not generic placeholders. Keep requirements in their original language. confidence_score and other fields must be honest/factual."},
+                {"role": "user", "content": prompt}
+            ],
+        )
+
+        generation_time = int((time.time() - start_time) * 1000)
+        content = response.choices[0].message.content
+        tokens_used = response.usage.total_tokens
+
+        # Log AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="analyze_job_fit",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                generation_time=generation_time,
+                success=True,
+                cv_id=cv_id
+            )
+
+        # Debug logging to help identify formatting issues
+        logger.info(f"AI Response content preview: {content[:200]}...")
+
+        # Parse JSON response - handle markdown code blocks
+        try:
+            # Extract JSON from markdown code blocks if present
+            if "```json" in content:
+                # Find the JSON content between ```json and ```
+                start = content.find("```json") + 7
+                end = content.find("```", start)
+                if end != -1:
+                    json_content = content[start:end].strip()
+                else:
+                    json_content = content
+            elif "```" in content:
+                # Handle generic code blocks
+                start = content.find("```") + 3
+                end = content.find("```", start)
+                if end != -1:
+                    json_content = content[start:end].strip()
+                else:
+                    json_content = content
+            else:
+                json_content = content
+
+            analysis = json.loads(json_content)
+
+            # Clean up the fit_analysis field to ensure it's just the content
+            if "fit_analysis" in analysis and isinstance(analysis["fit_analysis"], str):
+                # Remove any potential JSON structure that might have been included
+                fit_analysis = analysis["fit_analysis"]
+                # If it contains JSON-like structure, try to extract just the content
+                if fit_analysis.strip().startswith('{') and 'confidence_score' in fit_analysis:
+                    # This looks like the AI returned the entire JSON in the fit_analysis field
+                    # Try to extract just the content part
+                    try:
+                        # Find the content between quotes after "fit_analysis":
+                        import re
+                        match = re.search(r'"fit_analysis":\s*"([^"]*(?:\\.[^"]*)*)"', fit_analysis)
+                        if match:
+                            analysis["fit_analysis"] = match.group(1).replace('\\n', '\n').replace('\\"', '"')
+                    except:
+                        pass
+
+        except json.JSONDecodeError:
+            # Fallback if JSON parsing fails
+            logger.warning(f"analyze_job_fit_sync: JSON parse failed, using fallback. Content preview: {content[:200]}")
+            analysis = {
+                "confidence_score": 50,
+                "fit_analysis": content,
+                "key_matches": [],
+                "missing_skills": [],
+                "suggested_improvements": [],
+                "strengths": [],
+                "weaknesses": []
+            }
+
+        # Ensure required fields are always present
+        confidence_score = analysis.get("confidence_score", 50)
+        generated_at = analysis.get("generated_at") or datetime.now(timezone.utc).isoformat()
+
+        # Log presence of required fields for observability
+        logger.info(f"analyze_job_fit_sync: confidence_score={confidence_score}, generated_at={generated_at}, tokens_used={tokens_used}")
+        if "confidence_score" not in analysis:
+            logger.warning("analyze_job_fit_sync: confidence_score missing in AI response; using fallback value 50")
+        if "generated_at" not in analysis:
+            logger.warning(f"analyze_job_fit_sync: generated_at missing in AI response; using fallback timestamp {generated_at}")
+
+        return {
+            "confidence_score": confidence_score,
+            "fit_analysis": analysis.get("fit_analysis", content),
+            "generated_at": generated_at,
+            "key_matches": analysis.get("key_matches", []),
+            "missing_skills": analysis.get("missing_skills", []),
+            "suggested_improvements": analysis.get("suggested_improvements", []),
+            "strengths": analysis.get("strengths", []),
+            "weaknesses": analysis.get("weaknesses", []),
+            "tokens_used": tokens_used,
+            "generation_time": generation_time,
+            "model_used": AIConfig.OPENAI_MODEL
+        }
+
+    except Exception as e:
+        # Log failed AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="analyze_job_fit",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=0,
+                completion_tokens=0,
+                generation_time=0,
+                success=False,
+                error_message=str(e),
+                cv_id=cv_id
+            )
+
+        return {
+            "error": f"Error analyzing job fit: {str(e)}",
+            "confidence_score": 0,
+            "fit_analysis": "",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "key_matches": [],
+            "missing_skills": [],
+            "suggested_improvements": [],
+            "strengths": [],
+            "weaknesses": []
+        }
+
+
+def _log_ai_usage_safe(
+    db_session: Optional[Any],
+    user_id: str,
+    operation_type: str,
+    model_used: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+    generation_time: int,
+    success: bool = True,
+    error_message: Optional[str] = None,
+    cv_id: Optional[str] = None
+) -> None:
+    """
+    Safely log AI usage without breaking existing functionality.
+    
+    This function wraps the AI usage logging in a try-catch to ensure
+    that logging failures don't affect the main AI service functionality.
+    """
+    try:
+        if db_session:
+            from .ai_usage_service import log_ai_usage
+            log_ai_usage(
+                db=db_session,
+                user_id=user_id,
+                operation_type=operation_type,
+                model_used=model_used,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                generation_time=generation_time,
+                success=success,
+                error_message=error_message,
+                cv_id=cv_id
+            )
+    except Exception as e:
+        # Log the error but don't raise it to avoid breaking main functionality
+        logger.warning(f"Failed to log AI usage: {str(e)}")
 
 
 async def _with_retries(coro_factory, attempts: int = 2, delay: float = 0.5):
     last_exc = None
     for i in range(attempts):
         try:
-            return await coro_factory()
+            result = await coro_factory()
+            return result
         except Exception as e:
             last_exc = e
             if i < attempts - 1:
@@ -45,7 +276,7 @@ async def _with_retries(coro_factory, attempts: int = 2, delay: float = 0.5):
     raise last_exc
 
 
-async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, section_type: str = "why_good_fit") -> Dict[str, Any]:
+async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, section_type: str = "why_good_fit", user_id: Optional[str] = None, cv_id: Optional[str] = None, db_session: Optional[Any] = None) -> Dict[str, Any]:
     """Generate AI-enhanced CV section based on job description"""
     if not is_ai_enabled():
         return {
@@ -66,43 +297,21 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
         Job Description:
         {job_description}
 
-        IMPORTANT: If the job description is incomplete, missing, or contains placeholder text (like "Unknown", "N/A", empty, or very short content), you MUST:
-        1. Include a clear warning at the beginning of the content
-        2. Explain that you cannot provide accurate analysis without proper job requirements
-        3. Still provide a general positive overview of the candidate's qualifications
+        IMPORTANT: Only consider a job description incomplete if it is genuinely missing essential information (extremely short, placeholder text, or empty). DO NOT consider it incomplete just because it's in a non-English language or uses different terminology.
 
         Please generate a professional section with the following structure:
-        1. If job description is incomplete: Start with "⚠️ WARNING: The job description provided is incomplete or missing specific requirements. This analysis is based on general qualifications only."
-        2. 2-3 paragraphs highlighting relevant experience and skills
-        3. End with a "Job Requirements Analysis" section containing:
-           - If job description is complete: Job requirements in bullet points with explanations
-           - If job description is incomplete: Simply state "Unable to analyze job requirements due to incomplete job description. Please provide a complete job description with specific requirements and responsibilities for detailed analysis."
+        1. 2-3 paragraphs highlighting relevant experience and skills
+        2. End with a "Job Requirements Analysis" section containing job requirements in bullet points with explanations
 
         Format the response as JSON with the following structure:
         {{
-            "title": "Why I'm a Good Fit",
-            "content": "**Why I'm a Good Fit**\\n\\n[2-3 paragraphs highlighting experience and skills]\\n\\n**Job Requirements Analysis**\\n\\n[If job description is complete: List actual requirements with explanations]\\n\\n[If job description is incomplete: 'Unable to analyze job requirements due to incomplete job description. Please provide a complete job description with specific requirements and responsibilities for detailed analysis.']",
+            "title": "Hello <company name>!",
+            "content": "**Why am I applying for this job?**\\n\\n[1-2 short paragraphs highlighting experience and skills]\\n\\n**Job Requirements Analysis**\\n\\n[List actual requirements with explanations]",
             "key_points": ["Point 1", "Point 2", "Point 3"]
         }}
         """
     else:
-        prompt = f"""
-        Based on the following CV data and job description, generate a {section_type} section.
-
-        CV Data:
-        {cv_data}
-
-        Job Description:
-        {job_description}
-
-        IMPORTANT: If the job description is incomplete, missing, or contains placeholder text (like "Unknown", "N/A", empty, or very short content), you MUST:
-        1. Include a clear warning at the beginning of the content
-        2. Explain that you cannot provide accurate analysis without proper job requirements
-        3. Still provide a general positive overview of the candidate's qualifications
-
-        Please generate a professional section that aligns with the job requirements.
-        If the job description is incomplete, start with a warning and focus on general qualifications.
-        """
+        raise ValueError(f"Unsupported section type: '{section_type}'. Only 'why_good_fit' is currently supported.")
     
     try:
         start_time = time.time()
@@ -111,13 +320,11 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
         async def _call():
             return await asyncio.to_thread(
                 _openai_client.chat.completions.create,
-                model="gpt-4o-mini",
+                model=AIConfig.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": "You are a professional CV optimization expert. Generate compelling, tailored content that helps candidates stand out."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
-                temperature=0.7
             )
 
         response = await _with_retries(_call, attempts=2, delay=0.5)
@@ -126,6 +333,20 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
         
         content = response.choices[0].message.content
         tokens_used = response.usage.total_tokens
+        
+        # Log AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="generate_section",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                generation_time=generation_time,
+                success=True,
+                cv_id=cv_id
+            )
         
         # Try to parse as JSON, fallback to plain text
         try:
@@ -144,10 +365,25 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
             "key_points": parsed_content.get("key_points", []),
             "tokens_used": tokens_used,
             "generation_time": generation_time,
-            "model_used": "gpt-4o-mini"
+            "model_used": AIConfig.OPENAI_MODEL
         }
         
     except Exception as e:
+        # Log failed AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="generate_section",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=0,
+                completion_tokens=0,
+                generation_time=0,
+                success=False,
+                error_message=str(e),
+                cv_id=cv_id
+            )
+        
         # Fallback response in case of API error
         return {
             "section_content": f"I apologize, but I'm unable to generate content at the moment. Please try again later. Error: {str(e)}",
@@ -155,12 +391,12 @@ async def generate_cv_section(cv_data: Dict[str, Any], job_description: str, sec
             "key_points": [],
             "tokens_used": 0,
             "generation_time": 0,
-            "model_used": "gpt-4o-mini",
+            "model_used": AIConfig.OPENAI_MODEL,
             "error": str(e)
         }
 
 
-async def parse_cv_text_with_openai(text_content: str) -> dict:
+async def parse_cv_text_with_openai(text_content: str, user_id: Optional[str] = None, cv_id: Optional[str] = None, db_session: Optional[Any] = None) -> dict:
     """Parse CV text content using OpenAI to extract structured data"""
     
     # Check if text content is empty or too short
@@ -180,126 +416,24 @@ async def parse_cv_text_with_openai(text_content: str) -> dict:
             "volunteer_experience": []
         }
     
-    prompt = f"""
-    Parse the following CV text and map the content to our predefined CV sections. You must organize the CV content into ONLY these standard section names:
+    prompt = f"""Parse CV text and map to predefined sections. Use only these 10 sections: personal_info, professional_summary, work_experience, education, skills, certifications, projects, awards, publications, volunteer_experience.
 
-    **REQUIRED SECTIONS TO MAP TO:**
-    1. personal_info - Contact details, name, email, phone, location, social links
-    2. professional_summary - Career summary, objective, profile statement
-    3. work_experience - Employment history, jobs, positions held
-    4. education - Academic background, degrees, schools, universities
-    5. skills - Technical skills, soft skills, languages, competencies
-    6. certifications - Professional certifications, licenses, credentials
-    7. projects - Personal projects, portfolio items, side projects
-    8. awards - Honors, recognition, achievements, prizes
-    9. publications - Research papers, articles, books, publications
-    10. volunteer_experience - Volunteer work, community service, nonprofit activities
+CV Text:
+{text_content}
 
-    **MAPPING INSTRUCTIONS:**
-    - Map ALL content from the CV to these predefined sections
-    - If content doesn't fit standard sections, choose the most appropriate one
-    - Do NOT create custom section names - use only the 10 predefined sections above
-    - If a section has no content, omit it from the JSON response
-    - Group similar content together (e.g., all certifications go in "certifications")
-
-    Return a JSON object with this exact structure (omit sections with no content):
-
-    {{
-        "personal_info": {{
-            "full_name": "string",
-            "email": "string",
-            "phone": "string",
-            "location": "string",
-            "linkedin_url": "string",
-            "website_url": "string",
-            "github_url": "string"
-        }},
-        "professional_summary": {{
-            "content": "string",
-            "keywords": ["string1", "string2"]
-        }},
-        "work_experience": [
-            {{
-                "company": "string",
-                "position": "string",
-                "start_date": "YYYY-MM-DD",
-                "end_date": "YYYY-MM-DD or null",
-                "current": boolean,
-                "description": "string",
-                "achievements": ["string1", "string2"],
-                "technologies": ["string1", "string2"]
-            }}
-        ],
-        "education": [
-            {{
-                "institution": "string",
-                "degree": "string",
-                "field_of_study": "string",
-                "start_date": "YYYY-MM-DD",
-                "end_date": "YYYY-MM-DD or null",
-                "gpa": "string or null",
-                "description": "string",
-                "achievements": ["string1", "string2"],
-                "honors": ["string1", "string2"]
-            }}
-        ],
-        "skills": {{
-            "technical": ["string1", "string2"],
-            "soft": ["string1", "string2"],
-            "languages": [
-                {{"language": "string", "proficiency": "string"}}
-            ]
-        }},
-        "certifications": [
-            {{
-                "name": "string",
-                "issuer": "string",
-                "date": "YYYY-MM-DD",
-                "expiry_date": "YYYY-MM-DD or null",
-                "description": "string"
-            }}
-        ],
-        "projects": [
-            {{
-                "name": "string",
-                "description": "string",
-                "technologies": ["string1", "string2"],
-                "url": "string or null"
-            }}
-        ],
-        "awards": [
-            {{
-                "name": "string",
-                "issuer": "string",
-                "date": "YYYY-MM-DD",
-                "description": "string"
-            }}
-        ],
-        "publications": [
-            {{
-                "title": "string",
-                "authors": "string",
-                "journal": "string",
-                "date": "YYYY-MM-DD",
-                "url": "string or null"
-            }}
-        ],
-        "volunteer_experience": [
-            {{
-                "organization": "string",
-                "role": "string",
-                "start_date": "YYYY-MM-DD",
-                "end_date": "YYYY-MM-DD or null",
-                "description": "string"
-            }}
-        ]
-    }}
-
-    CV Text:
-    {text_content}
-
-    IMPORTANT: Only include sections that have content. Do not create empty sections or custom section names.
-    """
+Return JSON with this structure (omit empty sections):
+{{
+    "personal_info": {{"full_name": "string", "email": "string", "phone": "string", "location": "string", "linkedin_url": "string", "website_url": "string", "github_url": "string"}},
+    "professional_summary": {{"content": "string", "keywords": ["string1", "string2"]}},
+    "work_experience": [{{"company": "string", "position": "string", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD or null", "current": boolean, "description": "string", "achievements": ["string1", "string2"], "technologies": ["string1", "string2"]}}],
+    "education": [{{"institution": "string", "degree": "string", "field_of_study": "string", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD or null", "gpa": "string or null", "description": "string", "achievements": ["string1", "string2"], "honors": ["string1", "string2"]}}],
+    "skills": {{"technical": ["string1", "string2"], "soft": ["string1", "string2"], "languages": [{{"language": "string", "proficiency": "string"}}]}},
+    "certifications": [{{"name": "string", "issuer": "string", "date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD or null", "description": "string"}}],
+    "projects": [{{"name": "string", "description": "string", "technologies": ["string1", "string2"], "url": "string or null"}}],
+    "awards": [{{"name": "string", "issuer": "string", "date": "YYYY-MM-DD", "description": "string"}}],
+    "publications": [{{"title": "string", "authors": "string", "journal": "string", "date": "YYYY-MM-DD", "url": "string or null"}}],
+    "volunteer_experience": [{{"organization": "string", "role": "string", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD or null", "description": "string"}}]
+}}"""
     
     try:
         if not is_ai_enabled():
@@ -308,17 +442,29 @@ async def parse_cv_text_with_openai(text_content: str) -> dict:
         async def _call():
             return await asyncio.to_thread(
                 _openai_client.chat.completions.create,
-                model="gpt-4o-mini",
+                model=AIConfig.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": "You are an expert CV parser. Extract structured information from CV text and return valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=2000,
-                temperature=0.1
             )
         response = await _with_retries(_call, attempts=2, delay=0.5)
         
         content = response.choices[0].message.content
+        
+        # Log AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="parse_cv",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                generation_time=0,  # Not tracked in this function
+                success=True,
+                cv_id=cv_id
+            )
         
         # Clean up markdown code blocks if present
         if content.startswith('```json'):
@@ -348,6 +494,21 @@ async def parse_cv_text_with_openai(text_content: str) -> dict:
             return fallback
         
     except Exception as e:
+        # Log failed AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="parse_cv",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=0,
+                completion_tokens=0,
+                generation_time=0,
+                success=False,
+                error_message=str(e),
+                cv_id=cv_id
+            )
+        
         # Fallback response in case of API error
         fallback = deepcopy(DEFAULT_PARSED_CV)
         content_preview = text_content[:500] + "..." if len(text_content) > 500 else text_content
@@ -407,7 +568,7 @@ def _add_section_config(parsed_content: dict) -> dict:
     return parsed_content
 
 
-async def analyze_job_fit(cv_data: Dict[str, Any], job_description: str) -> Dict[str, Any]:
+async def analyze_job_fit(cv_data: Dict[str, Any], job_description: str, user_id: Optional[str] = None, cv_id: Optional[str] = None, db_session: Optional[Any] = None) -> Dict[str, Any]:
     """
     Analyze how well a CV fits a job description and generate a compelling fit narrative.
     
@@ -418,6 +579,7 @@ async def analyze_job_fit(cv_data: Dict[str, Any], job_description: str) -> Dict
         - missing_skills: Skills mentioned in JD but not in CV
         - suggested_improvements: Areas for improvement
     """
+    
     if not is_ai_enabled():
         return {
             "error": "OpenAI API key not configured. AI features are disabled.",
@@ -425,53 +587,37 @@ async def analyze_job_fit(cv_data: Dict[str, Any], job_description: str) -> Dict
             "fit_analysis": "",
             "key_matches": [],
             "missing_skills": [],
-            "suggested_improvements": []
+            "suggested_improvements": [],
+            "strengths": [],
+            "weaknesses": []
         }
     
     
-    prompt = f"""
-    Analyze CV vs job description match. Return JSON with honest analysis but positive fit_analysis text.
+    prompt = f"""Analyze CV vs job description match. Return JSON with honest analysis but positive fit_analysis text.
 
-    CV: {json.dumps(cv_data, indent=2)}
-    Job: {job_description}
+CV: {json.dumps(cv_data, indent=2)}
+Job: {job_description}
 
-    IMPORTANT: If the job description is incomplete, missing, or contains placeholder text (like "Unknown", "N/A", empty, or very short content), you MUST:
-    1. Include a clear warning at the beginning of the fit_analysis
-    2. Set confidence_score to 0
-    3. Explain that you cannot provide accurate analysis without proper job requirements
-    4. Still provide a general positive overview of the candidate's qualifications
+Rules:
+- confidence_score: honest 1-100 match score
+- fit_analysis: "Why I'm a Good Fit" text in first person (2-3 paragraphs + Job Requirements Analysis)
+- Extract ACTUAL job requirements from the job description
+- Keep requirements in their original language from the job description
+- If job description is very long, summarize requirements but keep them specific and real
+- Be concise and to the point, don't be overzealous
+- Other fields: honest assessment
 
-    Rules:
-    - confidence_score: honest 1-100 match score (0 if job description is incomplete)
-    - fit_analysis: "Why I'm a Good Fit" markdown text with the following structure:
-      1. If job description is incomplete: Start with a clear warning about incomplete job description
-      2. 2-3 paragraphs highlighting relevant experience and skills
-      3. End with a "Job Requirements Analysis" section containing:
-         - If job description is complete: Job requirements in bullet points with explanations
-         - If job description is incomplete: Clear statement that requirements cannot be analyzed due to incomplete job description
-    - Other fields: honest assessment
-
-    JSON format:
-    {{
-        "confidence_score": 85,
-        "fit_analysis": "**Why I'm a Good Fit**\\n\\n[2-3 paragraphs highlighting experience and skills]\\n\\n**Job Requirements Analysis**\\n\\n[If job description is complete: List actual requirements with explanations]\\n\\n[If job description is incomplete: 'Unable to analyze job requirements due to incomplete job description. Please provide a complete job description with specific requirements and responsibilities for detailed analysis.']",
-        "key_matches": ["genuine matches only"],
-        "missing_skills": ["skills in JD not in CV"],
-        "suggested_improvements": ["constructive recommendations"],
-        "strengths": ["candidate strengths"],
-        "weaknesses": ["honest gaps"]
-    }}
-
-    fit_analysis guidelines: 
-    - If job description is incomplete/missing: Start with "⚠️ WARNING: The job description provided is incomplete or missing specific requirements. This analysis is based on general qualifications only."
-    - 2-3 paragraphs highlighting relevant experience and skills
-    - Always positive tone, highlight strengths/potential even for poor matches
-    - End with "Job Requirements Analysis" section:
-      - If job description is complete: List actual requirements with explanations
-      - If job description is incomplete: Simply state "Unable to analyze job requirements due to incomplete job description. Please provide a complete job description with specific requirements and responsibilities for detailed analysis."
-    - If job description is very long, summarize requirements but keep them meaningful
-    - For each requirement, either show how CV covers it or honestly admit lack of experience with eagerness to learn
-    """
+JSON format:
+{{
+    "confidence_score": 85,
+    "fit_analysis": "**Why I'm a Good Fit**\\n\\n[2-3 paragraphs highlighting relevant experience]\\n\\n**Job Requirements Analysis**\\n\\n**[ACTUAL REQUIREMENT FROM JD]**\\n[explanation of how CV matches this requirement]\\n\\n**[ANOTHER ACTUAL REQUIREMENT FROM JD]**\\n[explanation of how CV matches this requirement]",
+    "key_matches": ["genuine matches only"],
+    "missing_skills": ["skills in JD not in CV"],
+    "suggested_improvements": ["constructive recommendations"],
+    "strengths": ["candidate strengths"],
+    "weaknesses": ["honest gaps"]
+}}
+"""
     
     try:
         start_time = time.time()
@@ -479,20 +625,44 @@ async def analyze_job_fit(cv_data: Dict[str, Any], job_description: str) -> Dict
         async def _call():
             return await asyncio.to_thread(
                 _openai_client.chat.completions.create,
-                model="gpt-4o-mini",
+                model=AIConfig.OPENAI_MODEL,
                 messages=[
-                    {"role": "system", "content": "Expert CV analyst. Return only valid JSON. fit_analysis must be positive candidate defense text. confidence_score and other fields must be honest/factual."},
+                    {"role": "system", "content": "Expert CV analyst who can analyze job descriptions in any language. Return only valid JSON. fit_analysis must be positive candidate defense text written in first person. Extract ACTUAL job requirements from the job description text and use them as bold headers (**Actual Requirement Text**), not generic placeholders. Keep requirements in their original language. confidence_score and other fields must be honest/factual."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=1000,
-                temperature=0.3
             )
 
-        response = await _with_retries(_call, attempts=2, delay=0.5)
+        try:
+            response = await asyncio.wait_for(_with_retries(_call, attempts=2, delay=0.5), timeout=60.0)
+        except asyncio.TimeoutError:
+            return {
+                "error": "OpenAI API call timed out after 60 seconds",
+                "confidence_score": 0,
+                "fit_analysis": "",
+                "key_matches": [],
+                "missing_skills": [],
+                "suggested_improvements": [],
+                "strengths": [],
+                "weaknesses": []
+            }
         
         generation_time = int((time.time() - start_time) * 1000)
         content = response.choices[0].message.content
         tokens_used = response.usage.total_tokens
+        
+        # Log AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="analyze_job_fit",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                generation_time=generation_time,
+                success=True,
+                cv_id=cv_id
+            )
         
         # Debug logging to help identify formatting issues
         logger.info(f"AI Response content preview: {content[:200]}...")
@@ -560,10 +730,25 @@ async def analyze_job_fit(cv_data: Dict[str, Any], job_description: str) -> Dict
             "weaknesses": analysis.get("weaknesses", []),
             "tokens_used": tokens_used,
             "generation_time": generation_time,
-            "model_used": "gpt-4o-mini"
+            "model_used": AIConfig.OPENAI_MODEL
         }
         
     except Exception as e:
+        # Log failed AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="analyze_job_fit",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=0,
+                completion_tokens=0,
+                generation_time=0,
+                success=False,
+                error_message=str(e),
+                cv_id=cv_id
+            )
+        
         return {
             "error": f"Error analyzing job fit: {str(e)}",
             "confidence_score": 0,
@@ -575,11 +760,11 @@ async def analyze_job_fit(cv_data: Dict[str, Any], job_description: str) -> Dict
             "weaknesses": [],
             "tokens_used": 0,
             "generation_time": 0,
-            "model_used": "gpt-4o-mini"
+            "model_used": AIConfig.OPENAI_MODEL
         }
 
 
-async def enhance_content(original_content: str, content_type: str = "bullet_point") -> Dict[str, Any]:
+async def enhance_content(original_content: str, content_type: str = "bullet_point", user_id: Optional[str] = None, cv_id: Optional[str] = None, db_session: Optional[Any] = None) -> Dict[str, Any]:
     """
     Enhance a piece of content (bullet point, paragraph, etc.) with stronger language and metrics.
     
@@ -652,13 +837,11 @@ async def enhance_content(original_content: str, content_type: str = "bullet_poi
         async def _call():
             return await asyncio.to_thread(
                 _openai_client.chat.completions.create,
-                model="gpt-4o-mini",
+                model=AIConfig.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": "You are a professional CV writer and content optimization expert. Enhance content to be more impactful, specific, and professional."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=800,
-                temperature=0.7
             )
 
         response = await _with_retries(_call, attempts=2, delay=0.5)
@@ -666,6 +849,20 @@ async def enhance_content(original_content: str, content_type: str = "bullet_poi
         generation_time = int((time.time() - start_time) * 1000)
         content = response.choices[0].message.content
         tokens_used = response.usage.total_tokens
+        
+        # Log AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="enhance_content",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                generation_time=generation_time,
+                success=True,
+                cv_id=cv_id
+            )
         
         # Parse JSON response - handle markdown code blocks
         try:
@@ -702,21 +899,36 @@ async def enhance_content(original_content: str, content_type: str = "bullet_poi
             "overall_improvements": overall_improvements,
             "tokens_used": tokens_used,
             "generation_time": generation_time,
-            "model_used": "gpt-4o-mini"
+            "model_used": AIConfig.OPENAI_MODEL
         }
         
     except Exception as e:
+        # Log failed AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="enhance_content",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=0,
+                completion_tokens=0,
+                generation_time=0,
+                success=False,
+                error_message=str(e),
+                cv_id=cv_id
+            )
+        
         return {
             "error": f"Error enhancing content: {str(e)}",
             "suggestions": [],
             "overall_improvements": [],
             "tokens_used": 0,
             "generation_time": 0,
-            "model_used": "gpt-4o-mini"
+            "model_used": AIConfig.OPENAI_MODEL
         }
 
 
-async def analyze_ats_optimization(cv_data: Dict[str, Any], job_description: str) -> Dict[str, Any]:
+async def analyze_ats_optimization(cv_data: Dict[str, Any], job_description: str, user_id: Optional[str] = None, cv_id: Optional[str] = None, db_session: Optional[Any] = None) -> Dict[str, Any]:
     """
     Analyze CV content for ATS keyword optimization (not formatting - that happens during PDF export).
     
@@ -858,7 +1070,7 @@ async def analyze_ats_optimization(cv_data: Dict[str, Any], job_description: str
         # Also log to logger
         logger.info("RAW OPENAI REQUEST:")
         logger.info("=" * 50)
-        logger.info(f"Model: gpt-4o-mini")
+        logger.info(f"Model: {AIConfig.OPENAI_MODEL}")
         logger.info(f"Max Tokens: 1200")
         logger.info(f"Temperature: 0.2")
         logger.info("Messages Array:")
@@ -868,10 +1080,8 @@ async def analyze_ats_optimization(cv_data: Dict[str, Any], job_description: str
         async def _call():
             return await asyncio.to_thread(
                 _openai_client.chat.completions.create,
-                model="gpt-4o-mini",
+                model=AIConfig.OPENAI_MODEL,
                 messages=messages,
-                max_tokens=1200,
-                temperature=0.2
             )
 
         response = await _with_retries(_call, attempts=2, delay=0.5)
@@ -879,6 +1089,20 @@ async def analyze_ats_optimization(cv_data: Dict[str, Any], job_description: str
         generation_time = int((time.time() - start_time) * 1000)
         content = response.choices[0].message.content
         tokens_used = response.usage.total_tokens
+        
+        # Log AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="ats_optimization",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                generation_time=generation_time,
+                success=True,
+                cv_id=cv_id
+            )
         
         # Log the full response for debugging
         logger.info("ATS Optimization Response:")
@@ -934,10 +1158,25 @@ async def analyze_ats_optimization(cv_data: Dict[str, Any], job_description: str
             "weaknesses": analysis.get("weaknesses", []),
             "tokens_used": tokens_used,
             "generation_time": generation_time,
-            "model_used": "gpt-4o-mini"
+            "model_used": AIConfig.OPENAI_MODEL
         }
         
     except Exception as e:
+        # Log failed AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="ats_optimization",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=0,
+                completion_tokens=0,
+                generation_time=0,
+                success=False,
+                error_message=str(e),
+                cv_id=cv_id
+            )
+        
         return {
             "error": f"Error analyzing ATS optimization: {str(e)}",
             "ats_score": 0,
@@ -949,13 +1188,16 @@ async def analyze_ats_optimization(cv_data: Dict[str, Any], job_description: str
             "weaknesses": [],
             "tokens_used": 0,
             "generation_time": 0,
-            "model_used": "gpt-4o-mini"
+            "model_used": AIConfig.OPENAI_MODEL
         }
 
 
-async def generate_all_suggestions(
+async def create_optimization_suggestions(
     cv_data: Dict[str, Any],
-    job_description: str
+    job_description: str,
+    user_id: Optional[str] = None,
+    cv_id: Optional[str] = None,
+    db_session: Optional[Any] = None
 ) -> Dict[str, Any]:
     """
     Generate ALL AI suggestions for CV optimization in one unified call.
@@ -1011,45 +1253,26 @@ async def generate_all_suggestions(
     system_prompt = "You are a CV optimization assistant. Analyze CVs against job descriptions and provide comprehensive improvement suggestions. Extract only real, tangible skills and create natural professional content."
     
     # Create the unified user prompt
-    user_prompt = f"""TASK: Analyze this CV against the job description and provide ALL improvement suggestions in one response.
+    user_prompt = f"""Analyze CV against job description and provide improvement suggestions.
 
-CURRENT CV DATA:
+CV DATA:
 Technical Skills: {json.dumps(current_technical_skills)}
 Soft Skills: {json.dumps(current_soft_skills)}
 Professional Summary: {current_summary}
-Work Experience Overview: {work_overview_text}
+Work Experience: {work_overview_text}
 
 JOB DESCRIPTION:
 {job_description}
 
-IMPORTANT: If the job description is incomplete, missing, or contains placeholder text (like "Unknown", "N/A", empty, or very short content), you MUST:
-1. Return empty arrays for skills suggestions
-2. For professional summary, provide a general improvement without job-specific targeting
-3. Include a note in key_changes about incomplete job description
-
-PROVIDE ALL SUGGESTIONS IN ONE RESPONSE:
-
-1. SKILLS: Suggest missing technical and soft skills from the job description
-   Rules:
+TASKS:
+1. SKILLS: Suggest missing technical (max 10) and soft (max 5) skills from job description
    - Only actual skills/tools/technologies/methodologies
-   - NOT job titles, companies, industries, locations, or generic keywords
    - Case-insensitive check against current skills (no duplicates)
-   - Maximum 10 technical, 5 soft
-   - Provide one-sentence reasoning for each skill
-   - If job description is incomplete, return empty arrays
+   - One-sentence reasoning per skill
 
-2. PROFESSIONAL SUMMARY: Provide ONE improved rewrite
-   Rules:
-   - 2-4 sentences that are focused on the candidate's experience and skills relevant to the job description.
-   - Natural professional prose.
-   - Emphasize relevant experience from work experiences and education history.
-   - Stay factual and base on CV content and job description.
-   - A recruiter is looking for a candidate who is a good fit for the job, so the summary should be focused on the candidate's experience and skills relevant to the job description.
-   - Write it honestly but stay positive and avoid being too promotional or too generic or too cliché.
-   - If job description is incomplete, focus on general qualifications
-
-GOOD skill examples: "Python", "Agile", "Team Leadership", "AWS", "SQL", "First Aid", "Floor Buffers", "Disinfectant Application", "PPE Usage", "Chemical Dilution", "Attention to Detail", "Time Management", "Reliability"
-BAD skill examples: "hospital", "janitor", "customer", "quality", "experience", "senior", "janitorial", "cleaning", "maintenance"
+2. PROFESSIONAL SUMMARY: Provide ONE improved rewrite (2-4 sentences)
+   - Focus on candidate's experience relevant to job description
+   - Natural professional prose, factual and positive
 
 RETURN JSON:
 {{
@@ -1062,9 +1285,7 @@ RETURN JSON:
     "original_text": "{current_summary}",
     "key_changes": ["Added Python expertise", "Emphasized leadership"]
   }}
-}}
-
-CRITICAL: Return valid JSON only. No explanations outside the JSON structure."""
+}}"""
     
     try:
         start_time = time.time()
@@ -1076,13 +1297,11 @@ CRITICAL: Return valid JSON only. No explanations outside the JSON structure."""
         async def _call():
             return await asyncio.to_thread(
                 _openai_client.chat.completions.create,
-                model="gpt-4o-mini",
+                model=AIConfig.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=1200,
-                temperature=0.2
             )
         
         response = await _with_retries(_call, attempts=2, delay=0.5)
@@ -1090,6 +1309,20 @@ CRITICAL: Return valid JSON only. No explanations outside the JSON structure."""
         generation_time = int((time.time() - start_time) * 1000)
         raw_response = response.choices[0].message.content
         tokens_used = response.usage.total_tokens
+        
+        # Log AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="generate_suggestions",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                generation_time=generation_time,
+                success=True,
+                cv_id=cv_id
+            )
         
         # Log response metrics for monitoring
         logger.info(f"OpenAI response received: {tokens_used} tokens, {generation_time}ms")
@@ -1201,8 +1434,23 @@ CRITICAL: Return valid JSON only. No explanations outside the JSON structure."""
             }
         
     except Exception as e:
+        # Log failed AI usage
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="generate_suggestions",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=0,
+                completion_tokens=0,
+                generation_time=0,
+                success=False,
+                error_message=str(e),
+                cv_id=cv_id
+            )
+        
         # Log error and return empty structures (graceful degradation)
-        logger.error(f"Error in generate_all_suggestions: {str(e)}")
+        logger.error(f"Error in create_optimization_suggestions: {str(e)}")
         return {
             "skills": {"technical": [], "soft": []},
             "professional_summary": {
@@ -1213,7 +1461,7 @@ CRITICAL: Return valid JSON only. No explanations outside the JSON structure."""
         }
 
 
-def extract_job_description_with_ai(raw_content: str, source_url: str) -> Dict[str, Any]:
+def extract_job_description_with_ai(raw_content: str, source_url: str, user_id: Optional[str] = None, cv_id: Optional[str] = None, db_session: Optional[Any] = None) -> Dict[str, Any]:
     """
     Extract structured job description data from raw HTML content using OpenAI.
     
@@ -1269,8 +1517,9 @@ Return only the JSON object:
 """
 
         def _call_openai():
+            start_time = time.time()
             response = _openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=AIConfig.OPENAI_MODEL,
                 messages=[
                     {
                         "role": "system",
@@ -1281,12 +1530,32 @@ Return only the JSON object:
                         "content": prompt
                     }
                 ],
-                temperature=0.1,
-                max_tokens=2000
             )
-            return response.choices[0].message.content.strip()
+            end_time = time.time()
+            
+            # Extract token usage information
+            usage = response.usage
+            prompt_tokens = usage.prompt_tokens if usage else 0
+            completion_tokens = usage.completion_tokens if usage else 0
+            generation_time = int((end_time - start_time) * 1000)  # Convert to milliseconds
+            
+            return response.choices[0].message.content.strip(), prompt_tokens, completion_tokens, generation_time
 
-        result = _call_openai()
+        result, prompt_tokens, completion_tokens, generation_time = _call_openai()
+        
+        # Log AI usage with actual token counts
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="extract_job_description",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                generation_time=generation_time,
+                success=True,
+                cv_id=cv_id
+            )
         
         # Parse the JSON response
         try:
@@ -1325,8 +1594,85 @@ Return only the JSON object:
             }
         
     except Exception as e:
+        # Log failed AI usage (we can't get actual token counts on error, so use 0)
+        if user_id:
+            _log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type="extract_job_description",
+                model_used=AIConfig.OPENAI_MODEL,
+                prompt_tokens=0,  # Cannot determine on error
+                completion_tokens=0,  # Cannot determine on error
+                generation_time=0,  # Cannot determine on error
+                success=False,
+                error_message=str(e),
+                cv_id=cv_id
+            )
+        
         logger.error(f"Error in extract_job_description_with_ai: {str(e)}")
         return {
             "error": f"Failed to extract job description: {str(e)}",
             "success": False
         }
+
+
+def check_cv_ai_enhancement_status(db_session: Any, cv_id: str) -> bool:
+    """
+    Check if a CV has been enhanced with AI by looking for accepted AI suggestions.
+    
+    Args:
+        db_session: Database session
+        cv_id: CV ID to check
+        
+    Returns:
+        bool: True if CV has accepted AI suggestions, False otherwise
+    """
+    try:
+        from ..models.ai_suggestion import AISuggestion
+        from ..models.ai_section import AISection
+        
+        # Check for accepted AI suggestions
+        accepted_suggestions = db_session.query(AISuggestion).filter(
+            AISuggestion.cv_id == cv_id,
+            AISuggestion.is_accepted == "accepted"
+        ).count()
+        
+        # Check for active AI sections (AI-generated content that's been applied)
+        active_ai_sections = db_session.query(AISection).filter(
+            AISection.cv_id == cv_id,
+            AISection.is_active == True
+        ).count()
+        
+        # CV is considered AI-enhanced if it has any accepted suggestions or active AI sections
+        return accepted_suggestions > 0 or active_ai_sections > 0
+        
+    except Exception as e:
+        logger.error(f"Error checking AI enhancement status for CV {cv_id}: {str(e)}")
+        return False
+
+
+def mark_cv_as_ai_enhanced(db_session: Any, cv_id: str) -> bool:
+    """
+    Mark a CV as AI-enhanced by setting the is_ai_enhanced flag to True.
+    
+    Args:
+        db_session: Database session
+        cv_id: CV ID to mark as AI-enhanced
+        
+    Returns:
+        bool: True if successfully marked, False otherwise
+    """
+    try:
+        from ..models.cv import CV
+        
+        cv = db_session.query(CV).filter(CV.id == cv_id).first()
+        if cv:
+            cv.is_ai_enhanced = True
+            db_session.commit()
+            return True
+        return False
+        
+    except Exception as e:
+        logger.error(f"Error marking CV {cv_id} as AI-enhanced: {str(e)}")
+        db_session.rollback()
+        return False

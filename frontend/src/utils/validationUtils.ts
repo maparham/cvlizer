@@ -195,6 +195,92 @@ export interface FieldValidationResult {
   message?: string
 }
 
+/**
+ * Validate job posting URL with comprehensive regex patterns
+ * Supports LinkedIn, Indeed, Glassdoor, and other common job sites
+ */
+export const validateJobPostingUrl = (url: string): FieldValidationResult => {
+  if (!url || url.trim() === '') {
+    return { isValid: false, message: 'Please enter a job posting URL' }
+  }
+
+  // Basic URL format validation
+  const basicUrlRegex = /^https?:\/\/.+/
+  if (!basicUrlRegex.test(url)) {
+    return { isValid: false, message: 'URL must start with http:// or https://' }
+  }
+
+  try {
+    // Use native URL constructor for additional validation
+    new URL(url)
+  } catch {
+    return { isValid: false, message: 'Please enter a valid URL format' }
+  }
+
+  // Job posting site patterns
+  const jobSitePatterns = [
+    // LinkedIn job postings
+    /^https?:\/\/(www\.)?linkedin\.com\/jobs\/view\/\d+/i,
+    /^https?:\/\/(www\.)?linkedin\.com\/jobs\/search\/\?/i,
+    
+    // Indeed job postings
+    /^https?:\/\/(www\.)?indeed\.com\/viewjob\?/i,
+    /^https?:\/\/(www\.)?indeed\.com\/jobs\?/i,
+    /^https?:\/\/(.*\.)?indeed\.com\/viewjob\?/i,
+    
+    // Glassdoor job postings
+    /^https?:\/\/(www\.)?glassdoor\.com\/job-listing\/.*\/JV_/i,
+    /^https?:\/\/(www\.)?glassdoor\.com\/Jobs\/.*-jobs/i,
+    
+    // ZipRecruiter
+    /^https?:\/\/(www\.)?ziprecruiter\.com\/c\/Jobs\/.*/i,
+    
+    // Monster
+    /^https?:\/\/(www\.)?monster\.com\/jobs\/search\/.*/i,
+    
+    // CareerBuilder
+    /^https?:\/\/(www\.)?careerbuilder\.com\/job\/.*/i,
+    
+    // AngelList/Wellfound
+    /^https?:\/\/(angel\.co|wellfound\.com)\/.*\/jobs\/.*/i,
+    
+    // Stack Overflow Jobs
+    /^https?:\/\/(www\.)?stackoverflow\.com\/jobs\/\d+/i,
+    
+    // Remote job sites
+    /^https?:\/\/(www\.)?remote\.co\/remote-jobs\/.*/i,
+    /^https?:\/\/(www\.)?flexjobs\.com\/job\/.*/i,
+    /^https?:\/\/(www\.)?weworkremotely\.com\/remote-jobs\/.*/i,
+    
+    // Company career pages (generic pattern)
+    /^https?:\/\/.*\.com\/careers?\/.*/i,
+    /^https?:\/\/.*\.com\/jobs\/.*/i,
+    /^https?:\/\/.*\.com\/employment\/.*/i,
+    /^https?:\/\/.*\.com\/opportunities\/.*/i,
+    
+    // Government job sites
+    /^https?:\/\/(www\.)?usajobs\.gov\/GetJob\/ViewDetails\/.*/i,
+    
+    // Academic job sites
+    /^https?:\/\/(www\.)?higheredjobs\.com\/search\/.*/i,
+    /^https?:\/\/(www\.)?chronicle\.com\/jobs\/.*/i,
+  ]
+
+  // Check if URL matches any job posting pattern
+  const isJobPostingUrl = jobSitePatterns.some(pattern => pattern.test(url))
+  
+  if (isJobPostingUrl) {
+    return { isValid: true }
+  }
+
+  // If it's a valid URL but doesn't match job posting patterns, still allow it
+  // but provide a helpful message
+  return { 
+    isValid: true, 
+    message: 'URL format is valid. Make sure this is a job posting URL.' 
+  }
+}
+
 export const validateField = (fieldName: string, value: string, _data: any): FieldValidationResult => {
   switch (fieldName) {
     case 'email': {
@@ -231,6 +317,11 @@ export const validateField = (fieldName: string, value: string, _data: any): Fie
         isValid: githubRegex.test(value),
         message: 'Please enter a valid GitHub URL'
       }
+    }
+    
+    case 'job_posting_url': {
+      if (!value) return { isValid: false, message: 'Please enter a job posting URL' }
+      return validateJobPostingUrl(value)
     }
     
     default:

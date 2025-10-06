@@ -15,8 +15,10 @@ import { Suspense, lazy, useCallback, useEffect } from 'react'
 import { Box, CircularProgress } from '@mui/material'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ImpersonationProvider } from './contexts/ImpersonationContext'
+import { AITaskPollingProvider } from './contexts/AITaskPollingContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import { ImpersonationBanner } from './components/common'
+import ErrorBoundary from './components/ErrorBoundary'
 import { useCVStore } from './stores/cvStore'
 import { useImpersonation } from './hooks/useImpersonation'
 import { useActivityLogger } from './hooks/useActivityLogger'
@@ -28,7 +30,8 @@ const Register = lazy(() => import('./pages/Register'))
 const CVEditor = lazy(() => import('./pages/CVEditor'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Profile = lazy(() => import('./pages/Profile'))
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+// Temporarily disable lazy loading for AdminDashboard to debug the issue
+import AdminDashboard from './pages/AdminDashboard'
 const LoginRedirect = lazy(() => import('./components/LoginRedirect'))
 
 // Loading component
@@ -68,7 +71,7 @@ const AppContent = () => {
   }, [fetchCVs, navigate, isAuthenticated, authLoading, location.pathname])
 
   return (
-    <>
+    <ErrorBoundary>
       {/* Impersonation banner - shows when admin is impersonating */}
       <ImpersonationBanner onImpersonationEnd={handleImpersonationEnd} />
       
@@ -105,7 +108,7 @@ const AppContent = () => {
           } />
         </Routes>
       </Suspense>
-    </>
+    </ErrorBoundary>
   )
 }
 
@@ -123,21 +126,25 @@ const theme = createTheme({
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <ImpersonationProvider>
-          <Router
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
-            <AppContent />
-          </Router>
-        </ImpersonationProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <ImpersonationProvider>
+            <AITaskPollingProvider>
+              <Router
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                }}
+              >
+                <AppContent />
+              </Router>
+            </AITaskPollingProvider>
+          </ImpersonationProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }
 

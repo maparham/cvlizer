@@ -22,15 +22,18 @@
 import { apiClient as api } from './api';
 import {
   JobFitAnalysisRequest,
-  JobFitAnalysisResponse,
   ContentEnhancementRequest,
   ContentEnhancementResponse,
+  ContentEnhancementCreateResponse,
+  AIEnhancementResponse,
+  AIEnhancementCreateResponse,
   ATSOptimizationRequest,
   ATSOptimizationResponse,
   AISectionResponse,
   AISectionListResponse,
   JobDescription,
   JobDescriptionRequest,
+  DraftResponse,
   AIServiceError,
   AllSuggestionsResponse
 } from '../types/ai';
@@ -86,25 +89,18 @@ class AIService {
   }
 
   /**
-   * Analyze job fit between CV and job description
+   * Analyze job fit between CV and job description (now returns immediately with background processing)
    */
   async analyzeJobFit(
     cvId: string, 
     request: JobFitAnalysisRequest
-  ): Promise<JobFitAnalysisResponse> {
-    const cacheKey = `job-fit-${cvId}-${request.job_description_id}`;
-    const cached = this.getCachedData<JobFitAnalysisResponse>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
+  ): Promise<DraftResponse> {
     try {
-      const response = await api.post<JobFitAnalysisResponse>(
+      const response = await api.post<DraftResponse>(
         `/api/cvs/${cvId}/analyze-job-fit`,
         request
       );
       
-      this.setCachedData(cacheKey, response.data);
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -117,14 +113,35 @@ class AIService {
   }
 
   /**
-   * Enhance content with AI suggestions
+   * Check draft generation status
+   */
+  async getDraftStatus(draftId: string): Promise<DraftResponse> {
+    try {
+      const response = await api.get<DraftResponse>(
+        `/api/drafts/${draftId}/status`
+      );
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Error getting draft status:', error);
+      const aiError: AIServiceError = {
+        error: error.response?.data?.detail || 'Failed to get draft status',
+        details: error.message,
+        code: error.response?.status?.toString()
+      };
+      throw aiError;
+    }
+  }
+
+  /**
+   * Enhance content with AI suggestions (now returns immediately with background processing)
    */
   async enhanceContent(
     cvId: string,
     request: ContentEnhancementRequest
-  ): Promise<ContentEnhancementResponse> {
+  ): Promise<ContentEnhancementCreateResponse> {
     try {
-      const response = await api.post<ContentEnhancementResponse>(
+      const response = await api.post<ContentEnhancementCreateResponse>(
         `/api/cvs/${cvId}/enhance-content`,
         request
       );
@@ -133,6 +150,26 @@ class AIService {
     } catch (error: any) {
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || 'Failed to enhance content',
+        details: error.message,
+        code: error.response?.status?.toString()
+      };
+      throw aiError;
+    }
+  }
+
+  /**
+   * Check content enhancement status
+   */
+  async getContentEnhancementStatus(enhancementId: string): Promise<ContentEnhancementResponse> {
+    try {
+      const response = await api.get<ContentEnhancementResponse>(
+        `/api/content-enhancements/${enhancementId}/status`
+      );
+      
+      return response.data;
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error: error.response?.data?.detail || 'Failed to get content enhancement status',
         details: error.message,
         code: error.response?.status?.toString()
       };
@@ -230,19 +267,20 @@ class AIService {
   }
 
   /**
-   * Create job description
+   * Create job description for a specific CV
    */
   async createJobDescription(
+    cvId: string,
     request: JobDescriptionRequest
   ): Promise<JobDescription> {
     try {
       const response = await api.post<JobDescription>(
-        '/api/job-descriptions',
+        `/api/cvs/${cvId}/job-descriptions`,
         request
       );
       
-      // Clear global job descriptions cache since we've added a new one
-      this.cache.delete('job-descriptions-global');
+      // Clear cache for this CV since we've added a new job description
+      this.clearCacheForCV(cvId);
       
       return response.data;
     } catch (error: any) {
@@ -256,14 +294,14 @@ class AIService {
   }
 
   /**
-   * Parse job description from URL
+   * Parse job description from URL (now returns immediately with background processing)
    */
   async parseJobDescriptionUrl(
     cvId: string,
     url: string
-  ): Promise<JobDescription> {
+  ): Promise<any> {
     try {
-      const response = await api.post<JobDescription>(
+      const response = await api.post<any>(
         `/api/cvs/${cvId}/job-descriptions/parse-url`,
         { url }
       );
@@ -283,10 +321,30 @@ class AIService {
   }
 
   /**
-   * Get job descriptions for the user (global, not CV-specific)
+   * Check job description parsing status
    */
-  async getJobDescriptions(): Promise<JobDescription[]> {
-    const cacheKey = 'job-descriptions-global';
+  async getJobDescriptionStatus(jobDescriptionId: string): Promise<JobDescription> {
+    try {
+      const response = await api.get<JobDescription>(
+        `/api/job-descriptions/${jobDescriptionId}/status`
+      );
+      
+      return response.data;
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error: error.response?.data?.detail || 'Failed to get job description status',
+        details: error.message,
+        code: error.response?.status?.toString()
+      };
+      throw aiError;
+    }
+  }
+
+  /**
+   * Get job descriptions for a specific CV
+   */
+  async getJobDescriptions(cvId: string): Promise<JobDescription[]> {
+    const cacheKey = `job-descriptions-${cvId}`;
     const cached = this.getCachedData<JobDescription[]>(cacheKey);
     if (cached) {
       return cached;
@@ -294,7 +352,7 @@ class AIService {
 
     try {
       const response = await api.get<{ job_descriptions: JobDescription[] }>(
-        '/api/job-descriptions'
+        `/api/cvs/${cvId}/job-descriptions`
       );
       
       this.setCachedData(cacheKey, response.data.job_descriptions);
@@ -310,12 +368,39 @@ class AIService {
   }
 
   /**
+   * Update job description
+   */
+  async updateJobDescription(
+    jobDescriptionId: string,
+    request: Partial<JobDescriptionRequest>
+  ): Promise<JobDescription> {
+    try {
+      const response = await api.put<JobDescription>(
+        `/api/job-descriptions/${jobDescriptionId}`,
+        request
+      );
+
+      // Clear cache for all CVs since we've updated a job description
+      this.clearAllCache();
+
+      return response.data;
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error: error.response?.data?.detail || 'Failed to update job description',
+        details: error.message,
+        code: error.response?.status?.toString()
+      };
+      throw aiError;
+    }
+  }
+
+  /**
    * Delete job description
    */
   async deleteJobDescription(jobDescriptionId: string): Promise<void> {
     try {
       await api.delete(`/api/job-descriptions/${jobDescriptionId}`);
-      
+
       // Clear global job descriptions cache since we've deleted one
       this.cache.delete('job-descriptions-global');
     } catch (error: any) {
@@ -369,7 +454,7 @@ class AIService {
   }
 
   /**
-   * Generate ALL AI suggestions in one unified call
+   * Generate ALL AI suggestions in one unified call (synchronous - kept for backward compatibility)
    */
   async generateAllSuggestions(
     cvId: string,
@@ -397,6 +482,60 @@ class AIService {
   }
 
   /**
+   * Create AI enhancement task (background task version)
+   */
+  async createAIEnhancement(
+    cvId: string,
+    jobDescriptionId: string
+  ): Promise<AIEnhancementCreateResponse> {
+    try {
+      const response = await api.post<AIEnhancementCreateResponse>(
+        `/api/cvs/${cvId}/ai-enhancements`,
+        { job_description_id: jobDescriptionId }
+      );
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating AI enhancement:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get AI enhancement status
+   */
+  async getAIEnhancementStatus(enhancementId: string): Promise<AIEnhancementResponse> {
+    try {
+      const response = await api.get<AIEnhancementResponse>(
+        `/api/ai-enhancements/${enhancementId}/status`
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Error getting AI enhancement status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the latest AI enhancement for a CV
+   * Returns null if no enhancement exists (not an error)
+   */
+  async getLatestAIEnhancement(cvId: string): Promise<AIEnhancementResponse | null> {
+    try {
+      const response = await api.get<AIEnhancementResponse | null>(
+        `/api/cvs/${cvId}/ai-enhancements/latest`
+      );
+
+      // Backend returns null when no enhancement exists (expected case)
+      return response.data;
+    } catch (error: any) {
+      console.error('Error getting latest AI enhancement:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a job fit analysis draft
    */
   async createJobFitDraft(
@@ -414,6 +553,7 @@ class AIService {
       
       return response.data;
     } catch (error: any) {
+      console.error('❌ [aiService] createJobFitDraft API error:', error);
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || 'Failed to create job fit draft',
         details: error.message,
@@ -425,18 +565,11 @@ class AIService {
 
   /**
    * Get all drafts for a CV
+   * Always fetches fresh data from backend to ensure consistency after approve/reject actions
    */
   async getCVDrafts(cvId: string): Promise<any[]> {
-    const cacheKey = `drafts-${cvId}`;
-    const cached = this.getCachedData<any[]>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
     try {
       const response = await api.get(`/api/cvs/${cvId}/drafts`);
-      
-      this.setCachedData(cacheKey, response.data.drafts);
       return response.data.drafts;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -481,12 +614,68 @@ class AIService {
   async deleteWhyGoodFitDraft(cvId: string): Promise<void> {
     try {
       await api.delete(`/api/cvs/${cvId}/why_good_fit/draft`);
-      
+
       // Clear cache for this CV since we've deleted content
       this.clearCacheForCV(cvId);
     } catch (error: any) {
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || 'Failed to delete draft',
+        details: error.message,
+        code: error.response?.status?.toString()
+      };
+      throw aiError;
+    }
+  }
+
+  /**
+   * Delete a content enhancement record
+   */
+  async deleteContentEnhancement(enhancementId: string): Promise<void> {
+    try {
+      await api.delete(`/api/content-enhancements/${enhancementId}`);
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error: error.response?.data?.detail || 'Failed to delete content enhancement',
+        details: error.message,
+        code: error.response?.status?.toString()
+      };
+      throw aiError;
+    }
+  }
+
+  /**
+   * Update an AI enhancement record with new suggestion data
+   */
+  async updateAIEnhancement(enhancementId: string, enhancementData: any): Promise<void> {
+    try {
+      console.log('📤 [aiService.updateAIEnhancement] Updating enhancement:', enhancementId);
+      console.log('📊 [aiService.updateAIEnhancement] Data:', enhancementData);
+
+      await api.put(`/api/ai-enhancements/${enhancementId}`, {
+        enhancement_data: enhancementData
+      });
+
+      console.log('✅ [aiService.updateAIEnhancement] Update successful');
+    } catch (error: any) {
+      console.error('❌ [aiService.updateAIEnhancement] Update failed:', error);
+      const aiError: AIServiceError = {
+        error: error.response?.data?.detail || 'Failed to update AI enhancement',
+        details: error.message,
+        code: error.response?.status?.toString()
+      };
+      throw aiError;
+    }
+  }
+
+  /**
+   * Delete an AI enhancement record
+   */
+  async deleteAIEnhancement(enhancementId: string): Promise<void> {
+    try {
+      await api.delete(`/api/ai-enhancements/${enhancementId}`);
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error: error.response?.data?.detail || 'Failed to delete AI enhancement',
         details: error.message,
         code: error.response?.status?.toString()
       };
@@ -507,6 +696,7 @@ export const {
   getAISections,
   createJobDescription,
   getJobDescriptions,
+  updateJobDescription,
   deleteJobDescription,
   checkAIFeatureStatus,
   retryWithBackoff,
@@ -516,5 +706,12 @@ export const {
   createJobFitDraft,
   getCVDrafts,
   approveWhyGoodFitDraft,
-  deleteWhyGoodFitDraft
+  deleteWhyGoodFitDraft,
+  parseJobDescriptionUrl,
+  getJobDescriptionStatus,
+  getContentEnhancementStatus,
+  getDraftStatus,
+  getLatestAIEnhancement,
+  deleteContentEnhancement,
+  deleteAIEnhancement
 } = aiService;

@@ -23,6 +23,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Box,
   TextField,
@@ -41,6 +42,7 @@ import {
   Stack,
   Grid,
   Paper,
+  LinearProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -52,11 +54,14 @@ import {
   Check as CheckIcon,
   Close as CloseIcon,
   Work as WorkIcon,
+  HourglassEmpty as HourglassEmptyIcon,
 } from '@mui/icons-material';
-import { useAIStore, useJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
+import { useAIStore, useCVJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
 import { JobDescription } from '../../../types/ai';
 import { useNotifications } from '../../../stores/uiStore';
-import { aiService } from '../../../services/aiService';
+import { formatRelativeTime } from '../../../utils/formatters';
+import { validateJobPostingUrl, FieldValidationResult } from '../../../utils/validationUtils';
+import { useJobDescriptionPolling } from '../../../hooks/useJobDescriptionPolling';
 
 interface JobDescriptionsModalProps {
   open: boolean;
@@ -101,24 +106,43 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [editingJobDescription, setEditingJobDescription] = useState<JobDescription | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [jobDescriptionToDelete, setJobDescriptionToDelete] = useState<JobDescription | null>(null);
+  
+  // URL validation state
+  const [urlValidation, setUrlValidation] = useState<FieldValidationResult>({ isValid: false, message: 'Please enter a job posting URL' });
+  const [urlTouched, setUrlTouched] = useState(false);
 
   const { showSuccess, showError } = useNotifications();
   const {
     loadJobDescriptions,
     createJobDescription,
+    updateJobDescription,
     deleteJobDescription,
     setActiveJobDescription,
+    showJobDescriptionInSidebar,
+    parseJobDescriptionUrl,
   } = useAIStore();
 
-  const jobDescriptions = useJobDescriptions();
+  const jobDescriptions = useCVJobDescriptions(cvId);
   const activeJobDescription = useActiveJobDescription();
+
+  // Use the centralized polling hook
+  const { parsingJobDescriptions } = useJobDescriptionPolling(jobDescriptions, {
+    onParsingComplete: () => {
+      showSuccess('Job description parsed successfully');
+    },
+    onParsingError: (_, error) => {
+      showError('URL Parsing Failed', `Failed to parse the job description URL: ${error}`);
+    },
+  });
 
   // Load job descriptions when modal opens
   useEffect(() => {
     if (open && cvId) {
-      loadJobDescriptions();
+      loadJobDescriptions(cvId);
     }
-  }, [open, cvId, loadJobDescriptions]);
+  }, [open, cvId, loadJobDescriptions]); // Always load when modal opens to ensure fresh data
 
   // Notify parent when active job description changes
   useEffect(() => {
@@ -130,11 +154,59 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     setError(null);
+    // Reset URL validation state when switching tabs
+    setUrlTouched(false);
+    setUrlValidation({ isValid: false, message: 'Please enter a job posting URL' });
   };
 
+  // URL validation handlers
+  const validateUrl = useCallback((url: string): FieldValidationResult => {
+    return validateJobPostingUrl(url);
+  }, []);
+
+  const handleUrlChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const newUrl = event.target.value;
+    setUrlInput(newUrl);
+    
+    // Clear general error when user starts typing
+    setError(null);
+    
+    // Validate URL in real-time
+    const validation = validateUrl(newUrl);
+    setUrlValidation(validation);
+  }, [validateUrl]);
+
+  const handleUrlBlur = useCallback(() => {
+    setUrlTouched(true);
+    // Re-validate on blur to ensure latest validation state
+    const validation = validateUrl(urlInput);
+    setUrlValidation(validation);
+  }, [urlInput, validateUrl]);
+
+  const isUrlValid = urlValidation.isValid;
+  const showUrlError = urlTouched && !isUrlValid;
+
+  // Initialize URL validation when modal opens
+  useEffect(() => {
+    if (open) {
+      const validation = validateUrl(urlInput);
+      setUrlValidation(validation);
+    }
+  }, [open, urlInput, validateUrl]);
+
   const handleUrlSubmit = useCallback(async () => {
+    // Mark URL as touched and validate
+    setUrlTouched(true);
+    const validation = validateUrl(urlInput);
+    setUrlValidation(validation);
+    
     if (!urlInput.trim()) {
       setError('Please enter a URL');
+      return;
+    }
+
+    if (!validation.isValid) {
+      setError(validation.message || 'Please enter a valid job posting URL');
       return;
     }
 
@@ -142,28 +214,15 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setError(null);
 
     try {
-      // Use the URL parsing service
-      const parsedData = await aiService.parseJobDescriptionUrl(cvId, urlInput);
+      // Use the URL parsing service - this creates the job description on backend
+      const parsedData = await parseJobDescriptionUrl(cvId, urlInput);
       
       if (!(parsedData as { success?: boolean }).success) {
         throw new Error((parsedData as { error?: string }).error || 'Failed to parse URL');
       }
 
-      const jobDescription = {
-        content: parsedData.content || `Job posting from: ${urlInput}`,
-        title: parsedData.title || title || 'Parsed Job Description',
-        company: parsedData.company || company || 'Unknown Company',
-        location: parsedData.location || location || 'Unknown Location',
-        source_url: urlInput,
-      };
-
-      const newJobDescription = await createJobDescription(jobDescription);
-      
-      // Automatically select the newly created job description
-      setActiveJobDescription(newJobDescription.id);
-      if (onJobDescriptionSelect) {
-        onJobDescriptionSelect(newJobDescription);
-      }
+      // The AI store will create a placeholder job description automatically
+      // and set it as active when parsing completes
       
       // Clear form fields
       setUrlInput('');
@@ -172,10 +231,11 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       setLocation('');
       setTextInput('');
       
-      // Close the modal after successful parsing
+      // Close the modal immediately to provide clear feedback
       onClose();
       
-      showSuccess('Job description parsed and created successfully');
+      // Show success message
+      showSuccess('Job description created and is being parsed in the background');
     } catch (err) {
       const userFriendlyMessage = 'Unable to parse this URL. Please use the "Text" tab to enter the job description manually.';
       setError(userFriendlyMessage);
@@ -183,7 +243,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [urlInput, title, company, location, cvId, createJobDescription, showSuccess, showError]);
+  }, [urlInput, title, company, location, cvId, parseJobDescriptionUrl, setActiveJobDescription, onJobDescriptionSelect, showSuccess, showError, validateUrl]);
 
   const handleTextSubmit = useCallback(async () => {
     if (!textInput.trim()) {
@@ -202,7 +262,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
         location: location || 'Unknown Location',
       };
 
-      const newJobDescription = await createJobDescription(jobDescription);
+      const newJobDescription = await createJobDescription(cvId, jobDescription);
       
       // Automatically select the newly created job description
       setActiveJobDescription(newJobDescription.id);
@@ -231,19 +291,38 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
 
   const handleJobDescriptionSelect = useCallback((jobDescription: JobDescription) => {
     setActiveJobDescription(jobDescription.id);
+    // Make sure the job description is visible in the sidebar
+    showJobDescriptionInSidebar(jobDescription.id);
     // Close the modal after selection
     onClose();
-  }, [setActiveJobDescription, onClose]);
+  }, [setActiveJobDescription, showJobDescriptionInSidebar, onClose]);
 
-  const handleJobDescriptionDelete = useCallback(async (jobDescriptionId: string) => {
+
+  const handleDeleteClick = useCallback((jobDescription: JobDescription) => {
+    setJobDescriptionToDelete(jobDescription);
+    setShowDeleteDialog(true);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!jobDescriptionToDelete) return;
+    
     try {
-      await deleteJobDescription(jobDescriptionId);
+      await deleteJobDescription(jobDescriptionToDelete.id);
       showSuccess('Job description deleted successfully');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete job description';
       showError('Error', errorMessage);
+    } finally {
+      setShowDeleteDialog(false);
+      setJobDescriptionToDelete(null);
     }
-  }, [deleteJobDescription, showSuccess, showError]);
+  }, [jobDescriptionToDelete, deleteJobDescription, showSuccess, showError]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setShowDeleteDialog(false);
+    setJobDescriptionToDelete(null);
+  }, []);
+
 
   const handleEditJobDescription = useCallback((jobDescription: JobDescription) => {
     setEditingJobDescription(jobDescription);
@@ -263,16 +342,14 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setError(null);
 
     try {
-      // TODO: Implement update job description API
-      // For now, we'll delete and recreate
-      await deleteJobDescription(editingJobDescription.id);
-      await createJobDescription({
+      // Update the job description using the proper update API
+      await updateJobDescription(editingJobDescription.id, {
         content: textInput,
         title: title || 'Manual Job Description',
         company: company || 'Unknown Company',
         location: location || 'Unknown Location',
       });
-      
+
       setShowEditDialog(false);
       setEditingJobDescription(null);
       setTextInput('');
@@ -287,23 +364,108 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [editingJobDescription, textInput, title, company, location, deleteJobDescription, createJobDescription, showSuccess, showError]);
+  }, [editingJobDescription, textInput, title, company, location, updateJobDescription, showSuccess, showError]);
 
 
   const formatDate = useCallback((dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatRelativeTime(dateString);
   }, []);
+
+  // Parsing card component
+  const ParsingCard: React.FC<{ jobDescription: JobDescription }> = ({ jobDescription }) => {
+    const hasError = jobDescription.parse_error;
+    
+    if (hasError) {
+      return (
+        <Card
+          variant="outlined"
+          sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            border: 2,
+            borderColor: 'error.main',
+            backgroundColor: 'rgba(211, 47, 47, 0.04)',
+          }}
+        >
+          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Typography variant="h6" color="error" sx={{ fontWeight: 500 }}>
+                Parsing Failed
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+                Unable to extract job details from URL
+              </Typography>
+              <Typography variant="caption" color="error" sx={{ textAlign: 'center', maxWidth: 200 }}>
+                {jobDescription.parse_error}
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                onClick={() => handleDeleteClick(jobDescription)}
+                sx={{ mt: 1 }}
+              >
+                Remove
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      );
+    }
+    
+    return (
+      <Card
+        variant="outlined"
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          border: 2,
+          borderColor: 'primary.main',
+          backgroundColor: 'rgba(25, 118, 210, 0.04)',
+        }}
+      >
+        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <CircularProgress size={40} thickness={4} />
+            <Typography variant="h6" color="primary" sx={{ fontWeight: 500 }}>
+              Parsing Job Description
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+              Extracting details from URL...
+            </Typography>
+            <Box sx={{ width: '100%', maxWidth: 200 }}>
+              <LinearProgress 
+                variant="indeterminate" 
+                sx={{ 
+                  height: 4, 
+                  borderRadius: 2,
+                  backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: 2,
+                  }
+                }} 
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+              <HourglassEmptyIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+              <Typography variant="caption" color="text.secondary">
+                This may take a few moments
+              </Typography>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const handleClose = useCallback(() => {
     setError(null);
     setTabValue(0);
+    // Reset URL validation state when closing modal
+    setUrlTouched(false);
+    setUrlValidation({ isValid: false, message: 'Please enter a job posting URL' });
     onClose();
   }, [onClose]);
 
@@ -371,49 +533,28 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                     label="Job Posting URL"
                     placeholder="https://linkedin.com/jobs/view/..."
                     value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
+                    onChange={handleUrlChange}
+                    onBlur={handleUrlBlur}
                     fullWidth
                     disabled={isLoading}
-                    helperText="Paste a URL from LinkedIn, Indeed, or other job sites"
+                    error={showUrlError}
+                    helperText={
+                      showUrlError 
+                        ? urlValidation.message 
+                        : urlValidation.isValid && urlValidation.message 
+                          ? urlValidation.message 
+                          : "Paste a URL from LinkedIn, Indeed, or other job sites. Job details will be extracted automatically."
+                    }
                   />
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        label="Job Title (Optional)"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        fullWidth
-                        disabled={isLoading}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        label="Company (Optional)"
-                        value={company}
-                        onChange={(e) => setCompany(e.target.value)}
-                        fullWidth
-                        disabled={isLoading}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        label="Location (Optional)"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        fullWidth
-                        disabled={isLoading}
-                      />
-                    </Grid>
-                  </Grid>
                   <Button
                     variant="contained"
                     onClick={handleUrlSubmit}
-                    disabled={isLoading || !urlInput.trim()}
+                    disabled={isLoading || !urlInput.trim() || !isUrlValid}
                     startIcon={isLoading ? <CircularProgress size={20} /> : <AddIcon />}
                     size="large"
                     sx={{ alignSelf: 'flex-start' }}
                   >
-                    {isLoading ? 'Parsing...' : 'Parse & Save Job Description'}
+                    {isLoading ? 'Loading...' : 'LOAD & SAVE'}
                   </Button>
                 </Stack>
               </TabPanel>
@@ -488,43 +629,57 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                     </Paper>
                   ) : (
                     <Grid container spacing={3}>
-                      {jobDescriptions.map((jobDescription) => (
-                        <Grid item xs={12} md={6} lg={4} key={jobDescription.id}>
-                          <Card
-                            variant="outlined"
-                            sx={{
-                              height: '100%',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              border: activeJobDescription?.id === jobDescription.id ? 2 : 1,
-                              borderColor: activeJobDescription?.id === jobDescription.id ? 'primary.main' : 'divider',
-                            }}
-                          >
-                            <CardContent sx={{ flex: 1 }}>
-                              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                                <Typography variant="h6" component="div" sx={{ flex: 1, mr: 1 }}>
-                                  {jobDescription.title || 'Untitled Job Description'}
-                                </Typography>
-                                <Box>
-                                  <Tooltip title="Edit">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleEditJobDescription(jobDescription)}
-                                    >
-                                      <EditIcon />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Delete">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleJobDescriptionDelete(jobDescription.id)}
-                                      color="error"
-                                    >
-                                      <DeleteIcon />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Box>
-                              </Box>
+                      {jobDescriptions.map((jobDescription) => {
+                        const isParsing = jobDescription.is_parsing || parsingJobDescriptions.has(jobDescription.id);
+                        const hasError = jobDescription.parse_error;
+                        
+                        return (
+                          <Grid item xs={12} md={6} lg={4} key={jobDescription.id}>
+                            {(isParsing || hasError) ? (
+                              <ParsingCard jobDescription={jobDescription} />
+                            ) : (
+                              <Card
+                                variant="outlined"
+                                sx={{
+                                  height: '100%',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  border: activeJobDescription?.id === jobDescription.id ? 2 : 1,
+                                  borderColor: activeJobDescription?.id === jobDescription.id ? 'primary.main' : 'divider',
+                                }}
+                              >
+                                <CardContent sx={{ flex: 1 }}>
+                                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                                    <Typography variant="h6" component="div" sx={{ flex: 1, mr: 1 }}>
+                                      {jobDescription.is_parsing ? 'Loading...' : (jobDescription.title || 'Untitled Job Description')}
+                                    </Typography>
+                                    <Box>
+                                      <Tooltip title={isParsing ? "Cannot edit while parsing" : "Edit"}>
+                                        <span>
+                                          <IconButton
+                                            size="small"
+                                            onClick={() => handleEditJobDescription(jobDescription)}
+                                            disabled={isParsing}
+                                            sx={{
+                                              opacity: isParsing ? 0.5 : 1,
+                                              cursor: isParsing ? 'not-allowed' : 'pointer',
+                                            }}
+                                          >
+                                            <EditIcon />
+                                          </IconButton>
+                                        </span>
+                                      </Tooltip>
+                                      <Tooltip title="Delete">
+                                        <IconButton
+                                          size="small"
+                                          onClick={() => handleDeleteClick(jobDescription)}
+                                          color="error"
+                                        >
+                                          <DeleteIcon />
+                                        </IconButton>
+                                      </Tooltip>
+                                    </Box>
+                                  </Box>
                               
                               {(jobDescription.company || jobDescription.location || jobDescription.source_url) && (
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
@@ -588,33 +743,35 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                                 Added: {formatDate(jobDescription.created_at)}
                               </Typography>
                               
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 4,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                  mb: 1,
-                                }}
-                              >
-                                {jobDescription.content}
-                              </Typography>
-                            </CardContent>
-                            
-                            <CardActions sx={{ justifyContent: 'center', px: 2, pb: 2 }}>
-                              <Button
-                                size="small"
-                                onClick={() => handleJobDescriptionSelect(jobDescription)}
-                                variant={activeJobDescription?.id === jobDescription.id ? 'contained' : 'outlined'}
-                              >
-                                {activeJobDescription?.id === jobDescription.id ? 'Selected' : 'Select'}
-                              </Button>
-                            </CardActions>
-                          </Card>
-                        </Grid>
-                      ))}
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 4,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                      mb: 1,
+                                    }}
+                                  >
+                                    {jobDescription.content}
+                                  </Typography>
+                                </CardContent>
+                                
+                                <CardActions sx={{ justifyContent: 'center', px: 2, pb: 2 }}>
+                                  <Button
+                                    size="small"
+                                    onClick={() => handleJobDescriptionSelect(jobDescription)}
+                                    variant={activeJobDescription?.id === jobDescription.id ? 'contained' : 'outlined'}
+                                  >
+                                    {activeJobDescription?.id === jobDescription.id ? 'Selected' : 'Select'}
+                                  </Button>
+                                </CardActions>
+                              </Card>
+                            )}
+                          </Grid>
+                        );
+                      })}
                     </Grid>
                   )}
                 </Box>
@@ -626,7 +783,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
         <DialogActions sx={{ borderTop: '1px solid #e0e0e0', p: 2 }}>
           {activeJobDescription && (
             <Typography variant="body2" color="text.secondary">
-              Active: {activeJobDescription.title || 'Untitled Job Description'}
+              Active: {activeJobDescription.is_parsing ? 'Loading...' : (activeJobDescription.title || 'Untitled Job Description')}
             </Typography>
           )}
         </DialogActions>
@@ -685,6 +842,36 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
             startIcon={isLoading ? <CircularProgress size={20} /> : <CheckIcon />}
           >
             {isLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={showDeleteDialog}
+        onClose={handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete Job Description</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete "{jobDescriptionToDelete?.title || 'this job description'}"? 
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={isLoading}
+            startIcon={isLoading ? <CircularProgress size={20} /> : <DeleteIcon />}
+          >
+            {isLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -19,7 +19,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   Box,
@@ -59,6 +59,7 @@ import {
 } from '@mui/icons-material';
 import { useAIStore, useJobFitAnalysis, useActiveJobDescription } from '../../../stores/aiStore';
 import { useNotifications } from '../../../stores/uiStore';
+import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
 
 interface JobFitAnalysisProps {
   cvId: string;
@@ -83,8 +84,49 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
     clearJobFitAnalysis,
   } = useAIStore();
 
+  // Use global AI task polling for job fit analysis
+  const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
+
   const jobFitAnalysis = useJobFitAnalysis();
   const activeJobDescription = useActiveJobDescription();
+
+  // Monitor active tasks for job fit analysis completion
+  useEffect(() => {
+    for (const [taskId, task] of activeTasks) {
+      if (task.type === 'draft' && task.cvId === cvId && !task.isGenerating) {
+        if (task.generationError) {
+          showError('Error', `Job fit analysis failed: ${task.generationError}`);
+          setIsGenerating(false);
+        } else {
+          // Task completed successfully - handle based on whether section exists
+          if (existingWhyGoodFit && (existingWhyGoodFit as { content?: string }).content) {
+            // Section exists, show overwrite dialog
+            setPendingAnalysisResult(task.data);
+            setShowOverwriteDialog(true);
+            setIsGenerating(false);
+          } else if (task.data && onAddToCV && 'draft_data' in task.data) {
+            // No existing section, add directly
+            const draftData = task.data.draft_data || {};
+            const whyGoodFitData = {
+              content: draftData.fit_analysis || '',
+              confidence_score: draftData.confidence_score || 0,
+              key_matches: draftData.key_matches || [],
+              generated_at: new Date().toISOString(),
+              job_description_id: activeJobDescription?.id,
+            };
+            
+            onAddToCV(JSON.stringify(whyGoodFitData), 'why_good_fit');
+            showSuccess('Job fit section generated and added to CV');
+            setIsGenerating(false);
+          } else {
+            showSuccess('Job fit analysis completed successfully');
+            setIsGenerating(false);
+          }
+        }
+        removeTask(taskId);
+      }
+    }
+  }, [activeTasks, cvId, showSuccess, showError, removeTask, onAddToCV, activeJobDescription, existingWhyGoodFit]);
 
   const handleAnalyze = useCallback(async () => {
     if (!activeJobDescription) {
@@ -96,38 +138,55 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
     try {
       const analysisResult = await analyzeJobFit(cvId, activeJobDescription.id);
       
-      // Check if section already exists
-      if (existingWhyGoodFit && (existingWhyGoodFit as { content?: string }).content) {
-        // Store the analysis result and show confirmation dialog
-        setPendingAnalysisResult(analysisResult);
-        setShowOverwriteDialog(true);
+      // Add the task to polling if it's still generating
+      if (analysisResult.is_generating) {
+        addTask({
+          id: analysisResult.id,
+          type: 'draft',
+          cvId: cvId,
+          isGenerating: true,
+          data: analysisResult,
+        });
+      } else {
+        // Task completed immediately
         setIsGenerating(false);
-        return;
       }
       
-      // No existing content, add directly
-      if (onAddToCV && analysisResult && 'fit_analysis' in analysisResult) {
-        const analysis = analysisResult as { fit_analysis: string; confidence_score: number; key_matches: string[] };
-        const whyGoodFitData = {
-          content: analysis.fit_analysis,
-          confidence_score: analysis.confidence_score,
-          key_matches: analysis.key_matches,
-          generated_at: new Date().toISOString(),
-          job_description_id: activeJobDescription.id,
-        };
+      // If task completed immediately (not generating), handle it now
+      if (!analysisResult.is_generating) {
+        // Check if section already exists
+        if (existingWhyGoodFit && (existingWhyGoodFit as { content?: string }).content) {
+          // Store the analysis result and show confirmation dialog
+          setPendingAnalysisResult(analysisResult);
+          setShowOverwriteDialog(true);
+          setIsGenerating(false);
+          return;
+        }
         
-        onAddToCV(JSON.stringify(whyGoodFitData), 'why_good_fit');
-        showSuccess('Job fit section generated and added to CV');
-      } else {
-        showSuccess('Job fit section generated successfully');
+        // No existing content, add directly
+        if (onAddToCV && analysisResult && 'draft_data' in analysisResult) {
+          const draftData = analysisResult.draft_data || {};
+          const whyGoodFitData = {
+            content: draftData.fit_analysis || '',
+            confidence_score: draftData.confidence_score || 0,
+            key_matches: draftData.key_matches || [],
+            generated_at: new Date().toISOString(),
+            job_description_id: activeJobDescription.id,
+          };
+          
+          onAddToCV(JSON.stringify(whyGoodFitData), 'why_good_fit');
+          showSuccess('Job fit section generated and added to CV');
+        } else {
+          showSuccess('Job fit section generated successfully');
+        }
+        setIsGenerating(false);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to analyze job fit';
       showError('Error', errorMessage);
-    } finally {
       setIsGenerating(false);
     }
-  }, [cvId, activeJobDescription, analyzeJobFit, onAddToCV, existingWhyGoodFit, showSuccess, showError]);
+  }, [cvId, activeJobDescription, analyzeJobFit, onAddToCV, existingWhyGoodFit, showSuccess, showError, addTask]);
 
   const handleRegenerate = useCallback(() => {
     clearJobFitAnalysis();

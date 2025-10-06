@@ -29,7 +29,7 @@ class OptimizationHistory(Base):
     optimized_sections = Column(JSON, nullable=True)  # Sections that need optimization
     strengths = Column(JSON, nullable=True)  # List of strengths identified
     weaknesses = Column(JSON, nullable=True)  # List of weaknesses identified
-    ai_model = Column(String(50), default="gpt-4o-mini", nullable=False)
+    ai_model = Column(String(50), nullable=True)  # Default set by application layer from config
     tokens_used = Column(Integer, nullable=True)
     generation_time = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

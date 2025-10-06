@@ -51,6 +51,8 @@ const mockDraft: DraftResponse = {
   tokens_used: 150,
   created_at: '2024-01-15T10:30:00Z',
   job_description_id: 'test-job-1',
+  is_generating: false,
+  generation_error: undefined,
 };
 
 const mockApprovalResult = {

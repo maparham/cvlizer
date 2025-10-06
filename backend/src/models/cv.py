@@ -33,8 +33,10 @@ class CV(Base):
     ai_sections = relationship("AISection", back_populates="cv", cascade="all, delete-orphan")
     ai_drafts = relationship("AIDraft", back_populates="cv", cascade="all, delete-orphan")
     ai_suggestions = relationship("AISuggestion", back_populates="cv", cascade="all, delete-orphan")
+    ai_enhancements = relationship("AIEnhancement", back_populates="cv", cascade="all, delete-orphan")
     optimization_history = relationship("OptimizationHistory", back_populates="cv", cascade="all, delete-orphan", order_by="OptimizationHistory.created_at.desc()")
     history = relationship("CVHistory", back_populates="cv", cascade="all, delete-orphan", order_by="CVHistory.created_at.desc()")
+    content_enhancements = relationship("ContentEnhancement", back_populates="cv", cascade="all, delete-orphan")
     
     def __str__(self):
         return f"<CV {self.original_filename}>"

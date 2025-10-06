@@ -61,57 +61,40 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
 }) => {
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  
+
   const { approveWhyGoodFitDraft, deleteWhyGoodFitDraft } = useAIStore();
   const { showSuccess, showError } = useNotifications();
-  const { onUpdateCV, onSave } = useCVEditor();
+  const { onUpdateCV } = useCVEditor();
 
   const handleApprove = useCallback(async () => {
     setIsApproving(true);
     try {
-      // Notify parent component immediately to remove from local state
-      onApproved?.();
-      
-      const result = await approveWhyGoodFitDraft(cvId, draft.id);
-      
-      // The backend returns the updated CV data
-      if (result && result.cv) {
-        // Update the CV data immediately without page refresh
-        onUpdateCV(result.cv.parsed_data);
-        
-        // Save the changes to persist them
-        await onSave(result.cv.parsed_data, 'AI draft approved and added to CV');
-        
-        showSuccess('Draft approved and added to CV successfully');
-        
-        // Hide the draft section with a smooth transition
-        setIsVisible(false);
-      } else {
-        // Fallback if result format is different
-        showSuccess('Draft approved and added to CV successfully');
-        setIsVisible(false);
-      }
+      await approveWhyGoodFitDraft(cvId, draft.id);
+
+      // IMPORTANT: The backend saves the section, but we need to refetch the CV
+      // to get the clean data without any transformations
+      // Simply reload the page to get fresh data from the backend
+      showSuccess('Draft approved! Refreshing CV...');
+
+      // Reload the page to fetch clean data from backend
+      window.location.reload();
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to approve draft';
       showError('Error', errorMessage);
-    } finally {
       setIsApproving(false);
     }
-  }, [cvId, draft.id, approveWhyGoodFitDraft, onUpdateCV, onSave, showSuccess, showError, onApproved]);
+  }, [cvId, draft.id, approveWhyGoodFitDraft, showSuccess, showError]);
 
   const handleReject = useCallback(async () => {
     setIsRejecting(true);
     try {
-      // Notify parent component immediately to remove from local state
-      onRejected?.();
-      
       await deleteWhyGoodFitDraft(cvId);
-      
+
       showSuccess('Draft rejected successfully');
-      
-      // Hide the draft section with a smooth transition
-      setIsVisible(false);
+
+      // Notify parent component after successful rejection
+      onRejected?.();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to reject draft';
       showError('Error', errorMessage);
@@ -137,12 +120,8 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
     return `${(milliseconds / 1000).toFixed(1)}s`;
   };
 
-  if (!isVisible) {
-    return null;
-  }
-
   return (
-    <Fade in={isVisible} timeout={300}>
+    <Fade in={true} timeout={300}>
       <Box sx={{ mb: 3 }}>
         <Paper
           elevation={2}
