@@ -44,6 +44,7 @@ import {
 import { useAIStore } from '../../../stores/aiStore';
 import { useNotifications } from '../../../stores/uiStore';
 import { useCVEditor } from '../../../contexts/CVEditorContext';
+import { useCVStore } from '../../../stores/cvStore';
 import { DraftResponse } from '../../../types/ai';
 
 interface InlineDraftSectionProps {
@@ -65,26 +66,37 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
   const { approveWhyGoodFitDraft, deleteWhyGoodFitDraft } = useAIStore();
   const { showSuccess, showError } = useNotifications();
   const { onUpdateCV } = useCVEditor();
+  const { setCurrentCV } = useCVStore();
 
   const handleApprove = useCallback(async () => {
     setIsApproving(true);
     try {
-      await approveWhyGoodFitDraft(cvId, draft.id);
+      // Backend returns: { message: string, cv: CV }
+      const result = await approveWhyGoodFitDraft(cvId, draft.id);
 
-      // IMPORTANT: The backend saves the section, but we need to refetch the CV
-      // to get the clean data without any transformations
-      // Simply reload the page to get fresh data from the backend
-      showSuccess('Draft approved! Refreshing CV...');
+      // Update CV store with fresh data from backend
+      // This ensures all subsequent saves include the why_good_fit section
+      if (result.cv) {
+        setCurrentCV(result.cv);
 
-      // Reload the page to fetch clean data from backend
-      window.location.reload();
+        // Update CV editor context with new parsed_data
+        // This updates the local cvData state in the editor
+        if (result.cv.parsed_data) {
+          onUpdateCV(result.cv.parsed_data);
+        }
+      }
 
+      showSuccess('Draft approved and added to CV successfully');
+
+      // Notify parent component (triggers UI re-render)
+      onApproved?.();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to approve draft';
       showError('Error', errorMessage);
+    } finally {
       setIsApproving(false);
     }
-  }, [cvId, draft.id, approveWhyGoodFitDraft, showSuccess, showError]);
+  }, [cvId, draft.id, approveWhyGoodFitDraft, setCurrentCV, onUpdateCV, showSuccess, showError, onApproved]);
 
   const handleReject = useCallback(async () => {
     setIsRejecting(true);
