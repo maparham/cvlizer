@@ -22,6 +22,7 @@ import { useAIStore } from '../stores/aiStore';
 import { useAISuggestionsStore } from '../stores/aiSuggestionsStore';
 import { useNotifications } from '../stores/uiStore';
 import { POLLING_CONFIG, STORAGE_KEYS } from '../config/constants';
+import { Logger } from '../utils/logger';
 
 export interface AITask {
   id: string;
@@ -67,7 +68,7 @@ export const useAITaskPolling = (
           const tasksMap = new Map(parsedTasks.map((task: AITask) => [task.id, task]));
           return tasksMap;
         } catch (e) {
-          console.error("Failed to parse stored AI tasks:", e);
+          Logger.error("Failed to parse stored AI tasks", { error: e });
           return new Map();
         }
       }
@@ -129,7 +130,7 @@ export const useAITaskPolling = (
           anyTaskStillGenerating = true;
         }
       } catch (error: any) {
-        console.error(`Failed to update task ${task.id}:`, error);
+        Logger.error('Failed to update AI task', { taskId: task.id, taskType: task.type, error: error.message });
         const errorMessage = error.error || error.message || 'Unknown error';
         const failedTask = { ...task, isGenerating: false, generationError: errorMessage };
         newActiveTasks.set(task.id, failedTask);

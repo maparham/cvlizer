@@ -37,6 +37,7 @@ import {
   AIServiceError,
   AllSuggestionsResponse
 } from '../types/ai';
+import { Logger } from '../utils/logger';
 
 /**
  * AI Service class for managing all AI-related API calls
@@ -120,10 +121,10 @@ class AIService {
       const response = await api.get<DraftResponse>(
         `/api/drafts/${draftId}/status`
       );
-      
+
       return response.data;
     } catch (error: any) {
-      console.error('Error getting draft status:', error);
+      Logger.error('Error getting draft status', { draftId, error: error.message });
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || 'Failed to get draft status',
         details: error.message,
@@ -469,7 +470,7 @@ class AIService {
       return response.data;
     } catch (error: any) {
       // Graceful degradation - return empty structures on error
-      console.error('Error generating all suggestions:', error);
+      Logger.error('Error generating all suggestions', { cvId, jobDescriptionId, error: error.message });
       return {
         skills: { technical: [], soft: [] },
         professional_summary: {
@@ -496,7 +497,7 @@ class AIService {
       
       return response.data;
     } catch (error: any) {
-      console.error('Error creating AI enhancement:', error);
+      Logger.error('Error creating AI enhancement', { cvId, jobDescriptionId, error: error.message });
       throw error;
     }
   }
@@ -512,7 +513,7 @@ class AIService {
 
       return response.data;
     } catch (error: any) {
-      console.error('Error getting AI enhancement status:', error);
+      Logger.error('Error getting AI enhancement status', { enhancementId, error: error.message });
       throw error;
     }
   }
@@ -530,7 +531,7 @@ class AIService {
       // Backend returns null when no enhancement exists (expected case)
       return response.data;
     } catch (error: any) {
-      console.error('Error getting latest AI enhancement:', error);
+      Logger.error('Error getting latest AI enhancement', { cvId, error: error.message });
       throw error;
     }
   }
@@ -553,7 +554,7 @@ class AIService {
       
       return response.data;
     } catch (error: any) {
-      console.error('❌ [aiService] createJobFitDraft API error:', error);
+      Logger.error('createJobFitDraft API error', { cvId, jobDescriptionId, error: error.message });
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || 'Failed to create job fit draft',
         details: error.message,
@@ -648,16 +649,15 @@ class AIService {
    */
   async updateAIEnhancement(enhancementId: string, enhancementData: any): Promise<void> {
     try {
-      console.log('📤 [aiService.updateAIEnhancement] Updating enhancement:', enhancementId);
-      console.log('📊 [aiService.updateAIEnhancement] Data:', enhancementData);
+      Logger.debug('Updating AI enhancement', { enhancementId, enhancementData });
 
       await api.put(`/api/ai-enhancements/${enhancementId}`, {
         enhancement_data: enhancementData
       });
 
-      console.log('✅ [aiService.updateAIEnhancement] Update successful');
+      Logger.debug('AI enhancement update successful', { enhancementId });
     } catch (error: any) {
-      console.error('❌ [aiService.updateAIEnhancement] Update failed:', error);
+      Logger.error('AI enhancement update failed', { enhancementId, error: error.message });
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || 'Failed to update AI enhancement',
         details: error.message,

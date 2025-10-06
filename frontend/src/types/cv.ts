@@ -246,3 +246,28 @@ export interface CVUploadResponse {
   cv: CV
   message: string
 }
+
+/**
+ * CV Title Update Payload
+ */
+export interface CVTitleUpdatePayload {
+  title: string;
+}
+
+/**
+ * CV API Response wrapper for list operations
+ */
+export interface CVListResponse {
+  cvs: CV[];
+  total?: number;
+}
+
+/**
+ * Generic CV operation result
+ */
+export interface CVOperationResult<T = CV> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}

@@ -640,4 +640,12 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
   )
 }
 
-export default SkillsSection
+// Memoize component to prevent unnecessary re-renders
+export default React.memo(SkillsSection, (prevProps, nextProps) => {
+  // Re-render only if critical props change
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing &&
+    prevProps.cvId === nextProps.cvId
+  );
+});

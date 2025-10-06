@@ -130,4 +130,10 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
   )
 }
 
-export default CertificationsSection
+// Memoize to prevent unnecessary re-renders of certification items
+export default React.memo(CertificationsSection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

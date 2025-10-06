@@ -129,4 +129,10 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
   )
 }
 
-export default VolunteerExperienceSection
+// Memoize to prevent unnecessary re-renders of volunteer experience items
+export default React.memo(VolunteerExperienceSection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

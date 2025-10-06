@@ -31,6 +31,8 @@ import {
   // InlineDiffState - unused import removed
 } from '../types/ai';
 import { aiService } from '../services/aiService';
+import { Logger } from '../utils/logger';
+import { ErrorHandler } from '../utils/errorHandler';
 
 interface AIStoreActions {
   // Feature status actions
@@ -385,24 +387,28 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       loadJobDescriptions: async (cvId: string) => {
         try {
           const jobDescriptions = await aiService.getJobDescriptions(cvId);
-          
+
           // Replace job descriptions for this CV only (CV-scoped)
           set((state) => {
             // Remove old job descriptions for this CV and add new ones
             const otherCVJobDescriptions = state.jobDescriptions.filter(jd => jd.cv_id !== cvId);
             const newJobDescriptions = [...otherCVJobDescriptions, ...jobDescriptions];
-            
+
             // Restore the CV-specific active job description selection
             const activeIdForCV = state.activeJobDescriptionIdPerCV[cvId];
             const isActiveIdValid = activeIdForCV && jobDescriptions.some(jd => jd.id === activeIdForCV);
-            
+
             return {
               jobDescriptions: newJobDescriptions,
               activeJobDescriptionId: isActiveIdValid ? activeIdForCV : state.activeJobDescriptionId,
             };
           });
         } catch (error) {
-          console.error('Failed to load job descriptions:', error);
+          ErrorHandler.handleSilent(error, {
+            feature: 'job-descriptions',
+            action: 'load',
+            metadata: { cvId }
+          });
         }
       },
 
@@ -412,9 +418,15 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
           set((state) => ({
             jobDescriptions: [...state.jobDescriptions, newJobDescription],
           }));
+          Logger.debug('Job description created', { cvId, jobDescriptionId: newJobDescription.id });
           return newJobDescription;
         } catch (error) {
-          console.error('Failed to create job description:', error);
+          ErrorHandler.handle(error, {
+            feature: 'job-descriptions',
+            action: 'create',
+            userMessage: 'Failed to create job description',
+            metadata: { cvId }
+          });
           throw error;
         }
       },
@@ -427,9 +439,15 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               jd.id === jobDescriptionId ? updatedJobDescription : jd
             ),
           }));
+          Logger.debug('Job description updated', { jobDescriptionId });
           return updatedJobDescription;
         } catch (error) {
-          console.error('Failed to update job description:', error);
+          ErrorHandler.handle(error, {
+            feature: 'job-descriptions',
+            action: 'update',
+            userMessage: 'Failed to update job description',
+            metadata: { jobDescriptionId }
+          });
           throw error;
         }
       },
@@ -441,24 +459,30 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
             // Find the CV this job description belongs to
             const jobDescription = state.jobDescriptions.find(jd => jd.id === jobDescriptionId);
             const cvId = jobDescription?.cv_id;
-            
+
             // Clean up per-CV map if this was the active selection for that CV
             const newMap = { ...state.activeJobDescriptionIdPerCV };
             if (cvId && newMap[cvId] === jobDescriptionId) {
               delete newMap[cvId];
               localStorage.setItem('activeJobDescriptionIdPerCV', JSON.stringify(newMap));
             }
-            
+
             return {
               jobDescriptions: state.jobDescriptions.filter(jd => jd.id !== jobDescriptionId),
-              activeJobDescriptionId: state.activeJobDescriptionId === jobDescriptionId 
-                ? undefined 
+              activeJobDescriptionId: state.activeJobDescriptionId === jobDescriptionId
+                ? undefined
                 : state.activeJobDescriptionId,
               activeJobDescriptionIdPerCV: newMap,
             };
           });
+          Logger.debug('Job description deleted', { jobDescriptionId });
         } catch (error) {
-          console.error('Failed to delete job description:', error);
+          ErrorHandler.handle(error, {
+            feature: 'job-descriptions',
+            action: 'delete',
+            userMessage: 'Failed to delete job description',
+            metadata: { jobDescriptionId }
+          });
           throw error;
         }
       },
@@ -522,12 +546,13 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       // Background task actions
       parseJobDescriptionUrl: async (cvId: string, url: string) => {
         try {
+          Logger.info('Parsing job description from URL', { cvId, url });
           const response = await aiService.parseJobDescriptionUrl(cvId, url);
-          
+
           // Clear cache to ensure fresh data on next load
           aiService.clearCacheForCV(cvId);
           aiService.clearAllCache(); // Clear global job descriptions cache
-          
+
           // Always create a placeholder job description immediately
           if (response.job_description_id) {
             const placeholderJobDescription: JobDescription = {
@@ -549,7 +574,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               const newMap = { ...state.activeJobDescriptionIdPerCV };
               newMap[cvId] = placeholderJobDescription.id;
               localStorage.setItem('activeJobDescriptionIdPerCV', JSON.stringify(newMap));
-              
+
               return {
                 jobDescriptions: [...state.jobDescriptions, placeholderJobDescription],
                 activeJobDescriptionId: placeholderJobDescription.id,
@@ -561,27 +586,33 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
             if (!response.is_parsing) {
               const jobDescription = await aiService.getJobDescriptionStatus(response.job_description_id);
               set((state) => ({
-                jobDescriptions: state.jobDescriptions.map(jd => 
+                jobDescriptions: state.jobDescriptions.map(jd =>
                   jd.id === response.job_description_id ? jobDescription : jd
                 ),
               }));
             }
           }
-          
+
           return response;
         } catch (error) {
-          console.error('Failed to parse job description URL:', error);
+          ErrorHandler.handle(error, {
+            feature: 'job-descriptions',
+            action: 'parse-url',
+            userMessage: 'Failed to parse job description from URL',
+            metadata: { cvId, url }
+          });
           throw error;
         }
       },
 
       enhanceContent: async (cvId: string, content: string, contentType: string) => {
         try {
-          const response = await aiService.enhanceContent(cvId, { 
-            original_content: content, 
-            content_type: contentType 
+          Logger.debug('Enhancing content', { cvId, contentType, contentLength: content.length });
+          const response = await aiService.enhanceContent(cvId, {
+            original_content: content,
+            content_type: contentType
           });
-          
+
           // If generation is complete immediately, add to suggestions
           if (!response.is_generating && response.enhancement_id) {
             const enhancement = await aiService.getContentEnhancementStatus(response.enhancement_id);
@@ -600,16 +631,22 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               },
             }));
           }
-          
+
           return response;
         } catch (error) {
-          console.error('Failed to enhance content:', error);
+          ErrorHandler.handle(error, {
+            feature: 'content-enhancement',
+            action: 'enhance',
+            userMessage: 'Failed to enhance content',
+            metadata: { cvId, contentType }
+          });
           throw error;
         }
       },
 
       createJobFitDraft: async (cvId: string, jobDescriptionId: string) => {
         try {
+          Logger.info('Creating job fit draft', { cvId, jobDescriptionId });
           const response = await aiService.createJobFitDraft(cvId, jobDescriptionId);
 
           // Backend deletes any existing why_good_fit draft before creating a new one
@@ -635,7 +672,12 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
 
           return response;
         } catch (error) {
-          console.error('Failed to create job fit draft:', error);
+          ErrorHandler.handle(error, {
+            feature: 'job-fit-draft',
+            action: 'create',
+            userMessage: 'Failed to create job fit analysis',
+            metadata: { cvId, jobDescriptionId }
+          });
           throw error;
         }
       },

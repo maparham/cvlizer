@@ -345,4 +345,10 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
   )
 }
 
-export default EducationSection
+// Memoize to prevent unnecessary re-renders of education items
+export default React.memo(EducationSection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

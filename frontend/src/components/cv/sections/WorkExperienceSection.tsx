@@ -155,4 +155,10 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
   )
 }
 
-export default WorkExperienceSection
+// Memoize to prevent unnecessary re-renders of work experience items
+export default React.memo(WorkExperienceSection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

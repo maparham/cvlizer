@@ -113,4 +113,10 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
   )
 }
 
-export default AwardsSection
+// Memoize to prevent unnecessary re-renders of award items
+export default React.memo(AwardsSection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

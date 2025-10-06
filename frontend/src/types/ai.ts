@@ -320,3 +320,39 @@ export interface DraftState {
   error?: string;
 }
 
+/**
+ * Inline Suggestion Data - for store and component communication
+ */
+export interface InlineSuggestionData {
+  id: string;
+  sectionType: string;
+  fieldPath?: string;
+  description: string;
+  originalValue: string;
+  suggestedValue: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+/**
+ * AI Service Response Wrapper - standardizes AI operation responses
+ */
+export interface AIServiceResponse<T> {
+  data: T;
+  tokensUsed?: number;
+  generationTime?: number;
+  modelUsed?: string;
+  isGenerating?: boolean;
+  generationError?: string;
+}
+
+/**
+ * Generic background task response
+ */
+export interface BackgroundTaskResponse {
+  task_id: string;
+  is_processing: boolean;
+  is_complete: boolean;
+  error?: string;
+  result?: unknown;
+}
+

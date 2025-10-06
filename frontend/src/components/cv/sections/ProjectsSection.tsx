@@ -143,4 +143,10 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
   )
 }
 
-export default ProjectsSection
+// Memoize to prevent unnecessary re-renders of project items
+export default React.memo(ProjectsSection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

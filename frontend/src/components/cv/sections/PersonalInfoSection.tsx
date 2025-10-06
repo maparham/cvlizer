@@ -253,4 +253,10 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
   )
 }
 
-export default PersonalInfoSection
+// Memoize to prevent unnecessary re-renders
+export default React.memo(PersonalInfoSection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

@@ -368,4 +368,10 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
   )
 }
 
-export default ProfessionalSummarySection
+// Memoize component to prevent unnecessary re-renders
+export default React.memo(ProfessionalSummarySection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

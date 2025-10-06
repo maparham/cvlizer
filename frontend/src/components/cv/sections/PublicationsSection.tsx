@@ -127,4 +127,10 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
   )
 }
 
-export default PublicationsSection
+// Memoize to prevent unnecessary re-renders of publication items
+export default React.memo(PublicationsSection, (prevProps, nextProps) => {
+  return (
+    prevProps.data === nextProps.data &&
+    prevProps.isEditing === nextProps.isEditing
+  );
+});

@@ -19,6 +19,8 @@
 
 import { create } from 'zustand';
 import { aiService } from '../services/aiService';
+import { Logger } from '../utils/logger';
+import { ErrorHandler } from '../utils/errorHandler';
 import { AllSuggestionsResponse } from '../types/ai';
 
 interface AIStore {
@@ -62,7 +64,11 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to generate AI suggestions';
-      console.error('Error creating AI enhancement:', error);
+      ErrorHandler.handle(error, {
+        feature: 'ai-suggestions',
+        action: 'create-enhancement',
+        metadata: { cvId, jobDescId }
+      });
       
       set({
         allSuggestions: {
@@ -106,7 +112,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
 
       return enhancement;
     } catch (error) {
-      console.error('Failed to update AI enhancement status:', error);
+      Logger.error('Failed to update AI enhancement status', { enhancementId, error: error.message });
       throw error;
     }
   },
@@ -129,11 +135,11 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           });
         }
       } else {
-        console.log('ℹ️ [loadLatestAIEnhancement] No suggestions to restore for CV:', cvId);
+        Logger.debug('No suggestions to restore for CV', { cvId });
       }
     } catch (error) {
       // Only log actual errors (network issues, auth failures, etc.)
-      console.error('❌ [loadLatestAIEnhancement] Error loading enhancement:', error);
+      Logger.error('Error loading AI enhancement', { cvId, error: error.message });
       // Don't throw - just fail silently since this is optional restoration
     }
   },
@@ -145,7 +151,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
 
   // Dismiss a single skill suggestion from the UI
   dismissSkillSuggestion: async (skill: string, type: 'technical' | 'soft') => {
-    console.log('🔍 [dismissSkillSuggestion] Dismissing skill:', skill, 'type:', type);
+    Logger.debug('Dismissing skill suggestion', { skill, type, cvId });
     const currentSuggestions = get().allSuggestions;
     const enhancementId = get().currentEnhancementId;
 
@@ -307,7 +313,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
         suggestionsError: null
       });
     } catch (error) {
-      console.error('Failed to delete AI enhancement:', error);
+      Logger.error('Failed to delete AI enhancement', { enhancementId, error: error.message });
       // Don't throw - just log the error
     }
   },

@@ -1,6 +1,6 @@
 /**
  * API Service Module
- * 
+ *
  * This module provides centralized HTTP client configuration and API functions including:
  * - Axios instance with base URL configuration
  * - Request/response interceptors for authentication
@@ -9,6 +9,7 @@
  * - CV-specific API endpoints (upload, CRUD operations)
  */
 import axios from 'axios'
+import { ClerkWindow, isClerkAvailable } from '../types/clerk'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '')
 
@@ -26,9 +27,14 @@ api.interceptors.request.use(
     // Use Clerk token
     if (!config.headers.Authorization) {
       // Fall back to Clerk token from the global Clerk instance
-      if (typeof window !== 'undefined' && (window as any).Clerk) {
+      if (typeof window !== 'undefined' && isClerkAvailable(window)) {
+        const clerk = (window as ClerkWindow).Clerk
+        if (!clerk) {
+          return Promise.reject(new Error('Authentication service not available'))
+        }
+
         try {
-          const token = await (window as any).Clerk.session?.getToken()
+          const token = await clerk.session?.getToken()
           if (token) {
             config.headers.Authorization = `Bearer ${token}`
           } else {
@@ -58,11 +64,14 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Handle unauthorized errors - user needs to re-authenticate
       // Redirect to sign-in if Clerk is available
-      if (typeof window !== 'undefined' && (window as any).Clerk) {
-        try {
-          (window as any).Clerk.redirectToSignIn()
-        } catch {
-          // Redirect failed - ignore error
+      if (typeof window !== 'undefined' && isClerkAvailable(window)) {
+        const clerk = (window as ClerkWindow).Clerk
+        if (clerk) {
+          try {
+            await clerk.redirectToSignIn()
+          } catch {
+            // Redirect failed - ignore error
+          }
         }
       }
     }
@@ -71,29 +80,60 @@ api.interceptors.response.use(
   }
 )
 
-// Normalize API errors to a predictable message
-export const normalizeApiError = (error: any): string => {
+/**
+ * API Error Response interfaces for type safety
+ */
+interface ApiErrorDetail {
+  message?: string;
+  errors?: string[];
+}
+
+interface ApiErrorResponse {
+  status: number;
+  data?: string | {
+    message?: string;
+    detail?: string | ApiErrorDetail;
+  };
+}
+
+interface ApiError {
+  message?: string;
+  response?: ApiErrorResponse;
+}
+
+/**
+ * Normalize API errors to a predictable message
+ * @param error - Error object from API call
+ * @returns User-friendly error message
+ */
+export const normalizeApiError = (error: unknown): string => {
   if (!error) return 'Unknown error'
-  const response = error.response
-  if (!response) return error.message || 'Network error'
+
+  const apiError = error as ApiError
+  const response = apiError.response
+
+  if (!response) return apiError.message || 'Network error'
+
   const data = response.data
   if (!data) return `HTTP ${response.status}`
   if (typeof data === 'string') return data
-  if (data.message) return data.message
-  if (data.detail) {
-    if (typeof data.detail === 'string') return data.detail
-    if (data.detail.message) {
-      // Handle validation errors with detailed field information
-      if (data.detail.errors && Array.isArray(data.detail.errors)) {
-        const errorList = data.detail.errors.join('\n• ')
-        return `${data.detail.message}:\n• ${errorList}`
+  if (typeof data === 'object') {
+    if (data.message) return data.message
+    if (data.detail) {
+      if (typeof data.detail === 'string') return data.detail
+      if (typeof data.detail === 'object' && data.detail.message) {
+        // Handle validation errors with detailed field information
+        if (data.detail.errors && Array.isArray(data.detail.errors)) {
+          const errorList = data.detail.errors.join('\n• ')
+          return `${data.detail.message}:\n• ${errorList}`
+        }
+        return data.detail.message
       }
-      return data.detail.message
-    }
-    try {
-      return JSON.stringify(data.detail)
-    } catch {
-      return 'Request failed'
+      try {
+        return JSON.stringify(data.detail)
+      } catch {
+        return 'Request failed'
+      }
     }
   }
   return 'Request failed'
@@ -120,22 +160,22 @@ export const cvApi = {
   },
 
   // Update CV data
-  updateCV: async (cvId: string, data: { parsed_data: any }) => {
+  updateCV: async (cvId: string, data: { parsed_data: Record<string, unknown> }) => {
     // Defensive guard: Clean and normalize why_good_fit data if present
     if (data.parsed_data && data.parsed_data.why_good_fit) {
-      const raw = data.parsed_data.why_good_fit;
+      const raw = data.parsed_data.why_good_fit as Record<string, unknown>;
 
       // Normalize the data to match backend schema (snake_case fields only)
-      const normalized: any = {
-        content: raw.content || raw.fit_analysis || '',
-        fit_analysis: raw.fit_analysis || raw.content || '',
-        confidence_score: raw.confidence_score ?? raw.confidenceScore, // Support both cases
+      const normalized: Record<string, unknown> = {
+        content: (raw.content as string) || (raw.fit_analysis as string) || '',
+        fit_analysis: (raw.fit_analysis as string) || (raw.content as string) || '',
+        confidence_score: raw.confidence_score ?? raw.confidenceScore,
         key_matches: raw.key_matches || [],
         missing_skills: raw.missing_skills || [],
         suggested_improvements: raw.suggested_improvements || [],
         strengths: raw.strengths || [],
         weaknesses: raw.weaknesses || [],
-        generated_at: raw.generated_at || new Date().toISOString(),
+        generated_at: (raw.generated_at as string) || new Date().toISOString(),
         job_description_id: raw.job_description_id,
       };
 
