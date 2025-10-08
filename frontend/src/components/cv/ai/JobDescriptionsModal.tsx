@@ -234,7 +234,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [urlInput, title, company, location, cvId, parseJobDescriptionUrl, setActiveJobDescription, onJobDescriptionSelect, showSuccess, showError, validateUrl]);
+  }, [urlInput, title, company, location, cvId, parseJobDescriptionUrl, setActiveJobDescription, onJobDescriptionSelect, showSuccess, showError, validateUrl, onClose]);
 
   const handleTextSubmit = useCallback(async () => {
     if (!textInput.trim()) {
@@ -278,7 +278,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [textInput, title, company, location, cvId, createJobDescription, showSuccess, showError]);
+  }, [textInput, title, company, location, cvId, createJobDescription, showSuccess, showError, onJobDescriptionSelect, setActiveJobDescription, onClose]);
 
   const handleJobDescriptionSelect = useCallback((jobDescription: JobDescription) => {
     setActiveJobDescription(jobDescription.id);
@@ -373,13 +373,11 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
         onClose={handleClose}
         maxWidth="lg"
         fullWidth
-        fullScreen
         PaperProps={{
           sx: {
-            height: '100vh',
-            maxHeight: '100vh',
-            m: 0,
-            borderRadius: 0,
+            minHeight: '70vh',
+            maxHeight: '90vh',
+            borderRadius: 1,
           }
         }}
       >
@@ -406,7 +404,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+        <DialogContent sx={{ p: 0, overflow: 'auto', height: '100%' }}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             {error && (
               <Alert severity="error" sx={{ m: 2, mb: 0 }}>
@@ -422,10 +420,18 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
               </Tabs>
             </Box>
 
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
+            <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
               {/* URL Input Tab */}
               <TabPanel value={tabValue} index={0}>
                 <Stack spacing={3} sx={{ maxWidth: 800, mx: 'auto' }}>
+                  <Alert severity="info" sx={{ mb: 1 }}>
+                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                      <strong>Supported sites:</strong> LinkedIn, Indeed, Glassdoor, and most major job boards
+                    </Typography>
+                    <Typography variant="body2">
+                      Job details will be automatically extracted and parsed in the background (typically 10-30 seconds)
+                    </Typography>
+                  </Alert>
                   <TextField
                     label="Job Posting URL"
                     placeholder="https://linkedin.com/jobs/view/..."
@@ -459,6 +465,11 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
               {/* Text Input Tab */}
               <TabPanel value={tabValue} index={1}>
                 <Stack spacing={3} sx={{ maxWidth: 800, mx: 'auto' }}>
+                  <Alert severity="info" sx={{ mb: 1 }}>
+                    <Typography variant="body2">
+                      <strong>Tip:</strong> Include complete job requirements, responsibilities, and qualifications for the best AI optimization results
+                    </Typography>
+                  </Alert>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={4}>
                       <TextField
@@ -488,17 +499,29 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                       />
                     </Grid>
                   </Grid>
-                  <TextField
-                    label="Job Description"
-                    placeholder="Paste the job description text here..."
-                    value={textInput}
-                    onChange={(e) => setTextInput(e.target.value)}
-                    multiline
-                    rows={12}
-                    fullWidth
-                    disabled={isLoading}
-                    helperText="Paste the complete job description including requirements, responsibilities, and qualifications"
-                  />
+                  <Box>
+                    <TextField
+                      label="Job Description"
+                      placeholder="Paste the job description text here..."
+                      value={textInput}
+                      onChange={(e) => setTextInput(e.target.value)}
+                      multiline
+                      rows={12}
+                      fullWidth
+                      disabled={isLoading}
+                      helperText="Paste the complete job description including requirements, responsibilities, and qualifications"
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {textInput.length} characters • {textInput.trim().split(/\s+/).filter(word => word.length > 0).length} words
+                      </Typography>
+                      {textInput.length > 0 && (
+                        <Typography variant="caption" color={textInput.length < 100 ? 'warning.main' : 'success.main'}>
+                          {textInput.length < 100 ? '⚠ More detail recommended' : '✓ Good detail level'}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
                   <Button
                     variant="contained"
                     onClick={handleTextSubmit}
@@ -514,7 +537,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
 
               {/* Saved Job Descriptions Tab */}
               <TabPanel value={tabValue} index={2}>
-                <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
+                <Box sx={{ maxWidth: 1400, mx: 'auto', p: 2 }}>
                   {jobDescriptions.length === 0 ? (
                     <Paper sx={{ p: 4, textAlign: 'center' }}>
                       <Typography color="text.secondary" variant="h6" gutterBottom>

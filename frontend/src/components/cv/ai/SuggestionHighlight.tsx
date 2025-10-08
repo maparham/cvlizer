@@ -241,7 +241,7 @@ export const SuggestionHighlight: React.FC<SuggestionHighlightProps> = ({
         aria-describedby={`suggestion-${suggestion.id}`}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            handleClick(e as any);
+            handleClick(e as React.MouseEvent);
           }
         }}
       >

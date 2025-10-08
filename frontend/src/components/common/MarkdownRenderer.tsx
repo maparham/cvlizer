@@ -49,9 +49,10 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         WebkitLineClamp: lineClamp,
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden',
+        mr: 0, // Ensure no right margin
         ...sx,
       }
-    : sx;
+    : { mr: 0, ...sx };
 
   return (
     <Box sx={wrapperSx}>
@@ -91,7 +92,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           
           // Paragraphs
           p: ({ children }) => (
-            <Typography variant={variant} sx={{ mb: 1, color, lineHeight: 1.6 }}>
+            <Typography variant={variant} sx={{ mb: 1, color, lineHeight: 1.6, mr: 0 }}>
               {children}
             </Typography>
           ),

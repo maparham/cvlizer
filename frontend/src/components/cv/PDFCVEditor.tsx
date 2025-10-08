@@ -28,6 +28,7 @@ import {
 import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from './index'
 import { useAIStore } from '../../stores/aiStore'
 import { useAISuggestionsStore } from '../../stores/aiSuggestionsStore'
+import { CVData } from '../../types/cv'
 
 interface PDFCVEditorProps {
   title?: string
@@ -46,12 +47,12 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
   const { loadLatestAIEnhancement, clearAllSuggestions } = useAISuggestionsStore()
 
   // Debug wrapper for onUpdateCV
-  const debugOnUpdateCV = useCallback((newCvData: any) => {
+  const debugOnUpdateCV = useCallback((newCvData: CVData) => {
     onUpdateCV(newCvData);
-  }, [onUpdateCV, cvData]);
+  }, [onUpdateCV]);
 
   // Debug wrapper for onSave
-  const debugOnSave = useCallback(async (newCvData: any, message?: string) => {
+  const debugOnSave = useCallback(async (newCvData: CVData, message?: string) => {
     await onSave(newCvData, message);
   }, [onSave]);
 
@@ -241,6 +242,8 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                   }
                 }
               } catch (error) {
+                // Silently handle errors - user will be notified by other mechanisms
+                console.debug('Error in PDF CV editor:', error);
               }
             }
           }}

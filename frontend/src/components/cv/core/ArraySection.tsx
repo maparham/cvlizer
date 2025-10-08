@@ -21,7 +21,7 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
   onUnsavedChanges
 }) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [editData, setEditData] = useState<any>({})
+  const [editData, setEditData] = useState<Record<string, unknown>>({})
 
   // Use common auto-save hook - it now properly handles new vs existing items
   useArraySectionAutoSave(

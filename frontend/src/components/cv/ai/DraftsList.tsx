@@ -48,13 +48,6 @@ const DraftsList: React.FC<DraftsListProps> = ({
   const drafts = useCVDrafts(cvId);
   const { isLoading, error } = useAIStore((state) => state.drafts);
 
-  // Load drafts on component mount
-  useEffect(() => {
-    if (cvId) {
-      loadDrafts();
-    }
-  }, [cvId]);
-
   const loadDrafts = useCallback(async () => {
     try {
       // Clear cache before fetching to ensure we get fresh data from backend
@@ -66,6 +59,13 @@ const DraftsList: React.FC<DraftsListProps> = ({
       showError('Error', errorMessage);
     }
   }, [cvId, getCVDrafts, showError]);
+
+  // Load drafts on component mount
+  useEffect(() => {
+    if (cvId) {
+      loadDrafts();
+    }
+  }, [cvId, loadDrafts]);
 
   const handleDraftChange = useCallback(() => {
     // The store already updates the drafts list when approve/discard is called

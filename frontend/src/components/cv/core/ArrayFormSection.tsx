@@ -12,7 +12,7 @@ interface ArrayFormSectionProps<T extends ArrayItem> extends SectionProps {
   emptyMessage: string
   createNewItem: () => T
   requiredFields: (keyof T)[]
-  renderItemForm: (_item: T, _index: number, _updateItem: (_field: keyof T, _value: any) => void) => React.ReactNode
+  renderItemForm: (_item: T, _index: number, _updateItem: (_field: keyof T, _value: unknown) => void) => React.ReactNode
   renderItemDisplay: (_item: T, _index: number) => React.ReactNode
   autoSaveMessage: string
 }
@@ -90,7 +90,7 @@ const ArrayFormSection = <T extends ArrayItem>({
     removeItem(index)
   }
 
-  const handleUpdateItem = (index: number, field: keyof T, value: any) => {
+  const handleUpdateItem = (index: number, field: keyof T, value: unknown) => {
     updateItem(index, field as keyof ArrayItem, value)
   }
 

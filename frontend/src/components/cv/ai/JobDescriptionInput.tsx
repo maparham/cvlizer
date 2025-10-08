@@ -177,7 +177,7 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [urlInput, title, company, location, cvId, createJobDescription, showSuccess, showError]);
+  }, [urlInput, title, company, location, cvId, createJobDescription, showSuccess, showError, onJobDescriptionSelect, setActiveJobDescription]);
 
   const handleTextSubmit = useCallback(async () => {
     if (!textInput.trim()) {
@@ -216,7 +216,7 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [textInput, title, company, location, cvId, createJobDescription, showSuccess, showError]);
+  }, [textInput, title, company, location, cvId, createJobDescription, showSuccess, showError, onJobDescriptionSelect, setActiveJobDescription]);
 
   const handleJobDescriptionSelect = useCallback((jobDescription: JobDescription) => {
     setActiveJobDescription(jobDescription.id);

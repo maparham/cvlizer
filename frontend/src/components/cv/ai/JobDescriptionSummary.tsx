@@ -71,7 +71,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [isGeneratingJobFit, setIsGeneratingJobFit] = useState(false);
 
-  const { hideJobDescriptionFromSidebar, setActiveJobDescription, updateJobDescription, createJobFitDraft } = useAIStore();
+  const { hideJobDescriptionFromSidebar, updateJobDescription, createJobFitDraft } = useAIStore();
   const { showSuccess, showError } = useNotifications();
   const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
 
