@@ -3,7 +3,7 @@ URL Parsing Service for Job Descriptions
 
 This module provides functionality to parse job posting URLs and extract
 job description content using OpenAI AI service for intelligent content extraction.
-Includes local browser automation using Playwright for handling JavaScript-rendered job postings.
+Includes local browser automation using Selenium for handling JavaScript-rendered job postings.
 
 Key responsibilities:
 - Parse job posting URLs using standard web scraping
@@ -21,20 +21,18 @@ Usage:
 - Handles errors gracefully with detailed error messages
 
 Browser Automation Integration:
-- Uses Playwright for reliable JavaScript rendering
+- Uses Selenium WebDriver with Chrome for reliable JavaScript rendering
 - Enables dynamic content loading with intelligent waiting
 - Handles complex sites like jobs.wien.gv.at
 - Maintains existing functionality for standard sites
 """
 
 import requests
-import re
 from typing import Dict, Any, Optional
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 import time
 from bs4 import BeautifulSoup
 import logging
-import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -42,6 +40,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
+
+from src.services.ai_service import extract_job_description_with_ai
 
 logger = logging.getLogger(__name__)
 
@@ -338,13 +338,6 @@ def _extract_raw_content(url: str) -> str:
 def _parse_with_openai(raw_content: str, url: str, user_id: str = None, db_session = None) -> Dict[str, Any]:
     """Parse job description content using OpenAI AI service."""
     try:
-        # Import here to avoid circular imports
-        try:
-            from .ai_service import extract_job_description_with_ai
-        except ImportError:
-            # Fallback for test environments or when running standalone
-            from src.services.ai_service import extract_job_description_with_ai
-        
         # Use the AI service to parse the content
         result = extract_job_description_with_ai(raw_content, url, user_id=user_id, db_session=db_session)
         

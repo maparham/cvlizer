@@ -15,14 +15,10 @@ import logging
 import asyncio
 import contextlib
 
-# Optional rate limiting - only import if available
-try:
-    from slowapi import Limiter, _rate_limit_exceeded_handler
-    from slowapi.util import get_remote_address
-    from slowapi.errors import RateLimitExceeded
-    SLOWAPI_AVAILABLE = True
-except ImportError:
-    SLOWAPI_AVAILABLE = False
+# Rate limiting
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Import API routers
 from src.api.auth import router as auth_router
@@ -55,11 +51,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Add rate limiting if available
-if SLOWAPI_AVAILABLE:
-    limiter = Limiter(key_func=get_remote_address)
-    app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Add rate limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add compression middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)

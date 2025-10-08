@@ -25,7 +25,7 @@ from src.services.ai_service import (
     generate_cv_section, 
     is_ai_enabled, 
     analyze_job_fit, 
-    enhance_content, 
+    enhance_content,
     analyze_ats_optimization,
     create_optimization_suggestions
 )
@@ -745,8 +745,8 @@ async def optimize_ats_endpoint(
                 detail="AI features are disabled"
             )
         
-        # Analyze ATS optimization
-        optimization_result = await analyze_ats_optimization(
+        # Analyze ATS optimization - use the dedicated ATS analysis function
+        ats_result = await analyze_ats_optimization(
             cv_data=cv.parsed_data,
             job_description=job_description.content,
             user_id=current_user.id,
@@ -755,15 +755,15 @@ async def optimize_ats_endpoint(
         )
         
         # Check if analysis failed
-        if optimization_result.get("error"):
+        if ats_result.get("error"):
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"AI service error: {optimization_result['error']}"
+                detail=f"AI service error: {ats_result['error']}"
             )
         
         # Convert missing keywords to proper format
         missing_keywords = []
-        for keyword in optimization_result.get("missing_keywords", []):
+        for keyword in ats_result.get("missing_keywords", []):
             missing_keywords.append(MissingKeyword(
                 keyword=keyword.get("keyword", ""),
                 importance=keyword.get("importance", "medium"),
@@ -771,36 +771,41 @@ async def optimize_ats_endpoint(
                 suggested_placement=keyword.get("suggested_placement", "")
             ))
         
-        # Convert keyword density to proper format
+        # Convert keyword_analysis to keyword_density format for response
+        # keyword_analysis contains presence info, we map it to density format
         keyword_density = {}
-        for keyword, density_data in optimization_result.get("keyword_density", {}).items():
+        keyword_analysis = ats_result.get("keyword_analysis", {})
+        for keyword, analysis_data in keyword_analysis.items():
+            # Map keyword analysis to density format
+            # present=True means current > 0, not present means current = 0
+            is_present = analysis_data.get("present", False)
             keyword_density[keyword] = KeywordDensity(
-                current=density_data.get("current", 0.0),
-                recommended=density_data.get("recommended", 0.0),
-                status=density_data.get("status", "unknown")
+                current=1.0 if is_present else 0.0,
+                recommended=1.0,  # Recommended is always 1 if keyword is in JD
+                status="good" if is_present else "missing"
             )
         
-        # Convert optimized sections to proper format
+        # Convert content_optimization to optimized_sections format
         optimized_sections = []
-        for section in optimization_result.get("optimized_sections", []):
+        for optimization in ats_result.get("content_optimization", []):
             optimized_sections.append(OptimizedSection(
-                section=section.get("section", ""),
-                current_keywords=section.get("current_keywords", []),
-                missing_keywords=section.get("missing_keywords", []),
-                suggestion=section.get("suggestion", "")
+                section=optimization.get("section", ""),
+                current_keywords=[],  # Not provided in content_optimization
+                missing_keywords=optimization.get("missing_keywords", []),
+                suggestion=optimization.get("suggestion", "")
             ))
         
         return ATSOptimizationResponse(
-            ats_score=optimization_result.get("ats_score", 0),
+            ats_score=ats_result.get("ats_score", 0),
             missing_keywords=missing_keywords,
             keyword_density=keyword_density,
-            suggestions=optimization_result.get("suggestions", []),
+            suggestions=ats_result.get("suggestions", []),
             optimized_sections=optimized_sections,
-            strengths=optimization_result.get("strengths", []),
-            weaknesses=optimization_result.get("weaknesses", []),
-            tokens_used=optimization_result.get("tokens_used", 0),
-            generation_time=optimization_result.get("generation_time", 0),
-            model_used=optimization_result.get("model_used", AIConfig.OPENAI_MODEL)
+            strengths=ats_result.get("strengths", []),
+            weaknesses=ats_result.get("weaknesses", []),
+            tokens_used=ats_result.get("tokens_used", 0),
+            generation_time=ats_result.get("generation_time", 0),
+            model_used=ats_result.get("model_used", AIConfig.OPENAI_MODEL)
         )
         
     except HTTPException:

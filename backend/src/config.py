@@ -21,8 +21,8 @@ class AIConfig:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL")  # Required: Must be set in .env
     
-    # Agent Model Configuration (for job description parsing)
-    AGENT_MODEL: str = os.getenv("AGENT_MODEL")  # Required: Must be set in .env
+    # Agent Model Configuration (for future agent-based features)
+    AGENT_MODEL: str = os.getenv("AGENT_MODEL")  # Optional: Reserved for future agent implementations
     AGENT_PROCESSING_TIER: str = os.getenv("AGENT_PROCESSING_TIER", "flex")  # Processing tier: "flex" or "standard"
 
     # Token limits
@@ -257,6 +257,46 @@ class AIUsageConfig:
 
 
 # ============================================================================
+# OpenAI Pricing Helper
+# ============================================================================
+
+class OpenAIPricing:
+    """Helper class for OpenAI pricing calculations"""
+    
+    @classmethod
+    def estimate_cost(cls, model: str, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Estimate the cost of an OpenAI API call based on token usage.
+        
+        Args:
+            model: OpenAI model name (e.g., "gpt-4o-mini", "gpt-4o")
+            prompt_tokens: Number of input/prompt tokens used
+            completion_tokens: Number of output/completion tokens generated
+            
+        Returns:
+            Estimated cost in USD
+        """
+        # Find the pricing for the model (case-insensitive match)
+        model_lower = model.lower()
+        pricing = None
+        
+        for model_key, model_pricing in AIUsageConfig.MODEL_PRICING.items():
+            if model_key.lower() in model_lower:
+                pricing = model_pricing
+                break
+        
+        # Use default pricing if model not found
+        if not pricing:
+            input_cost = (prompt_tokens / 1_000_000) * AIUsageConfig.DEFAULT_INPUT_PRICE_PER_1M
+            output_cost = (completion_tokens / 1_000_000) * AIUsageConfig.DEFAULT_OUTPUT_PRICE_PER_1M
+        else:
+            input_cost = (prompt_tokens / 1_000_000) * pricing["input_price_per_1m"]
+            output_cost = (completion_tokens / 1_000_000) * pricing["output_price_per_1m"]
+        
+        return input_cost + output_cost
+
+
+# ============================================================================
 # Export Configuration Classes
 # ============================================================================
 
@@ -272,6 +312,7 @@ __all__ = [
     "AppConfig",
     "ValidationConfig",
     "AIUsageConfig",
+    "OpenAIPricing",
 ]
 
 
@@ -314,7 +355,7 @@ def validate_config() -> list:
         warnings.append("OPENAI_MODEL not configured in .env - REQUIRED for AI features")
     
     if not AIConfig.AGENT_MODEL:
-        warnings.append("AGENT_MODEL not configured in .env - REQUIRED for job description parsing")
+        warnings.append("AGENT_MODEL not configured in .env - Optional (reserved for future agent features)")
 
     if not AuthConfig.CLERK_SECRET_KEY:
         warnings.append("CLERK_SECRET_KEY not configured - authentication may fail")

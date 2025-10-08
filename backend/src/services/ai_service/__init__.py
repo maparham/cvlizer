@@ -1,0 +1,80 @@
+"""
+AI service for CV parsing and content generation using OpenAI.
+
+This module provides functions for parsing CV content with OpenAI
+and generating AI-enhanced CV sections tailored to job descriptions.
+
+This is a package that organizes AI functionality into specialized
+submodules while maintaining backward compatibility through re-exports.
+"""
+
+# Re-export common utilities and types
+from .common import (
+    is_ai_enabled,
+    JobFitResult,
+    ATSOptimizationResult,
+)
+
+# Re-export job fit analysis functions
+from .job_fit import (
+    analyze_job_fit,
+    analyze_job_fit_sync,
+)
+
+# Re-export CV parsing functions
+from .cv_parsing import (
+    parse_cv_text_with_openai,
+)
+
+# Re-export section generation functions
+from .section_generation import (
+    generate_cv_section,
+)
+
+# Re-export content enhancement functions
+from .content_enhancement import (
+    enhance_content,
+)
+
+# Re-export ATS optimization functions
+from .ats_optimization import (
+    analyze_ats_optimization,
+    create_optimization_suggestions,
+)
+
+# Re-export job extraction functions
+from .job_extraction import (
+    extract_job_description_with_ai,
+)
+
+# Re-export CV status functions
+from .cv_status import (
+    check_cv_ai_enhancement_status,
+    mark_cv_as_ai_enhanced,
+)
+
+# Define public API
+__all__ = [
+    # Common utilities and types
+    'is_ai_enabled',
+    'JobFitResult',
+    'ATSOptimizationResult',
+    # Job fit analysis
+    'analyze_job_fit',
+    'analyze_job_fit_sync',
+    # CV parsing
+    'parse_cv_text_with_openai',
+    # Section generation
+    'generate_cv_section',
+    # Content enhancement
+    'enhance_content',
+    # ATS optimization
+    'analyze_ats_optimization',
+    'create_optimization_suggestions',
+    # Job extraction
+    'extract_job_description_with_ai',
+    # CV status
+    'check_cv_ai_enhancement_status',
+    'mark_cv_as_ai_enhanced',
+]
+

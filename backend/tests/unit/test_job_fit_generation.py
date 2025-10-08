@@ -13,13 +13,18 @@ from src.api.ai import generate_job_fit_sync
 class TestAnalyzeJobFitSync:
     """Test analyze_job_fit_sync function with field validation"""
 
-    @patch('src.services.ai_service._openai_client')
-    def test_analyze_job_fit_sync_with_full_response(self, mock_client):
+    @patch('src.services.ai_service.job_fit.get_openai_client')
+    def test_analyze_job_fit_sync_with_full_response(self, mock_get_client):
         """Test analyze_job_fit_sync when AI returns complete JSON"""
-        # Setup mock response with all required fields
+        # Setup mock client and response for Responses API
+        mock_client = Mock()
+        mock_get_client.return_value = mock_client
+        
         mock_response = Mock()
-        mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = json.dumps({
+        # Responses API returns content in output items with type='message'
+        mock_output_item = Mock()
+        mock_output_item.type = 'message'
+        mock_output_item.content = json.dumps({
             "confidence_score": 85,
             "fit_analysis": "Candidate is a great fit",
             "generated_at": "2025-01-01T12:00:00Z",
@@ -29,12 +34,13 @@ class TestAnalyzeJobFitSync:
             "strengths": ["Strong backend"],
             "weaknesses": ["Limited DevOps"]
         })
+        mock_response.output = [mock_output_item]
+        # Token usage in Responses API
         mock_response.usage = Mock(
-            total_tokens=500,
             prompt_tokens=300,
             completion_tokens=200
         )
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.responses.create.return_value = mock_response
 
         result = analyze_job_fit_sync(
             cv_data={"skills": ["Python", "FastAPI"]},
@@ -45,28 +51,32 @@ class TestAnalyzeJobFitSync:
         assert result["confidence_score"] == 85
         assert result["fit_analysis"] == "Candidate is a great fit"
         assert result["generated_at"] == "2025-01-01T12:00:00Z"
-        assert result["tokens_used"] == 500
+        assert result["tokens_used"] == 500  # prompt_tokens (300) + completion_tokens (200)
         # Model name comes from env OPENAI_MODEL (could be gpt-5 or gpt-5-nano)
         assert result["model_used"] in ["gpt-5", "gpt-5-nano"]
         assert "error" not in result
 
-    @patch('src.services.ai_service._openai_client')
-    def test_analyze_job_fit_sync_missing_confidence_score(self, mock_client):
+    @patch('src.services.ai_service.job_fit.get_openai_client')
+    def test_analyze_job_fit_sync_missing_confidence_score(self, mock_get_client):
         """Test analyze_job_fit_sync when AI response is missing confidence_score"""
-        # Setup mock response WITHOUT confidence_score
+        # Setup mock client and response for Responses API
+        mock_client = Mock()
+        mock_get_client.return_value = mock_client
+        
         mock_response = Mock()
-        mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = json.dumps({
+        mock_output_item = Mock()
+        mock_output_item.type = 'message'
+        mock_output_item.content = json.dumps({
             "fit_analysis": "Candidate is a great fit",
             # confidence_score intentionally missing
             "key_matches": ["Python"],
         })
+        mock_response.output = [mock_output_item]
         mock_response.usage = Mock(
-            total_tokens=400,
             prompt_tokens=250,
             completion_tokens=150
         )
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.responses.create.return_value = mock_response
 
         result = analyze_job_fit_sync(
             cv_data={"skills": ["Python"]},
@@ -77,25 +87,29 @@ class TestAnalyzeJobFitSync:
         assert result["confidence_score"] == 50
         assert result["fit_analysis"] == "Candidate is a great fit"
         assert "generated_at" in result
-        assert result["tokens_used"] == 400
+        assert result["tokens_used"] == 400  # prompt_tokens (250) + completion_tokens (150)
 
-    @patch('src.services.ai_service._openai_client')
-    def test_analyze_job_fit_sync_missing_generated_at(self, mock_client):
+    @patch('src.services.ai_service.job_fit.get_openai_client')
+    def test_analyze_job_fit_sync_missing_generated_at(self, mock_get_client):
         """Test analyze_job_fit_sync when AI response is missing generated_at"""
-        # Setup mock response WITHOUT generated_at
+        # Setup mock client and response for Responses API
+        mock_client = Mock()
+        mock_get_client.return_value = mock_client
+        
         mock_response = Mock()
-        mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = json.dumps({
+        mock_output_item = Mock()
+        mock_output_item.type = 'message'
+        mock_output_item.content = json.dumps({
             "confidence_score": 75,
             "fit_analysis": "Good match",
             # generated_at intentionally missing
         })
+        mock_response.output = [mock_output_item]
         mock_response.usage = Mock(
-            total_tokens=350,
             prompt_tokens=200,
             completion_tokens=150
         )
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.responses.create.return_value = mock_response
 
         result = analyze_job_fit_sync(
             cv_data={"skills": ["Python"]},
@@ -109,19 +123,23 @@ class TestAnalyzeJobFitSync:
         # Should be ISO format
         datetime.fromisoformat(result["generated_at"].replace('Z', '+00:00'))
 
-    @patch('src.services.ai_service._openai_client')
-    def test_analyze_job_fit_sync_json_parse_failure(self, mock_client):
+    @patch('src.services.ai_service.job_fit.get_openai_client')
+    def test_analyze_job_fit_sync_json_parse_failure(self, mock_get_client):
         """Test analyze_job_fit_sync when JSON parsing fails"""
-        # Setup mock response with invalid JSON
+        # Setup mock client and response for Responses API
+        mock_client = Mock()
+        mock_get_client.return_value = mock_client
+        
         mock_response = Mock()
-        mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = "This is not valid JSON at all!"
+        mock_output_item = Mock()
+        mock_output_item.type = 'message'
+        mock_output_item.content = "This is not valid JSON at all!"
+        mock_response.output = [mock_output_item]
         mock_response.usage = Mock(
-            total_tokens=300,
             prompt_tokens=200,
             completion_tokens=100
         )
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.responses.create.return_value = mock_response
 
         result = analyze_job_fit_sync(
             cv_data={"skills": ["Python"]},
@@ -132,13 +150,15 @@ class TestAnalyzeJobFitSync:
         assert result["confidence_score"] == 50
         assert result["fit_analysis"] == "This is not valid JSON at all!"
         assert "generated_at" in result
-        assert result["tokens_used"] == 300
+        assert result["tokens_used"] == 300  # prompt_tokens (200) + completion_tokens (100)
 
-    @patch('src.services.ai_service._openai_client')
-    def test_analyze_job_fit_sync_api_exception(self, mock_client):
+    @patch('src.services.ai_service.job_fit.get_openai_client')
+    def test_analyze_job_fit_sync_api_exception(self, mock_get_client):
         """Test analyze_job_fit_sync when OpenAI API raises exception"""
-        # Setup mock to raise exception
-        mock_client.chat.completions.create.side_effect = Exception("API timeout")
+        # Setup mock client that raises exception
+        mock_client = Mock()
+        mock_get_client.return_value = mock_client
+        mock_client.responses.create.side_effect = Exception("API timeout")
 
         result = analyze_job_fit_sync(
             cv_data={"skills": ["Python"]},
@@ -152,25 +172,29 @@ class TestAnalyzeJobFitSync:
         assert result["fit_analysis"] == ""
         assert "generated_at" in result
 
-    @patch('src.services.ai_service._openai_client')
-    def test_analyze_job_fit_sync_with_markdown_code_block(self, mock_client):
+    @patch('src.services.ai_service.job_fit.get_openai_client')
+    def test_analyze_job_fit_sync_with_markdown_code_block(self, mock_get_client):
         """Test analyze_job_fit_sync when AI returns JSON wrapped in markdown"""
-        # Setup mock response with markdown code block
+        # Setup mock client and response for Responses API
+        mock_client = Mock()
+        mock_get_client.return_value = mock_client
+        
         mock_response = Mock()
-        mock_response.choices = [Mock()]
-        mock_response.choices[0].message.content = """```json
+        mock_output_item = Mock()
+        mock_output_item.type = 'message'
+        mock_output_item.content = """```json
 {
     "confidence_score": 90,
     "fit_analysis": "Excellent match",
     "generated_at": "2025-01-02T10:00:00Z"
 }
 ```"""
+        mock_response.output = [mock_output_item]
         mock_response.usage = Mock(
-            total_tokens=450,
             prompt_tokens=280,
             completion_tokens=170
         )
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.responses.create.return_value = mock_response
 
         result = analyze_job_fit_sync(
             cv_data={"skills": ["Python", "FastAPI"]},
@@ -184,7 +208,7 @@ class TestAnalyzeJobFitSync:
 
     def test_analyze_job_fit_sync_ai_disabled(self):
         """Test analyze_job_fit_sync when AI is disabled"""
-        with patch('src.services.ai_service.is_ai_enabled', return_value=False):
+        with patch('src.services.ai_service.job_fit.is_ai_enabled', return_value=False):
             result = analyze_job_fit_sync(
                 cv_data={"skills": ["Python"]},
                 job_description="Python developer"

@@ -34,7 +34,6 @@ Follow core paradigms and best practices.
 ## Refactoring
 - Identify smallest unit of change
 - Propose incremental improvements
-- Maintain backward compatibility when possible
 - Test each incremental change
 - Document architectural decisions
 
