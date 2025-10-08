@@ -290,7 +290,12 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
           <Stack spacing={2}>
             {/* Active Job Description */}
             {activeJobDescription ? (
-              <>
+              <Box sx={{
+                backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                border: '1px solid rgba(25, 118, 210, 0.2)',
+                borderRadius: 2,
+                p: 2
+              }}>
                 <JobDescriptionCard
                   jobDescription={activeJobDescription}
                   isActive={true}
@@ -349,7 +354,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                         transition: 'all 0.2s ease-in-out'
                       }}
                     >
-                      {suggestionsLoading ? 'Enhancing...' : 'Enhance CV'}
+                      {suggestionsLoading ? 'Enhancing...' : 'Enhance CV for this Job'}
                     </Button>
                   )}
                   
@@ -401,7 +406,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                     </Button>
                   )}
                 </Box>
-              </>
+              </Box>
             ) : (
               <Card 
                 variant="outlined" 
