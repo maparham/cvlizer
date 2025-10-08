@@ -14,7 +14,7 @@ interface Certification {
   description?: string
 }
 
-const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
+const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Certifications', onTitleSave }) => {
   const createNewCertification = (): Certification => ({
     id: generateSectionId('certifications'),
     name: '',
@@ -115,7 +115,8 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
       registerIndividualItemEditing={registerIndividualItemEditing as any}
       unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
       requestIndividualItemCancel={requestIndividualItemCancel as any}
-      title="Certifications"
+      title={title}
+      onTitleSave={onTitleSave}
       emptyMessage="No certifications added yet."
       createNewItem={createNewCertification}
       requiredFields={['name', 'issuer', 'date']}

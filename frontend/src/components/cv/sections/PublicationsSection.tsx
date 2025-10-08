@@ -14,7 +14,7 @@ interface Publication {
   url?: string
 }
 
-const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
+const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Publications', onTitleSave }) => {
   const createNewPublication = (): Publication => ({
     id: generateSectionId('publications'),
     title: '',
@@ -113,7 +113,8 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
       registerIndividualItemEditing={registerIndividualItemEditing as any}
       unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
       requestIndividualItemCancel={requestIndividualItemCancel as any}
-      title="Publications"
+      title={title}
+      onTitleSave={onTitleSave}
       emptyMessage="No publications added yet."
       createNewItem={createNewPublication}
       requiredFields={['title', 'authors', 'journal', 'date']}

@@ -30,7 +30,7 @@ interface WorkExperience {
   technologies: string[]
 }
 
-const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
+const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Work Experience', onTitleSave }) => {
   const createNewExperience = (): WorkExperience => ({
     id: generateSectionId('work_experience'),
     company: '',
@@ -140,7 +140,8 @@ const WorkExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
       registerIndividualItemEditing={registerIndividualItemEditing as any}
       unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
       requestIndividualItemCancel={requestIndividualItemCancel as any}
-      title="Work Experience"
+      title={title}
+      onTitleSave={onTitleSave}
       emptyMessage="Click the + button to add your first work experience"
       createNewItem={createNewExperience}
       requiredFields={['position', 'company', 'start_date']}

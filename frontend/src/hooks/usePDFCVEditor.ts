@@ -15,6 +15,7 @@ interface PDFCVEditorHook {
   resetToDefaultOrder: () => void
   isDefaultOrder: () => boolean
   getAvailableSectionsToAdd: () => Array<{id: string; name: string}>
+  updateSectionTitle: (sectionId: string, newTitle: string) => void
 
   // Drag and drop
   activeId: string | null
@@ -139,6 +140,7 @@ export const usePDFCVEditor = ({
     resetToDefaultOrder: handleResetConfirm,
     isDefaultOrder: sectionManagement.isDefaultOrder,
     getAvailableSectionsToAdd: sectionManagement.getAvailableSectionsToAdd,
+    updateSectionTitle: sectionManagement.updateSectionTitle,
 
     // Drag and drop
     activeId: dragAndDrop.activeId,

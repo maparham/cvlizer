@@ -43,6 +43,9 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   const { sections } = useCVEditorControls()
   const { editing, changes } = useCVEditorState()
   
+  // Get section title update function
+  const updateSectionTitle = sections.updateTitle
+  
   // Get inline drafts functionality
   const {
     getDraftsAfterSection,
@@ -85,12 +88,19 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
     // Get drafts that should appear after this section
     const draftsAfter = getDraftsAfterSection(section.type)
 
+    // Create title save callback for this section
+    const handleTitleSave = async (newTitle: string) => {
+      await updateSectionTitle(section.id, newTitle)
+    }
+
     const renderSectionContent = () => {
       switch (section.type) {
       case 'personal_info':
         return (
           <SectionFactory
             sectionType="personal_info"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.personal_info} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, personal_info: data as PersonalInfo })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, personal_info: data as PersonalInfo }, message || 'Personal information saved')}
@@ -104,6 +114,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="professional_summary"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.professional_summary} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, professional_summary: data as ProfessionalSummary })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, professional_summary: data as ProfessionalSummary }, message || 'Professional summary saved')}
@@ -118,6 +130,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="why_good_fit"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.why_good_fit}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, why_good_fit: data as WhyGoodFit })}
             onSave={async (data: unknown, message?: string) => {
@@ -144,6 +158,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="work_experience"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.work_experience} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, work_experience: data as WorkExperience[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, work_experience: data as WorkExperience[] }, message || 'Work experience saved')}
@@ -161,6 +177,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="education"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.education} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, education: data as Education[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, education: data as Education[] }, message || 'Education saved')}
@@ -178,6 +196,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="skills"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.skills} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, skills: data as Skills })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, skills: data as Skills }, message || 'Skills saved')}
@@ -192,6 +212,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="certifications"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.certifications || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, certifications: data as Certification[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, certifications: data as Certification[] }, message || 'Certifications saved')}
@@ -209,6 +231,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="projects"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.projects || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, projects: data as Project[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, projects: data as Project[] }, message || 'Projects saved')}
@@ -226,6 +250,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="awards"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.awards || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, awards: data as Award[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, awards: data as Award[] }, message || 'Awards saved')}
@@ -243,6 +269,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="publications"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.publications || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, publications: data as Publication[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, publications: data as Publication[] }, message || 'Publications saved')}
@@ -260,6 +288,8 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
         return (
           <SectionFactory
             sectionType="volunteer_experience"
+            sectionTitle={section.title}
+            onSectionTitleSave={handleTitleSave}
             data={cvData?.volunteer_experience || []} 
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, volunteer_experience: data as VolunteerExperience[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, volunteer_experience: data as VolunteerExperience[] }, message || 'Volunteer experience saved')}

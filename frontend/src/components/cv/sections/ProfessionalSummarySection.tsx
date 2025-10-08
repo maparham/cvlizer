@@ -11,7 +11,7 @@ interface ProfessionalSummarySectionProps extends SectionProps {
   cvId?: string;
 }
 
-const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, cvId }) => {
+const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, cvId, title = 'Professional Summary', onTitleSave }) => {
   const [showMarkdownPreview, setShowMarkdownPreview] = useState(false)
 
   // Get unified AI suggestions store with CV validation
@@ -358,7 +358,8 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
       onEdit={onEdit}
       onClose={onClose}
       onUnsavedChanges={onUnsavedChanges}
-      title="Professional Summary"
+      title={title}
+      onTitleSave={onTitleSave}
       sectionId="professional_summary"
       requiredFields={['content']}
       renderForm={renderForm}

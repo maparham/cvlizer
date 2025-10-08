@@ -28,6 +28,7 @@ export interface IndividualItemSectionProps<T> {
   requestIndividualItemCancel?: (sectionId: string, onCancel: () => void) => void
   isAnotherItemBeingEdited?: boolean
   sortOptions?: SortOption<T>[]
+  onTitleSave?: (newTitle: string) => Promise<void>
 }
 
 export interface ItemControlsProps<T> {

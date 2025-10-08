@@ -28,6 +28,7 @@ import { CVData, CVSection } from './cv'
  * @property {React.ReactNode} [editButton] - Custom edit button component
  * @property {React.ReactNode} [headerActions] - Additional header action buttons
  * @property {boolean} [isValid] - Whether the current data is valid
+ * @property {(newTitle: string) => Promise<void>} [onTitleSave] - Callback to save section title
  */
 export interface BaseSectionProps {
   children?: React.ReactNode
@@ -40,6 +41,7 @@ export interface BaseSectionProps {
   editButton?: React.ReactNode
   headerActions?: React.ReactNode
   isValid?: boolean
+  onTitleSave?: (newTitle: string) => Promise<void>
 }
 
 /**
@@ -60,6 +62,8 @@ export interface BaseSectionProps {
  * @property {() => void} [unregisterIndividualItemEditing] - Unregister individual item editing
  * @property {(sectionId: string, onCancel: () => void) => void} [requestIndividualItemCancel] - Request cancel for individual item
  * @property {boolean} [isAnotherItemBeingEdited] - Whether another item is being edited
+ * @property {string} [title] - Section title
+ * @property {(newTitle: string) => Promise<void>} [onTitleSave] - Callback to save section title
  */
 export interface SectionProps<T = unknown> {
   data: T
@@ -74,6 +78,8 @@ export interface SectionProps<T = unknown> {
   unregisterIndividualItemEditing?: () => void
   requestIndividualItemCancel?: (sectionId: string, onCancel: () => void) => void
   isAnotherItemBeingEdited?: boolean
+  title?: string
+  onTitleSave?: (newTitle: string) => Promise<void>
 }
 
 /**

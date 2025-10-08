@@ -594,6 +594,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                               onDelete={handleDeleteClick}
                               onSelect={handleJobDescriptionSelect}
                               showSelectButton={true}
+                              maxChipWidth={200}
                             />
                           </Grid>
                         );

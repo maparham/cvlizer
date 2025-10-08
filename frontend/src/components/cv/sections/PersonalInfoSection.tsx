@@ -14,7 +14,7 @@ import { SectionProps } from '../../../types'
 import SimpleFormSection from '../core/SimpleFormSection'
 import LocationAutocomplete from '../ui/LocationAutocomplete'
 
-const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges }) => {
+const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, title = 'Personal Information', onTitleSave }) => {
   const renderForm = (editData: any, updateData: (field: string, value: any) => void, onSave: () => void, onCancel: () => void) => (
     <Box>
       <TextField
@@ -243,12 +243,13 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
       onEdit={onEdit}
       onClose={onClose}
       onUnsavedChanges={onUnsavedChanges}
-      title="Personal Information"
+      title={title}
       sectionId="personal_info"
       requiredFields={['full_name', 'email', 'location']}
       renderForm={renderForm}
       renderDisplay={renderDisplay}
       autoSaveMessage="Personal information auto-saved"
+      onTitleSave={onTitleSave}
     />
   )
 }

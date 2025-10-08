@@ -22,7 +22,7 @@ interface Education {
   honors: string[]
 }
 
-const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
+const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Education', onTitleSave }) => {
   const createNewEducation = (): Education => ({
     id: generateSectionId('education'),
     institution: '',
@@ -330,7 +330,8 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
       registerIndividualItemEditing={registerIndividualItemEditing as any}
       unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
       requestIndividualItemCancel={requestIndividualItemCancel as any}
-      title="Education"
+      title={title}
+      onTitleSave={onTitleSave}
       emptyMessage="Click the + button to add your first education entry"
       createNewItem={createNewEducation}
       requiredFields={['degree', 'institution', 'start_date']}

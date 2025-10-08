@@ -13,6 +13,7 @@ interface SimpleFormSectionProps extends SectionProps {
   renderDisplay: (_data: any) => React.ReactNode
   autoSaveMessage: string
   autoSaveMode?: boolean // If true, don't show Save/Cancel buttons
+  onTitleSave?: (newTitle: string) => Promise<void>
 }
 
 /**
@@ -32,7 +33,8 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   renderForm,
   renderDisplay,
   autoSaveMessage,
-  autoSaveMode = false
+  autoSaveMode = false,
+  onTitleSave
 }) => {
   // Memoize default data to prevent unnecessary re-renders
   const defaultData = useMemo(() => {
@@ -128,6 +130,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       onCancel={handleCancel}
       isValid={!autoSaveMode ? validateForm(editData) : true}
       editButton={null}
+      onTitleSave={onTitleSave}
     >
       {isEditing ? (
         <Box>

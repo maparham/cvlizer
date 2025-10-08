@@ -15,6 +15,7 @@ interface ArrayFormSectionProps<T extends ArrayItem> extends SectionProps {
   renderItemForm: (_item: T, _index: number, _updateItem: (_field: keyof T, _value: unknown) => void) => React.ReactNode
   renderItemDisplay: (_item: T, _index: number) => React.ReactNode
   autoSaveMessage: string
+  onTitleSave?: (newTitle: string) => Promise<void>
 }
 
 /**
@@ -34,7 +35,8 @@ const ArrayFormSection = <T extends ArrayItem>({
   requiredFields,
   renderItemForm,
   renderItemDisplay,
-  autoSaveMessage
+  autoSaveMessage,
+  onTitleSave
 }: ArrayFormSectionProps<T>) => {
   const [editData, setEditData] = useState<T[]>(data as T[] || [])
 
@@ -119,6 +121,7 @@ const ArrayFormSection = <T extends ArrayItem>({
       onSave={handleSave}
       onCancel={handleCancel}
       isValid={isFormValid()}
+      onTitleSave={onTitleSave}
     >
       {isEditing ? (
         <Box>

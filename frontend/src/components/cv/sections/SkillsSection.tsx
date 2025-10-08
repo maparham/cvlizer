@@ -11,7 +11,7 @@ interface SkillsSectionProps extends SectionProps {
   cvId?: string;
 }
 
-const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, cvId }) => {
+const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, cvId, title = 'Skills', onTitleSave }) => {
   const [newTechnicalSkill, setNewTechnicalSkill] = useState('')
   const [newSoftSkill, setNewSoftSkill] = useState('')
 
@@ -609,13 +609,14 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
       onEdit={onEdit}
       onClose={onClose}
       onUnsavedChanges={undefined} // Skills auto-save immediately, no unsaved changes tracking needed
-      title="Skills"
+      title={title}
       sectionId="skills"
       requiredFields={[]} // Skills are optional
       renderForm={renderForm}
       renderDisplay={renderDisplay}
       autoSaveMessage="Skills auto-saved"
       autoSaveMode={true} // Hide save/cancel buttons for Skills section
+      onTitleSave={onTitleSave}
     />
   )
 }

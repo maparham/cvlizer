@@ -69,7 +69,8 @@ function IndividualItemSection<T>({
   unregisterIndividualItemEditing,
   requestIndividualItemCancel,
   isAnotherItemBeingEdited = false,
-  sortOptions = []
+  sortOptions = [],
+  onTitleSave
 }: IndividualItemSectionProps<T>) {
   // Custom hooks for state management
   const {
@@ -301,6 +302,7 @@ function IndividualItemSection<T>({
       onSave={undefined}
       onCancel={undefined}
       isValid={true}
+      onTitleSave={onTitleSave}
       headerActions={
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
           {/* Sort controls */}

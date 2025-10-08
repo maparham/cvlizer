@@ -302,6 +302,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   onEdit={handleEditJobDescription}
                   onHide={handleJobDescriptionHide}
                   variant="sidebar"
+                  maxChipWidth={120}
                 />
                 
                 <Box sx={{ 

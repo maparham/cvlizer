@@ -46,6 +46,7 @@ import {
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import { WhyGoodFit } from '../../../types/cv';
+import { EditableTitle } from '../EditableTitle';
 
 interface WhyGoodFitSectionProps {
   data?: WhyGoodFit;
@@ -55,6 +56,8 @@ interface WhyGoodFitSectionProps {
   onEdit: () => void;
   onClose: () => void;
   onUnsavedChanges: (hasChanges: boolean) => void;
+  title?: string;
+  onTitleSave?: (newTitle: string) => Promise<void>;
 }
 
 const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
@@ -65,6 +68,8 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
   onEdit,
   onClose,
   onUnsavedChanges,
+  title = "Why I'm a Good Fit",
+  onTitleSave,
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editContent, setEditContent] = useState(data?.content || data?.fit_analysis || '');
@@ -122,9 +127,23 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-          Why I'm a Good Fit
-        </Typography>
+        {onTitleSave ? (
+          <EditableTitle
+            title={title}
+            onSave={onTitleSave}
+            variant="h5"
+            sx={{
+              '& .MuiTypography-root': {
+                fontWeight: 600,
+                color: 'primary.main'
+              }
+            }}
+          />
+        ) : (
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+            {title}
+          </Typography>
+        )}
         <Box>
           <Tooltip title="Edit Section">
             <IconButton onClick={handleEdit} size="small">

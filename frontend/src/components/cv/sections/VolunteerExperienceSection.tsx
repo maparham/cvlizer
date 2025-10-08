@@ -14,7 +14,7 @@ interface VolunteerExperience {
   description: string
 }
 
-const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
+const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Volunteer Experience', onTitleSave }) => {
   const createNewVolunteerExperience = (): VolunteerExperience => ({
     id: generateSectionId('volunteer_experience'),
     organization: '',
@@ -114,7 +114,8 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
       registerIndividualItemEditing={registerIndividualItemEditing as any}
       unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
       requestIndividualItemCancel={requestIndividualItemCancel as any}
-      title="Volunteer Experience"
+      title={title}
+      onTitleSave={onTitleSave}
       emptyMessage="No volunteer experience added yet."
       createNewItem={createNewVolunteerExperience}
       requiredFields={['organization', 'role', 'start_date']}

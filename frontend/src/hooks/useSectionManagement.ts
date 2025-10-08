@@ -12,6 +12,7 @@ interface SectionManagementState {
   resetToDefaultOrder: () => void
   isDefaultOrder: () => boolean
   getAvailableSectionsToAdd: () => Array<{id: string; name: string}>
+  updateSectionTitle: (sectionId: string, newTitle: string) => void
 }
 
 interface UseSectionManagementProps {
@@ -373,6 +374,27 @@ export const useSectionManagement = ({
     )
   }, [sections, cvData, createSectionsFromCVData])
 
+  const updateSectionTitle = useCallback((sectionId: string, newTitle: string) => {
+    // Update the section title in the sections array
+    const updatedSections = sections.map(section =>
+      section.id === sectionId
+        ? { ...section, title: newTitle }
+        : section
+    )
+    
+    setSections(updatedSections)
+    
+    // Update the section configuration in CV data
+    const updatedCvData = {
+      ...cvData,
+      section_config: {
+        sections: updatedSections
+      }
+    }
+    
+    onSave(updatedCvData, 'Section title updated')
+  }, [sections, cvData, onSave])
+
   return {
     sections,
     setSections,
@@ -382,6 +404,7 @@ export const useSectionManagement = ({
     reorderSections,
     resetToDefaultOrder,
     isDefaultOrder,
-    getAvailableSectionsToAdd
+    getAvailableSectionsToAdd,
+    updateSectionTitle
   }
 }

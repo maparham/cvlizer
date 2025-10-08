@@ -62,6 +62,7 @@ export interface JobDescriptionCardProps {
   onSelect?: (jobDescription: JobDescription) => void;
   showSelectButton?: boolean;
   variant?: 'default' | 'sidebar';
+  maxChipWidth?: number;
 }
 
 const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
@@ -74,6 +75,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   onSelect,
   showSelectButton = false,
   variant = 'default',
+  maxChipWidth,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const theme = useTheme();
@@ -201,7 +203,6 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               sx={{ 
                 fontWeight: isActive ? 700 : 600, 
                 flex: 1, 
-                mr: 1,
                 color: isActive ? 'primary.main' : 'primary.main',
                 display: '-webkit-box',
                 WebkitLineClamp: 1,
@@ -224,7 +225,6 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               sx={{ 
                 fontWeight: isActive ? 700 : 600, 
                 flex: 1, 
-                mr: 1,
                 color: isActive ? 'primary.main' : 'text.primary',
                 display: '-webkit-box',
                 WebkitLineClamp: 1,
@@ -298,7 +298,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
             {jobDescription.company && (
               <Chip
                 icon={<WorkIcon />}
-                label={jobDescription.company.length > 16 ? jobDescription.company.substring(0, 16) + '...' : jobDescription.company}
+                label={jobDescription.company}
                 size="small"
                 variant="outlined"
                 sx={{
@@ -307,15 +307,20 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                   '& .MuiChip-icon': {
                     fontSize: '16px'
                   },
-                  maxWidth: '180px',
-                  flex: '1 1 auto'
+                  maxWidth: maxChipWidth ? `${maxChipWidth}px` : undefined,
+                  flex: '1 1 auto',
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }
                 }}
               />
             )}
             {jobDescription.location && (
               <Chip
                 icon={<LocationOnIcon />}
-                label={jobDescription.location.length > 14 ? jobDescription.location.substring(0, 14) + '...' : jobDescription.location}
+                label={jobDescription.location}
                 size="small"
                 variant="outlined"
                 sx={{
@@ -324,8 +329,13 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                   '& .MuiChip-icon': {
                     fontSize: '16px'
                   },
-                  maxWidth: '160px',
-                  flex: '1 1 auto'
+                  maxWidth: maxChipWidth ? `${maxChipWidth}px` : undefined,
+                  flex: '1 1 auto',
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }
                 }}
               />
             )}
@@ -449,6 +459,12 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                     borderColor: 'primary.light',
                     '& .MuiChip-icon': {
                       fontSize: '16px'
+                    },
+                    maxWidth: maxChipWidth ? `${maxChipWidth}px` : undefined,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }
                   }}
                 />
@@ -464,6 +480,12 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                     borderColor: 'success.light',
                     '& .MuiChip-icon': {
                       fontSize: '16px'
+                    },
+                    maxWidth: maxChipWidth ? `${maxChipWidth}px` : undefined,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }
                   }}
                 />

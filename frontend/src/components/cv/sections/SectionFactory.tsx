@@ -56,6 +56,8 @@ type SectionType =
 interface SectionFactoryProps extends SectionProps {
   sectionType: SectionType;
   cvId?: string;
+  sectionTitle?: string;
+  onSectionTitleSave?: (newTitle: string) => Promise<void>;
 }
 
 // Map of regular sections
@@ -83,6 +85,8 @@ const DIFF_SECTIONS = {
 
 const SectionFactory: React.FC<SectionFactoryProps> = ({
   sectionType,
+  sectionTitle,
+  onSectionTitleSave,
   ...props
 }) => {
   const { isInDiffMode } = useInlineDiffContext();
@@ -105,7 +109,7 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
     return null;
   }
 
-  return <SectionComponent {...props} data={props.data as any} onUnsavedChanges={props.onUnsavedChanges as any} />;
+  return <SectionComponent {...props} data={props.data as any} onUnsavedChanges={props.onUnsavedChanges as any} title={sectionTitle} onTitleSave={onSectionTitleSave} />;
 };
 
 export default SectionFactory;

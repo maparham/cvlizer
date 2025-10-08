@@ -32,6 +32,7 @@ interface CVEditorContextType {
   resetToDefaultOrder: () => void
   isDefaultOrder: () => boolean
   getAvailableSectionsToAdd: () => Array<{id: string; name: string}>
+  updateSectionTitle: (sectionId: string, newTitle: string) => void
 
   // Drag and drop
   activeId: string | null
@@ -140,6 +141,7 @@ export const useCVEditorControls = () => {
       resetToDefault: context.resetToDefaultOrder,
       isDefaultOrder: context.isDefaultOrder,
       availableToAdd: context.getAvailableSectionsToAdd(),
+      updateTitle: context.updateSectionTitle,
     },
     
     // Drag and drop

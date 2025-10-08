@@ -13,7 +13,7 @@ interface Award {
   description: string
 }
 
-const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
+const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Awards & Recognition', onTitleSave }) => {
   const createNewAward = (): Award => ({
     id: generateSectionId('awards'),
     name: '',
@@ -99,7 +99,8 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
       registerIndividualItemEditing={registerIndividualItemEditing as any}
       unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
       requestIndividualItemCancel={requestIndividualItemCancel as any}
-      title="Awards & Recognition"
+      title={title}
+      onTitleSave={onTitleSave}
       emptyMessage="No awards added yet."
       createNewItem={createNewAward}
       requiredFields={['name', 'issuer', 'date']}

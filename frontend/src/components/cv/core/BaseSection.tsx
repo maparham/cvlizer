@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { Box, Typography, IconButton, Divider, Tooltip } from '@mui/material'
 import { Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon } from '@mui/icons-material'
 import { BaseSectionProps } from '../../../types'
+import { EditableTitle } from '../EditableTitle'
 
 const BaseSection: React.FC<BaseSectionProps> = ({ 
   title, 
@@ -12,7 +13,8 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   editButton,
   headerActions,
   isEditing,
-  isValid = true
+  isValid = true,
+  onTitleSave
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null)
 
@@ -103,9 +105,23 @@ const BaseSection: React.FC<BaseSectionProps> = ({
       )}
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-          {title}
-        </Typography>
+        {onTitleSave ? (
+          <EditableTitle
+            title={title || ''}
+            onSave={onTitleSave}
+            variant="h5"
+            sx={{
+              '& .MuiTypography-root': {
+                fontWeight: 'bold',
+                color: '#1976d2'
+              }
+            }}
+          />
+        ) : (
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+            {title}
+          </Typography>
+        )}
         {headerActions}
       </Box>
       

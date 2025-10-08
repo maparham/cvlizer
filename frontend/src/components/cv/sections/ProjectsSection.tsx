@@ -13,7 +13,7 @@ interface Project {
   url?: string
 }
 
-const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel }) => {
+const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Projects', onTitleSave }) => {
   const createNewProject = (): Project => ({
     id: generateSectionId('projects'),
     name: '',
@@ -129,7 +129,8 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
       registerIndividualItemEditing={registerIndividualItemEditing as any}
       unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
       requestIndividualItemCancel={requestIndividualItemCancel as any}
-      title="Projects"
+      title={title}
+      onTitleSave={onTitleSave}
       emptyMessage="No projects added yet."
       createNewItem={createNewProject}
       requiredFields={['name', 'description']}
