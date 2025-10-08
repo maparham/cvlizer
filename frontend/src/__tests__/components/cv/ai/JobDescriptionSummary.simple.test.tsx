@@ -111,7 +111,7 @@ describe('JobDescriptionSummary - Basic Tests', () => {
       <JobDescriptionSummary cvId="cv-1" />
     );
 
-    expect(screen.getByText('Job Descriptions')).toBeInTheDocument();
+    expect(screen.getByText('Job Description')).toBeInTheDocument();
   });
 
   it('shows "No Job Description Yet" when no job descriptions exist', () => {

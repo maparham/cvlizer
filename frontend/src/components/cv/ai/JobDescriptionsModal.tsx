@@ -100,7 +100,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [jobDescriptionToDelete, setJobDescriptionToDelete] = useState<JobDescription | null>(null);
   
-  // Separate state for edit dialog (to avoid affecting TEXT tab fields)
+  // Separate state for edit dialog (to avoid affecting MANUAL tab fields)
   const [editTitle, setEditTitle] = useState('');
   const [editCompany, setEditCompany] = useState('');
   const [editLocation, setEditLocation] = useState('');
@@ -234,7 +234,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       // Show success message
       showSuccess('Job description created and is being parsed in the background');
     } catch (err) {
-      const userFriendlyMessage = 'Unable to parse this URL. Please use the "Text" tab to enter the job description manually.';
+      const userFriendlyMessage = 'Unable to parse this URL. Please use the "MANUAL" tab to enter the job description manually.';
       setError(userFriendlyMessage);
       showError('URL Parsing Failed', userFriendlyMessage);
     } finally {
@@ -395,7 +395,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
           pb: 2
         }}>
           <Typography variant="h5" component="div">
-            Job Descriptions
+            Job Description
           </Typography>
           <IconButton 
             onClick={handleClose} 
@@ -421,8 +421,8 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="job description input tabs">
                 <Tab label="URL" icon={<LinkIcon />} />
-                <Tab label="Text" icon={<DescriptionIcon />} />
-                <Tab label="Saved" icon={<UploadIcon />} />
+                <Tab label="MANUAL" icon={<DescriptionIcon />} />
+                <Tab label="ARCHIVE" icon={<UploadIcon />} />
               </Tabs>
             </Box>
 
@@ -468,56 +468,79 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                 </Stack>
               </TabPanel>
 
-              {/* Text Input Tab */}
+              {/* MANUAL Input Tab */}
               <TabPanel value={tabValue} index={1}>
                 <Stack spacing={3} sx={{ maxWidth: 800, mx: 'auto' }}>
-                  <Alert severity="info" sx={{ mb: 1 }}>
+                  <Alert severity="info">
                     <Typography variant="body2">
                       <strong>Tip:</strong> Include complete job requirements, responsibilities, and qualifications for the best AI optimization results
                     </Typography>
                   </Alert>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
+                  
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 3, 
+                    flexWrap: 'wrap',
+                    alignItems: 'flex-end'
+                  }}>
+                    <Box sx={{ flex: '1 1 calc(33.333% - 16px)', minWidth: '200px' }}>
                       <TextField
                         label="Job Title (Optional)"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         fullWidth
                         disabled={isLoading}
+                        variant="outlined"
+                        size="medium"
                       />
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
+                    </Box>
+                    <Box sx={{ flex: '1 1 calc(33.333% - 16px)', minWidth: '200px' }}>
                       <TextField
                         label="Company (Optional)"
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         fullWidth
                         disabled={isLoading}
+                        variant="outlined"
+                        size="medium"
                       />
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
+                    </Box>
+                    <Box sx={{ flex: '1 1 calc(33.333% - 16px)', minWidth: '200px' }}>
                       <TextField
                         label="Location (Optional)"
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
                         fullWidth
                         disabled={isLoading}
+                        variant="outlined"
+                        size="medium"
                       />
-                    </Grid>
-                  </Grid>
-                  <Box>
+                    </Box>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <TextField
                       label="Job Description"
                       placeholder="Paste the job description text here..."
                       value={textInput}
                       onChange={(e) => setTextInput(e.target.value)}
                       multiline
-                      rows={12}
+                      rows={10}
                       fullWidth
                       disabled={isLoading}
-                      helperText="Paste the complete job description including requirements, responsibilities, and qualifications"
+                      variant="outlined"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          alignItems: 'flex-start',
+                        },
+                      }}
                     />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                    }}>
                       <Typography variant="caption" color="text.secondary">
                         {textInput.length} characters • {textInput.trim().split(/\s+/).filter(word => word.length > 0).length} words
                       </Typography>
@@ -528,20 +551,23 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                       )}
                     </Box>
                   </Box>
-                  <Button
-                    variant="contained"
-                    onClick={handleTextSubmit}
-                    disabled={isLoading || !textInput.trim()}
-                    startIcon={isLoading ? <CircularProgress size={20} /> : <AddIcon />}
-                    size="large"
-                    sx={{ alignSelf: 'flex-start' }}
-                  >
-                    {isLoading ? 'Saving...' : 'Save Job Description'}
-                  </Button>
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-start', pt: 1 }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleTextSubmit}
+                      disabled={isLoading || !textInput.trim()}
+                      startIcon={isLoading ? <CircularProgress size={20} /> : <AddIcon />}
+                      size="large"
+                      sx={{ minWidth: 200 }}
+                    >
+                      {isLoading ? 'Saving...' : 'Save Job Description'}
+                    </Button>
+                  </Box>
                 </Stack>
               </TabPanel>
 
-              {/* Saved Job Descriptions Tab */}
+              {/* Archive Job Descriptions Tab */}
               <TabPanel value={tabValue} index={2}>
                 <Box sx={{ maxWidth: 1400, mx: 'auto', p: 2 }}>
                   {jobDescriptions.length === 0 ? (
@@ -550,7 +576,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                         No job descriptions saved yet
                       </Typography>
                       <Typography color="text.secondary">
-                        Add one using the URL or Text tabs.
+                        Add one using the URL or MANUAL tabs.
                       </Typography>
                     </Paper>
                   ) : (

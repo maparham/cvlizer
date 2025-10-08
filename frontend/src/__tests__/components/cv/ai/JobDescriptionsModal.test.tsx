@@ -130,10 +130,10 @@ describe('JobDescriptionsModal', () => {
       );
 
       expect(mockLoadJobDescriptions).toHaveBeenCalled();
-      expect(screen.getByText('Job Descriptions')).toBeInTheDocument();
+      expect(screen.getByText('Job Description')).toBeInTheDocument();
     });
 
-    it('shows all job descriptions including hidden ones in saved tab', () => {
+    it('shows all job descriptions including hidden ones in archive tab', () => {
       mockUseAIStore.mockReturnValue({
         ...defaultMockStore,
         jobDescriptions: [mockJobDescription, mockJobDescription2],
@@ -149,9 +149,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       expect(screen.getByText('Software Engineer')).toBeInTheDocument();
       expect(screen.getByText('Product Manager')).toBeInTheDocument();
@@ -173,12 +173,12 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       expect(screen.getByText('No job descriptions saved yet')).toBeInTheDocument();
-      expect(screen.getByText('Add one using the URL or Text tabs.')).toBeInTheDocument();
+      expect(screen.getByText('Add one using the URL or MANUAL tabs.')).toBeInTheDocument();
     });
   });
 
@@ -207,9 +207,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Click select button for first job description
       const selectButtons = screen.getAllByText('Select');
@@ -238,9 +238,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Click select button
       const selectButton = screen.getByText('Select');
@@ -265,9 +265,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       expect(screen.getByText('Selected')).toBeInTheDocument();
       expect(screen.getAllByText('Select')).toHaveLength(1); // Only one select button for non-active JD
@@ -642,8 +642,8 @@ describe('JobDescriptionsModal', () => {
       fireEvent.click(parseButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Unable to parse this URL. Please use the "Text" tab to enter the job description manually.')).toBeInTheDocument();
-        expect(mockShowError).toHaveBeenCalledWith('URL Parsing Failed', 'Unable to parse this URL. Please use the "Text" tab to enter the job description manually.');
+        expect(screen.getByText('Unable to parse this URL. Please use the "MANUAL" tab to enter the job description manually.')).toBeInTheDocument();
+        expect(mockShowError).toHaveBeenCalledWith('URL Parsing Failed', 'Unable to parse this URL. Please use the "MANUAL" tab to enter the job description manually.');
       });
     });
 
@@ -671,7 +671,7 @@ describe('JobDescriptionsModal', () => {
     });
   });
 
-  describe('Text Input Tab', () => {
+  describe('MANUAL Input Tab', () => {
     it('creates job description from text input', async () => {
       const mockCreateJobDescription = jest.fn().mockResolvedValue(mockJobDescription);
       const mockSetActiveJobDescription = jest.fn();
@@ -700,9 +700,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to text tab
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      // Switch to manual tab
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
 
       // Fill form
       fireEvent.change(screen.getByLabelText('Job Title (Optional)'), { target: { value: 'Manual Title' } });
@@ -744,9 +744,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to text tab
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      // Switch to manual tab
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
 
       // Click save button without entering text
       const saveButton = screen.getByText('Save Job Description');
@@ -773,9 +773,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Click edit button
       const editButtons = screen.getAllByLabelText('Edit');
@@ -818,9 +818,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Click edit button
       const editButtons = screen.getAllByLabelText('Edit');
@@ -865,9 +865,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Click delete button
       const deleteButtons = screen.getAllByLabelText('Delete');
@@ -900,9 +900,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Click delete button
       const deleteButtons = screen.getAllByLabelText('Delete');
@@ -934,9 +934,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Click delete button
       const deleteButtons = screen.getAllByLabelText('Delete');
@@ -970,14 +970,14 @@ describe('JobDescriptionsModal', () => {
       // Initially on URL tab
       expect(screen.getByLabelText('Job Posting URL')).toBeInTheDocument();
 
-      // Switch to text tab
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      // Switch to manual tab
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
       expect(screen.getByLabelText('Job Description')).toBeInTheDocument();
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
       expect(screen.getByText('No job descriptions saved yet')).toBeInTheDocument();
     });
 
@@ -1002,9 +1002,9 @@ describe('JobDescriptionsModal', () => {
       fireEvent.click(parseButton);
       expect(screen.getByText('Please enter a URL')).toBeInTheDocument();
 
-      // Switch to text tab
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      // Switch to manual tab
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
 
       // Error should be cleared
       expect(screen.queryByText('Please enter a URL')).not.toBeInTheDocument();
@@ -1065,9 +1065,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to text tab
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      // Switch to manual tab
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
 
       // Fill form
       fireEvent.change(screen.getByLabelText('Job Description'), { target: { value: 'Test content' } });
@@ -1105,9 +1105,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to text tab
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      // Switch to manual tab
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
 
       // Fill form
       fireEvent.change(screen.getByLabelText('Job Description'), { target: { value: 'Test content' } });
@@ -1145,9 +1145,9 @@ describe('JobDescriptionsModal', () => {
         />
       );
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Click delete button
       const deleteButtons = screen.getAllByLabelText('Delete');

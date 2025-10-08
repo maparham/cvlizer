@@ -42,8 +42,8 @@ This directory contains comprehensive unit tests for the Job Description card lo
 - ✅ Edit functionality works correctly
 - ✅ Delete functionality works correctly with confirmation dialog
 - ✅ URL parsing tab functionality
-- ✅ Text input tab functionality
-- ✅ Saved job descriptions tab shows all job descriptions normally
+- ✅ MANUAL input tab functionality
+- ✅ Archive job descriptions tab shows all job descriptions normally
 - ✅ Tab navigation and error clearing
 - ✅ Loading states during operations
 - ✅ Error handling for all operations

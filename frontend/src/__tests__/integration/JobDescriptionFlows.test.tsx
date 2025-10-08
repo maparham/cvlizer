@@ -166,11 +166,11 @@ describe('Job Description Integration Flows', () => {
       fireEvent.click(addButton);
 
       // Modal should be open
-      expect(screen.getByText('Job Descriptions')).toBeInTheDocument();
+      expect(screen.getByText('Job Description')).toBeInTheDocument();
 
-      // Switch to text tab and add job description
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      // Switch to manual tab and add job description
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
 
       fireEvent.change(screen.getByLabelText('Job Title (Optional)'), { 
         target: { value: 'Software Engineer' } 
@@ -239,9 +239,9 @@ describe('Job Description Integration Flows', () => {
       const manageButton = screen.getByText('Manage (1)');
       fireEvent.click(manageButton);
 
-      // Switch to text tab and add second job description
-      const textTab2 = screen.getByText('Text');
-      fireEvent.click(textTab2);
+      // Switch to manual tab and add second job description
+      const manualTab2 = screen.getByText('MANUAL');
+      fireEvent.click(manualTab2);
 
       fireEvent.change(screen.getByLabelText('Job Title (Optional)'), { 
         target: { value: 'Product Manager' } 
@@ -287,9 +287,9 @@ describe('Job Description Integration Flows', () => {
       const manageButton2 = screen.getByText('Manage (2)');
       fireEvent.click(manageButton2);
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Both job descriptions should be visible in modal
       expect(screen.getByText('Software Engineer')).toBeInTheDocument();
@@ -348,8 +348,8 @@ describe('Job Description Integration Flows', () => {
       const addButton = screen.getByText('Add Job Description');
       fireEvent.click(addButton);
 
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
 
       fireEvent.change(screen.getByLabelText('Job Description'), { 
         target: { value: 'First job description content' } 
@@ -383,8 +383,8 @@ describe('Job Description Integration Flows', () => {
       const manageButton = screen.getByText('Manage (1)');
       fireEvent.click(manageButton);
 
-      const textTab2 = screen.getByText('Text');
-      fireEvent.click(textTab2);
+      const manualTab2 = screen.getByText('MANUAL');
+      fireEvent.click(manualTab2);
 
       fireEvent.change(screen.getByLabelText('Job Description'), { 
         target: { value: 'Second job description content' } 
@@ -418,8 +418,8 @@ describe('Job Description Integration Flows', () => {
       const manageButton2 = screen.getByText('Manage (2)');
       fireEvent.click(manageButton2);
 
-      const textTab3 = screen.getByText('Text');
-      fireEvent.click(textTab3);
+      const manualTab3 = screen.getByText('MANUAL');
+      fireEvent.click(manualTab3);
 
       fireEvent.change(screen.getByLabelText('Job Description'), { 
         target: { value: 'Third job description content' } 
@@ -559,9 +559,9 @@ describe('Job Description Integration Flows', () => {
       const manageButton = screen.getByText('Manage (1)');
       fireEvent.click(manageButton);
 
-      // Switch to saved tab
-      const savedTab = screen.getByText('Saved');
-      fireEvent.click(savedTab);
+      // Switch to archive tab
+      const archiveTab = screen.getByText('ARCHIVE');
+      fireEvent.click(archiveTab);
 
       // Updated job description should be visible in modal
       expect(screen.getByText('Updated Software Engineer')).toBeInTheDocument();
@@ -594,8 +594,8 @@ describe('Job Description Integration Flows', () => {
       const addButton = screen.getByText('Add Job Description');
       fireEvent.click(addButton);
 
-      const textTab = screen.getByText('Text');
-      fireEvent.click(textTab);
+      const manualTab = screen.getByText('MANUAL');
+      fireEvent.click(manualTab);
 
       fireEvent.change(screen.getByLabelText('Job Description'), { 
         target: { value: 'Test content' } 

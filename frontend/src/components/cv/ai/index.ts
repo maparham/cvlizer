@@ -9,7 +9,6 @@
 // Existing AI components
 export { default as JobFitAnalysis } from './JobFitAnalysis';
 export { default as ATSOptimization } from './ATSOptimization';
-export { default as JobDescriptionInput } from './JobDescriptionInput';
 export { default as JobDescriptionSummary } from './JobDescriptionSummary';
 export { default as JobDescriptionsModal } from './JobDescriptionsModal';
 

@@ -230,7 +230,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WorkIcon />
-            Job Descriptions
+            Job Description
           </Typography>
           <Button
             variant="outlined"
