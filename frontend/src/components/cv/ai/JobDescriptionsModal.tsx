@@ -100,6 +100,12 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [jobDescriptionToDelete, setJobDescriptionToDelete] = useState<JobDescription | null>(null);
   
+  // Separate state for edit dialog (to avoid affecting TEXT tab fields)
+  const [editTitle, setEditTitle] = useState('');
+  const [editCompany, setEditCompany] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editTextInput, setEditTextInput] = useState('');
+  
   // URL validation state
   const [urlValidation, setUrlValidation] = useState<FieldValidationResult>({ isValid: false, message: 'Please enter a job posting URL' });
   const [urlTouched, setUrlTouched] = useState(false);
@@ -317,15 +323,15 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
 
   const handleEditJobDescription = useCallback((jobDescription: JobDescription) => {
     setEditingJobDescription(jobDescription);
-    setTitle(jobDescription.title || '');
-    setCompany(jobDescription.company || '');
-    setLocation(jobDescription.location || '');
-    setTextInput(jobDescription.content);
+    setEditTitle(jobDescription.title || '');
+    setEditCompany(jobDescription.company || '');
+    setEditLocation(jobDescription.location || '');
+    setEditTextInput(jobDescription.content);
     setShowEditDialog(true);
   }, []);
 
   const handleEditSubmit = useCallback(async () => {
-    if (!editingJobDescription || !textInput.trim()) {
+    if (!editingJobDescription || !editTextInput.trim()) {
       return;
     }
 
@@ -335,18 +341,18 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     try {
       // Update the job description using the proper update API
       await updateJobDescription(editingJobDescription.id, {
-        content: textInput,
-        title: title || 'Manual Job Description',
-        company: company || 'Unknown Company',
-        location: location || 'Unknown Location',
+        content: editTextInput,
+        title: editTitle || 'Manual Job Description',
+        company: editCompany || 'Unknown Company',
+        location: editLocation || 'Unknown Location',
       });
 
       setShowEditDialog(false);
       setEditingJobDescription(null);
-      setTextInput('');
-      setTitle('');
-      setCompany('');
-      setLocation('');
+      setEditTextInput('');
+      setEditTitle('');
+      setEditCompany('');
+      setEditLocation('');
       showSuccess('Job description updated successfully');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update job description';
@@ -355,7 +361,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [editingJobDescription, textInput, title, company, location, updateJobDescription, showSuccess, showError]);
+  }, [editingJobDescription, editTextInput, editTitle, editCompany, editLocation, updateJobDescription, showSuccess, showError]);
 
   const handleClose = useCallback(() => {
     setError(null);
@@ -595,29 +601,29 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Job Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
               fullWidth
               disabled={isLoading}
             />
             <TextField
               label="Company"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
+              value={editCompany}
+              onChange={(e) => setEditCompany(e.target.value)}
               fullWidth
               disabled={isLoading}
             />
             <TextField
               label="Location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              value={editLocation}
+              onChange={(e) => setEditLocation(e.target.value)}
               fullWidth
               disabled={isLoading}
             />
             <TextField
               label="Job Description"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
+              value={editTextInput}
+              onChange={(e) => setEditTextInput(e.target.value)}
               multiline
               rows={8}
               fullWidth
@@ -632,7 +638,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
           <Button
             onClick={handleEditSubmit}
             variant="contained"
-            disabled={isLoading || !textInput.trim()}
+            disabled={isLoading || !editTextInput.trim()}
             startIcon={isLoading ? <CircularProgress size={20} /> : <CheckIcon />}
           >
             {isLoading ? 'Saving...' : 'Save Changes'}

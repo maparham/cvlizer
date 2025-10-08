@@ -207,9 +207,11 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                 flex: 1, 
                 mr: 1,
                 color: isActive ? 'primary.main' : 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
+                display: '-webkit-box',
+                WebkitLineClamp: 1,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
                 textDecoration: 'none',
                 cursor: 'pointer',
                 '&:hover': {
@@ -228,9 +230,11 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                 flex: 1, 
                 mr: 1,
                 color: isActive ? 'primary.main' : 'text.primary',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
+                display: '-webkit-box',
+                WebkitLineClamp: 1,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
               }}
             >
               {jobDescription.title || 'Untitled Job Description'}
@@ -403,7 +407,19 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
     >
       <DialogTitle>
         <Box>
-          <Typography variant="h5" component="div" sx={{ fontWeight: 600, mb: 1 }}>
+          <Typography 
+            variant="h5" 
+            component="div" 
+            sx={{ 
+              fontWeight: 600, 
+              mb: 1,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}
+          >
             {jobDescription.title || 'Untitled Job Description'}
           </Typography>
           {/* Metadata chips */}
