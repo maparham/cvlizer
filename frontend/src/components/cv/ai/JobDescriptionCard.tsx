@@ -18,7 +18,7 @@
  * - Used in JobDescriptionsModal for grid display
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -31,6 +31,12 @@ import {
   Button,
   CircularProgress,
   LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Work as WorkIcon,
@@ -44,6 +50,7 @@ import {
 } from '@mui/icons-material';
 import { JobDescription } from '../../../types/ai';
 import { formatRelativeTime } from '../../../utils/formatters';
+import { MarkdownRenderer } from '../../common';
 
 export interface JobDescriptionCardProps {
   jobDescription: JobDescription;
@@ -68,8 +75,23 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   showSelectButton = false,
   variant = 'default',
 }) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const isParsing = isParsingProp || jobDescription.is_parsing;
   const hasError = jobDescription.parse_error;
+
+  const handleCardClick = () => {
+    // Only open dialog for successfully parsed job descriptions
+    if (!isParsing && !hasError) {
+      setDialogOpen(true);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
 
   // Parsing/Error state card
   if (isParsing || hasError) {
@@ -149,23 +171,26 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
 
   // Normal job description card
   return (
-    <Card
-      variant="outlined"
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        border: isActive ? 2 : 1,
-        borderColor: isActive ? 'primary.main' : 'divider',
-        backgroundColor: isActive ? 'rgba(25, 118, 210, 0.04)' : 'transparent',
-        boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.08)',
-          transform: 'translateY(-1px)'
-        }
-      }}
-    >
+    <>
+      <Card
+        variant="outlined"
+        onClick={handleCardClick}
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          border: isActive ? 2 : 1,
+          borderColor: isActive ? 'primary.main' : 'divider',
+          backgroundColor: isActive ? 'rgba(25, 118, 210, 0.04)' : 'transparent',
+          boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+          transition: 'all 0.2s ease-in-out',
+          cursor: 'pointer',
+          '&:hover': {
+            boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.08)',
+            transform: 'translateY(-1px)'
+          }
+        }}
+      >
       <CardContent sx={{ flex: 1, pb: showSelectButton ? 1 : 2 }}>
         {/* Header with title and actions */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
@@ -176,6 +201,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               href={jobDescription.source_url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               sx={{ 
                 fontWeight: isActive ? 700 : 600, 
                 flex: 1, 
@@ -215,7 +241,10 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               <Tooltip title="Edit">
                 <IconButton
                   size="small"
-                  onClick={() => onEdit(jobDescription)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(jobDescription);
+                  }}
                   sx={{
                     '&:hover': {
                       backgroundColor: 'primary.light',
@@ -231,7 +260,10 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               <Tooltip title="Remove from sidebar">
                 <IconButton
                   size="small"
-                  onClick={() => onHide(jobDescription.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onHide(jobDescription.id);
+                  }}
                   sx={{
                     '&:hover': {
                       backgroundColor: 'rgba(0, 0, 0, 0.04)',
@@ -247,7 +279,10 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               <Tooltip title="Delete">
                 <IconButton
                   size="small"
-                  onClick={() => onDelete(jobDescription)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(jobDescription);
+                  }}
                   color="error"
                 >
                   <DeleteIcon fontSize="small" />
@@ -329,20 +364,15 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
         </Typography>
 
         {/* Content preview */}
-        <Typography
+        <MarkdownRenderer
+          content={jobDescription.content}
           variant="body2"
           color="text.secondary"
+          lineClamp={variant === 'sidebar' ? 2 : 4}
           sx={{
-            display: '-webkit-box',
-            WebkitLineClamp: variant === 'sidebar' ? 2 : 4,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
             mb: 1,
-            lineHeight: 1.6,
           }}
-        >
-          {jobDescription.content}
-        </Typography>
+        />
       </CardContent>
 
       {/* Select button (only shown in modal) */}
@@ -350,7 +380,10 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
         <CardActions sx={{ justifyContent: 'center', px: 2, pb: 2, pt: 0 }}>
           <Button
             size="small"
-            onClick={() => onSelect(jobDescription)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(jobDescription);
+            }}
             variant={isActive ? 'contained' : 'outlined'}
             fullWidth
           >
@@ -359,6 +392,101 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
         </CardActions>
       )}
     </Card>
+
+    {/* Job Description Detail Dialog */}
+    <Dialog
+      open={dialogOpen}
+      onClose={handleCloseDialog}
+      fullWidth
+      maxWidth="md"
+      fullScreen={isMobile}
+    >
+      <DialogTitle>
+        <Box>
+          <Typography variant="h5" component="div" sx={{ fontWeight: 600, mb: 1 }}>
+            {jobDescription.title || 'Untitled Job Description'}
+          </Typography>
+          {/* Metadata chips */}
+          {(jobDescription.company || jobDescription.location || jobDescription.employment_type || jobDescription.salary_range) && (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {jobDescription.company && (
+                <Chip
+                  icon={<WorkIcon />}
+                  label={jobDescription.company}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                    borderColor: 'primary.light',
+                    '& .MuiChip-icon': {
+                      fontSize: '16px'
+                    }
+                  }}
+                />
+              )}
+              {jobDescription.location && (
+                <Chip
+                  icon={<LocationOnIcon />}
+                  label={jobDescription.location}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    backgroundColor: 'rgba(76, 175, 80, 0.08)',
+                    borderColor: 'success.light',
+                    '& .MuiChip-icon': {
+                      fontSize: '16px'
+                    }
+                  }}
+                />
+              )}
+              {jobDescription.employment_type && (
+                <Chip
+                  icon={<BusinessCenterIcon />}
+                  label={jobDescription.employment_type}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    backgroundColor: 'rgba(156, 39, 176, 0.08)',
+                    borderColor: 'secondary.light',
+                    '& .MuiChip-icon': {
+                      fontSize: '16px'
+                    }
+                  }}
+                />
+              )}
+              {jobDescription.salary_range && (
+                <Chip
+                  icon={<AttachMoneyIcon />}
+                  label={jobDescription.salary_range}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    backgroundColor: 'rgba(255, 152, 0, 0.08)',
+                    borderColor: 'warning.light',
+                    '& .MuiChip-icon': {
+                      fontSize: '16px'
+                    }
+                  }}
+                />
+              )}
+            </Box>
+          )}
+        </Box>
+      </DialogTitle>
+      <DialogContent dividers>
+        <MarkdownRenderer
+          content={jobDescription.content}
+          variant="body1"
+          color="text.primary"
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleCloseDialog} variant="outlined">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  </>
   );
 };
 

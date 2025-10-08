@@ -1499,15 +1499,21 @@ Please extract and return ONLY a JSON object with the following structure:
     "title": "Job title (e.g., 'Senior Software Engineer')",
     "company": "Company name",
     "location": "Job location (city, state/country)",
-    "content": "Complete job description including requirements, responsibilities, qualifications, and benefits. PRESERVE original formatting including bullet points, line breaks, and section headers",
+    "content": "Complete job description in MARKDOWN format with proper formatting",
     "source": "Job site type (e.g., 'linkedin', 'indeed', 'company_careers', etc.)"
 }}
 
 Guidelines:
 - Extract the most specific and accurate information available
-- For the content field, include the full job description with all requirements and responsibilities
-- PRESERVE original formatting: keep bullet points (-, •), line breaks (\\n), and section headers as they appear
-- Maintain the structure with proper spacing between sections
+- For the content field, format as MARKDOWN:
+  * Use ## for main section headers (e.g., ## Requirements, ## Responsibilities)
+  * Use ### for subsection headers
+  * Use - or * for bullet points in lists
+  * Use **bold** for emphasis on key terms or requirements
+  * Use proper line breaks (\\n\\n) between sections
+  * Preserve all structure and hierarchy from the original
+  * Convert any numbered lists to markdown format (1., 2., etc.)
+  * Keep technical terms and requirements exactly as stated
 - If information is not available, use empty string or "Unknown"
 - For source, try to identify the job site type from the URL or content
 - Ensure the JSON is valid and properly formatted
@@ -1523,7 +1529,7 @@ Return only the JSON object:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert at extracting structured information from job postings. Always return valid JSON."
+                        "content": "You are an expert at extracting structured information from job postings. Always return valid JSON. Format the 'content' field as markdown with proper headers (##, ###), bullet points (-, *), bold text (**bold**), and line breaks."
                     },
                     {
                         "role": "user", 

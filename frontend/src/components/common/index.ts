@@ -13,3 +13,4 @@ export {
 export type { ErrorFallbackProps } from './ErrorBoundary'
 
 export { default as ImpersonationBanner } from './ImpersonationBanner'
+export { default as MarkdownRenderer } from './MarkdownRenderer'

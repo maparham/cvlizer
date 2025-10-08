@@ -56,6 +56,7 @@ import { JobDescription } from '../../../types/ai';
 import { useNotifications } from '../../../stores/uiStore';
 import { formatRelativeTime } from '../../../utils/formatters';
 import { aiService } from '../../../services/aiService';
+import { MarkdownRenderer } from '../../common';
 
 interface JobDescriptionInputProps {
   cvId: string;
@@ -499,18 +500,12 @@ const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
                     Added: {formatDate(jobDescription.created_at)}
                   </Typography>
                   
-                  <Typography
+                  <MarkdownRenderer
+                    content={jobDescription.content}
                     variant="body2"
                     color="text.secondary"
-                    sx={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {jobDescription.content}
-                  </Typography>
+                    lineClamp={3}
+                  />
                 </CardContent>
                 
                 <CardActions>
