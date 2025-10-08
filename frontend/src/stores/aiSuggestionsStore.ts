@@ -156,7 +156,6 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
     const enhancementId = get().currentEnhancementId;
 
     if (!currentSuggestions) {
-      console.log('⚠️ [dismissSkillSuggestion] No current suggestions found');
       return;
     }
 
@@ -170,7 +169,6 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
     };
 
     set({ allSuggestions: updatedSuggestions });
-    console.log('✅ [dismissSkillSuggestion] UI updated - skill removed');
 
     // Check if ALL suggestions across ALL sections are now dismissed
     const hasNoSuggestions =
@@ -178,18 +176,13 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text;
 
-    console.log('🔍 [dismissSkillSuggestion] Has no suggestions:', hasNoSuggestions);
-
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
-      console.log('🗑️ [dismissSkillSuggestion] All suggestions dismissed - deleting enhancement');
       await get().deleteCurrentEnhancement();
     } else if (enhancementId) {
       // Update the backend with partial dismissal
-      console.log('💾 [dismissSkillSuggestion] Partial dismissal - updating backend enhancement');
       try {
         await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-        console.log('✅ [dismissSkillSuggestion] Backend updated successfully');
       } catch (error) {
         console.error('❌ [dismissSkillSuggestion] Failed to update backend:', error);
       }
@@ -198,12 +191,10 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
 
   // Dismiss all skill suggestions from the UI
   dismissAllSkillSuggestions: async () => {
-    console.log('🔍 [dismissAllSkillSuggestions] Dismissing all skill suggestions');
     const currentSuggestions = get().allSuggestions;
     const enhancementId = get().currentEnhancementId;
 
     if (!currentSuggestions) {
-      console.log('⚠️ [dismissAllSkillSuggestions] No current suggestions found');
       return;
     }
 
@@ -217,7 +208,6 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
     };
 
     set({ allSuggestions: updatedSuggestions });
-    console.log('✅ [dismissAllSkillSuggestions] UI updated - all skills removed');
 
     // Check if ALL suggestions across ALL sections are now dismissed
     const hasNoSuggestions =
@@ -225,18 +215,13 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text;
 
-    console.log('🔍 [dismissAllSkillSuggestions] Has no suggestions:', hasNoSuggestions);
-
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
-      console.log('🗑️ [dismissAllSkillSuggestions] All suggestions dismissed - deleting enhancement');
       await get().deleteCurrentEnhancement();
     } else if (enhancementId) {
       // Update the backend with partial dismissal
-      console.log('💾 [dismissAllSkillSuggestions] Partial dismissal - updating backend enhancement');
       try {
         await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-        console.log('✅ [dismissAllSkillSuggestions] Backend updated successfully');
       } catch (error) {
         console.error('❌ [dismissAllSkillSuggestions] Failed to update backend:', error);
       }
@@ -245,17 +230,12 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
 
   // Dismiss professional summary suggestion
   dismissSummarySuggestion: async () => {
-    console.log('🔍 [dismissSummarySuggestion] Starting dismissal');
     const currentSuggestions = get().allSuggestions;
     const enhancementId = get().currentEnhancementId;
 
     if (!currentSuggestions) {
-      console.log('⚠️ [dismissSummarySuggestion] No current suggestions found');
       return;
     }
-
-    console.log('📊 [dismissSummarySuggestion] Current suggestions:', currentSuggestions);
-    console.log('🆔 [dismissSummarySuggestion] Enhancement ID:', enhancementId);
 
     // Update UI immediately - clear summary only
     const updatedSuggestions = {
@@ -268,7 +248,6 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
     };
 
     set({ allSuggestions: updatedSuggestions });
-    console.log('✅ [dismissSummarySuggestion] UI updated with cleared summary');
 
     // Check if ALL suggestions across ALL sections are now dismissed
     const hasNoSuggestions =
@@ -276,19 +255,14 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text;
 
-    console.log('🔍 [dismissSummarySuggestion] Has no suggestions:', hasNoSuggestions);
-
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
-      console.log('🗑️ [dismissSummarySuggestion] All suggestions dismissed - deleting enhancement');
       await get().deleteCurrentEnhancement();
     } else if (enhancementId) {
       // Update the backend with partial dismissal - save the updated suggestions
-      console.log('💾 [dismissSummarySuggestion] Partial dismissal - updating backend enhancement');
       try {
         // Update the enhancement_data in the backend with the new state
         await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-        console.log('✅ [dismissSummarySuggestion] Backend updated successfully');
       } catch (error) {
         console.error('❌ [dismissSummarySuggestion] Failed to update backend:', error);
       }

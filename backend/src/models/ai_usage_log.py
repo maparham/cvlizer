@@ -18,7 +18,7 @@ class AIUsageLog(Base):
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     cv_id = Column(String(36), ForeignKey("cvs.id", ondelete="CASCADE"), nullable=True, index=True)
     operation_type = Column(String(50), nullable=False, index=True)  # parse_cv, generate_section, etc.
-    model_used = Column(String(50), nullable=False)  # gpt-4o-mini, etc.
+    model_used = Column(String(50), nullable=False)  # Model name from .env (e.g., gpt-5-nano)
     prompt_tokens = Column(Integer, nullable=False, default=0)
     completion_tokens = Column(Integer, nullable=False, default=0)
     total_tokens = Column(Integer, nullable=False, default=0)

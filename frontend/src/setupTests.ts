@@ -120,18 +120,25 @@ Object.defineProperty(window, 'sessionStorage', {
   value: sessionStorageMock
 })
 
-// Mock import.meta for Vite
-Object.defineProperty(globalThis, 'import', {
-  value: {
-    meta: {
-      env: {
-        VITE_API_URL: 'http://localhost:8000',
-        VITE_ADMIN_EMAIL: 'admin@example.com',
-        MODE: 'test'
+// Mock import.meta for Vite - must be done before any imports
+// @ts-ignore - import.meta is not available in Jest
+if (typeof globalThis.import === 'undefined') {
+  Object.defineProperty(globalThis, 'import', {
+    value: {
+      meta: {
+        env: {
+          VITE_API_BASE_URL: 'http://localhost:8000',
+          VITE_ADMIN_EMAIL: 'admin@example.com',
+          VITE_CLERK_PUBLISHABLE_KEY: 'pk_test_mock',
+          MODE: 'test',
+          DEV: false
+        }
       }
-    }
-  }
-})
+    },
+    writable: false,
+    configurable: true
+  })
+}
 
 // Mock react-markdown
 jest.mock('react-markdown', () => {

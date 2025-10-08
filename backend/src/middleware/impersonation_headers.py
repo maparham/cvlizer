@@ -16,8 +16,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 import logging
 
-from ..middleware.clerk_auth import get_current_user_with_impersonation
-from ..models.base import get_db
+from src.middleware.clerk_auth import get_current_user_with_impersonation
+from src.models.base import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class ImpersonationHeadersMiddleware(BaseHTTPMiddleware):
                 # This is a lightweight check that won't interfere with normal auth
                 try:
                     from fastapi.security import HTTPBearer
-                    from ..models.base import get_db
+                    from src.models.base import get_db
                     
                     security = HTTPBearer(auto_error=False)
                     credentials = await security(request)

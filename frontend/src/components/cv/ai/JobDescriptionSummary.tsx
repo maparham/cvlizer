@@ -23,10 +23,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardActions,
-  Chip,
-  IconButton,
-  Tooltip,
   Stack,
   Dialog,
   DialogTitle,
@@ -38,18 +34,15 @@ import {
 import {
   AutoAwesome as AutoAwesomeIcon,
   Work as WorkIcon,
-  Link as LinkIcon,
-  Edit as EditIcon,
-  Close as CloseIcon,
   Check as CheckIcon,
 } from '@mui/icons-material';
 import { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
 import { JobDescription } from '../../../types/ai';
 import { useNotifications } from '../../../stores/uiStore';
-import { formatRelativeTime } from '../../../utils/formatters';
 import { useJobDescriptionPolling } from '../../../hooks/useJobDescriptionPolling';
 import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
 import JobDescriptionsModal from './JobDescriptionsModal';
+import JobDescriptionCard from './JobDescriptionCard';
 
 interface JobDescriptionSummaryProps {
   cvId: string;
@@ -231,10 +224,6 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     }
   }, [activeJobDescription, cvId, createJobFitDraft, showSuccess, showError, addTask]);
 
-  const formatDate = useCallback((dateString: string) => {
-    return formatRelativeTime(dateString);
-  }, []);
-
   return (
     <>
       <Box>
@@ -301,225 +290,20 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
           <Stack spacing={2}>
             {/* Active Job Description */}
             {activeJobDescription ? (
-              <Card 
-                variant="outlined" 
-                sx={{ 
-                  border: activeJobDescription.is_parsing || activeJobDescription.parse_error ? 2 : 1, 
-                  borderColor: activeJobDescription.parse_error 
-                    ? 'error.main' 
-                    : activeJobDescription.is_parsing 
-                      ? 'warning.main' 
-                      : 'primary.main',
-                  backgroundColor: activeJobDescription.parse_error 
-                    ? 'rgba(244, 67, 54, 0.04)' 
-                    : activeJobDescription.is_parsing 
-                      ? 'rgba(255, 193, 7, 0.04)' 
-                      : 'rgba(25, 118, 210, 0.04)',
-                  boxShadow: activeJobDescription.parse_error 
-                    ? '0 2px 8px rgba(244, 67, 54, 0.2)' 
-                    : activeJobDescription.is_parsing 
-                      ? '0 2px 8px rgba(255, 193, 7, 0.2)' 
-                      : '0 2px 8px rgba(0,0,0,0.08)',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    boxShadow: activeJobDescription.parse_error 
-                      ? '0 4px 12px rgba(244, 67, 54, 0.3)' 
-                      : activeJobDescription.is_parsing 
-                        ? '0 4px 12px rgba(255, 193, 7, 0.3)' 
-                        : '0 4px 12px rgba(0,0,0,0.12)',
-                    transform: 'translateY(-1px)'
-                  }
-                }}
-              >
-                <CardContent sx={{ pb: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontWeight: 700, 
-                        flex: 1, 
-                        mr: 1, 
-                        color: activeJobDescription.parse_error 
-                          ? 'error.main' 
-                          : activeJobDescription.is_parsing 
-                            ? 'warning.main' 
-                            : 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
-                      }}
-                    >
-                      {activeJobDescription.is_parsing && !activeJobDescription.parse_error && (
-                        <CircularProgress size={16} sx={{ color: 'warning.main' }} />
-                      )}
-                      {activeJobDescription.parse_error ? 'Parsing Failed' : (activeJobDescription.is_parsing ? 'Loading...' : (activeJobDescription.title || 'Untitled Job Description'))}
-                    </Typography>
-                    <Box>
-                      <Tooltip title="Edit">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditJobDescription(activeJobDescription)}
-                          sx={{
-                            '&:hover': {
-                              backgroundColor: 'primary.light',
-                              color: 'primary.contrastText'
-                            }
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Remove from sidebar">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleJobDescriptionHide(activeJobDescription.id)}
-                          sx={{
-                            '&:hover': {
-                              backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                              color: 'text.secondary'
-                            }
-                          }}
-                        >
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                  
-                  {/* Company, Location, and URL as Chips */}
-                  {(activeJobDescription.company || activeJobDescription.location || activeJobDescription.source_url || activeJobDescription.is_parsing) && (
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
-                      {activeJobDescription.is_parsing ? (
-                        <Chip
-                          icon={<CircularProgress size={16} />}
-                          label="Parsing job description..."
-                          size="small"
-                          variant="outlined"
-                          sx={{ 
-                            backgroundColor: 'rgba(255, 193, 7, 0.08)',
-                            borderColor: 'warning.light',
-                            '& .MuiChip-icon': {
-                              fontSize: '16px'
-                            }
-                          }}
-                        />
-                      ) : activeJobDescription.parse_error ? (
-                        <Chip
-                          icon={<CloseIcon />}
-                          label={`Parsing failed: ${activeJobDescription.parse_error}`}
-                          size="small"
-                          variant="outlined"
-                          sx={{ 
-                            backgroundColor: 'rgba(244, 67, 54, 0.08)',
-                            borderColor: 'error.light',
-                            '& .MuiChip-icon': {
-                              fontSize: '16px'
-                            }
-                          }}
-                        />
-                      ) : (
-                        <>
-                          {activeJobDescription.company && (
-                            <Chip
-                              icon={<WorkIcon />}
-                              label={activeJobDescription.company}
-                              size="small"
-                              variant="outlined"
-                              sx={{ 
-                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                borderColor: 'primary.light',
-                                '& .MuiChip-icon': {
-                                  fontSize: '16px'
-                                }
-                              }}
-                            />
-                          )}
-                          {activeJobDescription.location && (
-                            <Chip
-                              icon={<LinkIcon />}
-                              label={activeJobDescription.location}
-                              size="small"
-                              variant="outlined"
-                              sx={{ 
-                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                borderColor: 'primary.light',
-                                '& .MuiChip-icon': {
-                                  fontSize: '16px'
-                                }
-                              }}
-                            />
-                          )}
-                        </>
-                      )}
-                      {activeJobDescription.source_url && (
-                        <Chip
-                          icon={<LinkIcon />}
-                          label="URL"
-                          size="small"
-                          variant="outlined"
-                          sx={{ 
-                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                            borderColor: 'primary.light',
-                            cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: 'primary.light',
-                              color: 'primary.contrastText',
-                              transform: 'scale(1.05)'
-                            },
-                            '& .MuiChip-icon': {
-                              fontSize: '16px'
-                            },
-                            transition: 'all 0.2s ease-in-out'
-                          }}
-                          onClick={() => window.open(activeJobDescription.source_url, '_blank', 'noopener,noreferrer')}
-                        />
-                      )}
-                    </Box>
-                  )}
-                  
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                    Added: {formatDate(activeJobDescription.created_at)}
-                  </Typography>
-                  
-                  <Typography
-                    variant="body2"
-                    color={activeJobDescription.parse_error 
-                      ? 'error.main' 
-                      : activeJobDescription.is_parsing 
-                        ? 'warning.main' 
-                        : 'text.secondary'
-                    }
-                    sx={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      mb: 1.5,
-                      lineHeight: 1.6,
-                      fontStyle: activeJobDescription.is_parsing || activeJobDescription.parse_error ? 'italic' : 'normal'
-                    }}
-                  >
-                    {activeJobDescription.parse_error 
-                      ? `Failed to parse URL: ${activeJobDescription.parse_error}` 
-                      : activeJobDescription.is_parsing 
-                        ? 'Parsing job description from URL...' 
-                        : activeJobDescription.content
-                    }
-                  </Typography>
-                </CardContent>
+              <>
+                <JobDescriptionCard
+                  jobDescription={activeJobDescription}
+                  isActive={true}
+                  onEdit={handleEditJobDescription}
+                  onHide={handleJobDescriptionHide}
+                  variant="sidebar"
+                />
                 
-                <CardActions sx={{ 
-                  pt: 0, 
-                  px: 2, 
-                  pb: 2, 
+                <Box sx={{ 
+                  display: 'flex',
                   flexDirection: 'column', 
                   gap: 2,
-                  alignItems: 'stretch',
-                  '& .MuiButton-root': {
-                    width: '100%',
-                    minWidth: 'unset',
-                    mx: 0
-                  }
+                  mt: 2
                 }}>
                   {onGenerateSuggestions && (
                     <Button
@@ -542,6 +326,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                       }
                       onClick={onGenerateSuggestions}
                       disabled={suggestionsLoading || activeJobDescription?.is_parsing}
+                      fullWidth
                       sx={{
                         textTransform: 'none',
                         backgroundColor: 'transparent',
@@ -589,6 +374,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                       }
                       onClick={handleGenerateJobFit}
                       disabled={isGeneratingJobFit || activeJobDescription?.is_parsing}
+                      fullWidth
                       sx={{
                         textTransform: 'none',
                         backgroundColor: 'transparent',
@@ -614,8 +400,8 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                       {isGeneratingJobFit ? 'Generating...' : 'Generate Job Fit Section'}
                     </Button>
                   )}
-                </CardActions>
-              </Card>
+                </Box>
+              </>
             ) : (
               <Card 
                 variant="outlined" 

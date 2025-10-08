@@ -27,7 +27,7 @@ class JobDescription(Base):
     company = Column(String(255), nullable=True)
     location = Column(String(255), nullable=True)
     hidden = Column(Boolean, default=False, nullable=False)
-    
+
     # Background task status fields
     is_parsing = Column(Boolean, default=False, nullable=False)
     parse_error = Column(Text, nullable=True)

@@ -7,8 +7,8 @@ to enable effective problem recreation and debugging by administrators.
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
-from ..models.user_activity import UserActivity, UserSession
-from ..models.user import User
+from src.models.user_activity import UserActivity, UserSession
+from src.models.user import User
 import logging
 import uuid
 

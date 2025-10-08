@@ -18,6 +18,23 @@ import { useNotifications } from '../../../../stores/uiStore';
 import { JobDescription } from '../../../../types/ai';
 import { aiService } from '../../../../services/aiService';
 
+// Mock logger and errorHandler to avoid import.meta.env issues
+jest.mock('../../../../utils/logger', () => ({
+  Logger: jest.fn().mockImplementation(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  })),
+}));
+
+jest.mock('../../../../utils/errorHandler', () => ({
+  ErrorHandler: jest.fn().mockImplementation(() => ({
+    handle: jest.fn(),
+    logError: jest.fn(),
+  })),
+}));
+
 // Mock the AI store
 jest.mock('../../../../stores/aiStore');
 const mockUseAIStore = useAIStore as jest.MockedFunction<typeof useAIStore>;

@@ -10,7 +10,34 @@ jest.mock('../../../services/api', () => ({
   },
 }))
 
+// Mock the CV store
+jest.mock('../../../stores/cvStore', () => ({
+  useCVStore: jest.fn(() => ({
+    uploadCV: mockUploadCV,
+  })),
+}))
+
+// Mock file validation utility
+jest.mock('../../../utils/fileValidation', () => ({
+  validateCVFile: jest.fn(),
+}))
+
+// Mock FilePreview component
+jest.mock('../FilePreview', () => ({
+  __esModule: true,
+  default: ({ file, onRemove, onUpload, uploading }: any) => (
+    <div data-testid="file-preview">
+      <div>{file.name}</div>
+      <button onClick={onRemove}>Remove</button>
+      <button onClick={onUpload} disabled={uploading}>Upload CV</button>
+      {uploading && <div>Uploading CV...</div>}
+    </div>
+  ),
+}))
+
 const mockCvApi = cvApi as jest.Mocked<typeof cvApi>
+const mockUploadCV = jest.fn()
+const mockValidateCVFile = require('../../../utils/fileValidation').validateCVFile as jest.Mock
 
 describe('CVUpload', () => {
   const mockOnClose = jest.fn()
@@ -18,6 +45,18 @@ describe('CVUpload', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    // Default: validation passes
+    mockValidateCVFile.mockReturnValue({ isValid: true })
+    mockUploadCV.mockResolvedValue({
+      id: 'cv123',
+      original_filename: 'test.pdf',
+      file_size: 1024,
+      file_type: 'application/pdf',
+      parsed_data: { test: 'data' },
+      is_parsed: true,
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: '2023-01-01T00:00:00Z'
+    })
   })
 
   it('should render upload dialog', () => {
@@ -49,18 +88,7 @@ describe('CVUpload', () => {
   it('should handle file selection via input', async () => {
     const user = userEvent.setup()
     const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' })
-    
-    mockCvApi.uploadCV.mockResolvedValueOnce({
-      id: 'cv123',
-      original_filename: 'test.pdf',
-      file_size: 1024,
-      file_type: 'application/pdf',
-      parsed_data: { test: 'data' },
-      is_parsed: true,
-      created_at: '2023-01-01T00:00:00Z',
-      updated_at: '2023-01-01T00:00:00Z'
-    })
-    
+
     render(
       <CVUpload
         open={true}
@@ -68,30 +96,33 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     await user.upload(fileInput, file)
-    
+
+    // Wait for file to be selected and validated
     await waitFor(() => {
-      expect(mockCvApi.uploadCV).toHaveBeenCalledWith(file)
-      expect(mockOnSuccess).toHaveBeenCalled()
+      expect(screen.getByText('test.pdf')).toBeInTheDocument()
     })
+
+    // Click upload button inside FilePreview
+    const uploadButtons = screen.getAllByText('Upload CV')
+    const uploadButton = uploadButtons[uploadButtons.length - 1] // Get the button from FilePreview
+    fireEvent.click(uploadButton)
+
+    await waitFor(() => {
+      expect(mockUploadCV).toHaveBeenCalledWith(file)
+    })
+
+    // Component has a 1-second delay before calling onSuccess
+    await waitFor(() => {
+      expect(mockOnSuccess).toHaveBeenCalled()
+    }, { timeout: 2000 })
   })
 
   it('should handle drag and drop', async () => {
     const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' })
-    
-    mockCvApi.uploadCV.mockResolvedValueOnce({
-      id: 'cv123',
-      original_filename: 'test.pdf',
-      file_size: 1024,
-      file_type: 'application/pdf',
-      parsed_data: { test: 'data' },
-      is_parsed: true,
-      created_at: '2023-01-01T00:00:00Z',
-      updated_at: '2023-01-01T00:00:00Z'
-    })
-    
+
     render(
       <CVUpload
         open={true}
@@ -99,26 +130,32 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     const dropZone = screen.getByText('Drag & drop your CV here').closest('div')
-    
+
     fireEvent.dragEnter(dropZone!)
     expect(screen.getByText('Drop your CV here')).toBeInTheDocument()
-    
+
     fireEvent.drop(dropZone!, {
       dataTransfer: {
         files: [file]
       }
     })
-    
+
     await waitFor(() => {
-      expect(mockCvApi.uploadCV).toHaveBeenCalledWith(file)
+      expect(screen.getByText('test.pdf')).toBeInTheDocument()
     })
   })
 
   it('should show error for invalid file type', async () => {
     const file = new File(['test content'], 'test.txt', { type: 'text/plain' })
-    
+
+    // Mock validation failure
+    mockValidateCVFile.mockReturnValue({
+      isValid: false,
+      error: 'Please upload a PDF, DOC, or DOCX file'
+    })
+
     render(
       <CVUpload
         open={true}
@@ -126,40 +163,34 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    
-    // Create a FileList with the file
-    const fileList = {
-      0: file,
-      length: 1,
-      item: (index: number) => (index === 0 ? file : null),
-      [Symbol.iterator]: function* () {
-        yield file
-      }
-    } as FileList
-    
-    // Simulate the change event directly
+
+    // Use fireEvent.change with proper file list structure
     Object.defineProperty(fileInput, 'files', {
-      value: fileList,
+      value: [file],
       writable: false,
     })
-    
-    // Fire the change event directly
     fireEvent.change(fileInput)
-    
+
     await waitFor(() => {
+      expect(mockValidateCVFile).toHaveBeenCalledWith(file)
       expect(screen.getByText('Please upload a PDF, DOC, or DOCX file')).toBeInTheDocument()
     }, { timeout: 3000 })
-    
-    expect(mockCvApi.uploadCV).not.toHaveBeenCalled()
+
+    expect(mockUploadCV).not.toHaveBeenCalled()
   })
 
   it('should show error for file too large', async () => {
-    const user = userEvent.setup()
     const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' })
     Object.defineProperty(file, 'size', { value: 11 * 1024 * 1024 }) // 11MB
-    
+
+    // Mock validation failure
+    mockValidateCVFile.mockReturnValue({
+      isValid: false,
+      error: 'File size must be less than 10MB'
+    })
+
     render(
       <CVUpload
         open={true}
@@ -167,23 +198,30 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    await user.upload(fileInput, file)
-    
+
+    // Use fireEvent.change with proper file list structure
+    Object.defineProperty(fileInput, 'files', {
+      value: [file],
+      writable: false,
+    })
+    fireEvent.change(fileInput)
+
     await waitFor(() => {
+      expect(mockValidateCVFile).toHaveBeenCalledWith(file)
       expect(screen.getByText('File size must be less than 10MB')).toBeInTheDocument()
     }, { timeout: 3000 })
-    
-    expect(mockCvApi.uploadCV).not.toHaveBeenCalled()
+
+    expect(mockUploadCV).not.toHaveBeenCalled()
   })
 
   it('should show upload progress', async () => {
     const user = userEvent.setup()
     const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' })
-    
+
     // Mock a delayed response
-    mockCvApi.uploadCV.mockImplementation(() => 
+    mockUploadCV.mockImplementation(() =>
       new Promise(resolve => setTimeout(() => resolve({
         id: 'cv123',
         original_filename: 'test.pdf',
@@ -193,9 +231,9 @@ describe('CVUpload', () => {
         is_parsed: true,
         created_at: '2023-01-01T00:00:00Z',
         updated_at: '2023-01-01T00:00:00Z'
-      }), 100))
+      }), 300))
     )
-    
+
     render(
       <CVUpload
         open={true}
@@ -203,32 +241,33 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     await user.upload(fileInput, file)
-    
+
+    // Wait for file to be selected
     await waitFor(() => {
-      expect(screen.getByText('Uploading CV...')).toBeInTheDocument()
-    }, { timeout: 3000 })
-    
+      expect(screen.getByText('test.pdf')).toBeInTheDocument()
+    })
+
+    // Click upload button inside FilePreview
+    const uploadButtons = screen.getAllByText('Upload CV')
+    const uploadButton = uploadButtons[uploadButtons.length - 1]
+    await user.click(uploadButton)
+
+    // The component immediately shows uploading state
+    await waitFor(() => {
+      const uploadingTexts = screen.getAllByText('Uploading CV...')
+      expect(uploadingTexts.length).toBeGreaterThan(0)
+    })
+
     expect(screen.getByRole('progressbar')).toBeInTheDocument()
   })
 
   it('should show success message after upload', async () => {
     const user = userEvent.setup()
     const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' })
-    
-    mockCvApi.uploadCV.mockResolvedValueOnce({
-      id: 'cv123',
-      original_filename: 'test.pdf',
-      file_size: 1024,
-      file_type: 'application/pdf',
-      parsed_data: { test: 'data' },
-      is_parsed: true,
-      created_at: '2023-01-01T00:00:00Z',
-      updated_at: '2023-01-01T00:00:00Z'
-    })
-    
+
     render(
       <CVUpload
         open={true}
@@ -236,10 +275,20 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     await user.upload(fileInput, file)
-    
+
+    // Wait for file to be selected
+    await waitFor(() => {
+      expect(screen.getByText('test.pdf')).toBeInTheDocument()
+    })
+
+    // Click upload button inside FilePreview
+    const uploadButtons = screen.getAllByText('Upload CV')
+    const uploadButton = uploadButtons[uploadButtons.length - 1]
+    fireEvent.click(uploadButton)
+
     await waitFor(() => {
       expect(screen.getByText('CV uploaded successfully! AI is now parsing your CV in the background.')).toBeInTheDocument()
     }, { timeout: 3000 })
@@ -248,15 +297,15 @@ describe('CVUpload', () => {
   it('should show error message on upload failure', async () => {
     const user = userEvent.setup()
     const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' })
-    
-    mockCvApi.uploadCV.mockRejectedValueOnce({
+
+    mockUploadCV.mockRejectedValueOnce({
       response: {
         data: {
           detail: 'Upload failed'
         }
       }
     })
-    
+
     render(
       <CVUpload
         open={true}
@@ -264,14 +313,25 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     await user.upload(fileInput, file)
-    
+
+    // Wait for file to be selected
     await waitFor(() => {
-      expect(screen.getByText('Upload failed. Please try again.')).toBeInTheDocument()
+      expect(screen.getByText('test.pdf')).toBeInTheDocument()
+    })
+
+    // Click upload button inside FilePreview
+    const uploadButtons = screen.getAllByText('Upload CV')
+    const uploadButton = uploadButtons[uploadButtons.length - 1]
+    fireEvent.click(uploadButton)
+
+    await waitFor(() => {
+      // Component shows response.data.detail if available
+      expect(screen.getByText('Upload failed')).toBeInTheDocument()
     }, { timeout: 3000 })
-    
+
     expect(mockOnSuccess).not.toHaveBeenCalled()
   })
 
@@ -288,7 +348,15 @@ describe('CVUpload', () => {
     expect(mockOnClose).toHaveBeenCalled()
   })
 
-  it('should not close dialog during upload', () => {
+  it('should not close dialog during upload', async () => {
+    const user = userEvent.setup()
+    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' })
+
+    // Mock a long-running upload
+    mockUploadCV.mockImplementation(() =>
+      new Promise(() => {}) // Never resolves
+    )
+
     render(
       <CVUpload
         open={true}
@@ -296,18 +364,26 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
-    // Simulate uploading state
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' })
-    
-    // Mock a long-running upload
-    mockCvApi.uploadCV.mockImplementation(() => 
-      new Promise(() => {}) // Never resolves
-    )
-    
-    fireEvent.change(fileInput, { target: { files: [file] } })
-    
+    await user.upload(fileInput, file)
+
+    // Wait for file to be selected
+    await waitFor(() => {
+      expect(screen.getByText('test.pdf')).toBeInTheDocument()
+    })
+
+    // Click upload button inside FilePreview
+    const uploadButtons = screen.getAllByText('Upload CV')
+    const uploadButton = uploadButtons[uploadButtons.length - 1]
+    await user.click(uploadButton)
+
+    // Wait for uploading state
+    await waitFor(() => {
+      const uploadingTexts = screen.getAllByText('Uploading CV...')
+      expect(uploadingTexts.length).toBeGreaterThan(0)
+    })
+
     // Try to close during upload
     fireEvent.click(screen.getByText('Cancel'))
     expect(mockOnClose).not.toHaveBeenCalled()

@@ -7,8 +7,8 @@ and other important system events for security auditing and debugging purposes.
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
-from ..models.audit_log import AuditLog
-from ..models.user import User
+from src.models.audit_log import AuditLog
+from src.models.user import User
 import logging
 
 logger = logging.getLogger(__name__)

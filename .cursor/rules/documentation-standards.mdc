@@ -32,9 +32,10 @@ Always add comprehensive documentation for new code and modules.
 - Add TODOs for known limitations or future improvements.
 
 ## File Creation Guidelines
-- Do not create .md files unless the user instructs.
+- **NEVER create .md files (README, documentation, guides, etc.) unless explicitly instructed by the user.**
+- **NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.**
 - Only create code files when explicitly requested.
-- Prefer editing existing files.
+- Prefer editing existing files over creating new ones.
 
 ## Enforcement
 - All new files must include proper documentation.

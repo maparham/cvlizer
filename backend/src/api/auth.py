@@ -11,8 +11,8 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import timedelta
 
-from ..models.base import get_db
-from ..services.auth_service import (
+from src.models.base import get_db
+from src.services.auth_service import (
     authenticate_user, create_user, get_user_by_email,
     create_access_token, create_refresh_token, verify_token
 )

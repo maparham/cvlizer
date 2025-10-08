@@ -17,10 +17,10 @@ import time
 from dotenv import load_dotenv
 from functools import lru_cache
 
-from ..models.base import get_db
-from ..models.user import User
-from ..services.clerk_sync_service import sync_clerk_user_to_local_db
-from ..services.auth_service import SECRET_KEY as APP_JWT_SECRET, ALGORITHM as APP_JWT_ALG
+from src.models.base import get_db
+from src.models.user import User
+from src.services.clerk_sync_service import sync_clerk_user_to_local_db
+from src.services.auth_service import SECRET_KEY as APP_JWT_SECRET, ALGORITHM as APP_JWT_ALG
 from datetime import datetime, timezone
 from jose import jwt
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -478,7 +478,7 @@ def get_current_user_with_impersonation(
     
     # Validate impersonation session
     try:
-        from ..services.impersonation_service import validate_session
+        from src.services.impersonation_service import validate_session
         
         # Get client metadata for validation
         admin_ip = None

@@ -13,6 +13,23 @@ import { renderHook, act } from '@testing-library/react';
 import { useAIStore, useVisibleJobDescriptions, useActiveJobDescription } from '../../stores/aiStore';
 import { JobDescription } from '../../types/ai';
 
+// Mock logger and errorHandler to avoid import.meta.env issues
+jest.mock('../../utils/logger', () => ({
+  Logger: jest.fn().mockImplementation(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  })),
+}));
+
+jest.mock('../../utils/errorHandler', () => ({
+  ErrorHandler: jest.fn().mockImplementation(() => ({
+    handle: jest.fn(),
+    logError: jest.fn(),
+  })),
+}));
+
 // Mock localStorage
 const localStorageMock = {
   getItem: jest.fn(),

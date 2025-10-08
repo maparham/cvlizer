@@ -9,9 +9,9 @@ from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_, or_
-from ..models.ai_usage_log import AIUsageLog
-from ..models.user import User
-from ..config import AIUsageConfig
+from src.models.ai_usage_log import AIUsageLog
+from src.models.user import User
+from src.config import AIUsageConfig
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
     Calculate the estimated cost for OpenAI API usage.
 
     Args:
-        model: The model used (e.g., "gpt-4o-mini")
+        model: The model used (e.g., "gpt-5-nano")
         prompt_tokens: Number of input tokens
         completion_tokens: Number of output tokens
 

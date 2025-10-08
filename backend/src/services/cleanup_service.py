@@ -17,10 +17,10 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 from sqlalchemy.orm import Session
 
-from ..models.base import get_db
-from ..services.impersonation_service import cleanup_expired_sessions
-from ..models.audit_log import AuditLog
-from ..models.impersonation_session import ImpersonationSession
+from src.models.base import get_db
+from src.services.impersonation_service import cleanup_expired_sessions
+from src.models.audit_log import AuditLog
+from src.models.impersonation_session import ImpersonationSession
 import os
 
 logger = logging.getLogger(__name__)

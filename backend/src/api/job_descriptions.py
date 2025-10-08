@@ -11,11 +11,11 @@ from pydantic import BaseModel
 import uuid
 import asyncio
 
-from ..models.base import get_db
-from ..models.user import User
-from ..models.cv import CV
-from ..models.job_description import JobDescription
-from ..services.job_description_service import (
+from src.models.base import get_db
+from src.models.user import User
+from src.models.cv import CV
+from src.models.job_description import JobDescription
+from src.services.job_description_service import (
     get_cv_owned_by,
     create_job_description_for_cv,
     list_job_descriptions_for_cv,
@@ -26,11 +26,11 @@ from ..services.job_description_service import (
     get_job_description_by_id,
     update_job_description_owned_by,
 )
-from ..services.url_parsing_service import parse_job_url
-from ..middleware.clerk_auth import get_effective_user
-from ..utils.background_tasks import run_task_in_background
-from ..models.base import SessionLocal
-from ..config import BackgroundTaskConfig
+from src.services.url_parsing_service import parse_job_url
+from src.middleware.clerk_auth import get_effective_user
+from src.utils.background_tasks import run_task_in_background
+from src.models.base import SessionLocal
+from src.config import BackgroundTaskConfig
 
 router = APIRouter(prefix="/api", tags=["job-descriptions"])
 
@@ -47,7 +47,7 @@ def parse_job_url_sync(task_id: str, url: str, user_id: str):
     db = SessionLocal()
     try:
         # Parse job URL (it's a synchronous function)
-        from ..services.url_parsing_service import parse_job_url
+        from src.services.url_parsing_service import parse_job_url
         result = parse_job_url(url, user_id=user_id, db_session=db)
 
         # Update JobDescription record with parsed data
@@ -58,7 +58,7 @@ def parse_job_url_sync(task_id: str, url: str, user_id: str):
                 jd.title = result.get("title")
                 jd.company = result.get("company")
                 jd.location = result.get("location")
-                jd.source_url = result.get("source_url")
+                jd.source_url = result.get("source_url", url)
                 jd.is_parsing = False
                 jd.parse_error = None
             else:
@@ -78,12 +78,29 @@ def parse_job_url_sync(task_id: str, url: str, user_id: str):
                 jd.is_parsing = False
                 jd.parse_error = f"Background parsing failed: {str(e)}"
                 db_error.commit()
+                logger.info(f"Successfully updated job description {task_id} with error status")
         except Exception as update_error:
             logger.exception(f"parse_job_url_sync: Failed to update job description with error: {str(update_error)}")
+            # Even if commit fails, try one more time with a fresh session
+            try:
+                db_final = SessionLocal()
+                jd = db_final.query(JobDescription).filter(JobDescription.id == task_id).first()
+                if jd and jd.is_parsing:
+                    jd.is_parsing = False
+                    jd.parse_error = "Parsing failed due to system error"
+                    db_final.commit()
+                    logger.info(f"Successfully updated job description {task_id} on retry")
+                db_final.close()
+            except Exception as final_error:
+                logger.critical(f"CRITICAL: Failed to update job description {task_id} status after multiple attempts: {str(final_error)}")
         finally:
             db_error.close()
     finally:
-        db.close()
+        # Ensure database session is always closed
+        try:
+            db.close()
+        except Exception:
+            pass
 
 
 async def parse_job_url_background(jd_id: str, url: str, user_id: str):

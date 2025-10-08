@@ -54,7 +54,7 @@ class CVDiffService:
         This ensures both old and new data have the same structure,
         preventing phantom changes from data normalization differences.
         """
-        from ..utils.validation import CVDataValidator
+        from src.utils.validation import CVDataValidator
         
         # Make a deep copy to avoid modifying original data
         cleaned = json.loads(json.dumps(cv_data))

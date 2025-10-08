@@ -110,13 +110,10 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
     }
 
     const handleApplyAllSuggestions = async () => {
-      console.log('🎯 [SkillsSection.handleApplyAllSuggestions] Starting apply all');
       if (!skillsSuggestions) {
-        console.log('⚠️ [SkillsSection.handleApplyAllSuggestions] No suggestions found');
         return;
       }
 
-      console.log('📊 [SkillsSection.handleApplyAllSuggestions] Suggestions:', skillsSuggestions);
 
       const updatedData = { ...editData }
 
@@ -126,7 +123,6 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
           ...(updatedData.technical || []),
           ...skillsSuggestions.technical.map(s => s.skill)
         ]
-        console.log('✅ [SkillsSection.handleApplyAllSuggestions] Added technical skills:', skillsSuggestions.technical.map(s => s.skill));
       }
 
       // Add all soft skills
@@ -135,27 +131,21 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
           ...(updatedData.soft || []),
           ...skillsSuggestions.soft.map(s => s.skill)
         ]
-        console.log('✅ [SkillsSection.handleApplyAllSuggestions] Added soft skills:', skillsSuggestions.soft.map(s => s.skill));
       }
 
       // Update both technical and soft skills
       updateData('technical', updatedData.technical)
       updateData('soft', updatedData.soft)
       saveDataImmediately(updatedData, 'All AI suggested skills applied')
-      console.log('💾 [SkillsSection.handleApplyAllSuggestions] CV data saved');
 
       // Dismiss all suggestions - this will DELETE the enhancement from backend since all are applied
-      console.log('🗑️ [SkillsSection.handleApplyAllSuggestions] Dismissing all suggestions');
       await dismissAllSkillSuggestions()
-      console.log('✅ [SkillsSection.handleApplyAllSuggestions] Suggestions dismissed');
 
       showSuccess('All AI suggested skills have been applied')
     }
 
     const handleRejectAllSuggestions = async () => {
-      console.log('❌ [SkillsSection.handleRejectAllSuggestions] Starting reject all');
       await dismissAllSkillSuggestions()
-      console.log('✅ [SkillsSection.handleRejectAllSuggestions] All suggestions rejected');
       showSuccess('All AI suggestions have been rejected')
     }
     
@@ -395,13 +385,10 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
   const renderDisplay = (data: any) => {
     // Handler functions for display mode
     const handleApplyAllSuggestionsDisplay = async () => {
-      console.log('🎯 [SkillsSection.handleApplyAllSuggestionsDisplay] Starting apply all (display mode)');
       if (!skillsSuggestions) {
-        console.log('⚠️ [SkillsSection.handleApplyAllSuggestionsDisplay] No suggestions found');
         return;
       }
 
-      console.log('📊 [SkillsSection.handleApplyAllSuggestionsDisplay] Suggestions:', skillsSuggestions);
 
       const updatedData = { ...data }
 
@@ -411,7 +398,6 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
           ...(updatedData.technical || []),
           ...skillsSuggestions.technical.map(s => s.skill)
         ]
-        console.log('✅ [SkillsSection.handleApplyAllSuggestionsDisplay] Added technical skills:', skillsSuggestions.technical.map(s => s.skill));
       }
 
       // Add all soft skills
@@ -420,26 +406,20 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
           ...(updatedData.soft || []),
           ...skillsSuggestions.soft.map(s => s.skill)
         ]
-        console.log('✅ [SkillsSection.handleApplyAllSuggestionsDisplay] Added soft skills:', skillsSuggestions.soft.map(s => s.skill));
       }
 
       // Update the data
       onUpdate(updatedData)
       onSave?.(updatedData, 'All AI suggested skills applied')
-      console.log('💾 [SkillsSection.handleApplyAllSuggestionsDisplay] CV data saved');
 
       // Dismiss all suggestions - this will DELETE the enhancement from backend since all are applied
-      console.log('🗑️ [SkillsSection.handleApplyAllSuggestionsDisplay] Dismissing all suggestions');
       await dismissAllSkillSuggestions()
-      console.log('✅ [SkillsSection.handleApplyAllSuggestionsDisplay] Suggestions dismissed');
 
       showSuccess('All AI suggested skills have been applied')
     }
 
     const handleRejectAllSuggestionsDisplay = async () => {
-      console.log('❌ [SkillsSection.handleRejectAllSuggestionsDisplay] Starting reject all (display mode)');
       await dismissAllSkillSuggestions()
-      console.log('✅ [SkillsSection.handleRejectAllSuggestionsDisplay] All suggestions rejected');
       showSuccess('All AI suggestions have been rejected')
     }
 

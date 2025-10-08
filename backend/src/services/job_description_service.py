@@ -25,8 +25,8 @@ Dependencies:
 """
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from ..models.cv import CV
-from ..models.job_description import JobDescription
+from src.models.cv import CV
+from src.models.job_description import JobDescription
 
 
 def get_cv_owned_by(db: Session, cv_id: str, user_id: str) -> Optional[CV]:

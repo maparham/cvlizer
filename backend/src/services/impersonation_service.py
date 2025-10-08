@@ -19,10 +19,10 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 import logging
 
-from ..models.user import User
-from ..models.impersonation_session import ImpersonationSession
-from ..services.audit_service import log_admin_action
-from ..middleware.clerk_auth import is_admin_user
+from src.models.user import User
+from src.models.impersonation_session import ImpersonationSession
+from src.services.audit_service import log_admin_action
+from src.middleware.clerk_auth import is_admin_user
 
 logger = logging.getLogger(__name__)
 

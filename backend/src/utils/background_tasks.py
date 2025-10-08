@@ -10,8 +10,8 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Any, Dict, Optional
 from sqlalchemy.orm import Session
 
-from ..models.base import SessionLocal
-from ..config import BackgroundTaskConfig
+from src.models.base import SessionLocal
+from src.config import BackgroundTaskConfig
 
 
 # Thread pool for background tasks (configurable via environment)

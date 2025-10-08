@@ -43,13 +43,16 @@ describe('EditableTitle', () => {
       expect(screen.getByTestId('EditIcon')).toBeInTheDocument()
     })
 
-    test('enters edit mode on click', () => {
+    test('enters edit mode on click', async () => {
       render(<EditableTitle {...defaultProps} />)
       fireEvent.click(screen.getByText('Test Title'))
 
       const input = screen.getByDisplayValue('Test Title')
       expect(input).toBeInTheDocument()
-      expect(input).toHaveFocus()
+      // Use waitFor since focus happens in useEffect
+      await waitFor(() => {
+        expect(input).toHaveFocus()
+      })
     })
   })
 

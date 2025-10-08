@@ -8,8 +8,8 @@ This module provides functions for CRUD operations on CV records:
 """
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
-from ..models.cv import CV
-from ..models.user import User
+from src.models.cv import CV
+from src.models.user import User
 import uuid
 import json
 

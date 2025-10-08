@@ -4,7 +4,7 @@ Comprehensive Pydantic schemas for CV data validation with proper type safety.
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import date
-from ..config import AIConfig
+from src.config import AIConfig
 
 
 class PersonalInfoSchema(BaseModel):
@@ -44,7 +44,7 @@ class WhyGoodFitSchema(BaseModel):
     weaknesses: List[str] = Field(default_factory=list, description="Areas for improvement")
     tokens_used: int = Field(0, description="Tokens used in generation")
     generation_time: int = Field(0, description="Generation time in milliseconds")
-    model_used: str = Field(AIConfig.DEFAULT_MODEL, description="AI model used")
+    model_used: str = Field(default_factory=lambda: AIConfig.OPENAI_MODEL, description="AI model used")
     generated_at: str = Field(..., description="Generation timestamp")
     job_description_id: Optional[str] = Field(None, description="Associated job description ID")
 

@@ -16,14 +16,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from ..models.base import get_db
-from ..models.user import User
-from ..models.cv import CV
-from ..models.ai_section import AISection
-from ..models.job_description import JobDescription
-from ..models.user_activity import UserActivity
-from ..middleware.clerk_auth import get_current_user, require_admin_not_impersonating
-from ..services.user_activity_service import get_user_activities, get_user_recent_errors, clear_user_activities
+from src.models.base import get_db
+from src.models.user import User
+from src.models.cv import CV
+from src.models.ai_section import AISection
+from src.models.job_description import JobDescription
+from src.models.user_activity import UserActivity
+from src.middleware.clerk_auth import get_current_user, require_admin_not_impersonating
+from src.services.user_activity_service import get_user_activities, get_user_recent_errors, clear_user_activities
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -86,7 +86,7 @@ class DashboardData(BaseModel):
 
 
 # Import admin check from middleware
-from ..middleware.clerk_auth import is_admin_user
+from src.middleware.clerk_auth import is_admin_user
 
 
 def require_admin(current_user: User = Depends(get_current_user)):
@@ -652,4 +652,74 @@ async def clear_user_activities_admin(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error clearing user activities"
+        )
+
+
+# Job Description Cleanup Endpoints
+class JobDescriptionCleanupStats(BaseModel):
+    """Statistics about stuck job descriptions"""
+    total_parsing: int
+    active_parsing: int
+    stuck_parsing: int
+    stuck_job_descriptions: List[dict]
+
+
+class JobDescriptionCleanupResult(BaseModel):
+    """Result of cleanup operation"""
+    found_count: int
+    fixed_count: int
+    message: str
+
+
+@router.get("/job-descriptions/stuck", response_model=JobDescriptionCleanupStats)
+async def get_stuck_job_descriptions_stats(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin_not_impersonating)
+):
+    """Get statistics about stuck job descriptions"""
+    from src.services.job_description_cleanup_service import get_parsing_statistics
+    
+    try:
+        stats = get_parsing_statistics(db)
+        return JobDescriptionCleanupStats(**stats)
+    except Exception as e:
+        logger.error(f"Error getting job description statistics: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error getting job description statistics"
+        )
+
+
+@router.post("/job-descriptions/cleanup", response_model=JobDescriptionCleanupResult)
+async def cleanup_stuck_job_descriptions(
+    timeout_minutes: int = Query(10, ge=1, le=60, description="Minutes after which parsing is considered stuck"),
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin_not_impersonating)
+):
+    """
+    Find and fix all stuck job descriptions.
+    
+    This endpoint identifies job descriptions that have been in is_parsing=True
+    state for longer than the specified timeout and sets them to failed status.
+    """
+    from src.services.job_description_cleanup_service import cleanup_stuck_job_descriptions
+    
+    try:
+        found_count, fixed_count = cleanup_stuck_job_descriptions(db, timeout_minutes)
+        
+        if found_count == 0:
+            message = "No stuck job descriptions found"
+        else:
+            message = f"Fixed {fixed_count} out of {found_count} stuck job description(s)"
+        
+        return JobDescriptionCleanupResult(
+            found_count=found_count,
+            fixed_count=fixed_count,
+            message=message
+        )
+    except Exception as e:
+        logger.error(f"Error cleaning up stuck job descriptions: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error cleaning up stuck job descriptions"
         )

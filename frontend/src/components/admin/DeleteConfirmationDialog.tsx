@@ -88,7 +88,6 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
       <DialogContent>
         <Alert severity="error" sx={{ mb: 2 }}>
           <Typography variant="h6" gutterBottom>
-            ⚠️ WARNING: This action cannot be undone!
           </Typography>
           <Typography variant="body2">
             {message}

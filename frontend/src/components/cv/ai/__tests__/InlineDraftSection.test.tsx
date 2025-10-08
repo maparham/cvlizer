@@ -12,8 +12,26 @@ import { createTheme } from '@mui/material/styles';
 import InlineDraftSection from '../InlineDraftSection';
 import { useAIStore } from '../../../../stores/aiStore';
 import { useNotifications } from '../../../../stores/uiStore';
+import { useCVStore } from '../../../../stores/cvStore';
 import { useCVEditor } from '../../../../contexts/CVEditorContext';
 import { DraftResponse } from '../../../../types/ai';
+
+// Mock logger and errorHandler to avoid import.meta.env issues
+jest.mock('../../../../utils/logger', () => ({
+  Logger: jest.fn().mockImplementation(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  })),
+}));
+
+jest.mock('../../../../utils/errorHandler', () => ({
+  ErrorHandler: jest.fn().mockImplementation(() => ({
+    handle: jest.fn(),
+    logError: jest.fn(),
+  })),
+}));
 
 // Mock the API service first to avoid import.meta issues
 jest.mock('../../../../services/api', () => ({
@@ -28,10 +46,12 @@ jest.mock('../../../../services/api', () => ({
 // Mock the stores and contexts
 jest.mock('../../../../stores/aiStore');
 jest.mock('../../../../stores/uiStore');
+jest.mock('../../../../stores/cvStore');
 jest.mock('../../../../contexts/CVEditorContext');
 
 const mockUseAIStore = useAIStore as jest.MockedFunction<typeof useAIStore>;
 const mockUseNotifications = useNotifications as jest.MockedFunction<typeof useNotifications>;
+const mockUseCVStore = useCVStore as jest.MockedFunction<typeof useCVStore>;
 const mockUseCVEditor = useCVEditor as jest.MockedFunction<typeof useCVEditor>;
 
 const theme = createTheme();
@@ -76,7 +96,7 @@ describe('InlineDraftSection', () => {
   const mockShowSuccess = jest.fn();
   const mockShowError = jest.fn();
   const mockOnUpdateCV = jest.fn();
-  const mockOnSave = jest.fn();
+  const mockSetCurrentCV = jest.fn();
   const mockOnApproved = jest.fn();
   const mockOnRejected = jest.fn();
 
@@ -93,14 +113,16 @@ describe('InlineDraftSection', () => {
       showError: mockShowError,
     } as any);
 
+    mockUseCVStore.mockReturnValue({
+      setCurrentCV: mockSetCurrentCV,
+    } as any);
+
     mockUseCVEditor.mockReturnValue({
       onUpdateCV: mockOnUpdateCV,
-      onSave: mockOnSave,
     } as any);
 
     mockApproveDraft.mockResolvedValue(mockApprovalResult);
     mockDeleteDraft.mockResolvedValue(undefined);
-    mockOnSave.mockResolvedValue(undefined);
   });
 
   const renderComponent = () => {
@@ -152,11 +174,8 @@ describe('InlineDraftSection', () => {
 
     await waitFor(() => {
       expect(mockApproveDraft).toHaveBeenCalledWith('test-cv-1', 'test-draft-1');
+      expect(mockSetCurrentCV).toHaveBeenCalledWith(mockApprovalResult.cv);
       expect(mockOnUpdateCV).toHaveBeenCalledWith(mockApprovalResult.cv.parsed_data);
-      expect(mockOnSave).toHaveBeenCalledWith(
-        mockApprovalResult.cv.parsed_data,
-        'AI draft approved and added to CV'
-      );
       expect(mockShowSuccess).toHaveBeenCalledWith('Draft approved and added to CV successfully');
       expect(mockOnApproved).toHaveBeenCalled();
     });

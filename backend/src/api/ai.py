@@ -11,17 +11,17 @@ from pydantic import BaseModel
 import uuid
 import asyncio
 
-from ..models.base import get_db
-from ..models.user import User
-from ..models.cv import CV
-from ..models.job_description import JobDescription
-from ..services.job_description_service import get_cv_owned_by, get_job_description_by_id
-from ..models.ai_section import AISection
-from ..models.ai_draft import AIDraft
-from ..config import AIConfig
-from ..models.content_enhancement import ContentEnhancement
-from ..models.ai_enhancement import AIEnhancement
-from ..services.ai_service import (
+from src.models.base import get_db
+from src.models.user import User
+from src.models.cv import CV
+from src.models.job_description import JobDescription
+from src.services.job_description_service import get_cv_owned_by, get_job_description_by_id
+from src.models.ai_section import AISection
+from src.models.ai_draft import AIDraft
+from src.config import AIConfig
+from src.models.content_enhancement import ContentEnhancement
+from src.models.ai_enhancement import AIEnhancement
+from src.services.ai_service import (
     generate_cv_section, 
     is_ai_enabled, 
     analyze_job_fit, 
@@ -29,10 +29,10 @@ from ..services.ai_service import (
     analyze_ats_optimization,
     create_optimization_suggestions
 )
-from ..middleware.clerk_auth import get_effective_user
-from ..utils.background_tasks import run_task_in_background
-from ..models.base import SessionLocal
-from ..schemas.cv_schemas import WhyGoodFitSchema
+from src.middleware.clerk_auth import get_effective_user
+from src.utils.background_tasks import run_task_in_background
+from src.models.base import SessionLocal
+from src.schemas.cv_schemas import WhyGoodFitSchema
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api", tags=["ai"])
@@ -50,7 +50,7 @@ def enhance_content_sync(task_id: str, original_content: str, content_type: str,
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            from ..services.ai_service import enhance_content
+            from src.services.ai_service import enhance_content
             enhancement_result = loop.run_until_complete(enhance_content(
                 original_content=original_content,
                 content_type=content_type,
@@ -72,7 +72,7 @@ def enhance_content_sync(task_id: str, original_content: str, content_type: str,
                 enhancement.overall_improvements = enhancement_result.get("overall_improvements", [])
                 enhancement.tokens_used = enhancement_result.get("tokens_used", 0)
                 enhancement.generation_time = enhancement_result.get("generation_time", 0)
-                enhancement.model_used = enhancement_result.get("model_used", AIConfig.DEFAULT_MODEL)
+                enhancement.model_used = enhancement_result.get("model_used", AIConfig.OPENAI_MODEL)
                 enhancement.is_generating = False
                 enhancement.generation_error = None
 
@@ -119,7 +119,7 @@ def generate_job_fit_sync(task_id: str, cv_data: dict, job_description: str, use
     db = SessionLocal()
     try:
         # Generate job fit analysis using synchronous function
-        from ..services.ai_service import analyze_job_fit_sync
+        from src.services.ai_service import analyze_job_fit_sync
         fit_result = analyze_job_fit_sync(
             cv_data=cv_data,
             job_description=job_description,
@@ -157,7 +157,7 @@ def generate_job_fit_sync(task_id: str, cv_data: dict, job_description: str, use
                     draft.draft_data = fit_result
                     draft.tokens_used = fit_result.get("tokens_used", 0)
                     draft.generation_time = fit_result.get("generation_time", 0)
-                    draft.ai_model = fit_result.get("model_used", AIConfig.DEFAULT_MODEL)
+                    draft.ai_model = fit_result.get("model_used", AIConfig.OPENAI_MODEL)
                     draft.is_generating = False
                     draft.generation_error = None
                     logger.info(f"generate_job_fit_sync: Draft {task_id} saved successfully with required fields")
@@ -207,7 +207,7 @@ def ai_enhancement_sync(task_id: str, cv_data: dict, job_description: str, user_
     """
     try:
         # Import here to avoid circular imports
-        from ..services.ai_service import create_optimization_suggestions
+        from src.services.ai_service import create_optimization_suggestions
         
         # Run the AI enhancement generation
         loop = asyncio.new_event_loop()
@@ -221,7 +221,7 @@ def ai_enhancement_sync(task_id: str, cv_data: dict, job_description: str, user_
             ))
             
             # Update the AI enhancement record with results
-            from ..models.base import SessionLocal
+            from src.models.base import SessionLocal
             db = SessionLocal()
             try:
                 enhancement = db.query(AIEnhancement).filter(AIEnhancement.id == task_id).first()
@@ -238,7 +238,7 @@ def ai_enhancement_sync(task_id: str, cv_data: dict, job_description: str, user_
             
     except Exception as e:
         # Update the enhancement record with error
-        from ..models.base import SessionLocal
+        from src.models.base import SessionLocal
         db = SessionLocal()
         try:
             enhancement = db.query(AIEnhancement).filter(AIEnhancement.id == task_id).first()
@@ -514,7 +514,7 @@ async def generate_ai_section(
             section_content=ai_result["section_content"],
             section_type=request.section_type,
             generation_prompt=f"Generate {request.section_type} section",
-            ai_model=ai_result.get("model_used", AIConfig.DEFAULT_MODEL),
+            ai_model=ai_result.get("model_used", AIConfig.OPENAI_MODEL),
             tokens_used=ai_result.get("tokens_used", 0),
             generation_time=ai_result.get("generation_time", 0)
         )
@@ -678,7 +678,7 @@ async def get_content_enhancement_status(
         overall_improvements=enhancement.overall_improvements or [],
         tokens_used=enhancement.tokens_used,
         generation_time=enhancement.generation_time,
-        model_used=enhancement.model_used or AIConfig.DEFAULT_MODEL,
+        model_used=enhancement.model_used or AIConfig.OPENAI_MODEL,
         is_generating=enhancement.is_generating,
         generation_error=enhancement.generation_error
     )
@@ -800,7 +800,7 @@ async def optimize_ats_endpoint(
             weaknesses=optimization_result.get("weaknesses", []),
             tokens_used=optimization_result.get("tokens_used", 0),
             generation_time=optimization_result.get("generation_time", 0),
-            model_used=optimization_result.get("model_used", AIConfig.DEFAULT_MODEL)
+            model_used=optimization_result.get("model_used", AIConfig.OPENAI_MODEL)
         )
         
     except HTTPException:
@@ -954,7 +954,7 @@ async def create_job_fit_draft(
         job_description_id=request.job_description_id,
         section_type="why_good_fit",
         draft_data={},  # Will be populated by background task
-        ai_model=AIConfig.DEFAULT_MODEL,
+        ai_model=AIConfig.OPENAI_MODEL,
         tokens_used=0,
         generation_time=0,
         is_generating=True
@@ -1144,7 +1144,7 @@ async def approve_why_good_fit_draft(
             "weaknesses": raw.get("weaknesses", []),
             "tokens_used": draft.tokens_used or raw.get("tokens_used", 0),
             "generation_time": draft.generation_time or raw.get("generation_time", 0),
-            "model_used": draft.ai_model or raw.get("model_used", AIConfig.DEFAULT_MODEL),
+            "model_used": draft.ai_model or raw.get("model_used", AIConfig.OPENAI_MODEL),
             "generated_at": generated_at,
             "job_description_id": str(draft.job_description_id) if draft.job_description_id else raw.get("job_description_id"),
         }
@@ -1284,7 +1284,7 @@ class AISuggestionCreate(BaseModel):
     improvements: Optional[List[str]] = None
     confidence_score: Optional[int] = None
     section_path: Optional[str] = None
-    ai_model: str = AIConfig.DEFAULT_MODEL
+    ai_model: str = AIConfig.OPENAI_MODEL
     tokens_used: Optional[int] = None
     generation_time: Optional[int] = None
 
@@ -1311,7 +1311,7 @@ async def create_ai_suggestion(
             )
         
         # Create AI suggestion record
-        from ..models.ai_suggestion import AISuggestion
+        from src.models.ai_suggestion import AISuggestion
         ai_suggestion = AISuggestion(
             cv_id=suggestion.cv_id,
             job_description_id=suggestion.job_description_id,
@@ -1353,7 +1353,7 @@ async def accept_ai_suggestion(
 ):
     """Accept or reject an AI suggestion"""
     try:
-        from ..models.ai_suggestion import AISuggestion
+        from src.models.ai_suggestion import AISuggestion
         
         # Get the suggestion
         suggestion = db.query(AISuggestion).filter(AISuggestion.id == suggestion_id).first()

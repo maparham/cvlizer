@@ -37,20 +37,20 @@ import asyncio
 import os
 from concurrent.futures import ThreadPoolExecutor
 
-from ..models.base import get_db, SessionLocal
-from ..models.user import User
-from ..models.cv import CV
-from ..services.cv_service import (
+from src.models.base import get_db, SessionLocal
+from src.models.user import User
+from src.models.cv import CV
+from src.services.cv_service import (
     create_cv, get_cv_by_id, get_cvs_by_user, update_cv, delete_cv
 )
-from ..services.cv_parsing_service import parse_cv_with_openai
-from ..services.file_service import validate_file, save_uploaded_file, delete_file
-from ..constants import DEFAULT_PARSED_CV
+from src.services.cv_parsing_service import parse_cv_with_openai
+from src.services.file_service import validate_file, save_uploaded_file, delete_file
+from src.constants import DEFAULT_PARSED_CV
 from copy import deepcopy
-from ..schemas.cv_schemas import CVUpdateRequestSchema, CVDataSchema
-from ..utils.validation import CVDataValidator
-from ..middleware.clerk_auth import get_effective_user
-from ..services.latex_export_service import generate_cv_latex, compile_pdf_from_latex, is_latex_available
+from src.schemas.cv_schemas import CVUpdateRequestSchema, CVDataSchema
+from src.utils.validation import CVDataValidator
+from src.middleware.clerk_auth import get_effective_user
+from src.services.latex_export_service import generate_cv_latex, compile_pdf_from_latex, is_latex_available
 
 router = APIRouter(prefix="/api/cvs", tags=["cvs"])
 
@@ -83,7 +83,7 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
             
             # Create initial history entry after successful parsing (only if parsing succeeded and no error)
             if not parsed_data.get('error'):
-                from ..models.cv_history import CVHistory
+                from src.models.cv_history import CVHistory
                 import json
                 
                 # Check if initial history entry already exists
@@ -444,7 +444,7 @@ async def duplicate_cv(
         )
         
         # Create initial history entry for the duplicated CV
-        from ..models.cv_history import CVHistory
+        from src.models.cv_history import CVHistory
         import json
         
         # Calculate data size

@@ -10,13 +10,13 @@ from typing import List, Dict, Any
 from pydantic import BaseModel
 import logging
 
-from ..models.base import get_db
-from ..models.user import User
-from ..services.user_activity_service import (
+from src.models.base import get_db
+from src.models.user import User
+from src.services.user_activity_service import (
     log_user_activity, log_user_error, log_api_call,
     create_user_session, end_user_session
 )
-from ..middleware.clerk_auth import get_current_user
+from src.middleware.clerk_auth import get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/user-activities", tags=["user-activities"])

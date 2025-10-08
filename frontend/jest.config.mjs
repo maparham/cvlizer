@@ -27,16 +27,13 @@ export default {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       useESM: true,
+      tsconfig: {
+        jsx: 'react-jsx',
+      },
     }],
   },
-  globals: {
-    'import.meta': {
-      env: {
-        VITE_API_BASE_URL: 'http://localhost:8000',
-        VITE_ADMIN_EMAIL: 'admin@example.com'
-      }
-    }
-  },
+  // Note: import.meta is mocked in setupTests.ts
+  globals: {},
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   coverageReporters: ['text', 'lcov', 'html'],

@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 import logging
 
-from ..models.user import User
+from src.models.user import User
 
 logger = logging.getLogger(__name__)
 

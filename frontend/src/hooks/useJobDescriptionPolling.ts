@@ -150,13 +150,15 @@ export const useJobDescriptionPolling = (
         stopPolling();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobDescriptions]); // Only depend on jobDescriptions to prevent infinite loop
 
-    // Cleanup on unmount
+  // Separate effect for cleanup on unmount only
+  useEffect(() => {
     return () => {
       stopPolling();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobDescriptions]); // Only depend on jobDescriptions to prevent infinite loop
+  }, []); // Empty deps = only runs on mount/unmount
 
   return {
     parsingJobDescriptions,

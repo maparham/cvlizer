@@ -29,39 +29,30 @@ import {
   TextField,
   Button,
   Typography,
-  Card,
-  CardContent,
-  CardActions,
   Tabs,
   Tab,
   Alert,
   CircularProgress,
-  Chip,
   IconButton,
-  Tooltip,
   Stack,
   Grid,
   Paper,
-  LinearProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Link as LinkIcon,
   Description as DescriptionIcon,
   Upload as UploadIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
   Check as CheckIcon,
   Close as CloseIcon,
-  Work as WorkIcon,
-  HourglassEmpty as HourglassEmptyIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useAIStore, useCVJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
 import { JobDescription } from '../../../types/ai';
 import { useNotifications } from '../../../stores/uiStore';
-import { formatRelativeTime } from '../../../utils/formatters';
 import { validateJobPostingUrl, FieldValidationResult } from '../../../utils/validationUtils';
 import { useJobDescriptionPolling } from '../../../hooks/useJobDescriptionPolling';
+import JobDescriptionCard from './JobDescriptionCard';
 
 interface JobDescriptionsModalProps {
   open: boolean;
@@ -366,100 +357,6 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     }
   }, [editingJobDescription, textInput, title, company, location, updateJobDescription, showSuccess, showError]);
 
-
-  const formatDate = useCallback((dateString: string) => {
-    return formatRelativeTime(dateString);
-  }, []);
-
-  // Parsing card component
-  const ParsingCard: React.FC<{ jobDescription: JobDescription }> = ({ jobDescription }) => {
-    const hasError = jobDescription.parse_error;
-    
-    if (hasError) {
-      return (
-        <Card
-          variant="outlined"
-          sx={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            border: 2,
-            borderColor: 'error.main',
-            backgroundColor: 'rgba(211, 47, 47, 0.04)',
-          }}
-        >
-          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h6" color="error" sx={{ fontWeight: 500 }}>
-                Parsing Failed
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                Unable to extract job details from URL
-              </Typography>
-              <Typography variant="caption" color="error" sx={{ textAlign: 'center', maxWidth: 200 }}>
-                {jobDescription.parse_error}
-              </Typography>
-              <Button
-                size="small"
-                variant="outlined"
-                color="error"
-                onClick={() => handleDeleteClick(jobDescription)}
-                sx={{ mt: 1 }}
-              >
-                Remove
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      );
-    }
-    
-    return (
-      <Card
-        variant="outlined"
-        sx={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          border: 2,
-          borderColor: 'primary.main',
-          backgroundColor: 'rgba(25, 118, 210, 0.04)',
-        }}
-      >
-        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <CircularProgress size={40} thickness={4} />
-            <Typography variant="h6" color="primary" sx={{ fontWeight: 500 }}>
-              Parsing Job Description
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-              Extracting details from URL...
-            </Typography>
-            <Box sx={{ width: '100%', maxWidth: 200 }}>
-              <LinearProgress 
-                variant="indeterminate" 
-                sx={{ 
-                  height: 4, 
-                  borderRadius: 2,
-                  backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                  '& .MuiLinearProgress-bar': {
-                    borderRadius: 2,
-                  }
-                }} 
-              />
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-              <HourglassEmptyIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
-                This may take a few moments
-              </Typography>
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  };
-
   const handleClose = useCallback(() => {
     setError(null);
     setTabValue(0);
@@ -631,144 +528,18 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                     <Grid container spacing={3}>
                       {jobDescriptions.map((jobDescription) => {
                         const isParsing = jobDescription.is_parsing || parsingJobDescriptions.has(jobDescription.id);
-                        const hasError = jobDescription.parse_error;
-                        
+
                         return (
                           <Grid item xs={12} md={6} lg={4} key={jobDescription.id}>
-                            {(isParsing || hasError) ? (
-                              <ParsingCard jobDescription={jobDescription} />
-                            ) : (
-                              <Card
-                                variant="outlined"
-                                sx={{
-                                  height: '100%',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  border: activeJobDescription?.id === jobDescription.id ? 2 : 1,
-                                  borderColor: activeJobDescription?.id === jobDescription.id ? 'primary.main' : 'divider',
-                                }}
-                              >
-                                <CardContent sx={{ flex: 1 }}>
-                                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                                    <Typography variant="h6" component="div" sx={{ flex: 1, mr: 1 }}>
-                                      {jobDescription.is_parsing ? 'Loading...' : (jobDescription.title || 'Untitled Job Description')}
-                                    </Typography>
-                                    <Box>
-                                      <Tooltip title={isParsing ? "Cannot edit while parsing" : "Edit"}>
-                                        <span>
-                                          <IconButton
-                                            size="small"
-                                            onClick={() => handleEditJobDescription(jobDescription)}
-                                            disabled={isParsing}
-                                            sx={{
-                                              opacity: isParsing ? 0.5 : 1,
-                                              cursor: isParsing ? 'not-allowed' : 'pointer',
-                                            }}
-                                          >
-                                            <EditIcon />
-                                          </IconButton>
-                                        </span>
-                                      </Tooltip>
-                                      <Tooltip title="Delete">
-                                        <IconButton
-                                          size="small"
-                                          onClick={() => handleDeleteClick(jobDescription)}
-                                          color="error"
-                                        >
-                                          <DeleteIcon />
-                                        </IconButton>
-                                      </Tooltip>
-                                    </Box>
-                                  </Box>
-                              
-                              {(jobDescription.company || jobDescription.location || jobDescription.source_url) && (
-                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-                                  {jobDescription.company && (
-                                    <Chip
-                                      icon={<WorkIcon />}
-                                      label={jobDescription.company}
-                                      size="small"
-                                      variant="outlined"
-                                      sx={{ 
-                                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                        borderColor: 'primary.light',
-                                        '& .MuiChip-icon': {
-                                          fontSize: '16px'
-                                        }
-                                      }}
-                                    />
-                                  )}
-                                  {jobDescription.location && (
-                                    <Chip
-                                      icon={<LinkIcon />}
-                                      label={jobDescription.location}
-                                      size="small"
-                                      variant="outlined"
-                                      sx={{ 
-                                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                        borderColor: 'primary.light',
-                                        '& .MuiChip-icon': {
-                                          fontSize: '16px'
-                                        }
-                                      }}
-                                    />
-                                  )}
-                                  {jobDescription.source_url && (
-                                    <Chip
-                                      icon={<LinkIcon />}
-                                      label="URL"
-                                      size="small"
-                                      variant="outlined"
-                                      sx={{ 
-                                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                        borderColor: 'primary.light',
-                                        cursor: 'pointer',
-                                        '&:hover': {
-                                          backgroundColor: 'primary.light',
-                                          color: 'primary.contrastText',
-                                          transform: 'scale(1.05)'
-                                        },
-                                        '& .MuiChip-icon': {
-                                          fontSize: '16px'
-                                        },
-                                        transition: 'all 0.2s ease-in-out'
-                                      }}
-                                      onClick={() => window.open(jobDescription.source_url, '_blank', 'noopener,noreferrer')}
-                                    />
-                                  )}
-                                </Box>
-                              )}
-                              
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                                Added: {formatDate(jobDescription.created_at)}
-                              </Typography>
-                              
-                                  <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                    sx={{
-                                      display: '-webkit-box',
-                                      WebkitLineClamp: 4,
-                                      WebkitBoxOrient: 'vertical',
-                                      overflow: 'hidden',
-                                      mb: 1,
-                                    }}
-                                  >
-                                    {jobDescription.content}
-                                  </Typography>
-                                </CardContent>
-                                
-                                <CardActions sx={{ justifyContent: 'center', px: 2, pb: 2 }}>
-                                  <Button
-                                    size="small"
-                                    onClick={() => handleJobDescriptionSelect(jobDescription)}
-                                    variant={activeJobDescription?.id === jobDescription.id ? 'contained' : 'outlined'}
-                                  >
-                                    {activeJobDescription?.id === jobDescription.id ? 'Selected' : 'Select'}
-                                  </Button>
-                                </CardActions>
-                              </Card>
-                            )}
+                            <JobDescriptionCard
+                              jobDescription={jobDescription}
+                              isActive={activeJobDescription?.id === jobDescription.id}
+                              isParsing={isParsing}
+                              onEdit={handleEditJobDescription}
+                              onDelete={handleDeleteClick}
+                              onSelect={handleJobDescriptionSelect}
+                              showSelectButton={true}
+                            />
                           </Grid>
                         );
                       })}
@@ -856,7 +627,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
         <DialogTitle>Delete Job Description</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete "{jobDescriptionToDelete?.title || 'this job description'}"? 
+            Are you sure you want to delete "{jobDescriptionToDelete?.title || 'this job description'}"?
             This action cannot be undone.
           </DialogContentText>
         </DialogContent>

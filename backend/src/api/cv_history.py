@@ -13,10 +13,10 @@ from pydantic import BaseModel, Field
 import json
 from datetime import datetime
 
-from ..models import get_db, CVHistory, CV, User
-from ..services.cv_diff_service import cv_diff_service
-from ..middleware.clerk_auth import get_effective_user, get_current_user
-from ..utils.history_validation import ValidatedCreateHistoryRequest, calculate_data_size
+from src.models import get_db, CVHistory, CV, User
+from src.services.cv_diff_service import cv_diff_service
+from src.middleware.clerk_auth import get_effective_user, get_current_user
+from src.utils.history_validation import ValidatedCreateHistoryRequest, calculate_data_size
 
 
 router = APIRouter(prefix="/api/cvs", tags=["cv-history"])

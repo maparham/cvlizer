@@ -13,8 +13,8 @@ import json
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Tuple, Optional
-from ..constants import DEFAULT_PARSED_CV
-from ..config import AIConfig
+from src.constants import DEFAULT_PARSED_CV
+from src.config import AIConfig
 from copy import deepcopy
 
 logger = logging.getLogger(__name__)
@@ -1628,8 +1628,8 @@ def check_cv_ai_enhancement_status(db_session: Any, cv_id: str) -> bool:
         bool: True if CV has accepted AI suggestions, False otherwise
     """
     try:
-        from ..models.ai_suggestion import AISuggestion
-        from ..models.ai_section import AISection
+        from src.models.ai_suggestion import AISuggestion
+        from src.models.ai_section import AISection
         
         # Check for accepted AI suggestions
         accepted_suggestions = db_session.query(AISuggestion).filter(
@@ -1663,7 +1663,7 @@ def mark_cv_as_ai_enhanced(db_session: Any, cv_id: str) -> bool:
         bool: True if successfully marked, False otherwise
     """
     try:
-        from ..models.cv import CV
+        from src.models.cv import CV
         
         cv = db_session.query(CV).filter(CV.id == cv_id).first()
         if cv:

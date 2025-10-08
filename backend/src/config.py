@@ -19,11 +19,11 @@ class AIConfig:
 
     # OpenAI API Configuration
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-
-    # Model-specific defaults
-    DEFAULT_MODEL: str = "gpt-4o-mini"
-    FALLBACK_MODEL: str = "gpt-3.5-turbo"
+    OPENAI_MODEL: str = os.getenv("OPENAI_MODEL")  # Required: Must be set in .env
+    
+    # Agent Model Configuration (for job description parsing)
+    AGENT_MODEL: str = os.getenv("AGENT_MODEL")  # Required: Must be set in .env
+    AGENT_PROCESSING_TIER: str = os.getenv("AGENT_PROCESSING_TIER", "flex")  # Processing tier: "flex" or "standard"
 
     # Token limits
     MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "4000"))
@@ -309,6 +309,12 @@ def validate_config() -> list:
 
     if not AIConfig.OPENAI_API_KEY or AIConfig.OPENAI_API_KEY == "your-openai-key-here":
         warnings.append("OPENAI_API_KEY not configured - AI features will be disabled")
+
+    if not AIConfig.OPENAI_MODEL:
+        warnings.append("OPENAI_MODEL not configured in .env - REQUIRED for AI features")
+    
+    if not AIConfig.AGENT_MODEL:
+        warnings.append("AGENT_MODEL not configured in .env - REQUIRED for job description parsing")
 
     if not AuthConfig.CLERK_SECRET_KEY:
         warnings.append("CLERK_SECRET_KEY not configured - authentication may fail")

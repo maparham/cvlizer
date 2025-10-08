@@ -1,0 +1,85 @@
+# .cursorignore - Files and directories to exclude from Cursor's indexing
+# Note: .env files are intentionally NOT ignored to allow configuration access
+
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+frontend/dist/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+cv_optimizer.db
+test.db
+
+# Test coverage and reports
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+playwright-report/
+test-results/
+lcov-report/
+lcov.info
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Uploaded files and media
+backend/uploads/
+uploads/
+*.pdf
+*.doc
+*.docx
+
+# Compiled JavaScript
+*.js.map
+
+# Package manager files
+package-lock.json
+yarn.lock
+poetry.lock
+Pipfile.lock
+
+# Docker volumes
+.docker/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Large binary files
+*.bin
+*.exe
+*.dll
+*.so
+*.dylib
+
