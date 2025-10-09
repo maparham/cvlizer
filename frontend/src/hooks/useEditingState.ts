@@ -75,9 +75,10 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
   // State ref to hold latest values for callbacks, preventing stale closures
   const stateRef = useRef({
     editingIndividualItem: null as EditingIndividualItem | null,
-    onCancel: (() => {}) as () => void
+    onCancel: (() => {}) as () => void,
+    pendingChanges: new Map<string, unknown>()
   })
-
+  
   // Section editing state
   const [editingSection, setEditingSection] = useState<string | null>(null)
   
@@ -107,27 +108,72 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
   useEffect(() => {
     stateRef.current = {
       ...stateRef.current,
-      editingIndividualItem
+      editingIndividualItem,
+      pendingChanges
     }
-  }, [editingIndividualItem])
+  }, [editingIndividualItem, pendingChanges])
 
   // Single callback that works for any section
   const onUnsavedChanges = useCallback((sectionId: string, hasChanges: boolean) => {
     updatePendingChanges(sectionId, hasChanges ? { hasChanges: true } : null)
   }, [updatePendingChanges])
 
-  // Section editing functions
-  const handleSectionEdit = useCallback((sectionType: string) => {
-    setEditingSection(sectionType)
-    startEditing(sectionType)
-  }, [startEditing])
-
+  // Section editing functions - define handleSectionClose first to avoid circular dependency
   const handleSectionClose = useCallback(() => {
     if (editingSection) {
       stopEditing(editingSection)
     }
     setEditingSection(null)
   }, [editingSection, stopEditing])
+
+  const handleSectionEdit = useCallback((sectionType: string) => {
+    // Check if an individual item is currently being edited with unsaved changes
+    const currentEditingItem = stateRef.current.editingIndividualItem
+    const currentPendingChanges = stateRef.current.pendingChanges
+    
+    // Check if there are ANY pending changes (individual items or other sections)
+    // Skip this check if we're currently discarding changes to avoid showing dialog during cleanup
+    if (currentPendingChanges.size > 0 && !isDiscardingChangesRef.current) {
+      // Show dialog to confirm discarding changes
+      setPendingIndividualItemRegistration(null) // Not registering an item, just switching to section edit
+      setShowUnsavedChangesDialog(true)
+      
+      const onCancelToCall = currentEditingItem ? stateRef.current.onCancel : null
+      setPendingNavigation(() => () => {
+        // Discard any current editing state and proceed with section edit
+        if (onCancelToCall) {
+          onCancelToCall()
+        }
+        if (editingSection) {
+          handleSectionClose()
+        }
+        setEditingSection(sectionType)
+        startEditing(sectionType)
+      })
+      return // Don't proceed with edit until user confirms
+    }
+    
+    // If we're editing an individual item in the same section, this is a no-op
+    // Individual item editing already handles the section's editing state
+    if (currentEditingItem && currentEditingItem.sectionId === sectionType) {
+      return
+    }
+    
+    // No pending changes (or discarding in progress) - close any current editing and proceed
+    // Skip cleanup if we're discarding to avoid canceling the newly registered item
+    if (currentEditingItem && !isDiscardingChangesRef.current) {
+      stateRef.current.onCancel()
+    }
+    if (editingSection && !isDiscardingChangesRef.current) {
+      handleSectionClose()
+    }
+    
+    // Proceed with section edit only if not discarding (during discard, individual item is already set up)
+    if (!isDiscardingChangesRef.current) {
+      setEditingSection(sectionType)
+      startEditing(sectionType)
+    }
+  }, [startEditing, editingSection, handleSectionClose])
 
   const requestSectionCancel = useCallback(() => {
     // Don't show dialog if we're in the middle of discarding changes
@@ -141,8 +187,9 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
       return
     }
 
-    // Use current pendingChanges state
-    const hasCurrentSectionChanges = pendingChanges.has(editingSection)
+    // Use ref to get the most current pendingChanges, avoiding stale closure
+    const currentPendingChanges = stateRef.current.pendingChanges
+    const hasCurrentSectionChanges = currentPendingChanges.has(editingSection)
 
     if (hasCurrentSectionChanges) {
       setShowUnsavedChangesDialog(true)
@@ -150,7 +197,7 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     } else {
       handleSectionClose()
     }
-  }, [editingSection, pendingChanges, handleSectionClose])
+  }, [editingSection, handleSectionClose])
 
   // Individual item editing functions
   const registerIndividualItemEditing = useCallback((
@@ -161,13 +208,37 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     skipDialog = false
   ): 'success' | 'dialog_shown' => {
     const currentEditingItem = stateRef.current.editingIndividualItem
+    // Use ref to get the most current pendingChanges, avoiding stale closure
+    const currentPendingChanges = stateRef.current.pendingChanges
+    
+    // Check if ANY section has unsaved changes (not just currently editing section)
+    // This handles auto-save sections that may have closed but still have pending changes
+    // Skip this check if we're currently discarding changes to avoid showing dialog during cleanup
+    if (!currentEditingItem && currentPendingChanges.size > 0 && !skipDialog && !isDiscardingChangesRef.current) {
+      // Show dialog to confirm discarding changes from the section(s)
+      setPendingIndividualItemRegistration({ 
+        sectionId, 
+        itemIndex, 
+        onCancel, 
+        onStartEdit: onStartEdit || (() => {}) 
+      })
+      setShowUnsavedChangesDialog(true)
+      setPendingNavigation(() => () => {
+        // Close section edit if still open and clear its state
+        if (editingSection) {
+          handleSectionClose()
+        }
+      })
+      return 'dialog_shown'
+    }
     
     // If another item is already being edited, cancel it first
     if (currentEditingItem) {
       // Check if there are actual data changes in the current edit
-      const hasRealDataChanges = pendingChanges.has(currentEditingItem.sectionId)
+      const hasRealDataChanges = currentPendingChanges.has(currentEditingItem.sectionId)
       
-      if (hasRealDataChanges && !skipDialog) {
+      // Skip dialog if we're currently discarding changes to avoid showing dialog during cleanup
+      if (hasRealDataChanges && !skipDialog && !isDiscardingChangesRef.current) {
         // Show dialog to confirm canceling current edit
         setPendingIndividualItemRegistration({ 
           sectionId, 
@@ -189,15 +260,18 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     }
     
     // Register the new edit
-    setEditingIndividualItem({ 
+    const newEditingItem = { 
       id: `${sectionId}-${itemIndex}`, 
       section: sectionId, 
       sectionId, 
       data: null 
-    })
+    }
+    setEditingIndividualItem(newEditingItem)
+    // Update ref immediately to avoid stale state in callbacks
+    stateRef.current.editingIndividualItem = newEditingItem
     stateRef.current.onCancel = onCancel
     return 'success'
-  }, [pendingChanges])
+  }, [editingSection, handleSectionClose])
 
   const unregisterIndividualItemEditing = useCallback((_sectionId: string, _itemIndex: number) => {
     setEditingIndividualItem(null)
@@ -228,11 +302,13 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     }
     
     const currentEditingItem = stateRef.current.editingIndividualItem
+    // Use ref to get the most current pendingChanges, avoiding stale closure
+    const currentPendingChanges = stateRef.current.pendingChanges
     
     // Since only one item can be edited at a time, check if this is the current edit
     if (currentEditingItem && currentEditingItem.sectionId === sectionId) {
       // Check if there are actually unsaved data changes for this section
-      const hasCurrentSectionChanges = pendingChanges.has(sectionId)
+      const hasCurrentSectionChanges = currentPendingChanges.has(sectionId)
       
       if (hasCurrentSectionChanges) {
         // Show confirmation dialog only if there are unsaved changes
@@ -246,7 +322,7 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
       // This shouldn't happen, but if it does, just cancel
       onCancel()
     }
-  }, [pendingChanges])
+  }, [])
 
   // Dialog handling functions
   const handleUnsavedChangesDialogClose = useCallback(() => {
