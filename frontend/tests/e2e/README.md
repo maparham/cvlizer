@@ -6,17 +6,19 @@ Comprehensive end-to-end tests for the CV Optimizer application using Playwright
 
 ```
 tests/e2e/
-├── auth.spec.ts              # Authentication flow tests
-├── dashboard.spec.ts         # Dashboard functionality tests
-├── cv-editor.spec.ts         # CV editor functionality tests
+├── auth.spec.ts                    # Authentication flow tests
+├── dashboard.spec.ts               # Dashboard functionality tests
+├── cv-editor.spec.ts               # CV editor functionality tests
+├── create-and-delete-cv.spec.ts    # Complete CV creation workflow
+├── unsaved-changes-dialog.spec.ts  # Unsaved changes dialog tests
 ├── fixtures/
-│   └── testData.ts          # Test data and sample content
+│   └── testData.ts                # Test data and sample content
 ├── helpers/
-│   └── auth.ts              # Authentication helper functions
+│   └── auth.ts                    # Authentication helper functions
 └── page-objects/
-    ├── DashboardPage.ts     # Dashboard page object model
-    ├── CVEditorPage.ts      # CV Editor page object model
-    └── index.ts             # Page objects index
+    ├── DashboardPage.ts           # Dashboard page object model
+    ├── CVEditorPage.ts            # CV Editor page object model
+    └── index.ts                   # Page objects index
 ```
 
 ## Test Coverage
@@ -48,6 +50,19 @@ tests/e2e/
 - ✅ Navigate back to dashboard
 - ✅ Handle unsaved changes warning
 - ✅ Form validation
+
+### Unsaved Changes Dialog (`unsaved-changes-dialog.spec.ts`)
+- ✅ Array section item - Education (discard changes)
+- ✅ Array section item - Experience (continue editing)
+- ✅ Non-array section - Professional Summary (discard changes)
+- ✅ Non-array section - Personal Information (continue editing)
+- ✅ Section to section switching
+- ✅ Item to item switching (same section)
+- ✅ Item to item switching (different sections)
+- ✅ Section to item switching
+- ✅ Item to section switching
+- ✅ No dialog without changes
+- ✅ Escape key with changes
 
 ## Page Object Models
 
@@ -119,7 +134,7 @@ The application components have been enhanced with `data-testid` attributes for 
 ### CV Editor
 - `cv-editor-back-button` - Back to dashboard button
 - `cv-editor-user-menu-button` - User menu button
-- `unsaved-changes-dialog` - Unsaved changes warning dialog
+- `cv-content-area` - Main CV content area
 - `personal-info-full-name-input` - Full name input field
 - `personal-info-email-input` - Email input field
 - `personal-info-phone-input` - Phone input field
@@ -128,6 +143,16 @@ The application components have been enhanced with `data-testid` attributes for 
 - `delete-work-experience-item-{index}` - Delete work experience item
 - `save-work-experience-button` - Save work experience button
 - `cancel-work-experience-button` - Cancel work experience button
+- `add-new-education-button` - Add education button
+- `edit-education-item-{index}` - Edit education item
+- `delete-education-item-{index}` - Delete education item
+- `save-education-button` - Save education button
+- `cancel-education-button` - Cancel education button
+
+### Unsaved Changes Dialog
+- `unsaved-changes-dialog` - Unsaved changes warning dialog
+- `unsaved-changes-continue-button` - Continue editing button
+- `unsaved-changes-discard-button` - Discard changes button
 
 ## Best Practices
 

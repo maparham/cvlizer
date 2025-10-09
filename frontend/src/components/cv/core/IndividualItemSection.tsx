@@ -114,12 +114,14 @@ function IndividualItemSection<T>({
     // Register with global editing state for escape key handling first
     if (registerIndividualItemEditing) {
       // Create a callback to start editing this specific item
+      // This is called when user clicks "Discard Changes" in the dialog
       const onStartEdit = () => {
-        
         setEditingItemIndex(index)
         editingItemIndexRef.current = index
         setEditData(data[index])
-        onEdit()
+        // NOTE: Don't call onEdit() here because registerIndividualItemEditing
+        // already dispatches START_ITEM_EDIT. Calling onEdit() would dispatch
+        // START_SECTION_EDIT and overwrite the editing_item state
       }
       
       // Try to register - this might show a dialog if there are unsaved changes
@@ -133,7 +135,9 @@ function IndividualItemSection<T>({
         setEditingItemIndex(index)
         editingItemIndexRef.current = index
         setEditData(itemToEdit)
-        onEdit()
+        // NOTE: Don't call onEdit() here because registerIndividualItemEditing
+        // already dispatches START_ITEM_EDIT. Calling onEdit() would dispatch
+        // START_SECTION_EDIT and overwrite the editing_item state
       }
     } else {
       // Fallback if registerIndividualItemEditing is not available
@@ -197,7 +201,9 @@ function IndividualItemSection<T>({
     // Don't add to itemsData yet - only add when saved
     setEditingItemIndex(newIndex)
     setEditData(newItem)
-    onEdit()
+    // NOTE: Don't call onEdit() here because registerIndividualItemEditing
+    // dispatches START_ITEM_EDIT. Calling onEdit() would dispatch START_SECTION_EDIT
+    // and overwrite the editing_item state
     
     // Register with global editing state for escape key handling
     if (registerIndividualItemEditing) {
@@ -206,12 +212,12 @@ function IndividualItemSection<T>({
         setEditingItemIndex(newIndex)
         editingItemIndexRef.current = newIndex
         setEditData(newItem)
-        onEdit()
+        // NOTE: Don't call onEdit() here for the same reason as above
       }
       
       registerIndividualItemEditing(sectionId, newIndex, handleCancelEdit, onStartEdit)
     }
-  }, [createNewItem, itemsData.length, setEditingItemIndex, setEditData, onEdit, registerIndividualItemEditing, sectionId, handleCancelEdit, editingItemIndexRef])
+  }, [createNewItem, itemsData.length, setEditingItemIndex, setEditData, registerIndividualItemEditing, sectionId, handleCancelEdit, editingItemIndexRef])
 
   // Drag and drop handlers
   const handleDragEndComplete = useCallback((result: DropResult) => {

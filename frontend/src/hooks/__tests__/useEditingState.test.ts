@@ -287,7 +287,7 @@ describe('useEditingState', () => {
 
       expect(registrationResult!).toBe('dialog_shown')
       expect(result.current.showUnsavedChangesDialog).toBe(true)
-      expect(result.current.pendingNavigation).not.toBeNull()
+      // pendingNavigation is now internal to the state machine, no need to check it
     })
 
     it('should not show dialog when typing after discarding changes', () => {
@@ -1134,8 +1134,7 @@ describe('useEditingState', () => {
       expect(result.current.showUnsavedChangesDialog).toBe(true)
       expect(result.current.editingSection).toBe('professional_summary')
       
-      // Verify pendingNavigation was set up
-      expect(result.current.pendingNavigation).not.toBeNull()
+      // pendingNavigation is now internal to the state machine, no need to check it
 
       // Click "Discard Changes"
       act(() => {

@@ -110,6 +110,9 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
                 : "Markdown formatting is supported"
           }
           placeholder="Your professional summary goes here... (Markdown supported) *"
+          inputProps={{
+            'data-testid': 'professional-summary-textarea'
+          }}
           sx={{ 
             '& .MuiInputBase-input': { 
               lineHeight: 1.6,

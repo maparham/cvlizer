@@ -14,7 +14,8 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   headerActions,
   isEditing,
   isValid = true,
-  onTitleSave
+  onTitleSave,
+  sectionId
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null)
 
@@ -83,6 +84,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
             <IconButton
               className="edit-button"
               onClick={onEdit}
+              data-testid={sectionId ? `edit-section-${sectionId}-button` : undefined}
               sx={{
                 position: 'absolute',
                 top: 0,

@@ -64,6 +64,7 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
       maxWidth="sm"
       fullWidth
       disableEscapeKeyDown
+      data-testid="unsaved-changes-dialog"
     >
       <DialogTitle sx={{ 
         display: 'flex', 
@@ -108,6 +109,7 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
           onClick={onClose}
           variant="contained"
           color="primary"
+          data-testid="unsaved-changes-continue-button"
           sx={{ 
             fontWeight: 500,
             px: 3,
@@ -120,6 +122,7 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
           onClick={onConfirm}
           variant="outlined"
           color="secondary"
+          data-testid="unsaved-changes-discard-button"
           sx={{ 
             fontWeight: 500,
             px: 3,

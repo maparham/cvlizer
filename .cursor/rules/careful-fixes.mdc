@@ -7,14 +7,47 @@ description: Careful problem-solving and fix verification rule
 
 Be careful and precise when fixing issues.
 
+## DEBUG FIRST: Root Cause Analysis
+
+**Always understand the root cause before implementing solutions.**
+
+### Debugging Steps (REQUIRED BEFORE FIXING)
+1. **Reproduce the issue** - Understand exact conditions that trigger the problem
+2. **Identify the source** - Which specific component/test/function causes it?
+3. **Inspect state** - Use screenshots, logs, HTML reports to see actual state
+4. **Trace the flow** - What happened before the failure? What accumulated?
+5. **Pinpoint the culprit** - Which specific action left things in a bad state?
+
+### Red Flags - Avoid These Patterns
+- ❌ **Blanket/Global Solutions** - Adding cleanup/fixes everywhere when one place is broken
+- ❌ **Defensive Patterns** - "Just in case" fixes without understanding the actual problem
+- ❌ **Symptom Fixes** - Treating symptoms instead of the disease
+- ❌ **Pattern Matching** - Using common patterns (like `afterEach` hooks) without justification
+
+### Correct Approach
+- ✅ **Targeted Fix** - Fix exactly what's broken, where it's broken
+- ✅ **Minimal Change** - One line fix for one test is better than 10 lines for all tests
+- ✅ **Owner Cleans Up** - Component/test that opens something should close it
+- ✅ **Verify Impact** - Ensure fix doesn't affect other working code
+
+### Example (From Real Debugging Session)
+**Problem**: Test #9 fails with "page closed" after 8 successful tests  
+**Wrong Approach**: Add `afterEach` hook to close all forms globally ❌  
+**Right Approach**: Debug to find Test #8 left a form open, add one cleanup line to Test #8 ✅
+
 ## Problem-Solving Approach
+- **ROOT CAUSE FIRST** - See "DEBUG FIRST" section above. Never skip debugging.
 - **ANALYZE EXISTING ARCHITECTURE FIRST**: Search the codebase for existing functionality before implementing.
-- Fix problems at the source; avoid band-aids:
+- **Fix problems at the source** - avoid band-aids:
   - If frontend fails due to unclean backend data, fix backend validation.
   - If UI breaks due to malformed API responses, fix the API response format.
   - If errors occur due to missing validation, add validation at the data entry point.
 - Consider edge cases and side effects.
 - Implement the minimum necessary change.
+- **Minimal, targeted fixes over blanket solutions**:
+  - If one test fails, fix that test - not all tests
+  - If one component has an issue, fix that component - not the parent
+  - If one state update is wrong, fix that update - not all state management
 - **END-TO-END FLOW TESTING** for data/event flows:
   - Trace user action → API → backend → DB → response → UI update.
   - Test each step; verify data integrity and state consistency.

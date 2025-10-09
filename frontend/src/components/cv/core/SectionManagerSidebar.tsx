@@ -339,6 +339,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                                 size="small"
                                 variant="outlined"
                                 onClick={() => onAddNewSection(section.id)}
+                                data-testid={`add-section-${section.id}-button`}
                                 sx={{ ml: 1.5, minWidth: 'auto', px: 0.5, flexShrink: 0 }}
                               >
                                 <AddIcon fontSize="small" />
@@ -388,6 +389,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                           size="small"
                           variant="outlined"
                           onClick={() => onAddNewSection(section.id)}
+                          data-testid={`add-section-${section.id}-button`}
                           sx={{ ml: 1.5, minWidth: 'auto', px: 0.5, flexShrink: 0 }}
                         >
                           <AddIcon fontSize="small" />

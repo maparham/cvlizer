@@ -34,9 +34,9 @@ export default defineConfig({
     video: 'retain-on-failure',
 
     /* Slow down all actions by X milliseconds (uncomment to use) */
-    launchOptions: {
-      slowMo: 600, // 0.6 second delay between each action
-    },
+    // launchOptions: {
+    //   slowMo: 600, // 0.6 second delay between each action - DISABLED for faster tests
+    // },
   },
 
   /* Configure projects for major browsers */

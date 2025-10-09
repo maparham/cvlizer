@@ -141,6 +141,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       isValid={!autoSaveMode ? validateForm(editData) : true}
       editButton={null}
       onTitleSave={onTitleSave}
+      sectionId={sectionId}
     >
       {isEditing ? (
         <Box>

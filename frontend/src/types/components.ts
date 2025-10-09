@@ -42,6 +42,7 @@ export interface BaseSectionProps {
   headerActions?: React.ReactNode
   isValid?: boolean
   onTitleSave?: (newTitle: string) => Promise<void>
+  sectionId?: string
 }
 
 /**
