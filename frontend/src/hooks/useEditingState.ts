@@ -182,13 +182,29 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
       return
     }
     
+    // Use ref to get the most current pendingChanges, avoiding stale closure
+    const currentPendingChanges = stateRef.current.pendingChanges
+    
+    // Check if there are ANY pending changes (even if editingSection is null)
+    // This handles auto-save sections that may have closed but still have pending changes
+    if (!editingSection && currentPendingChanges.size > 0) {
+      setShowUnsavedChangesDialog(true)
+      // Capture the sections to close
+      const sectionsToClose = Array.from(currentPendingChanges.keys())
+      setPendingNavigation(() => () => {
+        sectionsToClose.forEach(section => {
+          stopEditing(section)
+        })
+        setEditingSection(null)
+      })
+      return
+    }
+    
     if (!editingSection) {
       handleSectionClose()
       return
     }
 
-    // Use ref to get the most current pendingChanges, avoiding stale closure
-    const currentPendingChanges = stateRef.current.pendingChanges
     const hasCurrentSectionChanges = currentPendingChanges.has(editingSection)
 
     if (hasCurrentSectionChanges) {
@@ -197,7 +213,7 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     } else {
       handleSectionClose()
     }
-  }, [editingSection, handleSectionClose])
+  }, [editingSection, handleSectionClose, stopEditing])
 
   // Individual item editing functions
   const registerIndividualItemEditing = useCallback((

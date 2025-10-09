@@ -60,6 +60,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
     individualItem: editingIndividualItem,
     onSectionEdit: handleSectionEdit,
     onSectionClose: handleSectionClose,
+    onRequestSectionCancel: requestSectionCancel,
     onRegisterIndividualItem: registerIndividualItemEditing,
     onUnregisterIndividualItem: unregisterIndividualItemEditing,
     onRequestIndividualCancel: requestIndividualItemCancel,
@@ -106,7 +107,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, personal_info: data as PersonalInfo }, message || 'Personal information saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('personal_info')}
-            onClose={() => handleSectionClose()}
+            onClose={() => requestSectionCancel()}
             onUnsavedChanges={onUnsavedChanges}
           />
         )
@@ -121,7 +122,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, professional_summary: data as ProfessionalSummary }, message || 'Professional summary saved')}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('professional_summary')}
-            onClose={() => handleSectionClose()}
+            onClose={() => requestSectionCancel()}
             onUnsavedChanges={onUnsavedChanges}
             cvId={cvId}
           />
@@ -150,7 +151,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             }}
             isEditing={isEditing}
             onEdit={() => handleSectionEdit('why_good_fit')}
-            onClose={() => handleSectionClose()}
+            onClose={() => requestSectionCancel()}
             onUnsavedChanges={onUnsavedChanges}
           />
         )

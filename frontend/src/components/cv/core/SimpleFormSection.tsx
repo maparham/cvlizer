@@ -112,8 +112,18 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   }
 
   const handleCancel = () => {
-    setEditData(actualData)
-    onClose()
+    if (autoSaveMode) {
+      // For auto-save sections, just reset and close (no dialog needed)
+      setEditData(actualData)
+      if (onUnsavedChanges) {
+        onUnsavedChanges(sectionId, false)
+      }
+      onClose()
+    } else {
+      // For non-auto-save sections, call onClose which will check for changes
+      // and show dialog if needed. Data will be reset only if user confirms discard.
+      onClose()
+    }
   }
 
   const updateData = (field: string, value: any) => {
