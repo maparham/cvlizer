@@ -646,26 +646,35 @@ describe('useEditingState', () => {
       const mockOnCancel1 = jest.fn()
       const mockOnCancel2 = jest.fn()
 
-      // Create a callback that verifies the editing item is correctly set
-      const mockOnStartEdit = jest.fn()
-
       // Register first item
       act(() => {
         result.current.registerIndividualItemEditing('education', 0, mockOnCancel1)
       })
 
-      // Register second item with onStartEdit callback
+      expect(result.current.editingIndividualItem?.id).toBe('education-0')
+
+      // Register second item in same section (no changes in first)
+      // This will trigger handleSectionEdit internally via onStartEdit callback
+      // If stateRef isn't updated synchronously, handleSectionEdit will see stale item (education-0)
+      // and incorrectly try to cancel it
       act(() => {
-        result.current.registerIndividualItemEditing('education', 1, mockOnCancel2, mockOnStartEdit, true)
+        result.current.registerIndividualItemEditing('education', 1, mockOnCancel2)
       })
 
-      // Verify the second item is now being edited (confirming state update happened synchronously)
+      // CRITICAL: If stateRef wasn't updated synchronously, the newly registered item would be canceled
+      // by handleSectionEdit seeing the old item. Verify the second item is still active.
       expect(result.current.editingIndividualItem).toEqual({
         id: 'education-1',
         section: 'education',
         sectionId: 'education',
         data: null
       })
+      
+      // Verify first item was properly canceled
+      expect(mockOnCancel1).toHaveBeenCalled()
+      
+      // Verify second item was NOT canceled (would be called if stateRef wasn't synced)
+      expect(mockOnCancel2).not.toHaveBeenCalled()
     })
 
     it('should switch between items across different sections without changes', () => {
@@ -1113,14 +1122,20 @@ describe('useEditingState', () => {
         result.current.onUnsavedChanges('professional_summary', true)
       })
 
+      expect(mockPendingChanges.has('professional_summary')).toBe(true)
+
       // Request cancel (e.g., clicking close button)
       act(() => {
         result.current.requestSectionCancel()
       })
 
-      // Dialog should show
+      // CRITICAL ASSERTION: Dialog MUST show before discard
+      // This would fail if the bug (not checking pending changes when editingSection is null) exists
       expect(result.current.showUnsavedChangesDialog).toBe(true)
       expect(result.current.editingSection).toBe('professional_summary')
+      
+      // Verify pendingNavigation was set up
+      expect(result.current.pendingNavigation).not.toBeNull()
 
       // Click "Discard Changes"
       act(() => {
@@ -1131,6 +1146,37 @@ describe('useEditingState', () => {
       expect(result.current.editingSection).toBeNull()
       expect(mockPendingChanges.has('professional_summary')).toBe(false)
       expect(result.current.showUnsavedChangesDialog).toBe(false)
+    })
+
+    it('should show dialog via handleSectionEdit when pending changes exist but editingSection is null', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      // Directly set up the bug scenario: no editingSection but has pending changes
+      // This simulates auto-save section behavior
+      act(() => {
+        result.current.onUnsavedChanges('professional_summary', true)
+      })
+
+      // Verify state: editingSection is null but pending changes exist
+      expect(result.current.editingSection).toBeNull()
+      expect(mockPendingChanges.has('professional_summary')).toBe(true)
+
+      // Now try to edit another section - this should show dialog for the pending changes
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      // CRITICAL: Dialog MUST show for the pending changes in professional_summary
+      // even though editingSection is null (tests handleSectionEdit path line 136)
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+      expect(mockPendingChanges.has('professional_summary')).toBe(true)
+      
+      // After discard, new section becomes active
+      act(() => {
+        result.current.handleUnsavedChangesDialogConfirm()
+      })
+      
+      expect(result.current.editingSection).toBe('personal_info')
     })
   })
 })
