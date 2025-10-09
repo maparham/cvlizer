@@ -21,12 +21,12 @@
  * 
  * @template T - The type of items this section manages
  */
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Box, Typography, IconButton, Tooltip } from '@mui/material'
 import { Add as AddIcon, Cancel as CancelIcon } from '@mui/icons-material'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import BaseSection from './BaseSection'
-import { ErrorBoundary, CompactErrorFallback } from '../../common'
+import { ErrorBoundary, CompactErrorFallback, ConfirmDialog } from '../../common'
 import {
   type IndividualItemSectionProps,
   getSectionId,
@@ -98,6 +98,12 @@ function IndividualItemSection<T>({
   } = useSorting<T>(title, data, isReordering)
 
   const { itemsData, setItemsData } = useItemsData<T>(data, sortField, sortDirection, isReordering)
+
+  // State for delete confirmation dialog
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    open: boolean;
+    index: number | null;
+  }>({ open: false, index: null })
 
   // Memoized section ID calculation
   const sectionId = useMemo(() => getSectionId(title), [title])
@@ -171,12 +177,19 @@ function IndividualItemSection<T>({
     handleCancelEdit(true) // Pass true to indicate this is a save operation
   }, [editingItemIndex, editData, itemsData, sortField, sortDirection, setItemsData, onUpdate, onSave, autoSaveMessage, handleCancelEdit])
 
-  const handleDeleteItem = useCallback((index: number) => {
-    const newData = itemsData.filter((_, i) => i !== index)
-    setItemsData(newData)
-    onUpdate(newData)
-    onSave(newData, `${autoSaveMessage} deleted`)
-  }, [itemsData, setItemsData, onUpdate, onSave, autoSaveMessage])
+  const handleDeleteItemClick = useCallback((index: number) => {
+    setDeleteConfirmation({ open: true, index })
+  }, [])
+
+  const handleConfirmDelete = useCallback(() => {
+    if (deleteConfirmation.index !== null) {
+      const newData = itemsData.filter((_, i) => i !== deleteConfirmation.index)
+      setItemsData(newData)
+      onUpdate(newData)
+      onSave(newData, `${autoSaveMessage} deleted`)
+    }
+    setDeleteConfirmation({ open: false, index: null })
+  }, [deleteConfirmation.index, itemsData, setItemsData, onUpdate, onSave, autoSaveMessage])
 
   const handleAddItem = useCallback(() => {
     const newItem = createNewItem()
@@ -463,7 +476,7 @@ function IndividualItemSection<T>({
                                 editingItemIndex={editingItemIndex}
                                 isAnotherItemBeingEdited={isAnotherItemBeingEdited}
                                 onEdit={handleEditItem}
-                                onDelete={handleDeleteItem}
+                                onDelete={handleDeleteItemClick}
                                 renderItemDisplay={renderItemDisplay}
                               />
                             </Box>
@@ -480,6 +493,18 @@ function IndividualItemSection<T>({
         </Box>
       )}
     </BaseSection>
+
+    {/* Delete confirmation dialog */}
+    <ConfirmDialog
+      open={deleteConfirmation.open}
+      onClose={() => setDeleteConfirmation({ open: false, index: null })}
+      onConfirm={handleConfirmDelete}
+      title={`Delete ${getSingularTitle(title)}?`}
+      message={`Are you sure you want to delete this ${getSingularTitle(title).toLowerCase()}?`}
+      confirmButtonText="Delete"
+      confirmButtonColor="error"
+      severity="error"
+    />
     </ErrorBoundary>
   )
 }
