@@ -215,6 +215,7 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     // This handles auto-save sections that may have closed but still have pending changes
     // Skip this check if we're currently discarding changes to avoid showing dialog during cleanup
     if (!currentEditingItem && currentPendingChanges.size > 0 && !skipDialog && !isDiscardingChangesRef.current) {
+      console.log('🔴 No currentEditingItem but has pending changes - editingSection:', editingSection, 'pendingChanges:', Array.from(currentPendingChanges.keys()))
       // Show dialog to confirm discarding changes from the section(s)
       setPendingIndividualItemRegistration({ 
         sectionId, 
@@ -223,11 +224,23 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
         onStartEdit: onStartEdit || (() => {}) 
       })
       setShowUnsavedChangesDialog(true)
+      // Capture the current editing section to close it (can't rely on closure value)
+      const sectionToCloseFromState = editingSection
+      console.log('🔴 Setting pendingNavigation - sectionToClose:', sectionToCloseFromState, 'pendingChanges:', Array.from(currentPendingChanges.keys()))
+      
       setPendingNavigation(() => () => {
-        // Close section edit if still open and clear its state
-        if (editingSection) {
-          handleSectionClose()
-        }
+        console.log('🟠 pendingNavigation for item registration executing')
+        // Close any sections that have pending changes by calling stopEditing
+        const sectionsToClose = Array.from(currentPendingChanges.keys())
+        sectionsToClose.forEach(section => {
+          console.log('🟠 Calling stopEditing for:', section)
+          stopEditing(section)
+        })
+        
+        // Clear the editingSection state if it was set (to close the UI)
+        // Need to set it to null to close the section edit UI
+        console.log('🟠 Setting editingSection to null to close UI')
+        setEditingSection(null)
       })
       return 'dialog_shown'
     }
@@ -270,6 +283,12 @@ export const useEditingState = (_props?: UseEditingStateProps): EditingStateHook
     // Update ref immediately to avoid stale state in callbacks
     stateRef.current.editingIndividualItem = newEditingItem
     stateRef.current.onCancel = onCancel
+    
+    // IMPORTANT: When registering an item, we need to close any open section editing
+    if (editingSection && editingSection !== sectionId) {
+      handleSectionClose()
+    }
+    
     return 'success'
   }, [editingSection, handleSectionClose])
 

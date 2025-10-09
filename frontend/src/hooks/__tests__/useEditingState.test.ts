@@ -645,14 +645,9 @@ describe('useEditingState', () => {
       const { result } = renderHook(() => useEditingState())
       const mockOnCancel1 = jest.fn()
       const mockOnCancel2 = jest.fn()
-      let capturedItemDuringCallback: any = null
 
-      // Create a callback that captures the editing item during registration
-      const mockOnStartEdit = jest.fn(() => {
-        // This simulates what happens in handleSectionEdit - it should see the updated item
-        // We can't directly access stateRef, but we can verify the item is correctly set
-        capturedItemDuringCallback = result.current.editingIndividualItem
-      })
+      // Create a callback that verifies the editing item is correctly set
+      const mockOnStartEdit = jest.fn()
 
       // Register first item
       act(() => {
@@ -664,7 +659,7 @@ describe('useEditingState', () => {
         result.current.registerIndividualItemEditing('education', 1, mockOnCancel2, mockOnStartEdit, true)
       })
 
-      // Verify the second item is now being edited
+      // Verify the second item is now being edited (confirming state update happened synchronously)
       expect(result.current.editingIndividualItem).toEqual({
         id: 'education-1',
         section: 'education',
@@ -705,6 +700,437 @@ describe('useEditingState', () => {
 
       // First item's cancel should have been called
       expect(mockOnCancel1).toHaveBeenCalled()
+    })
+  })
+
+  describe('Non-Array Section Editing', () => {
+    it('should allow switching between non-array sections without changes', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      // Edit personal_info section
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      expect(result.current.editingSection).toBe('personal_info')
+
+      // Switch to professional_summary without changes
+      act(() => {
+        result.current.handleSectionEdit('professional_summary')
+      })
+
+      // Should switch successfully
+      expect(result.current.editingSection).toBe('professional_summary')
+    })
+
+    it('should show dialog when switching sections with pending changes', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      // Edit personal_info section
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      // Simulate changes
+      act(() => {
+        result.current.onUnsavedChanges('personal_info', true)
+      })
+
+      expect(mockPendingChanges.has('personal_info')).toBe(true)
+
+      // Try to switch to another section
+      act(() => {
+        result.current.handleSectionEdit('professional_summary')
+      })
+
+      // Should show dialog
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+      expect(result.current.editingSection).toBe('personal_info') // Should not switch yet
+    })
+
+    it('should allow switching after discarding changes in non-array section', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      // Edit personal_info section
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      // Simulate changes
+      act(() => {
+        result.current.onUnsavedChanges('personal_info', true)
+      })
+
+      // Try to switch to another section
+      act(() => {
+        result.current.handleSectionEdit('professional_summary')
+      })
+
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+
+      // Confirm discard
+      act(() => {
+        result.current.handleUnsavedChangesDialogConfirm()
+      })
+
+      // Should switch to new section
+      expect(result.current.showUnsavedChangesDialog).toBe(false)
+      expect(result.current.editingSection).toBe('professional_summary')
+      expect(mockPendingChanges.has('personal_info')).toBe(false)
+    })
+
+    it('should not show dialog when typing after discarding in non-array section', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      jest.useFakeTimers()
+
+      // Edit personal_info section
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      // Simulate changes
+      act(() => {
+        result.current.onUnsavedChanges('personal_info', true)
+      })
+
+      // Try to switch sections
+      act(() => {
+        result.current.handleSectionEdit('professional_summary')
+      })
+
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+
+      // Confirm discard
+      act(() => {
+        result.current.handleUnsavedChangesDialogConfirm()
+      })
+
+      expect(result.current.showUnsavedChangesDialog).toBe(false)
+
+      // Simulate typing in the new section during discard window
+      act(() => {
+        result.current.onUnsavedChanges('professional_summary', true)
+      })
+
+      // Dialog should NOT show during discard window
+      expect(result.current.showUnsavedChangesDialog).toBe(false)
+
+      // Fast-forward past discard window
+      act(() => {
+        jest.advanceTimersByTime(100)
+      })
+
+      jest.useRealTimers()
+    })
+
+    it('should handle switching from array item to non-array section', () => {
+      const { result } = renderHook(() => useEditingState())
+      const mockOnCancel = jest.fn(() => {
+        act(() => {
+          result.current.unregisterIndividualItemEditing('education', 0)
+        })
+      })
+
+      // Register item editing
+      act(() => {
+        result.current.registerIndividualItemEditing('education', 0, mockOnCancel)
+      })
+
+      expect(result.current.editingIndividualItem?.sectionId).toBe('education')
+
+      // Switch to non-array section without changes
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      // Should cancel item and switch to section
+      expect(mockOnCancel).toHaveBeenCalled()
+      expect(result.current.editingIndividualItem).toBeNull()
+      expect(result.current.editingSection).toBe('personal_info')
+    })
+
+    it('should handle switching from non-array section to array item', () => {
+      const { result } = renderHook(() => useEditingState())
+      const mockOnCancel = jest.fn()
+
+      // Edit non-array section
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      expect(result.current.editingSection).toBe('personal_info')
+
+      // Close the section first (this simulates the actual UI flow)
+      act(() => {
+        result.current.handleSectionClose()
+      })
+
+      // Now register item editing
+      let registrationResult: string
+      act(() => {
+        registrationResult = result.current.registerIndividualItemEditing('education', 0, mockOnCancel)
+      })
+
+      // Should succeed
+      expect(registrationResult!).toBe('success')
+      expect(result.current.editingIndividualItem?.sectionId).toBe('education')
+      expect(result.current.editingSection).toBeNull()
+    })
+
+    it('should show dialog when switching from non-array section to array item with changes', () => {
+      const { result } = renderHook(() => useEditingState())
+      const mockOnCancel = jest.fn()
+
+      // Edit non-array section
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      // Simulate changes
+      act(() => {
+        result.current.onUnsavedChanges('personal_info', true)
+      })
+
+      // Try to register item editing
+      let registrationResult: string
+      act(() => {
+        registrationResult = result.current.registerIndividualItemEditing('education', 0, mockOnCancel)
+      })
+
+      // Should show dialog
+      expect(registrationResult!).toBe('dialog_shown')
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+      expect(result.current.editingSection).toBe('personal_info') // Should not switch yet
+    })
+
+    it('should close auto-save section when switching to array item (real bug scenario)', () => {
+      const { result } = renderHook(() => useEditingState())
+      const mockOnCancel = jest.fn()
+      const mockOnStartEdit = jest.fn()
+
+      // Edit professional_summary (auto-save section)
+      act(() => {
+        result.current.handleSectionEdit('professional_summary')
+      })
+
+      expect(result.current.editingSection).toBe('professional_summary')
+
+      // Simulate changes in professional_summary
+      act(() => {
+        result.current.onUnsavedChanges('professional_summary', true)
+      })
+
+      expect(mockPendingChanges.has('professional_summary')).toBe(true)
+
+      // Try to edit an array item WITHOUT closing the section first
+      // This simulates: user types in professional_summary, section auto-saves and maybe closes,
+      // but pendingChanges remain, then user clicks edit on education
+      let registrationResult: string
+      act(() => {
+        registrationResult = result.current.registerIndividualItemEditing('education', 0, mockOnCancel, mockOnStartEdit)
+      })
+
+      // Dialog should show because of pending changes
+      expect(registrationResult!).toBe('dialog_shown')
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+
+      // Discard changes
+      act(() => {
+        result.current.handleUnsavedChangesDialogConfirm()
+      })
+
+      // Professional summary should be fully closed (both UI and state)
+      expect(result.current.editingSection).toBeNull()
+      expect(mockPendingChanges.has('professional_summary')).toBe(false)
+      expect(mockEditingSections.has('professional_summary')).toBe(false)
+      
+      // Verify stopEditing was called to clear state
+      expect(mockStopEditing).toHaveBeenCalledWith('professional_summary')
+      
+      // The item edit should now be active
+      expect(mockOnStartEdit).toHaveBeenCalled()
+      expect(result.current.editingIndividualItem).toEqual({
+        id: 'education-0',
+        section: 'education',
+        sectionId: 'education',
+        data: null
+      })
+    })
+
+    it('should handle requestSectionCancel without changes', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      // Edit section
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      expect(result.current.editingSection).toBe('personal_info')
+
+      // Request cancel without changes
+      act(() => {
+        result.current.requestSectionCancel()
+      })
+
+      // Should close immediately without dialog
+      expect(result.current.editingSection).toBeNull()
+      expect(result.current.showUnsavedChangesDialog).toBe(false)
+    })
+
+    it('should show dialog on requestSectionCancel with changes', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      // Edit section
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      // Simulate changes
+      act(() => {
+        result.current.onUnsavedChanges('personal_info', true)
+      })
+
+      // Request cancel
+      act(() => {
+        result.current.requestSectionCancel()
+      })
+
+      // Should show dialog
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+      expect(result.current.editingSection).toBe('personal_info') // Should not close yet
+    })
+
+    it('should close professional_summary edit mode after discarding changes when editing elsewhere', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      // Edit professional_summary
+      act(() => {
+        result.current.handleSectionEdit('professional_summary')
+      })
+
+      expect(result.current.editingSection).toBe('professional_summary')
+
+      // Make changes in professional_summary
+      act(() => {
+        result.current.onUnsavedChanges('professional_summary', true)
+      })
+
+      expect(mockPendingChanges.has('professional_summary')).toBe(true)
+      
+      // Check that stopEditing was called when we started editing
+      expect(mockStartEditing).toHaveBeenCalledWith('professional_summary')
+
+      // Try to edit another section (e.g., personal_info)
+      act(() => {
+        result.current.handleSectionEdit('personal_info')
+      })
+
+      // Dialog should show
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+      expect(result.current.editingSection).toBe('professional_summary') // Still editing professional_summary
+
+      // Click "Discard Changes"
+      act(() => {
+        result.current.handleUnsavedChangesDialogConfirm()
+      })
+
+      // professional_summary edit mode should be closed
+      expect(result.current.editingSection).toBe('personal_info') // Now editing personal_info
+      
+      // Check that stopEditing was actually called for professional_summary to close it
+      expect(mockStopEditing).toHaveBeenCalledWith('professional_summary')
+      
+      // And startEditing was called for personal_info to open it
+      expect(mockStartEditing).toHaveBeenCalledWith('personal_info')
+      
+      // professional_summary should not be in editingSections anymore
+      expect(result.current.editingSections.has('professional_summary')).toBe(false)
+      
+      // personal_info should now be in editingSections
+      expect(result.current.editingSections.has('personal_info')).toBe(true)
+      
+      expect(mockPendingChanges.has('professional_summary')).toBe(false) // Changes discarded
+      expect(result.current.showUnsavedChangesDialog).toBe(false)
+    })
+
+    it('should close professional_summary edit mode after discarding when switching to array item', () => {
+      const { result } = renderHook(() => useEditingState())
+      const mockOnCancel = jest.fn()
+
+      // Edit professional_summary
+      act(() => {
+        result.current.handleSectionEdit('professional_summary')
+      })
+
+      expect(result.current.editingSection).toBe('professional_summary')
+
+      // Make changes
+      act(() => {
+        result.current.onUnsavedChanges('professional_summary', true)
+      })
+
+      // Try to edit an array item (e.g., education item)
+      let registrationResult: string
+      act(() => {
+        registrationResult = result.current.registerIndividualItemEditing('education', 0, mockOnCancel)
+      })
+
+      // Dialog should show
+      expect(registrationResult!).toBe('dialog_shown')
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+      expect(result.current.editingSection).toBe('professional_summary') // Still editing
+
+      // Click "Discard Changes"
+      act(() => {
+        result.current.handleUnsavedChangesDialogConfirm()
+      })
+
+      // professional_summary should be closed, now editing the item
+      expect(result.current.editingSection).toBeNull()
+      expect(result.current.editingIndividualItem).toEqual({
+        id: 'education-0',
+        section: 'education',
+        sectionId: 'education',
+        data: null
+      })
+      expect(mockPendingChanges.has('professional_summary')).toBe(false)
+      expect(result.current.showUnsavedChangesDialog).toBe(false)
+    })
+
+    it('should close professional_summary via requestSectionCancel and discard', () => {
+      const { result } = renderHook(() => useEditingState())
+
+      // Edit professional_summary
+      act(() => {
+        result.current.handleSectionEdit('professional_summary')
+      })
+
+      expect(result.current.editingSection).toBe('professional_summary')
+
+      // Make changes
+      act(() => {
+        result.current.onUnsavedChanges('professional_summary', true)
+      })
+
+      // Request cancel (e.g., clicking close button)
+      act(() => {
+        result.current.requestSectionCancel()
+      })
+
+      // Dialog should show
+      expect(result.current.showUnsavedChangesDialog).toBe(true)
+      expect(result.current.editingSection).toBe('professional_summary')
+
+      // Click "Discard Changes"
+      act(() => {
+        result.current.handleUnsavedChangesDialogConfirm()
+      })
+
+      // professional_summary should be closed
+      expect(result.current.editingSection).toBeNull()
+      expect(mockPendingChanges.has('professional_summary')).toBe(false)
+      expect(result.current.showUnsavedChangesDialog).toBe(false)
     })
   })
 })
