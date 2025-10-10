@@ -12,17 +12,24 @@ Be careful and precise when fixing issues.
 **Always understand the root cause before implementing solutions.**
 
 ### Debugging Steps (REQUIRED BEFORE FIXING)
-1. **Reproduce the issue** - Understand exact conditions that trigger the problem
-2. **Identify the source** - Which specific component/test/function causes it?
-3. **Inspect state** - Use screenshots, logs, HTML reports to see actual state
-4. **Trace the flow** - What happened before the failure? What accumulated?
-5. **Pinpoint the culprit** - Which specific action left things in a bad state?
+1. **READ THE ACTUAL CODE** - Never assume behavior. Read the implementation first.
+2. **Reproduce the issue** - Understand exact conditions that trigger the problem
+3. **Identify the source** - Which specific component/test/function causes it?
+4. **Inspect state** - Use screenshots, logs, HTML reports to see actual state
+5. **Trace the flow** - What happened before the failure? What accumulated?
+6. **Pinpoint the culprit** - Which specific action left things in a bad state?
 
-### Red Flags - Avoid These Patterns
+### Anti-Patterns to Avoid
+- ❌ **Don't assume based on naming/patterns/conventions** - READ THE SOURCE CODE instead
 - ❌ **Blanket/Global Solutions** - Adding cleanup/fixes everywhere when one place is broken
 - ❌ **Defensive Patterns** - "Just in case" fixes without understanding the actual problem
 - ❌ **Symptom Fixes** - Treating symptoms instead of the disease
-- ❌ **Pattern Matching** - Using common patterns (like `afterEach` hooks) without justification
+- ❌ **Pattern Matching** - Using common patterns without justification
+
+### Correct Actions
+- ✅ **READ THE SOURCE CODE** - Find the component/function and read its implementation
+- ✅ **TRACE THE LOGIC** - Follow state updates, props, handlers to understand actual behavior
+- ✅ **VERIFY BEFORE IMPLEMENTING** - Look at the code before writing tests/fixes
 
 ### Correct Approach
 - ✅ **Targeted Fix** - Fix exactly what's broken, where it's broken

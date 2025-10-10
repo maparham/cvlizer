@@ -41,10 +41,10 @@ def get_cv_by_id(db: Session, cv_id: str, user_id: str) -> Optional[CV]:
 
 
 def get_cvs_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 10) -> List[CV]:
-    """Get all CVs for a user with pagination"""
+    """Get all CVs for a user with pagination, ordered by most recently updated first"""
     return db.query(CV).options(joinedload(CV.history)).filter(
         CV.user_id == user_id
-    ).offset(skip).limit(limit).all()
+    ).order_by(CV.updated_at.desc()).offset(skip).limit(limit).all()
 
 
 def update_cv(db: Session, cv_id: str, user_id: str, parsed_data: dict) -> Optional[CV]:

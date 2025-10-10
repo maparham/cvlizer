@@ -44,9 +44,9 @@ lcov.info
 .DS_Store
 
 # Logs
-*.log
-logs/
-*.log.*
+# *.log
+# logs/
+# *.log.*
 
 # Uploaded files and media
 backend/uploads/

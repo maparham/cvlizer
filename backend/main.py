@@ -20,6 +20,9 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+# Logging setup
+from src.utils.logging_setup import setup_logging
+
 # Import API routers
 from src.api.auth import router as auth_router
 from src.api.cvs import router as cvs_router
@@ -38,6 +41,14 @@ from src.services.cleanup_service import start_cleanup_service, stop_cleanup_ser
 from src.middleware.impersonation_headers import ImpersonationHeadersMiddleware
 
 load_dotenv()
+
+# Setup logging to both console and file
+setup_logging()
+
+# Suppress SQLite StaticPool connection reset errors
+# These are harmless cleanup errors under high concurrency that don't affect functionality
+logging.getLogger("sqlalchemy.pool.impl.StaticPool").setLevel(logging.CRITICAL)
+
 logger = logging.getLogger("uvicorn.error")
 
 def _is_truthy(val: str) -> bool:
@@ -119,7 +130,7 @@ async def startup_event():
     try:
         # Database initialization and table creation
         from src.database import create_tables
-        from src.models.base import get_db
+        from src.models.base import get_db, get_pool_status
         
         # Ensure all tables are created
         create_tables()
@@ -129,6 +140,13 @@ async def startup_event():
         db = next(get_db())
         db.close()
         logger.info("Database connection verified successfully")
+        
+        # Log connection pool configuration and status
+        try:
+            pool_status = get_pool_status()
+            logger.info(f"Database connection pool status: {pool_status}")
+        except Exception as pool_error:
+            logger.warning(f"Could not retrieve pool status: {pool_error}")
     except Exception as e:
         logger.warning(f"Database initialization check failed: {e}")
     

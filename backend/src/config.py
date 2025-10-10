@@ -54,10 +54,99 @@ class DatabaseConfig:
     """Database related configuration"""
 
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./cv_optimizer.db")
-    POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "5"))
-    MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+    
+    # Pool configuration - timeout and recycle
     POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
     POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "3600"))
+    
+    @classmethod
+    def is_test_environment(cls) -> bool:
+        """
+        Check if running in test environment.
+        
+        Detects test execution via PYTEST_CURRENT_TEST environment variable,
+        which is set by pytest during test runs (including Playwright tests).
+        """
+        return bool(os.getenv("PYTEST_CURRENT_TEST"))
+    
+    @classmethod
+    def get_database_type(cls) -> str:
+        """
+        Detect database type from DATABASE_URL.
+        
+        Returns:
+            'sqlite', 'postgresql', 'mysql', or 'unknown'
+        """
+        url = cls.DATABASE_URL.lower()
+        if url.startswith('sqlite'):
+            return 'sqlite'
+        elif url.startswith('postgresql') or url.startswith('postgres'):
+            return 'postgresql'
+        elif url.startswith('mysql'):
+            return 'mysql'
+        return 'unknown'
+    
+    @classmethod
+    def is_poolable_database(cls) -> bool:
+        """
+        Check if database supports standard connection pooling.
+        
+        SQLite uses different pooling mechanisms (StaticPool) than
+        PostgreSQL/MySQL which benefit from full connection pooling.
+        """
+        return cls.get_database_type() in ['postgresql', 'mysql']
+    
+    @classmethod
+    def get_pool_size(cls) -> int:
+        """
+        Get pool size with environment-aware defaults.
+        
+        Environment-specific defaults:
+        - Test: 20 connections (sized for 12 concurrent Playwright test streams on 8-core machine)
+        - Production: 10 connections (MVP with up to 10 simultaneous users + background tasks)
+        - Development: 5 connections (single developer testing)
+        
+        Can be overridden via DB_POOL_SIZE environment variable.
+        """
+        env_value = os.getenv("DB_POOL_SIZE")
+        if env_value:
+            return int(env_value)
+        
+        # Environment-aware defaults
+        if cls.is_test_environment():
+            return 20  # Handle 12 concurrent test streams with headroom
+        elif AppConfig.is_production():
+            return 10  # 10 simultaneous users + background tasks
+        else:
+            return 5  # Single developer in development
+    
+    @classmethod
+    def get_max_overflow(cls) -> int:
+        """
+        Get max overflow with environment-aware defaults.
+        
+        Environment-specific defaults:
+        - Test: 10 overflow (additional capacity for test spikes)
+        - Production: 10 overflow (production burst capacity)
+        - Development: 5 overflow (development burst capacity)
+        
+        Can be overridden via DB_MAX_OVERFLOW environment variable.
+        """
+        env_value = os.getenv("DB_MAX_OVERFLOW")
+        if env_value:
+            return int(env_value)
+        
+        # Environment-aware defaults
+        if cls.is_test_environment():
+            return 10  # Additional capacity for test spikes
+        elif AppConfig.is_production():
+            return 10  # Production overflow capacity
+        else:
+            return 5  # Development overflow
+    
+    # Note: Use get_pool_size() and get_max_overflow() methods to retrieve values
+    # with environment-aware defaults. Legacy code may access POOL_SIZE/MAX_OVERFLOW
+    # but should migrate to using the getter methods.
 
 
 # ============================================================================

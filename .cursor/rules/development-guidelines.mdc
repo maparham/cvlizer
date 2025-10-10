@@ -10,14 +10,6 @@ description: MVP-focused development guidelines and best practices
 - Deeper/nested rules override parent ones
 - `globs`-scoped rules apply only to matched files
 
-## Quick Reference
-1. [Project Structure](mdc:.cursor/rules/project-structure.mdc) - Architecture and directory organization
-2. [Backend Patterns](mdc:.cursor/rules/backend-patterns.mdc) - FastAPI, SQLAlchemy, Python
-3. [Frontend Patterns](mdc:.cursor/rules/frontend-patterns.mdc) - React, TypeScript, Material-UI
-4. [Testing Patterns](mdc:.cursor/rules/testing-patterns.mdc) - Testing strategies (MVP focus)
-5. [AI Integration](mdc:.cursor/rules/ai-integration.mdc) - OpenAI service patterns
-6. [Security Patterns](mdc:.cursor/rules/security-patterns.mdc) - Essential security only
-
 ## MVP Development Focus
 - **Backend**: PEP 8, Black (88 chars), type hints, basic docstrings
 - **Frontend**: TypeScript strict mode, ESLint, Prettier

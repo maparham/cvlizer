@@ -2,11 +2,13 @@
 
 Always analyze existing architecture before implementing features.
 
-## Required Steps
-1. Search the codebase for similar functionality (use `codebase_search`).
-2. Read related components to learn current patterns.
-3. Identify existing state management and data flow.
-4. Check existing UI patterns and component hierarchies.
+## Required Steps (DO NOT SKIP)
+
+Follow "DEBUG FIRST" from careful-fixes rule, plus:
+1. Search the codebase for similar functionality (use `codebase_search`)
+2. Read related components to learn current patterns
+3. Identify existing state management and data flow
+4. Check existing UI patterns and component hierarchies
 
 ## Checklist Before Implementation
 - [ ] No duplicate functionality
@@ -14,6 +16,7 @@ Always analyze existing architecture before implementing features.
 - [ ] Existing state management used
 - [ ] Existing UI patterns respected
 - [ ] Existing APIs leveraged
+- [ ] **Actual behavior understood from source code**
 
 ## Red Flags
 - Creating new state management when existing stores work

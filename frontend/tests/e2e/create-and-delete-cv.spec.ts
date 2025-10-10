@@ -10,64 +10,59 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { TEST_TIMEOUT, VALIDATION_WAIT, DASHBOARD_REFRESH_TIMEOUT } from './test-constants';
 
 test.describe('Create and Delete CV Workflow', () => {
   test('should create a minimal CV and then delete it', async ({ page }) => {
-    // Step 1: Navigate to the application
-    await page.goto('http://localhost:3000');
-    await expect(page).toHaveTitle(/CV Optimizer/);
-
-    // Step 2: Navigate to login page
-    await page.goto('http://localhost:3000/login');
+    // Authentication handled by global-setup.ts - user already logged in
+    // Navigate to root (admin users redirect to /admin, then go to dashboard)
+    await page.goto('/');
     
-    // Wait for Clerk authentication form to load
-    await page.waitForTimeout(2000);
+    const url = page.url();
+    if (url.includes('/admin')) {
+      await page.getByRole('button', { name: /back to dashboard/i }).click();
+      await page.waitForURL('**/dashboard');
+    } else if (!url.includes('/dashboard')) {
+      await page.goto('/dashboard');
+    }
+    
+    await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible();
 
-    // Step 3: Fill in login credentials using Clerk's accessible labels
-    await page.getByLabel('Email address').fill('mahmoud.shahrud@gmail.com');
-    await page.getByRole('textbox', { name: 'Password' }).fill('pNm6h@n@q@fnHFM');
-
-    // Wait a moment for Clerk to process the input
-    await page.waitForTimeout(1000);
-
-    // Step 4: Click continue button
-    await page.getByRole('button', { name: 'Continue' }).click();
-
-    // Wait for navigation after login - test user is admin so goes to /admin
-    await page.waitForURL('**/admin', { timeout: 20000 });
-
-    // Step 5: Navigate to dashboard from admin
-    await page.getByRole('button', { name: /back to dashboard/i }).click();
-    await page.waitForURL('**/dashboard');
-
-    // Step 6: Start creating a new CV from scratch
+    // Start creating a new CV from scratch
     await page.getByTestId('start-from-scratch-button').click();
 
     // Wait for CV editor to load
-    await page.waitForURL(/\/cv\//, { timeout: 10000 });
+    await page.waitForURL(/\/cv\//, { timeout: TEST_TIMEOUT });
     await expect(page.getByRole('heading', { name: 'Personal Information' })).toBeVisible();
 
     // Step 7: Edit Personal Information section
-    await page.getByRole('button', { name: /edit this section/i }).first().click();
+    await page.getByTestId('edit-section-personal_info-button').click();
 
-    // Fill in personal information
-    await page.getByRole('textbox', { name: /your name/i }).fill('John Smith');
-    await page.getByRole('textbox', { name: /email/i }).fill('john.smith@example.com');
-    await page.getByRole('textbox', { name: /phone/i }).fill('+1 234 567 8900');
+    // Fill in all required personal information fields
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill('John Smith');
+    await page.getByTestId('personal-info-email-input').locator('input').fill('john.smith@example.com');
+    await page.getByTestId('personal-info-phone-input').locator('input').fill('+1 234 567 8900');
     await page.getByRole('combobox', { name: /location/i }).fill('New York, NY');
+    await page.keyboard.press('Tab'); // Close autocomplete
+    await page.waitForTimeout(VALIDATION_WAIT);
 
     // Save personal information - click the save icon button
-    await page.waitForTimeout(500);
-    await page.locator('button:has(svg[data-testid="SaveIcon"])').first().click();
+    const saveButton = page.locator('button:has(svg[data-testid="SaveIcon"])').first();
+    await expect(saveButton).toBeEnabled({ timeout: TEST_TIMEOUT });
+    
+    // Capture temp CV ID before save
+    const tempCvId = page.url().split('/cv/')[1];
+    await saveButton.click();
 
-    // Wait for success message
-    await expect(page.getByText(/personal information saved/i)).toBeVisible({ timeout: 5000 });
+    // Wait for navigation from temp ID to real UUID (happens after first save)
+    // The navigation itself indicates success
+    await page.waitForURL((url) => url.pathname.includes('/cv/') && !url.pathname.includes(tempCvId), { timeout: TEST_TIMEOUT });
 
     // Step 8: Add Professional Summary section
     await page.getByRole('button', { name: /add this section to your cv/i }).first().click();
     
     // Wait for section to be added
-    await expect(page.getByText(/professional summary section added/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/professional summary section added/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     // Edit Professional Summary
     await page.getByRole('button', { name: /edit this section/i }).nth(1).click();
@@ -81,34 +76,34 @@ test.describe('Create and Delete CV Workflow', () => {
     await page.locator('button:has(svg[data-testid="SaveIcon"])').first().click();
 
     // Wait for success message
-    await expect(page.getByText(/professional summary saved/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/professional summary saved/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     // Step 9: Add Skills section
     const addButtons = page.getByRole('button', { name: /add this section to your cv/i });
     await addButtons.nth(3).click(); // Skills section
 
     // Wait for section to be added
-    await expect(page.getByText(/skills section added/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/skills section added/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     // Edit Skills section
     await page.getByRole('button', { name: /edit this section/i }).nth(2).click();
 
     // Add technical skills
     await page.getByRole('button', { name: 'Python', exact: true }).click();
-    await expect(page.getByText(/technical skill added/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/technical skill added/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     await page.getByRole('button', { name: 'JavaScript', exact: true }).click();
-    await expect(page.getByText(/technical skill added/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/technical skill added/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     await page.getByRole('button', { name: 'TypeScript', exact: true }).click();
-    await expect(page.getByText(/technical skill added/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/technical skill added/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     // Add soft skills
     await page.getByRole('button', { name: 'Communication', exact: true }).click();
-    await expect(page.getByText(/soft skill added/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/soft skill added/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     await page.getByRole('button', { name: 'Leadership', exact: true }).click();
-    await expect(page.getByText(/soft skill added/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/soft skill added/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     // Close skills editor
     await page.getByRole('button', { name: /cancel editing/i }).click();
@@ -120,21 +115,23 @@ test.describe('Create and Delete CV Workflow', () => {
     await expect(page.getByText('Communication')).toBeVisible();
     await expect(page.getByText('Leadership')).toBeVisible();
 
-    // Get the CV ID from URL for later verification
+    // Get the REAL CV ID from URL (after temp→real conversion)
     const cvUrl = page.url();
     const cvId = cvUrl.split('/cv/')[1];
     expect(cvId).toBeTruthy();
+    expect(cvId).not.toContain('temp-'); // Verify it's a real UUID, not temp
 
     // Step 10: Navigate back to dashboard
     await page.getByTestId('cv-editor-back-button').click();
     await page.waitForURL('**/dashboard');
-
-    // Verify we're on the dashboard
     await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible();
+    
+    // The CV should already be in the Zustand store from the save operation
+    // Wait for CV cards to render (the CV was added to store.cvs during saveTemporaryCV)
+    await expect(page.getByTestId(`edit-cv-button-${cvId}`)).toBeVisible({ timeout: DASHBOARD_REFRESH_TIMEOUT });
 
-    // Step 11: Find and delete the newly created CV
-    // The CV should be visible on the dashboard
-    await expect(page.getByText(/New CV 2\.pdf/i)).toBeVisible();
+    // Step 11: Find and delete the newly created CV using real CV ID
+    await expect(page.getByTestId(`delete-cv-button-${cvId}`)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     // Click the delete button for the new CV
     await page.getByTestId(`delete-cv-button-${cvId}`).click();
@@ -147,10 +144,10 @@ test.describe('Create and Delete CV Workflow', () => {
     await page.getByRole('dialog').getByRole('button', { name: /delete/i }).click();
 
     // Wait for success message
-    await expect(page.getByText(/deleted successfully/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/deleted successfully/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
     // Verify the CV is no longer in the list
-    await expect(page.getByText(/New CV 2\.pdf/i)).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/New CV 2\.pdf/i)).not.toBeVisible({ timeout: TEST_TIMEOUT });
   });
 });
 

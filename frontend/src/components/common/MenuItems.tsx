@@ -33,6 +33,7 @@ export interface MenuItemData {
   onClick: () => void
   disabled?: boolean
   loading?: boolean
+  testId?: string
 }
 
 export interface MenuItemsProps {
@@ -80,6 +81,7 @@ const MenuItems: React.FC<MenuItemsProps> = ({
           key={index}
           onClick={item.onClick}
           disabled={item.disabled}
+          data-testid={item.testId}
           sx={{}}
         >
           <ListItemIcon sx={{ color: 'inherit' }}>

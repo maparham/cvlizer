@@ -5,6 +5,13 @@ description: Testing patterns and conventions for both frontend and backend
 
 # Testing Patterns & Conventions
 
+## CRITICAL: Read Code Before Writing Tests
+
+**Follow the "DEBUG FIRST" approach from the careful-fixes rule:**
+- Read implementation before writing tests
+- Trace actual behavior, not assumed behavior
+- Never write tests based on naming assumptions (e.g., "hide" button might remove, not toggle)
+
 ## Backend Testing (Python/Pytest)
 - Place in [tests/](mdc:backend/tests/), use `test_` prefix
 - FastAPI TestClient for endpoints, test success/error scenarios

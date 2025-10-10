@@ -35,6 +35,7 @@ from pydantic import BaseModel, ValidationError, Field
 import uuid
 import asyncio
 import os
+import logging
 from concurrent.futures import ThreadPoolExecutor
 
 from src.models.base import get_db, SessionLocal
@@ -58,21 +59,29 @@ router = APIRouter(prefix="/api/cvs", tags=["cvs"])
 _workers = int(os.getenv("CV_PARSE_WORKERS", "2"))
 executor = ThreadPoolExecutor(max_workers=max(1, _workers))
 
+# Logger for background task monitoring
+logger = logging.getLogger(__name__)
+
 
 
 
 
 def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: str):
-    """Synchronous CV parsing function to run in thread pool"""
+    """
+    Synchronous CV parsing function to run in thread pool.
+    
+    CRITICAL: This runs in a background thread, so it must manage its own
+    database session and ensure cleanup to prevent connection pool exhaustion.
+    The session must be closed in a finally block to guarantee the connection
+    is returned to the pool even if exceptions occur.
+    """
+    db = SessionLocal()
     try:
-        # Create dedicated database session for background thread
-        db = SessionLocal()
-        
         # Parse CV content (run async function in sync context)
         parsed_data = asyncio.run(parse_cv_with_openai(file_content, filename, content_type))
         
         # Update CV record with parsed data
-        cv = db.query(CV).filter(CV.id == cv_id).first()  # Direct query for background task
+        cv = db.query(CV).filter(CV.id == cv_id).first()
         if cv:
             cv.parsed_data = parsed_data
             cv.is_parsed = True
@@ -81,7 +90,7 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
             db.commit()
             db.refresh(cv)
             
-            # Create initial history entry after successful parsing (only if parsing succeeded and no error)
+            # Create initial history entry after successful parsing
             if not parsed_data.get('error'):
                 from src.models.cv_history import CVHistory
                 import json
@@ -112,18 +121,27 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
                     db.add(initial_entry)
                     db.commit()
         
-        db.close()
     except Exception as e:
-        # Update CV record with error
+        # Rollback failed transaction to prevent connection issues
+        db.rollback()
+        logger.error(f"Background parsing failed for CV {cv_id}: {str(e)}")
+        
+        # Try to update CV with error message (using same session after rollback)
         try:
-            db = SessionLocal()
             cv = db.query(CV).filter(CV.id == cv_id).first()
             if cv:
                 cv.parse_error = f"Background parsing failed: {str(e)}"
                 db.commit()
+        except Exception as update_error:
+            logger.error(f"Failed to update CV error status for CV {cv_id}: {update_error}")
+    
+    finally:
+        # Always close the session to return connection to pool
+        try:
             db.close()
-        except Exception as db_error:
-            pass
+            logger.debug(f"Database session closed for CV {cv_id} background parsing")
+        except Exception as close_error:
+            logger.error(f"Failed to close database session for CV {cv_id}: {close_error}")
 
 async def parse_cv_background(cv_id: str, file_content: bytes, filename: str, content_type: str):
     """Parse CV in background using thread pool executor"""

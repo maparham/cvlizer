@@ -125,27 +125,31 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
       icon: <DuplicateIcon />,
       onClick: handleDuplicate,
       disabled: duplicating || !cv.is_parsed,
-      loading: duplicating
+      loading: duplicating,
+      testId: `duplicate-cv-button-${cv.id}`
     },
     {
       label: 'Rename',
       icon: <RenameIcon />,
       onClick: handleRename,
-      disabled: false
+      disabled: false,
+      testId: `rename-cv-button-${cv.id}`
     },
     {
       label: 'Download',
       icon: <DownloadIcon />,
       onClick: handleDownload,
       disabled: downloading,
-      loading: downloading
+      loading: downloading,
+      testId: `download-cv-button-${cv.id}`
     },
     {
       label: 'Create Similar',
       icon: <CreateSimilarIcon />,
       onClick: handleCreateSimilar,
       disabled: creatingSimilar || !cv.is_parsed,
-      loading: creatingSimilar
+      loading: creatingSimilar,
+      testId: `create-similar-cv-button-${cv.id}`
     }
   ]
 

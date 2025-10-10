@@ -103,6 +103,7 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
             onClick={() => sectionId && onToggleVisibility?.(sectionId)}
             color={sectionVisible ? 'primary' : 'default'}
             size="small"
+            data-testid={sectionId ? `hide-section-${sectionId}-button` : undefined}
             sx={{ 
               '&:hover': { 
                 bgcolor: sectionVisible ? 'primary.light' : 'action.hover',

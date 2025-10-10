@@ -55,10 +55,10 @@ export class CVEditorPage {
     this.stayButton = page.getByTestId('unsaved-changes-stay-button');
     this.leaveButton = page.getByTestId('unsaved-changes-leave-button');
     
-    // Personal Info Section
-    this.personalInfoFullNameInput = page.getByTestId('personal-info-full-name-input');
-    this.personalInfoEmailInput = page.getByTestId('personal-info-email-input');
-    this.personalInfoPhoneInput = page.getByTestId('personal-info-phone-input');
+    // Personal Info Section - locator('input') needed because test-id is on TextField wrapper div
+    this.personalInfoFullNameInput = page.getByTestId('personal-info-full-name-input').locator('input');
+    this.personalInfoEmailInput = page.getByTestId('personal-info-email-input').locator('input');
+    this.personalInfoPhoneInput = page.getByTestId('personal-info-phone-input').locator('input');
     
     // Work Experience Section
     this.addNewWorkExperienceButton = page.getByTestId('add-new-work-experience-button');

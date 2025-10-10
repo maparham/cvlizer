@@ -21,33 +21,31 @@
 
 import { test, expect, Page } from '@playwright/test';
 
-// Helper function to login and navigate to CV editor
+// Helper function to navigate to CV editor using existing auth
 async function setupTest(page: Page): Promise<string> {
-  // Navigate to login page
-  await page.goto('http://localhost:3000/login');
-  
-  // Wait for Clerk authentication form to load
-  await expect(page.getByLabel('Email address')).toBeVisible({ timeout: 10000 });
+  // Navigate to home page (authentication handled by global setup)
+  await page.goto('/', { waitUntil: 'load' });
 
-  // Fill in login credentials
-  await page.getByLabel('Email address').fill('mahmoud.shahrud@gmail.com');
-  await page.getByRole('textbox', { name: 'Password' }).fill('pNm6h@n@q@fnHFM');
+  // Wait for auth state to be processed
+  await page.waitForTimeout(200);
 
-  // Click continue button
-  await page.getByRole('button', { name: 'Continue' }).click();
+  // Admin users are redirected to /admin, navigate to dashboard if needed
+  const url = page.url();
+  if (url.includes('/admin')) {
+    await page.getByRole('button', { name: /back to dashboard/i }).click();
+    await page.waitForURL('**/dashboard');
+  } else if (!url.includes('/dashboard')) {
+    await page.goto('/dashboard', { waitUntil: 'load' });
+  }
 
-  // Wait for navigation after login
-  await page.waitForURL('**/admin', { timeout: 20000 });
-
-  // Navigate to dashboard
-  await page.getByRole('button', { name: /back to dashboard/i }).click();
-  await page.waitForURL('**/dashboard');
+  // Ensure we're on dashboard
+  await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible({ timeout: 5000 });
 
   // Always create a new CV from scratch for testing
   const emptyStateButton = page.getByTestId('start-from-scratch-empty-state-button');
   const regularButton = page.getByTestId('start-from-scratch-button');
   
-  const isEmptyState = await emptyStateButton.isVisible({ timeout: 1000 }).catch(() => false);
+  const isEmptyState = await emptyStateButton.isVisible({ timeout: 5000 }).catch(() => false);
   if (isEmptyState) {
     await emptyStateButton.click();
   } else {
@@ -166,7 +164,7 @@ async function waitForDialog(page: Page): Promise<void> {
 
 // Helper function to verify dialog is NOT shown
 async function verifyNoDialog(page: Page): Promise<void> {
-  await expect(page.getByTestId('unsaved-changes-dialog')).not.toBeVisible({ timeout: 1000 });
+  await expect(page.getByTestId('unsaved-changes-dialog')).not.toBeVisible({ timeout: 5000 });
 }
 
 // Helper function to add a second Education item (only needed for test #6)

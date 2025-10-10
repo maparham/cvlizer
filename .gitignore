@@ -292,6 +292,7 @@ backend/uploads/*
 test-results/
 playwright-report/
 playwright/.cache/
+frontend/tests/e2e/.auth/
 
 # Build outputs
 dist/
