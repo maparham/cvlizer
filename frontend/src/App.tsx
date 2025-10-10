@@ -80,6 +80,9 @@ const AppContent = () => {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          {/* Clerk email verification routes */}
+          <Route path="/register/verify" element={<LoginRedirect />} />
+          <Route path="/sign-in/verify" element={<LoginRedirect />} />
           <Route path="/login-redirect" element={<LoginRedirect />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
