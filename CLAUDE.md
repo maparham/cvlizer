@@ -9,7 +9,7 @@ CV Optimizer is a full-stack AI-powered CV enhancement SaaS application built wi
 **Tech Stack:**
 - **Backend**: FastAPI, SQLAlchemy ORM, SQLite/PostgreSQL, OpenAI integration
 - **Frontend**: React 18, TypeScript, Material-UI, Zustand state management
-- **Auth**: Clerk with JWT tokens
+- **Auth**: Clerk (primary) with JWT token verification, legacy JWT support
 - **Testing**: Pytest (backend), Jest (frontend), Playwright (E2E)
 
 ## Development Commands
@@ -103,7 +103,7 @@ docker-compose down
 The backend follows a **layered architecture** with clear separation of concerns:
 
 ```
-Request ’ Middleware (auth, CORS) ’ API Routes ’ Service Layer ’ Database ’ Response
+Request ï¿½ Middleware (auth, CORS) ï¿½ API Routes ï¿½ Service Layer ï¿½ Database ï¿½ Response
 ```
 
 **Key Architectural Patterns:**
@@ -128,7 +128,7 @@ Request ’ Middleware (auth, CORS) ’ API Routes ’ Service Layer ’ Database ’ Resp
    - ThreadPoolExecutor for CPU-intensive AI operations
    - Each background task creates its own database session using `SessionLocal()`
    - Always close sessions in finally blocks
-   - Update task status in database (pending ’ processing ’ completed/failed)
+   - Update task status in database (pending ï¿½ processing ï¿½ completed/failed)
 
 5. **AI Integration** ([backend/src/services/ai_service.py](backend/src/services/ai_service.py)):
    - All OpenAI calls go through ai_service
@@ -137,19 +137,20 @@ Request ’ Middleware (auth, CORS) ’ API Routes ’ Service Layer ’ Database ’ Resp
    - Check `is_ai_enabled()` before operations
 
 **Authentication Flow:**
-- Clerk JWT tokens are verified via [clerk_auth.py](backend/src/middleware/clerk_auth.py)
-- User synced to local database on first request
-- `get_effective_user` dependency handles both normal auth and impersonation
-- All user-owned resources MUST filter by `user_id`
+- **Primary**: Clerk JWT tokens verified via [clerk_auth.py](backend/src/middleware/clerk_auth.py) with JWKS support
+- **Legacy**: JWT token authentication for backward compatibility
+- User automatically synced to local database on first request
+- `get_effective_user` dependency handles both normal auth and admin impersonation
+- All user-owned resources MUST filter by `user_id` for security
 
 ### Frontend Architecture
 
 The frontend follows a **unidirectional data flow** pattern:
 
 ```
-User Action ’ Component ’ Custom Hook ’ Zustand Store ’ API Service ’ Backend
-                                             “
-                                Response ’ Store Update ’ Component Re-render
+User Action ï¿½ Component ï¿½ Custom Hook ï¿½ Zustand Store ï¿½ API Service ï¿½ Backend
+                                             ï¿½
+                                Response ï¿½ Store Update ï¿½ Component Re-render
 ```
 
 **Key Architectural Patterns:**
@@ -420,7 +421,7 @@ python -m pytest tests/unit/test_models.py::TestJobDescriptionModel::test_create
 - Use ThreadPoolExecutor for CPU-intensive operations
 - Create new database session in background threads: `SessionLocal()`
 - Always close sessions in finally blocks
-- Update task status: pending ’ processing ’ completed/failed
+- Update task status: pending ï¿½ processing ï¿½ completed/failed
 - Frontend polls for completion using polling contexts
 
 ## Environment Variables

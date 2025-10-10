@@ -9,14 +9,14 @@ The CV Lator backend is a FastAPI-based REST API service that provides comprehen
 ### Technology Stack
 - **Framework**: FastAPI 0.104.1
 - **Database**: SQLite (development) / PostgreSQL (production)
-- **ORM**: SQLAlchemy 2.0.23 with Alembic for migrations
-- **Authentication**: Clerk JWT token verification with JWKS support
-- **AI Integration**: OpenAI GPT-4o-mini
+- **ORM**: SQLAlchemy 2.0.23 with Alembic 1.12.1 for migrations
+- **Authentication**: Clerk JWT token verification with JWKS support (primary), legacy JWT with python-jose 3.3.0
+- **AI Integration**: OpenAI >=1.68.0 (GPT-4o-mini for CV parsing and content generation)
 - **File Processing**: PyMuPDF 1.26.4, python-docx 1.1.0
-- **Web Scraping**: Selenium 4.15.0 for JavaScript-heavy job sites
-- **Background Processing**: ThreadPoolExecutor for CV parsing
+- **Web Scraping**: Selenium 4.15.0 for JavaScript-heavy job sites, requests 2.31.0, beautifulsoup4 4.12.2
+- **Background Processing**: ThreadPoolExecutor for CPU-intensive operations
 - **PDF Export**: LaTeX compilation for professional CV formatting
-- **Testing**: pytest with comprehensive coverage
+- **Testing**: pytest 7.4.3 with comprehensive coverage, httpx 0.25.2 for async tests
 - **Deployment**: Docker with production-ready configuration
 
 ### Project Structure
@@ -113,15 +113,24 @@ backend/
 #### Job Description Model
 - **Table**: `job_descriptions`
 - **Primary Key**: `id` (UUID)
-- **Foreign Keys**: `cv_id` → `cvs.id` (CASCADE DELETE)
+- **Foreign Keys**: 
+  - `user_id` → `users.id` (CASCADE DELETE)
+  - `cv_id` → `cvs.id` (CASCADE DELETE, nullable)
 - **Fields**:
-  - `cv_id`: Associated CV ID (indexed)
-  - `content`: Job description text
-  - `description`: Structured description
-  - `requirements`: JSON requirements data
-  - `salary_range`: Salary information
-  - `employment_type`: Employment type
-  - `source_url`: Source URL (nullable)
+  - `user_id`: Owner user ID (indexed)
+  - `cv_id`: Associated CV ID (indexed, nullable)
+  - `content`: Job description full text (nullable)
+  - `description`: Structured description (nullable)
+  - `requirements`: JSON requirements data (nullable)
+  - `salary_range`: Salary information (nullable)
+  - `employment_type`: Employment type (nullable)
+  - `source_url`: Source URL for job posting (nullable)
+  - `title`: Job title (nullable)
+  - `company`: Company name (nullable)
+  - `location`: Job location (nullable)
+  - `hidden`: Hidden from sidebar flag (boolean, default false)
+  - `is_parsing`: Background parsing status (boolean, default false)
+  - `parse_error`: Parsing error message (nullable)
   - `created_at`: Creation timestamp
   - `updated_at`: Last update timestamp
 
@@ -158,12 +167,12 @@ backend/
 ## API Endpoints
 
 ### Authentication Endpoints (`/auth`)
-**Note**: Primary authentication is handled by Clerk. Legacy JWT endpoints are maintained for backward compatibility.
-- `POST /auth/register` - Legacy user registration (Clerk preferred)
-- `POST /auth/login` - Legacy user login (Clerk preferred)
-- `POST /auth/refresh` - Refresh JWT token
+**Note**: Primary authentication is handled by Clerk with JWT token verification. Legacy JWT endpoints are maintained for backward compatibility.
+- `POST /auth/register` - Legacy user registration (deprecated, use Clerk)
+- `POST /auth/login` - Legacy user login (deprecated, use Clerk)
+- `POST /auth/refresh` - Refresh JWT token (legacy)
 - `POST /auth/logout` - User logout
-- `GET /auth/me` - Get current user info
+- `GET /auth/me` - Get current user info (works with both Clerk and legacy JWT)
 
 ### CV Management Endpoints (`/api/cvs`)
 - `POST /api/cvs/` - Upload CV file
@@ -193,8 +202,20 @@ backend/
 - `GET /api/admin/users` - List all users
 - `GET /api/admin/cvs` - List all CVs
 - `GET /api/admin/stats` - System statistics
-- `POST /api/admin/impersonate` - Start impersonation
-- `POST /api/admin/stop-impersonation` - Stop impersonation
+- `POST /api/admin/impersonate` - Start impersonation session
+- `POST /api/admin/stop-impersonation` - Stop impersonation session
+
+### Admin AI Usage Endpoints (`/api/admin/ai-usage`)
+- `GET /api/admin/ai-usage/stats` - Get AI usage statistics
+- `GET /api/admin/ai-usage/by-user` - Get usage breakdown by user
+- `GET /api/admin/ai-usage/by-operation` - Get usage breakdown by operation type
+- `GET /api/admin/ai-usage/timeline` - Get usage timeline data
+- `GET /api/admin/ai-usage/logs` - Get paginated usage logs
+- `DELETE /api/admin/ai-usage/logs` - Delete all usage logs (admin only)
+
+### User Activity Endpoints (`/api/user-activities`)
+- `GET /api/user-activities` - Get current user's activity log
+- `POST /api/user-activities` - Log a user activity
 
 ### CV History Endpoints (`/api/cvs/{cv_id}/history`)
 - `GET /api/cvs/{cv_id}/history` - Get CV version history
@@ -205,11 +226,12 @@ backend/
 ## Services
 
 ### Authentication Service
-- **Primary**: Clerk JWT token verification with JWKS support
-- **Secondary**: Legacy JWT token generation and validation
-- Password hashing with bcrypt (legacy support)
-- Clerk user synchronization to local database
-- User session management with impersonation support
+- **Primary**: Clerk JWT token verification with JWKS support for production-ready authentication
+- **Secondary**: Legacy JWT token generation and validation for backward compatibility
+- Password hashing with bcrypt (legacy accounts only)
+- Automatic Clerk user synchronization to local database on first request
+- User session management with admin impersonation support
+- Role-based access control (admin/user)
 
 ### CV Service
 - CRUD operations for CV records
@@ -347,7 +369,7 @@ DEBUG=true
 MAX_FILE_SIZE=10485760
 ALLOWED_FILE_TYPES=application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document
 CV_PARSE_WORKERS=2
-CORS_ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173
+CORS_ALLOW_ORIGINS=http://localhost:3000
 ```
 
 ## Testing
@@ -443,15 +465,20 @@ CORS_ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173
 
 ### Core Dependencies
 - FastAPI 0.104.1 - Web framework
+- uvicorn[standard] 0.24.0 - ASGI server
 - SQLAlchemy 2.0.23 - ORM
 - Alembic 1.12.1 - Database migrations
 - Pydantic 2.3.0 - Data validation
-- OpenAI 1.3.7 - AI integration
+- pydantic-settings 2.0.3 - Settings management
+- OpenAI >=1.68.0 - AI integration (Responses API support)
 - PyMuPDF 1.26.4 - PDF processing
 - python-docx 1.1.0 - DOCX processing
 - Selenium 4.15.0 - Browser automation for web scraping
 - requests 2.31.0 - HTTP client for web scraping
 - beautifulsoup4 4.12.2 - HTML parsing
+- python-jose[cryptography] 3.3.0 - JWT token handling (legacy)
+- passlib[bcrypt] 1.7.4 - Password hashing (legacy)
+- slowapi 0.1.9 - Rate limiting
 
 ### Development Dependencies
 - pytest 7.4.3 - Testing framework

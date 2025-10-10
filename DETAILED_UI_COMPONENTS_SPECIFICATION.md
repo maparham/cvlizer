@@ -200,8 +200,9 @@ This document provides an exhaustive, fine-grained specification of every UI com
 - **App Bar**: Light gray background (#f5f5f5)
 - **Height**: 48px for compact design
 - **Navigation**: Back button with breadcrumb
-- **Actions**: Export, delete, user menu
+- **Actions**: AI Tools shortcut button (before Export), Export, delete, user menu
 - **Typography**: Body2 breadcrumb text
+- **AI Tools Button**: AutoAwesome icon, secondary style, only visible for saved CVs
 
 #### Main Layout
 - **Container**: Full viewport height with flex layout
@@ -844,14 +845,14 @@ This document provides an exhaustive, fine-grained specification of every UI com
 
 ### History Panel (`src/components/cv/HistoryPanel.tsx`)
 
-**Purpose**: Sidebar panel for CV version history management with diff viewer.
+**Purpose**: Sidebar panel for CV version history management with diff viewer using react-diff-viewer-continued.
 
 **Layout Structure**:
-- **Drawer**: Right-side sliding drawer with handle
-- **Header**: Title with close button
-- **History List**: Chronological list of versions
-- **Diff Viewer**: Side-by-side comparison of versions
-- **Actions**: Create, restore, delete versions
+- **Drawer**: Right-side sliding drawer with resizable width
+- **Header**: "Your CV's Evolution" title with history icon and close button
+- **History List**: Chronological list grouped by date
+- **Diff Viewer**: Side-by-side JSON comparison with syntax highlighting
+- **Actions**: Create manual snapshot, restore version, delete version, compare versions
 
 **Visual Elements**:
 

@@ -8,15 +8,17 @@ The CV Lator frontend is a React 18 application built with TypeScript and Materi
 
 ### Technology Stack
 - **Framework**: React 18.2.0 with TypeScript 5.2.2
-- **Build Tool**: Vite 5.0.8
-- **UI Library**: Material-UI (MUI) 5.15.0
+- **Build Tool**: Vite 5.0.8 (dev server on port 3000)
+- **UI Library**: Material-UI (MUI) 5.15.0 with @mui/icons-material 5.15.0
 - **State Management**: React Context + Zustand 4.4.7 (hybrid approach)
 - **Routing**: React Router DOM 6.20.1
-- **Authentication**: Clerk React 5.48.1
-- **Drag & Drop**: @dnd-kit/core, @hello-pangea/dnd
-- **HTTP Client**: Axios 1.6.2
-- **Testing**: Jest 29.7.0, Playwright 1.55.0
-- **Styling**: Emotion (CSS-in-JS)
+- **Authentication**: Clerk React 5.48.1 with JWT token support
+- **Drag & Drop**: @dnd-kit/core 6.1.0, @dnd-kit/sortable 8.0.0, @hello-pangea/dnd 18.0.1
+- **HTTP Client**: Axios 1.6.2 with interceptors
+- **Date Handling**: date-fns 4.1.0, dayjs 1.11.18, @mui/x-date-pickers 8.11.2
+- **Diff Viewer**: react-diff-viewer-continued 3.4.0
+- **Testing**: Jest 29.7.0, Playwright 1.55.0, React Testing Library 14.1.2
+- **Styling**: Emotion (CSS-in-JS) with @emotion/react 11.11.1
 
 ### Project Structure
 ```
@@ -144,15 +146,17 @@ frontend/
 #### CV Editor Page
 - **File**: `src/pages/CVEditor.tsx`
 - **Route**: `/cv/:cvId` and `/cv/new`
-- **Purpose**: Main CV editing interface
+- **Purpose**: Main CV editing interface with PDF-style layout
 - **Features**:
-  - Section-based CV editing
-  - Real-time preview and validation
-  - Auto-save functionality
-  - Export and delete operations
-  - AI Tools shortcut button for quick access
-  - Unsaved changes warning
+  - Section-based CV editing with drag-and-drop reordering
+  - Real-time preview with PDF-style rendering
+  - Auto-save functionality with version history
+  - LaTeX-based PDF export
+  - AI Tools shortcut button for instant access (saved CVs only)
+  - Job description management with browser automation for URL parsing
+  - Unsaved changes warning dialog
   - Navigation with edit state checks
+  - History panel with diff viewer
 
 #### Profile Page
 - **File**: `src/pages/Profile.tsx`
@@ -198,14 +202,20 @@ frontend/
   - Auto-save functionality
 
 #### Job Description Management
-- **File**: `src/components/cv/JobDescriptionManager.tsx`
-- **Purpose**: Job description input and management
+- **Files**: 
+  - `src/components/cv/ai/JobDescriptionsModal.tsx` - Main modal for managing job descriptions
+  - `src/components/cv/ai/JobDescriptionCard.tsx` - Individual job description cards
+  - `src/components/cv/ai/JobDescriptionSummary.tsx` - Summary display in AI Tools tab
+- **Purpose**: Job description input, parsing, and management
 - **Features**:
-  - Text input for job descriptions
-  - URL-based job posting extraction with browser automation
-  - Support for JavaScript-heavy job sites
+  - Text input for job descriptions (MANUAL tab)
+  - URL-based job posting extraction with Selenium browser automation (URL tab)
+  - Support for JavaScript-heavy job sites (e.g., jobs.wien.gv.at)
+  - Background processing with parsing status indicators
   - Multiple job descriptions per CV
-  - AI-powered matching suggestions
+  - Hide/show job descriptions in sidebar
+  - Job description editing and deletion
+  - AI-powered matching suggestions and content generation
 
 #### AI Section Generator
 - **File**: `src/components/cv/AISectionGenerator.tsx`
@@ -283,13 +293,15 @@ frontend/
 #### PDFCVEditor (`src/components/cv/PDFCVEditor.tsx`)
 - **Purpose**: Main CV editing interface with PDF-like layout
 - **Features**:
-  - Section management sidebar with tab navigation
-  - PDF-style content area
-  - Drag and drop functionality
-  - AI Tools tab integration
+  - Section management sidebar with tab navigation (Sections / AI Tools)
+  - PDF-style content area with A4 dimensions
+  - Drag and drop functionality for section reordering (@dnd-kit)
+  - AI Tools tab for job descriptions and AI suggestions
+  - History panel with diff viewer (react-diff-viewer-continued)
   - External tab state management
-  - Unsaved changes detection
+  - Unsaved changes detection and warning dialog
   - Integration with CV editor context
+  - LocalizationProvider for date pickers
 
 #### Section Management
 - **SectionManagerSidebar**: Section reordering and visibility controls with tab navigation
@@ -457,7 +469,7 @@ interface PaginatedResponse<T> {
 
 ### Development
 - **Dev Server**: Vite dev server with HMR
-- **Port**: 5173 (default)
+- **Port**: 3000 (configured in vite.config.ts)
 - **Hot Reload**: Automatic reload on changes
 - **Source Maps**: Full source map support
 

@@ -6,12 +6,12 @@ A comprehensive web application that helps job seekers optimize their CVs using 
 
 ### Core Functionality
 - **CV Upload & Parsing**: Upload PDF, DOC, or DOCX files and extract structured data using AI
-- **User Authentication**: Secure JWT-based authentication with refresh tokens
+- **User Authentication**: Clerk-based authentication with JWT token verification (legacy JWT also supported)
 - **CV Editing**: Interactive editor with drag-and-drop reordering and inline editing
-- **Job Description Integration**: Add job descriptions via text input or URL
+- **Job Description Integration**: Add job descriptions via text input or URL with browser automation support
 - **AI-Enhanced Sections**: Generate tailored "Why I'm a Good Fit" sections using OpenAI
-- **Real-time Preview**: Live preview of CV changes
-- **Auto-save**: Automatic saving of changes to the database
+- **Real-time Preview**: Live preview of CV changes in PDF-style layout
+- **Auto-save**: Automatic saving of changes with version history
 
 ### Technical Features
 - **Backend**: FastAPI with SQLAlchemy ORM
@@ -175,10 +175,11 @@ Once the backend is running, visit:
 ### Key Endpoints
 
 #### Authentication
-- `POST /auth/register` - User registration
-- `POST /auth/login` - User login
-- `POST /auth/refresh` - Refresh JWT token
+- `POST /auth/register` - Legacy user registration (Clerk is primary)
+- `POST /auth/login` - Legacy user login (Clerk is primary)
+- `POST /auth/refresh` - Refresh JWT token (legacy)
 - `POST /auth/logout` - User logout
+- `GET /auth/me` - Get current user info (works with both Clerk and legacy JWT)
 
 #### CV Management
 - `POST /api/cvs/` - Upload CV file
@@ -246,13 +247,15 @@ frontend/
 
 ## 🔒 Security Features
 
-- JWT-based authentication with refresh tokens
-- Password hashing with bcrypt
+- Clerk authentication with JWT token verification (JWKS support)
+- Legacy JWT authentication with refresh tokens (backward compatibility)
+- Password hashing with bcrypt (legacy accounts)
 - File type validation and size limits
 - CORS configuration
 - Input validation and sanitization
 - SQL injection prevention via ORM
 - XSS protection
+- Admin impersonation with audit logging
 
 ## 📊 Performance
 
