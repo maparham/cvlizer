@@ -119,6 +119,12 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
 
   // Load the latest AI enhancement from backend (for page refresh persistence)
   loadLatestAIEnhancement: async (cvId: string) => {
+    // Skip loading for temporary CVs (not yet saved to backend)
+    if (cvId.startsWith('temp-')) {
+      Logger.debug('Skipping AI enhancement load for temporary CV', { cvId });
+      return;
+    }
+
     try {
       const enhancement = await aiService.getLatestAIEnhancement(cvId);
 

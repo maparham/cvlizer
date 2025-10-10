@@ -47,6 +47,14 @@ import { migrateCVIfNeeded } from '../utils/cvDataMigration'
 const DEFAULT_CV_FILENAME = 'New CV'
 const TEMP_CV_ID_PREFIX = 'temp-'
 
+/**
+ * Check if a CV ID is temporary (not yet saved to backend)
+ * Temporary CVs have IDs that start with 'temp-'
+ */
+export const isTempCVId = (cvId: string | undefined): boolean => {
+  return cvId ? cvId.startsWith(TEMP_CV_ID_PREFIX) : false
+}
+
 // Default CV structure for new CVs - only includes sections that can be empty
 export const DEFAULT_CV_DATA: CVData = {
   personal_info: {

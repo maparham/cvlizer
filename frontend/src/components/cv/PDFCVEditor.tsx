@@ -28,6 +28,7 @@ import {
 import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from './index'
 import { useAIStore } from '../../stores/aiStore'
 import { useAISuggestionsStore } from '../../stores/aiSuggestionsStore'
+import { isTempCVId } from '../../stores/cvStore'
 import { CVData } from '../../types/cv'
 
 interface PDFCVEditorProps {
@@ -65,10 +66,13 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
       // Clear suggestions first to prevent showing wrong CV's suggestions
       clearAllSuggestions()
 
-      // Then load data for the new CV
-      loadJobDescriptions(cvId)
-      getCVDrafts(cvId)
-      loadLatestAIEnhancement(cvId)
+      // Skip loading AI data for temporary CVs (not yet saved to backend)
+      if (!isTempCVId(cvId)) {
+        // Then load data for the new CV
+        loadJobDescriptions(cvId)
+        getCVDrafts(cvId)
+        loadLatestAIEnhancement(cvId)
+      }
     }
   }, [cvId, loadJobDescriptions, getCVDrafts, loadLatestAIEnhancement, clearAllSuggestions])
   

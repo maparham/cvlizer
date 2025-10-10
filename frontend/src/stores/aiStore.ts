@@ -216,6 +216,12 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       // Draft management actions
 
       getCVDrafts: async (cvId: string) => {
+        // Skip loading for temporary CVs (not yet saved to backend)
+        if (cvId.startsWith('temp-')) {
+          Logger.debug('Skipping drafts load for temporary CV', { cvId });
+          return [];
+        }
+
         set((state) => ({
           drafts: { ...state.drafts, isLoading: true, error: undefined },
         }));
@@ -385,6 +391,12 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
 
       // Job description actions
       loadJobDescriptions: async (cvId: string) => {
+        // Skip loading for temporary CVs (not yet saved to backend)
+        if (cvId.startsWith('temp-')) {
+          Logger.debug('Skipping job descriptions load for temporary CV', { cvId });
+          return;
+        }
+
         try {
           const jobDescriptions = await aiService.getJobDescriptions(cvId);
 
