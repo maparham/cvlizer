@@ -268,10 +268,10 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
         />
 
         {/* History Panel */}
-        {cvId && <ConnectedHistoryPanel cvId={cvId} />}
+        {import.meta.env.VITE_SHOW_HISTORY_PANEL === 'true' && cvId && <ConnectedHistoryPanel cvId={cvId} />}
         
         {/* History Panel Handle - Always visible when panel is closed */}
-        {cvId && <ConnectedHistoryPanelHandle cvId={cvId} />}
+        {import.meta.env.VITE_SHOW_HISTORY_PANEL === 'true' && cvId && <ConnectedHistoryPanelHandle cvId={cvId} />}
 
         </Box>
       </InlineDiffProvider>
