@@ -16,15 +16,15 @@
  * 8. Multiple sections can be managed in sequence
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 // Authentication handled by global-setup.ts
 async function setupCV(page: Page): Promise<string> {
   await page.goto('/', { waitUntil: 'load' });
-  
-  // Wait for auth state to be processed
-  await page.waitForTimeout(200);
-  
+
+  // Wait for navigation and auth state to complete
+  await page.waitForLoadState('networkidle');
+
   // Admin users are redirected to /admin, so navigate to dashboard if needed
   const url = page.url();
   if (url.includes('/admin')) {
@@ -63,8 +63,12 @@ test.describe('CV Editor - Section Management', () => {
   let cvId: string;
   let testPage: any;
 
-  test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext({ storageState: 'tests/e2e/.auth/user.json' });
+  test.beforeAll(async ({ browser }, testInfo) => {
+    // Determine which user auth to use based on project name
+    const isUser2 = testInfo.project.name.includes('user2');
+    const authFile = isUser2 ? 'tests/e2e/.auth/user2.json' : 'tests/e2e/.auth/user1.json';
+    
+    const context = await browser.newContext({ storageState: authFile });
     testPage = await context.newPage();
     cvId = await setupCV(testPage);
     console.log(`✓ Created test CV: ${cvId} (will be reused for all section tests)`);
@@ -165,11 +169,8 @@ test.describe('CV Editor - Section Management', () => {
     
     // Click hide button for Education section
     await page.getByTestId('hide-section-education-button').click();
-    
-    // Wait for hide action to complete and any async updates
-    await page.waitForTimeout(1000);
-    
-    // Verify section is hidden (actually deleted since it's empty)
+
+    // Verify section is hidden (wait implicitly handles async updates)
     await expect(educationHeading).not.toBeVisible({ timeout: 3000 });
     
     // Ensure page is still stable
@@ -185,11 +186,8 @@ test.describe('CV Editor - Section Management', () => {
     
     // Re-add the section using the add button
     await page.getByTestId('add-section-education-button').click();
-    
-    // Wait for add action to complete
-    await page.waitForTimeout(500);
-    
-    // Verify section is now visible again
+
+    // Verify section is now visible again (wait implicitly handles add action)
     await expect(educationHeading).toBeVisible({ timeout: 3000 });
   });
 

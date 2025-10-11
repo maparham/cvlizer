@@ -9,11 +9,11 @@
  * 5. Deleting the created CV
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { TEST_TIMEOUT, VALIDATION_WAIT, DASHBOARD_REFRESH_TIMEOUT } from './test-constants';
 
 test.describe('Create and Delete CV Workflow', () => {
-  test('should create a minimal CV and then delete it', async ({ page }) => {
+  test('should create a minimal CV and then delete it', async ({ page, testUser }) => {
     // Authentication handled by global-setup.ts - user already logged in
     // Navigate to root (admin users redirect to /admin, then go to dashboard)
     await page.goto('/');
@@ -38,10 +38,21 @@ test.describe('Create and Delete CV Workflow', () => {
     // Step 7: Edit Personal Information section
     await page.getByTestId('edit-section-personal_info-button').click();
 
+    // Wait for form to render by checking for first input
+    const nameInput = page.getByTestId('personal-info-full-name-input').locator('input');
+    await expect(nameInput).toBeVisible({ timeout: TEST_TIMEOUT });
+
     // Fill in all required personal information fields
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill('John Smith');
-    await page.getByTestId('personal-info-email-input').locator('input').fill('john.smith@example.com');
+    await nameInput.click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(testUser.displayName);
+    
+    await page.getByTestId('personal-info-email-input').locator('input').click();
+    await page.getByTestId('personal-info-email-input').locator('input').fill(testUser.email);
+    
+    await page.getByTestId('personal-info-phone-input').locator('input').click();
     await page.getByTestId('personal-info-phone-input').locator('input').fill('+1 234 567 8900');
+    
+    await page.getByRole('combobox', { name: /location/i }).click();
     await page.getByRole('combobox', { name: /location/i }).fill('New York, NY');
     await page.keyboard.press('Tab'); // Close autocomplete
     await page.waitForTimeout(VALIDATION_WAIT);
@@ -71,9 +82,10 @@ test.describe('Create and Delete CV Workflow', () => {
     const summaryText = 'Experienced professional with a strong track record in delivering high-quality results. Passionate about continuous learning and applying innovative solutions to complex challenges.';
     await page.getByRole('textbox', { name: /your professional summary/i }).fill(summaryText);
 
-    // Save professional summary - click the save icon button
-    await page.waitForTimeout(500);
-    await page.locator('button:has(svg[data-testid="SaveIcon"])').first().click();
+    // Save professional summary - wait for save button to be enabled
+    const summaryButton = page.locator('button:has(svg[data-testid="SaveIcon"])').first();
+    await expect(summaryButton).toBeEnabled({ timeout: TEST_TIMEOUT });
+    await summaryButton.click();
 
     // Wait for success message
     await expect(page.getByText(/professional summary saved/i)).toBeVisible({ timeout: TEST_TIMEOUT });

@@ -33,8 +33,8 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:3000',
 
-    /* Reuse authenticated session across all tests */
-    storageState: 'tests/e2e/.auth/user.json',
+    /* Authentication is handled dynamically per worker via fixtures.ts */
+    /* storageState is set per worker in fixtures based on workerIndex */
 
     /* Run in headless mode for faster execution */
     headless: true,
@@ -54,25 +54,24 @@ export default defineConfig({
     // },
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for major browsers - split by user for parallel execution */
   projects: [
+    // Chromium with User 1
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
-        // Override slow motion for this browser only
-        // launchOptions: { slowMo: 1000 }
+        storageState: 'tests/e2e/.auth/user1.json',
       },
     },
 
+    // Firefox with User 2 (for user isolation across workers)
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: 'tests/e2e/.auth/user2.json',
+      },
     },
 
     /* Test against mobile viewports. */

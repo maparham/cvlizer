@@ -15,11 +15,11 @@
  * 8. Empty state when no results
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 import { TEST_TIMEOUT, VALIDATION_WAIT, DASHBOARD_REFRESH_TIMEOUT } from './test-constants';
 
 // Authentication handled by global-setup.ts
-async function setupDashboardWithMultipleCVs(page: Page): Promise<string[]> {
+async function setupDashboardWithMultipleCVs(page: Page, userDisplayName: string, userEmail: string): Promise<string[]> {
   await page.goto('/', { waitUntil: 'load' });
   
   // Wait a bit for auth state to be processed
@@ -49,8 +49,15 @@ async function setupDashboardWithMultipleCVs(page: Page): Promise<string[]> {
     
     // Add different content to each CV
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill(`Test User ${i + 1}`);
-    await page.getByTestId('personal-info-email-input').locator('input').fill(`testuser${i + 1}@example.com`);
+    await page.waitForTimeout(200); // Wait for form to render
+    
+    await page.getByTestId('personal-info-full-name-input').locator('input').click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(`${userDisplayName} CV${i + 1}`);
+    
+    await page.getByTestId('personal-info-email-input').locator('input').click();
+    await page.getByTestId('personal-info-email-input').locator('input').fill(userEmail);
+    
+    await page.getByRole('combobox', { name: 'Location' }).click();
     await page.getByRole('combobox', { name: 'Location' }).fill('San Francisco, CA');
     await page.keyboard.press('Tab');
     await page.waitForTimeout(VALIDATION_WAIT);
@@ -89,11 +96,24 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Dashboard - Search and Filter', () => {
   let cvIds: string[] = [];
   let testPage: any;
+  let currentTestUser: any;
 
-  test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext({ storageState: 'tests/e2e/.auth/user.json' });
+  test.beforeAll(async ({ browser }, testInfo) => {
+    // Determine which user auth to use based on project name
+    const isUser2 = testInfo.project.name.includes('user2');
+    const authFile = isUser2 ? 'tests/e2e/.auth/user2.json' : 'tests/e2e/.auth/user1.json';
+    
+    const context = await browser.newContext({ storageState: authFile });
     testPage = await context.newPage();
-    cvIds = await setupDashboardWithMultipleCVs(testPage);
+    
+    // Store user info for tests
+    currentTestUser = {
+      displayName: `Test User${isUser2 ? '2' : '1'}`,
+      email: isUser2 ? 'mahmoud.shahrood+testuser2@gmail.com' : 'mahmoud.shahrood+testuser1@gmail.com',
+      userNumber: isUser2 ? 2 : 1
+    };
+    
+    cvIds = await setupDashboardWithMultipleCVs(testPage, currentTestUser.displayName, currentTestUser.email);
     console.log(`✓ Created ${cvIds.length} test CVs for search/filter testing`);
   });
 
@@ -105,12 +125,12 @@ test.describe('Dashboard - Search and Filter', () => {
   test('1. Search CVs by name finds matching results', async () => {
     const page = testPage;
     
-    // Search for "Test User 1"
+    // Search for user's CVs (e.g., "Test User1 CV1")
     const searchInput = page.getByTestId('search-cvs-input');
     if (await searchInput.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await searchInput.locator('input').fill('Test User 1');
+      await searchInput.locator('input').fill(`${currentTestUser.displayName} CV1`);
       
-      // Should show CVs containing "Test User 1"
+      // Should show CVs containing the user's name
       // Wait for search to filter results
       await page.waitForTimeout(500);
       

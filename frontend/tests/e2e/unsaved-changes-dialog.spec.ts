@@ -19,15 +19,15 @@
  * 7. Escape key with changes
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 // Helper function to navigate to CV editor using existing auth
 async function setupTest(page: Page): Promise<string> {
   // Navigate to home page (authentication handled by global setup)
   await page.goto('/', { waitUntil: 'load' });
 
-  // Wait for auth state to be processed
-  await page.waitForTimeout(200);
+  // Wait for navigation to complete (either to dashboard or admin)
+  await page.waitForLoadState('networkidle');
 
   // Admin users are redirected to /admin, navigate to dashboard if needed
   const url = page.url();
@@ -69,22 +69,26 @@ async function setupTest(page: Page): Promise<string> {
   if (!hasEducation) {
     // New CV - need to add sections
     // Add Education section
+    await page.getByTestId('add-section-education-button').scrollIntoViewIfNeeded();
     await page.getByTestId('add-section-education-button').click();
     await expect(educationHeading).toBeVisible({ timeout: 5000 });
     
     // Add a sample Education item
     await page.getByTestId('add-new-education-button').click();
-    
-    // Fill Institution first (required)
+
+    // Wait for form dialog to render by checking for the first required field
     const institutionInput = page.getByRole('textbox', { name: 'Institution *' });
-    await expect(institutionInput).toBeVisible();
+    await expect(institutionInput).toBeVisible({ timeout: 10000 });
+    await institutionInput.click();
     await institutionInput.fill('Stanford University');
     
     // Fill Degree (required) - it's a combobox
+    await page.getByRole('combobox', { name: 'Degree' }).click();
     await page.getByRole('combobox', { name: 'Degree' }).fill('PhD');
     await page.keyboard.press('Tab');
     
     // Fill Field of Study
+    await page.getByRole('textbox', { name: 'Field of Study' }).click();
     await page.getByRole('textbox', { name: 'Field of Study' }).fill('Computer Science');
     
     // Fill Start Date (required)
@@ -108,18 +112,21 @@ async function setupTest(page: Page): Promise<string> {
   
   if (!hasExperience) {
     // Add Work Experience section
+    await page.getByTestId('add-section-work_experience-button').scrollIntoViewIfNeeded();
     await page.getByTestId('add-section-work_experience-button').click();
     await expect(experienceHeading).toBeVisible({ timeout: 5000 });
     
     // Add a sample Work Experience item
     await page.getByTestId('add-new-work-experience-button').click();
-    
-    // Fill Company (required)
+
+    // Wait for form dialog to render by checking for the first required field
     const companyInput = page.getByRole('textbox', { name: 'Company *' });
     await expect(companyInput).toBeVisible();
+    await companyInput.click();
     await companyInput.fill('Google Inc');
     
     // Fill Position (optional)
+    await page.getByRole('combobox', { name: 'Position' }).click();
     await page.getByRole('combobox', { name: 'Position' }).fill('Software Engineer');
     await page.keyboard.press('Tab');
     
@@ -205,9 +212,13 @@ test.describe('Unsaved Changes Dialog - CV Editor', () => {
   let testPage: any; // Reuse the same page for all tests
 
   // Create CV once for all tests
-  test.beforeAll(async ({ browser }) => {
-    // Create a persistent context and page
-    const context = await browser.newContext();
+  test.beforeAll(async ({ browser }, testInfo) => {
+    // Determine which user auth to use based on project name
+    const isUser2 = testInfo.project.name.includes('user2');
+    const authFile = isUser2 ? 'tests/e2e/.auth/user2.json' : 'tests/e2e/.auth/user1.json';
+    
+    // Create a persistent context and page with auth
+    const context = await browser.newContext({ storageState: authFile });
     testPage = await context.newPage();
     
     // Run setup to create CV - this leaves us on the CV editor page

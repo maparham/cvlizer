@@ -73,7 +73,7 @@ def sync_clerk_user_to_local_db(
                 user.updated_at = datetime.utcnow()
                 db.commit()
                 db.refresh(user)
-                logger.info(f"Updated existing user {clerk_user_id} in local database")
+                logger.debug(f"Updated existing user {clerk_user_id} in local database")
             
             return user
         

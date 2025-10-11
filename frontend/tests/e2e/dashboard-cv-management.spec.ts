@@ -16,17 +16,17 @@
  * 9. Multiple CVs can be managed
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 import { TEST_TIMEOUT, VALIDATION_WAIT, EXTERNAL_SERVICE_TIMEOUT } from './test-constants';
 
 // Authentication is handled by global-setup.ts
 // Tests start with user already logged in via storageState
 async function navigateToDashboard(page: Page): Promise<void> {
   await page.goto('/', { waitUntil: 'load' });
-  
-  // Wait a bit for auth state to be processed
-  await page.waitForTimeout(200);
-  
+
+  // Wait for navigation and auth state to complete
+  await page.waitForLoadState('networkidle');
+
   // Admin users are redirected to /admin, so navigate to dashboard if needed
   const url = page.url();
   if (url.includes('/admin')) {
@@ -45,10 +45,23 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Dashboard - CV Management', () => {
   let testPage: any;
   let createdCVIds: string[] = [];
+  let currentTestUser: any;
 
-  test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext({ storageState: 'tests/e2e/.auth/user.json' });
+  test.beforeAll(async ({ browser }, testInfo) => {
+    // Determine which user auth to use based on project name
+    const isUser2 = testInfo.project.name.includes('user2');
+    const authFile = isUser2 ? 'tests/e2e/.auth/user2.json' : 'tests/e2e/.auth/user1.json';
+    
+    const context = await browser.newContext({ storageState: authFile });
     testPage = await context.newPage();
+    
+    // Store user info for tests
+    currentTestUser = {
+      displayName: `Test User${isUser2 ? '2' : '1'}`,
+      email: isUser2 ? 'mahmoud.shahrood+testuser2@gmail.com' : 'mahmoud.shahrood+testuser1@gmail.com',
+      userNumber: isUser2 ? 2 : 1
+    };
+    
     await navigateToDashboard(testPage);
     console.log(`✓ Navigated to dashboard`);
   });
@@ -73,8 +86,18 @@ test.describe('Dashboard - CV Management', () => {
     
     // Save personal info to convert temp CV to real CV with UUID
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill('Test User');
-    await page.getByTestId('personal-info-email-input').locator('input').fill('test@example.com');
+
+    // Wait for form to render
+    const nameInput = page.getByTestId('personal-info-full-name-input').locator('input');
+    await expect(nameInput).toBeVisible({ timeout: 5000 });
+
+    await nameInput.click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(currentTestUser.displayName);
+    
+    await page.getByTestId('personal-info-email-input').locator('input').click();
+    await page.getByTestId('personal-info-email-input').locator('input').fill(currentTestUser.email);
+    
+    await page.getByRole('combobox', { name: 'Location' }).click();
     await page.getByRole('combobox', { name: 'Location' }).fill('Seattle, WA');
     await page.keyboard.press('Tab'); // Close autocomplete
     await page.waitForTimeout(VALIDATION_WAIT); // Wait for validation
@@ -182,7 +205,8 @@ test.describe('Dashboard - CV Management', () => {
     await page.waitForTimeout(VALIDATION_WAIT);
     
     const saveButton = page.locator('button:has(svg[data-testid="SaveIcon"])').first();
-    await expect(saveButton).toBeEnabled({ timeout: TEST_TIMEOUT });
+    // Wait longer for validation to complete and save button to become enabled
+    await expect(saveButton).toBeEnabled({ timeout: 10000 });
     
     const tempCvId = page.url().split('/cv/')[1];
     await saveButton.click();
@@ -292,7 +316,8 @@ test.describe('Dashboard - CV Management', () => {
           const confirmButton = testPage.getByRole('dialog').getByRole('button', { name: /delete/i });
           await expect(confirmButton).toBeVisible({ timeout: 2000 });
           await confirmButton.click();
-          await testPage.waitForTimeout(500); // Brief pause between deletions
+          // Wait for dialog to close
+          await expect(confirmButton).not.toBeVisible({ timeout: 2000 });
           console.log(`✓ Deleted CV: ${cvId}`);
         }
       }

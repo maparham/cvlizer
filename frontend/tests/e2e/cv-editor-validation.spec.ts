@@ -17,15 +17,15 @@
  * 10. Validation errors clear when fixed
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 // Authentication handled by global-setup.ts
 async function setupCVForValidation(page: Page): Promise<string> {
   await page.goto('/', { waitUntil: 'load' });
-  
-  // Wait for auth state to be processed
-  await page.waitForTimeout(200);
-  
+
+  // Wait for navigation and auth state to complete
+  await page.waitForLoadState('networkidle');
+
   // Admin users are redirected to /admin, so navigate to dashboard if needed
   const url = page.url();
   if (url.includes('/admin')) {
@@ -52,15 +52,24 @@ async function setupCVForValidation(page: Page): Promise<string> {
   await expect(page.getByRole('heading', { name: 'Personal Information' })).toBeVisible({ timeout: 5000 });
   
   // Add Education and Work Experience sections
+  await page.getByTestId('add-section-education-button').scrollIntoViewIfNeeded();
   await page.getByTestId('add-section-education-button').click();
   await expect(page.getByRole('heading', { name: 'Education' })).toBeVisible({ timeout: 5000 });
-  
+
+  // Small delay for DOM to stabilize after Education section addition
+  await page.waitForTimeout(1000);
+
+  // Add Work Experience section
+  await page.getByTestId('add-section-work_experience-button').scrollIntoViewIfNeeded();
   await page.getByTestId('add-section-work_experience-button').click();
   await expect(page.getByRole('heading', { name: 'Work Experience' })).toBeVisible({ timeout: 5000 });
   
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.evaluate(() => console.clear());
-  
+
+  // Wait briefly for scroll to complete
+  await page.waitForTimeout(500);
+
   return cvId;
 }
 
@@ -70,8 +79,12 @@ test.describe('CV Editor - Form Validation', () => {
   let cvId: string;
   let testPage: any;
 
-  test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext({ storageState: 'tests/e2e/.auth/user.json' });
+  test.beforeAll(async ({ browser }, testInfo) => {
+    // Determine which user auth to use based on project name
+    const isUser2 = testInfo.project.name.includes('user2');
+    const authFile = isUser2 ? 'tests/e2e/.auth/user2.json' : 'tests/e2e/.auth/user1.json';
+    
+    const context = await browser.newContext({ storageState: authFile });
     testPage = await context.newPage();
     cvId = await setupCVForValidation(testPage);
     console.log(`✓ Created test CV for validation: ${cvId}`);
@@ -86,25 +99,22 @@ test.describe('CV Editor - Form Validation', () => {
   test.afterEach(async () => {
     // Smart cleanup: close forms and handle unsaved changes dialog
     try {
-      // Wait a bit for any closing animations from test to complete
-      await testPage.waitForTimeout(300);
-
       // Check for open Education/Work Experience form (dialog with save button)
       const saveButton = testPage.locator('[data-testid="save-education-button"], [data-testid="save-work-experience-button"]').first();
       const isDialogFormOpen = await saveButton.isVisible({ timeout: 500 }).catch(() => false);
 
       if (isDialogFormOpen) {
         await testPage.keyboard.press('Escape');
-        await testPage.waitForTimeout(300);
 
-        // Check if unsaved changes dialog appeared
+        // Wait for unsaved changes dialog to potentially appear
         const discardButton = testPage.getByRole('button', { name: /discard changes/i });
         const hasUnsavedDialog = await discardButton.isVisible({ timeout: 500 }).catch(() => false);
 
         if (hasUnsavedDialog) {
           // Discard changes to close the dialog and proceed with tests
           await discardButton.click();
-          await testPage.waitForTimeout(300);
+          // Wait for dialog to close
+          await expect(discardButton).not.toBeVisible({ timeout: 1000 });
         }
       } else {
         // Only check for Personal Info editing if no dialog form was open
@@ -115,16 +125,16 @@ test.describe('CV Editor - Form Validation', () => {
         if (isPersonalInfoOpen) {
           // Close Personal Info section by clicking Cancel editing button
           await cancelEditingButton.click();
-          await testPage.waitForTimeout(300);
 
-          // Check if unsaved changes dialog appeared
+          // Wait for unsaved changes dialog to potentially appear
           const discardButton = testPage.getByRole('button', { name: /discard changes/i });
           const hasUnsavedDialog = await discardButton.isVisible({ timeout: 500 }).catch(() => false);
 
           if (hasUnsavedDialog) {
             // Discard changes to close the dialog and proceed with tests
             await discardButton.click();
-            await testPage.waitForTimeout(300);
+            // Wait for dialog to close
+            await expect(discardButton).not.toBeVisible({ timeout: 1000 });
           }
         }
       }
@@ -134,7 +144,7 @@ test.describe('CV Editor - Form Validation', () => {
       if (!currentUrl.includes('/cv/')) {
         console.warn('⚠ Page navigated away from CV editor, returning...');
         await testPage.goto(currentUrl.includes('/cv/') ? currentUrl : `/cv/${cvId}`);
-        await testPage.waitForTimeout(500);
+        await testPage.waitForLoadState('domcontentloaded');
       }
     } catch (error) {
       console.log('Cleanup (non-fatal):', error.message);
@@ -143,34 +153,43 @@ test.describe('CV Editor - Form Validation', () => {
 
   test('1. Education: Institution field is required', async () => {
     const page = testPage;
-    
+
+    // Click add button and wait for dialog to open
     await page.getByTestId('add-new-education-button').click();
-    
+
+    // Wait for dialog by checking for a form field (not the save button which might be outside viewport)
+    const degreeField = page.getByRole('combobox', { name: 'Degree' });
+    await expect(degreeField).toBeVisible({ timeout: 5000 });
+
     // Fill everything except Institution
-    await page.getByRole('combobox', { name: 'Degree' }).fill('PhD');
+    await degreeField.fill('PhD');
     await page.keyboard.press('Tab');
     await page.getByRole('textbox', { name: 'Field of Study' }).fill('Computer Science');
-    
+
     const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
     await startDateGroup.getByLabel('Day').fill('01');
     await startDateGroup.getByLabel('Month').fill('09');
     await startDateGroup.getByLabel('Year').fill('2020');
-    
-    // Save button should be disabled or show validation error
+
+    // Save button should be disabled (Institution is required but missing)
     const saveButton = page.getByTestId('save-education-button');
-    await expect(saveButton).toBeDisabled();
+    await expect(saveButton).toBeDisabled({ timeout: 3000 });
 
     // Form will be closed by afterEach cleanup
   });
 
   test('2. Education: Start Date is required', async () => {
     const page = testPage;
-    
+
     await page.getByTestId('add-new-education-button').click();
-    
+
+    // Wait for form to open
+    const institutionField = page.getByRole('textbox', { name: 'Institution *' });
+    await expect(institutionField).toBeVisible({ timeout: 3000 });
+
     // Fill required Institution but not Start Date
-    await page.getByRole('textbox', { name: 'Institution *' }).fill('Stanford University');
-    
+    await institutionField.fill('Stanford University');
+
     // Save button should be disabled
     const saveButton = page.getByTestId('save-education-button');
     await expect(saveButton).toBeDisabled();
@@ -180,10 +199,14 @@ test.describe('CV Editor - Form Validation', () => {
 
   test('3. Education: End Date must be after Start Date', async () => {
     const page = testPage;
-    
+
     await page.getByTestId('add-new-education-button').click();
-    
-    await page.getByRole('textbox', { name: 'Institution *' }).fill('MIT');
+
+    // Wait for form to open
+    const institutionField = page.getByRole('textbox', { name: 'Institution *' });
+    await expect(institutionField).toBeVisible({ timeout: 3000 });
+
+    await institutionField.fill('MIT');
     
     // Set Start Date to 2022
     const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
@@ -210,12 +233,16 @@ test.describe('CV Editor - Form Validation', () => {
 
   test('4. Work Experience: Company field is required', async () => {
     const page = testPage;
-    
+
     await page.getByRole('heading', { name: 'Work Experience' }).scrollIntoViewIfNeeded();
     await page.getByTestId('add-new-work-experience-button').click();
-    
+
+    // Wait for form to open
+    const positionField = page.getByRole('combobox', { name: 'Position' });
+    await expect(positionField).toBeVisible({ timeout: 3000 });
+
     // Fill position but not company
-    await page.getByRole('combobox', { name: 'Position' }).fill('Software Engineer');
+    await positionField.fill('Software Engineer');
     await page.keyboard.press('Tab');
     
     const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
@@ -232,11 +259,15 @@ test.describe('CV Editor - Form Validation', () => {
 
   test('5. Work Experience: Start Date is required', async () => {
     const page = testPage;
-    
+
     await page.getByTestId('add-new-work-experience-button').click();
-    
+
+    // Wait for form to open
+    const companyField = page.getByRole('textbox', { name: 'Company *' });
+    await expect(companyField).toBeVisible({ timeout: 3000 });
+
     // Fill company but not start date
-    await page.getByRole('textbox', { name: 'Company *' }).fill('Apple Inc');
+    await companyField.fill('Apple Inc');
     
     const saveButton = page.getByTestId('save-work-experience-button');
     await expect(saveButton).toBeDisabled();
@@ -246,10 +277,14 @@ test.describe('CV Editor - Form Validation', () => {
 
   test('6. Work Experience: Date order validation', async () => {
     const page = testPage;
-    
+
     await page.getByTestId('add-new-work-experience-button').click();
-    
-    await page.getByRole('textbox', { name: 'Company *' }).fill('Microsoft');
+
+    // Wait for form to open
+    const companyField = page.getByRole('textbox', { name: 'Company *' });
+    await expect(companyField).toBeVisible({ timeout: 3000 });
+
+    await companyField.fill('Microsoft');
     
     // Start date: 2023
     const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
@@ -285,8 +320,8 @@ test.describe('CV Editor - Form Validation', () => {
     await emailInput.clear();
     await emailInput.fill('invalid-email-format');
 
-    // Wait a moment for validation
-    await page.waitForTimeout(500);
+    // Trigger validation by blurring the field
+    await emailInput.blur();
 
     // Check if there's any validation indication
     // Could be inline error, or save button remains disabled
@@ -310,8 +345,8 @@ test.describe('CV Editor - Form Validation', () => {
     await phoneInput.clear();
     await phoneInput.fill('abc123');
 
-    // Wait for validation
-    await page.waitForTimeout(500);
+    // Trigger validation by blurring the field
+    await phoneInput.blur();
 
     // System may auto-format input or show validation error
     // Either behavior is acceptable - we've tested the input can receive invalid data
@@ -327,7 +362,11 @@ test.describe('CV Editor - Form Validation', () => {
     await page.getByRole('heading', { name: 'Education' }).scrollIntoViewIfNeeded();
     await page.getByTestId('add-new-education-button').click();
 
-    await page.getByRole('textbox', { name: 'Institution *' }).fill('Test University');
+    // Wait for form to open
+    const institutionField = page.getByRole('textbox', { name: 'Institution *' });
+    await expect(institutionField).toBeVisible({ timeout: 3000 });
+
+    await institutionField.fill('Test University');
 
     const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
     await startDateGroup.getByLabel('Day').fill('01');
@@ -340,9 +379,7 @@ test.describe('CV Editor - Form Validation', () => {
     await endDateGroup.getByLabel('Day').fill('01');
     await endDateGroup.getByLabel('Month').fill('01');
     await endYearInput.fill('2020');
-
-    // Wait for validation
-    await page.waitForTimeout(500);
+    await endYearInput.blur(); // Trigger validation
 
     // Save button should be disabled due to date order error
     const saveButton = page.getByTestId('save-education-button');
@@ -353,11 +390,7 @@ test.describe('CV Editor - Form Validation', () => {
     await endYearInput.fill('2024');
     await endYearInput.blur(); // Trigger validation
 
-    // Wait for validation to complete
-    await page.waitForTimeout(800);
-
-    // Now try to save - button should be enabled
-    // Use waitFor with enabled state
+    // Wait for save button to become enabled (validation passed)
     await saveButton.waitFor({ state: 'visible', timeout: 2000 });
 
     // Click if enabled, otherwise skip (some systems may still validate)

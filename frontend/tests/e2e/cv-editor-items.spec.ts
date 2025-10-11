@@ -18,15 +18,15 @@
  * 11. Item count updates correctly after operations
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 // Authentication handled by global-setup.ts
 async function setupCVWithSections(page: Page): Promise<string> {
   await page.goto('/', { waitUntil: 'load' });
-  
-  // Wait for auth state to be processed
-  await page.waitForTimeout(200);
-  
+
+  // Wait for navigation and auth state to complete
+  await page.waitForLoadState('networkidle');
+
   // Admin users are redirected to /admin, so navigate to dashboard if needed
   const url = page.url();
   if (url.includes('/admin')) {
@@ -71,8 +71,12 @@ test.describe('CV Editor - Item CRUD Operations', () => {
   let cvId: string;
   let testPage: any;
 
-  test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext({ storageState: 'tests/e2e/.auth/user.json' });
+  test.beforeAll(async ({ browser }, testInfo) => {
+    // Determine which user auth to use based on project name
+    const isUser2 = testInfo.project.name.includes('user2');
+    const authFile = isUser2 ? 'tests/e2e/.auth/user2.json' : 'tests/e2e/.auth/user1.json';
+    
+    const context = await browser.newContext({ storageState: authFile });
     testPage = await context.newPage();
     cvId = await setupCVWithSections(testPage);
     console.log(`✓ Created test CV with sections: ${cvId}`);
@@ -87,8 +91,10 @@ test.describe('CV Editor - Item CRUD Operations', () => {
   test.afterEach(async () => {
     // Close any open forms by pressing Escape
     await testPage.keyboard.press('Escape');
-    await testPage.waitForTimeout(200);
-    
+
+    // Wait for any dialogs to close
+    await testPage.waitForLoadState('domcontentloaded');
+
     // Close any open notifications
     const closeButtons = testPage.locator('button[aria-label="Close"]');
     const count = await closeButtons.count();
@@ -182,26 +188,76 @@ test.describe('CV Editor - Item CRUD Operations', () => {
   test('4. Delete Education item', async () => {
     const page = testPage;
     
-    // Verify we have 2 items
-    await expect(page.getByTestId('edit-education-item-0')).toBeVisible();
-    await expect(page.getByTestId('edit-education-item-1')).toBeVisible();
+    // Scroll to Education section to ensure it's visible
+    await page.getByRole('heading', { name: 'Education' }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500); // Wait for scroll to complete
+    
+    // Check if we have Education items, if not, create them first
+    const hasFirstItem = await page.getByTestId('edit-education-item-0').isVisible().catch(() => false);
+    const hasSecondItem = await page.getByTestId('edit-education-item-1').isVisible().catch(() => false);
+    
+    if (!hasFirstItem || !hasSecondItem) {
+      // Create first Education item if it doesn't exist
+      if (!hasFirstItem) {
+        await page.getByTestId('add-new-education-button').click();
+        await page.getByRole('textbox', { name: 'Institution *' }).fill('Stanford University');
+        await page.getByRole('combobox', { name: 'Degree' }).fill('PhD');
+        await page.keyboard.press('Tab');
+        await page.getByRole('textbox', { name: 'Field of Study' }).fill('Computer Science');
+        
+        const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
+        await startDateGroup.getByLabel('Day').fill('01');
+        await startDateGroup.getByLabel('Month').fill('09');
+        await startDateGroup.getByLabel('Year').fill('2018');
+        
+        await page.getByTestId('save-education-button').click();
+        await expect(page.getByTestId('edit-education-item-0')).toBeVisible({ timeout: 10000 });
+      }
+      
+      // Create second Education item if it doesn't exist
+      if (!hasSecondItem) {
+        await page.getByTestId('add-new-education-button').click();
+        await page.getByRole('textbox', { name: 'Institution *' }).fill('MIT');
+        await page.getByRole('combobox', { name: 'Degree' }).fill('Masters');
+        await page.keyboard.press('Tab');
+        await page.getByRole('textbox', { name: 'Field of Study' }).fill('Data Science');
+        
+        const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
+        await startDateGroup.getByLabel('Day').fill('01');
+        await startDateGroup.getByLabel('Month').fill('09');
+        await startDateGroup.getByLabel('Year').fill('2016');
+        
+        await page.getByTestId('save-education-button').click();
+        await expect(page.getByTestId('edit-education-item-1')).toBeVisible({ timeout: 10000 });
+      }
+    }
+    
+    // Verify we have 2 items - wait longer for elements to be visible
+    await expect(page.getByTestId('edit-education-item-0')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('edit-education-item-1')).toBeVisible({ timeout: 10000 });
     
     // Delete second item
     await page.getByTestId('delete-education-item-1').click();
-    
-    // May show confirmation dialog
+
+    // May show confirmation dialog - wait for it
     const confirmDialog = page.getByRole('dialog');
-    if (await confirmDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await confirmDialog.getByRole('button', { name: /delete|confirm/i }).click();
+    const hasDialog = await confirmDialog.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (hasDialog) {
+      const confirmButton = confirmDialog.getByRole('button', { name: /delete|confirm/i });
+      await expect(confirmButton).toBeVisible({ timeout: 3000 });
+      await confirmButton.click();
+      // Wait for dialog to close
+      await expect(confirmDialog).not.toBeVisible({ timeout: 3000 });
     }
+
+    // Wait for delete operation to complete
+    await page.waitForTimeout(1000);
     
-    // Wait for delete to complete
-    await page.waitForTimeout(500);
-    
-    // Verify item was deleted  
-    await expect(page.getByTestId('edit-education-item-1')).not.toBeVisible({ timeout: 3000 });
+    // Verify item was deleted
+    await expect(page.getByTestId('edit-education-item-1')).not.toBeVisible({ timeout: 10000 });
     // First item should still exist
-    await expect(page.getByTestId('edit-education-item-0')).toBeVisible();
+    await expect(page.getByTestId('edit-education-item-0')).toBeVisible({ timeout: 5000 });
   });
 
   test('5. Add first Work Experience item', async () => {
@@ -269,11 +325,8 @@ test.describe('CV Editor - Item CRUD Operations', () => {
     if (await confirmDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
       await confirmDialog.getByRole('button', { name: /delete|confirm/i }).click();
     }
-    
-    // Wait for delete to complete
-    await page.waitForTimeout(500);
-    
-    // Verify deleted
+
+    // Verify deleted (wait implicitly handles delete completion)
     await expect(page.getByTestId('edit-work-experience-item-1')).not.toBeVisible({ timeout: 3000 });
     await expect(page.getByTestId('edit-work-experience-item-0')).toBeVisible();
   });

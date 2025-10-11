@@ -62,7 +62,7 @@ def is_admin_user(user: User) -> bool:
     if not is_admin:
         logger.warning(f"Admin access denied for {user.email} (expected: {admin_email})")
     else:
-        logger.info(f"Admin access granted for {user.email}")
+        logger.debug(f"Admin access granted for {user.email}")
     
     return is_admin
 CLERK_API_URL = "https://api.clerk.com/v1"
@@ -292,7 +292,7 @@ def get_current_user_from_clerk(
                         for email_addr in email_addresses:
                             if email_addr.get("id") == primary_email_id:
                                 email = email_addr.get("email_address")
-                                logger.info(f"Successfully retrieved email {email} for Clerk user {clerk_user_id}")
+                                logger.debug(f"Successfully retrieved email {email} for Clerk user {clerk_user_id}")
                                 break
                     else:
                         logger.warning(f"No email addresses found in Clerk API response for user {clerk_user_id}")

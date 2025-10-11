@@ -11,12 +11,12 @@
  * 4. Multi-section workflow: Add Education → Add Experience → Add Skills → Preview all
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 import { TEST_TIMEOUT, VALIDATION_WAIT, EXTERNAL_SERVICE_TIMEOUT } from './test-constants';
 
 test.describe('Critical User Journeys', () => {
   
-  test('1. Complete CV creation journey: Create → Add sections → Fill data', async ({ page }) => {
+  test('1. Complete CV creation journey: Create → Add sections → Fill data', async ({ page, testUser }) => {
     // Authentication handled by global-setup.ts
     await page.goto('/');
     
@@ -41,13 +41,16 @@ test.describe('Critical User Journeys', () => {
     
     // Fill Personal Information
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.waitForTimeout(200); // Wait for form to render
-    
-    await page.getByTestId('personal-info-full-name-input').locator('input').click();
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill('Jane Doe');
+
+    // Wait for form to render by checking for first input field
+    const nameInput = page.getByTestId('personal-info-full-name-input').locator('input');
+    await expect(nameInput).toBeVisible({ timeout: TEST_TIMEOUT });
+
+    await nameInput.click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(testUser.displayName);
     
     await page.getByTestId('personal-info-email-input').locator('input').click();
-    await page.getByTestId('personal-info-email-input').locator('input').fill('jane.doe@example.com');
+    await page.getByTestId('personal-info-email-input').locator('input').fill(testUser.email);
     
     await page.getByTestId('personal-info-phone-input').locator('input').click();
     await page.getByTestId('personal-info-phone-input').locator('input').fill('+1 555-0123');
@@ -115,9 +118,12 @@ test.describe('Critical User Journeys', () => {
     await expect(page.getByRole('heading', { name: 'Professional Summary' })).toBeVisible({ timeout: TEST_TIMEOUT });
     
     await page.getByTestId('edit-section-professional_summary-button').click();
-    await page.waitForTimeout(200); // Wait for form to render
-    
-    await page.getByTestId('professional-summary-textarea').click();
+
+    // Wait for textarea to render - increase timeout for slower rendering
+    const summaryTextarea = page.getByTestId('professional-summary-textarea');
+    await expect(summaryTextarea).toBeVisible({ timeout: 10000 });
+
+    await summaryTextarea.click();
     await page.getByTestId('professional-summary-textarea').fill(
       'Experienced product manager with a strong background in technology and business strategy.'
     );
@@ -139,7 +145,7 @@ test.describe('Critical User Journeys', () => {
     console.log(`✓ Created complete CV: ${cvId}`);
   });
 
-  test('2. Edit existing CV journey: Open → Edit multiple sections', async ({ page }) => {
+  test('2. Edit existing CV journey: Open → Edit multiple sections', async ({ page, testUser }) => {
     // Authentication handled by global-setup.ts
     await page.goto('/');
     
@@ -163,13 +169,16 @@ test.describe('Critical User Journeys', () => {
     
     // Save personal info to convert temp CV to real CV with UUID
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.waitForTimeout(200); // Wait for form to fully render
-    
-    await page.getByTestId('personal-info-full-name-input').locator('input').click();
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill('Initial User');
+
+    // Wait for form to fully render
+    const nameInput = page.getByTestId('personal-info-full-name-input').locator('input');
+    await expect(nameInput).toBeVisible({ timeout: TEST_TIMEOUT });
+
+    await nameInput.click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(testUser.displayName);
     
     await page.getByTestId('personal-info-email-input').locator('input').click();
-    await page.getByTestId('personal-info-email-input').locator('input').fill('initial@example.com');
+    await page.getByTestId('personal-info-email-input').locator('input').fill(testUser.email);
     
     await page.getByRole('combobox', { name: 'Location' }).click();
     await page.getByRole('combobox', { name: 'Location' }).fill('Boston, MA');
@@ -177,15 +186,9 @@ test.describe('Critical User Journeys', () => {
     await page.waitForTimeout(VALIDATION_WAIT);
     
     const saveButton = page.locator('button:has(svg[data-testid="SaveIcon"])').first();
-    // If save button is still disabled, wait for validation to complete
-    // This test needs extra time as it's creating and immediately editing
-    let retries = 0;
-    while (await saveButton.isDisabled() && retries < 7) {
-      await page.waitForTimeout(400);
-      retries++;
-    }
+    // Wait for save button to become enabled after validation
     await expect(saveButton).toBeEnabled({ timeout: TEST_TIMEOUT });
-    
+
     const tempCvId = page.url().split('/cv/')[1];
     await saveButton.click();
     
@@ -206,9 +209,12 @@ test.describe('Critical User Journeys', () => {
     
     // Edit Personal Info
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.waitForTimeout(200); // Wait for form to render
-    
-    await page.getByTestId('personal-info-phone-input').locator('input').click();
+
+    // Wait for form to render
+    const phoneInput = page.getByTestId('personal-info-phone-input').locator('input');
+    await expect(phoneInput).toBeVisible({ timeout: TEST_TIMEOUT });
+
+    await phoneInput.click();
     await page.getByTestId('personal-info-phone-input').locator('input').fill('+1 555-9999');
     await page.locator('button:has(svg[data-testid="SaveIcon"])').first().click();
     
@@ -261,7 +267,7 @@ test.describe('Critical User Journeys', () => {
     console.log(`✓ Edited CV across multiple sections: ${cvId}`);
   });
 
-  test('3. CV lifecycle journey: Create → Edit → Duplicate → Delete original', async ({ page }) => {
+  test('3. CV lifecycle journey: Create → Edit → Duplicate → Delete original', async ({ page, testUser }) => {
     // Authentication handled by global-setup.ts
     await page.goto('/');
     
@@ -285,13 +291,16 @@ test.describe('Critical User Journeys', () => {
     
     // Add some content
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.waitForTimeout(200); // Wait for form to render
-    
-    await page.getByTestId('personal-info-full-name-input').locator('input').click();
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill('Test User');
+
+    // Wait for form to render
+    const nameInput = page.getByTestId('personal-info-full-name-input').locator('input');
+    await expect(nameInput).toBeVisible({ timeout: TEST_TIMEOUT });
+
+    await nameInput.click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(testUser.displayName);
     
     await page.getByTestId('personal-info-email-input').locator('input').click();
-    await page.getByTestId('personal-info-email-input').locator('input').fill('test@example.com');
+    await page.getByTestId('personal-info-email-input').locator('input').fill(testUser.email);
     
     await page.getByRole('combobox', { name: 'Location' }).click();
     await page.getByRole('combobox', { name: 'Location' }).fill('San Francisco, CA');
@@ -299,14 +308,9 @@ test.describe('Critical User Journeys', () => {
     await page.waitForTimeout(VALIDATION_WAIT);
     
     const saveButton = page.locator('button:has(svg[data-testid="SaveIcon"])').first();
-    // If save button is still disabled, wait for validation to complete
-    let retries = 0;
-    while (await saveButton.isDisabled() && retries < 3) {
-      await page.waitForTimeout(300);
-      retries++;
-    }
+    // Wait for save button to become enabled after validation
     await expect(saveButton).toBeEnabled({ timeout: TEST_TIMEOUT });
-    
+
     const tempCvId = page.url().split('/cv/')[1];
     await saveButton.click();
     
@@ -360,7 +364,10 @@ test.describe('Critical User Journeys', () => {
     const cvId = page.url().split('/cv/')[1];
     
     // Add Education with item
+    await page.getByTestId('add-section-education-button').scrollIntoViewIfNeeded();
     await page.getByTestId('add-section-education-button').click();
+    await expect(page.getByRole('heading', { name: 'Education' })).toBeVisible({ timeout: TEST_TIMEOUT });
+    
     await page.getByTestId('add-new-education-button').click();
     
     // Wait for form to be visible
@@ -381,7 +388,10 @@ test.describe('Critical User Journeys', () => {
     await expect(page.getByTestId('edit-education-item-0')).toBeVisible({ timeout: TEST_TIMEOUT });
     
     // Add Work Experience with item
+    await page.getByTestId('add-section-work_experience-button').scrollIntoViewIfNeeded();
     await page.getByTestId('add-section-work_experience-button').click();
+    await expect(page.getByRole('heading', { name: 'Work Experience' })).toBeVisible({ timeout: TEST_TIMEOUT });
+    
     await page.getByTestId('add-new-work-experience-button').click();
     
     // Wait for form to be visible

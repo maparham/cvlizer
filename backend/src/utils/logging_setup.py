@@ -66,6 +66,10 @@ def setup_logging(log_dir: str = "logs") -> None:
             logger.addHandler(file_handler)
         logger.propagate = False
     
+    # Reduce verbosity of specific loggers
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)  # Only log HTTP errors
+    logging.getLogger("urllib3.connectionpool").setLevel(logging.INFO)  # Silence connection pool debug
+    
     logging.info(f"Logging configured - Level: {LoggingConfig.LOG_LEVEL}")
 
 

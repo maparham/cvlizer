@@ -2,35 +2,51 @@
  * Global Setup for E2E Tests
  * 
  * This module performs one-time authentication before all tests run,
- * saving the authenticated session state. This eliminates the need for
- * each test to login separately, reducing test execution time by 2-3 minutes.
+ * saving authenticated session states for multiple users. This eliminates 
+ * the need for each test to login separately and supports parallel test 
+ * execution with separate user accounts to prevent data conflicts.
  * 
- * The authentication state is saved to .auth/user.json and automatically
- * loaded by all tests via playwright.config.ts storageState setting.
+ * The authentication states are saved to .auth/user1.json and .auth/user2.json
+ * and dynamically assigned to workers via fixtures.
  */
 import { chromium, FullConfig } from '@playwright/test';
-import { TEST_USER } from './test-constants';
+import { TEST_USERS } from './test-constants';
 
 async function globalSetup(config: FullConfig) {
-  console.log('🔐 Setting up global authentication...');
+  console.log('🔐 Setting up global authentication for multiple users...');
   
   const browser = await chromium.launch();
-  const page = await browser.newPage();
   
   try {
-    // Login once for all tests
-    await page.goto('http://localhost:3000/login');
-    await page.getByLabel('Email address').fill(TEST_USER.email);
-    await page.getByRole('textbox', { name: 'Password' }).fill(TEST_USER.password);
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Authenticate each test user
+    for (let i = 0; i < TEST_USERS.length; i++) {
+      const user = TEST_USERS[i];
+      const userNum = i + 1;
+      
+      console.log(`  Authenticating user ${userNum}: ${user.email}`);
+      
+      const page = await browser.newPage();
+      
+      try {
+        // Login
+        await page.goto('http://localhost:3000/login');
+        await page.getByLabel('Email address').fill(user.email);
+        await page.getByRole('textbox', { name: 'Password' }).fill(user.password);
+        await page.getByRole('button', { name: 'Continue' }).click();
+        
+        // Wait for successful login (redirects to dashboard or admin)
+        await page.waitForURL(/\/(dashboard|admin)/, { timeout: 20000 });
+        
+        // Save authentication state to separate file for this user
+        await page.context().storageState({ path: `tests/e2e/.auth/user${userNum}.json` });
+        
+        console.log(`  ✅ User ${userNum} authenticated`);
+      } finally {
+        await page.close();
+      }
+    }
     
-    // Wait for successful login (redirects to admin for this user)
-    await page.waitForURL('**/admin', { timeout: 20000 });
-    
-    // Save authentication state to file
-    await page.context().storageState({ path: 'tests/e2e/.auth/user.json' });
-    
-    console.log('✅ Authentication state saved');
+    console.log('✅ All authentication states saved');
   } catch (error) {
     console.error('❌ Global setup failed:', error);
     throw error;

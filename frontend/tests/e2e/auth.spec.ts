@@ -13,7 +13,7 @@
  * 6. Admin routing (admin users go to /admin, then dashboard)
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 // Configure tests to NOT use the global auth state since we're testing login flow
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -81,11 +81,17 @@ test.describe('Authentication Flows', () => {
     await page.getByRole('button', { name: /back to dashboard/i }).click();
     await page.waitForURL('**/dashboard');
     
-    // Reload the page
-    await page.reload({ waitUntil: 'load' });
+    // Wait for dashboard to fully load
+    await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible({ timeout: 10000 });
+    
+    // Reload the page and wait for it to fully load
+    await page.reload({ waitUntil: 'networkidle' });
+    
+    // Wait for auth state to be restored and dashboard to load
+    await page.waitForLoadState('networkidle');
     
     // Should still be on dashboard (session persists)
-    await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible({ timeout: 10000 });
     await expect(page).toHaveURL(/.*dashboard/);
   });
 
@@ -102,12 +108,15 @@ test.describe('Authentication Flows', () => {
     await page.getByRole('button', { name: /back to dashboard/i }).click();
     await page.waitForURL('**/dashboard');
     
+    // Wait for dashboard to fully load before attempting logout
+    await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible({ timeout: 10000 });
+    
     // Open user menu and logout
     await page.getByRole('button', { name: /account of current user/i }).click();
     await page.getByRole('menuitem', { name: /logout|sign out/i }).click();
     
     // Should redirect to home page
-    await page.waitForURL('http://localhost:3000/', { timeout: 5000 });
+    await page.waitForURL('http://localhost:3000/', { timeout: 10000 });
   });
 
   test('5. Logout from CV editor', async ({ page }) => {

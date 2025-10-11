@@ -11,12 +11,12 @@
  * 4. Export requires saved CV (not allowed for unsaved new CVs)
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 import { TEST_TIMEOUT, VALIDATION_WAIT, MENU_CLOSE_WAIT, EXTERNAL_SERVICE_TIMEOUT, DASHBOARD_REFRESH_TIMEOUT } from './test-constants';
 
 test.describe('CV Editor - Export and Delete', () => {
   
-  test('1. Export CV initiates download', async ({ page }) => {
+  test('1. Export CV initiates download', async ({ page, testUser }) => {
     // Authentication handled by global-setup.ts
     await page.goto('/');
     
@@ -42,8 +42,15 @@ test.describe('CV Editor - Export and Delete', () => {
     
     // Add some content first
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill('Export Test User');
-    await page.getByTestId('personal-info-email-input').locator('input').fill('export@test.com');
+    await page.waitForTimeout(200); // Wait for form to render
+    
+    await page.getByTestId('personal-info-full-name-input').locator('input').click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(testUser.displayName);
+    
+    await page.getByTestId('personal-info-email-input').locator('input').click();
+    await page.getByTestId('personal-info-email-input').locator('input').fill(testUser.email);
+    
+    await page.getByRole('combobox', { name: 'Location' }).click();
     await page.getByRole('combobox', { name: 'Location' }).fill('Seattle, WA');
     await page.keyboard.press('Tab'); // Close autocomplete
     await page.waitForTimeout(VALIDATION_WAIT);
@@ -101,7 +108,7 @@ test.describe('CV Editor - Export and Delete', () => {
     await page.getByRole('dialog').getByRole('button', { name: /delete/i }).click();
   });
 
-  test('2. Delete CV from editor with confirmation', async ({ page }) => {
+  test('2. Delete CV from editor with confirmation', async ({ page, testUser }) => {
     // Authentication handled by global-setup.ts
     await page.goto('/');
     
@@ -126,8 +133,15 @@ test.describe('CV Editor - Export and Delete', () => {
     
     // Save personal info to convert temp CV to real CV
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill('Delete Test');
-    await page.getByTestId('personal-info-email-input').locator('input').fill('delete@test.com');
+    await page.waitForTimeout(200); // Wait for form to render
+    
+    await page.getByTestId('personal-info-full-name-input').locator('input').click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(testUser.displayName);
+    
+    await page.getByTestId('personal-info-email-input').locator('input').click();
+    await page.getByTestId('personal-info-email-input').locator('input').fill(testUser.email);
+    
+    await page.getByRole('combobox', { name: 'Location' }).click();
     await page.getByRole('combobox', { name: 'Location' }).fill('Austin, TX');
     await page.keyboard.press('Tab');
     await page.waitForTimeout(VALIDATION_WAIT);
@@ -184,7 +198,7 @@ test.describe('CV Editor - Export and Delete', () => {
     }
   });
 
-  test('3. Export shows appropriate message for new unsaved CV', async ({ page }) => {
+  test('3. Export shows appropriate message for new unsaved CV', async ({ page, testUser }) => {
     // Authentication handled by global-setup.ts
     await page.goto('/');
     
@@ -223,8 +237,15 @@ test.describe('CV Editor - Export and Delete', () => {
     
     // Save CV so we can properly delete it during cleanup
     await page.getByTestId('edit-section-personal_info-button').click();
-    await page.getByTestId('personal-info-full-name-input').locator('input').fill('Export Test User');
-    await page.getByTestId('personal-info-email-input').locator('input').fill('exporttest@example.com');
+    await page.waitForTimeout(200); // Wait for form to render
+    
+    await page.getByTestId('personal-info-full-name-input').locator('input').click();
+    await page.getByTestId('personal-info-full-name-input').locator('input').fill(testUser.displayName);
+    
+    await page.getByTestId('personal-info-email-input').locator('input').click();
+    await page.getByTestId('personal-info-email-input').locator('input').fill(testUser.email);
+    
+    await page.getByRole('combobox', { name: 'Location' }).click();
     await page.getByRole('combobox', { name: 'Location' }).fill('Denver, CO');
     await page.keyboard.press('Tab');
     await page.waitForTimeout(VALIDATION_WAIT);
