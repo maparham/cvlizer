@@ -16,8 +16,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Use 2 workers for optimal performance with 2 projects */
+  workers: process.env.CI ? 1 : 2,
   
   /* Global setup - authenticate once for all tests */
   globalSetup: resolve(__dirname, './tests/e2e/global-setup'),
