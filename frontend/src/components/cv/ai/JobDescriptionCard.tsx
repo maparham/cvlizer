@@ -52,6 +52,61 @@ import { JobDescription } from '../../../types/ai';
 import { formatRelativeTime } from '../../../utils/formatters';
 import { MarkdownRenderer } from '../../common';
 
+/**
+ * Strip markdown formatting and convert to plain text
+ */
+const stripMarkdown = (markdown: string): string => {
+  return markdown
+    .replace(/#{1,6}\s+/g, '') // Remove headings
+    .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
+    .replace(/\*(.+?)\*/g, '$1') // Remove italic
+    .replace(/\[(.+?)\]\(.+?\)/g, '$1') // Remove links (keep text)
+    .replace(/`(.+?)`/g, '$1') // Remove inline code
+    .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+    .replace(/>\s+/g, '') // Remove blockquotes
+    .replace(/^[-*+]\s+/gm, '') // Remove unordered list markers
+    .replace(/^\d+\.\s+/gm, '') // Remove ordered list markers
+    .trim();
+};
+
+/**
+ * Get a clean content snippet without metadata fields like Location, Working hours, etc.
+ */
+const getCleanSnippet = (content: string, maxLength: number = 200): string => {
+  // First strip markdown formatting
+  let plain = stripMarkdown(content);
+
+  // Remove common metadata patterns that appear at the start of job descriptions
+  // These patterns match lines like "Location: Wien", "Working hours: Full-time", etc.
+  plain = plain
+    .replace(/^Location:\s*.+?(?:\n|$)/gim, '')
+    .replace(/^Working hours:\s*.+?(?:\n|$)/gim, '')
+    .replace(/^Occupational Area:\s*.+?(?:\n|$)/gim, '')
+    .replace(/^Employment Type:\s*.+?(?:\n|$)/gim, '')
+    .replace(/^Salary:\s*.+?(?:\n|$)/gim, '')
+    .replace(/^Experience Level:\s*.+?(?:\n|$)/gim, '')
+    .replace(/^Job Type:\s*.+?(?:\n|$)/gim, '')
+    .replace(/^Remote:\s*.+?(?:\n|$)/gim, '')
+    .replace(/\n+/g, ' ') // Replace multiple newlines with single space
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+
+  // If content is short enough, return as-is
+  if (plain.length <= maxLength) {
+    return plain;
+  }
+
+  // Truncate at last complete word before maxLength
+  const truncated = plain.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+
+  if (lastSpace > 0) {
+    return truncated.substring(0, lastSpace) + '...';
+  }
+
+  return truncated + '...';
+};
+
 export interface JobDescriptionCardProps {
   jobDescription: JobDescription;
   isActive?: boolean;
@@ -180,7 +235,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
           flexDirection: 'column',
           border: isActive ? 2 : 1,
           borderColor: isActive ? 'primary.main' : 'divider',
-          backgroundColor: isActive ? 'rgba(25, 118, 210, 0.04)' : 'transparent',
+          backgroundColor: 'transparent',
           boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
           transition: 'all 0.2s ease-in-out',
           '&:hover': {
@@ -347,21 +402,26 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
           Added: {formatRelativeTime(jobDescription.created_at)}
         </Typography>
 
-        {/* Content preview */}
-        <MarkdownRenderer
-          content={jobDescription.content}
+        {/* Content preview - Plain text snippet */}
+        <Typography
           variant="body2"
           color="text.secondary"
-          lineClamp={variant === 'sidebar' ? 3 : 6}
           sx={{
+            display: '-webkit-box',
+            WebkitLineClamp: variant === 'sidebar' ? 3 : 6,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            lineHeight: 1.6,
             mb: 1,
             mt: 0,
           }}
-        />
+        >
+          {getCleanSnippet(jobDescription.content, variant === 'sidebar' ? 150 : 300)}
+        </Typography>
       </CardContent>
 
       {/* Action buttons */}
-      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, pt: 0 }}>
+      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, pt: 0, flexWrap: 'wrap', gap: 1 }}>
         {/* Select button (only shown in modal) - moved to left */}
         {showSelectButton && onSelect && (
           <Button
@@ -371,50 +431,56 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               onSelect(jobDescription);
             }}
             variant={isActive ? 'contained' : 'outlined'}
-            sx={{ flex: 1, mr: 1 }}
+            sx={{ flex: 1, minWidth: 'fit-content' }}
           >
             {isActive ? 'Selected' : 'Select'}
           </Button>
         )}
-        
-        {/* Action icons on the right */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {/* Preview icon */}
-          <Tooltip title="Preview">
-            <IconButton
+
+        {/* Action buttons on the right */}
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {/* Preview button */}
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<VisibilityIcon fontSize="small" />}
+            onClick={handlePreviewClick}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+              '&:hover': {
+                backgroundColor: 'primary.light',
+                color: 'primary.contrastText',
+                borderColor: 'primary.light'
+              }
+            }}
+          >
+            Preview
+          </Button>
+
+          {/* URL link button */}
+          {jobDescription.source_url && (
+            <Button
               size="small"
-              onClick={handlePreviewClick}
+              variant="outlined"
+              startIcon={<LinkIcon fontSize="small" />}
+              component="a"
+              href={jobDescription.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               sx={{
+                textTransform: 'none',
+                fontWeight: 500,
                 '&:hover': {
-                  backgroundColor: 'primary.light',
-                  color: 'primary.contrastText'
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  color: 'text.primary',
+                  borderColor: 'text.secondary'
                 }
               }}
             >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          
-          {/* URL link icon */}
-          {jobDescription.source_url && (
-            <Tooltip title="View Original">
-              <IconButton
-                size="small"
-                component="a"
-                href={jobDescription.source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    color: 'text.secondary'
-                  }
-                }}
-              >
-                <LinkIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+              View Original
+            </Button>
           )}
         </Box>
       </CardActions>

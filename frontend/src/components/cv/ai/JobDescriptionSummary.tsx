@@ -291,10 +291,9 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
             {/* Active Job Description */}
             {activeJobDescription ? (
               <Box sx={{
-                backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                border: '1px solid rgba(25, 118, 210, 0.2)',
+                backgroundColor: 'transparent',
                 borderRadius: 2,
-                p: 2
+                p: 0
               }}>
                 <JobDescriptionCard
                   jobDescription={activeJobDescription}

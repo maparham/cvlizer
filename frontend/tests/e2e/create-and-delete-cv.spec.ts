@@ -29,7 +29,7 @@ test.describe('Create and Delete CV Workflow', () => {
     await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible();
 
     // Start creating a new CV from scratch
-    await page.getByTestId('start-from-scratch-button').click();
+    await page.getByRole('button', { name: /start from scratch/i }).click();
 
     // Wait for CV editor to load
     await page.waitForURL(/\/cv\//, { timeout: TEST_TIMEOUT });
@@ -158,8 +158,8 @@ test.describe('Create and Delete CV Workflow', () => {
     // Wait for success message
     await expect(page.getByText(/deleted successfully/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
-    // Verify the CV is no longer in the list
-    await expect(page.getByText(/New CV 2\.pdf/i)).not.toBeVisible({ timeout: TEST_TIMEOUT });
+    // Wait for the CV card to be removed from the dashboard (delete button should disappear)
+    await expect(page.getByTestId(`delete-cv-button-${cvId}`)).not.toBeVisible({ timeout: TEST_TIMEOUT });
   });
 });
 
