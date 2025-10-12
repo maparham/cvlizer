@@ -51,6 +51,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Pagination,
 } from '@mui/material'
 import {
   AccountCircle as AccountCircleIcon,
@@ -108,7 +109,11 @@ const Dashboard: React.FC = () => {
     cvs,
     loading,
     error,
+    currentPage,
+    totalPages,
+    totalCVs,
     fetchCVs,
+    setPage,
     createTemporaryCV,
     saveTemporaryCV,
     updateCVTitle,
@@ -615,174 +620,197 @@ const Dashboard: React.FC = () => {
             </Typography>
           </Paper>
         ) : (
-          <Grid container spacing={3}>
-            {filteredAndSortedCVs.map((cv) => (
-              <Grid item xs={12} sm={6} lg={4} key={cv.id}>
-                <Card sx={{ 
-                  height: '100%', 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  transition: 'all 0.3s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
-                  }
-                }}>
-                  <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                    {/* CV Header with Status */}
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
-                      <Box sx={{ flexGrow: 1, mr: 1 }}>
-                        <EditableTitle
-                          title={cv.original_filename}
-                          onSave={(newTitle) => handleTitleSave(cv, newTitle)}
-                          variant="h6"
-                          sx={{ 
-                            mb: 1,
-                            fontWeight: 600,
-                            fontSize: '1.1rem',
-                            lineHeight: 1.2
-                          }}
-                        />
-                      </Box>
-                      <Tooltip title={
-                        cv.parse_error ? 'Parsing failed' : 
-                        cv.is_parsed ? 'Ready to edit' : 'Processing'
-                      }>
-                        {getCVStatusIcon(cv)}
-                      </Tooltip>
-                    </Box>
-
-                    {/* File Type and Metadata */}
-                    <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                      {isUploadedCV(cv) && (
-                        <Tooltip title="Download original file">
-                          <Chip
-                            label={cv.file_type.split('/')[1].toUpperCase()}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            icon={<DownloadIcon />}
-                            clickable
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDownloadCV(cv)
+          <>
+            <Grid container spacing={3}>
+              {filteredAndSortedCVs.map((cv) => (
+                <Grid item xs={12} sm={6} lg={4} key={cv.id}>
+                  <Card sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 3,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    transition: 'all 0.3s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+                    }
+                  }}>
+                    <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                      {/* CV Header with Status */}
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                        <Box sx={{ flexGrow: 1, mr: 1 }}>
+                          <EditableTitle
+                            title={cv.original_filename}
+                            onSave={(newTitle) => handleTitleSave(cv, newTitle)}
+                            variant="h6"
+                            sx={{
+                              mb: 1,
+                              fontWeight: 600,
+                              fontSize: '1.1rem',
+                              lineHeight: 1.2
                             }}
-                            sx={{ borderRadius: 1.5 }}
                           />
+                        </Box>
+                        <Tooltip title={
+                          cv.parse_error ? 'Parsing failed' :
+                          cv.is_parsed ? 'Ready to edit' : 'Processing'
+                        }>
+                          {getCVStatusIcon(cv)}
                         </Tooltip>
-                      )}
-                      {hasBeenEdited(cv) && (
-                        <Tooltip title="This CV has been modified">
-                          <Chip
-                            label="Modified"
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            icon={<EditedIcon />}
-                            sx={{ borderRadius: 1.5 }}
-                          />
-                        </Tooltip>
-                      )}
-                      {cv.is_parsed && (
-                        <Chip
-                          label={`${getSectionCount(cv)} sections`}
-                          size="small"
-                          variant="outlined"
-                          sx={{ borderRadius: 1.5 }}
-                        />
-                      )}
-                    </Stack>
+                      </Box>
 
-                    {/* File Info */}
-                    <Box sx={{ mb: 2 }}>
-                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                        <ScheduleIcon fontSize="small" color="action" />
-                        <Typography variant="body2" color="text.secondary">
-                          Created {formatDateTime(cv.created_at)}
-                        </Typography>
+                      {/* File Type and Metadata */}
+                      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                        {isUploadedCV(cv) && (
+                          <Tooltip title="Download original file">
+                            <Chip
+                              label={cv.file_type.split('/')[1].toUpperCase()}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                              icon={<DownloadIcon />}
+                              clickable
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDownloadCV(cv)
+                              }}
+                              sx={{ borderRadius: 1.5 }}
+                            />
+                          </Tooltip>
+                        )}
+                        {hasBeenEdited(cv) && (
+                          <Tooltip title="This CV has been modified">
+                            <Chip
+                              label="Modified"
+                              size="small"
+                              color="warning"
+                              variant="outlined"
+                              icon={<EditedIcon />}
+                              sx={{ borderRadius: 1.5 }}
+                            />
+                          </Tooltip>
+                        )}
+                        {cv.is_parsed && (
+                          <Chip
+                            label={`${getSectionCount(cv)} sections`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ borderRadius: 1.5 }}
+                          />
+                        )}
                       </Stack>
-                      {cv.updated_at && cv.updated_at !== cv.created_at && (
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <EditIcon fontSize="small" color="action" />
+
+                      {/* File Info */}
+                      <Box sx={{ mb: 2 }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                          <ScheduleIcon fontSize="small" color="action" />
                           <Typography variant="body2" color="text.secondary">
-                            Modified {formatDateTime(cv.updated_at)}
+                            Created {formatDateTime(cv.created_at)}
                           </Typography>
                         </Stack>
-                      )}
-                    </Box>
-
-                    {/* Processing Status */}
-                    {!cv.is_parsed && !cv.parse_error && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          AI is analyzing your CV...
-                        </Typography>
-                        <LinearProgress sx={{ borderRadius: 1 }} />
+                        {cv.updated_at && cv.updated_at !== cv.created_at && (
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <EditIcon fontSize="small" color="action" />
+                            <Typography variant="body2" color="text.secondary">
+                              Modified {formatDateTime(cv.updated_at)}
+                            </Typography>
+                          </Stack>
+                        )}
                       </Box>
-                    )}
 
-                    {/* Error State */}
-                    {cv.parse_error && (
-                      <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-                        <Typography variant="body2">
-                          {cv.parse_error}
-                        </Typography>
-                      </Alert>
-                    )}
-                  </CardContent>
+                      {/* Processing Status */}
+                      {!cv.is_parsed && !cv.parse_error && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            AI is analyzing your CV...
+                          </Typography>
+                          <LinearProgress sx={{ borderRadius: 1 }} />
+                        </Box>
+                      )}
 
-                  {/* Action Buttons */}
-                  <CardActions sx={{ p: 2, pt: 0, justifyContent: 'space-between' }}>
-                    <Button
-                      size="medium"
-                      variant="outlined"
-                      startIcon={<EditIcon />}
-                      onClick={() => navigate(`/cv/${cv.id}`)}
-                      disabled={!cv.is_parsed}
-                      data-testid={`edit-cv-button-${cv.id}`}
-                      sx={{ 
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        flexGrow: 1,
-                        mr: 1
-                      }}
-                    >
-                      {cv.is_parsed ? 'Edit CV' : 'Processing...'}
-                    </Button>
-                    
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteClick(cv)}
-                      disabled={deleting}
-                      color="error"
-                      sx={{
-                        opacity: 0.7,
-                        '&:hover': { opacity: 1 },
-                        transition: 'opacity 0.2s'
-                      }}
-                      data-testid={`delete-cv-button-${cv.id}`}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                    
-                    <CVQuickActions
-                      cv={cv}
-                      onDuplicate={handleDuplicateCV}
-                      onRename={handleTitleSave}
-                      onDownload={handleDownloadCV}
-                      onCreateSimilar={handleCreateSimilarCV}
-                      duplicating={duplicating}
-                      downloading={downloading}
-                      creatingSimilar={creatingSimilar}
-                    />
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                      {/* Error State */}
+                      {cv.parse_error && (
+                        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+                          <Typography variant="body2">
+                            {cv.parse_error}
+                          </Typography>
+                        </Alert>
+                      )}
+                    </CardContent>
+
+                    {/* Action Buttons */}
+                    <CardActions sx={{ p: 2, pt: 0, justifyContent: 'space-between' }}>
+                      <Button
+                        size="medium"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => navigate(`/cv/${cv.id}`)}
+                        disabled={!cv.is_parsed}
+                        data-testid={`edit-cv-button-${cv.id}`}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          flexGrow: 1,
+                          mr: 1
+                        }}
+                      >
+                        {cv.is_parsed ? 'Edit CV' : 'Processing...'}
+                      </Button>
+
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteClick(cv)}
+                        disabled={deleting}
+                        color="error"
+                        sx={{
+                          opacity: 0.7,
+                          '&:hover': { opacity: 1 },
+                          transition: 'opacity 0.2s'
+                        }}
+                        data-testid={`delete-cv-button-${cv.id}`}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+
+                      <CVQuickActions
+                        cv={cv}
+                        onDuplicate={handleDuplicateCV}
+                        onRename={handleTitleSave}
+                        onDownload={handleDownloadCV}
+                        onCreateSimilar={handleCreateSimilarCV}
+                        duplicating={duplicating}
+                        downloading={downloading}
+                        creatingSimilar={creatingSimilar}
+                      />
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4 }}>
+                <Stack spacing={2} alignItems="center">
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(_, page) => setPage(page)}
+                    color="primary"
+                    size="large"
+                    showFirstButton
+                    showLastButton
+                    data-testid="cv-pagination"
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Showing {cvs.length} of {totalCVs} CVs
+                  </Typography>
+                </Stack>
+              </Box>
+            )}
+          </>
         )}
 
         <CVUpload

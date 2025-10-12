@@ -236,21 +236,21 @@ async def upload_cv(
 @router.get("/", response_model=CVListResponse)
 async def list_cvs(
     page: int = 1,
-    limit: int = 10,
+    limit: int = 100,  # Increased default limit to show more CVs
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user)
 ):
-    """Get all CVs for the current user"""
+    """Get all CVs for the current user with pagination support"""
     skip = (page - 1) * limit
     cvs = get_cvs_by_user(db, str(current_user.id), skip=skip, limit=limit)
-    
+
     # Get total count
     total = db.query(CV).filter(CV.user_id == current_user.id).count()
     pages = (total + limit - 1) // limit
-    
+
     cv_responses = [CVResponse(**cv.to_response_dict()) for cv in cvs]
-    
-    
+
+
     return CVListResponse(
         cvs=cv_responses,
         total=total,

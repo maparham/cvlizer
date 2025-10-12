@@ -93,7 +93,13 @@ interface CVState {
   error: string | null
   saving: boolean
   lastSavedAt: string | null
-  
+
+  // Pagination state
+  currentPage: number
+  totalPages: number
+  totalCVs: number
+  cvsPerPage: number
+
   // Polling state
   hasUnparsedCVs: boolean
   pollingManager: PollingManager | null
@@ -104,7 +110,7 @@ interface CVState {
   lastAutoSnapshot: string | null
 
   // Actions
-  fetchCVs: () => Promise<void>
+  fetchCVs: (page?: number, limit?: number) => Promise<void>
   fetchCV: (_cvId: string) => Promise<CV | null>
   uploadCV: (file: File) => Promise<CV>
   createTemporaryCV: () => CV
@@ -130,7 +136,8 @@ interface CVState {
   clearError: () => void
   startPolling: () => void
   stopPolling: () => void
-  
+  setPage: (page: number) => void
+
   // Internal actions
   addCV: (cv: CV) => void
   updateCVInList: (cv: CV) => void
@@ -158,6 +165,10 @@ export const useCVStore = create<CVState>()(
       error: null,
       saving: false,
       lastSavedAt: null,
+      currentPage: 1,
+      totalPages: 1,
+      totalCVs: 0,
+      cvsPerPage: 100,
       hasUnparsedCVs: false,
       pollingManager: null,
 
@@ -167,24 +178,28 @@ export const useCVStore = create<CVState>()(
       lastAutoSnapshot: null,
 
       // Actions
-      fetchCVs: async () => {
+      fetchCVs: async (page: number = 1, limit: number = 100) => {
         const state = get()
         if (state.loading) return // Prevent concurrent fetches
-        
+
         set({ loading: true, error: null })
-        
+
         try {
-          const response = await cvApi.getCVs()
+          const response = await cvApi.getCVs(page, limit)
           const cvs = response.cvs || []
-          
+
           // Check if there are unparsed CVs
           const hasUnparsedCVs = cvs.some((cv: CV) => !cv.is_parsed && !cv.parse_error)
-          
-          set({ 
+
+          set({
             cvs,
             loading: false,
             hasUnparsedCVs,
-            error: null
+            error: null,
+            currentPage: response.page || page,
+            totalPages: response.pages || 1,
+            totalCVs: response.total || 0,
+            cvsPerPage: response.limit || limit
           })
 
           // Start polling if there are unparsed CVs
@@ -196,7 +211,7 @@ export const useCVStore = create<CVState>()(
           }
         } catch (error: any) {
           const errorMessage = normalizeApiError(error) || 'Failed to fetch CVs'
-          set({ 
+          set({
             error: errorMessage,
             loading: false,
             cvs: []
@@ -500,19 +515,22 @@ export const useCVStore = create<CVState>()(
         if (get().pollingManager?.isActive()) return
 
         const pollingFn = async () => {
-          const { loading, uploading } = get()
-          
+          const { loading, uploading, currentPage, cvsPerPage } = get()
+
           // Don't poll if already loading or uploading
           if (loading || uploading) return
 
           // Fetch CVs without setting loading state to avoid UI flicker
-          const response = await cvApi.getCVs()
+          const response = await cvApi.getCVs(currentPage, cvsPerPage)
           const cvs = response.cvs || []
           const newHasUnparsedCVs = cvs.some((cv: CV) => !cv.is_parsed && !cv.parse_error)
-          
-          set({ 
+
+          set({
             cvs,
-            hasUnparsedCVs: newHasUnparsedCVs
+            hasUnparsedCVs: newHasUnparsedCVs,
+            currentPage: response.page || currentPage,
+            totalPages: response.pages || 1,
+            totalCVs: response.total || 0
           })
 
           // Stop polling if no unparsed CVs remain
@@ -569,6 +587,11 @@ export const useCVStore = create<CVState>()(
 
       setSaving: (saving: boolean) => {
         set({ saving })
+      },
+
+      setPage: (page: number) => {
+        set({ currentPage: page })
+        get().fetchCVs(page, get().cvsPerPage)
       },
 
       // History actions

@@ -141,9 +141,11 @@ export const normalizeApiError = (error: unknown): string => {
 
 // CV API functions
 export const cvApi = {
-  // Get all CVs for the current user
-  getCVs: async () => {
-    const response = await api.get('/api/cvs/')
+  // Get all CVs for the current user with pagination support
+  getCVs: async (page: number = 1, limit: number = 100) => {
+    const response = await api.get('/api/cvs/', {
+      params: { page, limit }
+    })
     return response.data
   },
 

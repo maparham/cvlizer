@@ -9,7 +9,7 @@ CV Optimizer is a full-stack AI-powered CV enhancement SaaS application built wi
 **Tech Stack:**
 - **Backend**: FastAPI, SQLAlchemy ORM, SQLite/PostgreSQL, OpenAI integration
 - **Frontend**: React 18, TypeScript, Material-UI, Zustand state management
-- **Auth**: Clerk (primary) with JWT token verification, legacy JWT support
+- **Auth**: Clerk (primary) with JWT token verification
 - **Testing**: Pytest (backend), Jest (frontend), Playwright (E2E)
 
 ## Development Commands
@@ -138,7 +138,6 @@ Request � Middleware (auth, CORS) � API Routes � Service Layer � Databas
 
 **Authentication Flow:**
 - **Primary**: Clerk JWT tokens verified via [clerk_auth.py](backend/src/middleware/clerk_auth.py) with JWKS support
-- **Legacy**: JWT token authentication for backward compatibility
 - User automatically synced to local database on first request
 - `get_effective_user` dependency handles both normal auth and admin impersonation
 - All user-owned resources MUST filter by `user_id` for security
@@ -397,6 +396,7 @@ python -m pytest tests/unit/test_models.py::TestJobDescriptionModel::test_create
 - **ALWAYS** use `get_effective_user` dependency (not `get_current_user`)
 - This handles both normal authentication and admin impersonation
 - **ALWAYS** filter queries by `user_id` for user-owned resources
+- Focus on Clerk authentication as the primary method
 
 ### Code Quality
 - **Backend**: Follow PEP 8, use Black formatter (88 chars), add type hints

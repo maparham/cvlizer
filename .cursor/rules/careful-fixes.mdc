@@ -35,7 +35,7 @@ Be careful and precise when fixing issues.
 - ✅ **Targeted Fix** - Fix exactly what's broken, where it's broken
 - ✅ **Minimal Change** - One line fix for one test is better than 10 lines for all tests
 - ✅ **Owner Cleans Up** - Component/test that opens something should close it
-- ✅ **Verify Impact** - Ensure fix doesn't affect other working code
+- ✅ **Verify Impact** - Ensure fix solves the problem without creating new issues
 
 ### Example (From Real Debugging Session)
 **Problem**: Test #9 fails with "page closed" after 8 successful tests  
@@ -58,32 +58,32 @@ Be careful and precise when fixing issues.
 - **END-TO-END FLOW TESTING** for data/event flows:
   - Trace user action → API → backend → DB → response → UI update.
   - Test each step; verify data integrity and state consistency.
-  - Ensure no breaking changes; test success and error paths.
+  - Test success and error paths to ensure the fix works correctly.
 - Test before claiming a fix.
 
-## NEVER BREAK EXISTING FUNCTIONALITY
-- **PRESERVE ALL EXISTING BEHAVIOR** - Never change working functionality when fixing issues
-- **MINIMAL CHANGES ONLY** - Make the smallest possible change to fix the specific issue
+## IMPROVEMENT-FOCUSED APPROACH
+- **PROTOTYPE MINDSET** - This is a prototype; prioritize improvement over preserving old behavior
+- **FIX THE ROOT CAUSE** - Make the change needed to properly fix the issue, even if it changes existing behavior
 - **UNDERSTAND BEFORE CHANGING** - Fully analyze existing code before making any modifications
-- **ADDITIVE FIXES PREFERRED** - Add new code rather than changing existing logic when possible
-- **ISOLATE THE PROBLEM** - Fix only the specific issue, not related functionality
-- **PRESERVE WORKING PATHS** - Don't modify code paths that already work correctly
+- **REFACTOR WHEN NEEDED** - If fixing an issue reveals poor design, improve it rather than working around it
+- **ISOLATE THE PROBLEM** - Focus on the specific issue, but don't hesitate to improve related code if it's clearly beneficial
+- **BETTER DESIGN WINS** - Choose the better implementation even if it changes how things currently work
 
 ## Fix Verification
 - Do not claim fixed until the user tests and confirms, unless you verified directly.
 - Ask the user to test and be ready to iterate.
-- **EXISTING FUNCTIONALITY MUST WORK** - All current features must continue working exactly as before
-- **NO REGRESSIONS** - Never introduce new problems while fixing existing ones
+- **NEW PROBLEMS AVOIDED** - Don't introduce new bugs while fixing existing ones
 - **USER CONFIRMS FIX** - Don't claim fixed until user verifies it works
+- **IMPROVEMENTS WELCOME** - If the fix improves behavior beyond the original issue, that's a bonus
 
 ## Exception
 - You may claim complete only if you directly verified via static analysis, compilation, or automated tests.
 
 ## Communication
 - Explain what changed and why; provide testing instructions; acknowledge user verification; address follow-ups.
-- **EXPLAIN IMPACT** - Clearly state what will change and what will remain the same
-- **GET APPROVAL** - Confirm the approach before implementing changes
-- **WHEN IN DOUBT** - Ask for clarification if unsure about existing behavior
+- **EXPLAIN IMPACT** - Clearly state what will change and why it's an improvement
+- **GET APPROVAL FOR MAJOR CHANGES** - Confirm approach for significant architectural changes
+- **WHEN IN DOUBT** - Ask for clarification about requirements, not about preserving old behavior
 
 ## Debug Logging
 - When uncertain, add diagnostic logs and request user logs after testing.
