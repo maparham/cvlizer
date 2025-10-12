@@ -26,7 +26,7 @@ from src.services.job_description_service import (
     get_job_description_by_id,
     update_job_description_owned_by,
 )
-from src.services.url_parsing_service import parse_job_url
+from src.services.url_parsing_service import parse_job_url, _is_search_results_page
 from src.middleware.clerk_auth import get_effective_user
 from src.utils.background_tasks import run_task_in_background
 from src.models.base import SessionLocal
@@ -324,6 +324,13 @@ async def parse_job_description_url(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="CV not found"
+        )
+    
+    # Validate URL before creating job description - check for search results pages
+    if _is_search_results_page(request.url):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab."
         )
     
     # Create JobDescription record immediately with parsing status

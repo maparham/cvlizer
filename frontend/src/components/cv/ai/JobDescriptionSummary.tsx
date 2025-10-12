@@ -112,8 +112,8 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     onParsingComplete: () => {
       showSuccess('Job description parsed successfully');
     },
-    onParsingError: (_, error) => {
-      showError('URL Parsing Failed', `Failed to parse the job description URL: ${error}`);
+    onParsingError: () => {
+      // Error is displayed in the sidebar card - no need for temporary alert
     },
   });
 

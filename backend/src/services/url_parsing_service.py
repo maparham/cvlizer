@@ -6,6 +6,7 @@ job description content using OpenAI AI service for intelligent content extracti
 Includes local browser automation using Selenium for handling JavaScript-rendered job postings.
 
 Key responsibilities:
+- Validate URLs (reject search results pages)
 - Parse job posting URLs using standard web scraping
 - Fallback to local browser automation for JavaScript-heavy sites
 - Extract job description content and metadata using OpenAI
@@ -57,11 +58,18 @@ def parse_job_url(url: str, user_id: str = None, db_session = None) -> Dict[str,
         Dictionary containing parsed job description data
     """
     try:
-        # Validate URL
+        # Validate URL format
         parsed_url = urlparse(url)
         if not parsed_url.scheme or not parsed_url.netloc:
             return {
                 "error": "Invalid URL format. Please check the URL and try again, or use the 'Text' tab to enter the job description manually.",
+                "success": False
+            }
+        
+        # Check if this is a search results page
+        if _is_search_results_page(url):
+            return {
+                "error": "This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab.",
                 "success": False
             }
         
@@ -350,4 +358,49 @@ def is_supported_url(url: str) -> bool:
         return bool(parsed_url.scheme and parsed_url.netloc)
     except Exception:
         return False
+
+
+def _is_search_results_page(url: str) -> bool:
+    """
+    Check if the URL is a search results page rather than an individual job posting.
+    
+    Detects common patterns used by job sites for search results pages:
+    - Glassdoor: SRCH_ parameter, /jobs-SRCH pattern
+    - LinkedIn: /jobs/search, /jobs/collections
+    - Indeed: /jobs?, /q- patterns
+    - Generic: search parameters and keywords
+    
+    Args:
+        url: The URL to check
+        
+    Returns:
+        True if the URL appears to be a search results page
+    """
+    url_lower = url.lower()
+    
+    # Glassdoor search results patterns
+    if 'glassdoor' in url_lower:
+        if 'srch_' in url_lower:  # Search parameter
+            return True
+        if '/job/' in url_lower and '_jobs' in url_lower and 'jv_' not in url_lower:
+            return True  # /Job/location-keyword_jobs pattern without job ID
+    
+    # LinkedIn search results patterns
+    if 'linkedin.com' in url_lower:
+        if '/jobs/search' in url_lower or '/jobs/collections' in url_lower:
+            return True
+    
+    # Indeed search results patterns
+    if 'indeed' in url_lower:
+        if '/jobs?' in url_lower or '/q-' in url_lower:
+            return True
+    
+    # Generic search patterns
+    search_indicators = [
+        '/search?', '/search/', '?search=', '&search=',
+        '/jobs?', '/job-search',
+        'keyword=', 'keywords='
+    ]
+    
+    return any(indicator in url_lower for indicator in search_indicators)
 

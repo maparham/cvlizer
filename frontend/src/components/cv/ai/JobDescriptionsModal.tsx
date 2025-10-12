@@ -129,8 +129,8 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     onParsingComplete: () => {
       showSuccess('Job description parsed successfully');
     },
-    onParsingError: (_, error) => {
-      showError('URL Parsing Failed', `Failed to parse the job description URL: ${error}`);
+    onParsingError: () => {
+      // Error is displayed in the sidebar card - no need for temporary alert
     },
   });
 
@@ -215,7 +215,8 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       const parsedData = await parseJobDescriptionUrl(cvId, urlInput);
       
       if (!(parsedData as { success?: boolean }).success) {
-        throw new Error((parsedData as { error?: string }).error || 'Failed to parse URL');
+        const errorMsg = (parsedData as { error?: string }).error || 'Failed to parse URL';
+        throw new Error(errorMsg);
       }
 
       // The AI store will create a placeholder job description automatically
@@ -234,9 +235,11 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       // Show success message
       showSuccess('Job description created and is being parsed in the background');
     } catch (err) {
-      const userFriendlyMessage = 'Unable to parse this URL. Please use the "MANUAL" tab to enter the job description manually.';
-      setError(userFriendlyMessage);
-      showError('URL Parsing Failed', userFriendlyMessage);
+      // Use the actual error message from the backend (e.g., "This appears to be a search results page...")
+      const errorMessage = err instanceof Error ? err.message : 'Unable to parse this URL. Please use the "MANUAL" tab to enter the job description manually.';
+      setError(errorMessage);
+      // Error is displayed in the modal Alert when validation fails immediately
+      // Sidebar card shows errors when parsing starts but fails later
     } finally {
       setIsLoading(false);
     }
@@ -432,15 +435,15 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                 <Stack spacing={3} sx={{ maxWidth: 800, mx: 'auto' }}>
                   <Alert severity="info" sx={{ mb: 1 }}>
                     <Typography variant="body2" sx={{ mb: 0.5 }}>
-                      <strong>Supported sites:</strong> LinkedIn, Indeed, Glassdoor, and most major job boards
+                      <strong>Enter the direct link to the specific job posting</strong> – preferably the URL hosted by the company posting the job.
                     </Typography>
                     <Typography variant="body2">
-                      Job details will be automatically extracted and parsed in the background (typically 10-30 seconds)
+                      Avoid search results pages. Job details will be automatically extracted and parsed in the background (typically 10-30 seconds).
                     </Typography>
                   </Alert>
                   <TextField
                     label="Job Posting URL"
-                    placeholder="https://linkedin.com/jobs/view/..."
+                    placeholder="https://company.com/careers/job-title..."
                     value={urlInput}
                     onChange={handleUrlChange}
                     onBlur={handleUrlBlur}
@@ -452,7 +455,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                         ? urlValidation.message 
                         : urlValidation.isValid && urlValidation.message 
                           ? urlValidation.message 
-                          : "Paste a URL from LinkedIn, Indeed, or other job sites. Job details will be extracted automatically."
+                          : "Paste the direct URL of a specific job posting (not a search results page)."
                     }
                   />
                   <Button

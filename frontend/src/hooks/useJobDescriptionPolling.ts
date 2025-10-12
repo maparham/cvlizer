@@ -18,7 +18,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAIStore } from '../stores/aiStore';
-import { useNotifications } from '../stores/uiStore';
 import { JobDescription } from '../types/ai';
 import { POLLING_CONFIG } from '../config/constants';
 
@@ -50,19 +49,16 @@ export const useJobDescriptionPolling = (
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const processedJobDescriptionsRef = useRef<Set<string>>(new Set());
   const { updateJobDescriptionStatus } = useAIStore();
-  const { showError } = useNotifications();
   
   // Use refs to store callbacks to avoid dependency issues
   const onParsingCompleteRef = useRef(onParsingComplete);
   const onParsingErrorRef = useRef(onParsingError);
-  const showErrorRef = useRef(showError);
   
   // Update refs when callbacks change
   useEffect(() => {
     onParsingCompleteRef.current = onParsingComplete;
     onParsingErrorRef.current = onParsingError;
-    showErrorRef.current = showError;
-  }, [onParsingComplete, onParsingError, showError]);
+  }, [onParsingComplete, onParsingError]);
 
   // Start polling for specific job description IDs
   const startPolling = useCallback((jobDescriptionIds: string[]) => {
@@ -95,9 +91,9 @@ export const useJobDescriptionPolling = (
             processedJobDescriptionsRef.current.add(id);
             
             if (updated.parse_error) {
-              // Parsing failed
+              // Parsing failed - error will be displayed in the sidebar card
               onParsingErrorRef.current?.(updated, updated.parse_error);
-              showErrorRef.current('URL Parsing Failed', `Failed to parse the job description URL: ${updated.parse_error}`);
+              // Don't show temporary alert - the error appears in the sidebar
             } else {
               // Parsing succeeded
               onParsingCompleteRef.current?.(updated);
