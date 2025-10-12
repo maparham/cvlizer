@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class OpenAIDiagnosticRequest(BaseModel):
     """Request schema for OpenAI diagnostic tests."""
+    model_config = {"protected_namespaces": ()}
 
     prompt: str = Field(..., description="The prompt to test")
     system_message: Optional[str] = Field(
@@ -34,6 +35,7 @@ class OpenAIDiagnosticRequest(BaseModel):
 
 class DiagnosticMetrics(BaseModel):
     """Metrics from diagnostic test."""
+    model_config = {"protected_namespaces": ()}
 
     response_time_ms: int = Field(..., description="Response time in milliseconds")
     prompt_tokens: int = Field(..., description="Number of prompt tokens")

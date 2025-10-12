@@ -47,34 +47,30 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         Formatted prompt string
     """
     return (
-        f"Analyze CV vs job description match. Return JSON with honest analysis "
-        f"but positive fit_analysis text.\n\n"
-        f"CV: {json.dumps(cv_data, indent=2)}\n"
-        f"Job: {job_description}\n\n"
-        f"Rules:\n"
-        f"- confidence_score: honest 1-100 match score\n"
-        f'- fit_analysis: "Why I\'m a Good Fit" text in first person (1-2 short '
-        f"paragraphs + Job Requirements Analysis)\n"
-        f"- Extract ACTUAL job requirements from the job description\n"
-        f"- Keep requirements in their original language from the job description\n"
-        f"- If job description is very long, summarize requirements but keep them "
-        f"specific and real\n"
-        f"- Be concise and to the point, don't be overzealous\n"
-        f"- Other fields: honest assessment\n\n"
-        f"JSON format:\n"
+        f"Analyze CV vs job description. Balanced, evidence-based analysis.\n\n"
+        f"CV: {json.dumps(cv_data, indent=2)}\n\n"
+        f"JOB: {job_description}\n\n"
+        f"RULES:\n"
+        f"1. confidence_score: Honest 1-100 match\n"
+        f"2. fit_analysis (single string, first person):\n"
+        f"   A) 'Why I'm a Good Fit': Max 40-50 words (3-4 sentences). Lead with top 2-3 alignments + 1-2 specific projects/tools + enthusiasm.\n"
+        f"   B) 'Job Requirements Analysis': Extract 5-8 TECHNICAL requirements only (years experience, languages, tools, certs). SKIP job duties ('own strategy', 'mentor', 'collaborate'). Per requirement:\n"
+        f"      **[Exact JD requirement]**\\n\\n[2-3 sentences first person with specific CV evidence + honest assessment]\\n\\n\n"
+        f"   - No duplicates (merge similar)\n"
+        f"   - Stop after last requirement (no notes/summaries)\n"
+        f"   - Natural language, be honest but constructive\n"
+        f"3. OTHER FIELDS: key_matches (3-5), missing_skills, suggested_improvements (3-5 CV tips like 'Add metrics', 'Highlight X project'), strengths (3-5), weaknesses (2-4)\n\n"
+        f"EXAMPLE:\n"
         f"{{\n"
-        f'    "confidence_score": 85,\n'
-        f'    "fit_analysis": "**Why I\'m a Good Fit**\\n\\n[2-3 paragraphs '
-        f'highlighting relevant experience]\\n\\n**Job Requirements Analysis**'
-        f'\\n\\n**[ACTUAL REQUIREMENT FROM JD]**\\n[explanation of how CV matches '
-        f'this requirement]\\n\\n**[ANOTHER ACTUAL REQUIREMENT FROM JD]**\\n'
-        f'[explanation of how CV matches this requirement]",\n'
-        f'    "key_matches": ["genuine matches only"],\n'
-        f'    "missing_skills": ["skills in JD not in CV"],\n'
-        f'    "suggested_improvements": ["constructive recommendations"],\n'
-        f'    "strengths": ["candidate strengths"],\n'
-        f'    "weaknesses": ["honest gaps"]\n'
-        f"}}\n"
+        f'  "confidence_score": 75,\n'
+        f'  "fit_analysis": "**Why I\'m a Good Fit**\\n\\nI bring Python expertise and test automation experience. My pytest work at IMS Nanofabrication aligns well with this role. Excited to deepen testing leadership here.\\n\\n**Job Requirements Analysis**\\n\\n**5+ years testing with automation**\\n\\nI have 3 years with pytest plus 2 years in QA research. While below 5 years, my automation skills are solid and I\'m eager to grow.\\n\\n**Strong programming in Python or C#**\\n\\nPython is my strongest language - used extensively in FastAPI, ETL, and API work. Very comfortable with scripting.",\n'
+        f'  "key_matches": ["Python expertise", "pytest automation", "Docker", "ETL pipelines"],\n'
+        f'  "missing_skills": ["Kubernetes", "Performance testing tools"],\n'
+        f'  "suggested_improvements": ["Add metrics to achievements", "Highlight ETL optimization", "Emphasize testing methodologies"],\n'
+        f'  "strengths": ["Python background", "API expertise", "Automated testing"],\n'
+        f'  "weaknesses": ["Limited cloud experience", "Below 5 years testing"]\n'
+        f"}}\n\n"
+        f"CRITICAL: Write naturally in first person. fit_analysis is ONE string (not nested objects). ONLY two sections. Stop after last requirement.\n"
     )
     
 
@@ -90,9 +86,6 @@ def _parse_job_fit_response(content: str, tokens_used: int, generation_time: int
     Returns:
         Parsed and validated job fit result
     """
-    # Log content preview for debugging
-    logger.info(f"AI Response content preview: {content[:200]}...")
-    
     # Parse JSON response - handle markdown code blocks
     try:
         json_content = parse_json_from_markdown(content)
@@ -127,12 +120,11 @@ def _parse_job_fit_response(content: str, tokens_used: int, generation_time: int
     confidence_score = analysis.get("confidence_score", 50)
     generated_at = analysis.get("generated_at") or datetime.now(timezone.utc).isoformat()
     
-    # Log presence of required fields for observability
-    logger.info(f"Job fit analysis: confidence_score={confidence_score}, tokens_used={tokens_used}")
+    # Log missing required fields for observability
     if "confidence_score" not in analysis:
         logger.warning("confidence_score missing in AI response; using fallback value 50")
     if "generated_at" not in analysis:
-        logger.warning(f"generated_at missing in AI response; using fallback timestamp {generated_at}")
+        logger.debug(f"generated_at missing in AI response; using fallback timestamp {generated_at}")
     
     return {
         "confidence_score": confidence_score,
@@ -186,7 +178,7 @@ def _execute_job_fit_analysis_sync(
         # Make synchronous OpenAI API call using Response API
         response = client.responses.create(
             model=AIConfig.OPENAI_MODEL,
-            instructions="Expert CV analyst who can analyze job descriptions in any language. Return only valid JSON. fit_analysis must be positive candidate defense text written in first person. Extract ACTUAL job requirements from the job description text and use them as bold headers (**Actual Requirement Text**), not generic placeholders. Keep requirements in their original language. confidence_score and other fields must be honest/factual.",
+            instructions="Write as candidate in first person. Return valid JSON. fit_analysis is ONE string (not nested objects). Write naturally - genuine, conversational, human-like. Extract ONLY technical requirements (years experience, languages, tools). SKIP job duties/soft skills. Be honest but constructive. Populate ALL fields: key_matches (3-5), missing_skills, suggested_improvements (3-5 CV tips), strengths (3-5), weaknesses (2-4). No duplicates. Stop after last requirement.",
             input=prompt,
             reasoning={"effort": "minimal", "summary": "auto"},
         )
@@ -308,7 +300,7 @@ async def analyze_job_fit(
             return await asyncio.to_thread(
                 client.responses.create,
                 model=AIConfig.OPENAI_MODEL,
-                instructions="Expert CV analyst who can analyze job descriptions in any language. Return only valid JSON. fit_analysis must be positive candidate defense text written in first person. Extract ACTUAL job requirements from the job description text and use them as bold headers (**Actual Requirement Text**), not generic placeholders. Keep requirements in their original language. confidence_score and other fields must be honest/factual.",
+                instructions="Write as candidate in first person. Return valid JSON. fit_analysis is ONE string (not nested objects). Write naturally - genuine, conversational, human-like. Extract ONLY technical requirements (years experience, languages, tools). SKIP job duties/soft skills. Be honest but constructive. Populate ALL fields: key_matches (3-5), missing_skills, suggested_improvements (3-5 CV tips), strengths (3-5), weaknesses (2-4). No duplicates. Stop after last requirement.",
                 input=prompt,
                 reasoning={"effort": "minimal", "summary": "auto"},
             )

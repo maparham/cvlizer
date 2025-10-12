@@ -78,8 +78,6 @@ class CleanupService:
     
     async def run_cleanup(self):
         """Run all cleanup tasks."""
-        logger.debug("Starting cleanup tasks")
-        
         try:
             db = next(get_db())
             try:
@@ -97,8 +95,6 @@ class CleanupService:
                 old_audit_logs = self._cleanup_old_audit_logs(db)
                 if old_audit_logs > 0:
                     logger.info(f"Cleaned up {old_audit_logs} old audit log records")
-                
-                logger.debug("Cleanup tasks completed successfully")
                 
             finally:
                 db.close()

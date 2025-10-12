@@ -345,6 +345,8 @@ class AIEnhancementRequest(BaseModel):
 
 
 class AIEnhancementResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    
     id: str
     cv_id: str
     job_description_id: str

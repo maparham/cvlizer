@@ -92,6 +92,11 @@ Guidelines:
   * Preserve all structure and hierarchy from the original
   * Convert any numbered lists to markdown format (1., 2., etc.)
   * Keep technical terms and requirements exactly as stated
+  * IMPORTANT: Consolidate duplicate or highly similar requirements into single entries
+    - If multiple requirements cover the same skill/technology (e.g., "Strong programming experience" and "Solid programming/scripting experience"), combine them into ONE clear requirement
+    - If multiple requirements mention the same tool (e.g., "Experience with Docker" and "Docker and containerization"), merge into one comprehensive requirement
+    - Preserve unique requirements but eliminate redundancy
+    - When combining, use the most comprehensive wording that captures all aspects
 - If information is not available, use empty string or "Unknown"
 - For source, try to identify the job site type from the URL or content
 - Ensure the JSON is valid and properly formatted
@@ -105,7 +110,7 @@ Return only the JSON object:
             client = get_openai_client()
             response = client.responses.create(
                 model=AIConfig.OPENAI_MODEL,
-                instructions="You are an expert at extracting structured information from job postings. Always return valid JSON. Format the 'content' field as markdown with proper headers (##, ###), bullet points (-, *), bold text (**bold**), and line breaks.",
+                instructions="You are an expert at extracting structured information from job postings. Always return valid JSON. Format the 'content' field as markdown with proper headers (##, ###), bullet points (-, *), bold text (**bold**), and line breaks. IMPORTANT: Consolidate duplicate or similar requirements into single entries - if multiple requirements cover the same skill/technology (e.g., 'Strong programming' and 'Solid programming/scripting'), combine them into one clear requirement. Eliminate redundancy while preserving all unique requirements.",
                 input=prompt,
                 reasoning={"effort": "minimal", "summary": "auto"},
             )

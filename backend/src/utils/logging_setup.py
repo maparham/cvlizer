@@ -69,6 +69,14 @@ def setup_logging(log_dir: str = "logs") -> None:
     # Reduce verbosity of specific loggers
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)  # Only log HTTP errors
     logging.getLogger("urllib3.connectionpool").setLevel(logging.INFO)  # Silence connection pool debug
+    logging.getLogger("httpcore").setLevel(logging.WARNING)  # Silence HTTP debug logs
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # Silence HTTP debug logs
+    logging.getLogger("openai").setLevel(logging.WARNING)  # Silence OpenAI debug logs
+    logging.getLogger("openai._base_client").setLevel(logging.WARNING)  # Silence OpenAI client debug logs
+    logging.getLogger("httpcore.http11").setLevel(logging.WARNING)  # Silence HTTP/1.1 debug logs
+    logging.getLogger("selenium").setLevel(logging.WARNING)  # Silence Selenium debug logs
+    logging.getLogger("selenium.webdriver").setLevel(logging.WARNING)  # Silence Selenium webdriver debug logs
+    logging.getLogger("selenium.webdriver.remote.remote_connection").setLevel(logging.WARNING)  # Silence Selenium connection logs
     
     logging.info(f"Logging configured - Level: {LoggingConfig.LOG_LEVEL}")
 
