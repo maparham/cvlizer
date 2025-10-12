@@ -45,36 +45,49 @@ def sync_clerk_user_to_local_db(
             if user.email != email:
                 user.email = email
                 updated = True
-            
+
             if additional_data:
                 # Update email verification status if provided
                 if 'email_verified' in additional_data and user.email_verified != additional_data['email_verified']:
                     user.email_verified = additional_data['email_verified']
                     updated = True
-                
-                # Update last login
+
+                # Update last login (only if it's significantly different to avoid constant updates)
                 if 'last_sign_in_at' in additional_data:
                     last_sign_in = additional_data['last_sign_in_at']
+                    new_last_login = None
+
                     if isinstance(last_sign_in, int):
                         # Check if it's milliseconds (13 digits) or seconds (10 digits)
                         if last_sign_in > 1e12:  # Millisecond timestamp
-                            user.last_login = datetime.fromtimestamp(last_sign_in / 1000)
+                            new_last_login = datetime.fromtimestamp(last_sign_in / 1000)
                         else:  # Second timestamp
-                            user.last_login = datetime.fromtimestamp(last_sign_in)
+                            new_last_login = datetime.fromtimestamp(last_sign_in)
                     elif isinstance(last_sign_in, str):
                         # ISO string format
-                        user.last_login = datetime.fromisoformat(last_sign_in.replace('Z', '+00:00'))
+                        new_last_login = datetime.fromisoformat(last_sign_in.replace('Z', '+00:00'))
                     else:
                         # Try to convert to datetime directly
-                        user.last_login = last_sign_in
-                    updated = True
-            
+                        new_last_login = last_sign_in
+
+                    # Only update if last_login is None or differs by more than 1 minute
+                    # This prevents constant database writes for every API call
+                    if new_last_login:
+                        if user.last_login is None:
+                            user.last_login = new_last_login
+                            updated = True
+                        else:
+                            time_diff = abs((new_last_login - user.last_login).total_seconds())
+                            if time_diff > 60:  # Only update if more than 1 minute difference
+                                user.last_login = new_last_login
+                                updated = True
+
             if updated:
                 user.updated_at = datetime.utcnow()
                 db.commit()
                 db.refresh(user)
                 logger.debug(f"Updated existing user {clerk_user_id} in local database")
-            
+
             return user
         
         # If no user found by Clerk ID, check if user exists by email (migration case)
