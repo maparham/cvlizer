@@ -197,31 +197,8 @@ def _extract_with_browser_automation(url: str) -> str:
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         
-        # Wait for common job posting content selectors
-        content_selectors = [
-            (By.TAG_NAME, "main"),
-            (By.TAG_NAME, "article"),
-            (By.CLASS_NAME, "content"),
-            (By.CLASS_NAME, "job-description"),
-            (By.CLASS_NAME, "job-content"),
-            (By.CLASS_NAME, "description"),
-            (By.ID, "content"),
-            (By.CLASS_NAME, "main-content")
-        ]
-        
-        content_found = False
-        for by, selector in content_selectors:
-            try:
-                WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((by, selector))
-                )
-                content_found = True
-                logger.info(f"Found content with selector: {selector}")
-                break
-            except TimeoutException:
-                continue
-        
-        # Additional wait for dynamic content (especially for JavaScript-heavy sites)
+        # Wait for dynamic content to load (JavaScript-heavy sites)
+        # The JavaScript extraction below has its own robust selector logic with fallback
         time.sleep(3)
         
         # Extract page content using JavaScript
