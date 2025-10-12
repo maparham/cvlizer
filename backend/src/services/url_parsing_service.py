@@ -118,35 +118,27 @@ def _extract_raw_content_with_fallback(url: str) -> str:
     ])
     
     if is_js_heavy_site:
-        logger.info(f"Detected JavaScript-heavy site, trying browser automation first for {url}")
         # Try browser automation first for known problematic sites
         try:
             content = _extract_with_browser_automation(url)
             if content and len(content) > 500:  # Ensure we got substantial content
-                logger.info(f"Browser automation successful for {url}")
                 return content
         except Exception as e:
-            logger.warning(f"Browser automation failed for {url}: {str(e)}")
+            pass  # Fall back to standard scraping
     
     # Try standard scraping first (or as fallback)
     try:
-        logger.info(f"Attempting standard scraping for {url}")
         content = _extract_raw_content(url)
         if content and len(content) > 500:  # Ensure we got substantial content
-            logger.info(f"Standard scraping successful for {url}")
             return content
-        elif content:
-            logger.warning(f"Standard scraping returned minimal content for {url}, trying browser automation")
     except Exception as e:
-        logger.warning(f"Standard scraping failed for {url}: {str(e)}")
+        pass  # Fall back to browser automation
     
     # Fall back to browser automation for JavaScript-heavy sites or if standard scraping had minimal content
     if not is_js_heavy_site:  # Only try if we haven't already
         try:
-            logger.info(f"Attempting browser automation for {url}")
             content = _extract_with_browser_automation(url)
             if content:
-                logger.info(f"Browser automation successful for {url}")
                 return content
         except Exception as e:
             logger.error(f"Browser automation failed for {url}: {str(e)}")
@@ -173,8 +165,6 @@ def _extract_with_browser_automation(url: str) -> str:
     driver = None
     
     try:
-        logger.info(f"Starting browser automation for {url}")
-        
         # Configure Chrome options for headless mode
         chrome_options = Options()
         chrome_options.add_argument('--headless')
@@ -194,8 +184,6 @@ def _extract_with_browser_automation(url: str) -> str:
         # Initialize the Chrome driver
         driver = webdriver.Chrome(options=chrome_options)
         driver.set_page_load_timeout(60)  # 60 seconds timeout
-        
-        logger.info(f"Navigating to {url}")
         
         # Navigate to the URL
         driver.get(url)
@@ -247,10 +235,8 @@ def _extract_with_browser_automation(url: str) -> str:
         """)
         
         if content and len(content) > 100:
-            logger.info(f"Browser automation extracted {len(content)} characters from {url}")
             return content
         else:
-            logger.warning(f"Browser automation extracted minimal content from {url}")
             raise Exception("Browser automation extracted minimal content")
             
     except TimeoutException as e:
@@ -267,8 +253,8 @@ def _extract_with_browser_automation(url: str) -> str:
         if driver:
             try:
                 driver.quit()
-            except Exception as e:
-                logger.warning(f"Error closing browser: {str(e)}")
+            except Exception:
+                pass  # Silently handle cleanup errors
 
 
 def _extract_raw_content(url: str) -> str:

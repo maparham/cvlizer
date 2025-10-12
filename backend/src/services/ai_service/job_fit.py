@@ -46,31 +46,36 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
     Returns:
         Formatted prompt string
     """
-    return f"""Analyze CV vs job description match. Return JSON with honest analysis but positive fit_analysis text.
-
-CV: {json.dumps(cv_data, indent=2)}
-Job: {job_description}
-
-Rules:
-- confidence_score: honest 1-100 match score
-- fit_analysis: "Why I'm a Good Fit" text in first person (2-3 paragraphs + Job Requirements Analysis)
-- Extract ACTUAL job requirements from the job description
-- Keep requirements in their original language from the job description
-- If job description is very long, summarize requirements but keep them specific and real
-- Be concise and to the point, don't be overzealous
-- Other fields: honest assessment
-
-JSON format:
-{{
-    "confidence_score": 85,
-    "fit_analysis": "**Why I'm a Good Fit**\\n\\n[2-3 paragraphs highlighting relevant experience]\\n\\n**Job Requirements Analysis**\\n\\n**[ACTUAL REQUIREMENT FROM JD]**\\n[explanation of how CV matches this requirement]\\n\\n**[ANOTHER ACTUAL REQUIREMENT FROM JD]**\\n[explanation of how CV matches this requirement]",
-    "key_matches": ["genuine matches only"],
-    "missing_skills": ["skills in JD not in CV"],
-    "suggested_improvements": ["constructive recommendations"],
-    "strengths": ["candidate strengths"],
-    "weaknesses": ["honest gaps"]
-}}
-"""
+    return (
+        f"Analyze CV vs job description match. Return JSON with honest analysis "
+        f"but positive fit_analysis text.\n\n"
+        f"CV: {json.dumps(cv_data, indent=2)}\n"
+        f"Job: {job_description}\n\n"
+        f"Rules:\n"
+        f"- confidence_score: honest 1-100 match score\n"
+        f'- fit_analysis: "Why I\'m a Good Fit" text in first person (1-2 short '
+        f"paragraphs + Job Requirements Analysis)\n"
+        f"- Extract ACTUAL job requirements from the job description\n"
+        f"- Keep requirements in their original language from the job description\n"
+        f"- If job description is very long, summarize requirements but keep them "
+        f"specific and real\n"
+        f"- Be concise and to the point, don't be overzealous\n"
+        f"- Other fields: honest assessment\n\n"
+        f"JSON format:\n"
+        f"{{\n"
+        f'    "confidence_score": 85,\n'
+        f'    "fit_analysis": "**Why I\'m a Good Fit**\\n\\n[2-3 paragraphs '
+        f'highlighting relevant experience]\\n\\n**Job Requirements Analysis**'
+        f'\\n\\n**[ACTUAL REQUIREMENT FROM JD]**\\n[explanation of how CV matches '
+        f'this requirement]\\n\\n**[ANOTHER ACTUAL REQUIREMENT FROM JD]**\\n'
+        f'[explanation of how CV matches this requirement]",\n'
+        f'    "key_matches": ["genuine matches only"],\n'
+        f'    "missing_skills": ["skills in JD not in CV"],\n'
+        f'    "suggested_improvements": ["constructive recommendations"],\n'
+        f'    "strengths": ["candidate strengths"],\n'
+        f'    "weaknesses": ["honest gaps"]\n'
+        f"}}\n"
+    )
     
 
 def _parse_job_fit_response(content: str, tokens_used: int, generation_time: int) -> JobFitResult:
