@@ -52,6 +52,7 @@ from src.schemas.cv_schemas import CVUpdateRequestSchema, CVDataSchema
 from src.utils.validation import CVDataValidator
 from src.middleware.clerk_auth import get_effective_user
 from src.services.latex_export_service import generate_cv_latex, compile_pdf_from_latex, is_latex_available
+from src.utils.feature_flags import is_cv_history_enabled
 
 router = APIRouter(prefix="/api/cvs", tags=["cvs"])
 
@@ -90,21 +91,21 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
             db.commit()
             db.refresh(cv)
             
-            # Create initial history entry after successful parsing
-            if not parsed_data.get('error'):
+            # Create initial history entry after successful parsing (if feature is enabled)
+            if not parsed_data.get('error') and is_cv_history_enabled():
                 from src.models.cv_history import CVHistory
                 import json
-                
+
                 # Check if initial history entry already exists
                 existing_initial = db.query(CVHistory).filter(
                     CVHistory.cv_id == cv_id,
                     CVHistory.is_initial == True
                 ).first()
-                
+
                 if not existing_initial:
                     # Calculate data size
                     data_size = len(json.dumps(parsed_data).encode('utf-8'))
-                    
+
                     # Create initial history entry
                     initial_entry = CVHistory(
                         cv_id=cv_id,
@@ -117,7 +118,7 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
                         is_initial=True,
                         data_size=data_size
                     )
-                    
+
                     db.add(initial_entry)
                     db.commit()
         
@@ -461,28 +462,29 @@ async def duplicate_cv(
             is_parsed=True  # Already "parsed" since we're copying existing data
         )
         
-        # Create initial history entry for the duplicated CV
-        from src.models.cv_history import CVHistory
-        import json
-        
-        # Calculate data size
-        data_size = len(json.dumps(duplicated_parsed_data).encode('utf-8'))
-        
-        # Create initial history entry
-        initial_entry = CVHistory(
-            cv_id=str(new_cv.id),
-            user_id=str(current_user.id),
-            cv_data=duplicated_parsed_data,
-            change_type="initial_load",
-            description="Duplicated from original CV",
-            label="Initial CV (Copy)",
-            is_automatic=True,
-            is_initial=True,
-            data_size=data_size
-        )
-        
-        db.add(initial_entry)
-        db.commit()
+        # Create initial history entry for the duplicated CV (if feature is enabled)
+        if is_cv_history_enabled():
+            from src.models.cv_history import CVHistory
+            import json
+
+            # Calculate data size
+            data_size = len(json.dumps(duplicated_parsed_data).encode('utf-8'))
+
+            # Create initial history entry
+            initial_entry = CVHistory(
+                cv_id=str(new_cv.id),
+                user_id=str(current_user.id),
+                cv_data=duplicated_parsed_data,
+                change_type="initial_load",
+                description="Duplicated from original CV",
+                label="Initial CV (Copy)",
+                is_automatic=True,
+                is_initial=True,
+                data_size=data_size
+            )
+
+            db.add(initial_entry)
+            db.commit()
         
         return CVResponse(**new_cv.to_response_dict())
         

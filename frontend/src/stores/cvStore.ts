@@ -47,6 +47,9 @@ import { migrateCVIfNeeded } from '../utils/cvDataMigration'
 const DEFAULT_CV_FILENAME = 'New CV'
 const TEMP_CV_ID_PREFIX = 'temp-'
 
+// Check if CV history feature is enabled
+const isHistoryEnabled = () => import.meta.env.VITE_SHOW_HISTORY_PANEL === 'true'
+
 /**
  * Check if a CV ID is temporary (not yet saved to backend)
  * Temporary CVs have IDs that start with 'temp-'
@@ -596,13 +599,29 @@ export const useCVStore = create<CVState>()(
 
       // History actions
       createSnapshot: async (cvId: string, cvData: CVData, options: CreateSnapshotOptions): Promise<CVHistoryEntry> => {
+        // Skip if history feature is disabled
+        if (!isHistoryEnabled()) {
+          // Return a mock entry to prevent crashes
+          return {
+            id: `disabled_${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            cvData: cvData,
+            changeType: options.changeType,
+            description: options.description || 'Snapshot created',
+            isAutomatic: options.changeType !== 'manual_save' && options.changeType !== 'restore_point',
+            isInitial: options.changeType === 'initial_load',
+            label: options.label,
+            dataSize: JSON.stringify(cvData).length
+          }
+        }
+
         const entry = await backendHistoryService.createSnapshot(cvId, cvData, options)
-        
+
         // Update last auto snapshot time if this was automatic
         if (entry.isAutomatic) {
           set({ lastAutoSnapshot: entry.timestamp })
         }
-        
+
         return entry
       },
 
@@ -682,6 +701,9 @@ export const useCVStore = create<CVState>()(
       },
 
       createAutoSnapshotIfNeeded: async (cvId: string, cvData: CVData, changeType: string = 'auto_save'): Promise<void> => {
+        // Skip if history feature is disabled
+        if (!isHistoryEnabled()) return
+
         if (!(await get().shouldCreateAutoSnapshot(cvId))) return
 
         try {
@@ -690,7 +712,7 @@ export const useCVStore = create<CVState>()(
             'manual_save': 'CV saved',
             'section_edit': 'Section edited'
           }
-          
+
           await get().createSnapshot(cvId, cvData, {
             changeType: changeType as any,
             description: descriptions[changeType as keyof typeof descriptions] || 'CV updated',
@@ -702,6 +724,9 @@ export const useCVStore = create<CVState>()(
       },
 
       createSnapshotOnUserAction: async (cvId: string, cvData: CVData, action: string, customDescription?: string): Promise<void> => {
+        // Skip if history feature is disabled
+        if (!isHistoryEnabled()) return
+
         try {
           const actionDescriptions = {
             'section_completed': 'Section editing completed',
@@ -709,10 +734,10 @@ export const useCVStore = create<CVState>()(
             'major_change': 'Significant changes made',
             'manual_save': 'CV saved by user'
           }
-          
+
           // Use custom description if provided, otherwise fall back to action descriptions
           const description = customDescription || actionDescriptions[action as keyof typeof actionDescriptions] || 'CV updated'
-          
+
           await get().createSnapshot(cvId, cvData, {
             changeType: 'manual_save',
             description: description,

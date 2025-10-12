@@ -17,6 +17,7 @@ from src.models import get_db, CVHistory, CV, User
 from src.services.cv_diff_service import cv_diff_service
 from src.middleware.clerk_auth import get_effective_user, get_current_user
 from src.utils.history_validation import ValidatedCreateHistoryRequest, calculate_data_size
+from src.utils.feature_flags import is_cv_history_enabled
 
 
 router = APIRouter(prefix="/api/cvs", tags=["cv-history"])
@@ -85,7 +86,14 @@ async def create_history_entry(
     current_user: User = Depends(get_effective_user)
 ):
     """Create a new history entry for a CV."""
-    
+
+    # Check if history feature is enabled
+    if not is_cv_history_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="CV history feature is currently disabled"
+        )
+
     # Verify CV exists and belongs to user
     cv = db.query(CV).filter(
         and_(CV.id == cv_id, CV.user_id == current_user.id)
@@ -363,27 +371,29 @@ async def restore_cv_version(
     # Restore the CV data
     cv.parsed_data = history_entry.cv_data
     cv.updated_at = datetime.utcnow()
-    
-    # Create restore snapshot
-    restore_size = len(json.dumps(history_entry.cv_data).encode('utf-8'))
-    restore_entry = CVHistory(
-        cv_id=cv_id,
-        user_id=current_user.id,
-        cv_data=history_entry.cv_data,
-        change_type="restore_point",
-        description=f"Restored to version from {history_entry.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-        label=None,
-        is_automatic=False,
-        is_initial=False,
-        data_size=restore_size
-    )
-    db.add(restore_entry)
-    
+
+    # Create restore snapshot (if feature is enabled)
+    if is_cv_history_enabled():
+        restore_size = len(json.dumps(history_entry.cv_data).encode('utf-8'))
+        restore_entry = CVHistory(
+            cv_id=cv_id,
+            user_id=current_user.id,
+            cv_data=history_entry.cv_data,
+            change_type="restore_point",
+            description=f"Restored to version from {history_entry.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+            label=None,
+            is_automatic=False,
+            is_initial=False,
+            data_size=restore_size
+        )
+        db.add(restore_entry)
+
     db.commit()
     db.refresh(cv)
-    
-    # Apply retention policy after creating restore entry
-    _apply_retention_policy(db, cv_id)
+
+    # Apply retention policy after creating restore entry (if feature is enabled)
+    if is_cv_history_enabled():
+        _apply_retention_policy(db, cv_id)
     
     return {
         "message": "CV restored successfully",
