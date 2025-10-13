@@ -1,15 +1,15 @@
 /**
  * useAIUsageData - Custom hook for managing AI usage data
- * 
+ *
  * This hook handles loading and managing AI usage statistics, charts, and logs.
  * Provides date range management, filtering, and export/delete functionality.
- * 
+ *
  * Key responsibilities:
  * - Load AI usage statistics and charts
  * - Manage date range and filters
  * - Handle export and delete operations
  * - Provide pagination for logs
- * 
+ *
  * Usage context:
  * - Used in admin dashboard AI usage tab
  * - Integrates with AI usage API endpoints
@@ -20,21 +20,21 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotifications } from '../stores/uiStore'
-import { 
-  getAIUsageStats, 
-  getAIUsageByUser, 
-  getAIUsageByOperation, 
-  getAIUsageTimeline, 
+import {
+  getAIUsageStats,
+  getAIUsageByUser,
+  getAIUsageByOperation,
+  getAIUsageTimeline,
   getAIUsageLogs,
-  getDefaultDateRange 
+  getDefaultDateRange
 } from '../services/adminAIUsageService'
-import { 
-  SystemAIStats, 
-  UserAIUsage, 
-  OperationAIUsage, 
-  TimelineData, 
-  PaginatedAIUsageLogs, 
-  AIUsageFilters 
+import {
+  SystemAIStats,
+  UserAIUsage,
+  OperationAIUsage,
+  TimelineData,
+  PaginatedAIUsageLogs,
+  AIUsageFilters
 } from '../types/admin'
 import api from '../services/api'
 
@@ -81,7 +81,7 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
   const [filters, setFiltersState] = useState<AIUsageFilters>({})
   const [logsPage, setLogsPageState] = useState(0)
   const [logsLimit, setLogsLimitState] = useState(50)
-  
+
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const { showSuccess } = useNotifications()
@@ -171,10 +171,10 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
    * @param newFilters - Partial filter object to update
    */
   const handleFilterChange = (newFilters: Partial<AIUsageFilters>) => {
-    const updatedFilters = Object.keys(newFilters).length === 0 
-      ? {} 
+    const updatedFilters = Object.keys(newFilters).length === 0
+      ? {}
       : { ...filters, ...newFilters }
-    
+
     setFiltersState(updatedFilters)
     setLogsPageState(0)
     loadAILogs(updatedFilters)
@@ -231,17 +231,17 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
       const link = document.createElement('a')
       const url = URL.createObjectURL(blob)
       link.setAttribute('href', url)
-      
+
       const dateStr = new Date().toISOString().split('T')[0]
       const userStr = filters.user_id ? `_user_${filters.user_id.slice(0, 8)}` : ''
       const operationStr = filters.operation_type ? `_${filters.operation_type}` : ''
       link.setAttribute('download', `ai_usage_logs_${dateStr}${userStr}${operationStr}.csv`)
-      
+
       link.style.visibility = 'hidden'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      
+
       showSuccess('Success', `Exported ${aiLogs.logs.length} AI usage logs`)
     } catch (err) {
       console.error('Failed to export AI logs:', err)
@@ -264,28 +264,28 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
         },
         responseType: 'blob'
       })
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]))
       const link = document.createElement('a')
       link.href = url
-      
+
       const contentDisposition = response.headers['content-disposition']
       let filename = `ai_usage_logs_complete_export_${new Date().toISOString().split('T')[0]}.csv`
-      
+
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/)
         if (filenameMatch) {
           filename = filenameMatch[1]
         }
       }
-      
+
       link.setAttribute('download', filename)
       link.style.visibility = 'hidden'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
-      
+
       showSuccess('Success', 'AI usage logs exported successfully')
     } catch (err) {
       console.error('Failed to export all AI logs:', err)
@@ -298,12 +298,12 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
   const handleDeleteAllLogs = async () => {
     try {
       setLoading(true)
-      
+
       const response = await api.delete('/admin/ai-usage/logs/all')
       const deletedCount = response.data?.deleted_count || 0
-      
+
       await loadAIUsageData()
-      
+
       showSuccess('Success', `Successfully deleted ${deletedCount} AI usage log entries`)
     } catch (err: any) {
       console.error('Failed to delete all AI logs:', err)

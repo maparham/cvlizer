@@ -1,6 +1,6 @@
 /**
  * History Panel Handle Component
- * 
+ *
  * A persistent handle/tab that's always visible on the right side of the screen
  * to allow users to quickly open the history panel.
  */
@@ -19,13 +19,13 @@ import {
 interface HistoryPanelHandleProps {
   /** Whether the history panel is currently open */
   isOpen: boolean
-  
+
   /** Callback to open the history panel */
   onOpen: () => void
-  
+
   /** Number of history entries (optional, for badge) */
   entryCount?: number
-  
+
   /** Whether to show the entry count badge */
   showCount?: boolean
 }
@@ -81,7 +81,7 @@ const HistoryPanelHandle: React.FC<HistoryPanelHandleProps> = ({
         }}
       >
         <HistoryIcon fontSize="small" />
-        
+
         {showCount && entryCount > 0 && (
           <Chip
             size="small"
@@ -97,13 +97,13 @@ const HistoryPanelHandle: React.FC<HistoryPanelHandleProps> = ({
             }}
           />
         )}
-        
-        <ChevronLeftIcon 
-          fontSize="small" 
-          sx={{ 
+
+        <ChevronLeftIcon
+          fontSize="small"
+          sx={{
             mt: 0.5,
-            opacity: 0.7 
-          }} 
+            opacity: 0.7
+          }}
         />
       </Box>
     </Tooltip>

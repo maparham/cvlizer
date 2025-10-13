@@ -1,15 +1,15 @@
 /**
  * ImpersonationDialog - Dialog for confirming user impersonation
- * 
+ *
  * This component provides a confirmation dialog for starting user impersonation.
  * Shows warnings, justification input, and confirmation actions.
- * 
+ *
  * Key responsibilities:
  * - Display impersonation warnings and information
  * - Collect justification for impersonation
  * - Handle confirmation and cancellation
  * - Show loading states during action
- * 
+ *
  * Usage context:
  * - Used in admin dashboard for user management
  * - Integrates with impersonation service
@@ -52,8 +52,8 @@ const ImpersonationDialog: React.FC<ImpersonationDialogProps> = ({
   loading
 }) => {
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="sm"
       fullWidth
@@ -64,12 +64,12 @@ const ImpersonationDialog: React.FC<ImpersonationDialogProps> = ({
       <DialogContent>
         <Box sx={{ mb: 2 }}>
           <Alert severity="warning">
-            You are about to impersonate user <strong>{target?.email}</strong>. 
-            This action will be logged for audit purposes. The session will automatically 
+            You are about to impersonate user <strong>{target?.email}</strong>.
+            This action will be logged for audit purposes. The session will automatically
             expire in 30 minutes.
           </Alert>
         </Box>
-        
+
         <TextField
           fullWidth
           label="Justification (optional)"
@@ -81,7 +81,7 @@ const ImpersonationDialog: React.FC<ImpersonationDialogProps> = ({
           variant="outlined"
           sx={{ mt: 2 }}
         />
-        
+
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
           During impersonation:
         </Typography>
@@ -101,13 +101,13 @@ const ImpersonationDialog: React.FC<ImpersonationDialogProps> = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button 
+        <Button
           onClick={onClose}
           disabled={loading}
         >
           Cancel
         </Button>
-        <Button 
+        <Button
           onClick={onConfirm}
           variant="contained"
           color="warning"

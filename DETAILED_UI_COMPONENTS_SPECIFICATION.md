@@ -83,10 +83,10 @@ This document provides an exhaustive, fine-grained specification of every UI com
 - **Background**: Linear gradient from #667eea to #764ba2
 - **Height**: Minimum 400px with vertical padding
 - **Content**: Centered with max-width container
-- **Typography**: 
+- **Typography**:
   - H1: 32px, bold, white color
   - H5: 20px, 90% opacity, white color
-- **Buttons**: 
+- **Buttons**:
   - Primary: White background with blue text
   - Secondary: Transparent with white border
 

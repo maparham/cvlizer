@@ -1,10 +1,10 @@
 /**
  * Impersonation Service
- * 
+ *
  * This module provides client-side functionality for admin impersonation features.
  * It handles API communication for starting, ending, and monitoring impersonation
  * sessions with proper error handling and type safety.
- * 
+ *
  * Key responsibilities:
  * - Start and end impersonation sessions
  * - Monitor impersonation status with polling
@@ -151,10 +151,10 @@ class ImpersonationService {
    */
   formatRemainingTime(seconds: number): string {
     if (seconds <= 0) return '0:00'
-    
+
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
-    
+
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 

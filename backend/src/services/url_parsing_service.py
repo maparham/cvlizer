@@ -47,13 +47,13 @@ from src.services.ai_service import extract_job_description_with_ai
 logger = logging.getLogger(__name__)
 
 
-def parse_job_url(url: str, user_id: str = None, db_session = None) -> Dict[str, Any]:
+def parse_job_url(url: str, user_id: str = None, db_session=None) -> Dict[str, Any]:
     """
     Parse a job posting URL and extract job description content using OpenAI.
-    
+
     Args:
         url: The job posting URL to parse
-        
+
     Returns:
         Dictionary containing parsed job description data
     """
@@ -63,60 +63,58 @@ def parse_job_url(url: str, user_id: str = None, db_session = None) -> Dict[str,
         if not parsed_url.scheme or not parsed_url.netloc:
             return {
                 "error": "Invalid URL format. Please check the URL and try again, or use the 'Text' tab to enter the job description manually.",
-                "success": False
+                "success": False,
             }
-        
+
         # Check if this is a search results page
         if _is_search_results_page(url):
             return {
                 "error": "This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab.",
-                "success": False
+                "success": False,
             }
-        
+
         # Extract raw content from URL using web scraping with browser automation fallback
         raw_content = _extract_raw_content_with_fallback(url)
         if not raw_content:
             return {
                 "error": "Unable to extract content from this URL. The page may be empty or protected. Please copy and paste the job description manually using the 'Text' tab.",
-                "success": False
+                "success": False,
             }
-        
+
         # Use OpenAI to intelligently parse and structure the content
         return _parse_with_openai(raw_content, url, user_id, db_session)
-            
+
     except ValueError as e:
         # These are user-friendly error messages from _extract_raw_content
         logger.error(f"URL parsing failed for {url}: {str(e)}")
-        return {
-            "error": str(e),
-            "success": False
-        }
+        return {"error": str(e), "success": False}
     except Exception as e:
         logger.error(f"Failed to parse URL {url}: {str(e)}")
         return {
             "error": f"Unable to parse this URL. Please copy and paste the job description manually using the 'Text' tab.",
-            "success": False
+            "success": False,
         }
 
 
 def _extract_raw_content_with_fallback(url: str) -> str:
     """
     Extract raw content from URL with browser automation fallback for JavaScript-heavy sites.
-    
+
     First attempts standard web scraping, then falls back to browser automation if that fails
     or returns insufficient content. For known JavaScript-heavy sites, tries browser automation first.
-    
+
     Args:
         url: The URL to extract content from
-        
+
     Returns:
         Extracted text content or empty string if both methods fail
     """
     # Check if this is a known JavaScript-heavy site
-    is_js_heavy_site = any(domain in url.lower() for domain in [
-        'jobs.wien.gv.at', 'wien.gv.at', 'karriere.', 'jobs.'
-    ])
-    
+    is_js_heavy_site = any(
+        domain in url.lower()
+        for domain in ["jobs.wien.gv.at", "wien.gv.at", "karriere.", "jobs."]
+    )
+
     if is_js_heavy_site:
         # Try browser automation first for known problematic sites
         try:
@@ -125,7 +123,7 @@ def _extract_raw_content_with_fallback(url: str) -> str:
                 return content
         except Exception as e:
             pass  # Fall back to standard scraping
-    
+
     # Try standard scraping first (or as fallback)
     try:
         content = _extract_raw_content(url)
@@ -133,7 +131,7 @@ def _extract_raw_content_with_fallback(url: str) -> str:
             return content
     except Exception as e:
         pass  # Fall back to browser automation
-    
+
     # Fall back to browser automation for JavaScript-heavy sites or if standard scraping had minimal content
     if not is_js_heavy_site:  # Only try if we haven't already
         try:
@@ -142,74 +140,77 @@ def _extract_raw_content_with_fallback(url: str) -> str:
                 return content
         except Exception as e:
             logger.error(f"Browser automation failed for {url}: {str(e)}")
-    
+
     return ""
 
 
 def _extract_with_browser_automation(url: str) -> str:
     """
     Extract content from URL using Selenium browser automation with JavaScript rendering.
-    
+
     Uses Selenium to handle dynamic sites that require client-side rendering.
     Waits for content to load and extracts clean text content.
-    
+
     Args:
         url: The URL to extract content from
-        
+
     Returns:
         Extracted text content or empty string if extraction fails
-        
+
     Raises:
         Exception: If browser automation fails
     """
     driver = None
-    
+
     try:
         # Configure Chrome options for headless mode
         chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-setuid-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--no-first-run')
-        chrome_options.add_argument('--no-default-browser-check')
-        chrome_options.add_argument('--disable-default-apps')
-        chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-web-security')
-        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-        chrome_options.add_argument('--window-size=1920,1080')
-        chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-        
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-setuid-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--no-first-run")
+        chrome_options.add_argument("--no-default-browser-check")
+        chrome_options.add_argument("--disable-default-apps")
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-web-security")
+        chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument(
+            "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+
         # Initialize the Chrome driver
         driver = webdriver.Chrome(options=chrome_options)
         driver.set_page_load_timeout(60)  # 60 seconds timeout
-        
+
         # Navigate to the URL
         driver.get(url)
-        
+
         # Wait for page to load
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        
+
         # Wait for dynamic content to load (JavaScript-heavy sites)
         # The JavaScript extraction below has its own robust selector logic with fallback
         time.sleep(3)
-        
+
         # Extract page content using JavaScript
-        content = driver.execute_script("""
+        content = driver.execute_script(
+            """
             // Remove script and style elements
             const scripts = document.querySelectorAll('script, style, nav, header, footer, .navigation, .menu, .sidebar');
             scripts.forEach(el => el.remove());
-            
+
             // Try to find main content area
             const contentSelectors = [
-                'main', 'article', '.content', '.job-description', 
+                'main', 'article', '.content', '.job-description',
                 '.job-content', '.description', '#content', '.main-content',
                 '.job-details', '.position-description', '.job-info'
             ];
-            
+
             let contentElement = null;
             for (const selector of contentSelectors) {
                 const element = document.querySelector(selector);
@@ -218,27 +219,28 @@ def _extract_with_browser_automation(url: str) -> str:
                     break;
                 }
             }
-            
+
             // Fall back to body if no specific content area found
             if (!contentElement) {
                 contentElement = document.body;
             }
-            
+
             // Get text content with preserved line breaks
             const text = contentElement.textContent || contentElement.innerText || '';
-            
+
             // Clean up the text
             return text
                 .replace(/\\s+/g, ' ')  // Replace multiple whitespace with single space
                 .replace(/\\n\\s*\\n/g, '\\n\\n')  // Preserve paragraph breaks
                 .trim();
-        """)
-        
+        """
+        )
+
         if content and len(content) > 100:
             return content
         else:
             raise Exception("Browser automation extracted minimal content")
-            
+
     except TimeoutException as e:
         logger.error(f"Browser automation timeout for {url}: {str(e)}")
         raise Exception(f"Browser automation timeout: {str(e)}")
@@ -262,63 +264,79 @@ def _extract_raw_content(url: str) -> str:
     try:
         # Add a small delay to be respectful to the server
         time.sleep(1)
-        
+
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
-        
+
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
+
+        soup = BeautifulSoup(response.content, "html.parser")
+
         # Remove script and style elements
         for script in soup(["script", "style"]):
             script.decompose()
-        
+
         # Get all text content
-        text = soup.get_text(separator='\n', strip=True)
-        
+        text = soup.get_text(separator="\n", strip=True)
+
         # Clean up the text
-        lines = [line.strip() for line in text.split('\n') if line.strip()]
-        cleaned_text = '\n'.join(lines)
-        
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+        cleaned_text = "\n".join(lines)
+
         return cleaned_text if len(cleaned_text) > 100 else ""
-        
+
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 429:
             logger.error(f"Rate limited by {url}: {str(e)}")
-            raise ValueError("This job site is blocking automated requests. Please copy and paste the job description manually using the 'Text' tab.")
+            raise ValueError(
+                "This job site is blocking automated requests. Please copy and paste the job description manually using the 'Text' tab."
+            )
         elif e.response.status_code == 403:
             logger.error(f"Access forbidden for {url}: {str(e)}")
-            raise ValueError("This job site requires authentication or blocks automated access. Please copy and paste the job description manually using the 'Text' tab.")
+            raise ValueError(
+                "This job site requires authentication or blocks automated access. Please copy and paste the job description manually using the 'Text' tab."
+            )
         else:
             logger.error(f"HTTP error accessing {url}: {str(e)}")
-            raise ValueError(f"Unable to access this URL (HTTP {e.response.status_code}). Please copy and paste the job description manually using the 'Text' tab.")
+            raise ValueError(
+                f"Unable to access this URL (HTTP {e.response.status_code}). Please copy and paste the job description manually using the 'Text' tab."
+            )
     except requests.exceptions.Timeout as e:
         logger.error(f"Timeout accessing {url}: {str(e)}")
-        raise ValueError("The job site took too long to respond. Please copy and paste the job description manually using the 'Text' tab.")
+        raise ValueError(
+            "The job site took too long to respond. Please copy and paste the job description manually using the 'Text' tab."
+        )
     except requests.exceptions.RequestException as e:
         logger.error(f"Request error accessing {url}: {str(e)}")
-        raise ValueError("Unable to access this URL. Please copy and paste the job description manually using the 'Text' tab.")
+        raise ValueError(
+            "Unable to access this URL. Please copy and paste the job description manually using the 'Text' tab."
+        )
     except Exception as e:
         logger.error(f"Failed to extract content from {url}: {str(e)}")
-        raise ValueError("Unable to extract content from this URL. Please copy and paste the job description manually using the 'Text' tab.")
+        raise ValueError(
+            "Unable to extract content from this URL. Please copy and paste the job description manually using the 'Text' tab."
+        )
 
 
-def _parse_with_openai(raw_content: str, url: str, user_id: str = None, db_session = None) -> Dict[str, Any]:
+def _parse_with_openai(
+    raw_content: str, url: str, user_id: str = None, db_session=None
+) -> Dict[str, Any]:
     """Parse job description content using OpenAI AI service."""
     try:
         # Use the AI service to parse the content
-        result = extract_job_description_with_ai(raw_content, url, user_id=user_id, db_session=db_session)
-        
+        result = extract_job_description_with_ai(
+            raw_content, url, user_id=user_id, db_session=db_session
+        )
+
         # Check if AI service returned an error
         if result.get("error"):
             return {
                 "error": f"AI parsing failed: {result.get('error')}. Please copy and paste the job description manually using the 'Text' tab.",
-                "success": False
+                "success": False,
             }
-        
+
         return {
             "success": True,
             "content": result.get("content", ""),
@@ -326,14 +344,14 @@ def _parse_with_openai(raw_content: str, url: str, user_id: str = None, db_sessi
             "company": result.get("company", ""),
             "location": result.get("location", ""),
             "source_url": url,
-            "source": result.get("source", "ai_parsed")
+            "source": result.get("source", "ai_parsed"),
         }
-        
+
     except Exception as e:
         logger.error(f"Failed to parse content with OpenAI: {str(e)}")
         return {
             "error": f"AI service is currently unavailable. Please copy and paste the job description manually using the 'Text' tab.",
-            "success": False
+            "success": False,
         }
 
 
@@ -349,44 +367,48 @@ def is_supported_url(url: str) -> bool:
 def _is_search_results_page(url: str) -> bool:
     """
     Check if the URL is a search results page rather than an individual job posting.
-    
+
     Detects common patterns used by job sites for search results pages:
     - Glassdoor: SRCH_ parameter, /jobs-SRCH pattern
     - LinkedIn: /jobs/search, /jobs/collections
     - Indeed: /jobs?, /q- patterns
     - Generic: search parameters and keywords
-    
+
     Args:
         url: The URL to check
-        
+
     Returns:
         True if the URL appears to be a search results page
     """
     url_lower = url.lower()
-    
+
     # Glassdoor search results patterns
-    if 'glassdoor' in url_lower:
-        if 'srch_' in url_lower:  # Search parameter
+    if "glassdoor" in url_lower:
+        if "srch_" in url_lower:  # Search parameter
             return True
-        if '/job/' in url_lower and '_jobs' in url_lower and 'jv_' not in url_lower:
+        if "/job/" in url_lower and "_jobs" in url_lower and "jv_" not in url_lower:
             return True  # /Job/location-keyword_jobs pattern without job ID
-    
+
     # LinkedIn search results patterns
-    if 'linkedin.com' in url_lower:
-        if '/jobs/search' in url_lower or '/jobs/collections' in url_lower:
+    if "linkedin.com" in url_lower:
+        if "/jobs/search" in url_lower or "/jobs/collections" in url_lower:
             return True
-    
+
     # Indeed search results patterns
-    if 'indeed' in url_lower:
-        if '/jobs?' in url_lower or '/q-' in url_lower:
+    if "indeed" in url_lower:
+        if "/jobs?" in url_lower or "/q-" in url_lower:
             return True
-    
+
     # Generic search patterns
     search_indicators = [
-        '/search?', '/search/', '?search=', '&search=',
-        '/jobs?', '/job-search',
-        'keyword=', 'keywords='
+        "/search?",
+        "/search/",
+        "?search=",
+        "&search=",
+        "/jobs?",
+        "/job-search",
+        "keyword=",
+        "keywords=",
     ]
-    
-    return any(indicator in url_lower for indicator in search_indicators)
 
+    return any(indicator in url_lower for indicator in search_indicators)

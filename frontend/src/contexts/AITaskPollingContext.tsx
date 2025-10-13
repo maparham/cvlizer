@@ -1,16 +1,16 @@
 /**
  * AI Task Polling Context Provider
- * 
+ *
  * This context provides global AI task polling functionality across the application.
  * It automatically resumes polling for any active AI tasks when the app loads,
  * ensuring seamless user experience across page refreshes.
- * 
+ *
  * Key responsibilities:
  * - Initialize polling for any active tasks from localStorage
  * - Provide polling state to components throughout the app
  * - Handle cleanup of completed tasks
  * - Manage global polling state
- * 
+ *
  * Usage:
  * - Wrap the app with AITaskPollingProvider
  * - Use useAITaskPollingContext hook to access global polling state

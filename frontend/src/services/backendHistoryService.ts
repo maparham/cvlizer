@@ -1,13 +1,13 @@
 /**
  * Backend CV History Service
- * 
+ *
  * This service manages CV version history using the backend API instead of localStorage.
  * Provides better persistence, cross-device sync, and data safety.
  */
 
-import { 
-  CVData, 
-  CVHistoryEntry, 
+import {
+  CVData,
+  CVHistoryEntry,
   CreateSnapshotOptions,
   HistoryStats
 } from '../types'
@@ -49,13 +49,13 @@ export class BackendCVHistoryService {
   constructor(retentionPolicy: RetentionPolicy = DEFAULT_RETENTION_POLICY) {
     this.retentionPolicy = retentionPolicy
   }
-  
+
   /**
    * Create a new history snapshot with automatic cleanup
    */
   async createSnapshot(
-    cvId: string, 
-    cvData: CVData, 
+    cvId: string,
+    cvData: CVData,
     options: CreateSnapshotOptions
   ): Promise<CVHistoryEntry> {
     try {
@@ -67,12 +67,12 @@ export class BackendCVHistoryService {
         is_automatic: options.changeType !== 'manual_save' && options.changeType !== 'restore_point',
         is_initial: options.changeType === 'initial_load'
       })
-      
+
       const newEntry = response.data
-      
+
       // Apply automatic cleanup after creating new snapshot
       await this.performAutomaticCleanup(cvId)
-      
+
       return newEntry
     } catch (error: any) {
       // If the API is not available yet, create a mock entry to prevent crashes
@@ -140,16 +140,16 @@ export class BackendCVHistoryService {
     try {
       const allEntries = await this.getHistoryEntries(cvId)
       const entriesToKeep = applyRetentionPolicy(allEntries, this.retentionPolicy)
-      
+
       // If no cleanup needed, return early
       if (entriesToKeep.length === allEntries.length) {
         return
       }
-      
+
       // Find entries to delete
       const entryIdsToKeep = new Set(entriesToKeep.map(e => e.id))
       const entriesToDelete = allEntries.filter(e => !entryIdsToKeep.has(e.id))
-      
+
       // Delete entries that exceed retention policy
       for (const entry of entriesToDelete) {
         try {
@@ -158,7 +158,7 @@ export class BackendCVHistoryService {
           // Continue with other deletions even if one fails
         }
       }
-      
+
       if (entriesToDelete.length > 0) {
         // Cleanup completed above
       }
@@ -191,7 +191,7 @@ export class BackendCVHistoryService {
    */
   async restoreVersion(cvId: string, entryId: string): Promise<any> {
     const response = await api.post(`/api/cvs/${cvId}/restore/${entryId}`, {})
-    
+
     return response.data
   }
 
@@ -212,7 +212,7 @@ export class BackendCVHistoryService {
 
     const sections = [
       'personal_info',
-      'professional_summary', 
+      'professional_summary',
       'work_experience',
       'education',
       'skills',
@@ -226,7 +226,7 @@ export class BackendCVHistoryService {
     sections.forEach(section => {
       const fromSection = fromData[section]
       const toSection = toData[section]
-      
+
       if (!fromSection && toSection) {
         changes.added.push(this.getSectionDisplayName(section))
       } else if (fromSection && !toSection) {
@@ -245,11 +245,11 @@ export class BackendCVHistoryService {
     // Generate summary
     const summary = this.generateDiffSummary(changes)
 
-    return { 
+    return {
       added: changes.added,
       modified: changes.modified,
       removed: changes.removed,
-      summary 
+      summary
     }
   }
 
@@ -261,7 +261,7 @@ export class BackendCVHistoryService {
       // Get localStorage history
       const localStorageKey = `cv_history_${cvId}`
       const storedData = localStorage.getItem(localStorageKey)
-      
+
       if (!storedData) {
         return 0
       }
@@ -317,7 +317,7 @@ export class BackendCVHistoryService {
       publications: 'Publications',
       volunteer_experience: 'Volunteer Experience'
     }
-    
+
     return names[section as keyof typeof names] || section
   }
 
@@ -326,11 +326,11 @@ export class BackendCVHistoryService {
    */
   private compareSections(fromSection: any, toSection: any): string[] {
     const changes: string[] = []
-    
+
     // Simple comparison - could be enhanced with deep diff
     const fromStr = JSON.stringify(fromSection)
     const toStr = JSON.stringify(toSection)
-    
+
     if (fromStr !== toStr) {
       if (Array.isArray(fromSection) && Array.isArray(toSection)) {
         if (fromSection.length !== toSection.length) {
@@ -342,7 +342,7 @@ export class BackendCVHistoryService {
         changes.push('Content modified')
       }
     }
-    
+
     return changes
   }
 
@@ -351,19 +351,19 @@ export class BackendCVHistoryService {
    */
   private generateDiffSummary(changes: any): string {
     const parts: string[] = []
-    
+
     if (changes.added.length > 0) {
       parts.push(`Added ${changes.added.join(', ')}`)
     }
-    
+
     if (changes.modified.length > 0) {
       parts.push(`Modified ${changes.modified.map((m: any) => m.section).join(', ')}`)
     }
-    
+
     if (changes.removed.length > 0) {
       parts.push(`Removed ${changes.removed.join(', ')}`)
     }
-    
+
     return parts.length > 0 ? parts.join('; ') : 'No changes detected'
   }
 
@@ -379,10 +379,10 @@ export class BackendCVHistoryService {
       if (forcePrevious) {
         params.append('force_previous', 'true')
       }
-      
+
       const queryString = params.toString()
       const url = `/api/cvs/${cvId}/history/${entryId}/diff${queryString ? `?${queryString}` : ''}`
-      
+
       const response = await api.get(url)
       return response.data
     } catch (error) {

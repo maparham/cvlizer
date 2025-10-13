@@ -1,17 +1,17 @@
 /**
  * Dashboard Page Component
- * 
+ *
  * This module provides the main CV management interface where users can view,
  * manage, and organize their CV collection. It includes search, filtering,
  * and CRUD operations for CVs.
- * 
+ *
  * Key responsibilities:
  * - Display user's CV collection with status indicators
  * - Provide search and filtering capabilities
  * - Handle CV creation, editing, deletion, and duplication
  * - Show CV processing status and error states
  * - Manage user authentication and admin access
- * 
+ *
  * Usage:
  * - Rendered as the "/dashboard" route for authenticated users
  * - Uses CV store for state management and API operations
@@ -92,18 +92,18 @@ const Dashboard: React.FC = () => {
   const [downloading, setDownloading] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [cvToDelete, setCvToDelete] = useState<CV | null>(null)
-  
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'parsed' | 'parsing' | 'error'>('all')
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'modified'>('modified')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  
+
   const { logout, isAdmin: authIsAdmin, isAuthenticated, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const { showSuccess, showError, notifications, removeNotification } = useNotifications()
   const { logUserAction } = useActivityLogger()
-  
+
   // Use CV store instead of local state
   const {
     cvs,
@@ -163,7 +163,7 @@ const Dashboard: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (!cvToDelete) return
-    
+
     setDeleting(true)
     try {
       await deleteCVFromStore(cvToDelete.id)
@@ -188,7 +188,7 @@ const Dashboard: React.FC = () => {
 
   const handleStartFromScratch = async () => {
     if (creating) return
-    
+
     setCreating(true)
     try {
       const newCV = await createTemporaryCV()
@@ -203,18 +203,18 @@ const Dashboard: React.FC = () => {
 
   const handleTemplateSelect = async (template: any) => {
     if (creating) return
-    
+
     setCreating(true)
     try {
       const newCV = await createTemporaryCV()
-      
+
       // If a template was selected, apply its data
       if (template) {
         // Update the temporary CV with template data
         newCV.parsed_data = { ...newCV.parsed_data, ...template.sampleData }
         newCV.original_filename = `${template.name} - New CV`
       }
-      
+
       navigate(`/cv/${newCV.id}`)
     } catch (error) {
       console.error('Error creating blank CV:', error)
@@ -238,7 +238,7 @@ const Dashboard: React.FC = () => {
 
   const handleDownloadCV = async (cv: CV) => {
     if (downloading) return
-    
+
     setDownloading(true)
     try {
       await cvApi.downloadCV(cv.id, cv.original_filename)
@@ -252,7 +252,7 @@ const Dashboard: React.FC = () => {
 
   const handleDuplicateCV = async (cv: CV) => {
     if (duplicating) return
-    
+
     setDuplicating(true)
     try {
       await duplicateCVFromStore(cv.id)
@@ -266,21 +266,21 @@ const Dashboard: React.FC = () => {
 
   const handleCreateSimilarCV = async (cv: CV) => {
     if (creatingSimilar) return
-    
+
     setCreatingSimilar(true)
     try {
       // Create a new CV based on the existing one
       const newCV = await createTemporaryCV()
-      
+
       // Copy the parsed data from the existing CV
       if (cv.parsed_data) {
         newCV.parsed_data = JSON.parse(JSON.stringify(cv.parsed_data))
         newCV.original_filename = `Similar to ${cv.original_filename}`
       }
-      
+
       // Save the temporary CV to the backend
       const savedCV = await saveTemporaryCV({ parsed_data: newCV.parsed_data! })
-      
+
       navigate(`/cv/${savedCV.id}`)
       showSuccess('Success', `Created similar CV based on "${cv.original_filename}"`)
     } catch (error) {
@@ -297,7 +297,7 @@ const Dashboard: React.FC = () => {
     let filtered = cvs.filter((cv) => {
       // Search filter
       const matchesSearch = cv.original_filename.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       // Status filter
       let matchesStatus = true
       if (filterStatus === 'parsed') {
@@ -307,14 +307,14 @@ const Dashboard: React.FC = () => {
       } else if (filterStatus === 'error') {
         matchesStatus = !!cv.parse_error
       }
-      
+
       return matchesSearch && matchesStatus
     })
 
     // Sort
     filtered.sort((a, b) => {
       let comparison = 0
-      
+
       if (sortBy === 'name') {
         comparison = a.original_filename.localeCompare(b.original_filename)
       } else if (sortBy === 'created') {
@@ -322,7 +322,7 @@ const Dashboard: React.FC = () => {
       } else if (sortBy === 'modified') {
         comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
       }
-      
+
       return sortOrder === 'asc' ? comparison : -comparison
     })
 
@@ -405,7 +405,7 @@ const Dashboard: React.FC = () => {
                 onClick={handleCreateFromTemplate}
                 disabled={creating}
                 data-testid="create-cv-from-template-button"
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600
@@ -419,7 +419,7 @@ const Dashboard: React.FC = () => {
                 onClick={handleStartFromScratch}
                 disabled={creating}
                 data-testid="start-from-scratch-button"
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600
@@ -432,7 +432,7 @@ const Dashboard: React.FC = () => {
                 startIcon={<UploadIcon />}
                 onClick={() => setUploadOpen(true)}
                 data-testid="upload-cv-button"
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600
@@ -462,10 +462,10 @@ const Dashboard: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ 
-                  '& .MuiOutlinedInput-root': { 
-                    borderRadius: 2 
-                  } 
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2
+                  }
                 }}
               />
 
@@ -542,9 +542,9 @@ const Dashboard: React.FC = () => {
             <LinearProgress sx={{ width: 200 }} />
           </Box>
         ) : cvs.length === 0 ? (
-          <Paper sx={{ 
-            p: 6, 
-            textAlign: 'center', 
+          <Paper sx={{
+            p: 6,
+            textAlign: 'center',
             borderRadius: 3,
             background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
           }}>
@@ -553,7 +553,7 @@ const Dashboard: React.FC = () => {
               Welcome to CV Optimizer
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
-              Create professional CVs from scratch or upload existing ones to enhance them with AI-powered optimization. 
+              Create professional CVs from scratch or upload existing ones to enhance them with AI-powered optimization.
               Get started by creating your first CV or uploading an existing document.
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="center">
@@ -564,7 +564,7 @@ const Dashboard: React.FC = () => {
                 onClick={handleCreateFromTemplate}
                 disabled={creating}
                 data-testid="create-cv-from-template-empty-state-button"
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -581,7 +581,7 @@ const Dashboard: React.FC = () => {
                 onClick={handleStartFromScratch}
                 disabled={creating}
                 data-testid="start-from-scratch-empty-state-button"
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -597,7 +597,7 @@ const Dashboard: React.FC = () => {
                 startIcon={<UploadIcon />}
                 onClick={() => setUploadOpen(true)}
                 data-testid="upload-cv-empty-state-button"
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,

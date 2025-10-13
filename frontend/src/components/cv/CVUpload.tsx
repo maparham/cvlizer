@@ -1,6 +1,6 @@
 /**
  * CV Upload Component
- * 
+ *
  * This module provides a drag-and-drop file upload interface for CV files including:
  * - Drag and drop functionality with visual feedback
  * - File type and size validation (PDF, DOC, DOCX up to 10MB)
@@ -40,7 +40,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  
+
   // Use the CV store's upload function
   const { uploadCV: uploadCVToStore } = useCVStore()
 
@@ -58,7 +58,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0])
     }
@@ -73,7 +73,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
   const handleFile = (file: File) => {
     setError('')
     setSuccess(false)
-    
+
     // Validate the file before setting it
     try {
       const validation = validateCVFile(file)
@@ -108,11 +108,11 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
 
       // Use the store's upload function which handles state updates
       await uploadCVToStore(selectedFile)
-      
+
       clearInterval(progressInterval)
       setUploadProgress(100)
       setSuccess(true)
-      
+
       // Close immediately after upload, parsing happens in background
       setTimeout(() => {
         onSuccess() // This will refresh the CV list
@@ -122,7 +122,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         setSelectedFile(null)
         onClose() // Close the dialog after success callback
       }, 1000) // Give a moment to show success message
-      
+
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Upload failed. Please try again.'
       setError(errorMessage)
@@ -157,7 +157,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
               {error}
             </Alert>
           )}
-          
+
           {success && (
             <Alert severity="success" sx={{ mb: 2 }} icon={<CheckCircleIcon />}>
               CV uploaded successfully! AI is now parsing your CV in the background.

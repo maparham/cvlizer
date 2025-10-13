@@ -1,6 +1,6 @@
 /**
  * User Activities Dialog Component
- * 
+ *
  * This component displays user activities in a paginated dialog with filtering options.
  * It provides a scalable interface for viewing user activity logs with proper pagination
  * and filtering capabilities.
@@ -95,8 +95,8 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
   }
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="lg"
       fullWidth
@@ -126,7 +126,7 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
           </Box>
           {onClearActivities && activitiesTotal > 0 && (
             <Tooltip title="Clear Activity Log">
-              <IconButton 
+              <IconButton
                 onClick={() => setClearConfirmOpen(true)}
                 disabled={clearing}
                 color="error"
@@ -138,13 +138,13 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
           )}
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ 
-        flex: 1, 
-        overflow: 'hidden', 
-        display: 'flex', 
+      <DialogContent sx={{
+        flex: 1,
+        overflow: 'hidden',
+        display: 'flex',
         flexDirection: 'column',
-        pt: 3, 
-        position: 'relative' 
+        pt: 3,
+        position: 'relative'
       }}>
         {/* Filter Controls and Top Pagination */}
         <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'flex-start', pt: 1, flexWrap: 'wrap' }}>
@@ -177,12 +177,12 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
               <MenuItem value={200}>200</MenuItem>
             </Select>
           </FormControl>
-          
+
           {/* Top Pagination - Only show if there are multiple pages */}
           {Math.ceil(activitiesTotal / activitiesLimit) > 1 && (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
               gap: 2,
               ml: 'auto',
               mt: 0.5
@@ -249,9 +249,9 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
                 </TableBody>
               </Table>
             </TableContainer>
-            
+
             {/* Bottom Pagination - Sticky at bottom */}
-            <Box sx={{ 
+            <Box sx={{
               position: 'sticky',
               bottom: 0,
               backgroundColor: 'background.paper',
@@ -259,8 +259,8 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
               mt: 2,
               pt: 2,
               pb: 1,
-              display: 'flex', 
-              justifyContent: 'space-between', 
+              display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
               flexWrap: 'wrap',
               gap: 2
@@ -288,8 +288,8 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
       </DialogActions>
 
       {/* Clear Activities Confirmation Dialog */}
-      <Dialog 
-        open={clearConfirmOpen} 
+      <Dialog
+        open={clearConfirmOpen}
         onClose={() => setClearConfirmOpen(false)}
         maxWidth="sm"
         fullWidth
@@ -300,11 +300,11 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
         <DialogContent>
           <Box sx={{ mb: 2 }}>
             <Alert severity="warning">
-              You are about to permanently delete all activity logs for user <strong>{userEmail}</strong>. 
+              You are about to permanently delete all activity logs for user <strong>{userEmail}</strong>.
               This action cannot be undone and will remove all historical activity data for this user.
             </Alert>
           </Box>
-          
+
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             This will delete:
           </Typography>
@@ -322,19 +322,19 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
               All debugging and support information
             </Typography>
           </Box>
-          
+
           <Typography variant="body2" color="error.main" sx={{ mt: 2, fontWeight: 'bold' }}>
             This action is irreversible. Are you sure you want to proceed?
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => setClearConfirmOpen(false)}
             disabled={clearing}
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleClearActivities}
             variant="contained"
             color="error"

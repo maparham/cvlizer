@@ -4,6 +4,7 @@ User activity logging API endpoints.
 This module provides endpoints for logging user activities and retrieving
 activity logs for admin debugging and support purposes.
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
@@ -13,8 +14,11 @@ import logging
 from src.models.base import get_db
 from src.models.user import User
 from src.services.user_activity_service import (
-    log_user_activity, log_user_error, log_api_call,
-    create_user_session, end_user_session
+    log_user_activity,
+    log_user_error,
+    log_api_call,
+    create_user_session,
+    end_user_session,
 )
 from src.middleware.clerk_auth import get_current_user
 
@@ -29,7 +33,7 @@ class ActivityLogRequest(BaseModel):
     details: Dict[str, Any] = None
     pageUrl: str = None
     sessionId: str = None
-    
+
     class Config:
         populate_by_name = True
 
@@ -56,14 +60,14 @@ class SessionCreateRequest(BaseModel):
 async def log_batch_activities(
     request: BatchActivityRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Log multiple user activities in batch.
     """
     try:
         logged_activities = []
-        
+
         for activity_data in request.activities:
             activity = log_user_activity(
                 db=db,
@@ -73,26 +77,30 @@ async def log_batch_activities(
                 description=activity_data.description,
                 details=activity_data.details,
                 page_url=activity_data.pageUrl,
-                session_id=activity_data.sessionId
+                session_id=activity_data.sessionId,
             )
-            logged_activities.append({
-                "id": activity.id,
-                "action": activity.action,
-                "timestamp": activity.timestamp.isoformat()
-            })
-        
-        logger.debug(f"Logged {len(logged_activities)} activities for user {current_user.email}")
-        
+            logged_activities.append(
+                {
+                    "id": activity.id,
+                    "action": activity.action,
+                    "timestamp": activity.timestamp.isoformat(),
+                }
+            )
+
+        logger.debug(
+            f"Logged {len(logged_activities)} activities for user {current_user.email}"
+        )
+
         return {
             "message": f"Successfully logged {len(logged_activities)} activities",
-            "logged_activities": logged_activities
+            "logged_activities": logged_activities,
         }
-        
+
     except Exception as e:
         logger.error(f"Error logging batch activities: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error logging activities"
+            detail="Error logging activities",
         )
 
 
@@ -100,7 +108,7 @@ async def log_batch_activities(
 async def log_user_error_endpoint(
     request: ErrorLogRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Log a user error.
@@ -114,22 +122,22 @@ async def log_user_error_endpoint(
             stack_trace=request.stack_trace,
             page_url=request.page_url,
             session_id=request.session_id,
-            additional_context=request.additional_context
+            additional_context=request.additional_context,
         )
-        
+
         logger.info(f"Logged error for user {current_user.email}: {request.error_type}")
-        
+
         return {
             "message": "Error logged successfully",
             "activity_id": activity.id,
-            "timestamp": activity.timestamp.isoformat()
+            "timestamp": activity.timestamp.isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error logging user error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error logging error"
+            detail="Error logging error",
         )
 
 
@@ -137,7 +145,7 @@ async def log_user_error_endpoint(
 async def create_session(
     request: SessionCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Create a new user session.
@@ -147,22 +155,24 @@ async def create_session(
             db=db,
             user=current_user,
             session_id=request.session_id,
-            browser_info=request.browser_info
+            browser_info=request.browser_info,
         )
-        
-        logger.info(f"Created session for user {current_user.email}: {request.session_id}")
-        
+
+        logger.info(
+            f"Created session for user {current_user.email}: {request.session_id}"
+        )
+
         return {
             "message": "Session created successfully",
             "session_id": session.session_id,
-            "started_at": session.started_at.isoformat()
+            "started_at": session.started_at.isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error creating session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error creating session"
+            detail="Error creating session",
         )
 
 
@@ -170,32 +180,31 @@ async def create_session(
 async def end_session(
     session_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     End a user session.
     """
     try:
         session = end_user_session(db=db, session_id=session_id)
-        
+
         if session:
             logger.info(f"Ended session for user {current_user.email}: {session_id}")
             return {
                 "message": "Session ended successfully",
                 "session_id": session_id,
-                "ended_at": session.ended_at.isoformat()
+                "ended_at": session.ended_at.isoformat(),
             }
         else:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
             )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error ending session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error ending session"
+            detail="Error ending session",
         )

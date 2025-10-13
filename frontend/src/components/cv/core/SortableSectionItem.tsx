@@ -7,24 +7,24 @@ import { SortableSectionItemProps } from '../../../types'
 import { useCVEditor } from '../../../contexts/CVEditorContext'
 import { hasSectionErrors, getSectionErrorCount } from '../../../utils/validationUtils'
 
-const SortableSectionItem: React.FC<SortableSectionItemProps> = ({ 
-  id, 
-  title, 
-  visible, 
-  section, 
-  onToggleVisibility, 
-  isOverlay = false 
+const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
+  id,
+  title,
+  visible,
+  section,
+  onToggleVisibility,
+  isOverlay = false
 }) => {
   const { validationErrors } = useCVEditor()
-  
+
   // Use individual props if provided, otherwise fall back to section object
   const sectionId = id || section?.id || ''
   const sectionTitle = title || section?.title || ''
   const sectionVisible = visible !== undefined ? visible : (section?.visible ?? false)
-  
+
   const hasErrors = sectionId ? hasSectionErrors(validationErrors, sectionId) : false
   const errorCount = sectionId ? getSectionErrorCount(validationErrors, sectionId) : 0
-  
+
   const {
     attributes,
     listeners,
@@ -63,23 +63,23 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
     >
       <ListItemIcon sx={{ cursor: 'grab', '&:active': { cursor: 'grabbing' }, minWidth: '32px' }}>
         <Tooltip title="Drag to reorder sections">
-          <DragIcon 
-            {...attributes} 
+          <DragIcon
+            {...attributes}
             {...listeners}
             fontSize="small"
-            sx={{ 
+            sx={{
               color: '#666',
               '&:hover': { color: '#1976d2' }
             }}
           />
         </Tooltip>
       </ListItemIcon>
-      <ListItemText 
+      <ListItemText
         primary={sectionTitle}
-        sx={{ 
+        sx={{
           flexGrow: 1,
           minWidth: 0,
-          '& .MuiListItemText-primary': { 
+          '& .MuiListItemText-primary': {
             fontWeight: sectionVisible ? 600 : 400,
             fontSize: '0.85rem',
             lineHeight: 1.2,
@@ -104,8 +104,8 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
             color={sectionVisible ? 'primary' : 'default'}
             size="small"
             data-testid={sectionId ? `hide-section-${sectionId}-button` : undefined}
-            sx={{ 
-              '&:hover': { 
+            sx={{
+              '&:hover': {
                 bgcolor: sectionVisible ? 'primary.light' : 'action.hover',
                 color: sectionVisible ? 'primary.contrastText' : 'text.primary'
               }

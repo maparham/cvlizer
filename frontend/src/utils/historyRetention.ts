@@ -1,6 +1,6 @@
 /**
  * CV History Retention Policy
- * 
+ *
  * Manages automatic cleanup of CV version history based on intelligent rules
  * that preserve important versions while cleaning up clutter.
  */
@@ -10,29 +10,29 @@ import { CVHistoryEntry, CVHistoryChangeType } from '../types'
 export interface RetentionPolicy {
   /** Maximum total versions to keep */
   maxTotalVersions: number
-  
+
   /** Maximum automatic versions to keep */
   maxAutoVersions: number
-  
+
   /** Maximum age in days for automatic versions */
   maxAutoVersionAgeDays: number
-  
+
   /** Always preserve versions with these change types */
   preserveChangeTypes: CVHistoryChangeType[]
-  
+
   /** Always preserve manually labeled versions */
   preserveLabeledVersions: boolean
-  
+
   /** Always preserve the initial version */
   preserveInitialVersion: boolean
-  
+
   /** Minimum versions to always keep regardless of age */
   minVersionsToKeep: number
 }
 
 export const DEFAULT_RETENTION_POLICY: RetentionPolicy = {
   maxTotalVersions: 50,           // Keep last 50 versions max
-  maxAutoVersions: 30,            // Keep last 30 auto versions max  
+  maxAutoVersions: 30,            // Keep last 30 auto versions max
   maxAutoVersionAgeDays: 30,      // Auto versions older than 30 days can be cleaned
   preserveChangeTypes: [
     'initial_load',               // Always keep the original
@@ -49,7 +49,7 @@ export const DEFAULT_RETENTION_POLICY: RetentionPolicy = {
  * Returns the entries that should be kept
  */
 export function applyRetentionPolicy(
-  entries: CVHistoryEntry[], 
+  entries: CVHistoryEntry[],
   policy: RetentionPolicy = DEFAULT_RETENTION_POLICY
 ): CVHistoryEntry[] {
   if (entries.length <= policy.minVersionsToKeep) {
@@ -64,16 +64,16 @@ export function applyRetentionPolicy(
   const candidates: CVHistoryEntry[] = []
 
   entries.forEach(entry => {
-    const shouldPreserve = 
+    const shouldPreserve =
       // Always preserve initial version
       (policy.preserveInitialVersion && entry.isInitial) ||
-      
+
       // Always preserve manually labeled versions
       (policy.preserveLabeledVersions && entry.label) ||
-      
+
       // Always preserve specific change types
       policy.preserveChangeTypes.includes(entry.changeType) ||
-      
+
       // Always preserve recent manual versions
       (!entry.isAutomatic && new Date(entry.timestamp) > cutoffDate)
 
@@ -110,7 +110,7 @@ export function applyRetentionPolicy(
     const additionalEntries = candidates
       .filter(entry => !finalEntries.includes(entry))
       .slice(0, needed)
-    
+
     finalEntries.push(...additionalEntries)
     finalEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
   }
@@ -132,7 +132,7 @@ export function getRetentionStats(
   nextCleanupIn: number | null
 } {
   const keptEntries = applyRetentionPolicy(entries, policy)
-  const preserved = entries.filter(entry => 
+  const preserved = entries.filter(entry =>
     (policy.preserveInitialVersion && entry.isInitial) ||
     (policy.preserveLabeledVersions && entry.label) ||
     policy.preserveChangeTypes.includes(entry.changeType)
@@ -140,8 +140,8 @@ export function getRetentionStats(
 
   // Calculate when next cleanup might happen (when oldest auto version expires)
   const autoEntries = entries.filter(e => e.isAutomatic && !e.label)
-  const oldestAuto = autoEntries.length > 0 ? 
-    autoEntries.reduce((oldest, entry) => 
+  const oldestAuto = autoEntries.length > 0 ?
+    autoEntries.reduce((oldest, entry) =>
       new Date(entry.timestamp) < new Date(oldest.timestamp) ? entry : oldest
     ) : null
 
@@ -162,4 +162,3 @@ export function getRetentionStats(
     nextCleanupIn
   }
 }
-

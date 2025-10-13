@@ -113,7 +113,7 @@ backend/
 #### Job Description Model
 - **Table**: `job_descriptions`
 - **Primary Key**: `id` (UUID)
-- **Foreign Keys**: 
+- **Foreign Keys**:
   - `user_id` → `users.id` (CASCADE DELETE)
   - `cv_id` → `cvs.id` (CASCADE DELETE, nullable)
 - **Fields**:
@@ -137,7 +137,7 @@ backend/
 #### AI Section Model
 - **Table**: `ai_sections`
 - **Primary Key**: `id` (UUID)
-- **Foreign Keys**: 
+- **Foreign Keys**:
   - `cv_id` → `cvs.id` (CASCADE DELETE)
   - `job_description_id` → `job_descriptions.id` (CASCADE DELETE)
 - **Fields**:

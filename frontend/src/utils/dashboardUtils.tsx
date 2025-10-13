@@ -37,7 +37,7 @@ export const getCVStatusIcon = (cv: CV) => {
  */
 export const getSectionCount = (cv: CV): number => {
   if (!cv.parsed_data) return 0
-  
+
   // Helper function to check if section has data
   const hasData = (sectionType: string): boolean => {
     switch (sectionType) {
@@ -51,7 +51,7 @@ export const getSectionCount = (cv: CV): number => {
         return !!(cv.parsed_data?.education?.length)
       case 'skills':
         return !!(
-          cv.parsed_data?.skills?.technical?.length || 
+          cv.parsed_data?.skills?.technical?.length ||
           cv.parsed_data?.skills?.soft?.length ||
           cv.parsed_data?.skills?.languages?.length
         )
@@ -69,15 +69,15 @@ export const getSectionCount = (cv: CV): number => {
         return false
     }
   }
-  
+
   // If there's no section config, fall back to counting all sections with data
   if (!cv.parsed_data.section_config?.sections) {
     let count = 0
     const sectionTypes = [
-      'personal_info', 'professional_summary', 'work_experience', 'education', 
+      'personal_info', 'professional_summary', 'work_experience', 'education',
       'skills', 'certifications', 'projects', 'awards', 'publications', 'volunteer_experience'
     ]
-    
+
     for (const sectionType of sectionTypes) {
       if (hasData(sectionType)) {
         count++

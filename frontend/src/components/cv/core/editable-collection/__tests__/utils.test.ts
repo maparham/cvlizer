@@ -96,7 +96,7 @@ describe('editable-collection utils', () => {
 
     it('should sort items in ascending order', () => {
       const result = sortItemsByDate(mockItems, 'date', 'asc')
-      
+
       expect(result[0].name).toBe('Item 4') // empty date (epoch) comes first
       expect(result[1].name).toBe('Item 2') // 2022-06-10
       expect(result[2].name).toBe('Item 1') // 2023-01-15
@@ -105,7 +105,7 @@ describe('editable-collection utils', () => {
 
     it('should sort items in descending order', () => {
       const result = sortItemsByDate(mockItems, 'date', 'desc')
-      
+
       expect(result[0].name).toBe('Item 3') // 2023-12-01
       expect(result[1].name).toBe('Item 1') // 2023-01-15
       expect(result[2].name).toBe('Item 2') // 2022-06-10
@@ -115,9 +115,9 @@ describe('editable-collection utils', () => {
     it('should not modify original array', () => {
       const originalLength = mockItems.length
       const originalFirstItem = mockItems[0].name
-      
+
       sortItemsByDate(mockItems, 'date', 'asc')
-      
+
       expect(mockItems.length).toBe(originalLength)
       expect(mockItems[0].name).toBe(originalFirstItem)
     })
@@ -154,9 +154,9 @@ describe('editable-collection utils', () => {
     it('should not modify original array', () => {
       const originalLength = mockItems.length
       const originalFirstItem = mockItems[0]
-      
+
       reorderItems(mockItems, 0, 4)
-      
+
       expect(mockItems.length).toBe(originalLength)
       expect(mockItems[0]).toBe(originalFirstItem)
     })
@@ -183,9 +183,9 @@ describe('editable-collection utils', () => {
     it('should not modify original array', () => {
       const originalLength = mockItems.length
       const originalFirstItem = mockItems[0]
-      
+
       moveItemUp(mockItems, 2)
-      
+
       expect(mockItems.length).toBe(originalLength)
       expect(mockItems[0]).toBe(originalFirstItem)
     })
@@ -212,9 +212,9 @@ describe('editable-collection utils', () => {
     it('should not modify original array', () => {
       const originalLength = mockItems.length
       const originalFirstItem = mockItems[0]
-      
+
       moveItemDown(mockItems, 1)
-      
+
       expect(mockItems.length).toBe(originalLength)
       expect(mockItems[0]).toBe(originalFirstItem)
     })

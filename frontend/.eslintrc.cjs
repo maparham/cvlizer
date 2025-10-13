@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
-  env: { 
-    browser: true, 
+  env: {
+    browser: true,
     es2020: true,
     node: true,
     jest: true
@@ -19,7 +19,7 @@ module.exports = {
     'no-undef': 'off',
     'no-redeclare': 'off',
     'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': ['error', { 
+    '@typescript-eslint/no-unused-vars': ['error', {
       'argsIgnorePattern': '^_',
       'varsIgnorePattern': '^_',
       'ignoreRestSiblings': true

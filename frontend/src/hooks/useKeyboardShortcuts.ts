@@ -39,7 +39,7 @@ export const useKeyboardShortcuts = ({
     // Handle IndividualItemSection editing (priority over section editing)
     if (editingIndividualItem) {
       const hasCurrentSectionChanges = pendingChanges.has(editingIndividualItem.sectionId)
-      
+
       if (hasCurrentSectionChanges) {
         // Show unsaved changes dialog
         onShowUnsavedChangesDialog(true)
@@ -54,7 +54,7 @@ export const useKeyboardShortcuts = ({
     // Handle regular section editing (only when no individual item is being edited)
     else if (editingSection) {
       const hasCurrentSectionChanges = pendingChanges.has(editingSection)
-      
+
       if (hasCurrentSectionChanges) {
         // Show unsaved changes dialog
         onShowUnsavedChangesDialog(true)
@@ -73,42 +73,42 @@ export const useKeyboardShortcuts = ({
       const cancelButtons = document.querySelectorAll(
         'button[aria-label*="Cancel"], button[title*="Cancel"], button[aria-label*="cancel"], button[title*="cancel"]'
       )
-      
+
       // Filter to only buttons that are in simple form sections (not IndividualItemSection)
       const simpleFormCancelButtons = Array.from(cancelButtons).filter(button => {
         const htmlButton = button as HTMLButtonElement
-        
+
         // Check if this button is in a simple form section (Personal Info, Professional Summary, etc.)
         // These sections typically have different structure than IndividualItemSection
         const isInSimpleForm = htmlButton.closest('.simple-form-section, [data-section-type="simple"], .form-section:not(.individual-item)')
-        
-        return !htmlButton.disabled && 
+
+        return !htmlButton.disabled &&
                htmlButton.offsetParent !== null && // Element is visible
                htmlButton.getBoundingClientRect().width > 0 && // Element has dimensions
                isInSimpleForm // Only in simple form sections
       })
-      
+
       if (simpleFormCancelButtons.length > 0) {
         const cancelButton = simpleFormCancelButtons[0] as HTMLButtonElement
         cancelButton.click()
         return
       }
-      
+
       // Fallback: look for close buttons in simple form sections
       const closeButtons = document.querySelectorAll(
         'button[aria-label*="Close"], button[title*="Close"], button[aria-label*="close"], button[title*="close"]'
       )
-      
+
       const simpleFormCloseButtons = Array.from(closeButtons).filter(button => {
         const htmlButton = button as HTMLButtonElement
         const isInSimpleForm = htmlButton.closest('.simple-form-section, [data-section-type="simple"], .form-section:not(.individual-item)')
-        
-        return !htmlButton.disabled && 
+
+        return !htmlButton.disabled &&
                htmlButton.offsetParent !== null &&
                htmlButton.getBoundingClientRect().width > 0 &&
                isInSimpleForm
       })
-      
+
       if (simpleFormCloseButtons.length > 0) {
         const closeButton = simpleFormCloseButtons[0] as HTMLButtonElement
         closeButton.click()
@@ -116,9 +116,9 @@ export const useKeyboardShortcuts = ({
       }
     }
   }, [
-    editingSection, 
-    editingIndividualItem, 
-    pendingChanges, 
+    editingSection,
+    editingIndividualItem,
+    pendingChanges,
     showUnsavedChangesDialog,
     onRequestSectionCancel,
     onIndividualItemCancel,
@@ -131,7 +131,7 @@ export const useKeyboardShortcuts = ({
     // Ctrl+S or Cmd+S to save
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
       event.preventDefault()
-      
+
       // Find save buttons and click them
       const saveButtons = document.querySelectorAll('[aria-label="Save changes"], [title="Save changes"]')
       if (saveButtons.length > 0) {
@@ -150,7 +150,7 @@ export const useKeyboardShortcuts = ({
         event.preventDefault()
         handleEscapeKey()
       }
-      
+
       // Handle save shortcut
       handleSaveShortcut(event)
     }

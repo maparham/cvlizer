@@ -1,9 +1,9 @@
 /**
  * AI Store - Zustand store for AI features state management
- * 
+ *
  * This module provides centralized state management for all AI features including
  * job fit analysis, content enhancement, ATS optimization, and job descriptions.
- * 
+ *
  * Key responsibilities:
  * - Manage AI feature status and availability
  * - Store job fit analysis results and state
@@ -11,7 +11,7 @@
  * - Manage content enhancement suggestions
  * - Store job descriptions and active selection
  * - Provide actions for all AI operations
- * 
+ *
  * Usage:
  * - Import useAIStore hook in components
  * - Use selectors to get specific state slices
@@ -169,10 +169,10 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
 
         try {
           const result = await aiService.analyzeJobFit(cvId, { job_description_id: jobDescriptionId });
-          
+
           // Extract job fit analysis data from draft_data
           const analysisData = result.draft_data || {};
-          
+
           set((state) => ({
             jobFitAnalysis: {
               ...state.jobFitAnalysis,
@@ -193,7 +193,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               error: undefined,
             },
           }));
-          
+
           return result;
         } catch (error) {
           set((state) => ({
@@ -228,12 +228,12 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
 
         try {
           const drafts = await aiService.getCVDrafts(cvId);
-          
+
           set((state) => {
             // Clear existing drafts for this CV and add new ones
             // This ensures we don't accumulate drafts from different CVs
             const otherCVDrafts = state.drafts.drafts.filter(draft => draft.cv_id !== cvId);
-            
+
             return {
               drafts: {
                 ...state.drafts,
@@ -243,7 +243,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               },
             };
           });
-          
+
           return drafts;
         } catch (error) {
           set((state) => ({
@@ -697,7 +697,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       updateJobDescriptionStatus: async (jobDescriptionId: string) => {
         try {
           const updatedJobDescription = await aiService.getJobDescriptionStatus(jobDescriptionId);
-          
+
           // If parsing failed, delete the job description from backend and remove from store
           if (updatedJobDescription.parse_error) {
             try {
@@ -707,24 +707,24 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               console.error('Failed to delete failed job description from backend:', deleteError);
               // Continue with frontend cleanup even if backend deletion fails
             }
-            
+
             // Remove from store
             set((state) => {
               // Find the CV this job description belongs to
               const jobDescription = state.jobDescriptions.find(jd => jd.id === jobDescriptionId);
               const cvId = jobDescription?.cv_id;
-              
+
               // Clean up per-CV map if this was the active selection for that CV
               const newMap = { ...state.activeJobDescriptionIdPerCV };
               if (cvId && newMap[cvId] === jobDescriptionId) {
                 delete newMap[cvId];
                 localStorage.setItem('activeJobDescriptionIdPerCV', JSON.stringify(newMap));
               }
-              
+
               return {
                 jobDescriptions: state.jobDescriptions.filter(jd => jd.id !== jobDescriptionId),
-                activeJobDescriptionId: state.activeJobDescriptionId === jobDescriptionId 
-                  ? undefined 
+                activeJobDescriptionId: state.activeJobDescriptionId === jobDescriptionId
+                  ? undefined
                   : state.activeJobDescriptionId,
                 activeJobDescriptionIdPerCV: newMap,
               };
@@ -732,12 +732,12 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
           } else {
             // Update the job description in the store
             set((state) => ({
-              jobDescriptions: state.jobDescriptions.map(jd => 
+              jobDescriptions: state.jobDescriptions.map(jd =>
                 jd.id === jobDescriptionId ? updatedJobDescription : jd
               ),
             }));
           }
-          
+
           return updatedJobDescription;
         } catch (error) {
           console.error('Failed to update job description status:', error);
@@ -782,7 +782,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       updateContentEnhancementStatus: async (enhancementId: string) => {
         try {
           const updatedEnhancement = await aiService.getContentEnhancementStatus(enhancementId);
-          
+
           // Update the enhancement in the store if it exists
           set((state) => ({
             suggestions: {
@@ -796,7 +796,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               },
             },
           }));
-          
+
           return updatedEnhancement;
         } catch (error) {
           console.error('Failed to update content enhancement status:', error);
@@ -809,7 +809,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
           // Check if current active job description belongs to this CV
           const currentActiveJD = state.jobDescriptions.find(jd => jd.id === state.activeJobDescriptionId);
           const shouldClearActive = currentActiveJD?.cv_id === cvId;
-          
+
           // Don't remove from activeJobDescriptionIdPerCV - keep it for restoration later
           return {
             jobDescriptions: state.jobDescriptions.filter(jd => jd.cv_id !== cvId),
@@ -868,7 +868,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
         try {
           // First, get ATS optimization suggestions
           const atsOptimization = await aiService.analyzeATSOptimization(cvId, { job_description_id: jobDescriptionId });
-          
+
           // Transform ATS suggestions into inline diff format
           const suggestions: any[] = [];
           const processedKeywords = new Set<string>(); // Track processed keywords to avoid duplicates
@@ -880,11 +880,11 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
             if (processedKeywords.has(keyword.keyword.toLowerCase())) {
               return;
             }
-            
+
             // Parse suggested_placement to determine section and field
             let section = 'skills';
             let fieldPath = 'technical';
-            
+
             if (keyword.suggested_placement) {
               const placement = keyword.suggested_placement.toLowerCase();
               if (placement.includes('skills') || placement.includes('technical')) {
@@ -931,7 +931,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               changeType: 'addition' as const,
               fieldPath,
             };
-            
+
             suggestions.push(suggestion);
             processedKeywords.add(keyword.keyword.toLowerCase());
           });
@@ -958,22 +958,22 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
             atsOptimization.suggestions.forEach((suggestionText) => {
               // For general suggestions, only create section-specific suggestions when they would be meaningful
               const lowerText = suggestionText.toLowerCase();
-              
+
               // Extract keyword from suggestion for meaningful content creation
               const keywordMatch = suggestionText.match(/['"]([^'"]+)['"]/);
               const keyword = keywordMatch ? keywordMatch[1] : null;
-              
+
               // Skip if we've already processed this keyword from missing_keywords
               if (keyword && processedKeywords.has(keyword.toLowerCase())) {
                 return;
               }
-              
+
               // Skills section: Only if the suggestion is about enhancing skills content specifically
               if (lowerText.includes('skills') && (lowerText.includes('enhance') || lowerText.includes('improve') || lowerText.includes('add'))) {
-                const meaningfulContent = keyword ? 
+                const meaningfulContent = keyword ?
                   `Enhanced technical skills including ${keyword.toLowerCase()} and related competencies.` :
                   'Enhanced technical skills and competencies.';
-                  
+
                 suggestions.push({
                   id: `skills-general-${suggestionIndex++}`,
                   section: 'skills',
@@ -986,14 +986,14 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
                   fieldPath: 'technical',
                 });
               }
-              
+
               // Work Experience: Only if the suggestion is about enhancing work experience content specifically
-              if ((lowerText.includes('work experience') || lowerText.includes('employment')) && 
+              if ((lowerText.includes('work experience') || lowerText.includes('employment')) &&
                   (lowerText.includes('enhance') || lowerText.includes('improve') || lowerText.includes('descriptions'))) {
                 const meaningfulContent = keyword ?
                   `Enhanced work experience descriptions highlighting ${keyword.toLowerCase()} expertise and achievements.` :
                   'Enhanced work experience descriptions with improved detail and impact.';
-                  
+
                 suggestions.push({
                   id: `work-general-${suggestionIndex++}`,
                   section: 'work_experience',
@@ -1006,15 +1006,15 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
                   fieldPath: undefined,
                 });
               }
-              
+
               // Professional Summary: Only if the suggestion is about enhancing professional summary content
-              if ((lowerText.includes('professional') || lowerText.includes('summary') || 
+              if ((lowerText.includes('professional') || lowerText.includes('summary') ||
                    lowerText.includes('profile') || lowerText.includes('overview')) &&
                   (lowerText.includes('enhance') || lowerText.includes('improve') || lowerText.includes('content'))) {
                 const meaningfulContent = keyword ?
                   `Experienced professional with strong ${keyword.toLowerCase()} skills and diverse problem-solving capabilities.` :
                   'Enhanced professional summary highlighting key strengths and expertise.';
-                  
+
                 suggestions.push({
                   id: `professional-general-${suggestionIndex++}`,
                   section: 'professional_summary',
@@ -1052,10 +1052,10 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
 
       applyAllSuggestions: (cvData: any) => {
         const { suggestions } = get().inlineDiff;
-        
+
         // Create a deep copy of the original CV data
         const tempData = JSON.parse(JSON.stringify(cvData));
-        
+
         // Apply all suggestions to create temp state
         // NOTE: We don't actually apply suggestions to temp data here
         // Instead, we let the UI components handle displaying suggestions
@@ -1104,14 +1104,14 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       },
 
       acceptInlineSuggestion: (suggestionId: string) => {
-        
+
         set((state) => {
           const updatedSuggestions = state.inlineDiff.suggestions.map((suggestion) =>
             suggestion.id === suggestionId
               ? { ...suggestion, status: 'approved' as const }
               : suggestion
           );
-          
+
 
           // Update temp CV with accepted changes
           let updatedTempData = state.inlineDiff.tempCV?.tempData;
@@ -1217,10 +1217,10 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
 
         // Get only approved suggestions
         const approvedSuggestions = suggestions.filter(s => s.status === 'approved');
-        
+
         // Apply approved changes to original CV
         const finalData = JSON.parse(JSON.stringify(tempCV.originalCV));
-        
+
         approvedSuggestions.forEach((suggestion) => {
           if (suggestion.type === 'add_keyword' && suggestion.section === 'skills') {
             if (suggestion.fieldPath) {
@@ -1244,7 +1244,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
 
         // Clear diff mode
         get().exitDiffMode();
-        
+
         return finalData;
       },
     }),
@@ -1259,25 +1259,25 @@ export const useAIFeatureStatus = () => useAIStore((state) => state.featureStatu
 export const useJobFitAnalysis = () => useAIStore((state) => state.jobFitAnalysis);
 export const useATSOptimization = () => useAIStore((state) => state.atsOptimization);
 export const useJobDescriptions = () => useAIStore((state) => state.jobDescriptions);
-export const useCVJobDescriptions = (cvId: string) => useAIStore((state) => 
+export const useCVJobDescriptions = (cvId: string) => useAIStore((state) =>
   state.jobDescriptions.filter(jd => jd.cv_id === cvId), shallow
 );
-export const useVisibleJobDescriptions = () => useAIStore((state) => 
+export const useVisibleJobDescriptions = () => useAIStore((state) =>
   state.jobDescriptions.filter(jd => !state.hiddenJobDescriptionIds.includes(jd.id))
 );
-export const useVisibleCVJobDescriptions = (cvId: string) => useAIStore((state) => 
+export const useVisibleCVJobDescriptions = (cvId: string) => useAIStore((state) =>
   state.jobDescriptions.filter(jd => jd.cv_id === cvId && !state.hiddenJobDescriptionIds.includes(jd.id)), shallow
 );
 export const useActiveJobDescription = () => useAIStore((state) => {
   const activeId = state.activeJobDescriptionId;
   if (!activeId) return undefined;
-  
+
   const jobDescription = state.jobDescriptions.find(jd => jd.id === activeId);
   // If the active job description is hidden, return undefined
   if (jobDescription && state.hiddenJobDescriptionIds.includes(activeId)) {
     return undefined;
   }
-  
+
   return jobDescription;
 });
 export const useSuggestions = () => useAIStore((state) => state.suggestions);
@@ -1292,11 +1292,11 @@ export const useSuggestionPanel = () => useAIStore((state) => state.inlineDiff.i
 // Draft selectors
 export const useDrafts = () => useAIStore((state) => state.drafts);
 export const useCVDrafts = (cvId: string) => {
-  const drafts = useAIStore((state) => 
+  const drafts = useAIStore((state) =>
     state.drafts.drafts.filter(draft => draft.cv_id === cvId)
   , shallow);
   return drafts;
 };
-export const useWhyGoodFitDraft = (cvId: string) => useAIStore((state) => 
+export const useWhyGoodFitDraft = (cvId: string) => useAIStore((state) =>
   state.drafts.drafts.find(draft => draft.cv_id === cvId && draft.section_type === 'why_good_fit')
 );

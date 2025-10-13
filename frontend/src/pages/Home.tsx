@@ -1,15 +1,15 @@
 /**
  * Home Page Component
- * 
+ *
  * This module provides the landing page for the CV Optimizer application.
  * It showcases the main features and provides authentication options for users.
- * 
+ *
  * Key responsibilities:
  * - Display application hero section with call-to-action
  * - Showcase main features (upload, edit, AI enhancement)
  * - Provide authentication buttons for signed-in and signed-out users
  * - Handle navigation to dashboard and profile pages
- * 
+ *
  * Usage:
  * - Rendered as the root route ("/") in the application
  * - Uses Clerk authentication components for user state management
@@ -73,8 +73,8 @@ const Home: React.FC = () => {
                 variant="contained"
                 size="large"
                 onClick={() => navigate('/dashboard')}
-                sx={{ 
-                  bgcolor: 'white', 
+                sx={{
+                  bgcolor: 'white',
                   color: 'primary.main',
                   '&:hover': { bgcolor: 'grey.100' }
                 }}
@@ -85,15 +85,15 @@ const Home: React.FC = () => {
                 variant="outlined"
                 size="large"
                 onClick={() => navigate('/profile')}
-                sx={{ 
-                  borderColor: 'white', 
+                sx={{
+                  borderColor: 'white',
                   color: 'white',
                   '&:hover': { borderColor: 'grey.300', bgcolor: 'rgba(255,255,255,0.1)' }
                 }}
               >
                 My Profile
               </Button>
-              <UserButton 
+              <UserButton
                 appearance={{
                   elements: {
                     avatarBox: {
@@ -154,7 +154,7 @@ const Home: React.FC = () => {
         <Typography variant="h6" textAlign="center" color="text.secondary" sx={{ mb: 6 }}>
           Transform your CV in three simple steps
         </Typography>
-        
+
         <Grid container spacing={4}>
           {features.map((feature, index) => (
             <Grid item xs={12} md={4} key={index}>

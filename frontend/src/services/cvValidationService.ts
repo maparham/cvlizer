@@ -1,6 +1,6 @@
 /**
  * CV Validation Service
- * 
+ *
  * Centralized validation logic for CV data processing, cleaning, and validation.
  * This service handles data transformation between frontend and backend formats,
  * ensuring data integrity and proper validation before API calls.
@@ -37,7 +37,7 @@ export class CVValidationService {
       validateRequired: true,
       ...options
     })
-    
+
     return cleaner.clean()
   }
 
@@ -73,12 +73,12 @@ export class CVValidationService {
         if (!exp.start_date?.trim()) {
           errors.push(`Work Experience #${index + 1}: Start date is required`)
         }
-        
+
         // Validate date order
         const dateError = this.validateDateOrder(
-          exp.start_date, 
-          exp.end_date, 
-          'Work Experience', 
+          exp.start_date,
+          exp.end_date,
+          'Work Experience',
           index + 1
         )
         if (dateError) {
@@ -99,7 +99,7 @@ export class CVValidationService {
         if (!edu.start_date?.trim()) {
           errors.push(`Education #${index + 1}: Start date is required`)
         }
-        
+
         // Validate date order
         const dateError = this.validateDateOrder(
           edu.start_date,
@@ -257,19 +257,19 @@ class CVDataCleaner {
 
     // Clean professional summary
     this.cleanProfessionalSummary(cleanedData)
-    
+
     // Clean personal info
     this.cleanPersonalInfo(cleanedData)
-    
+
     // Clean skills
     this.cleanSkills(cleanedData)
-    
+
     // Clean why_good_fit section
     this.cleanWhyGoodFit(cleanedData)
-    
+
     // Clean array sections
     this.cleanArraySections(cleanedData)
-    
+
     // Preserve section_config - this contains section visibility and ordering
     if (this.data.section_config) {
       cleanedData.section_config = this.data.section_config
@@ -281,7 +281,7 @@ class CVDataCleaner {
   private cleanProfessionalSummary(data: any): void {
     if (data.professional_summary) {
       const content = this.cleanString(data.professional_summary.content)
-      
+
       // Backend requires min 10 characters for professional summary
       if (!content || content.length < 10) {
         delete data.professional_summary
@@ -294,12 +294,12 @@ class CVDataCleaner {
   private cleanPersonalInfo(data: any): void {
     if (data.personal_info) {
       const { full_name, email, location } = data.personal_info
-      
+
       // Clean strings
       const cleanedFullName = this.cleanString(full_name)
       const cleanedEmail = this.cleanString(email)
       const cleanedLocation = this.cleanString(location)
-      
+
       // Backend requires these fields to be non-empty
       if (!cleanedFullName || !cleanedEmail || !cleanedLocation) {
         delete data.personal_info
@@ -321,10 +321,10 @@ class CVDataCleaner {
     if (data.skills) {
       const technical = this.cleanArray(data.skills.technical)
       const soft = this.cleanArray(data.skills.soft)
-      
+
       // Clean languages array
       const languages = this.cleanArray(data.skills.languages || [])
-      
+
       // Backend requires at least one technical or soft skill
       if (technical.length === 0 && soft.length === 0) {
         delete data.skills
@@ -386,7 +386,7 @@ class CVDataCleaner {
   private cleanArraySections(data: any): void {
     const arraySections = [
       'work_experience',
-      'education', 
+      'education',
       'certifications',
       'projects',
       'awards',
@@ -408,23 +408,23 @@ class CVDataCleaner {
 
   private cleanString(value: any): string {
     if (typeof value !== 'string') return ''
-    
+
     let cleaned = value
-    
+
     if (this.options.trimStrings) {
       cleaned = cleaned.trim()
     }
-    
+
     if (this.options.removeEmptyStrings && cleaned === '') {
       return ''
     }
-    
+
     return cleaned
   }
 
   private cleanArray(arr: any[]): any[] {
     if (!Array.isArray(arr)) return []
-    
+
     return arr.filter(item => {
       if (item === null || item === undefined) return false
       if (typeof item === 'string') return this.cleanString(item) !== ''
@@ -440,17 +440,17 @@ class CVDataCleaner {
 
   private cleanArrayWithSectionType(arr: any[], sectionType: string): any[] {
     if (!Array.isArray(arr)) return []
-    
+
     return arr.filter(item => {
       if (item === null || item === undefined) return false
       if (typeof item === 'string') return this.cleanString(item) !== ''
       if (typeof item === 'object') {
         // Remove fields that don't belong to this section type
         this._removeInvalidFieldsForSection(item, sectionType)
-        
+
         // Convert null dates to empty strings for valid fields only
         this._normalizeValidDateFields(item, sectionType)
-        
+
         // Preserve the id field even if other fields are empty
         const hasId = item.id !== undefined && item.id !== null
         const hasOtherFields = Object.keys(item).some(key => key !== 'id' && item[key] !== undefined && item[key] !== null && item[key] !== '')
@@ -476,7 +476,7 @@ class CVDataCleaner {
     }
 
     const validFields = (validFieldsBySection as any)[sectionType] || []
-    
+
     // Remove any fields not in the valid list
     Object.keys(item).forEach(key => {
       if (!validFields.includes(key)) {
@@ -499,7 +499,7 @@ class CVDataCleaner {
     }
 
     const dateFields = (dateFieldsBySection as any)[sectionType] || []
-    
+
     dateFields.forEach((field: string) => {
       if (item[field] === null || item[field] === undefined) {
         item[field] = ''
@@ -513,7 +513,7 @@ class CVDataCleaner {
  */
 abstract class SectionValidator {
   abstract validate(data: any): ValidationResult
-  
+
   protected createResult(isValid: boolean, errors: string[] = [], warnings: string[] = []): ValidationResult {
     return { isValid, errors, warnings }
   }
@@ -584,7 +584,7 @@ class ProfessionalSummaryValidator extends SectionValidator {
     }
 
     const content = data.content.trim()
-    
+
     if (content.length < 10) {
       errors.push('Professional summary must be at least 10 characters long')
     }

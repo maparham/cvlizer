@@ -1,15 +1,15 @@
 /**
  * UsersTab - Admin dashboard users tab component
- * 
+ *
  * This component displays user management interface with search, filtering,
  * and user action capabilities.
- * 
+ *
  * Key responsibilities:
  * - Display user search and filtering controls
  * - Show users table with actions
  * - Handle user management operations
  * - Integrate with user action dialogs
- * 
+ *
  * Usage context:
  * - Used in admin dashboard as the second tab
  * - Integrates with useAdminUsers and useUserActions hooks
@@ -277,7 +277,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
                 <TableCell>
                   <Box display="flex" gap={1} alignItems="center">
                     <Tooltip title="Impersonate User">
-                      <IconButton 
+                      <IconButton
                         size="small"
                         onClick={() => onStartImpersonation(user)}
                         disabled={actionLoading === user.id || !user.is_active}

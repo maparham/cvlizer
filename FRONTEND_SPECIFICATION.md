@@ -202,7 +202,7 @@ frontend/
   - Auto-save functionality
 
 #### Job Description Management
-- **Files**: 
+- **Files**:
   - `src/components/cv/ai/JobDescriptionsModal.tsx` - Main modal for managing job descriptions
   - `src/components/cv/ai/JobDescriptionCard.tsx` - Individual job description cards
   - `src/components/cv/ai/JobDescriptionSummary.tsx` - Summary display in AI Tools tab

@@ -1,17 +1,17 @@
 /**
  * Impersonation Context Provider
- * 
+ *
  * This module provides a centralized context for managing impersonation state across the application.
  * It eliminates duplicate API calls by maintaining a single source of truth for impersonation status
  * and providing shared state to all components that need it.
- * 
+ *
  * Key responsibilities:
  * - Centralize impersonation status management
  * - Eliminate duplicate API calls from multiple components
  * - Provide real-time status updates to all consumers
  * - Handle status polling and event-driven updates
  * - Manage session expiration and cleanup
- * 
+ *
  * Usage:
  * - Wrap the app with ImpersonationProvider
  * - Use useImpersonationContext hook in components that need impersonation state
@@ -46,10 +46,10 @@ const ImpersonationContext = createContext<ImpersonationContextType | undefined>
 
 /**
  * Custom hook to access impersonation context
- * 
+ *
  * Provides access to centralized impersonation state and methods throughout the application.
  * Must be used within an ImpersonationProvider component to avoid runtime errors.
- * 
+ *
  * @returns {ImpersonationContextType} The impersonation context containing state and methods
  * @throws {Error} If used outside of ImpersonationProvider component
  */
@@ -63,10 +63,10 @@ export const useImpersonationContext = () => {
 
 /**
  * Provider component for impersonation context
- * 
+ *
  * Manages centralized impersonation state and provides it to all child components.
  * Handles status polling, event-driven updates, and session management.
- * 
+ *
  * @param {ImpersonationProviderProps} props - Component props
  * @returns {JSX.Element} Provider component
  */

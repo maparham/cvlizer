@@ -1,10 +1,10 @@
 /**
  * Activity Logger Hook
- * 
+ *
  * This hook provides easy integration of the activity logger with React components,
  * automatically initializing the logger when a user is authenticated and providing
  * convenient methods for logging various user activities.
- * 
+ *
  * Usage:
  * - Automatically initializes when user is authenticated
  * - Provides methods for logging common activities
@@ -21,7 +21,7 @@ export const useActivityLogger = () => {
     if (isAuthenticated && user?.id) {
       // Initialize activity logger with user ID
       activityLogger.init(user.id)
-      
+
       // Log page view on initialization (only once per session)
       activityLogger.logPageView()
     }

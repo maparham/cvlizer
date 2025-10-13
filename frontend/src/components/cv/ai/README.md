@@ -19,7 +19,7 @@ The inline diff system allows users to see AI suggestions applied as highlighted
 ### Data Flow
 
 ```
-User clicks "Generate AI Suggestions" 
+User clicks "Generate AI Suggestions"
   ↓
 AI Service analyzes CV + Job Description
   ↓
@@ -87,7 +87,7 @@ const CustomSection: React.FC<SectionProps> = ({ data, ...props }) => {
 ### Visual Highlighting
 
 - **Green background**: New additions (keywords, content)
-- **Yellow background**: Modified content  
+- **Yellow background**: Modified content
 - **Red strikethrough**: Removed content
 - **Status indicators**: Pending (⏳), Approved (✅), Rejected (❌)
 
@@ -145,7 +145,7 @@ Specialized hook for keyword highlighting.
 ```tsx
 const { highlightedKeywords, newKeywords } = useHighlightedKeywords(
   'skills',
-  'technical', 
+  'technical',
   originalTechnicalSkills
 );
 ```
@@ -200,9 +200,9 @@ const DIFF_SECTIONS = {
 Extend the `SuggestionType` and add handling logic:
 
 ```tsx
-export type SuggestionType = 
-  | 'add_keyword' 
-  | 'enhance_content' 
+export type SuggestionType =
+  | 'add_keyword'
+  | 'enhance_content'
   | 'add_section'
   | 'custom_suggestion_type';  // Add your type
 ```

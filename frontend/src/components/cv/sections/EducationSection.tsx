@@ -161,15 +161,15 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
           onChange={(value) => updateEducation('description', value)}
           onSave={onSave}
         />
-        
+
         <Box>
           <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
             Achievements
           </Typography>
           {(edu.achievements || []).map((achievement: string, achievementIndex: number) => (
-            <Box key={achievementIndex} sx={{ 
-              display: 'flex', 
-              gap: 1, 
+            <Box key={achievementIndex} sx={{
+              display: 'flex',
+              gap: 1,
               mb: 1,
               '&:hover .item-action-button': {
                 opacity: 1
@@ -205,15 +205,15 @@ const EducationSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEd
             Add Achievement
           </Button>
         </Box>
-        
+
         <Box>
           <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
             Honors & Awards
           </Typography>
           {(edu.honors || []).map((honor: string, honorIndex: number) => (
-            <Box key={honorIndex} sx={{ 
-              display: 'flex', 
-              gap: 1, 
+            <Box key={honorIndex} sx={{
+              display: 'flex',
+              gap: 1,
               mb: 1,
               '&:hover .item-action-button': {
                 opacity: 1

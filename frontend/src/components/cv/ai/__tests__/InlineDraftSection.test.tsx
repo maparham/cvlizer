@@ -1,6 +1,6 @@
 /**
  * Inline Draft Section Component Tests
- * 
+ *
  * This module tests the InlineDraftSection component functionality including
  * draft display, approval/rejection workflows, and integration with CV editor.
  */

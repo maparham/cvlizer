@@ -1,6 +1,6 @@
 /**
  * Work Experience Section Component
- * 
+ *
  * This module manages the work experience section of a CV including:
  * - Multiple work experience entries with individual editing
  * - Job position and location autocomplete functionality

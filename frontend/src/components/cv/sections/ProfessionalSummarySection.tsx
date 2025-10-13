@@ -43,7 +43,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
         showSuccess('Professional summary updated with AI suggestion')
       }
     }
-    
+
     return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -58,10 +58,10 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           {showMarkdownPreview ? 'Edit' : 'Preview'}
         </Button>
       </Box>
-      
+
       {showMarkdownPreview ? (
         <Box
-          sx={{ 
+          sx={{
             minHeight: '120px',
             padding: 2,
             border: '1px solid #ccc',
@@ -104,8 +104,8 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           error={!((typeof editData === 'string' ? editData : editData.content)?.trim()) || (typeof editData === 'string' ? editData : editData.content)?.trim().length < 10}
           helperText={
             !((typeof editData === 'string' ? editData : editData.content)?.trim())
-              ? "Professional summary is required" 
-              : (typeof editData === 'string' ? editData : editData.content)?.trim().length < 10 
+              ? "Professional summary is required"
+              : (typeof editData === 'string' ? editData : editData.content)?.trim().length < 10
                 ? "Professional summary must be at least 10 characters long"
                 : "Markdown formatting is supported"
           }
@@ -113,21 +113,21 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           inputProps={{
             'data-testid': 'professional-summary-textarea'
           }}
-          sx={{ 
-            '& .MuiInputBase-input': { 
+          sx={{
+            '& .MuiInputBase-input': {
               lineHeight: 1.6,
               textAlign: 'justify'
             }
           }}
         />
       )}
-      
+
       {/* AI Summary Suggestion - Only show if suggestion exists */}
       {hasSummarySuggestion && (
-        <Box 
-          sx={{ 
-            mt: 2, 
-            p: { xs: 1.5, sm: 2 }, 
+        <Box
+          sx={{
+            mt: 2,
+            p: { xs: 1.5, sm: 2 },
             backgroundColor: '#E3F2FD',
             border: '1px solid #BBDEFB',
             borderRadius: 1
@@ -148,11 +148,11 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
               <CloseIcon fontSize="small" />
             </IconButton>
           </Box>
-          
+
           <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.6 }}>
             {summarySuggestion.suggested_text}
           </Typography>
-          
+
           {summarySuggestion.key_changes && summarySuggestion.key_changes.length > 0 && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#666' }}>
@@ -164,8 +164,8 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
                     key={index}
                     label={change}
                     size="small"
-                    sx={{ 
-                      mr: { xs: 0.25, sm: 0.5 }, 
+                    sx={{
+                      mr: { xs: 0.25, sm: 0.5 },
                       mb: { xs: 0.25, sm: 0.5 },
                       backgroundColor: '#E8F5E8',
                       color: '#2E7D32',
@@ -176,7 +176,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
               </Box>
             </Box>
           )}
-          
+
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"
@@ -219,7 +219,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
   const renderDisplay = (data: any) => (
     <Box>
       <Box
-        sx={{ 
+        sx={{
           lineHeight: 1.6,
           textAlign: 'justify',
           '& h1, & h2, & h3, & h4, & h5, & h6': {
@@ -247,13 +247,13 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
       >
         <ReactMarkdown>{(typeof data === 'string' ? data : data.content) || 'Your professional summary goes here...'}</ReactMarkdown>
       </Box>
-      
+
       {/* AI Summary Suggestion - Show in display mode too */}
       {hasSummarySuggestion && (
-        <Box 
-          sx={{ 
-            mt: 2, 
-            p: { xs: 1.5, sm: 2 }, 
+        <Box
+          sx={{
+            mt: 2,
+            p: { xs: 1.5, sm: 2 },
             backgroundColor: '#E3F2FD',
             border: '1px solid #BBDEFB',
             borderRadius: 1
@@ -274,11 +274,11 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
               <CloseIcon fontSize="small" />
             </IconButton>
           </Box>
-          
+
           <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.6 }}>
             {summarySuggestion.suggested_text}
           </Typography>
-          
+
           {summarySuggestion.key_changes && summarySuggestion.key_changes.length > 0 && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#666' }}>
@@ -290,8 +290,8 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
                     key={index}
                     label={change}
                     size="small"
-                    sx={{ 
-                      mr: { xs: 0.25, sm: 0.5 }, 
+                    sx={{
+                      mr: { xs: 0.25, sm: 0.5 },
                       mb: { xs: 0.25, sm: 0.5 },
                       backgroundColor: '#E8F5E8',
                       color: '#2E7D32',
@@ -302,7 +302,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
               </Box>
             </Box>
           )}
-          
+
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"

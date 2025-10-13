@@ -1,21 +1,21 @@
 /**
  * Admin Dashboard - Administrative Interface and User Management
- * 
+ *
  * This module provides a comprehensive administrative interface for managing users,
  * monitoring system statistics, and performing administrative actions such as
  * activity tracking.
- * 
+ *
  * Key responsibilities:
  * - Tab management and routing
  * - Error boundary and authentication checks
  * - Layout wrapper with header and navigation
  * - Orchestrates child components
- * 
+ *
  * Usage context:
  * - Accessible only to authenticated admin users
  * - Provides comprehensive user management functionality
  * - Integrates with backend admin API endpoints
- * 
+ *
  * Dependencies:
  * - Custom hooks for data management
  * - Tab components for different views
@@ -59,11 +59,11 @@ const AdminDashboard: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0)
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  
+
   const { isAuthenticated } = useAuth()
   const { isImpersonating } = useImpersonation()
   const navigate = useNavigate()
-  
+
   // Custom hooks for data management
   const adminStats = useAdminStats()
   const adminUsers = useAdminUsers()

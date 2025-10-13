@@ -135,7 +135,7 @@ export const mockApiResponse = <T,>(data: T) => ({
 })
 
 // Test helpers
-export const waitForLoadingToFinish = () => 
+export const waitForLoadingToFinish = () =>
   new Promise(resolve => setTimeout(resolve, 0))
 
 // Mock functions
@@ -145,9 +145,9 @@ export const mockFn = jest.fn()
 export const setupTest = () => {
   // Reset all mocks
   jest.clearAllMocks()
-  
+
   // Reset localStorage
   localStorage.clear()
-  
+
   // Reset any global state if needed
 }

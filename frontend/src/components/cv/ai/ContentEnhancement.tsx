@@ -1,10 +1,10 @@
 /**
  * Content Enhancement Component
- * 
+ *
  * This component provides AI-powered content enhancement functionality including
  * enhancement buttons for editable content and a suggestions modal for reviewing
  * and accepting AI-generated improvements.
- * 
+ *
  * Key responsibilities:
  * - Render enhancement buttons for any editable content
  * - Display enhancement suggestions modal with before/after comparison
@@ -12,7 +12,7 @@
  * - Allow one-click accept/reject for each suggestion
  * - Maintain original text as fallback option
  * - Integrate with CV sections for content updates
- * 
+ *
  * Usage:
  * - EnhancementButton can be used inline with any editable content
  * - EnhancementModal is used to display and manage suggestions
@@ -125,7 +125,7 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
     setIsEnhancing(true);
     try {
       const enhancementResponse = await enhanceContent(cvId, content, contentType);
-      
+
       // Add the task to polling if it's still generating
       if (enhancementResponse.is_generating && enhancementResponse.enhancement_id) {
         addTask({
@@ -285,9 +285,9 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
                 <Typography variant="h6" gutterBottom color="text.secondary">
                   Original Content
                 </Typography>
-                <Typography variant="body1" sx={{ 
-                  p: 2, 
-                  bgcolor: 'grey.50', 
+                <Typography variant="body1" sx={{
+                  p: 2,
+                  bgcolor: 'grey.50',
                   borderRadius: 1,
                   fontStyle: 'italic'
                 }}>
@@ -358,7 +358,7 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
                                   <ListItemIcon>
                                     <TrendingUpIcon color="success" fontSize="small" />
                                   </ListItemIcon>
-                                  <ListItemText 
+                                  <ListItemText
                                     primary={improvement}
                                     primaryTypographyProps={{ variant: 'body2' }}
                                   />

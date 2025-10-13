@@ -23,7 +23,7 @@ export const initializeStores = async () => {
 export const cleanupStores = () => {
   // Cleanup any intervals or subscriptions
   cleanupCVStore()
-  
+
   // Clear any sensitive data if needed
   const uiStore = useUIStore.getState()
   uiStore.clearNotifications()

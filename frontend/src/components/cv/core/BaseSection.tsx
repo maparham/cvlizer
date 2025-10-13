@@ -4,12 +4,12 @@ import { Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon } from '@mui/i
 import { BaseSectionProps } from '../../../types'
 import { EditableTitle } from '../EditableTitle'
 
-const BaseSection: React.FC<BaseSectionProps> = ({ 
-  title, 
-  onEdit, 
+const BaseSection: React.FC<BaseSectionProps> = ({
+  title,
+  onEdit,
   onSave,
   onCancel,
-  children, 
+  children,
   editButton,
   headerActions,
   isEditing,
@@ -31,9 +31,9 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   }, [isEditing])
 
   return (
-    <Box 
+    <Box
       ref={sectionRef}
-      sx={{ 
+      sx={{
         position: 'relative'
       }}
     >
@@ -126,7 +126,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
         )}
         {headerActions}
       </Box>
-      
+
       {children}
       <Divider sx={{ my: 2 }} />
     </Box>

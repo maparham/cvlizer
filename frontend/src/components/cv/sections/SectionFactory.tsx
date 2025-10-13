@@ -1,17 +1,17 @@
 /**
  * Section Factory Component
- * 
+ *
  * This factory component dynamically renders the appropriate section component
  * based on whether inline diff mode is active. It provides a seamless way to
  * switch between regular sections and their diff-enabled counterparts.
- * 
+ *
  * Key responsibilities:
  * - Detect if inline diff mode is active
  * - Render diff-enabled sections when in diff mode
  * - Fall back to regular sections when not in diff mode
  * - Maintain consistent props interface across section types
  * - Handle section-specific diff integrations
- * 
+ *
  * Usage:
  * - Replace direct section imports with SectionFactory
  * - Automatically handles switching between regular and diff modes
@@ -40,7 +40,7 @@ import SkillsSectionWithDiff from './SkillsSectionWithDiff';
 import ProfessionalSummarySectionWithDiff from './ProfessionalSummarySectionWithDiff';
 
 // Section type mapping
-type SectionType = 
+type SectionType =
   | 'personal_info'
   | 'professional_summary'
   | 'work_experience'
@@ -97,13 +97,13 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
     if (isInDiffMode && DIFF_SECTIONS[sectionType as keyof typeof DIFF_SECTIONS]) {
       return DIFF_SECTIONS[sectionType as keyof typeof DIFF_SECTIONS];
     }
-    
+
     // Otherwise, use the regular section
     return REGULAR_SECTIONS[sectionType];
   };
 
   const SectionComponent = getSectionComponent();
-  
+
   if (!SectionComponent) {
     console.warn(`Unknown section type: ${sectionType}`);
     return null;

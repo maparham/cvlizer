@@ -1,6 +1,6 @@
 /**
  * Job Description Integration Flow Tests
- * 
+ *
  * Comprehensive integration tests covering complete user interaction flows:
  * - Add JD → hide from sidebar → select in modal → appears in sidebar
  * - Add multiple JDs → hide some → manage count shows total
@@ -172,14 +172,14 @@ describe('Job Description Integration Flows', () => {
       const manualTab = screen.getByText('MANUAL');
       fireEvent.click(manualTab);
 
-      fireEvent.change(screen.getByLabelText('Job Title (Optional)'), { 
-        target: { value: 'Software Engineer' } 
+      fireEvent.change(screen.getByLabelText('Job Title (Optional)'), {
+        target: { value: 'Software Engineer' }
       });
-      fireEvent.change(screen.getByLabelText('Company (Optional)'), { 
-        target: { value: 'Company A' } 
+      fireEvent.change(screen.getByLabelText('Company (Optional)'), {
+        target: { value: 'Company A' }
       });
-      fireEvent.change(screen.getByLabelText('Job Description'), { 
-        target: { value: 'First job description content' } 
+      fireEvent.change(screen.getByLabelText('Job Description'), {
+        target: { value: 'First job description content' }
       });
 
       const saveButton = screen.getByText('Save Job Description');
@@ -243,14 +243,14 @@ describe('Job Description Integration Flows', () => {
       const manualTab2 = screen.getByText('MANUAL');
       fireEvent.click(manualTab2);
 
-      fireEvent.change(screen.getByLabelText('Job Title (Optional)'), { 
-        target: { value: 'Product Manager' } 
+      fireEvent.change(screen.getByLabelText('Job Title (Optional)'), {
+        target: { value: 'Product Manager' }
       });
-      fireEvent.change(screen.getByLabelText('Company (Optional)'), { 
-        target: { value: 'Company B' } 
+      fireEvent.change(screen.getByLabelText('Company (Optional)'), {
+        target: { value: 'Company B' }
       });
-      fireEvent.change(screen.getByLabelText('Job Description'), { 
-        target: { value: 'Second job description content' } 
+      fireEvent.change(screen.getByLabelText('Job Description'), {
+        target: { value: 'Second job description content' }
       });
 
       const saveButton2 = screen.getByText('Save Job Description');
@@ -351,8 +351,8 @@ describe('Job Description Integration Flows', () => {
       const manualTab = screen.getByText('MANUAL');
       fireEvent.click(manualTab);
 
-      fireEvent.change(screen.getByLabelText('Job Description'), { 
-        target: { value: 'First job description content' } 
+      fireEvent.change(screen.getByLabelText('Job Description'), {
+        target: { value: 'First job description content' }
       });
 
       const saveButton = screen.getByText('Save Job Description');
@@ -386,8 +386,8 @@ describe('Job Description Integration Flows', () => {
       const manualTab2 = screen.getByText('MANUAL');
       fireEvent.click(manualTab2);
 
-      fireEvent.change(screen.getByLabelText('Job Description'), { 
-        target: { value: 'Second job description content' } 
+      fireEvent.change(screen.getByLabelText('Job Description'), {
+        target: { value: 'Second job description content' }
       });
 
       const saveButton2 = screen.getByText('Save Job Description');
@@ -421,8 +421,8 @@ describe('Job Description Integration Flows', () => {
       const manualTab3 = screen.getByText('MANUAL');
       fireEvent.click(manualTab3);
 
-      fireEvent.change(screen.getByLabelText('Job Description'), { 
-        target: { value: 'Third job description content' } 
+      fireEvent.change(screen.getByLabelText('Job Description'), {
+        target: { value: 'Third job description content' }
       });
 
       const saveButton3 = screen.getByText('Save Job Description');
@@ -508,14 +508,14 @@ describe('Job Description Integration Flows', () => {
       fireEvent.click(editButton);
 
       // Update form fields
-      fireEvent.change(screen.getByLabelText('Job Title'), { 
-        target: { value: 'Updated Software Engineer' } 
+      fireEvent.change(screen.getByLabelText('Job Title'), {
+        target: { value: 'Updated Software Engineer' }
       });
-      fireEvent.change(screen.getByLabelText('Company'), { 
-        target: { value: 'Updated Company A' } 
+      fireEvent.change(screen.getByLabelText('Company'), {
+        target: { value: 'Updated Company A' }
       });
-      fireEvent.change(screen.getByLabelText('Job Description'), { 
-        target: { value: 'Updated job description content' } 
+      fireEvent.change(screen.getByLabelText('Job Description'), {
+        target: { value: 'Updated job description content' }
       });
 
       // Submit form
@@ -597,8 +597,8 @@ describe('Job Description Integration Flows', () => {
       const manualTab = screen.getByText('MANUAL');
       fireEvent.click(manualTab);
 
-      fireEvent.change(screen.getByLabelText('Job Description'), { 
-        target: { value: 'Test content' } 
+      fireEvent.change(screen.getByLabelText('Job Description'), {
+        target: { value: 'Test content' }
       });
 
       const saveButton = screen.getByText('Save Job Description');
@@ -609,8 +609,8 @@ describe('Job Description Integration Flows', () => {
       });
 
       // Try again (should succeed)
-      fireEvent.change(screen.getByLabelText('Job Description'), { 
-        target: { value: 'Test content 2' } 
+      fireEvent.change(screen.getByLabelText('Job Description'), {
+        target: { value: 'Test content 2' }
       });
 
       const saveButton2 = screen.getByText('Save Job Description');

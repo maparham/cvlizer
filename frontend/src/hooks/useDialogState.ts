@@ -1,16 +1,16 @@
 /**
  * Dialog State Management Hook
- * 
+ *
  * This module provides reusable hooks for common dialog state patterns,
  * reducing repetitive useState declarations and providing consistent
  * dialog management across components.
- * 
+ *
  * Key responsibilities:
  * - Manage dialog open/close state
  * - Provide helper functions for common dialog operations
  * - Support confirmation dialogs and simple dialogs
  * - Handle dialog state cleanup and reset
- * 
+ *
  * Usage:
  * - Import useDialogState for simple dialogs
  * - Import useConfirmationDialog for confirmation dialogs

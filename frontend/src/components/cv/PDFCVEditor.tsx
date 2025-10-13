@@ -1,6 +1,6 @@
 /**
  * PDF-Style CV Editor Component
- * 
+ *
  * This module provides the main CV editing interface with PDF-like layout including:
  * - Section management sidebar for reordering and toggling visibility
  * - PDF-style content area with real-time editing
@@ -75,7 +75,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
       }
     }
   }, [cvId, loadJobDescriptions, getCVDrafts, loadLatestAIEnhancement, clearAllSuggestions])
-  
+
   // Handle AI Tools request from header
   useEffect(() => {
     if (onAIToolsRequest) {
@@ -83,7 +83,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
       window.switchToAITools = () => setSidebarTab(1)
     }
   }, [onAIToolsRequest])
-  
+
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -120,7 +120,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                 const updatedCvData = { ...cvData };
                 const keyword = content;
                 const suggestedPlacement = sectionType;
-                
+
                 if (suggestedPlacement.includes('skills section') || suggestedPlacement.includes('skills')) {
                   // Handle skills section
                   if (!updatedCvData.skills) {
@@ -129,15 +129,15 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                   if (!updatedCvData.skills.technical) updatedCvData.skills.technical = [];
                   if (!updatedCvData.skills.soft) updatedCvData.skills.soft = [];
                   if (!updatedCvData.skills.languages) updatedCvData.skills.languages = [];
-                  
+
                   // Check if keyword already exists to avoid duplicates
-                  const alreadyExists = 
+                  const alreadyExists =
                     updatedCvData.skills.technical.includes(keyword) ||
                     updatedCvData.skills.soft.includes(keyword) ||
-                    updatedCvData.skills.languages.some(lang => 
+                    updatedCvData.skills.languages.some(lang =>
                       typeof lang === 'string' ? lang === keyword : lang.language === keyword
                     );
-                  
+
                   if (!alreadyExists) {
                     if (suggestedPlacement.includes('technical')) {
                       updatedCvData.skills.technical.push(keyword);
@@ -148,7 +148,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                       updatedCvData.skills.technical.push(keyword);
                     }
                   }
-                  
+
                   // Ensure skills section exists in section config
                   if (!sections.items.find(s => s.type === 'skills')) {
                     const maxOrder = sections.items.length > 0 ? Math.max(...sections.items.map(s => s.order)) : -1;
@@ -159,13 +159,13 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                       visible: true,
                       order: maxOrder + 1
                     };
-                    
+
                     const updatedSections = [...sections.items, newSection];
                     updatedCvData.section_config = {
                       sections: updatedSections
                     };
                   }
-                  
+
                   onUpdateCV(updatedCvData);
                   onSave(updatedCvData, `Added "${keyword}" to skills`);
                 } else if (suggestedPlacement.includes('professional_summary') || suggestedPlacement.includes('professional summary')) {
@@ -173,9 +173,9 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                   if (!updatedCvData.professional_summary) {
                     updatedCvData.professional_summary = { content: '', keywords: [] };
                   }
-                  
+
                   const currentContent = updatedCvData.professional_summary.content || '';
-                  
+
                   if (!currentContent.toLowerCase().includes(keyword.toLowerCase())) {
                     // If no content exists, create a basic summary with the keyword
                     if (!currentContent.trim()) {
@@ -184,12 +184,12 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                       // For existing content, try to integrate the keyword more naturally
                       // Look for common integration points
                       const sentences = currentContent.split(/[.!?]+/).filter(s => s.trim());
-                      
+
                       if (sentences.length === 0) {
                         updatedCvData.professional_summary.content = `Experienced professional with expertise in ${keyword}.`;
                       } else if (sentences.length === 1) {
                         // Single sentence - add the keyword as a second sentence
-                        const enhancedContent = currentContent.endsWith('.') 
+                        const enhancedContent = currentContent.endsWith('.')
                           ? `${currentContent} Proficient in ${keyword}.`
                           : `${currentContent}. Proficient in ${keyword}.`;
                         updatedCvData.professional_summary.content = enhancedContent;
@@ -197,17 +197,17 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                         // Multiple sentences - try to integrate into the first sentence if it makes sense
                         const firstSentence = sentences[0].trim();
                         const lowerFirst = firstSentence.toLowerCase();
-                        
+
                         if (lowerFirst.includes('experienced') || lowerFirst.includes('professional') || lowerFirst.includes('expertise')) {
                           // Insert keyword into the first sentence
-                          const insertPoint = firstSentence.includes('with') 
+                          const insertPoint = firstSentence.includes('with')
                             ? firstSentence.replace('with', `with ${keyword} and`)
                             : firstSentence.replace(/experienced|professional/, `experienced ${keyword} professional`);
                           const enhancedContent = currentContent.replace(firstSentence, insertPoint);
                           updatedCvData.professional_summary.content = enhancedContent;
                         } else {
                           // Fallback to adding as a new sentence
-                          const enhancedContent = currentContent.endsWith('.') 
+                          const enhancedContent = currentContent.endsWith('.')
                             ? `${currentContent} Skilled in ${keyword}.`
                             : `${currentContent}. Skilled in ${keyword}.`;
                           updatedCvData.professional_summary.content = enhancedContent;
@@ -215,7 +215,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                       }
                     }
                   }
-                  
+
                   onUpdateCV(updatedCvData);
                   onSave(updatedCvData, `Added "${keyword}" to professional summary`);
                 } else if (suggestedPlacement.includes('work_experience') || suggestedPlacement.includes('work experience')) {
@@ -227,7 +227,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                     } else if (!mostRecentJob.description) {
                       mostRecentJob.description = `Worked with ${keyword} technologies.`;
                     }
-                    
+
                     onUpdateCV(updatedCvData);
                     onSave(updatedCvData, `Added "${keyword}" to work experience`);
                   } else {
@@ -236,11 +236,11 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
                       updatedCvData.skills = { technical: [], soft: [], languages: [] };
                     }
                     if (!updatedCvData.skills.technical) updatedCvData.skills.technical = [];
-                    
+
                     if (!updatedCvData.skills.technical.includes(keyword)) {
                       updatedCvData.skills.technical.push(keyword);
                     }
-                    
+
                     onUpdateCV(updatedCvData);
                     onSave(updatedCvData, `Added "${keyword}" to skills (no work experience found)`);
                   }
@@ -269,7 +269,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({ title, onTitleSave, cvId, onA
 
         {/* History Panel */}
         {import.meta.env.VITE_SHOW_HISTORY_PANEL === 'true' && cvId && <ConnectedHistoryPanel cvId={cvId} />}
-        
+
         {/* History Panel Handle - Always visible when panel is closed */}
         {import.meta.env.VITE_SHOW_HISTORY_PANEL === 'true' && cvId && <ConnectedHistoryPanelHandle cvId={cvId} />}
 

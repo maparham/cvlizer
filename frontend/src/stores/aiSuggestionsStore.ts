@@ -1,15 +1,15 @@
 /**
  * Unified AI Suggestions Store
- * 
+ *
  * This module manages the state for ALL AI-powered suggestions using Zustand.
  * It handles fetching all suggestions in one call, managing loading states, and dismissing suggestions.
- * 
+ *
  * Key responsibilities:
  * - Generate ALL suggestions (skills + professional summary) in one API call
  * - Manage unified loading and error states
  * - Handle dismissing individual suggestions
  * - Clear all suggestions when switching CVs or job descriptions
- * 
+ *
  * Usage:
  * - Import useAISuggestionsStore hook in components
  * - Call generateAllSuggestions to get ALL AI suggestions at once
@@ -50,18 +50,18 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
   currentEnhancementId: null,
   suggestionsLoading: false,
   suggestionsError: null,
-  
+
   // Generate ALL suggestions from AI using background task (new approach)
   generateAllSuggestions: async (cvId: string, jobDescId: string) => {
     set({ suggestionsLoading: true, suggestionsError: null });
-    
+
     try {
       // Create AI enhancement task using background task API
       const result = await aiService.createAIEnhancement(cvId, jobDescId);
-      
+
       // Return the enhancement ID for global polling integration
       return result.enhancement_id;
-      
+
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to generate AI suggestions';
       ErrorHandler.handle(error, {
@@ -69,7 +69,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
         action: 'create-enhancement',
         metadata: { cvId, jobDescId }
       });
-      
+
       set({
         allSuggestions: {
           skills: { technical: [], soft: [] },
@@ -319,4 +319,3 @@ export const useValidatedSuggestions = (cvId: string) => {
     return null;
   });
 };
-

@@ -51,7 +51,7 @@ describe('CVValidationService', () => {
   describe('cleanForBackend', () => {
     it('should preserve valid sections', () => {
       const result = CVValidationService.cleanForBackend(mockCVData)
-      
+
       expect(result.personal_info).toBeDefined()
       expect(result.professional_summary).toBeDefined()
       expect(result.skills).toBeDefined()
@@ -63,9 +63,9 @@ describe('CVValidationService', () => {
         ...mockCVData,
         professional_summary: { content: "", keywords: [] }
       }
-      
+
       const result = CVValidationService.cleanForBackend(invalidData)
-      
+
       expect(result.professional_summary).toBeUndefined()
     })
 
@@ -74,9 +74,9 @@ describe('CVValidationService', () => {
         ...mockCVData,
         professional_summary: { content: "Short", keywords: [] }
       }
-      
+
       const result = CVValidationService.cleanForBackend(invalidData)
-      
+
       expect(result.professional_summary).toBeUndefined()
     })
 
@@ -92,9 +92,9 @@ describe('CVValidationService', () => {
           website_url: ""
         }
       }
-      
+
       const result = CVValidationService.cleanForBackend(invalidData)
-      
+
       expect(result.personal_info).toBeUndefined()
     })
 
@@ -107,9 +107,9 @@ describe('CVValidationService', () => {
           languages: [{ id: "lang_1", language: "English", proficiency: "Native" as const }]
         }
       }
-      
+
       const result = CVValidationService.cleanForBackend(invalidData)
-      
+
       expect(result.skills).toBeUndefined()
     })
 
@@ -122,9 +122,9 @@ describe('CVValidationService', () => {
           languages: []
         }
       }
-      
+
       const result = CVValidationService.cleanForBackend(validData)
-      
+
       expect(result.skills).toBeDefined()
       expect(result.skills.technical).toEqual(["JavaScript"])
     })
@@ -138,9 +138,9 @@ describe('CVValidationService', () => {
           languages: []
         }
       }
-      
+
       const result = CVValidationService.cleanForBackend(validData)
-      
+
       expect(result.skills).toBeDefined()
       expect(result.skills.soft).toEqual(["Leadership"])
     })
@@ -149,7 +149,7 @@ describe('CVValidationService', () => {
   describe('validateSection', () => {
     it('should validate personal_info section correctly', () => {
       const result = CVValidationService.validateSection('personal_info', mockCVData.personal_info)
-      
+
       expect(result.isValid).toBe(true)
       expect(result.errors).toHaveLength(0)
     })
@@ -160,25 +160,25 @@ describe('CVValidationService', () => {
         email: "invalid-email",
         location: ""
       }
-      
+
       const result = CVValidationService.validateSection('personal_info', invalidPersonalInfo)
-      
+
       expect(result.isValid).toBe(false)
       expect(result.errors.length).toBeGreaterThan(0)
     })
 
     it('should validate professional_summary section correctly', () => {
       const result = CVValidationService.validateSection('professional_summary', mockCVData.professional_summary)
-      
+
       expect(result.isValid).toBe(true)
       expect(result.errors).toHaveLength(0)
     })
 
     it('should return errors for short professional summary', () => {
       const invalidSummary = { content: "Short", keywords: [] }
-      
+
       const result = CVValidationService.validateSection('professional_summary', invalidSummary)
-      
+
       expect(result.isValid).toBe(false)
       expect(result.errors).toContain('Professional summary must be at least 10 characters long')
     })
@@ -193,11 +193,11 @@ describe('CVValidationService', () => {
 
     it('should validate item with all required fields', () => {
       const result = CVValidationService.validateItem(
-        mockItem, 
-        ['name', 'description'] as (keyof typeof mockItem)[], 
+        mockItem,
+        ['name', 'description'] as (keyof typeof mockItem)[],
         'Projects'
       )
-      
+
       expect(result).toBe(true)
     })
 
@@ -206,23 +206,23 @@ describe('CVValidationService', () => {
         name: "",
         description: "A test project description"
       }
-      
+
       const result = CVValidationService.validateItem(
-        invalidItem, 
-        ['name', 'description'] as (keyof typeof invalidItem)[], 
+        invalidItem,
+        ['name', 'description'] as (keyof typeof invalidItem)[],
         'Projects'
       )
-      
+
       expect(result).toBe(false)
     })
 
     it('should return false for null item', () => {
       const result = CVValidationService.validateItem(
-        null, 
-        ['name'] as never[], 
+        null,
+        ['name'] as never[],
         'Projects'
       )
-      
+
       expect(result).toBe(false)
     })
   })
@@ -230,14 +230,14 @@ describe('CVValidationService', () => {
   describe('validateTitle', () => {
     it('should validate normal title', () => {
       const result = CVValidationService.validateTitle('My CV Title')
-      
+
       expect(result.isValid).toBe(true)
       expect(result.errors).toHaveLength(0)
     })
 
     it('should return error for empty title', () => {
       const result = CVValidationService.validateTitle('')
-      
+
       expect(result.isValid).toBe(false)
       expect(result.errors).toContain('Title cannot be empty')
     })
@@ -245,7 +245,7 @@ describe('CVValidationService', () => {
     it('should return error for title that is too long', () => {
       const longTitle = 'a'.repeat(300)
       const result = CVValidationService.validateTitle(longTitle)
-      
+
       expect(result.isValid).toBe(false)
       expect(result.errors).toContain('Title cannot exceed 255 characters')
     })
@@ -253,7 +253,7 @@ describe('CVValidationService', () => {
     it('should return warning for long title', () => {
       const longTitle = 'a'.repeat(220)
       const result = CVValidationService.validateTitle(longTitle)
-      
+
       expect(result.isValid).toBe(true)
       expect(result.warnings.length).toBeGreaterThan(0)
     })
@@ -265,14 +265,14 @@ describe('CVValidationService', () => {
     it('should return false for identical objects', () => {
       const currentData = { name: "John", age: 30 }
       const result = CVValidationService.hasUnsavedChanges(currentData, originalData)
-      
+
       expect(result).toBe(false)
     })
 
     it('should return true for different objects', () => {
       const currentData = { name: "Jane", age: 30 }
       const result = CVValidationService.hasUnsavedChanges(currentData, originalData)
-      
+
       expect(result).toBe(true)
     })
 
@@ -280,7 +280,7 @@ describe('CVValidationService', () => {
       const originalData = { person: { name: "John" } }
       const currentData = { person: { name: "Jane" } }
       const result = CVValidationService.hasUnsavedChanges(currentData, originalData)
-      
+
       expect(result).toBe(true)
     })
   })

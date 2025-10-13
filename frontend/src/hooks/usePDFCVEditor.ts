@@ -29,9 +29,9 @@ interface PDFCVEditorHook {
   requestSectionCancel: () => void
   editingIndividualItem: any
   registerIndividualItemEditing: (
-    sectionId: string, 
-    itemIndex: number, 
-    onCancel: () => void, 
+    sectionId: string,
+    itemIndex: number,
+    onCancel: () => void,
     onStartEdit?: () => void
   ) => 'success' | 'dialog_shown'
   unregisterIndividualItemEditing: (sectionId: string, itemIndex: number) => void
@@ -61,17 +61,17 @@ interface PDFCVEditorHook {
   clearValidationErrors: () => void
 }
 
-export const usePDFCVEditor = ({ 
-  cvData, 
-  onUpdateCV, 
-  onSave 
+export const usePDFCVEditor = ({
+  cvData,
+  onUpdateCV,
+  onSave
 }: PDFCVEditorProps): PDFCVEditorHook => {
   // Reset dialog state (not managed by other hooks)
   const [showResetDialog, setShowResetDialog] = useState(false)
-  
+
   // Validation errors state
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
-  
+
   const clearValidationErrors = useCallback(() => {
     setValidationErrors([])
   }, [])

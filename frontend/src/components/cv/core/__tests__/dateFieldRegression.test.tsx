@@ -46,13 +46,13 @@ describe('DateFieldComponent - Regression Prevention', () => {
 
       // Find the date input container (MUIDateField creates a complex DOM structure)
       const dateInputContainer = screen.getByRole('group')
-      
+
       // Focus the input and start typing
       await user.click(dateInputContainer)
-      
+
       // Type DD.MM.20 (partial year)
       await user.type(dateInputContainer, '251220')
-      
+
       // The key regression test: onChange should NOT be called for partial dates
       // This prevents the DD.MM parts from resetting
       expect(onChange).not.toHaveBeenCalled()
@@ -70,10 +70,10 @@ describe('DateFieldComponent - Regression Prevention', () => {
 
       const dateInputContainer = screen.getByRole('group')
       await user.click(dateInputContainer)
-      
+
       // Type complete valid date
       await user.type(dateInputContainer, '25122023')
-      
+
       // In test environment, MUIDateField may not trigger onChange immediately
       // The important thing is that it doesn't crash or reset the input
       expect(dateInputContainer).toBeInTheDocument()
@@ -90,10 +90,10 @@ describe('DateFieldComponent - Regression Prevention', () => {
 
       const dateInputContainer = screen.getByRole('group')
       await user.click(dateInputContainer)
-      
+
       // Type partial date
       await user.type(dateInputContainer, '251220')
-      
+
       // Should not show validation errors for partial input
       // The field should remain in a "typing" state
       expect(screen.queryByText('Test Date must be in YYYY-MM-DD format')).not.toBeInTheDocument()
@@ -113,10 +113,10 @@ describe('DateFieldComponent - Regression Prevention', () => {
 
       const dateInputContainer = screen.getByRole('group')
       await user.click(dateInputContainer)
-      
+
       // Type rapidly
       await user.type(dateInputContainer, '25122023')
-      
+
       // Should handle rapid input without crashing or resetting
       expect(dateInputContainer).toBeInTheDocument()
     })
@@ -162,10 +162,10 @@ describe('DateFieldComponent - Regression Prevention', () => {
       )
 
       const calendarButton = screen.getByRole('button')
-      
+
       // Click calendar button
       await user.click(calendarButton)
-      
+
       // The calendar should open (we can't easily test the calendar UI in jsdom,
       // but we can test that the button is functional)
       expect(calendarButton).toBeInTheDocument()

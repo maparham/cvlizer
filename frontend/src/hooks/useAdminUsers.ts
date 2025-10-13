@@ -1,15 +1,15 @@
 /**
  * useAdminUsers - Custom hook for managing admin user data
- * 
+ *
  * This hook handles loading, filtering, and managing user data for the admin dashboard.
  * Provides search functionality, filtering options, and user management actions.
- * 
+ *
  * Key responsibilities:
  * - Load and filter users from API
  * - Manage search and filter state
  * - Handle user CRUD operations
  * - Provide loading and error states
- * 
+ *
  * Usage context:
  * - Used in admin dashboard users tab
  * - Integrates with admin API endpoints
@@ -47,7 +47,7 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
     clerkFilter: 'all',
     activeFilter: 'all'
   })
-  
+
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
@@ -58,7 +58,7 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
       if (filters.searchTerm) params.append('search', filters.searchTerm)
       if (filters.clerkFilter !== 'all') params.append('clerk_only', filters.clerkFilter === 'clerk' ? 'true' : 'false')
       if (filters.activeFilter !== 'all') params.append('active_only', filters.activeFilter === 'active' ? 'true' : 'false')
-      
+
       const response = await api.get(`/admin/users?${params}`)
       setUsers(response.data)
       setError(null)
@@ -72,10 +72,10 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
   const toggleUserActive = async (userId: string, currentStatus: boolean) => {
     try {
       await api.put(`/admin/users/${userId}/toggle-active`)
-      
+
       // Update local state
-      setUsers(users.map(user => 
-        user.id === userId 
+      setUsers(users.map(user =>
+        user.id === userId
           ? { ...user, is_active: !currentStatus }
           : user
       ))

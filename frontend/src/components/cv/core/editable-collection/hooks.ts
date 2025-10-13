@@ -16,27 +16,27 @@ export const useItemEditing = <T>(
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null)
   const [editData, setEditData] = useState<T | null>(null)
   const editingItemIndexRef = useRef<number | null>(null)
-  
-  
+
+
   // Memoize section ID to avoid recalculation
   const sectionId = useMemo(() => getSectionId(title), [title])
 
   const handleCancelEdit = useCallback((isSave = false) => {
-    
+
     setEditingItemIndex(null)
     editingItemIndexRef.current = null
     setEditData(null)
-    
+
     // Clear unsaved changes
     if (onUnsavedChanges) {
       onUnsavedChanges(sectionId, false)
     }
-    
+
     // Unregister from global editing state
     if (unregisterIndividualItemEditing) {
       unregisterIndividualItemEditing()
     }
-    
+
     // Only call onClose if this is not a save operation
     // During save, we don't want to trigger the unsaved changes dialog
     if (!isSave && onClose) {
@@ -45,22 +45,22 @@ export const useItemEditing = <T>(
   }, [sectionId, onUnsavedChanges, unregisterIndividualItemEditing, onClose])
 
   const handleUpdateItem = useCallback((
-    field: keyof T, 
-    value: any, 
+    field: keyof T,
+    value: any,
     itemsData: T[]
   ) => {
     if (editData) {
       const newEditData = { ...editData, [field]: value }
-      
+
       // Track unsaved changes BEFORE setting state
       if (onUnsavedChanges) {
         const isNewItem = editingItemIndex !== null && editingItemIndex >= itemsData.length
         const originalItem = isNewItem ? null : itemsData[editingItemIndex!]
         const hasChanges = hasUnsavedChanges(newEditData, originalItem, isNewItem)
-        
+
         onUnsavedChanges(sectionId, hasChanges)
       }
-      
+
       setEditData(newEditData)
     }
   }, [editData, editingItemIndex, onUnsavedChanges, sectionId])
@@ -86,12 +86,12 @@ export const useSorting = <T>(
 ) => {
   // Memoize section ID to avoid recalculation
   const sectionId = useMemo(() => getSectionId(title), [title])
-  
+
   const [sortField, setSortField] = useState<keyof T | ''>(() => {
     const saved = localStorage.getItem(`cv_sort_${sectionId}_field`)
     return (saved as keyof T) || ''
   })
-  
+
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => {
     const saved = localStorage.getItem(`cv_sort_${sectionId}_direction`)
     return (saved as 'asc' | 'desc') || 'desc'
@@ -100,7 +100,7 @@ export const useSorting = <T>(
   const handleSort = useCallback((field: keyof T, direction: 'asc' | 'desc') => {
     setSortField(field)
     setSortDirection(direction)
-    
+
     // Save sort preferences to localStorage
     localStorage.setItem(`cv_sort_${sectionId}_field`, String(field))
     localStorage.setItem(`cv_sort_${sectionId}_direction`, direction)
@@ -143,12 +143,12 @@ export const useItemsData = <T>(
     // Only sync with parent data if we're not currently reordering manually
     if (!isReordering) {
       let newData = (data as T[]) || []
-      
+
       // Apply persisted sort if it exists
       if (sortField && newData.length > 0) {
         newData = sortItemsByDate(newData, sortField, sortDirection)
       }
-      
+
       setItemsData(newData)
     }
   }, [data, sortField, sortDirection, isReordering])

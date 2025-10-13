@@ -18,10 +18,10 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Use 2 workers for optimal performance with 2 projects */
   workers: process.env.CI ? 1 : 2,
-  
+
   /* Global setup - authenticate once for all tests */
   globalSetup: resolve(__dirname, './tests/e2e/global-setup'),
-  
+
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],

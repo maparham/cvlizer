@@ -1,6 +1,6 @@
 /**
  * AI Top Users Table Component.
- * 
+ *
  * This component displays a table of users ranked by AI usage,
  * showing token consumption, costs, and operation counts.
  */
@@ -102,7 +102,7 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
                       )}
                     </Box>
                   </TableCell>
-                  
+
                   <TableCell>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Person color="action" />
@@ -116,7 +116,7 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
                       </Box>
                     </Box>
                   </TableCell>
-                  
+
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight="medium">
                       {formatTokens(user.total_tokens)}
@@ -125,7 +125,7 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
                       {formatNumber(user.total_tokens)} tokens
                     </Typography>
                   </TableCell>
-                  
+
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight="medium" color="info.main">
                       {formatTokens(user.total_prompt_tokens)}
@@ -134,19 +134,19 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
                       {formatTokens(user.total_completion_tokens)}
                     </Typography>
                   </TableCell>
-                  
+
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight="medium" color="success.main">
                       {formatCost(user.total_cost)}
                     </Typography>
                   </TableCell>
-                  
+
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight="medium">
                       {formatNumber(user.operation_count)}
                     </Typography>
                   </TableCell>
-                  
+
                   <TableCell align="center">
                     {user.most_used_operation ? (
                       <Chip
@@ -161,7 +161,7 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
                       </Typography>
                     )}
                   </TableCell>
-                  
+
                   <TableCell align="center">
                     <Tooltip title="View detailed logs for this user">
                       <IconButton

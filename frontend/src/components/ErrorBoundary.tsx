@@ -1,15 +1,15 @@
 /**
  * Error Boundary Component
- * 
+ *
  * This component catches JavaScript errors anywhere in the child component tree,
  * logs those errors, and displays a fallback UI instead of the component tree that crashed.
- * 
+ *
  * Key responsibilities:
  * - Catch errors in child components during rendering
  * - Log errors for debugging purposes
  * - Display user-friendly error UI
  * - Provide error recovery mechanisms
- * 
+ *
  * Usage:
  * - Wrap components that might throw errors
  * - Provides graceful error handling for the entire application
@@ -52,7 +52,7 @@ class ErrorBoundary extends Component<Props, State> {
     // Log the error to console for debugging
     console.error('ErrorBoundary caught an error:', error)
     console.error('Error info:', errorInfo)
-    
+
     this.setState({
       error,
       errorInfo
@@ -96,7 +96,7 @@ class ErrorBoundary extends Component<Props, State> {
             <Typography variant="h4" color="error" gutterBottom>
               Something went wrong
             </Typography>
-            
+
             <Typography variant="body1" color="text.secondary" paragraph>
               An unexpected error occurred. Please try refreshing the page.
             </Typography>

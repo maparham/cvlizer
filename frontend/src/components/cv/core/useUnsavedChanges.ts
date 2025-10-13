@@ -28,10 +28,10 @@ export const useUnsavedChanges = () => {
     setState(prev => {
       const newEditingSections = new Set(prev.editingSections)
       newEditingSections.delete(sectionId)
-      
+
       const newPendingChanges = new Map(prev.pendingChanges)
       newPendingChanges.delete(sectionId)
-      
+
       return {
         ...prev,
         editingSections: newEditingSections,
@@ -51,7 +51,7 @@ export const useUnsavedChanges = () => {
       } else {
         newPendingChanges.delete(sectionId)
       }
-      
+
       return {
         ...prev,
         pendingChanges: newPendingChanges,
@@ -84,7 +84,7 @@ export const useUnsavedChanges = () => {
     }
 
     window.addEventListener('cv-saved', handleCVSaved)
-    
+
     return () => {
       window.removeEventListener('cv-saved', handleCVSaved)
     }

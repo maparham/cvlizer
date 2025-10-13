@@ -1,10 +1,10 @@
 /**
  * ATS Optimization Component
- * 
+ *
  * This component provides comprehensive ATS (Applicant Tracking System) optimization
  * functionality including keyword analysis, density optimization, and compatibility scoring.
  * It helps users optimize their CVs for better ATS performance.
- * 
+ *
  * Key responsibilities:
  * - Display ATS compatibility score with visual indicators
  * - Show missing keywords with importance ratings
@@ -12,7 +12,7 @@
  * - Provide section-specific optimization suggestions
  * - Allow one-click keyword integration
  * - Track optimization history and improvements
- * 
+ *
  * Usage:
  * - Used in CV editor as a dedicated optimization panel
  * - Requires cvId and jobDescriptionId props
@@ -160,7 +160,7 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
           <Typography variant="h6">
             ATS Optimization
           </Typography>
-          <Tooltip 
+          <Tooltip
             title={
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
@@ -398,11 +398,11 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
                               Missing keywords:
                             </Typography>
                             {section.missing_keywords.map((keyword, kwIndex) => (
-                              <Chip 
-                                key={kwIndex} 
-                                label={keyword} 
-                                size="small" 
-                                color="warning" 
+                              <Chip
+                                key={kwIndex}
+                                label={keyword}
+                                size="small"
+                                color="warning"
                                 variant="outlined"
                               />
                             ))}
@@ -481,8 +481,8 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
                 <Typography variant="body2" color="text.secondary">
                   Importance:
                 </Typography>
-                <Chip 
-                  label={selectedKeyword.importance} 
+                <Chip
+                  label={selectedKeyword.importance}
                   color={getImportanceColor(selectedKeyword.importance)}
                   size="small"
                 />
@@ -493,7 +493,7 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
               {selectedKeyword.suggested_placement.includes('professional_summary') || selectedKeyword.suggested_placement.includes('professional summary') ? (
                 <Alert severity="info" sx={{ mt: 1 }}>
                   <Typography variant="body2">
-                    <strong>Note:</strong> For professional summary, the keyword will be integrated naturally into your existing content. 
+                    <strong>Note:</strong> For professional summary, the keyword will be integrated naturally into your existing content.
                     You may want to review and refine the result after adding.
                   </Typography>
                 </Alert>

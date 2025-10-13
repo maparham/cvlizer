@@ -1,17 +1,17 @@
 /**
  * Array Utility Functions
- * 
+ *
  * This module provides utility functions for managing arrays of CV section items,
  * including sorting, filtering, and manipulation operations. These utilities are
  * used throughout the CV editor to handle dynamic lists of work experience,
  * education, skills, and other CV sections.
- * 
+ *
  * Key functions:
  * - Array sorting and filtering operations
  * - Item manipulation (add, remove, update, reorder)
  * - Validation helpers for array data
  * - Type-safe array operations with generic support
- * 
+ *
  * Usage:
  * - Import specific functions as needed in CV section components
  * - Used for maintaining data integrity in dynamic CV sections

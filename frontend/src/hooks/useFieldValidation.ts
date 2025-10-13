@@ -7,10 +7,10 @@ import { hasFieldError, getFieldError } from '../utils/validationUtils'
 
 export const useFieldValidation = (section: string, itemIndex?: number, field?: string) => {
   const { validationErrors } = useCVEditor()
-  
+
   const hasError = hasFieldError(validationErrors, section, itemIndex, field)
   const errorMessage = getFieldError(validationErrors, section, itemIndex, field)
-  
+
   return {
     hasError,
     errorMessage,

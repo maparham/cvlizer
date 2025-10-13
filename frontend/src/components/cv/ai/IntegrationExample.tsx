@@ -1,17 +1,17 @@
 /**
  * Integration Example Component
- * 
+ *
  * This component demonstrates how to integrate the AI suggestions inline diff system
  * into existing CV editing workflows. It shows the minimal changes needed to add
  * AI suggestion capabilities to any CV editor implementation.
- * 
+ *
  * Key demonstrations:
  * - Basic AI suggestion generation
  * - Handling suggestion acceptance/rejection
  * - Managing diff mode state
  * - Error handling and user feedback
  * - Integration with existing CV data flow
- * 
+ *
  * Usage:
  * - Copy patterns from this example for your own implementations
  * - Use as reference for common integration scenarios
@@ -76,10 +76,10 @@ const AIIntegrationDemo: React.FC = () => {
     try {
       // In a real implementation, you would call:
       // await generateSuggestions(cvId, jobDescriptionId);
-      
+
       // For demo purposes, we'll simulate the process
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Mock suggestions would be generated here
       setMessage('AI suggestions generated successfully!');
     } catch (error) {
@@ -175,8 +175,8 @@ const AIIntegrationDemo: React.FC = () => {
 
       {/* Message Display */}
       {message && (
-        <Alert 
-          severity={message.includes('Failed') ? 'error' : 'success'} 
+        <Alert
+          severity={message.includes('Failed') ? 'error' : 'success'}
           sx={{ mb: 3 }}
           onClose={() => setMessage(null)}
         >
@@ -190,7 +190,7 @@ const AIIntegrationDemo: React.FC = () => {
           <Typography variant="h6" gutterBottom>
             Current CV Data
           </Typography>
-          
+
           {/* Skills Section */}
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>

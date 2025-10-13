@@ -1,6 +1,6 @@
 /**
  * Job Description Test Setup
- * 
+ *
  * Common test utilities and mocks for job description testing
  */
 
@@ -79,7 +79,7 @@ export const createMockAIStore = (state = {}) => {
     ...createMockStoreState(),
     ...state,
   };
-  
+
   return {
     getState: () => mockStore,
     setState: (newState: any) => Object.assign(mockStore, newState),

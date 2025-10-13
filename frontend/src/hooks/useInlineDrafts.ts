@@ -1,15 +1,15 @@
 /**
  * Inline Drafts Hook
- * 
+ *
  * This hook provides functionality for managing inline draft sections within the CV editor.
  * It handles draft loading, positioning, and integration with the CV content flow.
- * 
+ *
  * Key responsibilities:
  * - Load and manage drafts for a specific CV
  * - Determine appropriate positioning for draft sections
  * - Provide draft data for inline rendering
  * - Handle draft state updates and notifications
- * 
+ *
  * Usage:
  * - Used in CV editor components to manage inline draft display
  * - Provides draft data and positioning information
@@ -67,20 +67,20 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
         // This allows users to regenerate sections multiple times
         return true;
       });
-      
+
       const positions = calculateDraftPositions(filteredDrafts);
       setState(prev => {
         // Only update if the drafts have actually changed
-        const draftsChanged = prev.drafts.length !== filteredDrafts.length || 
+        const draftsChanged = prev.drafts.length !== filteredDrafts.length ||
           prev.drafts.some((prevDraft, index) => {
             const currentDraft = filteredDrafts[index];
             return !currentDraft || prevDraft.id !== currentDraft.id;
           });
-        
+
         if (!draftsChanged) {
           return prev;
         }
-        
+
         return {
           ...prev,
           drafts: filteredDrafts,
@@ -94,7 +94,7 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
     if (!cvId) return;
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
-    
+
     try {
       await getCVDrafts(cvId);
     } catch (err) {
@@ -109,7 +109,7 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
   // Calculate where each draft should be positioned in the CV
   const calculateDraftPositions = (drafts: DraftResponse[]): Map<string, DraftPosition> => {
     const positions = new Map<string, DraftPosition>();
-    
+
     drafts.forEach((draft, index) => {
       let sectionId: string;
       let position: 'before' | 'after';

@@ -1,6 +1,6 @@
 /**
  * User CVs Dialog Component
- * 
+ *
  * This component displays user CVs in a dialog format.
  * It provides a clean interface for viewing user CV information
  * for administrative purposes.
@@ -45,8 +45,8 @@ const UserCVsDialog: React.FC<UserCVsDialogProps> = ({
   }
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="lg"
       fullWidth
@@ -98,13 +98,13 @@ const UserCVsDialog: React.FC<UserCVsDialogProps> = ({
                     </TableCell>
                     <TableCell>
                       <Box display="flex" gap={1}>
-                        <Chip 
-                          label={cv.is_parsed ? 'Parsed' : 'Error'} 
+                        <Chip
+                          label={cv.is_parsed ? 'Parsed' : 'Error'}
                           color={cv.is_parsed ? 'success' : 'error'}
                           size="small"
                         />
-                        <Chip 
-                          label={cv.parsing_status} 
+                        <Chip
+                          label={cv.parsing_status}
                           color="info"
                           size="small"
                         />

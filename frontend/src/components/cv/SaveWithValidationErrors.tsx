@@ -10,9 +10,9 @@ interface SaveWithValidationErrorsProps {
   onSaveError: (_error: unknown) => void
 }
 
-export const SaveWithValidationErrors: React.FC<SaveWithValidationErrorsProps> = ({ 
-  children, 
-  onSaveError: _onSaveError 
+export const SaveWithValidationErrors: React.FC<SaveWithValidationErrorsProps> = ({
+  children,
+  onSaveError: _onSaveError
 }) => {
   const { setValidationErrors, clearValidationErrors } = useCVEditor()
 
@@ -22,14 +22,14 @@ export const SaveWithValidationErrors: React.FC<SaveWithValidationErrorsProps> =
       const error = event.detail
       const errorMessage = error?.message || error?.response?.data?.message || 'Failed to save CV'
       const validationErrors = parseValidationErrors(errorMessage)
-      
+
       if (validationErrors.length > 0) {
         setValidationErrors(validationErrors)
       }
     }
 
     window.addEventListener('cv-save-error', handleSaveError as EventListener)
-    
+
     return () => {
       window.removeEventListener('cv-save-error', handleSaveError as EventListener)
     }
@@ -42,7 +42,7 @@ export const SaveWithValidationErrors: React.FC<SaveWithValidationErrorsProps> =
     }
 
     window.addEventListener('cv-saved', handleSaveSuccess)
-    
+
     return () => {
       window.removeEventListener('cv-saved', handleSaveSuccess)
     }

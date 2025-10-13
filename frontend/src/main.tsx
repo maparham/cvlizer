@@ -1,23 +1,23 @@
 /**
  * Application Entry Point - React Bootstrap and Authentication Setup
- * 
+ *
  * This module serves as the main entry point for the CV Lator React application.
  * It handles application initialization, authentication provider setup, and error
  * handling for missing environment configuration.
- * 
+ *
  * Key responsibilities:
  * - Bootstrap React application with StrictMode for development
  * - Initialize Clerk authentication provider with publishable key
  * - Handle missing environment configuration gracefully
  * - Provide user-friendly error UI for configuration issues
  * - Mount the main App component to the DOM
- * 
+ *
  * Usage context:
  * - This module is loaded by Vite as the application entry point
  * - Environment variables are loaded from .env files
  * - Authentication is required for all application functionality
  * - Graceful degradation when configuration is missing
- * 
+ *
  * Dependencies:
  * - Clerk React for authentication management
  * - React DOM for application mounting
@@ -73,8 +73,8 @@ if (!PUBLISHABLE_KEY) {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     {PUBLISHABLE_KEY && PUBLISHABLE_KEY !== 'pk_test_placeholder' ? (
-      <ClerkProvider 
-        publishableKey={PUBLISHABLE_KEY} 
+      <ClerkProvider
+        publishableKey={PUBLISHABLE_KEY}
         afterSignOutUrl="/"
         signInFallbackRedirectUrl="/login-redirect"
         signUpFallbackRedirectUrl="/login-redirect"

@@ -1,6 +1,6 @@
 /**
  * AI Store Integration Tests
- * 
+ *
  * Comprehensive unit tests for AI store selectors and job description management:
  * - useVisibleJobDescriptions selector filtering
  * - useActiveJobDescription behavior with hidden job descriptions

@@ -1,15 +1,15 @@
 /**
  * Date Utilities
- * 
+ *
  * This module provides date formatting and manipulation utilities specifically designed
  * for the CV editor. It handles date formatting for backend storage and user display.
- * 
+ *
  * Key responsibilities:
  * - Format dates for backend storage (YYYY-MM-DD format)
  * - Parse dates from various formats
  * - Provide date validation utilities
  * - Handle date comparisons and calculations
- * 
+ *
  * Usage:
  * - Use formatDateForBackend() when saving dates to the backend
  * - Use parseDateFromBackend() when loading dates from the backend
@@ -39,12 +39,12 @@ export const formatDateForBackend = (date: Date | Dayjs): string => {
  */
 export const formatDateForDisplay = (dateString: string): string => {
   if (!dateString) return ''
-  
+
   // Only support YYYY-MM-DD format
   if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
     return dateString
   }
-  
+
   // Return original if format is unknown
   return dateString
 }
@@ -56,17 +56,17 @@ export const formatDateForDisplay = (dateString: string): string => {
  */
 export const parseDateForPicker = (dateString: string): Date | null => {
   if (!dateString) return null
-  
+
   try {
     // Handle YYYY-MM format by adding first day of month
     const formattedDate = formatDateForDisplay(dateString)
     const date = new Date(formattedDate)
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
       return null
     }
-    
+
     return date
   } catch (error) {
     return null
@@ -80,15 +80,15 @@ export const parseDateForPicker = (dateString: string): Date | null => {
  */
 export const parseDateForDateField = (dateString: string): Dayjs | null => {
   if (!dateString) return null
-  
+
   try {
     const date = dayjs(dateString)
-    
+
     // Check if date is valid
     if (!date.isValid()) {
       return null
     }
-    
+
     return date
   } catch (error) {
     return null

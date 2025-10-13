@@ -1,6 +1,6 @@
 /**
  * Inline Drafts Hook Tests
- * 
+ *
  * This module tests the useInlineDrafts hook functionality including
  * draft loading, positioning calculations, and state management.
  */

@@ -39,7 +39,7 @@ export function useArraySection<T extends ArrayItem>({
   }, [editData, onSave])
 
   const updateItem = useCallback((index: number, field: keyof T, value: any) => {
-    setEditData(prev => prev.map((item, i) => 
+    setEditData(prev => prev.map((item, i) =>
       i === index ? { ...item, [field]: value } : item
     ))
   }, [])

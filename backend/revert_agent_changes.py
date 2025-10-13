@@ -33,14 +33,18 @@ def remove_agent_columns():
 
                 if column_name in columns:
                     # SQLite doesn't support DROP COLUMN easily, need to recreate table
-                    logger.info(f"Column {column_name} exists, will need table recreation")
+                    logger.info(
+                        f"Column {column_name} exists, will need table recreation"
+                    )
                 else:
                     logger.info(f"Column {column_name} doesn't exist, skipping")
             except Exception as e:
                 logger.error(f"Error checking column {column_name}: {str(e)}")
 
     logger.info("\nNote: SQLite requires table recreation to drop columns.")
-    logger.info("The columns are now removed from the model, so new instances won't have them.")
+    logger.info(
+        "The columns are now removed from the model, so new instances won't have them."
+    )
     logger.info("Existing data with these columns will be ignored.")
 
 

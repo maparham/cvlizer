@@ -25,7 +25,7 @@ export const useSectionAutoSave = (
     }
 
     window.addEventListener('is-discarding-changes', handleDiscardingChanges as EventListener)
-    
+
     return () => {
       window.removeEventListener('is-discarding-changes', handleDiscardingChanges as EventListener)
     }
@@ -38,7 +38,7 @@ export const useSectionAutoSave = (
       if (isDiscardingRef.current) {
         return
       }
-      
+
       const hasChanges = JSON.stringify(editData) !== JSON.stringify(originalData)
       if (hasChanges) {
         // Validate data before auto-saving
@@ -50,7 +50,7 @@ export const useSectionAutoSave = (
       }
       return
     }
-    
+
     // Only auto-save when transitioning from editing to not editing
     // Don't auto-save when data changes due to CV switching
     // Don't auto-save when changes are being discarded
@@ -59,7 +59,7 @@ export const useSectionAutoSave = (
       if (isDiscardingRef.current) {
         return
       }
-      
+
       const hasChanges = JSON.stringify(editData) !== JSON.stringify(originalData)
       if (hasChanges) {
         // Validate data before auto-saving

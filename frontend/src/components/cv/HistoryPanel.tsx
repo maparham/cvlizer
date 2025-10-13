@@ -1,6 +1,6 @@
 /**
  * History Panel Component
- * 
+ *
  * This component provides the UI for CV version history including:
  * - Timeline view of all snapshots
  * - Version comparison and preview
@@ -39,8 +39,8 @@ import {
   CompareArrows as CompareArrowsIcon
 } from '@mui/icons-material'
 
-import { 
-  CVHistoryEntry, 
+import {
+  CVHistoryEntry,
   HistoryPanelProps,
   CreateSnapshotOptions,
   HistoryStats
@@ -100,7 +100,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
   // Group entries by date for better organization
   const groupedEntries = useMemo(() => {
     const groups: { [key: string]: CVHistoryEntry[] } = {}
-    
+
     historyEntries.forEach(entry => {
       const date = new Date(entry.timestamp).toDateString()
       if (!groups[date]) {
@@ -109,7 +109,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
       groups[date].push(entry)
     })
 
-    return Object.entries(groups).sort(([a], [b]) => 
+    return Object.entries(groups).sort(([a], [b]) =>
       new Date(b).getTime() - new Date(a).getTime()
     )
   }, [historyEntries])
@@ -117,14 +117,14 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
   // Find the oldest entry (first version) to disable its diff button
   const oldestEntry = useMemo(() => {
     if (historyEntries.length === 0) return null
-    return historyEntries.reduce((oldest, current) => 
+    return historyEntries.reduce((oldest, current) =>
       new Date(current.timestamp) < new Date(oldest.timestamp) ? current : oldest
     )
   }, [historyEntries])
 
   const handleCreateSnapshot = async () => {
     updateState({ loading: true, error: null })
-    
+
     try {
       const options: CreateSnapshotOptions = {
         changeType: 'restore_point',
@@ -132,16 +132,16 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
         label: state.snapshotLabel || undefined,
         force: true
       }
-      
+
       await onCreateSnapshot(options)
-      updateState({ 
+      updateState({
         createSnapshotDialog: false,
         snapshotLabel: '',
         snapshotDescription: '',
         loading: false
       })
     } catch (error) {
-      updateState({ 
+      updateState({
         loading: false,
         error: getErrorDisplayMessage(error)
       })
@@ -150,18 +150,18 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
 
   const handleRestoreVersion = async () => {
     if (!state.selectedEntry) return
-    
+
     updateState({ loading: true, error: null })
-    
+
     try {
       await onRestoreVersion(state.selectedEntry)
-      updateState({ 
+      updateState({
         restoreConfirmDialog: false,
         selectedEntry: null,
         loading: false
       })
     } catch (error) {
-      updateState({ 
+      updateState({
         loading: false,
         error: getErrorDisplayMessage(error)
       })
@@ -175,7 +175,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
   }
 
   const handleDeleteClick = (entry: CVHistoryEntry) => {
-    updateState({ 
+    updateState({
       selectedEntry: entry,
       deleteConfirmDialog: true
     })
@@ -183,22 +183,22 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
 
   const handleConfirmDelete = async () => {
     if (!state.selectedEntry) return
-    
+
     updateState({ loading: true, error: null })
-    
+
     try {
       // Use the onDeleteEntry prop if provided, otherwise use a default implementation
       if (onDeleteEntry) {
         await onDeleteEntry(state.selectedEntry)
       }
-      
-      updateState({ 
+
+      updateState({
         deleteConfirmDialog: false,
         selectedEntry: null,
         loading: false
       })
     } catch (error) {
-      updateState({ 
+      updateState({
         loading: false,
         error: getErrorDisplayMessage(error)
       })
@@ -239,8 +239,8 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
         {/* Error Display */}
         {state.error && (
           <Box sx={{ px: 2, pb: 1 }}>
-            <Alert 
-              severity="error" 
+            <Alert
+              severity="error"
               onClose={() => updateState({ error: null })}
               sx={{ mb: 1 }}
             >
@@ -310,7 +310,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
                   />
                 </ListItem>
               </List>
-              
+
               {/* Actual History Entries */}
               {groupedEntries.map(([date, entries]) => (
               <Box key={date}>
@@ -319,7 +319,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
                     {formatDateGroupHeader(date)}
                   </Typography>
                 </Box>
-                
+
                 <List dense>
                   {entries.map((entry, index) => (
                     <ListItem
@@ -337,9 +337,9 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
                         primary={
                           <React.Fragment>
                             <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, mr: 1 }}>
-                              <Typography 
-                                component="span" 
-                                variant="body2" 
+                              <Typography
+                                component="span"
+                                variant="body2"
                                 fontWeight={index === 0 ? 'bold' : 'normal'}
                               >
                                 #{historyEntries.length - index} {entry.label || entry.description}
@@ -368,7 +368,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
                           </React.Fragment>
                         }
                       />
-                      
+
                       <ListItemSecondaryAction>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
                           {/* Delete Button - Not visible for current version or initial version */}
@@ -389,8 +389,8 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
 
                           {/* Diff Button - Disabled for first version */}
                           <Tooltip title={
-                            oldestEntry?.id === entry.id 
-                              ? "No previous version to compare against" 
+                            oldestEntry?.id === entry.id
+                              ? "No previous version to compare against"
                               : "Show diff from previous version"
                           }>
                             <span>
@@ -410,7 +410,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
                               <span>
                                 <IconButton
                                   size="small"
-                                  onClick={() => updateState({ 
+                                  onClick={() => updateState({
                                     selectedEntry: entry,
                                     restoreConfirmDialog: true
                                   })}
@@ -491,7 +491,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
           <Button onClick={() => updateState({ createSnapshotDialog: false })}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleCreateSnapshot}
             variant="contained"
             disabled={state.loading}
@@ -532,7 +532,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
           <Button onClick={() => updateState({ restoreConfirmDialog: false })}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleRestoreVersion}
             color={state.selectedEntry?.isInitial ? "warning" : "warning"}
             variant="contained"
@@ -568,7 +568,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
           <Button onClick={() => updateState({ deleteConfirmDialog: false })}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleConfirmDelete}
             color="error"
             variant="contained"
@@ -584,5 +584,3 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
 }
 
 export default HistoryPanel
-
-

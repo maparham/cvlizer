@@ -1,6 +1,6 @@
 /**
  * Predefined CV section registry
- * 
+ *
  * This file defines all available CV sections that can be displayed or added.
  * The backend AI will map imported CV content to these predefined section names.
  */
@@ -32,7 +32,7 @@ export const AVAILABLE_SECTIONS: SectionDefinition[] = [
     icon: '📝',
     category: 'core'
   },
-  
+
   // Experience sections
   {
     id: 'work_experience',
@@ -50,7 +50,7 @@ export const AVAILABLE_SECTIONS: SectionDefinition[] = [
     icon: '🤝',
     category: 'experience'
   },
-  
+
   // Education and skills
   {
     id: 'education',
@@ -68,7 +68,7 @@ export const AVAILABLE_SECTIONS: SectionDefinition[] = [
     icon: '🛠️',
     category: 'core'
   },
-  
+
   // Achievement sections
   {
     id: 'certifications',
@@ -125,7 +125,7 @@ export const getAvailableSectionIds = (): string[] => {
 // Section ordering for display
 export const SECTION_DISPLAY_ORDER = [
   'personal_info',
-  'professional_summary', 
+  'professional_summary',
   'work_experience',
   'education',
   'skills',
@@ -138,7 +138,7 @@ export const SECTION_DISPLAY_ORDER = [
 
 export const getSectionsInDisplayOrder = (sectionIds: string[]): SectionDefinition[] => {
   const orderedSections: SectionDefinition[] = []
-  
+
   // Add sections in display order if they exist in the provided list
   SECTION_DISPLAY_ORDER.forEach(id => {
     if (sectionIds.includes(id)) {
@@ -148,7 +148,7 @@ export const getSectionsInDisplayOrder = (sectionIds: string[]): SectionDefiniti
       }
     }
   })
-  
+
   // Add any remaining sections not in the display order
   sectionIds.forEach(id => {
     if (!SECTION_DISPLAY_ORDER.includes(id)) {
@@ -158,6 +158,6 @@ export const getSectionsInDisplayOrder = (sectionIds: string[]): SectionDefiniti
       }
     }
   })
-  
+
   return orderedSections
 }

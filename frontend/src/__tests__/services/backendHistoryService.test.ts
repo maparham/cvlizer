@@ -1,6 +1,6 @@
 /**
  * Simplified Backend CV History Service Tests
- * 
+ *
  * Basic tests to ensure the service can be instantiated and core methods exist.
  */
 
@@ -19,7 +19,7 @@ import { BackendCVHistoryService } from '../../services/backendHistoryService'
 
 describe('BackendCVHistoryService', () => {
   let historyService: BackendCVHistoryService
-  
+
   beforeEach(() => {
     historyService = new BackendCVHistoryService()
   })

@@ -1,6 +1,6 @@
 /**
  * Tests for SimpleCVDiffViewer Component
- * 
+ *
  * Tests the simplified diff viewer that displays backend-computed diff results,
  * including text diffs, change icons, and error handling.
  */
@@ -83,7 +83,7 @@ describe('SimpleCVDiffViewer', () => {
 
   it('should display loading state initially', () => {
     mockGetDiff.mockImplementation(() => new Promise(() => {})) // Never resolves
-    
+
     render(
       <SimpleCVDiffViewer
         oldVersion={mockOldVersion}
@@ -92,7 +92,7 @@ describe('SimpleCVDiffViewer', () => {
         title="Test Changes"
       />
     )
-    
+
     expect(screen.getByText('Computing changes...')).toBeInTheDocument()
     expect(screen.getByRole('progressbar')).toBeInTheDocument()
   })
@@ -112,9 +112,9 @@ describe('SimpleCVDiffViewer', () => {
       summary: '1 Change',
       total_changes: 1
     }
-    
+
     mockGetDiff.mockResolvedValue(mockDiffResult)
-    
+
     render(
       <SimpleCVDiffViewer
         oldVersion={mockOldVersion}
@@ -122,12 +122,12 @@ describe('SimpleCVDiffViewer', () => {
         cvId="cv_123"
       />
     )
-    
+
     await waitFor(() => {
       expect(screen.getByText('1 Change')).toBeInTheDocument()
       expect(screen.getByText('Work Experience: Position changed from "Developer" to "Senior Developer"')).toBeInTheDocument()
     })
-    
+
     expect(mockGetDiff).toHaveBeenCalledWith('cv_123', 'history_new', 'history_old', false)
   })
 
@@ -157,9 +157,9 @@ describe('SimpleCVDiffViewer', () => {
       summary: '1 Change',
       total_changes: 1
     }
-    
+
     mockGetDiff.mockResolvedValue(mockDiffResult)
-    
+
     render(
       <SimpleCVDiffViewer
         oldVersion={mockOldVersion}
@@ -167,13 +167,13 @@ describe('SimpleCVDiffViewer', () => {
         cvId="cv_123"
       />
     )
-    
+
     await waitFor(() => {
       expect(screen.getByText('Professional Summary: Content text updated')).toBeInTheDocument()
       expect(screen.getByText('18 characters added')).toBeInTheDocument()
       expect(screen.getByText('Text with changes highlighted:')).toBeInTheDocument()
     })
-    
+
     // Check that inline diff HTML is rendered
     const diffContainer = screen.getByText('Text with changes highlighted:').parentElement
     expect(diffContainer?.innerHTML).toContain('added content')
@@ -202,9 +202,9 @@ describe('SimpleCVDiffViewer', () => {
       summary: '2 Changes',
       total_changes: 2
     }
-    
+
     mockGetDiff.mockResolvedValue(mockDiffResult)
-    
+
     render(
       <SimpleCVDiffViewer
         oldVersion={mockOldVersion}
@@ -212,7 +212,7 @@ describe('SimpleCVDiffViewer', () => {
         cvId="cv_123"
       />
     )
-    
+
     await waitFor(() => {
       expect(screen.getByText('2 Changes')).toBeInTheDocument()
       expect(screen.getByText(/Location changed from/)).toBeInTheDocument()
@@ -226,9 +226,9 @@ describe('SimpleCVDiffViewer', () => {
       summary: 'No changes',
       total_changes: 0
     }
-    
+
     mockGetDiff.mockResolvedValue(mockDiffResult)
-    
+
     render(
       <SimpleCVDiffViewer
         oldVersion={mockOldVersion}
@@ -236,7 +236,7 @@ describe('SimpleCVDiffViewer', () => {
         cvId="cv_123"
       />
     )
-    
+
     await waitFor(() => {
       expect(screen.getByText('No changes detected between these versions.')).toBeInTheDocument()
     })
@@ -244,7 +244,7 @@ describe('SimpleCVDiffViewer', () => {
 
   it('should display error state', async () => {
     mockGetDiff.mockRejectedValue(new Error('API Error'))
-    
+
     render(
       <SimpleCVDiffViewer
         oldVersion={mockOldVersion}
@@ -252,7 +252,7 @@ describe('SimpleCVDiffViewer', () => {
         cvId="cv_123"
       />
     )
-    
+
     await waitFor(() => {
       expect(screen.getByText('Failed to load changes')).toBeInTheDocument()
     })
@@ -289,9 +289,9 @@ describe('SimpleCVDiffViewer', () => {
       summary: '3 Changes',
       total_changes: 3
     }
-    
+
     mockGetDiff.mockResolvedValue(mockDiffResult)
-    
+
     render(
       <SimpleCVDiffViewer
         oldVersion={mockOldVersion}
@@ -299,11 +299,11 @@ describe('SimpleCVDiffViewer', () => {
         cvId="cv_123"
       />
     )
-    
+
     await waitFor(() => {
       expect(screen.getByText('3 Changes')).toBeInTheDocument()
     })
-    
+
     // Icons should be rendered (they're SVG elements, so we check for their presence)
     const changeCards = screen.getAllByRole('listitem')
     expect(changeCards).toHaveLength(3)
@@ -311,7 +311,7 @@ describe('SimpleCVDiffViewer', () => {
 
   it('should handle side-by-side diff for large text', async () => {
     const longText = 'A'.repeat(2000) // Very long text
-    
+
     const mockDiffResult = {
       changes: [
         {
@@ -337,9 +337,9 @@ describe('SimpleCVDiffViewer', () => {
       summary: '1 Change',
       total_changes: 1
     }
-    
+
     mockGetDiff.mockResolvedValue(mockDiffResult)
-    
+
     render(
       <SimpleCVDiffViewer
         oldVersion={mockOldVersion}
@@ -347,7 +347,7 @@ describe('SimpleCVDiffViewer', () => {
         cvId="cv_123"
       />
     )
-    
+
     await waitFor(() => {
       expect(screen.getByText('Before:')).toBeInTheDocument()
       expect(screen.getByText('After:')).toBeInTheDocument()

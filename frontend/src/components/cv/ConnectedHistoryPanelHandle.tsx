@@ -1,7 +1,7 @@
 /**
  * Connected History Panel Handle Component
- * 
- * This component connects the HistoryPanelHandle to the CV store and 
+ *
+ * This component connects the HistoryPanelHandle to the CV store and
  * manages the entry count and state automatically.
  */
 
@@ -25,7 +25,7 @@ const ConnectedHistoryPanelHandle: React.FC<ConnectedHistoryPanelHandleProps> = 
   // Load entry count when component mounts or cvId changes
   useEffect(() => {
     let mounted = true
-    
+
     const loadEntryCount = async () => {
       // Skip history loading for temporary CVs (they don't exist on backend yet)
       if (cvId.startsWith('temp-')) {
@@ -34,7 +34,7 @@ const ConnectedHistoryPanelHandle: React.FC<ConnectedHistoryPanelHandleProps> = 
         }
         return
       }
-      
+
       try {
         const entries = await getHistoryEntries(cvId)
         if (mounted) {

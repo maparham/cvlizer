@@ -27,6 +27,7 @@ Dependencies:
 - Subprocess handling with timeout and error management
 - LaTeX formatting utilities for data escaping and formatting
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List
@@ -73,7 +74,13 @@ def _section(title: str, body: str) -> str:
 def _itemize(items: List[str]) -> str:
     if not items:
         return ""
-    body = "\n".join([f"\\item {_tex_escape(i.get('bullet', str(i)) if isinstance(i, dict) else str(i))}" for i in items if i])
+    body = "\n".join(
+        [
+            f"\\item {_tex_escape(i.get('bullet', str(i)) if isinstance(i, dict) else str(i))}"
+            for i in items
+            if i
+        ]
+    )
     return f"\\begin{{itemize}}\n{body}\n\\end{{itemize}}\n"
 
 
@@ -121,19 +128,25 @@ def generate_cv_latex(parsed: Dict[str, Any], title: str) -> str:
     # Skills
     skills_lines: List[str] = []
     if skills.get("technical"):
-        skills_lines.append("Technical: " + ", ".join(_tex_escape(s) for s in skills["technical"]))
+        skills_lines.append(
+            "Technical: " + ", ".join(_tex_escape(s) for s in skills["technical"])
+        )
     if skills.get("soft"):
         skills_lines.append("Soft: " + ", ".join(_tex_escape(s) for s in skills["soft"]))
     if skills.get("languages"):
         lang_strs = []
         for l in skills["languages"]:
-            lang_strs.append(f"{_tex_escape(l.get('language',''))} ({_tex_escape(l.get('proficiency',''))})")
+            lang_strs.append(
+                f"{_tex_escape(l.get('language',''))} ({_tex_escape(l.get('proficiency',''))})"
+            )
         skills_lines.append("Languages: " + ", ".join(lang_strs))
     skills_tex = "\\\n".join(skills_lines)
 
     body = []
     if header:
-        body.append(f"\\begin{{center}}\n\\Large\\textbf{{{_tex_escape(title)}}}\\\\\n{header}\n\\end{{center}}\n")
+        body.append(
+            f"\\begin{{center}}\n\\Large\\textbf{{{_tex_escape(title)}}}\\\\\n{header}\n\\end{{center}}\n"
+        )
     if summary_tex:
         body.append(_section("Professional Summary", summary_tex))
     if wx_tex:
@@ -179,16 +192,24 @@ def compile_pdf_from_latex(tex_source: str) -> bytes:
         cmd = [LATEX_REQUIRED_BIN, "-interaction=nonstopmode", "-halt-on-error", "cv.tex"]
         for _ in range(2):
             try:
-                proc = subprocess.run(cmd, cwd=tmpdir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=20)
+                proc = subprocess.run(
+                    cmd,
+                    cwd=tmpdir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    timeout=20,
+                )
                 if proc.returncode != 0:
                     raise RuntimeError(f"pdflatex failed: {proc.stdout[-1000:]}")
             except subprocess.TimeoutExpired as e:
                 captured_output = e.stdout[-1000:] if e.stdout else "No output captured"
-                raise RuntimeError(f"pdflatex timed out after 20 seconds. Output: {captured_output}")
+                raise RuntimeError(
+                    f"pdflatex timed out after 20 seconds. Output: {captured_output}"
+                )
 
         if not os.path.exists(pdf_path):
             raise RuntimeError("PDF not generated")
 
         with open(pdf_path, "rb") as pf:
             return pf.read()
-

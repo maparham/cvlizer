@@ -33,7 +33,7 @@ export const getSingularTitle = (pluralTitle: string): string => {
     'Volunteer Experience': 'Volunteer Experience',
     'Skills': 'Skill'
   }
-  
+
   return titleMap[pluralTitle] || pluralTitle.slice(0, -1)
 }
 
@@ -43,10 +43,10 @@ export const getSingularTitle = (pluralTitle: string): string => {
  */
 export const parseDate = (dateStr: string): Date => {
   if (!dateStr) return new Date(0) // Treat empty dates as oldest
-  
+
   // Handle various date formats (YYYY-MM-DD, YYYY-MM, YYYY)
   const cleanDate = dateStr.replace(/[^\d-]/g, '') // Remove non-date characters
-  
+
   if (cleanDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
     return new Date(cleanDate)
   } else if (cleanDate.match(/^\d{4}-\d{2}$/)) {
@@ -54,7 +54,7 @@ export const parseDate = (dateStr: string): Date => {
   } else if (cleanDate.match(/^\d{4}$/)) {
     return new Date(`${cleanDate}-01-01`)
   }
-  
+
   const date = new Date(cleanDate)
   return isNaN(date.getTime()) ? new Date(0) : date
 }
@@ -71,14 +71,14 @@ export const validateItem = <T>(item: T | null, requiredFields: (keyof T)[], sec
  * Sorts items by a date field
  */
 export const sortItemsByDate = <T>(
-  items: T[], 
-  field: keyof T, 
+  items: T[],
+  field: keyof T,
   direction: 'asc' | 'desc'
 ): T[] => {
   return [...items].sort((a, b) => {
     const dateA = parseDate(String(a[field] || ''))
     const dateB = parseDate(String(b[field] || ''))
-    
+
     const comparison = dateA.getTime() - dateB.getTime()
     return direction === 'asc' ? comparison : -comparison
   })
@@ -94,10 +94,10 @@ export const hasUnsavedChanges = <T>(
   isNewItem: boolean
 ): boolean => {
   if (!editData) return false
-  
+
   if (isNewItem) {
     // For new items, check if the form has any non-empty values
-    return Object.values(editData).some(value => 
+    return Object.values(editData).some(value =>
       value !== undefined && value !== null && value !== ''
     )
   } else {

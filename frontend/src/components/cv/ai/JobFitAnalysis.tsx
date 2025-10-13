@@ -1,10 +1,10 @@
 /**
  * Job Fit Analysis Component
- * 
+ *
  * This component provides comprehensive job fit analysis functionality including
  * confidence scoring, key matches identification, and detailed fit analysis.
  * It integrates with the AI store to analyze how well a CV matches a job description.
- * 
+ *
  * Key responsibilities:
  * - Display "Generate Job Fit" button with loading states
  * - Show generated "Why I'm a Good Fit" section with confidence score
@@ -12,7 +12,7 @@
  * - Show missing skills and suggested improvements
  * - Allow regeneration with different job descriptions
  * - Integrate with CV sections for adding content
- * 
+ *
  * Usage:
  * - Used in CV editor sidebar or as a dedicated analysis panel
  * - Requires cvId and jobDescriptionId props
@@ -114,7 +114,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
               generated_at: new Date().toISOString(),
               job_description_id: activeJobDescription?.id,
             };
-            
+
             onAddToCV(JSON.stringify(whyGoodFitData), 'why_good_fit');
             showSuccess('Job fit section generated and added to CV');
             setIsGenerating(false);
@@ -137,7 +137,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
     setIsGenerating(true);
     try {
       const analysisResult = await analyzeJobFit(cvId, activeJobDescription.id);
-      
+
       // Add the task to polling if it's still generating
       if (analysisResult.is_generating) {
         addTask({
@@ -151,7 +151,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
         // Task completed immediately
         setIsGenerating(false);
       }
-      
+
       // If task completed immediately (not generating), handle it now
       if (!analysisResult.is_generating) {
         // Check if section already exists
@@ -162,7 +162,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
           setIsGenerating(false);
           return;
         }
-        
+
         // No existing content, add directly
         if (onAddToCV && analysisResult && 'draft_data' in analysisResult) {
           const draftData = analysisResult.draft_data || {};
@@ -173,7 +173,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
             generated_at: new Date().toISOString(),
             job_description_id: activeJobDescription.id,
           };
-          
+
           onAddToCV(JSON.stringify(whyGoodFitData), 'why_good_fit');
           showSuccess('Job fit section generated and added to CV');
         } else {
@@ -209,7 +209,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
         generated_at: new Date().toISOString(),
         job_description_id: activeJobDescription?.id,
       };
-      
+
       onAddToCV(JSON.stringify(whyGoodFitData), 'why_good_fit');
       showSuccess('Job fit section updated in CV');
     }
@@ -252,7 +252,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
           <Typography variant="h6">
             Job Fit Analysis
           </Typography>
-          <Tooltip 
+          <Tooltip
             title={
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
@@ -328,7 +328,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
                   <Typography variant="h6">
                     Match Confidence
                   </Typography>
-                  <Tooltip 
+                  <Tooltip
                     title={
                       <Box>
                         <Typography variant="subtitle2" gutterBottom>
@@ -379,7 +379,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
                 Analysis Complete
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                The "Why I'm a Good Fit" section has been generated and added to your CV. 
+                The "Why I'm a Good Fit" section has been generated and added to your CV.
                 You can edit or delete it directly from the CV view.
               </Typography>
               <Box display="flex" gap={1} flexWrap="wrap">
@@ -524,7 +524,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
           <Typography variant="body2" color="text.secondary" paragraph>
             A "Why I'm a Good Fit" section already exists in your CV. The new analysis will replace the existing content.
           </Typography>
-          
+
           {existingWhyGoodFit && (existingWhyGoodFit as { content?: string }).content ? (
             <Box mb={3}>
               <Typography variant="subtitle2" gutterBottom>

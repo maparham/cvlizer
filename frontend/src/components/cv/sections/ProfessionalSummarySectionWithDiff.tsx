@@ -1,16 +1,16 @@
 /**
  * Professional Summary Section with Inline Diff Support
- * 
+ *
  * Enhanced version of the ProfessionalSummarySection that integrates with the inline diff system
  * to show AI suggestions for content enhancements and keyword additions.
- * 
+ *
  * Key responsibilities:
  * - Render professional summary with highlighted suggestions
  * - Show content enhancement suggestions with appropriate visual indicators
  * - Allow users to accept/reject individual content suggestions
  * - Maintain backward compatibility with original ProfessionalSummarySection functionality
  * - Handle both content and keyword suggestions for professional summary
- * 
+ *
  * Usage:
  * - Drop-in replacement for original ProfessionalSummarySection when diff mode is active
  * - Automatically detects diff mode and renders accordingly
@@ -27,17 +27,17 @@ import { SuggestionHighlight } from '../ai/SuggestionHighlight';
 import { useInlineDiffSection, useHighlightedContent } from '../../../hooks/useInlineDiffSection';
 import { useInlineDiffContext } from '../../../contexts/InlineDiffContext';
 
-const ProfessionalSummarySectionWithDiff: React.FC<SectionProps> = ({ 
-  data, 
-  onUpdate, 
-  onSave, 
-  isEditing, 
-  onEdit, 
-  onClose, 
-  onUnsavedChanges 
+const ProfessionalSummarySectionWithDiff: React.FC<SectionProps> = ({
+  data,
+  onUpdate,
+  onSave,
+  isEditing,
+  onEdit,
+  onClose,
+  onUnsavedChanges
 }) => {
   const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
-  
+
   const {
     isInDiffMode,
     acceptSuggestion: acceptInlineSuggestion,
@@ -62,7 +62,7 @@ const ProfessionalSummarySectionWithDiff: React.FC<SectionProps> = ({
     if (isPreview) {
       return (
         <Box
-          sx={{ 
+          sx={{
             minHeight: '120px',
             padding: 2,
             border: '1px solid #ccc',
@@ -160,8 +160,8 @@ const ProfessionalSummarySectionWithDiff: React.FC<SectionProps> = ({
                   size="small"
                   color="success"
                   onClick={() => acceptInlineSuggestion(contentDiff.suggestion!.id)}
-                  sx={{ 
-                    width: 24, 
+                  sx={{
+                    width: 24,
                     height: 24,
                     bgcolor: 'background.paper',
                     boxShadow: 1,
@@ -176,8 +176,8 @@ const ProfessionalSummarySectionWithDiff: React.FC<SectionProps> = ({
                   size="small"
                   color="error"
                   onClick={() => rejectInlineSuggestion(contentDiff.suggestion!.id)}
-                  sx={{ 
-                    width: 24, 
+                  sx={{
+                    width: 24,
                     height: 24,
                     bgcolor: 'background.paper',
                     boxShadow: 1,
@@ -220,7 +220,7 @@ const ProfessionalSummarySectionWithDiff: React.FC<SectionProps> = ({
           {showMarkdownPreview ? 'Edit' : 'Preview'}
         </Button>
       </Box>
-      
+
       {renderContentWithSuggestions(editData?.content || '', showMarkdownPreview)}
     </Box>
   );

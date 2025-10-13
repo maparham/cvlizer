@@ -1,6 +1,6 @@
 /**
  * AI Usage Statistics Cards Component.
- * 
+ *
  * This component displays key AI usage statistics in a card format,
  * including total tokens, costs, success rates, and operation counts.
  */
@@ -74,14 +74,14 @@ const StatCard: React.FC<{
             {icon}
           </Box>
         </Box>
-        
+
         <Box display="flex" alignItems="center" gap={1} mb={1}>
           <Typography variant="h4" component="div" color={getColor()}>
             {value}
           </Typography>
           {getTrendIcon()}
         </Box>
-        
+
         {subtitle && (
           <Typography variant="body2" color="text.secondary">
             {subtitle}
@@ -109,12 +109,12 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading })
     )
   }
 
-  const successRate = stats.total_operations > 0 
-    ? (stats.successful_operations / stats.total_operations) * 100 
+  const successRate = stats.total_operations > 0
+    ? (stats.successful_operations / stats.total_operations) * 100
     : 0
 
-  const failureRate = stats.total_operations > 0 
-    ? (stats.failed_operations / stats.total_operations) * 100 
+  const failureRate = stats.total_operations > 0
+    ? (stats.failed_operations / stats.total_operations) * 100
     : 0
 
   return (
@@ -128,7 +128,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading })
           color="primary"
         />
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={2}>
         <StatCard
           title="Input Tokens"
@@ -138,7 +138,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading })
           color="primary"
         />
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={2}>
         <StatCard
           title="Output Tokens"
@@ -148,7 +148,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading })
           color="secondary"
         />
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={2}>
         <StatCard
           title="Total Cost"
@@ -158,7 +158,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading })
           color="success"
         />
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={2}>
         <StatCard
           title="Operations"
@@ -168,7 +168,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading })
           color="secondary"
         />
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={2}>
         <StatCard
           title="Success Rate"
@@ -179,7 +179,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading })
           trend={successRate >= 90 ? 'up' : 'down'}
         />
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={2}>
         <StatCard
           title="Most Expensive"

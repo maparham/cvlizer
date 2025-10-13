@@ -1,6 +1,6 @@
 /**
  * AI Usage Logs Table Component.
- * 
+ *
  * This component displays detailed AI usage logs in a table format
  * with filtering, pagination, and sorting capabilities.
  */
@@ -38,14 +38,14 @@ import {
   AttachMoney
 } from '@mui/icons-material'
 import { PaginatedAIUsageLogs, AIUsageFilters } from '../../types/admin'
-import { 
-  formatCost, 
-  formatTokens, 
-  formatDateTime, 
-  formatDuration, 
-  formatOperationType, 
+import {
+  formatCost,
+  formatTokens,
+  formatDateTime,
+  formatDuration,
+  formatOperationType,
   formatModelName,
-  formatSuccessStatus 
+  formatSuccessStatus
 } from '../../utils/formatters'
 
 interface AIUsageLogsTableProps {
@@ -110,7 +110,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
           <Typography variant="h6" component="div">
             AI Usage Logs
           </Typography>
-          
+
           <Box display="flex" gap={1}>
             <Button
               startIcon={<Refresh />}
@@ -119,7 +119,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
             >
               Refresh
             </Button>
-            
+
             {onExport && (
               <Button
                 startIcon={<Download />}
@@ -158,7 +158,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               </Select>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel>Operation Type</InputLabel>
@@ -178,15 +178,15 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               </Select>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Status</InputLabel>
               <Select
                 value={filters.success === undefined ? '' : filters.success.toString()}
                 label="Status"
-                onChange={(e) => onFilterChange({ 
-                  success: e.target.value === '' ? undefined : e.target.value === 'true' 
+                onChange={(e) => onFilterChange({
+                  success: e.target.value === '' ? undefined : e.target.value === 'true'
                 })}
               >
                 <MenuItem value="">All Status</MenuItem>
@@ -195,7 +195,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               </Select>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
@@ -207,7 +207,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          
+
           <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
@@ -219,7 +219,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          
+
           <Grid item xs={12} sm={6} md={2}>
             <Button
               fullWidth
@@ -251,7 +251,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
             <TableBody>
               {data.logs.map((log) => {
                 const status = formatSuccessStatus(log.success)
-                
+
                 return (
                   <TableRow key={log.id} hover>
                     <TableCell>
@@ -259,7 +259,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                         {formatDateTime(log.timestamp)}
                       </Typography>
                     </TableCell>
-                    
+
                     <TableCell>
                       <Box display="flex" alignItems="center" gap={1}>
                         <Person color="action" fontSize="small" />
@@ -273,7 +273,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                         </Box>
                       </Box>
                     </TableCell>
-                    
+
                     <TableCell>
                       <Chip
                         label={formatOperationType(log.operation_type)}
@@ -282,13 +282,13 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                         variant="outlined"
                       />
                     </TableCell>
-                    
+
                     <TableCell>
                       <Typography variant="body2">
                         {formatModelName(log.model_used)}
                       </Typography>
                     </TableCell>
-                    
+
                     <TableCell align="right">
                       <Box textAlign="right">
                         <Typography variant="body2" fontWeight="medium">
@@ -299,7 +299,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                         </Typography>
                       </Box>
                     </TableCell>
-                    
+
                     <TableCell align="right">
                       <Box display="flex" alignItems="center" gap={0.5}>
                         <AttachMoney color="success" fontSize="small" />
@@ -308,7 +308,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                         </Typography>
                       </Box>
                     </TableCell>
-                    
+
                     <TableCell align="right">
                       <Box display="flex" alignItems="center" gap={0.5}>
                         <Speed color="action" fontSize="small" />
@@ -317,7 +317,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                         </Typography>
                       </Box>
                     </TableCell>
-                    
+
                     <TableCell align="center">
                       <Chip
                         icon={status.text === 'Success' ? <CheckCircle /> : <Error />}

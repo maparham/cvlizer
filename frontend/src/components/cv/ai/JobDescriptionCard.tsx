@@ -1,10 +1,10 @@
 /**
  * Job Description Card Component
- * 
+ *
  * Reusable card component for displaying job descriptions in both
  * the sidebar and modal contexts. Handles parsing states, errors,
  * and provides action buttons.
- * 
+ *
  * Key responsibilities:
  * - Display job description details (title, company, location)
  * - Make title clickable when source URL exists
@@ -12,7 +12,7 @@
  * - Show error states
  * - Provide edit, delete/hide, and select actions
  * - Support active/selected state highlighting
- * 
+ *
  * Usage:
  * - Used in JobDescriptionSummary for sidebar display
  * - Used in JobDescriptionsModal for grid display
@@ -47,10 +47,12 @@ import {
   LocationOn as LocationOnIcon,
   Visibility as VisibilityIcon,
   Link as LinkIcon,
+  ContentCopy as ContentCopyIcon,
 } from '@mui/icons-material';
 import { JobDescription } from '../../../types/ai';
 import { formatRelativeTime } from '../../../utils/formatters';
 import { MarkdownRenderer } from '../../common';
+import { useNotifications } from '../../../stores/uiStore';
 
 /**
  * Strip markdown formatting and convert to plain text
@@ -135,7 +137,8 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
+  const { showSuccess, showError } = useNotifications();
+
   const isParsing = isParsingProp || jobDescription.is_parsing;
   const hasError = jobDescription.parse_error;
 
@@ -146,6 +149,16 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
+  };
+
+  const handleCopyContent = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(jobDescription.content);
+      showSuccess('Job description copied to clipboard');
+    } catch (err) {
+      showError('Error', 'Failed to copy to clipboard');
+    }
   };
 
   // Parsing/Error state card
@@ -198,16 +211,16 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                   Extracting details from URL...
                 </Typography>
                 <Box sx={{ width: '100%', maxWidth: 200 }}>
-                  <LinearProgress 
-                    variant="indeterminate" 
-                    sx={{ 
-                      height: 4, 
+                  <LinearProgress
+                    variant="indeterminate"
+                    sx={{
+                      height: 4,
                       borderRadius: 2,
                       backgroundColor: 'rgba(25, 118, 210, 0.1)',
                       '& .MuiLinearProgress-bar': {
                         borderRadius: 2,
                       }
-                    }} 
+                    }}
                   />
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
@@ -248,16 +261,16 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
         {/* Header with title and actions */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
           {jobDescription.source_url ? (
-            <Typography 
-              variant="h6" 
+            <Typography
+              variant="h6"
               component="a"
               href={jobDescription.source_url}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              sx={{ 
-                fontWeight: isActive ? 700 : 600, 
-                flex: 1, 
+              sx={{
+                fontWeight: isActive ? 700 : 600,
+                flex: 1,
                 color: isActive ? 'primary.main' : 'primary.main',
                 display: '-webkit-box',
                 WebkitLineClamp: 1,
@@ -275,11 +288,11 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               {jobDescription.title || 'Untitled Job Description'}
             </Typography>
           ) : (
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                fontWeight: isActive ? 700 : 600, 
-                flex: 1, 
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: isActive ? 700 : 600,
+                flex: 1,
                 color: isActive ? 'primary.main' : 'text.primary',
                 display: '-webkit-box',
                 WebkitLineClamp: 1,
@@ -437,51 +450,68 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
           </Button>
         )}
 
-        {/* Action buttons on the right */}
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {/* Preview button */}
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<VisibilityIcon fontSize="small" />}
-            onClick={handlePreviewClick}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 500,
-              '&:hover': {
-                backgroundColor: 'primary.light',
-                color: 'primary.contrastText',
-                borderColor: 'primary.light'
-              }
-            }}
-          >
-            Preview
-          </Button>
-
-          {/* URL link button */}
-          {jobDescription.source_url && (
-            <Button
+        {/* Action buttons centered */}
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', flex: 1, justifyContent: 'center' }}>
+          {/* Copy content button */}
+          <Tooltip title="Copy markdown content">
+            <IconButton
               size="small"
-              variant="outlined"
-              startIcon={<LinkIcon fontSize="small" />}
-              component="a"
-              href={jobDescription.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleCopyContent}
               sx={{
-                textTransform: 'none',
-                fontWeight: 500,
+                border: '1px solid',
+                borderColor: 'divider',
                 '&:hover': {
                   backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  color: 'text.primary',
                   borderColor: 'text.secondary'
                 }
               }}
             >
-              View Original
-            </Button>
+              <ContentCopyIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          {/* URL link icon button */}
+          {jobDescription.source_url && (
+            <Tooltip title="View original posting">
+              <IconButton
+                size="small"
+                component="a"
+                href={jobDescription.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    borderColor: 'text.secondary'
+                  }
+                }}
+              >
+                <LinkIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
+
+          {/* Preview icon button */}
+          <Tooltip title="Preview job description">
+            <IconButton
+              size="small"
+              onClick={handlePreviewClick}
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  backgroundColor: 'primary.light',
+                  color: 'primary.contrastText',
+                  borderColor: 'primary.light'
+                }
+              }}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       </CardActions>
     </Card>
@@ -496,11 +526,11 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
     >
       <DialogTitle>
         <Box>
-          <Typography 
-            variant="h5" 
-            component="div" 
-            sx={{ 
-              fontWeight: 600, 
+          <Typography
+            variant="h5"
+            component="div"
+            sx={{
+              fontWeight: 600,
               mb: 1,
               display: '-webkit-box',
               WebkitLineClamp: 2,
@@ -578,4 +608,3 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
 };
 
 export default JobDescriptionCard;
-

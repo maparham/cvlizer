@@ -14,27 +14,16 @@ DEFAULT_PARSED_CV = {
         "phone": "",
         "location": "",
         "linkedin_url": "",
-        "website_url": ""
+        "website_url": "",
     },
-    "professional_summary": {
-        "content": "",
-        "keywords": []
-    },
+    "professional_summary": {"content": "", "keywords": []},
     "work_experience": [],
     "education": [],
-    "skills": {
-        "technical": [],
-        "soft": [],
-        "languages": []
-    },
+    "skills": {"technical": [], "soft": [], "languages": []},
     "certifications": [],
     "projects": [],
     "awards": [],
     "publications": [],
     "volunteer_experience": [],
-    "section_config": {
-        "sections": []
-    }
+    "section_config": {"sections": []},
 }
-
-

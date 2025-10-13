@@ -1,6 +1,6 @@
 /**
  * CV Editor Context
- * 
+ *
  * This module provides comprehensive state management for the CV editor including:
  * - CV data management and updates
  * - Section visibility and ordering controls
@@ -8,7 +8,7 @@
  * - Editing state management (section and individual item editing)
  * - Unsaved changes detection and confirmation dialogs
  * - Reset functionality with confirmation
- * 
+ *
  * Note: This is a large context that coordinates multiple editor features.
  * Consider breaking into smaller contexts if complexity grows further.
  */
@@ -46,9 +46,9 @@ interface CVEditorContextType {
   requestSectionCancel: () => void
   editingIndividualItem: EditingIndividualItem | null
   registerIndividualItemEditing: (
-    sectionId: string, 
-    itemIndex: number, 
-    onCancel: () => void, 
+    sectionId: string,
+    itemIndex: number,
+    onCancel: () => void,
     onStartEdit?: () => void
   ) => 'success' | 'dialog_shown'
   unregisterIndividualItemEditing: (sectionId: string, itemIndex: number) => void
@@ -94,7 +94,7 @@ export const CVEditorProvider: React.FC<CVEditorProviderProps> = ({
   onUpdateCV,
   onSave
 }) => {
-  
+
   const editorState = usePDFCVEditor({
     cvData,
     onUpdateCV,
@@ -106,7 +106,7 @@ export const CVEditorProvider: React.FC<CVEditorProviderProps> = ({
     cvData,
     onUpdateCV,
     onSave,
-    
+
     // Spread all the editor state
     ...editorState
   }
@@ -130,7 +130,7 @@ export const useCVEditor = (): CVEditorContextType => {
 // Simplified convenience hooks - consolidated from 4 to 2 focused hooks
 export const useCVEditorControls = () => {
   const context = useCVEditor()
-  
+
   return {
     // Section management
     sections: {
@@ -143,15 +143,15 @@ export const useCVEditorControls = () => {
       availableToAdd: context.getAvailableSectionsToAdd(),
       updateTitle: context.updateSectionTitle,
     },
-    
+
     // Drag and drop
     dragDrop: {
       activeId: context.activeId,
       onDragStart: context.handleDragStart,
       onDragEnd: context.handleDragEnd,
     },
-    
-    // Reset functionality  
+
+    // Reset functionality
     reset: {
       showDialog: context.showResetDialog,
       onResetClick: context.handleResetClick,
@@ -163,7 +163,7 @@ export const useCVEditorControls = () => {
 
 export const useCVEditorState = () => {
   const context = useCVEditor()
-  
+
   return {
     // Editing state
     editing: {
@@ -176,7 +176,7 @@ export const useCVEditorState = () => {
       onUnregisterIndividualItem: context.unregisterIndividualItemEditing,
       onRequestIndividualCancel: context.requestIndividualItemCancel,
     },
-    
+
     // Unsaved changes
     changes: {
       hasUnsaved: context.hasUnsavedChanges,

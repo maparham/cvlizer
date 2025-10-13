@@ -5,6 +5,7 @@ This module provides common functionality used across all AI service modules,
 including type definitions, configuration, OpenAI client initialization,
 and utility functions for API interaction and response processing.
 """
+
 import openai
 import asyncio
 import logging
@@ -44,8 +45,10 @@ else:
 # Type Definitions
 # ============================================================================
 
+
 class JobFitResult(TypedDict, total=False):
     """Type definition for job fit analysis results."""
+
     confidence_score: int
     fit_analysis: str
     generated_at: str
@@ -62,6 +65,7 @@ class JobFitResult(TypedDict, total=False):
 
 class ATSOptimizationResult(TypedDict, total=False):
     """Type definition for ATS optimization results."""
+
     ats_score: int
     missing_keywords: List[Dict[str, Any]]
     keyword_analysis: Dict[str, Any]
@@ -79,6 +83,7 @@ class ATSOptimizationResult(TypedDict, total=False):
 # Utility Functions
 # ============================================================================
 
+
 def get_openai_client():
     """Get the OpenAI client singleton."""
     return _openai_client
@@ -92,16 +97,16 @@ def is_ai_enabled() -> bool:
 def extract_response_data(response: Any) -> Tuple[Optional[str], int, int]:
     """
     Extract content and token usage from OpenAI Response API response.
-    
+
     This utility function handles the Response API's format which differs from
     the Chat Completions API format. It extracts:
     - The response text/content
     - Prompt/input tokens
     - Completion/output tokens
-    
+
     Args:
         response: OpenAI Response API response object
-        
+
     Returns:
         Tuple of (content, prompt_tokens, completion_tokens)
         - content: The response text, or None if not found
@@ -110,40 +115,47 @@ def extract_response_data(response: Any) -> Tuple[Optional[str], int, int]:
     """
     # Extract content from Response API format
     content = None
-    if hasattr(response, 'output_text'):
+    if hasattr(response, "output_text"):
         content = response.output_text
-    elif hasattr(response, 'output'):
+    elif hasattr(response, "output"):
         for item in response.output:
-            if hasattr(item, 'type') and item.type == 'message':
-                if hasattr(item, 'content'):
+            if hasattr(item, "type") and item.type == "message":
+                if hasattr(item, "content"):
                     if isinstance(item.content, list):
                         # Handle content as array
                         for content_item in item.content:
-                            if hasattr(content_item, 'type') and content_item.type == 'output_text':
+                            if (
+                                hasattr(content_item, "type")
+                                and content_item.type == "output_text"
+                            ):
                                 content = content_item.text
                                 break
                     else:
                         # Handle content as string
                         content = item.content
                     break
-    
+
     # Extract token usage - Response API uses input_tokens/output_tokens or prompt_tokens/completion_tokens
     prompt_tokens = 0
     completion_tokens = 0
-    if hasattr(response, 'usage'):
+    if hasattr(response, "usage"):
         # Try both naming conventions (SDK versions may vary)
-        prompt_tokens = getattr(response.usage, 'prompt_tokens', 0) or getattr(response.usage, 'input_tokens', 0)
-        completion_tokens = getattr(response.usage, 'completion_tokens', 0) or getattr(response.usage, 'output_tokens', 0)
-    
+        prompt_tokens = getattr(response.usage, "prompt_tokens", 0) or getattr(
+            response.usage, "input_tokens", 0
+        )
+        completion_tokens = getattr(response.usage, "completion_tokens", 0) or getattr(
+            response.usage, "output_tokens", 0
+        )
+
     return content, prompt_tokens, completion_tokens
 
 
 def parse_json_from_markdown(content: str) -> str:
     """
     Extract JSON content from markdown code blocks.
-    
+
     Handles both ```json and ``` code block formats.
-    
+
     Args:
         content: Raw content that may contain markdown code blocks
 
@@ -152,7 +164,7 @@ def parse_json_from_markdown(content: str) -> str:
     """
     if not content:
         return content
-    
+
     # Extract JSON from ```json code blocks
     if "```json" in content:
         start = content.find("```json") + 7
@@ -160,7 +172,7 @@ def parse_json_from_markdown(content: str) -> str:
         if end != -1:
             return content[start:end].strip()
         return content
-    
+
     # Extract from generic ``` code blocks
     if "```" in content:
         start = content.find("```") + 3
@@ -168,26 +180,25 @@ def parse_json_from_markdown(content: str) -> str:
         if end != -1:
             return content[start:end].strip()
         return content
-    
+
     return content
 
 
 def build_error_response(
-    error_message: str,
-    operation_type: str = "ai_operation"
+    error_message: str, operation_type: str = "ai_operation"
 ) -> Dict[str, Any]:
     """
     Build a standardized error response for AI operations.
-    
+
     Args:
         error_message: Error message to include
         operation_type: Type of operation that failed (for logging)
-        
+
     Returns:
         Standardized error response dictionary
     """
     logger.error(f"{operation_type} failed: {error_message}")
-    
+
     return {
         "error": error_message,
         "confidence_score": 0,
@@ -197,9 +208,9 @@ def build_error_response(
         "missing_skills": [],
         "suggested_improvements": [],
         "strengths": [],
-        "weaknesses": []
+        "weaknesses": [],
     }
-    
+
 
 def log_ai_usage_safe(
     db_session: Optional[Session],
@@ -211,14 +222,14 @@ def log_ai_usage_safe(
     generation_time: int,
     success: bool = True,
     error_message: Optional[str] = None,
-    cv_id: Optional[str] = None
+    cv_id: Optional[str] = None,
 ) -> None:
     """
     Safely log AI usage without breaking existing functionality.
-    
+
     This function wraps the AI usage logging in a try-catch to ensure
     that logging failures don't affect the main AI service functionality.
-    
+
     Args:
         db_session: Database session (optional)
         user_id: User identifier
@@ -234,6 +245,7 @@ def log_ai_usage_safe(
     try:
         if db_session:
             from src.services.ai_usage_service import log_ai_usage
+
             log_ai_usage(
                 db=db_session,
                 user_id=user_id,
@@ -244,25 +256,27 @@ def log_ai_usage_safe(
                 generation_time=generation_time,
                 success=success,
                 error_message=error_message,
-                cv_id=cv_id
+                cv_id=cv_id,
             )
     except Exception as e:
         # Log the error but don't raise it to avoid breaking main functionality
         logger.warning(f"Failed to log AI usage: {str(e)}")
 
 
-async def with_retries(coro_factory, attempts: int = RETRY_ATTEMPTS, delay: float = RETRY_DELAY):
+async def with_retries(
+    coro_factory, attempts: int = RETRY_ATTEMPTS, delay: float = RETRY_DELAY
+):
     """
     Execute async operation with retry logic.
-    
+
     Args:
         coro_factory: Factory function that creates the coroutine to execute
         attempts: Number of retry attempts
         delay: Base delay between retries (exponential backoff)
-        
+
     Returns:
         Result from successful coroutine execution
-        
+
     Raises:
         Last exception if all attempts fail
     """
@@ -274,6 +288,5 @@ async def with_retries(coro_factory, attempts: int = RETRY_ATTEMPTS, delay: floa
         except Exception as e:
             last_exc = e
             if i < attempts - 1:
-                await asyncio.sleep(delay * (2 ** i))
+                await asyncio.sleep(delay * (2**i))
     raise last_exc
-

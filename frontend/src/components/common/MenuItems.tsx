@@ -1,16 +1,16 @@
 /**
  * Reusable MenuItems Component
- * 
+ *
  * This module provides a reusable menu component that eliminates duplication
  * of menu rendering logic across different components. It handles both
  * context menus and regular dropdown menus with consistent styling and behavior.
- * 
+ *
  * Key responsibilities:
  * - Render menu items with consistent styling
  * - Handle loading states and disabled states
  * - Support both context and dropdown menu variants
  * - Provide consistent hover effects and transitions
- * 
+ *
  * Usage:
  * - Import MenuItems component for consistent menu rendering
  * - Use in CVQuickActions and other components with menu functionality

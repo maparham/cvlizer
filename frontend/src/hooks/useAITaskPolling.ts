@@ -1,16 +1,16 @@
 /**
  * Custom hook for AI task polling
- * 
+ *
  * This hook centralizes the polling logic for AI task status updates,
  * providing a consistent interface for both job fit analysis and content enhancement.
- * 
+ *
  * Key responsibilities:
  * - Poll for AI task completion (drafts and content enhancements)
  * - Handle task errors and success states
  * - Provide loading states and error handling
  * - Clean up polling intervals on unmount
  * - Persist polling state across page refreshes
- * 
+ *
  * Usage:
  * - Import in components that need to track AI task progress
  * - Pass task IDs and optional callbacks
@@ -81,7 +81,7 @@ export const useAITaskPolling = (
   const { updateDraftStatus, updateContentEnhancementStatus } = useAIStore();
   const { updateAIEnhancementStatus } = useAISuggestionsStore();
   const { showError } = useNotifications();
-  
+
   // Use refs for callbacks to avoid re-creating interval
   const onTaskCompleteRef = useRef(onTaskComplete);
   const onTaskErrorRef = useRef(onTaskError);

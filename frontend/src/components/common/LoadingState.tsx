@@ -1,6 +1,6 @@
 /**
  * Loading State Component
- * 
+ *
  * Reusable loading indicator for consistent UX
  */
 
@@ -13,8 +13,8 @@ interface LoadingStateProps {
   variant?: 'centered' | 'inline'
 }
 
-const LoadingState: React.FC<LoadingStateProps> = ({ 
-  message = 'Loading...', 
+const LoadingState: React.FC<LoadingStateProps> = ({
+  message = 'Loading...',
   size = 24,
   variant = 'centered'
 }) => {
@@ -32,11 +32,11 @@ const LoadingState: React.FC<LoadingStateProps> = ({
   }
 
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
+    <Box
+      sx={{
+        display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center', 
+        alignItems: 'center',
         justifyContent: 'center',
         gap: 2,
         p: 3

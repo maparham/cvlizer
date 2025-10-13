@@ -20,7 +20,7 @@ const COMMON_DEGREES = [
   'Bachelor of Science in Computer Science (BS CS)', 'Bachelor of Science in Engineering (BS Eng)',
   'Bachelor of Science in Nursing (BSN)', 'Bachelor of Science in Psychology (BS Psych)',
   'Bachelor of Science in Economics (BS Econ)', 'Bachelor of Science in Business (BS Business)',
-  
+
   // Master's Degrees
   'Master of Arts (MA)', 'Master of Science (MS)', 'Master of Engineering (MEng)',
   'Master of Business Administration (MBA)', 'Master of Computer Science (MCS)',
@@ -35,34 +35,34 @@ const COMMON_DEGREES = [
   'Master of Science in Computer Science (MS CS)', 'Master of Science in Engineering (MS Eng)',
   'Master of Science in Data Science (MS Data Science)', 'Master of Science in Cybersecurity (MS Cybersecurity)',
   'Master of Science in Artificial Intelligence (MS AI)', 'Master of Science in Software Engineering (MS SE)',
-  
+
   // Doctoral Degrees
   'Doctor of Philosophy (PhD)', 'Doctor of Education (EdD)', 'Doctor of Medicine (MD)',
   'Doctor of Dental Surgery (DDS)', 'Doctor of Veterinary Medicine (DVM)',
   'Doctor of Pharmacy (PharmD)', 'Doctor of Psychology (PsyD)', 'Doctor of Business Administration (DBA)',
   'Doctor of Engineering (DEng)', 'Doctor of Computer Science (DCS)', 'Doctor of Nursing Practice (DNP)',
   'Doctor of Public Health (DrPH)', 'Doctor of Social Work (DSW)', 'Doctor of Jurisprudence (JD)',
-  
+
   // Associate Degrees
   'Associate of Arts (AA)', 'Associate of Science (AS)', 'Associate of Applied Science (AAS)',
   'Associate of Engineering (AE)', 'Associate of Business Administration (ABA)',
   'Associate of Computer Science (ACS)', 'Associate of Nursing (AN)', 'Associate of Education (AEd)',
   'Associate of Commerce (ACom)', 'Associate of Technology (ATech)', 'Associate of Information Technology (AIT)',
-  
+
   // Professional Certifications
   'Certified Public Accountant (CPA)', 'Project Management Professional (PMP)',
   'Certified Information Systems Security Professional (CISSP)', 'Certified Data Professional (CDP)',
   'Certified Scrum Master (CSM)', 'Certified Information Security Manager (CISM)',
   'Certified Ethical Hacker (CEH)', 'Certified Cloud Security Professional (CCSP)',
   'Certified Information Systems Auditor (CISA)', 'Certified in Risk and Information Systems Control (CRISC)',
-  
+
   // International Degrees
   'Bachelor of Engineering (BEng) - UK', 'Master of Engineering (MEng) - UK',
   'Bachelor of Technology (BTech) - India', 'Master of Technology (MTech) - India',
   'Bachelor of Engineering (BEng) - Australia', 'Master of Engineering (MEng) - Australia',
   'Bachelor of Science (BSc) - UK', 'Master of Science (MSc) - UK',
   'Bachelor of Arts (BA) - UK', 'Master of Arts (MA) - UK',
-  
+
   // Short Forms (commonly used)
   'BA', 'BS', 'BSc', 'BEng', 'BBA', 'BCS', 'BFA', 'BArch', 'BN', 'BEd', 'BCom', 'BTech', 'BIT',
   'MA', 'MS', 'MSc', 'MEng', 'MBA', 'MCS', 'MFA', 'MArch', 'MN', 'MEd', 'MCom', 'MTech', 'MIT',
@@ -103,42 +103,42 @@ const DegreeAutocomplete: React.FC<DegreeAutocompleteProps> = ({
   // Filter degrees based on input
   const filteredDegrees = useMemo(() => {
     if (!inputValue || inputValue.length < 1) return []
-    
+
     const searchTerm = inputValue.toLowerCase().trim()
-    
+
     // Filter with multiple criteria for better matching
     const filtered = COMMON_DEGREES.filter(degree => {
       const degreeLower = degree.toLowerCase()
-      
+
       // Starts with search term (high priority)
       if (degreeLower.startsWith(searchTerm)) return true
-      
+
       // Contains search term (medium priority)
       if (degreeLower.includes(searchTerm)) return true
-      
+
       // Abbreviation match (for cases like "BS" matching "Bachelor of Science")
       const abbreviation = degreeLower.match(/\(([^)]+)\)/)?.[1]
       if (abbreviation && abbreviation.includes(searchTerm)) return true
-      
+
       return false
     })
-    
+
     // Sort results by relevance
     const sorted = filtered.sort((a, b) => {
       const aLower = a.toLowerCase()
       const bLower = b.toLowerCase()
-      
+
       // Exact matches first
       if (aLower === searchTerm && bLower !== searchTerm) return -1
       if (bLower === searchTerm && aLower !== searchTerm) return 1
-      
+
       // Then starts with
       if (aLower.startsWith(searchTerm) && !bLower.startsWith(searchTerm)) return -1
       if (bLower.startsWith(searchTerm) && !aLower.startsWith(searchTerm)) return 1
-      
+
       return 0
     })
-    
+
     return sorted.slice(0, 10) // Limit to 10 suggestions
   }, [inputValue])
 
@@ -152,12 +152,12 @@ const DegreeAutocomplete: React.FC<DegreeAutocompleteProps> = ({
   const handleInputChange = (_event: any, newInputValue: string) => {
     setInputValue(newInputValue)
     onChange(newInputValue) // Update parent immediately for better UX
-    
+
     // Check if the input exactly matches an option
-    const exactMatch = COMMON_DEGREES.find(degree => 
+    const exactMatch = COMMON_DEGREES.find(degree =>
       degree.toLowerCase() === newInputValue.toLowerCase().trim()
     )
-    
+
     if (exactMatch) {
       setIsOpen(false) // Hide dropdown if exact match
     } else {
@@ -168,7 +168,7 @@ const DegreeAutocomplete: React.FC<DegreeAutocompleteProps> = ({
   const handleFocus = () => {
     // Only show dropdown if there's text AND it's not an exact match
     if (inputValue.length > 0) {
-      const exactMatch = COMMON_DEGREES.find(degree => 
+      const exactMatch = COMMON_DEGREES.find(degree =>
         degree.toLowerCase() === inputValue.toLowerCase().trim()
       )
       setIsOpen(!exactMatch) // Hide dropdown if exact match
@@ -234,7 +234,7 @@ const DegreeAutocomplete: React.FC<DegreeAutocompleteProps> = ({
         </li>
       )}
       noOptionsText="Type to search degrees..."
-      sx={{ 
+      sx={{
         '& .MuiAutocomplete-inputRoot': {
           paddingTop: 0,
           paddingBottom: 0

@@ -47,13 +47,13 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
   const [showCategories, setShowCategories] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const skillsList = useMemo(() => 
-    skillType === 'technical' ? TECHNICAL_SKILLS : SOFT_SKILLS, 
+  const skillsList = useMemo(() =>
+    skillType === 'technical' ? TECHNICAL_SKILLS : SOFT_SKILLS,
     [skillType]
   )
 
-  const existingSkillsSet = useMemo(() => 
-    new Set(existingSkills), 
+  const existingSkillsSet = useMemo(() =>
+    new Set(existingSkills),
     [existingSkills]
   )
 
@@ -244,7 +244,7 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
           />
           {renderSuggestions()}
         </Box>
-        
+
         <Tooltip title={`Add ${skillType} skill`}>
           <span>
             <IconButton
@@ -268,7 +268,7 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
           </span>
         </Tooltip>
       </Box>
-      
+
       {inputValue.trim() && existingSkillsSet.has(inputValue.trim()) && (
         <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
           This skill is already added

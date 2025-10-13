@@ -12,14 +12,14 @@ Every module must include a comprehensive header comment block at the very top o
 ```typescript
 /**
  * Module Name - Brief Description
- * 
+ *
  * This module provides [detailed description of what the module does and why it exists].
- * 
+ *
  * Key responsibilities:
  * - [Primary responsibility 1]
  * - [Primary responsibility 2]
  * - [Primary responsibility 3]
- * 
+ *
  * Usage context:
  * - [When and how this module should be used]
  * - [Dependencies or requirements]
@@ -81,11 +81,11 @@ Usage context:
 ```typescript
 /**
  * Brief description of what the function does.
- * 
+ *
  * Detailed explanation of the function's purpose and behavior.
  * This can span multiple lines and should provide comprehensive
  * information about the function's behavior.
- * 
+ *
  * @param {Type} paramName - Description of the parameter
  * @param {Type} [optionalParam=defaultValue] - Description of optional parameter
  * @returns {Type} Description of what the function returns
@@ -97,16 +97,16 @@ Usage context:
 ```typescript
 /**
  * Class Name - Brief Description
- * 
+ *
  * Detailed description of what the class represents and its purpose.
  * This can span multiple lines and should provide comprehensive
  * information about the class's behavior and usage.
- * 
+ *
  */
 class ClassName {
   /**
    * Brief description of the method.
-   * 
+   *
    * @param {Type} paramName - Description of the parameter
    * @returns {Type} Description of what the method returns
    * @throws {ErrorType} Description of when this error is thrown
@@ -121,21 +121,21 @@ class ClassName {
 ```python
 def function_name(param1: Type, param2: Type = None) -> ReturnType:
     """Brief description of what the function does.
-    
+
     Detailed explanation of the function's purpose and behavior.
     This can span multiple lines and should provide comprehensive
     information about the function's behavior.
-    
+
     Args:
         param1 (Type): Description of the parameter
         param2 (Type, optional): Description of optional parameter. Defaults to None.
-    
+
     Returns:
         Type: Description of what the function returns
-    
+
     Raises:
         ErrorType: Description of when this error is thrown
-    
+
     """
 ```
 
@@ -143,28 +143,28 @@ def function_name(param1: Type, param2: Type = None) -> ReturnType:
 ```python
 class ClassName:
     """Class Name - Brief Description
-    
+
     Detailed description of what the class represents and its purpose.
     This can span multiple lines and should provide comprehensive
     information about the class's behavior and usage.
-    
+
     Attributes:
         attribute1 (Type): Description of the attribute
         attribute2 (Type): Description of the attribute
-    
+
     """
-    
+
     def method_name(self, param1: Type) -> ReturnType:
         """Brief description of the method.
-        
+
         Detailed explanation of the method's purpose and behavior.
-        
+
         Args:
             param1 (Type): Description of the parameter
-        
+
         Returns:
             ReturnType: Description of what the method returns
-        
+
         Raises:
             ErrorType: Description of when this error is thrown
         """
@@ -227,21 +227,21 @@ class ClassName:
 ```typescript
 /**
  * CV Validation Service
- * 
+ *
  * This module provides comprehensive validation for CV data structures,
  * ensuring data integrity and business rule compliance before saving.
- * 
+ *
  * Key responsibilities:
  * - Validates CV section data against business rules
  * - Performs cross-field validation and consistency checks
  * - Provides detailed error messages for validation failures
  * - Supports both individual field and full CV validation
- * 
+ *
  * Usage context:
  * - Import and use validateCV() for full CV validation
  * - Use validateSection() for individual section validation
  * - Check validation results and display errors to users
- * 
+ *
  * Dependencies:
  * - CV data schemas and types
  * - Business rule definitions

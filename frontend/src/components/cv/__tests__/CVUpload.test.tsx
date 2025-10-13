@@ -67,7 +67,7 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     expect(screen.getByText('Upload CV')).toBeInTheDocument()
     expect(screen.getByText('Drag & drop your CV here')).toBeInTheDocument()
     expect(screen.getByText('Supported formats: PDF, DOC, DOCX (max 10MB)')).toBeInTheDocument()
@@ -81,7 +81,7 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     expect(screen.queryByText('Upload CV')).not.toBeInTheDocument()
   })
 
@@ -343,7 +343,7 @@ describe('CVUpload', () => {
         onSuccess={mockOnSuccess}
       />
     )
-    
+
     fireEvent.click(screen.getByText('Cancel'))
     expect(mockOnClose).toHaveBeenCalled()
   })

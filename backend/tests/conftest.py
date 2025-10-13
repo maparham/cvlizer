@@ -30,9 +30,9 @@ def impersonation_db_session(setup_impersonation_test_db):
     connection = engine.connect()
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
-    
+
     yield session
-    
+
     session.close()
     transaction.rollback()
     connection.close()
@@ -41,19 +41,21 @@ def impersonation_db_session(setup_impersonation_test_db):
 @pytest.fixture
 def mock_clerk_auth():
     """Mock Clerk authentication for tests"""
-    with patch('src.middleware.clerk_auth.get_current_user_from_clerk') as mock_get_user, \
-         patch('src.middleware.clerk_auth.get_impersonation_session') as mock_get_session, \
-         patch('src.middleware.clerk_auth.get_user_by_id') as mock_get_user_by_id:
-        
+    with (
+        patch("src.middleware.clerk_auth.get_current_user_from_clerk") as mock_get_user,
+        patch("src.middleware.clerk_auth.get_impersonation_session") as mock_get_session,
+        patch("src.middleware.clerk_auth.get_user_by_id") as mock_get_user_by_id,
+    ):
+
         yield {
-            'get_user': mock_get_user,
-            'get_session': mock_get_session,
-            'get_user_by_id': mock_get_user_by_id
+            "get_user": mock_get_user,
+            "get_session": mock_get_session,
+            "get_user_by_id": mock_get_user_by_id,
         }
 
 
 @pytest.fixture
 def mock_audit_service():
     """Mock audit service for tests"""
-    with patch('src.services.impersonation_service.audit_service') as mock_audit:
+    with patch("src.services.impersonation_service.audit_service") as mock_audit:
         yield mock_audit

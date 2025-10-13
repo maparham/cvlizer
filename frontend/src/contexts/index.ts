@@ -1,7 +1,7 @@
 // Export all contexts
 export { AuthProvider, useAuth } from './AuthContext'
-export { 
-  CVEditorProvider, 
+export {
+  CVEditorProvider,
   useCVEditor,
   useCVEditorControls,
   useCVEditorState

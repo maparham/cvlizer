@@ -31,8 +31,8 @@ const Register: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <SignUp 
-              routing="path" 
+            <SignUp
+              routing="path"
               path="/register"
               signInUrl="/login"
               redirectUrl="/login-redirect"

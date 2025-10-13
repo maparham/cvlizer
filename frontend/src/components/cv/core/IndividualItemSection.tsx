@@ -1,10 +1,10 @@
 /**
  * IndividualItemSection Component
- * 
+ *
  * A comprehensive, reusable section component for managing collections of items where each item
  * can be independently edited, reordered, and managed. This component is designed for CV sections
  * like Work Experience, Education, Projects, etc.
- * 
+ *
  * Key Features:
  * - Individual item editing: Each item has its own edit/save/cancel controls
  * - Drag & drop reordering: Items can be reordered via drag handles or arrow buttons
@@ -14,11 +14,11 @@
  * - Global editing state management: Prevents multiple items from being edited simultaneously
  * - Unsaved changes tracking: Warns users about unsaved changes when navigating away
  * - Responsive UI: Hover effects, tooltips, and smooth transitions
- * 
+ *
  * The component uses a generic type T to work with any data structure, making it highly reusable
  * across different types of CV sections. It integrates with the global CV editing state to provide
  * a consistent user experience across the entire application.
- * 
+ *
  * @template T - The type of items this section manages
  */
 import { useCallback, useMemo, useState } from 'react'
@@ -110,7 +110,7 @@ function IndividualItemSection<T>({
 
   // Event handlers
   const handleEditItem = useCallback((index: number) => {
-    
+
     // Register with global editing state for escape key handling first
     if (registerIndividualItemEditing) {
       // Create a callback to start editing this specific item
@@ -123,15 +123,15 @@ function IndividualItemSection<T>({
         // already dispatches START_ITEM_EDIT. Calling onEdit() would dispatch
         // START_SECTION_EDIT and overwrite the editing_item state
       }
-      
+
       // Try to register - this might show a dialog if there are unsaved changes
       const registrationResult = registerIndividualItemEditing(sectionId, index, handleCancelEdit, onStartEdit)
-      
+
       // Only set local state if registration was successful (no dialog shown)
       // If a dialog is shown, onStartEdit will be called when user clicks "Discard Changes"
       if (registrationResult !== 'dialog_shown') {
         const itemToEdit = { ...itemsData[index] }
-        
+
         setEditingItemIndex(index)
         editingItemIndexRef.current = index
         setEditData(itemToEdit)
@@ -150,30 +150,30 @@ function IndividualItemSection<T>({
 
   const handleSaveItem = useCallback(() => {
     if (editingItemIndex !== null && editData) {
-      
+
       let newData = [...itemsData]
-      
+
       // Check if we're adding a new item (editingItemIndex >= current array length)
       if (editingItemIndex >= itemsData.length) {
         // Adding a new item
         newData.push(editData) // Add to end first
-        
+
         // If there's an active sort, re-sort the data to place the new item correctly
         if (sortField) {
           newData = sortItemsByDate(newData, sortField, sortDirection)
         }
       } else {
         // Editing an existing item - update at the index
-        
+
         newData[editingItemIndex] = editData
-        
+
         // If there's an active sort, re-sort the data in case the edited field affects sort order
         if (sortField) {
           newData = sortItemsByDate(newData, sortField, sortDirection)
         }
       }
-      
-      
+
+
       setItemsData(newData)
       onUpdate(newData)
       onSave(newData, editingItemIndex >= itemsData.length ? `${autoSaveMessage} added` : `${autoSaveMessage} updated`)
@@ -204,7 +204,7 @@ function IndividualItemSection<T>({
     // NOTE: Don't call onEdit() here because registerIndividualItemEditing
     // dispatches START_ITEM_EDIT. Calling onEdit() would dispatch START_SECTION_EDIT
     // and overwrite the editing_item state
-    
+
     // Register with global editing state for escape key handling
     if (registerIndividualItemEditing) {
       // Create a callback to start editing this specific item
@@ -214,7 +214,7 @@ function IndividualItemSection<T>({
         setEditData(newItem)
         // NOTE: Don't call onEdit() here for the same reason as above
       }
-      
+
       registerIndividualItemEditing(sectionId, newIndex, handleCancelEdit, onStartEdit)
     }
   }, [createNewItem, itemsData.length, setEditingItemIndex, setEditData, registerIndividualItemEditing, sectionId, handleCancelEdit, editingItemIndexRef])
@@ -245,21 +245,21 @@ function IndividualItemSection<T>({
     setItemsData(newData)
     onUpdate(newData)
     onSave(newData, `${autoSaveMessage} reordered`)
-    
+
     handleDragEnd()
   }, [sortField, clearSort, itemsData, setItemsData, onUpdate, onSave, autoSaveMessage, handleDragEnd])
 
   // Manual reordering handlers
   const handleMoveUpItem = useCallback((index: number) => {
     if (index === 0) return // Already at top
-    
+
     // Clear any active sorting to switch to manual mode
     if (sortField) {
       clearSort()
     }
-    
+
     handleManualReorder()
-    
+
     const newData = moveItemUp(itemsData, index)
     setItemsData(newData)
     onUpdate(newData)
@@ -268,14 +268,14 @@ function IndividualItemSection<T>({
 
   const handleMoveDownItem = useCallback((index: number) => {
     if (index === itemsData.length - 1) return // Already at bottom
-    
+
     // Clear any active sorting to switch to manual mode
     if (sortField) {
       clearSort()
     }
-    
+
     handleManualReorder()
-    
+
     const newData = moveItemDown(itemsData, index)
     setItemsData(newData)
     onUpdate(newData)
@@ -334,7 +334,7 @@ function IndividualItemSection<T>({
             itemsCount={itemsData.length}
             editingItemIndex={editingItemIndex}
           />
-          
+
           {/* Add button - always show when not editing an item */}
           {editingItemIndex === null && (
             <Tooltip title={isAnotherItemBeingEdited ? "Finish editing the current item first" : `Add new ${getSingularTitle(title).toLowerCase()}`}>
@@ -474,7 +474,7 @@ function IndividualItemSection<T>({
                                 onMoveDown={handleMoveDownItem}
                                 dragHandleProps={provided.dragHandleProps}
                               />
-                              
+
                               <ItemControls
                                 item={item}
                                 index={index}

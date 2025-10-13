@@ -1,10 +1,10 @@
 /**
  * CV Quick Actions Component
- * 
+ *
  * This module provides a context menu and 3-dot menu for CV cards with quick actions
  * including Duplicate, Rename, Delete, Download, and Create Similar. It supports both
  * right-click context menus and 3-dot button menus for better accessibility.
- * 
+ *
  * Key responsibilities:
  * - Provide right-click context menu on CV cards
  * - Add 3-dot menu button as alternative access method
@@ -12,7 +12,7 @@
  * - Confirm destructive actions (Delete)
  * - Show loading states for time-consuming operations
  * - Integrate with existing CV management functions
- * 
+ *
  * Usage:
  * - Used in Dashboard CV cards for quick actions
  * - Provides consistent action interface across all CVs

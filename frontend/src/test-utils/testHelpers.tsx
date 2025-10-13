@@ -26,7 +26,7 @@ const createTestQueryClient = () => new QueryClient({
 // Custom render function that includes all necessary providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   const queryClient = createTestQueryClient()
-  
+
   return (
     <BrowserRouter>
       <ThemeProvider theme={testTheme}>
@@ -66,12 +66,12 @@ export const mockLocalStorage = () => {
     length: 0,
     key: jest.fn(),
   }
-  
+
   Object.defineProperty(window, 'localStorage', {
     value: localStorageMock,
     writable: true,
   })
-  
+
   return localStorageMock
 }
 
@@ -84,12 +84,12 @@ export const mockSessionStorage = () => {
     length: 0,
     key: jest.fn(),
   }
-  
+
   Object.defineProperty(window, 'sessionStorage', {
     value: sessionStorageMock,
     writable: true,
   })
-  
+
   return sessionStorageMock
 }
 
@@ -112,7 +112,7 @@ export const mockFileList = (files: File[]) => {
     ...files,
     length: files.length,
   }
-  
+
   return fileList as FileList
 }
 
@@ -120,13 +120,13 @@ export const mockFileList = (files: File[]) => {
 export const setupTest = () => {
   // Clear all mocks
   jest.clearAllMocks()
-  
+
   // Reset localStorage and sessionStorage
   if (typeof window !== 'undefined') {
     window.localStorage.clear()
     window.sessionStorage.clear()
   }
-  
+
   // Reset fetch
   if (global.fetch) {
     global.fetch = jest.fn()
@@ -137,10 +137,10 @@ export const setupTest = () => {
 export const cleanupTest = () => {
   // Clear all mocks
   jest.clearAllMocks()
-  
+
   // Reset DOM
   document.body.innerHTML = ''
-  
+
   // Reset localStorage and sessionStorage
   if (typeof window !== 'undefined') {
     window.localStorage.clear()
@@ -153,7 +153,7 @@ export const waitFor = (callback: () => void, options?: { timeout?: number }) =>
   return new Promise((resolve, reject) => {
     const timeout = options?.timeout || 1000
     const startTime = Date.now()
-    
+
     const check = () => {
       try {
         callback()
@@ -166,7 +166,7 @@ export const waitFor = (callback: () => void, options?: { timeout?: number }) =>
         }
       }
     }
-    
+
     check()
   })
 }
@@ -243,7 +243,7 @@ export const mockURL = () => {
     writable: true,
     value: jest.fn(() => 'blob:mock-url')
   })
-  
+
   Object.defineProperty(URL, 'revokeObjectURL', {
     writable: true,
     value: jest.fn()

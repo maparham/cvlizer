@@ -1,15 +1,15 @@
 /**
  * Custom hook for job description parsing polling
- * 
+ *
  * This hook centralizes the polling logic for job description parsing status updates,
  * providing a consistent interface for both modal and sidebar components.
- * 
+ *
  * Key responsibilities:
  * - Poll for job description parsing completion
  * - Handle parsing errors and success states
  * - Provide loading states and error handling
  * - Clean up polling intervals on unmount
- * 
+ *
  * Usage:
  * - Import in components that need to track job description parsing
  * - Pass job descriptions array and optional callbacks
@@ -49,11 +49,11 @@ export const useJobDescriptionPolling = (
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const processedJobDescriptionsRef = useRef<Set<string>>(new Set());
   const { updateJobDescriptionStatus } = useAIStore();
-  
+
   // Use refs to store callbacks to avoid dependency issues
   const onParsingCompleteRef = useRef(onParsingComplete);
   const onParsingErrorRef = useRef(onParsingError);
-  
+
   // Update refs when callbacks change
   useEffect(() => {
     onParsingCompleteRef.current = onParsingComplete;
@@ -78,7 +78,7 @@ export const useJobDescriptionPolling = (
       for (const id of jobDescriptionIds) {
         try {
           const updated = await updateJobDescriptionStatus(id);
-          
+
           if (updated.is_parsing) {
             stillParsing.add(id);
           } else {
@@ -86,10 +86,10 @@ export const useJobDescriptionPolling = (
             if (processedJobDescriptionsRef.current.has(id)) {
               continue;
             }
-            
+
             // Mark as processed
             processedJobDescriptionsRef.current.add(id);
-            
+
             if (updated.parse_error) {
               // Parsing failed - error will be displayed in the sidebar card
               onParsingErrorRef.current?.(updated, updated.parse_error);

@@ -1,16 +1,16 @@
 /**
  * Common Style Constants
- * 
+ *
  * This module provides shared Material-UI styling constants to eliminate
  * repetitive styling patterns across components and ensure consistent
  * visual design throughout the application.
- * 
+ *
  * Key responsibilities:
  * - Define common component styling patterns
  * - Provide consistent spacing, colors, and effects
  * - Reduce code duplication in component sx props
  * - Maintain design system consistency
- * 
+ *
  * Usage:
  * - Import specific style objects for components
  * - Use in sx props: sx={{...commonStyles.dialog}}
@@ -81,7 +81,7 @@ export const cardStyles = {
 export const iconButtonStyles = {
   subtle: {
     opacity: 0.7,
-    '&:hover': { 
+    '&:hover': {
       opacity: 1,
       backgroundColor: 'action.hover',
     },

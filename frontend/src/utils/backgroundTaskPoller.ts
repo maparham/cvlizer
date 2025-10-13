@@ -55,7 +55,7 @@ export async function pollJobDescriptionStatus(
 
         // Get current status
         const status = await aiService.getJobDescriptionStatus(jobDescriptionId);
-        
+
         // Call progress callback
         opts.onProgress(status);
 
@@ -108,7 +108,7 @@ export async function pollContentEnhancementStatus(
 
         // Get current status
         const status = await aiService.getContentEnhancementStatus(enhancementId);
-        
+
         // Call progress callback
         opts.onProgress(status);
 
@@ -161,7 +161,7 @@ export async function pollDraftStatus(
 
         // Get current status
         const status = await aiService.getDraftStatus(draftId);
-        
+
         // Call progress callback
         opts.onProgress(status);
 
@@ -215,7 +215,7 @@ export async function pollBackgroundTask<T>(
 
         // Get current status
         const data = await pollFunction();
-        
+
         // Call progress callback
         opts.onProgress(data);
 
@@ -238,4 +238,3 @@ export async function pollBackgroundTask<T>(
     poll();
   });
 }
-

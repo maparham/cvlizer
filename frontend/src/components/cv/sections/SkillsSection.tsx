@@ -97,7 +97,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
       updateData('soft', updatedData.soft)
       saveDataImmediately(updatedData, 'Soft skill removed')
     }
-    
+
     // AI Suggestions handlers
     const handleAddSuggestedSkill = async (skill: string, type: 'technical' | 'soft') => {
       const updatedData = {
@@ -148,7 +148,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
       await dismissAllSkillSuggestions()
       showSuccess('All AI suggestions have been rejected')
     }
-    
+
     const hasSuggestions = skillsSuggestions && (skillsSuggestions.technical.length > 0 || skillsSuggestions.soft.length > 0)
 
     return (
@@ -208,23 +208,23 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
             existingSkills={editData.soft || []}
           />
         </Box>
-        
+
         {/* AI Suggestions Section - Only show if suggestions exist */}
         {hasSuggestions && (
-            <Box 
-              sx={{ 
-                mt: 2, 
-                p: 2, 
+            <Box
+              sx={{
+                mt: 2,
+                p: 2,
                 backgroundColor: '#E3F2FD',
                 border: '1px solid #90CAF9',
                 borderRadius: '8px'
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                <Typography 
-                  variant="subtitle2" 
-                  sx={{ 
-                    fontWeight: 600, 
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 600,
                     fontSize: '14px',
                     color: '#1976D2'
                   }}
@@ -235,13 +235,13 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
                   <InfoIcon sx={{ ml: 0.5, fontSize: '16px', color: '#1976D2' }} />
                 </Tooltip>
               </Box>
-              
+
               {skillsSuggestions.technical.length > 0 && (
                 <Box sx={{ mb: skillsSuggestions.soft.length > 0 ? 2 : 0 }}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontWeight: 500, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
                       fontSize: '13px',
                       color: '#424242',
                       mb: 1
@@ -281,13 +281,13 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
                   </Box>
                 </Box>
               )}
-              
+
               {skillsSuggestions.soft.length > 0 && (
                 <Box>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontWeight: 500, 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
                       fontSize: '13px',
                       color: '#424242',
                       mb: 1
@@ -327,14 +327,14 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
                   </Box>
                 </Box>
               )}
-              
+
               {/* Action Buttons */}
-              <Box sx={{ 
-                display: 'flex', 
-                gap: 1, 
-                mt: 2, 
-                pt: 2, 
-                borderTop: '1px solid #BBDEFB' 
+              <Box sx={{
+                display: 'flex',
+                gap: 1,
+                mt: 2,
+                pt: 2,
+                borderTop: '1px solid #BBDEFB'
               }}>
                 <Button
                   variant="contained"
@@ -447,13 +447,13 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
             />
           ))}
         </Box>
-      
+
       {/* AI Skills Suggestions - Show in display mode too */}
       {hasSuggestions && (
-        <Box 
-          sx={{ 
-            mt: 2, 
-            p: { xs: 1.5, sm: 2 }, 
+        <Box
+          sx={{
+            mt: 2,
+            p: { xs: 1.5, sm: 2 },
             backgroundColor: '#E3F2FD',
             border: '1px solid #BBDEFB',
             borderRadius: 1
@@ -467,7 +467,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
               <InfoIcon sx={{ ml: 1, fontSize: 16, color: '#1976d2' }} />
             </Tooltip>
           </Box>
-          
+
           {(skillsSuggestions.technical.length > 0 || skillsSuggestions.soft.length > 0) && (
             <Box>
               {skillsSuggestions.technical.length > 0 && (
@@ -481,7 +481,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
                         <Chip
                           label={suggestion.skill}
                           size="small"
-                          sx={{ 
+                          sx={{
                             backgroundColor: 'white',
                             border: '1px solid #1976d2',
                             color: '#1976d2',
@@ -506,7 +506,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
                   </Box>
                 </Box>
               )}
-              
+
               {skillsSuggestions.soft.length > 0 && (
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#666', display: 'block', mb: 1 }}>
@@ -518,7 +518,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
                         <Chip
                           label={suggestion.skill}
                           size="small"
-                          sx={{ 
+                          sx={{
                             backgroundColor: 'white',
                             border: '1px solid #7b1fa2',
                             color: '#7b1fa2',
@@ -543,14 +543,14 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({ data, onUpdate, onSave, i
                   </Box>
                 </Box>
               )}
-              
+
               {/* Action Buttons for Display Mode */}
-              <Box sx={{ 
-                display: 'flex', 
-                gap: 1, 
-                mt: 2, 
-                pt: 2, 
-                borderTop: '1px solid #BBDEFB' 
+              <Box sx={{
+                display: 'flex',
+                gap: 1,
+                mt: 2,
+                pt: 2,
+                borderTop: '1px solid #BBDEFB'
               }}>
                 <Button
                   variant="contained"

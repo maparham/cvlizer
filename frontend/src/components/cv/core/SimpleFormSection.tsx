@@ -66,27 +66,27 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
     // First check basic required fields
     const basicValidation = createFormValidator(requiredFields)(data)
     if (!basicValidation) return false
-    
+
     // Section-specific validation
     if (sectionId === 'professional_summary') {
       return data.content && data.content.trim().length >= 10
     }
-    
+
     return true
   }, [requiredFields, sectionId])
 
 
   // Use common auto-save hook with validation (skip for skills section as it handles its own saving)
   useSectionAutoSave(
-    isEditing, 
-    editData, 
-    actualData, 
-    onUpdate, 
-    onSave, 
-    autoSaveMessage, 
-    sectionId, 
-    onUnsavedChanges, 
-    validateForm, 
+    isEditing,
+    editData,
+    actualData,
+    onUpdate,
+    onSave,
+    autoSaveMessage,
+    sectionId,
+    onUnsavedChanges,
+    validateForm,
     autoSaveMode && sectionId !== 'skills' // Disable immediate save for skills as it handles its own saving
   )
 

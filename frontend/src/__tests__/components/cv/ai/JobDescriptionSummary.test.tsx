@@ -1,6 +1,6 @@
 /**
  * JobDescriptionSummary Component Tests
- * 
+ *
  * Comprehensive unit tests for the JobDescriptionSummary component covering:
  * - Rendering states (no job descriptions, hidden job descriptions, active job description)
  * - User interactions (hide, edit, enhance CV, generate job fit)
@@ -122,7 +122,7 @@ describe('JobDescriptionSummary', () => {
     localStorageMock.getItem.mockReturnValue(null);
     localStorageMock.setItem.mockClear();
     localStorageMock.removeItem.mockClear();
-    
+
     // Setup default mock returns
     mockUseVisibleJobDescriptions.mockReturnValue([]);
     mockUseJobDescriptions.mockReturnValue([]);
@@ -293,8 +293,8 @@ describe('JobDescriptionSummary', () => {
       mockUseNotifications.mockReturnValue(defaultMockNotifications);
 
       renderWithTheme(
-        <JobDescriptionSummary 
-          cvId="cv-1" 
+        <JobDescriptionSummary
+          cvId="cv-1"
           onGenerateSuggestions={mockOnGenerateSuggestions}
         />
       );
@@ -648,8 +648,8 @@ describe('JobDescriptionSummary', () => {
       mockUseNotifications.mockReturnValue(defaultMockNotifications);
 
       renderWithTheme(
-        <JobDescriptionSummary 
-          cvId="cv-1" 
+        <JobDescriptionSummary
+          cvId="cv-1"
           onGenerateSuggestions={jest.fn()}
           suggestionsLoading={true}
         />

@@ -1,6 +1,6 @@
 /**
  * Admin AI Usage API service.
- * 
+ *
  * This module provides API functions for fetching AI usage data
  * from the admin endpoints, including statistics, user breakdowns,
  * and detailed logs.
@@ -92,13 +92,13 @@ export const getAIUsageLogs = async (
   offset: number = 0
 ): Promise<PaginatedAIUsageLogs> => {
   const params = new URLSearchParams()
-  
+
   if (filters.start_date) params.append('start_date', filters.start_date)
   if (filters.end_date) params.append('end_date', filters.end_date)
   if (filters.user_id) params.append('user_id', filters.user_id)
   if (filters.operation_type) params.append('operation_type', filters.operation_type)
   if (filters.success !== undefined) params.append('success', filters.success.toString())
-  
+
   params.append('limit', limit.toString())
   params.append('offset', offset.toString())
 
@@ -134,7 +134,7 @@ export const formatOperationType = (operationType: string): string => {
     'generate_suggestions': 'Generate Suggestions',
     'extract_job_description': 'Extract Job Description'
   }
-  
+
   return typeMap[operationType] || operationType
 }
 
@@ -145,7 +145,7 @@ export const getDefaultDateRange = (): { start: string; end: string } => {
   const end = new Date()
   const start = new Date()
   start.setDate(start.getDate() - 30)
-  
+
   return {
     start: start.toISOString().split('T')[0],
     end: end.toISOString().split('T')[0]

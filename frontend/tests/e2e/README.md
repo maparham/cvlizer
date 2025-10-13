@@ -25,7 +25,7 @@ tests/e2e/
 
 ### Authentication (`auth.spec.ts`)
 - ✅ Login with valid credentials
-- ✅ Login with invalid credentials  
+- ✅ Login with invalid credentials
 - ✅ Form validation
 - ✅ Password visibility toggle
 - ✅ Logout functionality
@@ -73,7 +73,7 @@ Provides methods for:
 - Search functionality
 - Dialog handling
 
-### CVEditorPage  
+### CVEditorPage
 Provides methods for:
 - CV section editing (personal info, work experience, education)
 - Form interactions and validation

@@ -1,16 +1,16 @@
 /**
  * Skills Section with Inline Diff Support
- * 
+ *
  * Enhanced version of the SkillsSection that integrates with the inline diff system
  * to show AI suggestions for keyword additions and skill enhancements.
- * 
+ *
  * Key responsibilities:
  * - Render skills with highlighted suggestions
  * - Show new keyword suggestions with appropriate visual indicators
  * - Allow users to accept/reject individual skill suggestions
  * - Maintain backward compatibility with original SkillsSection functionality
  * - Handle both technical and soft skills with diff highlighting
- * 
+ *
  * Usage:
  * - Drop-in replacement for original SkillsSection when diff mode is active
  * - Automatically detects diff mode and renders accordingly
@@ -27,17 +27,17 @@ import { SuggestionHighlight } from '../ai/SuggestionHighlight';
 import { useInlineDiffSection, useHighlightedKeywords } from '../../../hooks/useInlineDiffSection';
 import { useInlineDiffContext } from '../../../contexts/InlineDiffContext';
 
-const SkillsSectionWithDiff: React.FC<SectionProps> = ({ 
-  data, 
-  onUpdate, 
-  onSave, 
-  isEditing, 
-  onEdit, 
-  onClose 
+const SkillsSectionWithDiff: React.FC<SectionProps> = ({
+  data,
+  onUpdate,
+  onSave,
+  isEditing,
+  onEdit,
+  onClose
 }) => {
   const [newTechnicalSkill, setNewTechnicalSkill] = useState('');
   const [newSoftSkill, setNewSoftSkill] = useState('');
-  
+
   const {
     isInDiffMode,
     acceptSuggestion: acceptInlineSuggestion,
@@ -71,10 +71,10 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
 
   // Enhanced chip renderer that handles suggestions
   const renderSkillChip = (
-    skill: string, 
-    index: number, 
-    isNew: boolean, 
-    suggestion: any, 
+    skill: string,
+    index: number,
+    isNew: boolean,
+    suggestion: any,
     onRemove: (index: number) => void,
     skillType: 'technical' | 'soft'
   ) => {
@@ -121,9 +121,9 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
                   size="small"
                   color="success"
                   onClick={() => acceptInlineSuggestion(suggestion.id)}
-                  sx={{ 
-                    width: 20, 
-                    height: 20, 
+                  sx={{
+                    width: 20,
+                    height: 20,
                     bgcolor: 'background.paper',
                     boxShadow: 1,
                     '&:hover': { boxShadow: 2 }
@@ -137,9 +137,9 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
                   size="small"
                   color="error"
                   onClick={() => rejectInlineSuggestion(suggestion.id)}
-                  sx={{ 
-                    width: 20, 
-                    height: 20, 
+                  sx={{
+                    width: 20,
+                    height: 20,
                     bgcolor: 'background.paper',
                     boxShadow: 1,
                     '&:hover': { boxShadow: 2 }
@@ -219,7 +219,7 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
     };
 
     // Prepare skills for rendering (combining original and new)
-    const displayTechnicalSkills = isInDiffMode 
+    const displayTechnicalSkills = isInDiffMode
       ? technicalKeywords.highlightedKeywords
       : (editData.technical || []).map((skill: string) => ({
           keyword: skill,
@@ -253,9 +253,9 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
               />
             )}
           </Box>
-          
+
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {displayTechnicalSkills.map((item: any, index: number) => 
+            {displayTechnicalSkills.map((item: any, index: number) =>
               renderSkillChip(
                 item.keyword,
                 index,
@@ -294,9 +294,9 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
               />
             )}
           </Box>
-          
+
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {displaySoftSkills.map((item: any, index: number) => 
+            {displaySoftSkills.map((item: any, index: number) =>
               renderSkillChip(
                 item.keyword,
                 index,
@@ -326,7 +326,7 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
     // Safely extract arrays, ensuring they are arrays and not objects
     let technicalSkills = [];
     let softSkills = [];
-    
+
     if (isInDiffMode) {
       technicalSkills = Array.isArray(technicalDiffData.displayData) ? technicalDiffData.displayData : [];
       softSkills = Array.isArray(softDiffData.displayData) ? softDiffData.displayData : [];

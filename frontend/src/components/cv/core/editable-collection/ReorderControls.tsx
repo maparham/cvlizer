@@ -1,6 +1,6 @@
 /**
  * ReorderControls Component
- * 
+ *
  * Provides drag handle and up/down arrow controls for reordering items.
  */
 import { Box, IconButton } from '@mui/material'

@@ -1,6 +1,6 @@
 /**
  * Version Preview Dialog Component
- * 
+ *
  * This component provides a dialog for previewing CV version changes
  * with semantic diff viewing and restore options.
  */
@@ -50,14 +50,14 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
   loading = false
 }) => {
   const [selectedTab, setSelectedTab] = useState(0)
-  
+
   // Reset tab when dialog opens
   useEffect(() => {
     if (open) {
       setSelectedTab(0)
     }
   }, [open])
-  
+
   const handleRestore = () => {
     if (selectedVersion && onRestore) {
       onRestore(selectedVersion)
@@ -107,24 +107,24 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
           <>
             {/* Tabs for dual diff view when original version exists */}
             {hasOriginalVersion && (
-              <Tabs 
-                value={selectedTab} 
+              <Tabs
+                value={selectedTab}
                 onChange={handleTabChange}
                 sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}
               >
-                <Tab 
-                  icon={<CompareArrowsIcon />} 
-                  label="From Previous" 
+                <Tab
+                  icon={<CompareArrowsIcon />}
+                  label="From Previous"
                   iconPosition="start"
                 />
-                <Tab 
-                  icon={<HistoryIcon />} 
-                  label="From Original" 
+                <Tab
+                  icon={<HistoryIcon />}
+                  label="From Original"
                   iconPosition="start"
                 />
               </Tabs>
             )}
-            
+
             {/* Diff Content */}
             <Box sx={{ p: hasOriginalVersion ? 0 : 2 }}>
               {hasOriginalVersion ? (
@@ -139,7 +139,7 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
                       forcePrevious={true} // Force comparison to previous version
                     />
                   )}
-                  
+
                   {/* Tab 1: Diff from Original Version */}
                   {selectedTab === 1 && (
                     <SimpleCVDiffViewer

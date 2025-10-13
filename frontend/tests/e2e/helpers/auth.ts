@@ -23,20 +23,20 @@ export const DEFAULT_TEST_USER: LoginCredentials = {
  * @param credentials - User credentials (defaults to DEFAULT_TEST_USER)
  */
 export async function loginUser(
-  page: Page, 
+  page: Page,
   credentials: LoginCredentials = DEFAULT_TEST_USER
 ): Promise<void> {
   // Navigate to login if not already there
   await page.getByRole('button', { name: 'Sign In' }).click();
-  
+
   // Fill in credentials
   await page.getByLabel('Email Address *').fill(credentials.email);
   await page.getByLabel('Email Address *').press('Tab');
   await page.getByLabel('Password *').fill(credentials.password);
-  
+
   // Submit form
   await page.getByRole('button', { name: 'Sign In' }).click();
-  
+
   // Wait for successful login (you might want to wait for a specific element that indicates successful login)
   // For example: await page.waitForSelector('[data-testid="dashboard"]', { timeout: 10000 });
 }
@@ -67,7 +67,7 @@ export async function ensureLoggedIn(
   credentials: LoginCredentials = DEFAULT_TEST_USER
 ): Promise<void> {
   const alreadyLoggedIn = await isLoggedIn(page);
-  
+
   if (!alreadyLoggedIn) {
     await loginUser(page, credentials);
   }

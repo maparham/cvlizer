@@ -22,5 +22,3 @@ export const isJWTExpired = (token: string): boolean => {
   const now = Math.floor(Date.now() / 1000)
   return payload.exp < now
 }
-
-

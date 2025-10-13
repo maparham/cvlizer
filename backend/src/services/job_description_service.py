@@ -23,6 +23,7 @@ Dependencies:
 - CV and JobDescription models for data persistence
 - UUID handling for proper database type management
 """
+
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from src.models.cv import CV
@@ -59,13 +60,16 @@ def create_job_description_for_cv(
 
 
 def list_job_descriptions_for_cv(db: Session, cv: CV) -> List[JobDescription]:
-    return db.query(JobDescription).filter(
-        JobDescription.cv_id == cv.id,
-        JobDescription.hidden == False
-    ).all()
+    return (
+        db.query(JobDescription)
+        .filter(JobDescription.cv_id == cv.id, JobDescription.hidden == False)
+        .all()
+    )
 
 
-def get_job_description_owned_by(db: Session, jd_id: str, user_id: str) -> Optional[JobDescription]:
+def get_job_description_owned_by(
+    db: Session, jd_id: str, user_id: str
+) -> Optional[JobDescription]:
     return (
         db.query(JobDescription)
         .filter(JobDescription.id == jd_id, JobDescription.user_id == user_id)
@@ -73,8 +77,14 @@ def get_job_description_owned_by(db: Session, jd_id: str, user_id: str) -> Optio
     )
 
 
-def get_job_description_for_cv(db: Session, jd_id: str, cv_id: str) -> Optional[JobDescription]:
-    return db.query(JobDescription).filter(JobDescription.id == jd_id, JobDescription.cv_id == cv_id).first()
+def get_job_description_for_cv(
+    db: Session, jd_id: str, cv_id: str
+) -> Optional[JobDescription]:
+    return (
+        db.query(JobDescription)
+        .filter(JobDescription.id == jd_id, JobDescription.cv_id == cv_id)
+        .first()
+    )
 
 
 def delete_job_description_owned_by(db: Session, jd_id: str, user_id: str) -> bool:
@@ -113,18 +123,30 @@ def create_job_description_for_user(
     return jd
 
 
-def list_job_descriptions_for_user(db: Session, user_id: str, cv_id: str) -> List[JobDescription]:
+def list_job_descriptions_for_user(
+    db: Session, user_id: str, cv_id: str
+) -> List[JobDescription]:
     """Get all job descriptions for a specific CV"""
-    return db.query(JobDescription).filter(
-        JobDescription.user_id == user_id,
-        JobDescription.cv_id == cv_id,
-        JobDescription.hidden == False
-    ).all()
+    return (
+        db.query(JobDescription)
+        .filter(
+            JobDescription.user_id == user_id,
+            JobDescription.cv_id == cv_id,
+            JobDescription.hidden == False,
+        )
+        .all()
+    )
 
 
-def get_job_description_by_id(db: Session, jd_id: str, user_id: str) -> Optional[JobDescription]:
+def get_job_description_by_id(
+    db: Session, jd_id: str, user_id: str
+) -> Optional[JobDescription]:
     """Get a job description by ID (for user-scoped operations)"""
-    return db.query(JobDescription).filter(JobDescription.id == jd_id, JobDescription.user_id == user_id).first()
+    return (
+        db.query(JobDescription)
+        .filter(JobDescription.id == jd_id, JobDescription.user_id == user_id)
+        .first()
+    )
 
 
 def hide_job_description_owned_by(db: Session, jd_id: str, user_id: str) -> bool:
@@ -165,4 +187,3 @@ def update_job_description_owned_by(
     db.commit()
     db.refresh(jd)
     return jd
-

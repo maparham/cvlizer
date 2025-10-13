@@ -1,15 +1,15 @@
 /**
  * User Actions Context Menu Component
- * 
+ *
  * This module provides a context menu for user management actions in the admin dashboard.
  * It consolidates multiple action buttons into a clean dropdown menu interface.
- * 
+ *
  * Key responsibilities:
  * - Display user management actions in a context menu
  * - Handle action execution with loading states
  * - Provide tooltips and proper accessibility
  * - Support disabled states for actions
- * 
+ *
  * Usage:
  * - Used in the admin dashboard Users table
  * - Provides actions like view details, view CVs, toggle active status, etc.
@@ -83,7 +83,7 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
           {isLoading ? <CircularProgress size={16} /> : <MoreVert />}
         </IconButton>
       </Tooltip>
-      
+
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -106,7 +106,7 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
           </ListItemIcon>
           <ListItemText>View Details</ListItemText>
         </MenuItem>
-        
+
         <MenuItem onClick={() => {
           onViewCVs(user.id)
           handleClose()
@@ -116,8 +116,8 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
           </ListItemIcon>
           <ListItemText>View CVs</ListItemText>
         </MenuItem>
-        
-        <MenuItem 
+
+        <MenuItem
           onClick={() => {
             onToggleActive(user.id, user.is_active)
             handleClose()
@@ -134,7 +134,7 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
             {user.is_active ? 'Deactivate User' : 'Activate User'}
           </ListItemText>
         </MenuItem>
-        
+
         <MenuItem onClick={() => {
           onViewActivities(user.id)
           handleClose()
@@ -144,8 +144,8 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
           </ListItemIcon>
           <ListItemText>View Activities</ListItemText>
         </MenuItem>
-        
-        <MenuItem 
+
+        <MenuItem
           onClick={() => {
             onViewErrors(user.id)
             handleClose()
@@ -157,7 +157,7 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
           </ListItemIcon>
           <ListItemText>View Errors</ListItemText>
         </MenuItem>
-        
+
         <MenuItem onClick={() => {
           onContactUser(user.email)
           handleClose()

@@ -1,6 +1,6 @@
 /**
  * AI-related TypeScript types and interfaces.
- * 
+ *
  * This module defines all TypeScript types related to AI features including
  * job fit analysis, content enhancement, and ATS optimization.
  */
@@ -355,4 +355,3 @@ export interface BackgroundTaskResponse {
   error?: string;
   result?: unknown;
 }
-

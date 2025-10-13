@@ -1,6 +1,6 @@
 /**
  * ID Generation Utilities
- * 
+ *
  * Provides stable, unique ID generation for CV data items.
  * Uses crypto.randomUUID() when available, falls back to timestamp + random.
  */
@@ -13,7 +13,7 @@ export const generateId = (): string => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID()
   }
-  
+
   // Fallback: timestamp + random string
   const timestamp = Date.now().toString(36)
   const randomPart = Math.random().toString(36).substring(2, 15)
@@ -42,7 +42,7 @@ function getSectionPrefix(sectionType: string): string {
     'volunteer_experience': 'vol',
     'skills': 'skill'
   }
-  
+
   return prefixes[sectionType] || 'item'
 }
 
@@ -52,15 +52,15 @@ function getSectionPrefix(sectionType: string): string {
  */
 export const generateDeterministicId = (item: any, sectionType: string, index: number): string => {
   const prefix = getSectionPrefix(sectionType)
-  
+
   // Create a deterministic hash based on stable fields only
   let contentHash = ''
-  
+
   if (sectionType === 'work_experience' && item.company && item.start_date) {
     // Use company + start_date (stable identifiers)
     contentHash = `${item.company}_${item.start_date}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
   } else if (sectionType === 'education' && item.institution && item.start_date) {
-    // Use institution + start_date (stable identifiers) 
+    // Use institution + start_date (stable identifiers)
     contentHash = `${item.institution}_${item.start_date}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
   } else if (sectionType === 'projects' && item.name) {
     // Use name (stable identifier)
@@ -85,12 +85,12 @@ export const generateDeterministicId = (item: any, sectionType: string, index: n
     // Fallback: use index for items without stable identifiers
     contentHash = `item_${index}`
   }
-  
+
   // Truncate if too long
   if (contentHash.length > 50) {
     contentHash = contentHash.substring(0, 50)
   }
-  
+
   return `${prefix}_${contentHash}`
 }
 
@@ -101,9 +101,9 @@ export const ensureId = <T extends { id?: string }>(item: T, sectionType?: strin
   if (item.id) {
     return item as T & { id: string }
   }
-  
+
   const newId = sectionType ? generateSectionId(sectionType) : generateId()
-  
+
   return {
     ...item,
     id: newId
@@ -114,7 +114,7 @@ export const ensureId = <T extends { id?: string }>(item: T, sectionType?: strin
  * Ensure all items in an array have IDs
  */
 export const ensureArrayItemsHaveIds = <T extends { id?: string }>(
-  items: T[], 
+  items: T[],
   sectionType?: string
 ): Array<T & { id: string }> => {
   return items.map(item => ensureId(item, sectionType))
@@ -125,7 +125,7 @@ export const ensureArrayItemsHaveIds = <T extends { id?: string }>(
  * Always regenerates IDs to ensure consistency between versions
  */
 export const ensureArrayItemsHaveDeterministicIds = <T extends { id?: string }>(
-  items: T[], 
+  items: T[],
   sectionType: string
 ): Array<T & { id: string }> => {
   return items.map((item, index) => {

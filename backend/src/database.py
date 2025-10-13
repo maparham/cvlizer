@@ -4,6 +4,7 @@ Database configuration and initialization module.
 This module handles database connection setup, table creation,
 and imports all models to ensure proper relationship definitions.
 """
+
 import os
 import sys
 from dotenv import load_dotenv
@@ -30,13 +31,16 @@ from src.models.impersonation_session import ImpersonationSession  # noqa: F401
 
 load_dotenv()
 
+
 def get_database_url():
     """Get the database URL from environment variables."""
     return os.getenv("DATABASE_URL", "sqlite:///./cv_optimizer.db")
 
+
 def create_tables():
     """Create all database tables using the shared engine."""
     Base.metadata.create_all(bind=engine)
+
 
 if __name__ == "__main__":
     create_tables()

@@ -1,6 +1,6 @@
 /**
  * Main Application Component
- * 
+ *
  * This module sets up the core application structure including:
  * - React Router for client-side routing
  * - Material-UI theme provider and styling
@@ -62,7 +62,7 @@ const AppContent = () => {
     if (isAuthenticated && !authLoading) {
       await fetchCVs()
     }
-    
+
     // Only redirect to admin if we're not already on an admin page
     // This prevents redirecting away from the current page when impersonation ends
     if (!location.pathname.startsWith('/admin')) {
@@ -74,7 +74,7 @@ const AppContent = () => {
     <ErrorBoundary>
       {/* Impersonation banner - shows when admin is impersonating */}
       <ImpersonationBanner onImpersonationEnd={handleImpersonationEnd} />
-      
+
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />

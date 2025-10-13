@@ -1,6 +1,6 @@
 /**
  * User Errors Dialog Component
- * 
+ *
  * This component displays user error logs in a dialog format.
  * It provides a clean interface for viewing user error information
  * for debugging and support purposes.
@@ -44,8 +44,8 @@ const UserErrorsDialog: React.FC<UserErrorsDialogProps> = ({
   formatDateTime
 }) => {
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="lg"
       fullWidth

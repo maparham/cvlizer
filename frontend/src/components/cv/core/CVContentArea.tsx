@@ -1,6 +1,6 @@
 /**
  * CV Content Area Component
- * 
+ *
  * This module renders the main PDF-style CV content area including:
  * - PDF-like paper layout with proper dimensions (A4 format)
  * - Dynamic section rendering based on visibility and order
@@ -11,21 +11,21 @@
 import React from 'react'
 import { Box, Paper } from '@mui/material'
 import { CVSection } from '../../../types'
-import { 
-  PersonalInfo, 
-  ProfessionalSummary, 
+import {
+  PersonalInfo,
+  ProfessionalSummary,
   WhyGoodFit,
-  WorkExperience, 
-  Education, 
-  Skills, 
-  Certification, 
-  Project, 
-  Award, 
-  Publication, 
-  VolunteerExperience 
+  WorkExperience,
+  Education,
+  Skills,
+  Certification,
+  Project,
+  Award,
+  Publication,
+  VolunteerExperience
 } from '../../../types/cv'
 import SectionFactory from '../sections/SectionFactory'
-import { 
+import {
   useCVEditorControls,
   useCVEditorState,
   useCVEditor
@@ -42,10 +42,10 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   const { cvData, onUpdateCV, onSave } = useCVEditor()
   const { sections } = useCVEditorControls()
   const { editing, changes } = useCVEditorState()
-  
+
   // Get section title update function
   const updateSectionTitle = sections.updateTitle
-  
+
   // Get inline drafts functionality
   const {
     getDraftsAfterSection,
@@ -53,7 +53,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
     handleDraftApproved,
     handleDraftRejected,
   } = useInlineDrafts(cvId || '', cvData)
-  
+
   // Extract editing-related functions for easier use
   const {
     section: editingSection,
@@ -65,7 +65,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
     onUnregisterIndividualItem: unregisterIndividualItemEditing,
     onRequestIndividualCancel: requestIndividualItemCancel,
   } = editing
-  
+
   const { onUnsavedChanges } = changes
 
   // Provide defaults to prevent undefined errors
@@ -73,13 +73,13 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   const safeEditingIndividualItem = editingIndividualItem || null
 
   const renderSection = (section: CVSection) => {
-    
+
     if (!section.visible) {
       return null;
     }
 
     const isEditing = editingSection === section.type
-    
+
     // Check if another individual item is being edited in a DIFFERENT section
     const isAnotherItemBeingEdited = safeEditingIndividualItem !== null && safeEditingIndividualItem.sectionId !== section.type
 
@@ -102,7 +102,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="personal_info"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.personal_info} 
+            data={cvData?.personal_info}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, personal_info: data as PersonalInfo })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, personal_info: data as PersonalInfo }, message || 'Personal information saved')}
             isEditing={isEditing}
@@ -117,7 +117,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="professional_summary"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.professional_summary} 
+            data={cvData?.professional_summary}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, professional_summary: data as ProfessionalSummary })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, professional_summary: data as ProfessionalSummary }, message || 'Professional summary saved')}
             isEditing={isEditing}
@@ -161,7 +161,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="work_experience"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.work_experience} 
+            data={cvData?.work_experience}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, work_experience: data as WorkExperience[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, work_experience: data as WorkExperience[] }, message || 'Work experience saved')}
             isEditing={isEditing}
@@ -180,7 +180,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="education"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.education} 
+            data={cvData?.education}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, education: data as Education[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, education: data as Education[] }, message || 'Education saved')}
             isEditing={isEditing}
@@ -199,7 +199,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="skills"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.skills} 
+            data={cvData?.skills}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, skills: data as Skills })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, skills: data as Skills }, message || 'Skills saved')}
             isEditing={isEditing}
@@ -215,7 +215,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="certifications"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.certifications || []} 
+            data={cvData?.certifications || []}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, certifications: data as Certification[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, certifications: data as Certification[] }, message || 'Certifications saved')}
             isEditing={isEditing}
@@ -234,7 +234,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="projects"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.projects || []} 
+            data={cvData?.projects || []}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, projects: data as Project[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, projects: data as Project[] }, message || 'Projects saved')}
             isEditing={isEditing}
@@ -253,7 +253,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="awards"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.awards || []} 
+            data={cvData?.awards || []}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, awards: data as Award[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, awards: data as Award[] }, message || 'Awards saved')}
             isEditing={isEditing}
@@ -272,7 +272,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="publications"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.publications || []} 
+            data={cvData?.publications || []}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, publications: data as Publication[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, publications: data as Publication[] }, message || 'Publications saved')}
             isEditing={isEditing}
@@ -291,7 +291,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             sectionType="volunteer_experience"
             sectionTitle={section.title}
             onSectionTitleSave={handleTitleSave}
-            data={cvData?.volunteer_experience || []} 
+            data={cvData?.volunteer_experience || []}
             onUpdate={(data: unknown) => onUpdateCV({ ...cvData, volunteer_experience: data as VolunteerExperience[] })}
             onSave={(data: unknown, message?: string) => onSave({ ...cvData, volunteer_experience: data as VolunteerExperience[] }, message || 'Volunteer experience saved')}
             isEditing={isEditing}
@@ -339,7 +339,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
     )
   }
 
-  
+
   return (
     <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#f5f5f5', p: 2 }}>
       <Paper

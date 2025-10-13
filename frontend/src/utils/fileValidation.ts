@@ -1,16 +1,16 @@
 /**
  * File Validation Utilities
- * 
+ *
  * This module provides centralized file validation logic for CV file uploads,
  * eliminating duplication between upload components and ensuring consistent
  * validation rules across the application.
- * 
+ *
  * Key responsibilities:
  * - Validate CV file types (PDF, DOC, DOCX)
  * - Check file size limits (10MB max)
  * - Provide consistent error messages
  * - Support file metadata extraction
- * 
+ *
  * Usage:
  * - Import validateCVFile() for file validation
  * - Use getFileTypeInfo() for file metadata
@@ -40,8 +40,8 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const FILE_TYPE_INFO: Record<string, FileTypeInfo> = {
   'application/pdf': { name: 'PDF', icon: 'pdf', color: '#d32f2f' },
   'application/msword': { name: 'DOC', icon: 'doc', color: '#1976d2' },
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { 
-    name: 'DOCX', icon: 'docx', color: '#1976d2' 
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {
+    name: 'DOCX', icon: 'docx', color: '#1976d2'
   }
 }
 
@@ -50,19 +50,19 @@ const FILE_TYPE_INFO: Record<string, FileTypeInfo> = {
  */
 export const validateCVFile = (file: File): FileValidationResult => {
   if (!ALLOWED_TYPES.includes(file.type as any)) {
-    return { 
-      isValid: false, 
-      error: 'Invalid file type. Only PDF, DOC, and DOCX files are allowed.' 
+    return {
+      isValid: false,
+      error: 'Invalid file type. Only PDF, DOC, and DOCX files are allowed.'
     }
   }
-  
+
   if (file.size > MAX_FILE_SIZE) {
-    return { 
-      isValid: false, 
-      error: 'File size must be less than 10MB.' 
+    return {
+      isValid: false,
+      error: 'File size must be less than 10MB.'
     }
   }
-  
+
   return { isValid: true }
 }
 

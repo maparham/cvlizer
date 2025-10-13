@@ -1,6 +1,6 @@
 /**
  * Section Manager Sidebar Component
- * 
+ *
  * This module provides the sidebar interface for CV section management including:
  * - Section visibility toggles (show/hide sections)
  * - Drag and drop reordering of CV sections
@@ -22,7 +22,7 @@ import {
   Tab,
   Stack
 } from '@mui/material'
-import { 
+import {
   Add as AddIcon,
   AutoAwesome as AutoAwesomeIcon,
   Edit as EditIcon
@@ -40,7 +40,7 @@ import { CVSection } from '../../../types'
 import SortableSectionItem from './SortableSectionItem'
 import { AVAILABLE_SECTIONS } from '../constants'
 import { EditableTitle } from '../EditableTitle'
-import { 
+import {
   JobDescriptionSummary
 } from '../ai'
 import { useAISuggestionsStore } from '../../../stores/aiSuggestionsStore'
@@ -87,7 +87,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
 }) => {
   const [internalActiveTab, setInternalActiveTab] = useState(0);
   const activeTab = externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
-  
+
   // AI Suggestions store
   const {
     suggestionsLoading,
@@ -95,17 +95,17 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     clearAllSuggestions,
     setSuggestionsLoading
   } = useAISuggestionsStore()
-  
+
   // Global polling context
   const { addTask, removeTask, activeTasks } = useAITaskPollingContext()
-  
+
   // AI store for job description management
   const { setActiveJobDescription } = useAIStore()
-  
+
   // Active job description from existing AI store
   const activeJobDescription = useActiveJobDescription()
   const prevJobDescriptionId = useRef<string | undefined>(activeJobDescription?.id)
-  
+
   // Handle job description selection
   const handleJobDescriptionSelect = useCallback((jobDescription: any) => {
     if (jobDescription) {
@@ -114,14 +114,14 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       setActiveJobDescription(undefined);
     }
   }, [setActiveJobDescription])
-  
+
   // Handle generating AI suggestions
   const handleGenerateSuggestions = useCallback(async () => {
     if (activeJobDescription && cvId) {
       try {
         // Create AI enhancement task using background task API
         const enhancementId = await generateAllSuggestions(cvId, activeJobDescription.id);
-        
+
         if (enhancementId) {
           // Add the task to global polling system
           addTask({
@@ -131,13 +131,13 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             isGenerating: true
           });
         }
-        
+
       } catch (error) {
         console.error('Error generating suggestions:', error);
       }
     }
   }, [activeJobDescription, cvId, generateAllSuggestions, addTask])
-  
+
   // Clear suggestions when job description changes (only when switching between different JDs)
   useEffect(() => {
     const currentId = activeJobDescription?.id
@@ -155,11 +155,11 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     const hasGeneratingTask = Array.from(activeTasks.values()).some(
       task => task.type === 'ai_enhancement' && task.cvId === cvId && task.isGenerating
     );
-    
+
     if (hasGeneratingTask && !suggestionsLoading) {
       setSuggestionsLoading(true);
     }
-    
+
     // Check for completed AI enhancement tasks
     for (const [taskId, task] of activeTasks) {
       if (task.type === 'ai_enhancement' && task.cvId === cvId && !task.isGenerating) {
@@ -172,16 +172,16 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             setSuggestionsLoading(false);
           }
         }
-        
+
         // Remove the completed task from global polling
         removeTask(taskId);
       }
     }
   }, [activeTasks, cvId, suggestionsLoading, setSuggestionsLoading, removeTask])
   return (
-    <Paper sx={{ 
-      width: 350, 
-      p: 0, 
+    <Paper sx={{
+      width: 350,
+      p: 0,
       overflow: 'hidden',
       border: 'none',
       boxShadow: 'none',
@@ -210,8 +210,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
 
       {/* Tabs for different views */}
       <Box sx={{ borderBottom: '1px solid #e0e0e0' }}>
-        <Tabs 
-          value={activeTab} 
+        <Tabs
+          value={activeTab}
           onChange={(_, newValue) => {
             if (onTabChange) {
               onTabChange(newValue);
@@ -221,16 +221,16 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           }}
           variant="fullWidth"
         >
-          <Tab 
-            label="Sections" 
-            icon={<EditIcon />} 
+          <Tab
+            label="Sections"
+            icon={<EditIcon />}
             iconPosition="start"
             sx={{ minHeight: 48 }}
           />
           {cvId && (
-            <Tab 
-              label="AI Tools" 
-              icon={<AutoAwesomeIcon />} 
+            <Tab
+              label="AI Tools"
+              icon={<AutoAwesomeIcon />}
               iconPosition="start"
               sx={{ minHeight: 48 }}
             />
@@ -239,8 +239,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       </Box>
 
       {/* Tab Content */}
-      <Box sx={{ 
-        flex: 1, 
+      <Box sx={{
+        flex: 1,
         overflow: 'auto',
         p: 2,
         pb: 4,
@@ -266,7 +266,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             <Typography variant="body2" sx={{ color: '#666', mb: 2, fontStyle: 'italic' }}>
               Drag sections to reorder them
             </Typography>
-      
+
             <DndContext
               collisionDetection={closestCenter}
               onDragStart={onDragStart}
@@ -308,9 +308,9 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                     .filter(section => !section.visible)
                     .sort((a, b) => a.order - b.order)
                     .map((section) => (
-                      <Card 
+                      <Card
                         key={section.id}
-                        sx={{ 
+                        sx={{
                           border: '1px solid #e0e0e0',
                           bgcolor: '#f5f5f5',
                           '&:hover': {
@@ -359,9 +359,9 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 4 }}>
               {availableSectionsToAdd.length > 0 ? availableSectionsToAdd.map((section) => (
-                <Card 
+                <Card
                   key={section.id}
-                  sx={{ 
+                  sx={{
                     border: '1px solid #e0e0e0',
                     '&:hover': {
                       borderColor: '#1976d2',
@@ -411,7 +411,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         {activeTab === 1 && cvId && (
           <>
             <Stack spacing={3}>
-              <JobDescriptionSummary 
+              <JobDescriptionSummary
                 cvId={cvId}
                 onJobDescriptionSelect={handleJobDescriptionSelect}
                 onGenerateSuggestions={handleGenerateSuggestions}

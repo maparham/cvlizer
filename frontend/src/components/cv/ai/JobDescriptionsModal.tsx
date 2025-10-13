@@ -1,17 +1,17 @@
 /**
  * Job Descriptions Modal Component
- * 
+ *
  * This component provides a full-screen modal interface for managing job descriptions
  * including URL parsing, manual text input, and file upload support. It integrates
  * with the AI store to manage job descriptions for CV optimization.
- * 
+ *
  * Key responsibilities:
  * - Full-screen modal for job description management
  * - URL input with automatic parsing for job postings
  * - Manual text input area for job descriptions
  * - Save and manage job descriptions for the current CV
  * - Integration with AI features for optimization
- * 
+ *
  * Usage:
  * - Used as a modal dialog triggered from the CV editor sidebar
  * - Requires cvId prop to associate with specific CV
@@ -99,13 +99,13 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [jobDescriptionToDelete, setJobDescriptionToDelete] = useState<JobDescription | null>(null);
-  
+
   // Separate state for edit dialog (to avoid affecting MANUAL tab fields)
   const [editTitle, setEditTitle] = useState('');
   const [editCompany, setEditCompany] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [editTextInput, setEditTextInput] = useState('');
-  
+
   // URL validation state
   const [urlValidation, setUrlValidation] = useState<FieldValidationResult>({ isValid: false, message: 'Please enter a job posting URL' });
   const [urlTouched, setUrlTouched] = useState(false);
@@ -164,10 +164,10 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   const handleUrlChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = event.target.value;
     setUrlInput(newUrl);
-    
+
     // Clear general error when user starts typing
     setError(null);
-    
+
     // Validate URL in real-time
     const validation = validateUrl(newUrl);
     setUrlValidation(validation);
@@ -196,7 +196,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setUrlTouched(true);
     const validation = validateUrl(urlInput);
     setUrlValidation(validation);
-    
+
     if (!urlInput.trim()) {
       setError('Please enter a URL');
       return;
@@ -213,7 +213,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     try {
       // Use the URL parsing service - this creates the job description on backend
       const parsedData = await parseJobDescriptionUrl(cvId, urlInput);
-      
+
       if (!(parsedData as { success?: boolean }).success) {
         const errorMsg = (parsedData as { error?: string }).error || 'Failed to parse URL';
         throw new Error(errorMsg);
@@ -221,17 +221,17 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
 
       // The AI store will create a placeholder job description automatically
       // and set it as active when parsing completes
-      
+
       // Clear form fields
       setUrlInput('');
       setTitle('');
       setCompany('');
       setLocation('');
       setTextInput('');
-      
+
       // Close the modal immediately to provide clear feedback
       onClose();
-      
+
       // Show success message
       showSuccess('Job description created and is being parsed in the background');
     } catch (err) {
@@ -263,22 +263,22 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       };
 
       const newJobDescription = await createJobDescription(cvId, jobDescription);
-      
+
       // Automatically select the newly created job description
       setActiveJobDescription(newJobDescription.id);
       if (onJobDescriptionSelect) {
         onJobDescriptionSelect(newJobDescription);
       }
-      
+
       // Clear form fields
       setTextInput('');
       setTitle('');
       setCompany('');
       setLocation('');
-      
+
       // Close the modal after successful creation
       onClose();
-      
+
       showSuccess('Job description created successfully');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create job description';
@@ -305,7 +305,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!jobDescriptionToDelete) return;
-    
+
     try {
       await deleteJobDescription(jobDescriptionToDelete.id);
       showSuccess('Job description deleted successfully');
@@ -390,9 +390,9 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
           }
         }}
       >
-        <DialogTitle sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <DialogTitle sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           borderBottom: '1px solid #e0e0e0',
           pb: 2
@@ -400,10 +400,10 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
           <Typography variant="h5" component="div">
             Job Description
           </Typography>
-          <IconButton 
-            onClick={handleClose} 
+          <IconButton
+            onClick={handleClose}
             size="large"
-            sx={{ 
+            sx={{
               '&:hover': {
                 backgroundColor: 'rgba(0, 0, 0, 0.04)'
               }
@@ -451,10 +451,10 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                     disabled={isLoading}
                     error={showUrlError}
                     helperText={
-                      showUrlError 
-                        ? urlValidation.message 
-                        : urlValidation.isValid && urlValidation.message 
-                          ? urlValidation.message 
+                      showUrlError
+                        ? urlValidation.message
+                        : urlValidation.isValid && urlValidation.message
+                          ? urlValidation.message
                           : "Paste the direct URL of a specific job posting (not a search results page)."
                     }
                   />
@@ -479,10 +479,10 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                       <strong>Tip:</strong> Include complete job requirements, responsibilities, and qualifications for the best AI optimization results
                     </Typography>
                   </Alert>
-                  
-                  <Box sx={{ 
-                    display: 'flex', 
-                    gap: 3, 
+
+                  <Box sx={{
+                    display: 'flex',
+                    gap: 3,
                     flexWrap: 'wrap',
                     alignItems: 'flex-end'
                   }}>
@@ -520,7 +520,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                       />
                     </Box>
                   </Box>
-                  
+
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <TextField
                       label="Job Description"
@@ -538,10 +538,10 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                         },
                       }}
                     />
-                    
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
+
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                     }}>
                       <Typography variant="caption" color="text.secondary">
@@ -554,7 +554,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                       )}
                     </Box>
                   </Box>
-                  
+
                   <Box sx={{ display: 'flex', justifyContent: 'flex-start', pt: 1 }}>
                     <Button
                       variant="contained"

@@ -1,17 +1,17 @@
 /**
  * File Preview Component
- * 
+ *
  * This module provides a visual file preview card that displays file information
  * before upload, including filename, file size, file type icon, and validation status.
  * It allows users to review their selection and remove it before proceeding with upload.
- * 
+ *
  * Key responsibilities:
  * - Display file metadata in a user-friendly format
  * - Show file type icons and formatted file sizes
  * - Provide remove functionality to clear selection
  * - Validate files before showing preview
  * - Integrate with existing upload flow
- * 
+ *
  * Usage:
  * - Used in CVUpload component to show file preview
  * - Provides non-blocking, cancellable file selection
@@ -201,4 +201,3 @@ const FilePreview: React.FC<FilePreviewProps> = ({
 }
 
 export default FilePreview
-

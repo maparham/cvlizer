@@ -1,6 +1,6 @@
 /**
  * AI Operation Breakdown Chart Component.
- * 
+ *
  * This component displays AI usage breakdown by operation type using Recharts,
  * showing token consumption and costs for each operation in a bar chart format.
  */
@@ -34,7 +34,7 @@ interface AIOperationBreakdownChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
-    
+
     return (
       <Box
         sx={{
@@ -48,7 +48,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <Typography variant="subtitle2" gutterBottom>
           {formatOperationType(label)}
         </Typography>
-        
+
         {payload.map((entry: any, index: number) => (
           <Box key={index} display="flex" alignItems="center" gap={1} mb={0.5}>
             <Box
@@ -64,7 +64,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             </Typography>
           </Box>
         ))}
-        
+
         <Typography variant="body2" color="text.secondary">
           Operations: {data.operation_count}
         </Typography>
@@ -77,7 +77,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       </Box>
     )
   }
-  
+
   return null
 }
 
@@ -140,20 +140,20 @@ const AIOperationBreakdownChart: React.FC<AIOperationBreakdownChartProps> = ({
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="operation_type" 
+              <XAxis
+                dataKey="operation_type"
                 tick={{ fontSize: 12 }}
                 angle={-45}
                 textAnchor="end"
                 height={80}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="tokens"
                 orientation="left"
                 tick={{ fontSize: 12 }}
                 tickFormatter={(value) => formatTokens(value)}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="cost"
                 orientation="right"
                 tick={{ fontSize: 12 }}
@@ -161,7 +161,7 @@ const AIOperationBreakdownChart: React.FC<AIOperationBreakdownChartProps> = ({
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              
+
               <Bar
                 yAxisId="tokens"
                 dataKey="tokens"

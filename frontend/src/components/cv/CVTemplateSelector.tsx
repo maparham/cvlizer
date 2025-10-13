@@ -1,16 +1,16 @@
 /**
  * CV Template Selector Component
- * 
+ *
  * This module provides a template selection dialog for creating new CVs with predefined structures.
  * It offers three templates (Student, Professional, Executive) with appropriate section ordering
  * and sample field placeholders, plus an option to start from scratch.
- * 
+ *
  * Key responsibilities:
  * - Display template options with visual previews
  * - Handle template selection and CV creation
  * - Provide "Start from Scratch" option
  * - Integrate with existing CV creation flow
- * 
+ *
  * Usage:
  * - Used in Dashboard when creating blank CVs
  * - Provides structured starting points for different career levels
@@ -51,7 +51,7 @@ interface CVTemplateDisplay extends CVTemplate {
 const TEMPLATE_DISPLAY_CONFIG: CVTemplateDisplay[] = CV_TEMPLATES.map((template, index) => {
   const icons = [<SchoolIcon />, <WorkIcon />, <BusinessIcon />]
   const colors = ['#1976d2', '#2e7d32', '#d32f2f']
-  
+
   return {
     ...template,
     icon: icons[index] || <WorkIcon />,
@@ -157,7 +157,7 @@ const CVTemplateSelector: React.FC<CVTemplateSelectorProps> = ({
                       )}
                     </Box>
                   </Box>
-                  
+
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {template.description}
                   </Typography>
@@ -203,4 +203,3 @@ const CVTemplateSelector: React.FC<CVTemplateSelectorProps> = ({
 }
 
 export default CVTemplateSelector
-

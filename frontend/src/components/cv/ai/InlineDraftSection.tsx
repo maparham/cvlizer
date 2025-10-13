@@ -1,16 +1,16 @@
 /**
  * Inline Draft Section Component
- * 
+ *
  * This component displays draft AI-generated sections directly within the CV editor content area.
  * It provides a seamless inline editing experience with visual distinction from regular sections.
- * 
+ *
  * Key responsibilities:
  * - Display draft content inline within CV structure
  * - Provide approve and reject actions with immediate feedback
  * - Show visual distinction with draft styling
  * - Handle loading states and error feedback
  * - Integrate seamlessly with CV editor flow
- * 
+ *
  * Usage:
  * - Rendered inline within CVContentArea alongside regular sections
  * - Shows drafts in appropriate locations based on section type
@@ -32,6 +32,8 @@ import {
   AccordionSummary,
   AccordionDetails,
   Fade,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Check as CheckIcon,
@@ -40,6 +42,7 @@ import {
   AutoAwesome as AutoAwesomeIcon,
   Schedule as ScheduleIcon,
   Psychology as PsychologyIcon,
+  ContentCopy as ContentCopyIcon,
 } from '@mui/icons-material';
 import { useAIStore } from '../../../stores/aiStore';
 import { useNotifications } from '../../../stores/uiStore';
@@ -115,6 +118,11 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
     }
   }, [cvId, deleteWhyGoodFitDraft, showSuccess, showError, onRejected]);
 
+  const copyToClipboard = useCallback((text: string) => {
+    navigator.clipboard.writeText(text);
+    showSuccess('Copied to clipboard');
+  }, [showSuccess]);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -175,9 +183,19 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
                   Why I'm a Good Fit
                 </Typography>
               </Box>
-              <Typography variant="caption" color="text.secondary">
-                Generated: {formatDate(draft.created_at)}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Generated: {formatDate(draft.created_at)}
+                </Typography>
+                <Tooltip title="Copy to clipboard">
+                  <IconButton
+                    size="small"
+                    onClick={() => copyToClipboard(draft.draft_data?.fit_analysis || draft.draft_data?.content || 'No content available')}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
 
             {/* Main content */}
@@ -242,7 +260,7 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
             <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
-                sx={{ 
+                sx={{
                   minHeight: 'auto',
                   py: 1,
                   '& .MuiAccordionSummary-content': { margin: 0 }

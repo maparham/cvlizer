@@ -1,15 +1,15 @@
 /**
  * StatCard - Reusable statistics display component
- * 
+ *
  * This component displays a single statistic with an icon, value, and optional trend.
  * Used throughout the admin dashboard for consistent data presentation.
- * 
+ *
  * Key responsibilities:
  * - Display statistic title and value
  * - Show optional trend information
  * - Provide consistent styling and layout
  * - Support different color themes
- * 
+ *
  * Usage context:
  * - Used in admin dashboard overview tab
  * - Can be reused in other admin components
@@ -28,12 +28,12 @@ interface StatCardProps {
   trend?: { value: number; label: string }
 }
 
-const StatCard: React.FC<StatCardProps> = ({ 
-  title, 
-  value, 
-  icon, 
-  color = 'primary', 
-  trend 
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  icon,
+  color = 'primary',
+  trend
 }) => (
   <Card>
     <CardContent>

@@ -11,86 +11,86 @@ const COMMON_JOB_POSITIONS = [
   'Mobile Developer', 'iOS Developer', 'Android Developer', 'React Native Developer', 'Flutter Developer',
   'DevOps Engineer', 'Site Reliability Engineer', 'Cloud Engineer', 'AWS Engineer', 'Azure Engineer',
   'Data Engineer', 'Machine Learning Engineer', 'AI Engineer', 'MLOps Engineer',
-  
+
   // Product & Design
   'Product Manager', 'Senior Product Manager', 'Principal Product Manager', 'Director of Product',
   'Product Owner', 'Scrum Master', 'UX Designer', 'UI Designer', 'Product Designer', 'User Researcher',
   'UX Researcher', 'Interaction Designer', 'Visual Designer', 'Design System Designer',
-  
+
   // Data & Analytics
   'Data Scientist', 'Senior Data Scientist', 'Principal Data Scientist', 'Data Analyst', 'Business Analyst',
   'Business Intelligence Analyst', 'Analytics Engineer', 'Research Scientist', 'Statistician',
   'Quantitative Analyst', 'Risk Analyst', 'Financial Analyst', 'Operations Analyst',
-  
+
   // Marketing & Sales
   'Marketing Manager', 'Digital Marketing Manager', 'Content Marketing Manager', 'Social Media Manager',
   'SEO Specialist', 'SEM Specialist', 'PPC Specialist', 'Email Marketing Specialist', 'Growth Marketing Manager',
   'Sales Manager', 'Account Manager', 'Business Development Manager', 'Sales Representative',
   'Customer Success Manager', 'Account Executive', 'Sales Director', 'VP of Sales',
-  
+
   // Operations & Management
   'Operations Manager', 'General Manager', 'Program Manager', 'Project Manager', 'Senior Project Manager',
   'Technical Program Manager', 'Operations Analyst', 'Business Operations Manager', 'Strategy Manager',
   'Chief Executive Officer', 'Chief Technology Officer', 'Chief Operating Officer', 'Chief Financial Officer',
   'Vice President', 'Director', 'Senior Director', 'VP of Engineering', 'Director of Engineering',
-  
+
   // Finance & Accounting
   'Financial Analyst', 'Senior Financial Analyst', 'Finance Manager', 'Controller', 'CFO',
   'Investment Analyst', 'Portfolio Manager', 'Credit Analyst', 'Risk Manager', 'Treasury Manager',
   'Accountant', 'Senior Accountant', 'Tax Manager', 'Audit Manager',
-  
+
   // Human Resources
   'HR Manager', 'HR Business Partner', 'Talent Acquisition Manager', 'Recruiter', 'Senior Recruiter',
   'People Operations Manager', 'Compensation Manager', 'Benefits Manager', 'HR Generalist',
-  
+
   // Customer Support
   'Customer Support Representative', 'Customer Success Specialist', 'Technical Support Engineer',
   'Customer Experience Manager', 'Support Manager', 'Customer Operations Manager',
-  
+
   // Quality Assurance
   'QA Engineer', 'Senior QA Engineer', 'Test Engineer', 'Automation Engineer', 'Performance Engineer',
   'Security Engineer', 'Cybersecurity Engineer', 'Information Security Analyst',
-  
+
   // Consulting & Strategy
   'Management Consultant', 'Strategy Consultant', 'Business Consultant', 'Technology Consultant',
   'Implementation Consultant', 'Solution Architect', 'Enterprise Architect', 'Technical Architect',
-  
+
   // Content & Communications
   'Content Writer', 'Technical Writer', 'Content Strategist', 'Copywriter', 'Editor',
   'Communications Manager', 'Public Relations Manager', 'Brand Manager', 'Marketing Communications Manager',
-  
+
   // Legal & Compliance
   'Legal Counsel', 'Senior Legal Counsel', 'Compliance Manager', 'Legal Assistant', 'Paralegal',
   'Privacy Officer', 'Risk & Compliance Manager',
-  
+
   // Healthcare & Life Sciences
   'Clinical Research Associate', 'Medical Writer', 'Regulatory Affairs Manager', 'Quality Assurance Manager',
   'Biostatistician', 'Clinical Data Manager', 'Medical Affairs Manager',
-  
+
   // Education & Training
   'Training Manager', 'Learning & Development Manager', 'Instructional Designer', 'Corporate Trainer',
   'Education Manager', 'Curriculum Developer',
-  
+
   // Retail & E-commerce
   'E-commerce Manager', 'Merchandising Manager', 'Supply Chain Manager', 'Inventory Manager',
   'Retail Manager', 'Store Manager', 'Category Manager',
-  
+
   // Real Estate
   'Real Estate Agent', 'Property Manager', 'Real Estate Broker', 'Commercial Real Estate Agent',
   'Real Estate Analyst', 'Development Manager',
-  
+
   // Media & Entertainment
   'Producer', 'Director', 'Editor', 'Cinematographer', 'Sound Engineer', 'Graphic Designer',
   'Video Editor', 'Motion Graphics Designer', 'Creative Director', 'Art Director',
-  
+
   // Non-profit & Government
   'Program Coordinator', 'Grant Writer', 'Development Manager', 'Community Manager',
   'Policy Analyst', 'Research Analyst', 'Government Relations Manager',
-  
+
   // Freelance & Contract
   'Freelancer', 'Consultant', 'Contractor', 'Independent Contractor', 'Self-Employed',
   'Entrepreneur', 'Founder', 'Co-Founder', 'Startup Founder',
-  
+
   // Entry Level & Internships
   'Intern', 'Junior Developer', 'Junior Analyst', 'Associate', 'Coordinator', 'Assistant',
   'Trainee', 'Apprentice', 'Entry Level', 'Graduate Trainee'
@@ -129,39 +129,39 @@ const JobPositionAutocomplete: React.FC<JobPositionAutocompleteProps> = ({
   // Filter positions based on input
   const filteredPositions = useMemo(() => {
     if (!inputValue || inputValue.length < 1) return []
-    
+
     const searchTerm = inputValue.toLowerCase().trim()
-    
+
     // Filter with multiple criteria for better matching
     const filtered = COMMON_JOB_POSITIONS.filter(position => {
       const positionLower = position.toLowerCase()
-      
+
       // Starts with search term (high priority)
       if (positionLower.startsWith(searchTerm)) return true
-      
+
       // Contains search term (medium priority)
       if (positionLower.includes(searchTerm)) return true
-      
+
       // Word boundary match (for partial word matches)
       const words = positionLower.split(' ')
       if (words.some(word => word.startsWith(searchTerm))) return true
-      
+
       return false
     })
-    
+
     // Sort results by relevance (exact matches first, then starts with, then contains)
     const sorted = filtered.sort((a, b) => {
       const aLower = a.toLowerCase()
       const bLower = b.toLowerCase()
-      
+
       // Exact matches first
       if (aLower === searchTerm && bLower !== searchTerm) return -1
       if (bLower === searchTerm && aLower !== searchTerm) return 1
-      
+
       // Then starts with
       if (aLower.startsWith(searchTerm) && !bLower.startsWith(searchTerm)) return -1
       if (bLower.startsWith(searchTerm) && !aLower.startsWith(searchTerm)) return 1
-      
+
       // Then word boundary matches
       const aWords = aLower.split(' ')
       const bWords = bLower.split(' ')
@@ -169,10 +169,10 @@ const JobPositionAutocomplete: React.FC<JobPositionAutocompleteProps> = ({
       const bWordMatch = bWords.some(word => word.startsWith(searchTerm))
       if (aWordMatch && !bWordMatch) return -1
       if (bWordMatch && !aWordMatch) return 1
-      
+
       return 0
     })
-    
+
     return sorted.slice(0, 10) // Limit to 10 suggestions
   }, [inputValue])
 
@@ -186,12 +186,12 @@ const JobPositionAutocomplete: React.FC<JobPositionAutocompleteProps> = ({
   const handleInputChange = (_event: any, newInputValue: string) => {
     setInputValue(newInputValue)
     onChange(newInputValue) // Update parent immediately for better UX
-    
+
     // Check if the input exactly matches an option
-    const exactMatch = COMMON_JOB_POSITIONS.find(position => 
+    const exactMatch = COMMON_JOB_POSITIONS.find(position =>
       position.toLowerCase() === newInputValue.toLowerCase().trim()
     )
-    
+
     if (exactMatch) {
       setIsOpen(false) // Hide dropdown if exact match
     } else {
@@ -202,7 +202,7 @@ const JobPositionAutocomplete: React.FC<JobPositionAutocompleteProps> = ({
   const handleFocus = () => {
     // Only show dropdown if there's text AND it's not an exact match
     if (inputValue.length > 0) {
-      const exactMatch = COMMON_JOB_POSITIONS.find(position => 
+      const exactMatch = COMMON_JOB_POSITIONS.find(position =>
         position.toLowerCase() === inputValue.toLowerCase().trim()
       )
       setIsOpen(!exactMatch) // Hide dropdown if exact match
@@ -268,7 +268,7 @@ const JobPositionAutocomplete: React.FC<JobPositionAutocompleteProps> = ({
         </li>
       )}
       noOptionsText="Type to search job positions..."
-      sx={{ 
+      sx={{
         '& .MuiAutocomplete-inputRoot': {
           paddingTop: 0,
           paddingBottom: 0

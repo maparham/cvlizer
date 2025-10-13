@@ -52,7 +52,7 @@ const Profile: React.FC = () => {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 badgeContent={
                   <Tooltip title={user.primaryEmailAddress?.verification?.status === 'verified' ? 'Email Verified' : 'Email Not Verified'}>
-                    {user.primaryEmailAddress?.verification?.status === 'verified' ? 
+                    {user.primaryEmailAddress?.verification?.status === 'verified' ?
                       <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} /> :
                       <Warning sx={{ color: 'warning.main', fontSize: 20 }} />
                     }
@@ -73,11 +73,11 @@ const Profile: React.FC = () => {
                     {user.primaryEmailAddress?.emailAddress}
                   </Typography>
                   {user.primaryEmailAddress?.verification?.status === 'verified' && (
-                    <Chip 
-                      icon={<Verified />} 
-                      label="Verified" 
-                      size="small" 
-                      color="success" 
+                    <Chip
+                      icon={<Verified />}
+                      label="Verified"
+                      size="small"
+                      color="success"
                       variant="outlined"
                     />
                   )}
@@ -87,11 +87,11 @@ const Profile: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-            
+
             <Box>
               <Tooltip title="Edit Profile">
-                <IconButton 
-                  color="primary" 
+                <IconButton
+                  color="primary"
                   sx={{ mr: 1 }}
                   onClick={() => {
                     const profileSection = document.querySelector('[data-clerk-profile]');
@@ -105,7 +105,7 @@ const Profile: React.FC = () => {
               </Tooltip>
             </Box>
           </Box>
-          
+
           <Stack direction="row" spacing={2}>
             <Button
               variant="outlined"
@@ -143,14 +143,14 @@ const Profile: React.FC = () => {
                 <Typography variant="body1" sx={{ mb: 2 }}>
                   {user.firstName || 'Not provided'}
                 </Typography>
-                
+
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Last Name
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
                   {user.lastName || 'Not provided'}
                 </Typography>
-                
+
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Username
                 </Typography>
@@ -175,19 +175,19 @@ const Profile: React.FC = () => {
                 <Typography variant="body1" sx={{ mb: 2 }}>
                   {user.primaryEmailAddress?.emailAddress}
                 </Typography>
-                
+
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Email Verified
                 </Typography>
                 <Box sx={{ mb: 2 }}>
-                  <Chip 
+                  <Chip
                     icon={user.primaryEmailAddress?.verification?.status === 'verified' ? <CheckCircle /> : <Warning />}
                     label={user.primaryEmailAddress?.verification?.status === 'verified' ? 'Verified' : 'Not Verified'}
                     color={user.primaryEmailAddress?.verification?.status === 'verified' ? 'success' : 'warning'}
                     size="small"
                   />
                 </Box>
-                
+
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Phone Number
                 </Typography>
@@ -212,14 +212,14 @@ const Profile: React.FC = () => {
                 <Typography variant="body1" sx={{ mb: 2 }}>
                   {user.createdAt ? formatDate(user.createdAt) : 'Unknown'}
                 </Typography>
-                
+
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Last Updated
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
                   {user.updatedAt ? formatDate(user.updatedAt) : 'Unknown'}
                 </Typography>
-                
+
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   User ID
                 </Typography>
@@ -259,9 +259,9 @@ const Profile: React.FC = () => {
         </Grid>
 
         {/* Visual Separator */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
           my: 6,
           '&::before': {
             content: '""',
@@ -276,8 +276,8 @@ const Profile: React.FC = () => {
         </Box>
 
         {/* Clerk's UserProfile Component */}
-        <Paper elevation={3} sx={{ 
-          p: 4, 
+        <Paper elevation={3} sx={{
+          p: 4,
           borderRadius: 3,
           background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
           border: '1px solid #e3f2fd'
@@ -290,15 +290,15 @@ const Profile: React.FC = () => {
               Update your profile information, manage security settings, and configure your account preferences using our secure interface.
             </Typography>
           </Box>
-          <Box sx={{ 
-            display: 'flex', 
+          <Box sx={{
+            display: 'flex',
             justifyContent: 'center',
             '& .cl-userProfile': {
               maxWidth: '100%',
               width: '100%'
             }
           }}>
-            <UserProfile 
+            <UserProfile
               routing="virtual"
               appearance={{
                 elements: {

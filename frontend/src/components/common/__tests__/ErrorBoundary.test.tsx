@@ -88,7 +88,7 @@ describe('ErrorBoundary', () => {
 
   it('should reset error state when Try Again is clicked', () => {
     let shouldThrow = true
-    
+
     const DynamicThrowError = () => {
       if (shouldThrow) {
         throw new Error('Test error')
@@ -106,7 +106,7 @@ describe('ErrorBoundary', () => {
 
     // Change the error condition before clicking reset
     shouldThrow = false
-    
+
     fireEvent.click(screen.getByText('Try Again'))
 
     // Rerender with no error
@@ -178,12 +178,12 @@ describe('useErrorHandler', () => {
   it('should provide captureError function that triggers error boundary', () => {
     const TestComponent = () => {
       const { captureError } = useErrorHandler()
-      
+
       // Simulate capturing an error immediately
       React.useEffect(() => {
         captureError(new Error('Captured error'))
       }, [captureError])
-      
+
       return <div>Test</div>
     }
 
@@ -228,7 +228,7 @@ describe('withErrorBoundary', () => {
   it('should set correct display name', () => {
     const TestComponent = () => <div>Test</div>
     TestComponent.displayName = 'TestComponent'
-    
+
     const WrappedComponent = withErrorBoundary(TestComponent)
 
     expect(WrappedComponent.displayName).toBe('withErrorBoundary(TestComponent)')

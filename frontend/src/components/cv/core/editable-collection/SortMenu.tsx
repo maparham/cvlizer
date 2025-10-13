@@ -1,6 +1,6 @@
 /**
  * SortMenu Component
- * 
+ *
  * Provides sorting options for items in a section, including manual ordering
  * and date-based sorting (newest/oldest first).
  */
@@ -28,7 +28,7 @@ function SortMenu<T>({
   return (
     <>
       <Tooltip title={
-        sortField 
+        sortField
           ? `Sorted by ${sortOptions.find(opt => opt.field === sortField)?.label} (${sortDirection === 'desc' ? 'newest first' : 'oldest first'}). Click for options.`
           : "Sort options"
       }>
@@ -36,7 +36,7 @@ function SortMenu<T>({
           onClick={(e) => setSortMenuAnchor(e.currentTarget)}
           sx={{
             bgcolor: sortField ? '#e3f2fd' : 'white',
-            boxShadow: 1, 
+            boxShadow: 1,
             transition: 'all 0.2s ease',
             color: sortField ? '#1976d2' : 'inherit',
             '&:hover': {
@@ -47,12 +47,12 @@ function SortMenu<T>({
           }}
           size="small"
         >
-          <SortIcon 
-            fontSize="small" 
-            sx={{ 
+          <SortIcon
+            fontSize="small"
+            sx={{
               transform: sortField && sortDirection === 'asc' ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s ease'
-            }} 
+            }}
           />
         </IconButton>
       </Tooltip>
@@ -77,7 +77,7 @@ function SortMenu<T>({
             Manual order
           </Box>
         </MenuItem>
-        
+
         {sortOptions.map((option) => (
           <Box key={String(option.field)}>
             <MenuItem

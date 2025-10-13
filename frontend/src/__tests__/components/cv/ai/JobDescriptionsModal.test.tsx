@@ -1,6 +1,6 @@
 /**
  * JobDescriptionsModal Component Tests
- * 
+ *
  * Comprehensive unit tests for the JobDescriptionsModal component covering:
  * - Modal opening and job description loading
  * - Job description selection and sidebar visibility
@@ -102,7 +102,7 @@ const renderWithTheme = (component: React.ReactElement) => {
 describe('JobDescriptionsModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up default mock return values
     mockUseJobDescriptions.mockReturnValue([]);
     mockUseActiveJobDescription.mockReturnValue(undefined);
@@ -297,7 +297,7 @@ describe('JobDescriptionsModal', () => {
 
         // Button should be disabled for empty URL
         expect(parseButton).toBeDisabled();
-        
+
         // Helper text should show placeholder text initially
         expect(screen.getByText('Paste a URL from LinkedIn, Indeed, or other job sites')).toBeInTheDocument();
       });
@@ -323,10 +323,10 @@ describe('JobDescriptionsModal', () => {
 
         // Valid LinkedIn URL
         fireEvent.change(urlInput, { target: { value: 'https://linkedin.com/jobs/view/1234567890' } });
-        
+
         // Button should be enabled for valid URL
         expect(parseButton).not.toBeDisabled();
-        
+
         // Should show helpful placeholder text
         expect(screen.getByText('Paste a URL from LinkedIn, Indeed, or other job sites')).toBeInTheDocument();
       });
@@ -352,7 +352,7 @@ describe('JobDescriptionsModal', () => {
 
         // Valid Indeed URL
         fireEvent.change(urlInput, { target: { value: 'https://indeed.com/viewjob?jk=abc123' } });
-        
+
         expect(parseButton).not.toBeDisabled();
       });
 
@@ -377,7 +377,7 @@ describe('JobDescriptionsModal', () => {
 
         // Valid Glassdoor URL
         fireEvent.change(urlInput, { target: { value: 'https://glassdoor.com/job-listing/software-engineer/JV_123' } });
-        
+
         expect(parseButton).not.toBeDisabled();
       });
 
@@ -403,7 +403,7 @@ describe('JobDescriptionsModal', () => {
         // Invalid URL (no protocol)
         fireEvent.change(urlInput, { target: { value: 'linkedin.com/jobs/view/123' } });
         fireEvent.blur(urlInput); // Trigger validation on blur
-        
+
         expect(parseButton).toBeDisabled();
         expect(screen.getByText('URL must start with http:// or https://')).toBeInTheDocument();
       });
@@ -430,7 +430,7 @@ describe('JobDescriptionsModal', () => {
         // Malformed URL that passes basic regex but fails URL constructor
         fireEvent.change(urlInput, { target: { value: 'https://[invalid-url' } });
         fireEvent.blur(urlInput); // Trigger validation on blur
-        
+
         expect(parseButton).toBeDisabled();
         expect(screen.getByText('Please enter a valid URL format')).toBeInTheDocument();
       });
@@ -456,7 +456,7 @@ describe('JobDescriptionsModal', () => {
 
         // Valid company career page URL
         fireEvent.change(urlInput, { target: { value: 'https://company.com/careers/software-engineer' } });
-        
+
         expect(parseButton).not.toBeDisabled();
       });
 
@@ -482,7 +482,7 @@ describe('JobDescriptionsModal', () => {
         // Enter invalid URL and blur
         fireEvent.change(urlInput, { target: { value: 'invalid-url' } });
         fireEvent.blur(urlInput);
-        
+
         // Should show error state - button should be disabled for invalid URL
         expect(parseButton).toBeDisabled();
       });
@@ -509,12 +509,12 @@ describe('JobDescriptionsModal', () => {
         // Enter invalid URL and blur to show error
         fireEvent.change(urlInput, { target: { value: 'invalid-url' } });
         fireEvent.blur(urlInput);
-        
+
         expect(parseButton).toBeDisabled();
 
         // Start typing a valid URL
         fireEvent.change(urlInput, { target: { value: 'https://linkedin.com/jobs/view/123' } });
-        
+
         // Error should be cleared and button enabled
         expect(parseButton).not.toBeDisabled();
       });
@@ -541,10 +541,10 @@ describe('JobDescriptionsModal', () => {
         // Enter invalid URL and try to submit
         fireEvent.change(urlInput, { target: { value: 'invalid-url' } });
         fireEvent.click(parseButton);
-        
+
         // Button should be disabled for invalid URL
         expect(parseButton).toBeDisabled();
-        
+
         // Should show error message in general error area
         expect(screen.getByText('URL must start with http:// or https://')).toBeInTheDocument();
       });

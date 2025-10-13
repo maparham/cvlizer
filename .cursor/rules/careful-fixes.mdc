@@ -38,8 +38,8 @@ Be careful and precise when fixing issues.
 - ✅ **Verify Impact** - Ensure fix solves the problem without creating new issues
 
 ### Example (From Real Debugging Session)
-**Problem**: Test #9 fails with "page closed" after 8 successful tests  
-**Wrong Approach**: Add `afterEach` hook to close all forms globally ❌  
+**Problem**: Test #9 fails with "page closed" after 8 successful tests
+**Wrong Approach**: Add `afterEach` hook to close all forms globally ❌
 **Right Approach**: Debug to find Test #8 left a form open, add one cleanup line to Test #8 ✅
 
 ## Problem-Solving Approach

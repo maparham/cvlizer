@@ -203,7 +203,7 @@ export const cvApi = {
   uploadCV: async (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    
+
     const response = await api.post('/api/cvs/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -229,7 +229,7 @@ export const cvApi = {
     const response = await api.get(`/api/cvs/${cvId}/download`, {
       responseType: 'blob'
     })
-    
+
     // Create a download link
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')

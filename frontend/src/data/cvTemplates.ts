@@ -1,16 +1,16 @@
 /**
  * CV Template Data
- * 
+ *
  * This module contains predefined CV templates with sample data for different
  * career levels and use cases. Templates provide structured starting points
  * for CV creation with appropriate section ordering and sample content.
- * 
+ *
  * Key responsibilities:
  * - Define template structures for different career levels
  * - Provide sample data that users can customize
  * - Maintain consistent data structure across templates
  * - Support template selection and customization
- * 
+ *
  * Usage:
  * - Import templates in CVTemplateSelector component
  * - Use template data to initialize new CVs

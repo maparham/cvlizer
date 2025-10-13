@@ -1,10 +1,10 @@
 /**
  * Floating Suggestions Panel Component
- * 
+ *
  * This component provides a floating panel interface for managing AI suggestions
  * in the CV editor. It displays all pending suggestions with options to accept
  * or reject each one, and provides overall control over the diff mode.
- * 
+ *
  * Key responsibilities:
  * - Display list of all AI suggestions with clear descriptions
  * - Provide accept/reject buttons for each suggestion
@@ -12,7 +12,7 @@
  * - Allow users to navigate to specific sections with suggestions
  * - Provide bulk actions for accepting/rejecting multiple suggestions
  * - Handle panel collapse/expand functionality
- * 
+ *
  * Usage:
  * - Automatically appears when diff mode is activated
  * - Positions itself as a fixed overlay (bottom-right by default)
@@ -212,7 +212,7 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
 
   const pendingCount = getPendingSuggestionsCount();
   const approvedCount = getApprovedSuggestionsCount();
-  
+
   const isButtonDisabled = approvedCount === 0 || isApplyingAll;
   const totalCount = suggestions.length;
   const progress = totalCount > 0 ? ((approvedCount + suggestions.filter(s => s.status === 'rejected').length) / totalCount) * 100 : 0;
@@ -235,28 +235,28 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
       console.warn('FloatingSuggestionsPanel - Prevented commit with 0 approved suggestions');
       return;
     }
-    
+
     // Only allow explicit user clicks
     if (!event?.isTrusted || event?.type !== 'click') {
       console.warn('FloatingSuggestionsPanel - Prevented commit from non-click event');
       return;
     }
-    
+
     // Add confirmation dialog to prevent accidental commits
     const confirmed = window.confirm(
       `Are you sure you want to apply ${approvedCount} approved suggestion${approvedCount > 1 ? 's' : ''} to your CV?`
     );
-    
+
     if (!confirmed) {
       return;
     }
-    
+
     const finalData = commitChanges();
     if (finalData) {
       // Trigger save or update CV data
       if (onContentUpdate) {
         onContentUpdate(finalData);
-        
+
         // Automatically save the changes to persist them
         if (onSave) {
           try {

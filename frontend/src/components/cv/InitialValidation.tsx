@@ -19,10 +19,10 @@ export const InitialValidation: React.FC<InitialValidationProps> = ({ children }
       const validationResult = validateCVData(cvData)
       if (!validationResult.isValid) {
         const errorArray = Object.values(validationResult.errors).concat(validationResult.crossFieldErrors)
-        setValidationErrors(errorArray.map((error: string) => ({ 
-          section: 'general', 
-          field: 'general', 
-          message: error 
+        setValidationErrors(errorArray.map((error: string) => ({
+          section: 'general',
+          field: 'general',
+          message: error
         })))
       }
     }

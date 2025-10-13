@@ -4,6 +4,7 @@ Tests for the User Activity Logging Service.
 This module tests user activity tracking, session management,
 and activity data retrieval functionality.
 """
+
 import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
@@ -15,7 +16,7 @@ from src.services.user_activity_service import (
     cleanup_old_activities,
     get_activity_stats,
     create_user_session,
-    end_user_session
+    end_user_session,
 )
 from src.models.user import User
 from src.models.user_activity import UserActivity, UserSession
@@ -27,14 +28,14 @@ class TestUserActivityService:
     def setup_method(self):
         """Set up test data for each test method."""
         self.mock_db = Mock(spec=Session)
-        
+
         # Create mock user
         self.test_user = User(
             id="user-123",
             email="test@example.com",
             clerk_id="clerk-user-123",
             is_active=True,
-            email_verified=True
+            email_verified=True,
         )
 
     def test_log_user_activity_success(self):
@@ -48,16 +49,18 @@ class TestUserActivityService:
             description="User viewed dashboard",
             page_url="http://localhost:3000/dashboard",
             session_id="session-123",
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
-        
+
         self.mock_db.add.return_value = None
         self.mock_db.commit.return_value = None
         self.mock_db.refresh.return_value = None
-        
-        with patch('src.services.user_activity_service.UserActivity') as mock_activity_class:
+
+        with patch(
+            "src.services.user_activity_service.UserActivity"
+        ) as mock_activity_class:
             mock_activity_class.return_value = mock_activity
-            
+
             result = log_user_activity(
                 db=self.mock_db,
                 user=self.test_user,
@@ -66,12 +69,12 @@ class TestUserActivityService:
                 description="User viewed dashboard",
                 details={"test": "data"},
                 page_url="http://localhost:3000/dashboard",
-                session_id="session-123"
+                session_id="session-123",
             )
-            
+
             # Verify activity was created
             assert result == mock_activity
-            
+
             # Verify database operations
             self.mock_db.add.assert_called_once()
             self.mock_db.commit.assert_called_once()
@@ -87,16 +90,18 @@ class TestUserActivityService:
             description="User edited CV",
             details={"cv_id": "cv-123", "section": "work_experience"},
             page_url="http://localhost:3000/cv-editor",
-            session_id="session-456"
+            session_id="session-456",
         )
-        
+
         self.mock_db.add.return_value = None
         self.mock_db.commit.return_value = None
         self.mock_db.refresh.return_value = None
-        
-        with patch('src.services.user_activity_service.UserActivity') as mock_activity_class:
+
+        with patch(
+            "src.services.user_activity_service.UserActivity"
+        ) as mock_activity_class:
             mock_activity_class.return_value = mock_activity
-            
+
             result = log_user_activity(
                 db=self.mock_db,
                 user=self.test_user,
@@ -105,9 +110,9 @@ class TestUserActivityService:
                 description="User edited CV",
                 details={"cv_id": "cv-123", "section": "work_experience"},
                 page_url="http://localhost:3000/cv-editor",
-                session_id="session-456"
+                session_id="session-456",
             )
-            
+
             assert result == mock_activity
 
     def test_log_user_activity_invalid_user(self):
@@ -118,7 +123,7 @@ class TestUserActivityService:
                 db=self.mock_db,
                 user=None,
                 activity_type="page_view",
-                action="dashboard_view"
+                action="dashboard_view",
             )
 
     def test_get_user_activities_pagination(self):
@@ -131,7 +136,7 @@ class TestUserActivityService:
                 activity_type="page_view",
                 action="dashboard_view",
                 description="User viewed dashboard",
-                timestamp=datetime.utcnow()
+                timestamp=datetime.utcnow(),
             ),
             UserActivity(
                 id="activity-2",
@@ -139,10 +144,10 @@ class TestUserActivityService:
                 activity_type="user_action",
                 action="cv_edit",
                 description="User edited CV",
-                timestamp=datetime.utcnow() - timedelta(minutes=1)
-            )
+                timestamp=datetime.utcnow() - timedelta(minutes=1),
+            ),
         ]
-        
+
         # Mock database query
         mock_query = Mock()
         mock_query.filter.return_value = mock_query
@@ -151,16 +156,13 @@ class TestUserActivityService:
         mock_query.limit.return_value = mock_query
         mock_query.all.return_value = mock_activities
         mock_query.count.return_value = 2
-        
+
         self.mock_db.query.return_value = mock_query
-        
+
         activities, total_count = get_user_activities(
-            db=self.mock_db,
-            user_id=self.test_user.id,
-            limit=10,
-            offset=0
+            db=self.mock_db, user_id=self.test_user.id, limit=10, offset=0
         )
-        
+
         assert len(activities) == 2
         assert total_count == 2
         assert activities[0].id == "activity-1"
@@ -175,10 +177,10 @@ class TestUserActivityService:
                 activity_type="page_view",
                 action="dashboard_view",
                 description="User viewed dashboard",
-                timestamp=datetime.utcnow()
+                timestamp=datetime.utcnow(),
             )
         ]
-        
+
         # Mock database query with filtering
         mock_query = Mock()
         mock_query.filter.return_value = mock_query
@@ -187,17 +189,17 @@ class TestUserActivityService:
         mock_query.limit.return_value = mock_query
         mock_query.all.return_value = mock_activities
         mock_query.count.return_value = 1
-        
+
         self.mock_db.query.return_value = mock_query
-        
+
         activities, total_count = get_user_activities(
             db=self.mock_db,
             user_id=self.test_user.id,
             activity_type="page_view",
             limit=10,
-            offset=0
+            offset=0,
         )
-        
+
         assert len(activities) == 1
         assert total_count == 1
         assert activities[0].activity_type == "page_view"
@@ -208,15 +210,12 @@ class TestUserActivityService:
         mock_query = Mock()
         mock_query.filter.return_value = mock_query
         mock_query.delete.return_value = 5  # 5 activities deleted
-        
+
         self.mock_db.query.return_value = mock_query
         self.mock_db.commit.return_value = None
-        
-        deleted_count = cleanup_old_activities(
-            db=self.mock_db,
-            days_to_keep=90
-        )
-        
+
+        deleted_count = cleanup_old_activities(db=self.mock_db, days_to_keep=90)
+
         assert deleted_count == 5
         self.mock_db.commit.assert_called_once()
 
@@ -225,20 +224,17 @@ class TestUserActivityService:
         # Mock database error
         self.mock_db.query.side_effect = Exception("Database error")
         self.mock_db.rollback.return_value = None
-        
+
         with pytest.raises(Exception, match="Database error"):
-            cleanup_old_activities(
-                db=self.mock_db,
-                days_to_keep=90
-            )
-        
+            cleanup_old_activities(db=self.mock_db, days_to_keep=90)
+
         self.mock_db.rollback.assert_called_once()
 
     def test_get_activity_stats(self):
         """Test retrieving activity statistics."""
         # The function will fail due to mock issues, so it returns the error fallback
         stats = get_activity_stats(db=self.mock_db)
-        
+
         # Should return stats even if empty (from error fallback)
         assert "total_activities" in stats
         assert "activity_types" in stats  # Note: actual field name is "activity_types"
@@ -252,24 +248,26 @@ class TestUserActivityService:
             session_id="sess_123",
             started_at=datetime.utcnow(),
             user_agent="Mozilla/5.0",
-            ip_address="192.168.1.1"
+            ip_address="192.168.1.1",
         )
-        
+
         self.mock_db.add.return_value = None
         self.mock_db.commit.return_value = None
         self.mock_db.refresh.return_value = None
-        
-        with patch('src.services.user_activity_service.UserSession') as mock_session_class:
+
+        with patch(
+            "src.services.user_activity_service.UserSession"
+        ) as mock_session_class:
             mock_session_class.return_value = mock_session
-            
+
             result = create_user_session(
                 db=self.mock_db,
                 user=self.test_user,
                 session_id="sess_123",
                 user_agent="Mozilla/5.0",
-                ip_address="192.168.1.1"
+                ip_address="192.168.1.1",
             )
-            
+
             assert result == mock_session
             self.mock_db.add.assert_called_once()
             self.mock_db.commit.assert_called_once()
@@ -281,23 +279,20 @@ class TestUserActivityService:
             user_id=self.test_user.id,
             session_id="sess_123",
             started_at=datetime.utcnow(),
-            ended_at=None
+            ended_at=None,
         )
-        
+
         # Mock finding the session
         mock_query = Mock()
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = mock_session
-        
+
         self.mock_db.query.return_value = mock_query
         self.mock_db.commit.return_value = None
         self.mock_db.refresh.return_value = None
-        
-        result = end_user_session(
-            db=self.mock_db,
-            session_id="sess_123"
-        )
-        
+
+        result = end_user_session(db=self.mock_db, session_id="sess_123")
+
         assert result == mock_session
         assert mock_session.ended_at is not None
         self.mock_db.commit.assert_called_once()
@@ -308,14 +303,11 @@ class TestUserActivityService:
         mock_query = Mock()
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = None
-        
+
         self.mock_db.query.return_value = mock_query
-        
-        result = end_user_session(
-            db=self.mock_db,
-            session_id="non-existent"
-        )
-        
+
+        result = end_user_session(db=self.mock_db, session_id="non-existent")
+
         assert result is None
 
     def test_activity_logging_error_handling(self):
@@ -323,15 +315,15 @@ class TestUserActivityService:
         # Mock database error
         self.mock_db.add.side_effect = Exception("Database error")
         self.mock_db.rollback.return_value = None
-        
+
         with pytest.raises(Exception, match="Database error"):
             log_user_activity(
                 db=self.mock_db,
                 user=self.test_user,
                 activity_type="page_view",
-                action="dashboard_view"
+                action="dashboard_view",
             )
-        
+
         self.mock_db.rollback.assert_called_once()
 
     def test_activity_data_validation(self):
@@ -342,23 +334,25 @@ class TestUserActivityService:
             id="activity-empty-type",
             user_id=self.test_user.id,
             activity_type="",
-            action="dashboard_view"
+            action="dashboard_view",
         )
-        
+
         self.mock_db.add.return_value = None
         self.mock_db.commit.return_value = None
         self.mock_db.refresh.return_value = None
-        
-        with patch('src.services.user_activity_service.UserActivity') as mock_activity_class:
+
+        with patch(
+            "src.services.user_activity_service.UserActivity"
+        ) as mock_activity_class:
             mock_activity_class.return_value = mock_activity
-            
+
             result = log_user_activity(
                 db=self.mock_db,
                 user=self.test_user,
                 activity_type="",
-                action="dashboard_view"
+                action="dashboard_view",
             )
-            
+
             assert result == mock_activity
 
     def test_session_management_integration(self):
@@ -368,70 +362,74 @@ class TestUserActivityService:
             id="session-123",
             user_id=self.test_user.id,
             session_id="sess_123",
-            started_at=datetime.utcnow()
+            started_at=datetime.utcnow(),
         )
-        
+
         self.mock_db.add.return_value = None
         self.mock_db.commit.return_value = None
         self.mock_db.refresh.return_value = None
-        
-        with patch('src.services.user_activity_service.UserSession') as mock_session_class:
+
+        with patch(
+            "src.services.user_activity_service.UserSession"
+        ) as mock_session_class:
             mock_session_class.return_value = mock_session
-            
+
             session = create_user_session(
-                db=self.mock_db,
-                user=self.test_user,
-                session_id="sess_123"
+                db=self.mock_db, user=self.test_user, session_id="sess_123"
             )
-            
+
             # Log activity with session
             mock_activity = UserActivity(
                 id="activity-123",
                 user_id=self.test_user.id,
                 session_id="sess_123",
                 activity_type="page_view",
-                action="dashboard_view"
+                action="dashboard_view",
             )
-            
-            with patch('src.services.user_activity_service.UserActivity') as mock_activity_class:
+
+            with patch(
+                "src.services.user_activity_service.UserActivity"
+            ) as mock_activity_class:
                 mock_activity_class.return_value = mock_activity
-                
+
                 activity = log_user_activity(
                     db=self.mock_db,
                     user=self.test_user,
                     activity_type="page_view",
                     action="dashboard_view",
-                    session_id="sess_123"
+                    session_id="sess_123",
                 )
-                
+
                 assert activity.session_id == session.session_id
 
     def test_activity_types_validation(self):
         """Test validation of different activity types."""
         valid_activity_types = ["page_view", "user_action", "api_call", "error"]
-        
+
         for activity_type in valid_activity_types:
             mock_activity = UserActivity(
                 id=f"activity-{activity_type}",
                 user_id=self.test_user.id,
                 activity_type=activity_type,
-                action="test_action"
+                action="test_action",
             )
-            
+
             self.mock_db.add.return_value = None
             self.mock_db.commit.return_value = None
             self.mock_db.refresh.return_value = None
-            
-            with patch('src.services.user_activity_service.UserActivity') as mock_activity_class:
+
+            with patch(
+                "src.services.user_activity_service.UserActivity"
+            ) as mock_activity_class:
                 mock_activity_class.return_value = mock_activity
-                
+
                 result = log_user_activity(
                     db=self.mock_db,
                     user=self.test_user,
                     activity_type=activity_type,
-                    action="test_action"
+                    action="test_action",
                 )
-                
+
                 assert result.activity_type == activity_type
 
     def test_large_activity_query_performance(self):
@@ -443,34 +441,31 @@ class TestUserActivityService:
                 user_id=self.test_user.id,
                 activity_type="page_view",
                 action="dashboard_view",
-                timestamp=datetime.utcnow()
+                timestamp=datetime.utcnow(),
             )
             for i in range(1000)
         ]
-        
+
         mock_query = Mock()
         mock_query.filter.return_value = mock_query
         mock_query.order_by.return_value = mock_query
         mock_query.offset.return_value = mock_query
         mock_query.limit.return_value = mock_query
         mock_query.count.return_value = 1000
-        
+
         # Mock the all() method to return only the first 100 items (simulating pagination)
         def mock_all():
             # Get the limit from the mock query chain
             limit = 100  # This would normally be extracted from the query
             return mock_activities[:limit]
-        
+
         mock_query.all = mock_all
-        
+
         self.mock_db.query.return_value = mock_query
-        
+
         activities, total_count = get_user_activities(
-            db=self.mock_db,
-            user_id=self.test_user.id,
-            limit=100,
-            offset=0
+            db=self.mock_db, user_id=self.test_user.id, limit=100, offset=0
         )
-        
+
         assert len(activities) == 100
         assert total_count == 1000

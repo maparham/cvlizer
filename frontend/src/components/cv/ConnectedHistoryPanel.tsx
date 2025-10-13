@@ -1,6 +1,6 @@
 /**
  * Connected History Panel Component
- * 
+ *
  * This component connects the HistoryPanel to the CV store and handles
  * all the data fetching and state management automatically.
  */
@@ -43,7 +43,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
     newestEntry: null
   })
   const [loading, setLoading] = useState(false)
-  
+
   // Preview dialog state
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false)
   const [selectedVersionForPreview, setSelectedVersionForPreview] = useState<CVHistoryEntry | null>(null)
@@ -90,7 +90,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
   const handleRestoreFromPreview = async (entry: CVHistoryEntry) => {
     // Close preview dialog first
     handleClosePreview()
-    
+
     // Use the existing restore handler
     await handleRestoreVersion(entry)
   }
@@ -100,10 +100,10 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
       await restoreVersion(cvId, {
         entryId: entry.id
       })
-      
+
       // Refresh history data after restore
       await loadHistoryData()
-      
+
       showSuccess(
         'Version Restored',
         `Successfully restored to version from ${formatDateTime(entry.timestamp)}`
@@ -124,10 +124,10 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
 
     try {
       await createSnapshot(cvId, currentCV.parsed_data, options)
-      
+
       // Refresh history data after creating snapshot
       await loadHistoryData()
-      
+
       showSuccess(
         'Version Saved',
         options.label || 'Version saved successfully'
@@ -143,10 +143,10 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
   const handleDeleteEntry = async (entry: CVHistoryEntry) => {
     try {
       await deleteHistoryEntry(cvId, entry.id)
-      
+
       // Refresh history data after deletion
       await loadHistoryData()
-      
+
       showSuccess(
         'Version Deleted',
         `Successfully deleted version from ${formatDateTime(entry.timestamp)}`
@@ -179,7 +179,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({ cvId }) =
         historyStats={historyStats}
         loading={loading}
       />
-      
+
       <VersionPreviewDialog
         open={previewDialogOpen}
         onClose={handleClosePreview}

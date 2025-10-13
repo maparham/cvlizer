@@ -1,16 +1,16 @@
 /**
  * Inline Diff Context Provider
- * 
+ *
  * This context provider manages the inline diff functionality for AI suggestions.
  * It provides a convenient wrapper around the AI store's inline diff capabilities
  * and handles the integration with CV data.
- * 
+ *
  * Key responsibilities:
  * - Provide easy access to inline diff state and actions
  * - Handle CV data integration for diff mode
  * - Manage suggestion highlighting and visual feedback
  * - Coordinate between AI store and CV components
- * 
+ *
  * Usage:
  * - Wrap CV editor components with InlineDiffProvider
  * - Use useInlineDiffContext hook to access functionality

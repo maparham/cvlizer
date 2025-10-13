@@ -1,15 +1,15 @@
 /**
  * OverviewTab - Admin dashboard overview tab component
- * 
+ *
  * This component displays system statistics and user overview data.
  * Shows key metrics, user distribution, and recent activity.
- * 
+ *
  * Key responsibilities:
  * - Display system statistics cards
  * - Show user distribution information
  * - Display recent activity metrics
  * - Handle loading and error states
- * 
+ *
  * Usage context:
  * - Used in admin dashboard as the first tab
  * - Integrates with useAdminStats hook

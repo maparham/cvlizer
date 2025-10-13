@@ -1,10 +1,10 @@
 /**
  * AI Service Module
- * 
+ *
  * This module provides AI-related API functions including job fit analysis,
  * content enhancement, and ATS optimization. It handles API calls, error
  * management, and response formatting for all AI features.
- * 
+ *
  * Key responsibilities:
  * - Job fit analysis API calls
  * - Content enhancement API calls
@@ -12,7 +12,7 @@
  * - Error handling and retry logic
  * - Response data transformation
  * - Caching for performance optimization
- * 
+ *
  * Usage:
  * - Import specific functions as needed
  * - All functions return promises with proper error handling
@@ -76,7 +76,7 @@ class AIService {
    * Clear cache for a specific CV
    */
   clearCacheForCV(cvId: string): void {
-    const keysToDelete = Array.from(this.cache.keys()).filter(key => 
+    const keysToDelete = Array.from(this.cache.keys()).filter(key =>
       key.includes(cvId)
     );
     keysToDelete.forEach(key => this.cache.delete(key));
@@ -93,7 +93,7 @@ class AIService {
    * Analyze job fit between CV and job description (now returns immediately with background processing)
    */
   async analyzeJobFit(
-    cvId: string, 
+    cvId: string,
     request: JobFitAnalysisRequest
   ): Promise<DraftResponse> {
     try {
@@ -101,7 +101,7 @@ class AIService {
         `/api/cvs/${cvId}/analyze-job-fit`,
         request
       );
-      
+
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -146,7 +146,7 @@ class AIService {
         `/api/cvs/${cvId}/enhance-content`,
         request
       );
-      
+
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -166,7 +166,7 @@ class AIService {
       const response = await api.get<ContentEnhancementResponse>(
         `/api/content-enhancements/${enhancementId}/status`
       );
-      
+
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -196,7 +196,7 @@ class AIService {
         `/api/cvs/${cvId}/optimize-ats`,
         request
       );
-      
+
       this.setCachedData(cacheKey, response.data);
       return response.data;
     } catch (error: any) {
@@ -225,10 +225,10 @@ class AIService {
           section_type: sectionType
         }
       );
-      
+
       // Clear cache for this CV since we've generated new content
       this.clearCacheForCV(cvId);
-      
+
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -254,7 +254,7 @@ class AIService {
       const response = await api.get<AISectionListResponse>(
         `/api/cvs/${cvId}/ai-sections`
       );
-      
+
       this.setCachedData(cacheKey, response.data.ai_sections);
       return response.data.ai_sections;
     } catch (error: any) {
@@ -279,10 +279,10 @@ class AIService {
         `/api/cvs/${cvId}/job-descriptions`,
         request
       );
-      
+
       // Clear cache for this CV since we've added a new job description
       this.clearCacheForCV(cvId);
-      
+
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -306,10 +306,10 @@ class AIService {
         `/api/cvs/${cvId}/job-descriptions/parse-url`,
         { url }
       );
-      
+
       // Clear cache for this CV since we've added a new job description
       this.clearCacheForCV(cvId);
-      
+
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -329,7 +329,7 @@ class AIService {
       const response = await api.get<JobDescription>(
         `/api/job-descriptions/${jobDescriptionId}/status`
       );
-      
+
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -355,7 +355,7 @@ class AIService {
       const response = await api.get<{ job_descriptions: JobDescription[] }>(
         `/api/cvs/${cvId}/job-descriptions`
       );
-      
+
       this.setCachedData(cacheKey, response.data.job_descriptions);
       return response.data.job_descriptions;
     } catch (error: any) {
@@ -437,20 +437,20 @@ class AIService {
     baseDelay: number = 1000
   ): Promise<T> {
     let lastError: any;
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error;
-        
+
         if (attempt < maxRetries - 1) {
           const delay = baseDelay * Math.pow(2, attempt);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
-    
+
     throw lastError;
   }
 
@@ -466,7 +466,7 @@ class AIService {
         `/api/cvs/${cvId}/ai-suggestions/generate`,
         { job_description_id: jobDescriptionId }
       );
-      
+
       return response.data;
     } catch (error: any) {
       // Graceful degradation - return empty structures on error
@@ -494,7 +494,7 @@ class AIService {
         `/api/cvs/${cvId}/ai-enhancements`,
         { job_description_id: jobDescriptionId }
       );
-      
+
       return response.data;
     } catch (error: any) {
       Logger.error('Error creating AI enhancement', { cvId, jobDescriptionId, error: error.message });
@@ -548,10 +548,10 @@ class AIService {
         `/api/cvs/${cvId}/analyze-job-fit`,
         { job_description_id: jobDescriptionId }
       );
-      
+
       // Clear cache for this CV since we've created new content
       this.clearCacheForCV(cvId);
-      
+
       return response.data;
     } catch (error: any) {
       Logger.error('createJobFitDraft API error', { cvId, jobDescriptionId, error: error.message });
@@ -594,10 +594,10 @@ class AIService {
         `/api/cvs/${cvId}/why_good_fit/approve`,
         { draft_id: draftId }
       );
-      
+
       // Clear cache for this CV since we've updated it
       this.clearCacheForCV(cvId);
-      
+
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {

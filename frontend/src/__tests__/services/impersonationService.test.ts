@@ -1,6 +1,6 @@
 /**
  * Impersonation Service Tests
- * 
+ *
  * This module provides comprehensive tests for the impersonation service,
  * including API communication, error handling, and data transformation.
  */

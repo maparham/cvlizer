@@ -1,6 +1,6 @@
 /**
  * EditForm Component
- * 
+ *
  * Renders the editing form for an item with save/cancel controls.
  */
 import { Box, IconButton, Tooltip } from '@mui/material'

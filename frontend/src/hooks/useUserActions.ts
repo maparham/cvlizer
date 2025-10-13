@@ -1,15 +1,15 @@
 /**
  * useUserActions - Custom hook for managing user actions and details
- * 
+ *
  * This hook handles user detail loading, CV management, activity tracking,
  * and impersonation functionality for the admin dashboard.
- * 
+ *
  * Key responsibilities:
  * - Load user details and CVs
  * - Manage user activities and errors
  * - Handle impersonation logic
  * - Provide loading states for actions
- * 
+ *
  * Usage context:
  * - Used in admin dashboard for user management
  * - Integrates with user API endpoints
@@ -78,7 +78,7 @@ export const useUserActions = (): UseUserActionsReturn => {
   const [userCVsOpen, setUserCVsOpen] = useState(false)
   const [activitiesOpen, setActivitiesOpen] = useState(false)
   const [errorsOpen, setErrorsOpen] = useState(false)
-  
+
   const navigate = useNavigate()
   const { showSuccess } = useNotifications()
   const { forceStatusCheck } = useImpersonation()
@@ -116,14 +116,14 @@ export const useUserActions = (): UseUserActionsReturn => {
       setSelectedUserId(userId)
       setActivitiesPage(page)
       setActivitiesLimit(limit)
-      
+
       const params = new URLSearchParams()
       params.append('limit', limit.toString())
       params.append('offset', (page * limit).toString())
       if (activityType) {
         params.append('activity_type', activityType)
       }
-      
+
       const response = await api.get(`/admin/users/${userId}/activities?${params.toString()}`)
       setUserActivities(response.data.activities)
       setActivitiesTotal(response.data.total || 0)
@@ -140,7 +140,7 @@ export const useUserActions = (): UseUserActionsReturn => {
     try {
       const response = await api.delete(`/admin/users/${userId}/activities`)
       showSuccess('Success', response.data.message)
-      
+
       if (selectedUserId === userId) {
         loadUserActivities(userId, activitiesPage, activitiesLimit, activityTypeFilter)
       }
@@ -176,11 +176,11 @@ export const useUserActions = (): UseUserActionsReturn => {
         target_user_id: impersonationTarget.id,
         justification: impersonationJustification || undefined
       })
-      
+
       setImpersonationDialogOpen(false)
       setImpersonationJustification('')
       showSuccess('Success', `Started impersonating ${impersonationTarget.email}`)
-      
+
       await forceStatusCheck()
       navigate('/dashboard')
     } catch (error) {

@@ -1,17 +1,17 @@
 /**
  * Inline Diff Section Hook
- * 
+ *
  * This hook provides functionality for individual CV sections to integrate with
  * the inline diff system. It handles highlighting logic, suggestion retrieval,
  * and data merging for sections that have AI suggestions.
- * 
+ *
  * Key responsibilities:
  * - Retrieve suggestions relevant to a specific section
  * - Provide highlighted data that merges original and suggested content
  * - Handle section-specific suggestion acceptance and rejection
  * - Determine if section should show diff highlights
  * - Provide utility functions for rendering suggested vs original content
- * 
+ *
  * Usage:
  * - Import and use in section components (SkillsSection, ProfessionalSummarySection, etc.)
  * - Hook automatically handles diff mode detection and data merging
@@ -58,7 +58,7 @@ export const useInlineDiffSection = ({
 
   const sectionSuggestions = useMemo(() => {
     if (!isInDiffMode) return [];
-    
+
     return getSuggestionsBySection(section).filter(suggestion => {
       // If fieldPath is specified, filter by it
       if (fieldPath) {
@@ -76,7 +76,7 @@ export const useInlineDiffSection = ({
 
     // Start with original data (not temp data with suggestions)
     let data = { ...originalData };
-    
+
     // Get temp data for this section (but don't use it for display)
     // The temp data is only used to ensure structure exists
     if (tempCV.tempData && section in tempCV.tempData) {
@@ -105,7 +105,7 @@ export const useInlineDiffSection = ({
         if (suggestion.type === 'add_keyword') {
           if (suggestion.fieldPath && data[suggestion.fieldPath]) {
             // Add keyword if not already present
-            if (Array.isArray(data[suggestion.fieldPath]) && 
+            if (Array.isArray(data[suggestion.fieldPath]) &&
                 !data[suggestion.fieldPath].includes(suggestion.suggestedValue)) {
               data[suggestion.fieldPath] = [...data[suggestion.fieldPath], suggestion.suggestedValue];
             }
@@ -186,7 +186,7 @@ export const useHighlightedKeywords = (
       const shouldShow = (suggestion.status === 'pending' && highlightMode !== 'approved') ||
           (suggestion.status === 'approved' && highlightMode !== 'pending') ||
           highlightMode === 'all';
-      
+
       if (shouldShow) {
         // Only add if not already in original keywords
         if (!originalKeywords.includes(suggestion.suggestedValue)) {

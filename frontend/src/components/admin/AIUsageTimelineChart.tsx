@@ -1,6 +1,6 @@
 /**
  * AI Usage Timeline Chart Component.
- * 
+ *
  * This component displays AI usage data over time using Recharts,
  * showing both token consumption and costs in a time-series format.
  */
@@ -41,7 +41,7 @@ interface AIUsageTimelineChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
-    
+
     return (
       <Box
         sx={{
@@ -55,7 +55,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <Typography variant="subtitle2" gutterBottom>
           {formatDate(label)}
         </Typography>
-        
+
         {payload.map((entry: any, index: number) => (
           <Box key={index} display="flex" alignItems="center" gap={1} mb={0.5}>
             <Box
@@ -71,7 +71,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             </Typography>
           </Box>
         ))}
-        
+
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Operations: {data.operation_count}
         </Typography>
@@ -81,7 +81,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       </Box>
     )
   }
-  
+
   return null
 }
 
@@ -127,7 +127,7 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
     date: item.date ? (() => {
       // Handle different timestamp formats from backend
       let date: Date;
-      
+
       if (item.date.includes(' ') && !item.date.includes('T') && !item.date.includes('Z')) {
         // Format: "YYYY-MM-DD HH:MM:SS" - treat as UTC
         date = new Date(item.date + 'Z');
@@ -138,7 +138,7 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
         // Other formats (ISO with timezone, etc.) - let JavaScript handle it
         date = new Date(item.date);
       }
-      
+
       return date.toLocaleDateString();
     })() : 'Unknown',
     tokens: item.total_tokens,
@@ -154,7 +154,7 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
           <Typography variant="h6" component="div">
             AI Usage Timeline
           </Typography>
-          
+
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Granularity</InputLabel>
             <Select
@@ -174,20 +174,20 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tick={{ fontSize: 12 }}
                 angle={-45}
                 textAnchor="end"
                 height={60}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="tokens"
                 orientation="left"
                 tick={{ fontSize: 12 }}
                 tickFormatter={(value) => formatTokens(value)}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="cost"
                 orientation="right"
                 tick={{ fontSize: 12 }}
@@ -195,7 +195,7 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              
+
               <Line
                 yAxisId="tokens"
                 type="monotone"
@@ -236,34 +236,34 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
               />
-              
+
               {/* Reference lines for max values */}
-              <ReferenceLine 
+              <ReferenceLine
                 yAxisId="tokens"
-                y={maxTokens} 
-                stroke="#8884d8" 
-                strokeDasharray="5 5" 
+                y={maxTokens}
+                stroke="#8884d8"
+                strokeDasharray="5 5"
                 opacity={0.3}
               />
-              <ReferenceLine 
+              <ReferenceLine
                 yAxisId="tokens"
-                y={maxPromptTokens} 
-                stroke="#1976d2" 
-                strokeDasharray="5 5" 
+                y={maxPromptTokens}
+                stroke="#1976d2"
+                strokeDasharray="5 5"
                 opacity={0.3}
               />
-              <ReferenceLine 
+              <ReferenceLine
                 yAxisId="tokens"
-                y={maxCompletionTokens} 
-                stroke="#9c27b0" 
-                strokeDasharray="5 5" 
+                y={maxCompletionTokens}
+                stroke="#9c27b0"
+                strokeDasharray="5 5"
                 opacity={0.3}
               />
-              <ReferenceLine 
+              <ReferenceLine
                 yAxisId="cost"
-                y={maxCost} 
-                stroke="#82ca9d" 
-                strokeDasharray="5 5" 
+                y={maxCost}
+                stroke="#82ca9d"
+                strokeDasharray="5 5"
                 opacity={0.3}
               />
             </LineChart>

@@ -11,11 +11,12 @@ description: MVP-focused development guidelines and best practices
 - `globs`-scoped rules apply only to matched files
 
 ## MVP Development Focus
-- **Backend**: PEP 8, Black (88 chars), type hints, basic docstrings
+- **Backend**: PEP 8, Black (90 chars), type hints, basic docstrings
 - **Frontend**: TypeScript strict mode, ESLint, Prettier
 - **Testing**: 80% backend, 70% frontend coverage (MVP targets)
 - **Security**: Essential auth and data protection only
 - **Performance**: Basic optimization, defer advanced patterns
+- **Pre-commit**: Automated formatting and linting on commit
 
 ## Common Patterns
 - **API Endpoint**: Dependency injection, Pydantic models, `get_effective_user` for auth

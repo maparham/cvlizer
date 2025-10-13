@@ -4,6 +4,7 @@ Job description management API endpoints.
 This module provides endpoints for creating, retrieving, and deleting
 job descriptions associated with CVs for AI-powered optimization.
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -39,6 +40,7 @@ def parse_job_url_sync(task_id: str, url: str, user_id: str):
     """Synchronous job URL parsing function to run in thread pool"""
     import time
     import logging
+
     logger = logging.getLogger(__name__)
 
     # Add a small delay to ensure frontend can see is_parsing=True state
@@ -48,6 +50,7 @@ def parse_job_url_sync(task_id: str, url: str, user_id: str):
     try:
         # Parse job URL (it's a synchronous function)
         from src.services.url_parsing_service import parse_job_url
+
         result = parse_job_url(url, user_id=user_id, db_session=db)
 
         # Update JobDescription record with parsed data
@@ -73,26 +76,42 @@ def parse_job_url_sync(task_id: str, url: str, user_id: str):
         logger.exception(f"parse_job_url_sync: Exception during parsing: {str(e)}")
         db_error = SessionLocal()
         try:
-            jd = db_error.query(JobDescription).filter(JobDescription.id == task_id).first()
+            jd = (
+                db_error.query(JobDescription)
+                .filter(JobDescription.id == task_id)
+                .first()
+            )
             if jd:
                 jd.is_parsing = False
                 jd.parse_error = f"Background parsing failed: {str(e)}"
                 db_error.commit()
-                logger.info(f"Successfully updated job description {task_id} with error status")
+                logger.info(
+                    f"Successfully updated job description {task_id} with error status"
+                )
         except Exception as update_error:
-            logger.exception(f"parse_job_url_sync: Failed to update job description with error: {str(update_error)}")
+            logger.exception(
+                f"parse_job_url_sync: Failed to update job description with error: {str(update_error)}"
+            )
             # Even if commit fails, try one more time with a fresh session
             try:
                 db_final = SessionLocal()
-                jd = db_final.query(JobDescription).filter(JobDescription.id == task_id).first()
+                jd = (
+                    db_final.query(JobDescription)
+                    .filter(JobDescription.id == task_id)
+                    .first()
+                )
                 if jd and jd.is_parsing:
                     jd.is_parsing = False
                     jd.parse_error = "Parsing failed due to system error"
                     db_final.commit()
-                    logger.info(f"Successfully updated job description {task_id} on retry")
+                    logger.info(
+                        f"Successfully updated job description {task_id} on retry"
+                    )
                 db_final.close()
             except Exception as final_error:
-                logger.critical(f"CRITICAL: Failed to update job description {task_id} status after multiple attempts: {str(final_error)}")
+                logger.critical(
+                    f"CRITICAL: Failed to update job description {task_id} status after multiple attempts: {str(final_error)}"
+                )
         finally:
             db_error.close()
     finally:
@@ -106,11 +125,7 @@ def parse_job_url_sync(task_id: str, url: str, user_id: str):
 async def parse_job_url_background(jd_id: str, url: str, user_id: str):
     """Parse job URL in background using thread pool executor"""
     await run_task_in_background(
-        jd_id,
-        "job_url_parsing",
-        parse_job_url_sync,
-        url,
-        user_id
+        jd_id, "job_url_parsing", parse_job_url_sync, url, user_id
     )
 
 
@@ -173,17 +188,14 @@ async def create_job_description(
     cv_id: str,
     job_description: JobDescriptionCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user)
+    current_user: User = Depends(get_effective_user),
 ):
     """Add a job description for a specific CV"""
     # Verify CV exists and belongs to user
     cv = get_cv_owned_by(db, cv_id, str(current_user.id))
     if not cv:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="CV not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
     # Create job description with CV binding
     jd = create_job_description_for_user(
         db,
@@ -195,7 +207,7 @@ async def create_job_description(
         company=job_description.company,
         location=job_description.location,
     )
-    
+
     return JobDescriptionResponse(
         id=str(jd.id),
         user_id=str(jd.user_id),
@@ -208,7 +220,7 @@ async def create_job_description(
         created_at=jd.created_at.isoformat(),
         hidden=jd.hidden,
         is_parsing=jd.is_parsing,
-        parse_error=jd.parse_error
+        parse_error=jd.parse_error,
     )
 
 
@@ -216,20 +228,17 @@ async def create_job_description(
 async def get_job_descriptions(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user)
+    current_user: User = Depends(get_effective_user),
 ):
     """Get all job descriptions for a specific CV"""
     # Verify CV exists and belongs to user
     cv = get_cv_owned_by(db, cv_id, str(current_user.id))
     if not cv:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="CV not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
     # Get job descriptions for this specific CV
     job_descriptions = list_job_descriptions_for_user(db, str(current_user.id), cv_id)
-    
+
     jd_responses = [
         JobDescriptionResponse(
             id=str(jd.id),
@@ -243,11 +252,11 @@ async def get_job_descriptions(
             created_at=jd.created_at.isoformat(),
             hidden=jd.hidden,
             is_parsing=jd.is_parsing,
-            parse_error=jd.parse_error
+            parse_error=jd.parse_error,
         )
         for jd in job_descriptions
     ]
-    
+
     return JobDescriptionListResponse(job_descriptions=jd_responses)
 
 
@@ -256,7 +265,7 @@ async def update_job_description(
     jd_id: str,
     job_description: JobDescriptionUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user)
+    current_user: User = Depends(get_effective_user),
 ):
     """Update a job description"""
     updated_jd = update_job_description_owned_by(
@@ -271,8 +280,7 @@ async def update_job_description(
 
     if not updated_jd:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Job description not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
         )
 
     return JobDescriptionResponse(
@@ -287,7 +295,7 @@ async def update_job_description(
         created_at=updated_jd.created_at.isoformat(),
         hidden=updated_jd.hidden,
         is_parsing=updated_jd.is_parsing,
-        parse_error=updated_jd.parse_error
+        parse_error=updated_jd.parse_error,
     )
 
 
@@ -295,44 +303,42 @@ async def update_job_description(
 async def delete_job_description(
     jd_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user)
+    current_user: User = Depends(get_effective_user),
 ):
     """Hide a job description (soft delete)"""
     # Hide the job description instead of actually deleting it
     success = hide_job_description_owned_by(db, jd_id, str(current_user.id))
     if not success:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Job description not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
         )
 
     return {"message": "Job description hidden successfully"}
 
 
-@router.post("/cvs/{cv_id}/job-descriptions/parse-url", response_model=JobDescriptionParseResponse)
+@router.post(
+    "/cvs/{cv_id}/job-descriptions/parse-url", response_model=JobDescriptionParseResponse
+)
 async def parse_job_description_url(
     cv_id: str,
     request: JobDescriptionParseRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user)
+    current_user: User = Depends(get_effective_user),
 ):
     """Parse a job description from a URL using background processing"""
     # Verify CV exists and belongs to user
     cv = get_cv_owned_by(db, cv_id, str(current_user.id))
-    
+
     if not cv:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="CV not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
     # Validate URL before creating job description - check for search results pages
     if _is_search_results_page(request.url):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab."
+            detail="This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab.",
         )
-    
+
     # Create JobDescription record immediately with parsing status
     jd = JobDescription(
         user_id=str(current_user.id),
@@ -342,20 +348,21 @@ async def parse_job_description_url(
         content="",  # Will be populated by background task
         title=None,
         company=None,
-        location=None
+        location=None,
     )
-    
+
     db.add(jd)
     db.commit()
     db.refresh(jd)
-    
-    
+
     # Add small delay to ensure DB commit before starting background task
     await asyncio.sleep(0.1)
-    
+
     # Start background parsing task
-    asyncio.create_task(parse_job_url_background(str(jd.id), request.url, str(current_user.id)))
-    
+    asyncio.create_task(
+        parse_job_url_background(str(jd.id), request.url, str(current_user.id))
+    )
+
     return JobDescriptionParseResponse(
         success=True,
         job_description_id=str(jd.id),
@@ -366,7 +373,7 @@ async def parse_job_description_url(
         location=None,
         source_url=request.url,
         source=None,
-        error=None
+        error=None,
     )
 
 
@@ -374,18 +381,17 @@ async def parse_job_description_url(
 async def get_job_description_status(
     jd_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user)
+    current_user: User = Depends(get_effective_user),
 ):
     """Get the current status of a job description parsing task"""
     # Get job description and verify ownership
     jd = get_job_description_by_id(db, jd_id, str(current_user.id))
-    
+
     if not jd:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Job description not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
         )
-    
+
     return JobDescriptionResponse(
         id=str(jd.id),
         user_id=str(jd.user_id),
@@ -398,5 +404,5 @@ async def get_job_description_status(
         created_at=jd.created_at.isoformat(),
         hidden=jd.hidden,
         is_parsing=jd.is_parsing,
-        parse_error=jd.parse_error
+        parse_error=jd.parse_error,
     )

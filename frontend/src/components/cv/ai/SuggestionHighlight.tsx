@@ -1,17 +1,17 @@
 /**
  * Suggestion Highlight Component
- * 
+ *
  * This component provides visual highlighting for AI suggestions within the CV editor.
  * It wraps content that has suggested changes and applies appropriate styling based on
  * the suggestion type and status.
- * 
+ *
  * Key responsibilities:
  * - Apply color coding for different suggestion types (addition, modification, removal)
  * - Show visual indicators for suggestion status (pending, approved, rejected)
  * - Handle hover states and interaction feedback
  * - Provide accessibility features for screen readers
  * - Support different highlight modes (all, pending, approved)
- * 
+ *
  * Usage:
  * - Wrap content that has suggestions with this component
  * - Pass the relevant suggestion data for styling
@@ -40,11 +40,11 @@ const HighlightWrapper = styled(Box)<{
 }>(({ theme, changeType, status, isHovered }) => {
   const getBackgroundColor = () => {
     if (status === 'rejected') return 'transparent';
-    
+
     switch (changeType) {
       case 'addition':
-        return status === 'approved' 
-          ? theme.palette.success.light 
+        return status === 'approved'
+          ? theme.palette.success.light
           : theme.palette.success.main;
       case 'modification':
         return status === 'approved'
@@ -61,7 +61,7 @@ const HighlightWrapper = styled(Box)<{
 
   const getBorderColor = () => {
     if (status === 'rejected') return theme.palette.grey[400];
-    
+
     switch (changeType) {
       case 'addition':
         return theme.palette.success.dark;
@@ -87,7 +87,7 @@ const HighlightWrapper = styled(Box)<{
     cursor: 'pointer',
     opacity: status === 'rejected' ? 0.5 : 1,
     textDecoration: changeType === 'removal' ? 'line-through' : 'none',
-    
+
     '&:hover': {
       boxShadow: theme.shadows[2],
       transform: 'translateY(-1px)',
@@ -182,7 +182,7 @@ export const SuggestionHighlight: React.FC<SuggestionHighlightProps> = ({
   const handleClick = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    
+
     if (suggestion.status === 'pending') {
       // Show context menu or quick actions
       // For now, just accept the suggestion on click
@@ -198,8 +198,8 @@ export const SuggestionHighlight: React.FC<SuggestionHighlightProps> = ({
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           {getChangeTypeIcon(suggestion.changeType)}
-          <Chip 
-            label={suggestion.changeType} 
+          <Chip
+            label={suggestion.changeType}
             size="small"
             color={
               suggestion.changeType === 'addition' ? 'success' :
@@ -276,8 +276,8 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({
 
   // For now, highlight the entire text if there are suggestions
   // In a more advanced implementation, we could highlight specific parts
-  const relevantSuggestion = suggestions.find(s => 
-    s.section === section && 
+  const relevantSuggestion = suggestions.find(s =>
+    s.section === section &&
     (s.fieldPath === fieldPath || !s.fieldPath)
   );
 

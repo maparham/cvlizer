@@ -1,9 +1,9 @@
 /**
  * End-to-End Test: CV Editor - Form Validation
- * 
+ *
  * Tests comprehensive form validation scenarios across all CV sections.
  * Uses one CV to test various validation rules naturally as a user would encounter them.
- * 
+ *
  * Test Scenarios:
  * 1. Education: Institution field is required
  * 2. Education: Start Date is required
@@ -34,23 +34,23 @@ async function setupCVForValidation(page: Page): Promise<string> {
   } else if (!url.includes('/dashboard')) {
     await page.goto('/dashboard', { waitUntil: 'load' });
   }
-  
+
   await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible({ timeout: 5000 });
-  
+
   const emptyStateButton = page.getByTestId('start-from-scratch-empty-state-button');
   const regularButton = page.getByTestId('start-from-scratch-button');
   const isEmptyState = await emptyStateButton.isVisible({ timeout: 5000 }).catch(() => false);
-  
+
   if (isEmptyState) {
     await emptyStateButton.click();
   } else {
     await regularButton.click();
   }
-  
+
   await page.waitForURL(/\/cv\//, { timeout: 5000 });
   const cvId = page.url().split('/cv/')[1];
   await expect(page.getByRole('heading', { name: 'Personal Information' })).toBeVisible({ timeout: 5000 });
-  
+
   // Add Education and Work Experience sections
   await page.getByTestId('add-section-education-button').scrollIntoViewIfNeeded();
   await page.getByTestId('add-section-education-button').click();
@@ -63,7 +63,7 @@ async function setupCVForValidation(page: Page): Promise<string> {
   await page.getByTestId('add-section-work_experience-button').scrollIntoViewIfNeeded();
   await page.getByTestId('add-section-work_experience-button').click();
   await expect(page.getByRole('heading', { name: 'Work Experience' })).toBeVisible({ timeout: 5000 });
-  
+
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.evaluate(() => console.clear());
 
@@ -83,7 +83,7 @@ test.describe('CV Editor - Form Validation', () => {
     // Determine which user auth to use based on project name
     const isUser2 = testInfo.project.name.includes('user2');
     const authFile = isUser2 ? 'tests/e2e/.auth/user2.json' : 'tests/e2e/.auth/user1.json';
-    
+
     const context = await browser.newContext({ storageState: authFile });
     testPage = await context.newPage();
     cvId = await setupCVForValidation(testPage);
@@ -207,19 +207,19 @@ test.describe('CV Editor - Form Validation', () => {
     await expect(institutionField).toBeVisible({ timeout: 3000 });
 
     await institutionField.fill('MIT');
-    
+
     // Set Start Date to 2022
     const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
     await startDateGroup.getByLabel('Day').fill('01');
     await startDateGroup.getByLabel('Month').fill('09');
     await startDateGroup.getByLabel('Year').fill('2022');
-    
+
     // Set End Date to 2020 (before start date)
     const endDateGroup = page.getByRole('group', { name: 'End Date' });
     await endDateGroup.getByLabel('Day').fill('01');
     await endDateGroup.getByLabel('Month').fill('05');
     await endDateGroup.getByLabel('Year').fill('2020');
-    
+
     // Try to save
     const saveButton = page.getByTestId('save-education-button');
     if (await saveButton.isEnabled()) {
@@ -244,12 +244,12 @@ test.describe('CV Editor - Form Validation', () => {
     // Fill position but not company
     await positionField.fill('Software Engineer');
     await page.keyboard.press('Tab');
-    
+
     const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
     await startDateGroup.getByLabel('Day').fill('01');
     await startDateGroup.getByLabel('Month').fill('01');
     await startDateGroup.getByLabel('Year').fill('2020');
-    
+
     // Save button should be disabled
     const saveButton = page.getByTestId('save-work-experience-button');
     await expect(saveButton).toBeDisabled();
@@ -268,7 +268,7 @@ test.describe('CV Editor - Form Validation', () => {
 
     // Fill company but not start date
     await companyField.fill('Apple Inc');
-    
+
     const saveButton = page.getByTestId('save-work-experience-button');
     await expect(saveButton).toBeDisabled();
 
@@ -285,19 +285,19 @@ test.describe('CV Editor - Form Validation', () => {
     await expect(companyField).toBeVisible({ timeout: 3000 });
 
     await companyField.fill('Microsoft');
-    
+
     // Start date: 2023
     const startDateGroup = page.getByRole('group', { name: 'Start Date *' });
     await startDateGroup.getByLabel('Day').fill('01');
     await startDateGroup.getByLabel('Month').fill('01');
     await startDateGroup.getByLabel('Year').fill('2023');
-    
+
     // End date: 2021 (invalid)
     const endDateGroup = page.getByRole('group', { name: 'End Date' });
     await endDateGroup.getByLabel('Day').fill('01');
     await endDateGroup.getByLabel('Month').fill('01');
     await endDateGroup.getByLabel('Year').fill('2021');
-    
+
     const saveButton = page.getByTestId('save-work-experience-button');
     if (await saveButton.isEnabled()) {
       await saveButton.click();
@@ -410,11 +410,11 @@ test.describe('CV Editor - Form Validation', () => {
       console.log('No CV to clean up');
       return;
     }
-    
+
     try {
       await testPage.goto('/dashboard');
       await expect(testPage.getByRole('heading', { name: /my cvs/i })).toBeVisible({ timeout: 5000 });
-      
+
       const deleteButton = testPage.getByTestId(`delete-cv-button-${cvId}`);
       if (await deleteButton.isVisible({ timeout: 5000 }).catch(() => false)) {
         await deleteButton.click();
@@ -426,4 +426,3 @@ test.describe('CV Editor - Form Validation', () => {
     }
   });
 });
-

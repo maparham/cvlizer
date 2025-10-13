@@ -1,6 +1,6 @@
 /**
  * UI Store - Zustand State Management
- * 
+ *
  * This module provides centralized state management for UI-related operations including:
  * - Theme management (light/dark/auto)
  * - Sidebar state and navigation
@@ -8,7 +8,7 @@
  * - Global loading states for operations
  * - Dialog state management for modals and confirmations
  * - Convenience methods for common UI operations
- * 
+ *
  * Usage:
  * - Import useUIStore hook to access UI state and actions
  * - Use notification methods for user feedback
@@ -31,13 +31,13 @@ interface UIState {
   // Theme and appearance
   theme: 'light' | 'dark' | 'auto'
   sidebarOpen: boolean
-  
+
   // Notifications
   notifications: Notification[]
-  
+
   // Loading states for different operations
   globalLoading: boolean
-  
+
   // Dialog states
   dialogs: {
     confirmDelete: boolean
@@ -49,27 +49,27 @@ interface UIState {
   setTheme: (theme: 'light' | 'dark' | 'auto') => void
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
-  
+
   // Notification actions
   addNotification: (notification: Omit<Notification, 'id'>) => string
   removeNotification: (id: string) => void
   clearNotifications: () => void
-  
+
   // Loading actions
   setGlobalLoading: (loading: boolean) => void
-  
+
   // Dialog actions
   openDialog: (dialog: keyof UIState['dialogs']) => void
   closeDialog: (dialog: keyof UIState['dialogs']) => void
   closeAllDialogs: () => void
-  
+
   // Convenience methods
   showSuccess: (title: string, message?: string) => void
   showError: (title: string, message?: string) => void
   showWarning: (title: string, message?: string) => void
   showInfo: (title: string, message?: string) => void
   showValidationError: (title: string, message?: string) => void
-  
+
   // Reset function for testing
   reset: () => void
 }
@@ -173,17 +173,17 @@ export const useUIStore = create<UIState>()(
         },
 
         // Convenience methods
-        showSuccess: (title: string, message?: string) => 
+        showSuccess: (title: string, message?: string) =>
           get().addNotification({ type: 'success', title, message }),
-        showError: (title: string, message?: string) => 
+        showError: (title: string, message?: string) =>
           get().addNotification({ type: 'error', title, message }),
-        showValidationError: (title: string, message?: string) => 
+        showValidationError: (title: string, message?: string) =>
           get().addNotification({ type: 'error', title, message, persistent: true }),
-        showWarning: (title: string, message?: string) => 
+        showWarning: (title: string, message?: string) =>
           get().addNotification({ type: 'warning', title, message }),
-        showInfo: (title: string, message?: string) => 
+        showInfo: (title: string, message?: string) =>
           get().addNotification({ type: 'info', title, message }),
-        
+
         // Reset function for testing
         reset: () => {
           set({
@@ -217,22 +217,22 @@ export const useUIStore = create<UIState>()(
 // Utility hooks for common patterns
 export const useNotifications = () => {
   const { notifications, addNotification, removeNotification, clearNotifications } = useUIStore()
-  
+
   return {
     notifications,
     addNotification,
     removeNotification,
     clearNotifications,
     // Convenience methods
-    showSuccess: (title: string, message?: string) => 
+    showSuccess: (title: string, message?: string) =>
       addNotification({ type: 'success', title, message }),
-    showError: (title: string, message?: string) => 
+    showError: (title: string, message?: string) =>
       addNotification({ type: 'error', title, message }),
-    showValidationError: (title: string, message?: string) => 
+    showValidationError: (title: string, message?: string) =>
       addNotification({ type: 'error', title, message, persistent: true }),
-    showWarning: (title: string, message?: string) => 
+    showWarning: (title: string, message?: string) =>
       addNotification({ type: 'warning', title, message }),
-    showInfo: (title: string, message?: string) => 
+    showInfo: (title: string, message?: string) =>
       addNotification({ type: 'info', title, message })
   }
 }

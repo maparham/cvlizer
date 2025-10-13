@@ -1,6 +1,6 @@
 /**
  * Simplified CV Diff Viewer Component
- * 
+ *
  * This component displays diff results computed by the backend service.
  * No frontend diff computation - just clean display of backend results.
  */
@@ -58,7 +58,7 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
       try {
         setLoading(true)
         setError(null)
-        
+
         // Get diff from backend
         const diffResult = await backendHistoryService.getDiff(
           cvId,
@@ -66,7 +66,7 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
           oldVersion?.id, // undefined means backend will use smart fallback logic
           forcePrevious // force comparison to previous version
         )
-        
+
         setChanges(diffResult.changes)
         setSummary(diffResult.summary)
       } catch (err) {
@@ -142,10 +142,10 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
       <Typography variant="h6" gutterBottom>
         {title}
       </Typography>
-      
-      <Typography 
-        variant="subtitle1" 
-        color="text.secondary" 
+
+      <Typography
+        variant="subtitle1"
+        color="text.secondary"
         gutterBottom
         sx={{ fontWeight: 'medium' }}
       >
@@ -156,9 +156,9 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
       <List sx={{ mt: 2 }}>
         {changes.map((change, index) => (
           <ListItem key={index} sx={{ px: 0, py: 1 }}>
-            <Card 
-              variant="outlined" 
-              sx={{ 
+            <Card
+              variant="outlined"
+              sx={{
                 width: '100%',
                 borderLeft: `4px solid ${getChangeColor(change.color)}`
               }}
@@ -166,33 +166,33 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
               <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
                 <Box display="flex" alignItems="flex-start" gap={1}>
                   {getChangeIcon(change.icon)}
-                  
+
                   <Box flexGrow={1}>
                     <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
                       {change.description}
                     </Typography>
-                    
+
                     {/* Text Diff Display */}
                     {change.text_diff && (
                       <Box sx={{ mt: 2 }}>
                         {/* Statistics */}
                         <Typography variant="subtitle2" gutterBottom sx={{ color: 'text.secondary' }}>
-                          {change.text_diff.stats.additions > 0 && change.text_diff.stats.deletions > 0 
+                          {change.text_diff.stats.additions > 0 && change.text_diff.stats.deletions > 0
                             ? `${change.text_diff.stats.additions} characters added, ${change.text_diff.stats.deletions} removed`
-                            : change.text_diff.stats.additions > 0 
+                            : change.text_diff.stats.additions > 0
                               ? `${change.text_diff.stats.additions} characters added`
                               : `${change.text_diff.stats.deletions} characters removed`
                           }
                         </Typography>
-                        
+
                         {/* Inline Diff with Highlighting */}
                         {change.text_diff.inline_diff ? (
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
                               Text with changes highlighted:
                             </Typography>
-                            <Box 
-                              sx={{ 
+                            <Box
+                              sx={{
                                 p: 2,
                                 bgcolor: '#f9f9f9',
                                 border: '1px solid #e0e0e0',
@@ -214,8 +214,8 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
                               <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
                                 Before:
                               </Typography>
-                              <Box 
-                                sx={{ 
+                              <Box
+                                sx={{
                                   p: 1.5, bgcolor: '#ffebee', border: '1px solid #ffcdd2',
                                   borderRadius: 1, fontSize: '0.875rem', lineHeight: 1.4,
                                   maxHeight: '200px', overflow: 'auto', whiteSpace: 'pre-wrap'
@@ -228,8 +228,8 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
                               <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
                                 After:
                               </Typography>
-                              <Box 
-                                sx={{ 
+                              <Box
+                                sx={{
                                   p: 1.5, bgcolor: '#e8f5e8', border: '1px solid #c8e6c9',
                                   borderRadius: 1, fontSize: '0.875rem', lineHeight: 1.4,
                                   maxHeight: '200px', overflow: 'auto', whiteSpace: 'pre-wrap'
@@ -240,7 +240,7 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
                             </Box>
                           </Box>
                         )}
-                        
+
                         {/* Word-level Summary */}
                         {change.text_diff.word_diff && change.text_diff.word_diff.length > 0 && (
                           <Box sx={{ mt: 2 }}>
@@ -248,11 +248,11 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
                               Summary of changes:
                             </Typography>
                             {change.text_diff.word_diff.map((wordChange, idx) => (
-                              <Typography 
+                              <Typography
                                 key={idx}
-                                variant="body2" 
-                                sx={{ 
-                                  ml: 1, 
+                                variant="body2"
+                                sx={{
+                                  ml: 1,
                                   color: 'text.secondary',
                                   fontFamily: 'monospace',
                                   fontSize: '0.8rem'
@@ -265,14 +265,14 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
                         )}
                       </Box>
                     )}
-                    
+
                     {/* Regular Details */}
                     {change.details && change.details.length > 0 && (
                       <Box sx={{ mt: 1 }}>
                         {change.details.map((detail, detailIndex) => (
-                          <Typography 
+                          <Typography
                             key={detailIndex}
-                            variant="body2" 
+                            variant="body2"
                             color="text.secondary"
                             sx={{ ml: 1 }}
                           >

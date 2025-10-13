@@ -49,5 +49,3 @@ STRICT MODE: This command is read-only. Do not change code, configuration, data,
 ### Handoff to implementation
 - After delivering the debug report, STOP. Await explicit user approval before making any edits or posting code.
 - Only upon approval, switch to implementation mode in a separate message.
-
-

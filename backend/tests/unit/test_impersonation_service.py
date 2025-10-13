@@ -17,7 +17,7 @@ from src.services.impersonation_service import (
     get_active_sessions,
     validate_session,
     cleanup_expired_sessions,
-    ImpersonationNotAllowedError
+    ImpersonationNotAllowedError,
 )
 from src.models.impersonation_session import ImpersonationSession
 from src.models.user import User
@@ -54,7 +54,9 @@ class TestImpersonationService:
         """Create a mock audit service"""
         return Mock()
 
-    def test_start_impersonation_session_success(self, mock_db, admin_user, target_user, mock_audit_service):
+    def test_start_impersonation_session_success(
+        self, mock_db, admin_user, target_user, mock_audit_service
+    ):
         """Test successful impersonation session start"""
         # Mock database queries
         mock_db.query.return_value.filter.return_value.first.return_value = target_user
@@ -63,20 +65,33 @@ class TestImpersonationService:
         mock_db.refresh = Mock()
 
         # Mock all internal functions
-        with patch('src.services.impersonation_service.log_admin_action', mock_audit_service), \
-             patch('src.services.impersonation_service.is_admin_user', side_effect=lambda user: user.is_admin), \
-             patch('src.services.impersonation_service._check_impersonation_enabled'), \
-             patch('src.services.impersonation_service._validate_admin_user'), \
-             patch('src.services.impersonation_service._validate_target_user', return_value=target_user), \
-             patch('src.services.impersonation_service._check_rate_limits'), \
-             patch('src.services.impersonation_service.get_active_session_for_admin', return_value=None):
+        with (
+            patch(
+                "src.services.impersonation_service.log_admin_action", mock_audit_service
+            ),
+            patch(
+                "src.services.impersonation_service.is_admin_user",
+                side_effect=lambda user: user.is_admin,
+            ),
+            patch("src.services.impersonation_service._check_impersonation_enabled"),
+            patch("src.services.impersonation_service._validate_admin_user"),
+            patch(
+                "src.services.impersonation_service._validate_target_user",
+                return_value=target_user,
+            ),
+            patch("src.services.impersonation_service._check_rate_limits"),
+            patch(
+                "src.services.impersonation_service.get_active_session_for_admin",
+                return_value=None,
+            ),
+        ):
             result = start_impersonation_session(
                 db=mock_db,
                 admin_user=admin_user,
                 target_user_id=target_user.id,
                 justification="Testing impersonation",
                 admin_ip="127.0.0.1",
-                admin_user_agent="Test Agent"
+                admin_user_agent="Test Agent",
             )
 
         # Verify session was created
@@ -95,28 +110,44 @@ class TestImpersonationService:
         # Verify audit log was created
         mock_audit_service.assert_called_once()
 
-    def test_start_impersonation_session_target_user_not_found(self, mock_db, admin_user, mock_audit_service):
+    def test_start_impersonation_session_target_user_not_found(
+        self, mock_db, admin_user, mock_audit_service
+    ):
         """Test impersonation start when target user doesn't exist"""
         # Mock database query to return None (user not found)
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
-        with patch('src.services.impersonation_service.log_admin_action', mock_audit_service), \
-             patch('src.services.impersonation_service.is_admin_user', side_effect=lambda user: user.is_admin), \
-             patch('src.services.impersonation_service._check_impersonation_enabled'), \
-             patch('src.services.impersonation_service._validate_admin_user'), \
-             patch('src.services.impersonation_service._check_rate_limits'), \
-             patch('src.services.impersonation_service.get_active_session_for_admin', return_value=None):
-            with pytest.raises(ImpersonationNotAllowedError, match="Target user not found"):
+        with (
+            patch(
+                "src.services.impersonation_service.log_admin_action", mock_audit_service
+            ),
+            patch(
+                "src.services.impersonation_service.is_admin_user",
+                side_effect=lambda user: user.is_admin,
+            ),
+            patch("src.services.impersonation_service._check_impersonation_enabled"),
+            patch("src.services.impersonation_service._validate_admin_user"),
+            patch("src.services.impersonation_service._check_rate_limits"),
+            patch(
+                "src.services.impersonation_service.get_active_session_for_admin",
+                return_value=None,
+            ),
+        ):
+            with pytest.raises(
+                ImpersonationNotAllowedError, match="Target user not found"
+            ):
                 start_impersonation_session(
                     db=mock_db,
                     admin_user=admin_user,
                     target_user_id="nonexistent-user",
                     justification="Testing",
                     admin_ip="127.0.0.1",
-                    admin_user_agent="Test Agent"
+                    admin_user_agent="Test Agent",
                 )
 
-    def test_start_impersonation_session_existing_active_session(self, mock_db, admin_user, target_user, mock_audit_service):
+    def test_start_impersonation_session_existing_active_session(
+        self, mock_db, admin_user, target_user, mock_audit_service
+    ):
         """Test starting impersonation when admin already has an active session"""
         # Mock existing active session
         existing_session = Mock(spec=ImpersonationSession)
@@ -125,13 +156,26 @@ class TestImpersonationService:
 
         mock_db.query.return_value.filter.return_value.first.return_value = target_user
 
-        with patch('src.services.impersonation_service.log_admin_action', mock_audit_service), \
-             patch('src.services.impersonation_service.is_admin_user', side_effect=lambda user: user.is_admin), \
-             patch('src.services.impersonation_service._check_impersonation_enabled'), \
-             patch('src.services.impersonation_service._validate_admin_user'), \
-             patch('src.services.impersonation_service._check_rate_limits'), \
-             patch('src.services.impersonation_service.get_active_session_for_admin', return_value=existing_session), \
-             patch('src.services.impersonation_service.end_impersonation_session', return_value=True):
+        with (
+            patch(
+                "src.services.impersonation_service.log_admin_action", mock_audit_service
+            ),
+            patch(
+                "src.services.impersonation_service.is_admin_user",
+                side_effect=lambda user: user.is_admin,
+            ),
+            patch("src.services.impersonation_service._check_impersonation_enabled"),
+            patch("src.services.impersonation_service._validate_admin_user"),
+            patch("src.services.impersonation_service._check_rate_limits"),
+            patch(
+                "src.services.impersonation_service.get_active_session_for_admin",
+                return_value=existing_session,
+            ),
+            patch(
+                "src.services.impersonation_service.end_impersonation_session",
+                return_value=True,
+            ),
+        ):
             # This should succeed and end the existing session
             result = start_impersonation_session(
                 db=mock_db,
@@ -139,17 +183,22 @@ class TestImpersonationService:
                 target_user_id=target_user.id,
                 justification="Testing",
                 admin_ip="127.0.0.1",
-                admin_user_agent="Test Agent"
+                admin_user_agent="Test Agent",
             )
-            
+
             # Verify the existing session was ended
             from src.services.impersonation_service import end_impersonation_session
-            end_impersonation_session.assert_called_once_with(mock_db, existing_session.id, "ended_by_new_session")
-            
+
+            end_impersonation_session.assert_called_once_with(
+                mock_db, existing_session.id, "ended_by_new_session"
+            )
+
             # Verify new session was created
             assert result is not None
 
-    def test_end_impersonation_session_success(self, mock_db, admin_user, mock_audit_service):
+    def test_end_impersonation_session_success(
+        self, mock_db, admin_user, mock_audit_service
+    ):
         """Test successful impersonation session end"""
         # Mock active session
         active_session = Mock(spec=ImpersonationSession)
@@ -162,7 +211,7 @@ class TestImpersonationService:
         active_session.target_user = Mock()
         active_session.target_user.email = "target@example.com"
         active_session.target_user_id = "target-123"
-        
+
         mock_db.query.return_value.filter.return_value.first.return_value = active_session
         mock_db.commit = Mock()
 
@@ -170,15 +219,20 @@ class TestImpersonationService:
         def mock_end_session(reason):
             active_session.ended_at = datetime.utcnow()
             active_session.status = "ended"
-        
+
         active_session.end_session = mock_end_session
 
-        with patch('src.services.impersonation_service.log_admin_action', mock_audit_service), \
-             patch('src.services.impersonation_service.is_admin_user', side_effect=lambda user: user.is_admin):
+        with (
+            patch(
+                "src.services.impersonation_service.log_admin_action", mock_audit_service
+            ),
+            patch(
+                "src.services.impersonation_service.is_admin_user",
+                side_effect=lambda user: user.is_admin,
+            ),
+        ):
             result = end_impersonation_session(
-                db=mock_db,
-                session_id=active_session.id,
-                end_reason="ended_by_admin"
+                db=mock_db, session_id=active_session.id, end_reason="ended_by_admin"
             )
 
         # Verify session was ended
@@ -197,12 +251,17 @@ class TestImpersonationService:
         # Mock database query to return None (session not found)
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
-        with patch('src.services.impersonation_service.log_admin_action', mock_audit_service), \
-             patch('src.services.impersonation_service.is_admin_user', side_effect=lambda user: user.is_admin):
+        with (
+            patch(
+                "src.services.impersonation_service.log_admin_action", mock_audit_service
+            ),
+            patch(
+                "src.services.impersonation_service.is_admin_user",
+                side_effect=lambda user: user.is_admin,
+            ),
+        ):
             result = end_impersonation_session(
-                db=mock_db,
-                session_id="nonexistent-session",
-                end_reason="ended_by_admin"
+                db=mock_db, session_id="nonexistent-session", end_reason="ended_by_admin"
             )
 
         # Verify function returns False for non-existent session
@@ -216,7 +275,7 @@ class TestImpersonationService:
         active_session.admin_id = admin_user.id
         active_session.status = "active"
         active_session.is_active = True
-        
+
         mock_db.query.return_value.filter.return_value.all.return_value = [active_session]
 
         result = get_active_session_for_admin(mock_db, admin_user.id)
@@ -241,14 +300,16 @@ class TestImpersonationService:
         session1.id = "session-1"
         session1.status = "active"
         session1.is_active = True
-        
+
         session2 = Mock(spec=ImpersonationSession)
         session2.id = "session-2"
         session2.status = "active"
         session2.is_active = True
-        
+
         mock_sessions = [session1, session2]
-        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = mock_sessions
+        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = (
+            mock_sessions
+        )
 
         result = get_active_sessions(mock_db, limit=10, offset=0)
 
@@ -268,7 +329,7 @@ class TestImpersonationService:
         mock_options = Mock()
         mock_filter = Mock()
         mock_first = Mock(return_value=session)
-        
+
         mock_filter.first = mock_first
         mock_options.filter.return_value = mock_filter
         mock_query.options.return_value = mock_options
@@ -293,7 +354,7 @@ class TestImpersonationService:
         mock_options = Mock()
         mock_filter = Mock()
         mock_first = Mock(return_value=session)
-        
+
         mock_filter.first = mock_first
         mock_options.filter.return_value = mock_filter
         mock_query.options.return_value = mock_options
@@ -316,7 +377,7 @@ class TestImpersonationService:
         mock_options = Mock()
         mock_filter = Mock()
         mock_first = Mock(return_value=session)
-        
+
         mock_filter.first = mock_first
         mock_options.filter.return_value = mock_filter
         mock_query.options.return_value = mock_options
@@ -333,17 +394,19 @@ class TestImpersonationService:
         expired_session1.id = "expired-1"
         expired_session1.status = "active"
         expired_session1.expires_at = datetime.utcnow() - timedelta(hours=1)
-        
+
         expired_session2 = Mock(spec=ImpersonationSession)
         expired_session2.id = "expired-2"
         expired_session2.status = "active"
         expired_session2.expires_at = datetime.utcnow() - timedelta(hours=2)
-        
+
         mock_expired_sessions = [expired_session1, expired_session2]
-        mock_db.query.return_value.filter.return_value.all.return_value = mock_expired_sessions
+        mock_db.query.return_value.filter.return_value.all.return_value = (
+            mock_expired_sessions
+        )
         mock_db.commit = Mock()
 
-        with patch('src.services.impersonation_service.log_admin_action', Mock()):
+        with patch("src.services.impersonation_service.log_admin_action", Mock()):
             result = cleanup_expired_sessions(mock_db)
 
         # Verify cleanup was performed
@@ -358,7 +421,7 @@ class TestImpersonationService:
         mock_db.query.return_value.filter.return_value.all.return_value = []
         mock_db.commit = Mock()
 
-        with patch('src.services.impersonation_service.log_admin_action', Mock()):
+        with patch("src.services.impersonation_service.log_admin_action", Mock()):
             result = cleanup_expired_sessions(mock_db)
 
         # Verify no cleanup was performed

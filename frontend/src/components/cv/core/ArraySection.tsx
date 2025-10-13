@@ -26,11 +26,11 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
   // Use common auto-save hook - it now properly handles new vs existing items
   useArraySectionAutoSave(
     isEditing,
-    editingIndex, 
-    editData, 
-    data || [], 
-    onUpdate, 
-    onSave, 
+    editingIndex,
+    editData,
+    data || [],
+    onUpdate,
+    onSave,
     autoSaveMessage || '',
     onUnsavedChanges ? (hasChanges: boolean) => onUnsavedChanges('', hasChanges) : undefined
   )
@@ -47,7 +47,7 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
   const handleSave = () => {
     if (editingIndex !== null) {
       const newData = [...(data || [])]
-      
+
       // Check if we're adding a new item (editingIndex >= current array length)
       if (editingIndex >= (data || []).length) {
         // Adding a new item - append to the array
@@ -56,7 +56,7 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
         // Editing an existing item - update at the index
         newData[editingIndex] = editData
       }
-      
+
       onUpdate(newData)
       onSave(newData, autoSaveMessage || '')
     }

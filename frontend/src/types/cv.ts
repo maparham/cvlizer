@@ -1,17 +1,17 @@
 /**
  * CV Type Definitions
- * 
+ *
  * This module defines the core TypeScript interfaces and types for CV-related data structures.
  * It includes the main CV entity, section types, validation schemas, and utility types used
  * throughout the CV editor application.
- * 
+ *
  * Key types:
  * - CV: Main CV entity with metadata and parsed data
  * - CVSection: Individual sections within a CV (work experience, education, etc.)
  * - CVData: The structured data content of a CV
  * - Validation types: Field validation results and error handling
  * - History types: CV version history and snapshot management
- * 
+ *
  * Usage:
  * - Import these types in components and services that work with CV data
  * - Used for type safety in API calls and data transformations
@@ -189,31 +189,31 @@ export interface CVSection {
   order: number
 }
 
-export type CVSectionType = 
-  | 'personal_info' 
-  | 'professional_summary' 
+export type CVSectionType =
+  | 'personal_info'
+  | 'professional_summary'
   | 'why_good_fit'
-  | 'work_experience' 
-  | 'education' 
-  | 'skills' 
-  | 'certifications' 
-  | 'projects' 
-  | 'awards' 
-  | 'publications' 
+  | 'work_experience'
+  | 'education'
+  | 'skills'
+  | 'certifications'
+  | 'projects'
+  | 'awards'
+  | 'publications'
   | 'volunteer_experience'
 
 // CV Section Data Union Type
-export type CVSectionData = 
-  | PersonalInfo 
-  | ProfessionalSummary 
+export type CVSectionData =
+  | PersonalInfo
+  | ProfessionalSummary
   | WhyGoodFit
-  | WorkExperience[] 
-  | Education[] 
-  | Skills 
-  | Certification[] 
-  | Project[] 
-  | Award[] 
-  | Publication[] 
+  | WorkExperience[]
+  | Education[]
+  | Skills
+  | Certification[]
+  | Project[]
+  | Award[]
+  | Publication[]
   | VolunteerExperience[]
 
 // Utility Types

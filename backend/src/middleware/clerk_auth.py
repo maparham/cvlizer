@@ -4,6 +4,7 @@ Clerk authentication middleware for FastAPI.
 This module provides authentication using Clerk JWT tokens and user synchronization
 with the local database.
 """
+
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -20,7 +21,10 @@ from functools import lru_cache
 from src.models.base import get_db
 from src.models.user import User
 from src.services.clerk_sync_service import sync_clerk_user_to_local_db
-from src.services.auth_service import SECRET_KEY as APP_JWT_SECRET, ALGORITHM as APP_JWT_ALG
+from src.services.auth_service import (
+    SECRET_KEY as APP_JWT_SECRET,
+    ALGORITHM as APP_JWT_ALG,
+)
 from datetime import datetime, timezone
 from jose import jwt
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -32,9 +36,11 @@ logger = logging.getLogger(__name__)
 
 CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
 
+
 # Auth mode configuration
 def _is_truthy(val: Optional[str]) -> bool:
     return str(val).lower() in {"1", "true", "yes", "on"}
+
 
 DEV_MODE = _is_truthy(os.getenv("DEV_MODE", "true"))
 VERIFY_TOKENS = _is_truthy(os.getenv("CLERK_VERIFY_TOKENS", "true"))
@@ -51,24 +57,35 @@ def is_admin_user(user: User) -> bool:
     Admin user is configured via ADMIN_EMAIL environment variable.
     """
     admin_email = os.getenv("ADMIN_EMAIL")
-    
+
     if not admin_email:
-        logger.warning("ADMIN_EMAIL environment variable not set. No admin access available.")
+        logger.warning(
+            "ADMIN_EMAIL environment variable not set. No admin access available."
+        )
         return False
-    
+
     # Strict email matching (case insensitive) and ensure user is active
-    is_admin = user.email.lower().strip() == admin_email.lower().strip() and user.is_active
-    
+    is_admin = (
+        user.email.lower().strip() == admin_email.lower().strip() and user.is_active
+    )
+
     if not is_admin:
         logger.warning(f"Admin access denied for {user.email} (expected: {admin_email})")
     else:
         logger.debug(f"Admin access granted for {user.email}")
-    
+
     return is_admin
+
+
 CLERK_API_URL = "https://api.clerk.com/v1"
 
-if not CLERK_SECRET_KEY or CLERK_SECRET_KEY == "sk_test_your_secret_key_from_clerk_dashboard":
-    logger.warning("CLERK_SECRET_KEY is not set or is a placeholder. Clerk API calls will fail.")
+if (
+    not CLERK_SECRET_KEY
+    or CLERK_SECRET_KEY == "sk_test_your_secret_key_from_clerk_dashboard"
+):
+    logger.warning(
+        "CLERK_SECRET_KEY is not set or is a placeholder. Clerk API calls will fail."
+    )
     CLERK_SECRET_KEY = None
 
 security = HTTPBearer()
@@ -77,12 +94,15 @@ security = HTTPBearer()
 _clerk_user_cache = {}
 _cache_ttl = 300  # 5 minutes cache TTL
 
+
 def get_clerk_user_info(clerk_user_id: str) -> Optional[Dict[str, Any]]:
     """
     Fetches user information from the Clerk Backend API with caching.
     """
     if not CLERK_SECRET_KEY:
-        logger.error("CLERK_SECRET_KEY is not configured. Cannot fetch user info from Clerk API.")
+        logger.error(
+            "CLERK_SECRET_KEY is not configured. Cannot fetch user info from Clerk API."
+        )
         return None
 
     # Check cache first
@@ -98,15 +118,17 @@ def get_clerk_user_info(clerk_user_id: str) -> Optional[Dict[str, Any]]:
     try:
         headers = {
             "Authorization": f"Bearer {CLERK_SECRET_KEY}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
-        response = requests.get(f"{CLERK_API_URL}/users/{clerk_user_id}", headers=headers, timeout=5)  # Reduced timeout
+        response = requests.get(
+            f"{CLERK_API_URL}/users/{clerk_user_id}", headers=headers, timeout=5
+        )  # Reduced timeout
         response.raise_for_status()
         user_data = response.json()
-        
+
         # Cache the result
         _clerk_user_cache[clerk_user_id] = (user_data, current_time)
-        
+
         return user_data
     except requests.exceptions.Timeout:
         logger.error(f"Timeout fetching user {clerk_user_id} from Clerk API")
@@ -120,13 +142,17 @@ def get_clerk_user_info(clerk_user_id: str) -> Optional[Dict[str, Any]]:
         elif e.response.status_code == 401:
             logger.error(f"Unauthorized access to Clerk API - check CLERK_SECRET_KEY")
         else:
-            logger.error(f"HTTP error {e.response.status_code} fetching user {clerk_user_id} from Clerk API: {e}")
+            logger.error(
+                f"HTTP error {e.response.status_code} fetching user {clerk_user_id} from Clerk API: {e}"
+            )
         return None
     except requests.exceptions.RequestException as e:
         logger.error(f"Request error fetching user {clerk_user_id} from Clerk API: {e}")
         return None
     except Exception as e:
-        logger.error(f"Unexpected error fetching user {clerk_user_id} from Clerk API: {e}")
+        logger.error(
+            f"Unexpected error fetching user {clerk_user_id} from Clerk API: {e}"
+        )
         return None
 
 
@@ -181,7 +207,9 @@ def _should_use_dev_bypass() -> bool:
     # If required config is missing and we're in dev, allow bypass to keep local DX
     required = all([CLERK_JWKS_URL, CLERK_ISSUER, CLERK_AUDIENCE])
     if DEV_MODE and not required:
-        logger.warning("DEV_MODE enabled and JWKS config missing; using dev-only token decode bypass.")
+        logger.warning(
+            "DEV_MODE enabled and JWKS config missing; using dev-only token decode bypass."
+        )
         return True
     return False
 
@@ -196,17 +224,19 @@ def verify_clerk_token(token: str) -> Optional[Dict[str, Any]]:
     # 1) Try dev bypass if allowed
     if _should_use_dev_bypass():
         try:
-            parts = token.split('.')
+            parts = token.split(".")
             if len(parts) != 3:
                 logger.error("Invalid JWT format")
                 return None
-            payload_part = parts[1] + '=' * (-len(parts[1]) % 4)
+            payload_part = parts[1] + "=" * (-len(parts[1]) % 4)
             payload_bytes = base64.urlsafe_b64decode(payload_part)
-            payload = json.loads(payload_bytes.decode('utf-8'))
+            payload = json.loads(payload_bytes.decode("utf-8"))
             if not payload.get("sub"):
                 logger.error("Token missing 'sub' claim")
                 return None
-            logger.warning("Using DEV_MODE token decode bypass. Do NOT use in production.")
+            logger.warning(
+                "Using DEV_MODE token decode bypass. Do NOT use in production."
+            )
             return payload
         except Exception as e:
             logger.error(f"Dev bypass decode failed: {e}")
@@ -236,17 +266,16 @@ def verify_clerk_token(token: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Clerk JWKS verification failed: {e}")
 
-
     return None
 
 
 def get_current_user_from_clerk(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """
     Get the current authenticated user from Clerk token.
-    
+
     This function:
     1. Validates the Clerk JWT token
     2. Extracts user information
@@ -254,7 +283,7 @@ def get_current_user_from_clerk(
     4. Returns the local User object
     """
     token = credentials.credentials
-    
+
     # Verify the Clerk token
     payload = verify_clerk_token(token)
     if not payload:
@@ -263,11 +292,11 @@ def get_current_user_from_clerk(
             detail="Invalid authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Extract user information from token
     clerk_user_id = payload.get("sub")
     email = payload.get("email")
-    
+
     if not clerk_user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -292,28 +321,44 @@ def get_current_user_from_clerk(
                         for email_addr in email_addresses:
                             if email_addr.get("id") == primary_email_id:
                                 email = email_addr.get("email_address")
-                                logger.debug(f"Successfully retrieved email {email} for Clerk user {clerk_user_id}")
+                                logger.debug(
+                                    f"Successfully retrieved email {email} for Clerk user {clerk_user_id}"
+                                )
                                 break
                     else:
-                        logger.warning(f"No email addresses found in Clerk API response for user {clerk_user_id}")
+                        logger.warning(
+                            f"No email addresses found in Clerk API response for user {clerk_user_id}"
+                        )
                 except Exception as e:
-                    logger.error(f"Failed to fetch user info from Clerk API for {clerk_user_id}: {str(e)}")
-            
+                    logger.error(
+                        f"Failed to fetch user info from Clerk API for {clerk_user_id}: {str(e)}"
+                    )
+
             if not email:
                 # Check if user already exists in database with a real email
-                existing_user = db.query(User).filter(User.clerk_id == clerk_user_id).first()
-                if existing_user and not existing_user.email.endswith("@clerk.placeholder"):
+                existing_user = (
+                    db.query(User).filter(User.clerk_id == clerk_user_id).first()
+                )
+                if existing_user and not existing_user.email.endswith(
+                    "@clerk.placeholder"
+                ):
                     email = existing_user.email
-                    logger.info(f"Using existing email {email} from database for Clerk user {clerk_user_id}")
+                    logger.info(
+                        f"Using existing email {email} from database for Clerk user {clerk_user_id}"
+                    )
                 else:
                     # Fallback placeholder (development convenience) - but log this as an error
                     try:
-                        suffix = clerk_user_id.split('_')[1]
+                        suffix = clerk_user_id.split("_")[1]
                         email = f"user_{suffix}@clerk.placeholder"
-                        logger.error(f"Using placeholder email {email} for Clerk user {clerk_user_id} - this indicates a configuration issue")
+                        logger.error(
+                            f"Using placeholder email {email} for Clerk user {clerk_user_id} - this indicates a configuration issue"
+                        )
                     except Exception:
                         email = None
-                        logger.error(f"Failed to generate even placeholder email for Clerk user {clerk_user_id}")
+                        logger.error(
+                            f"Failed to generate even placeholder email for Clerk user {clerk_user_id}"
+                        )
 
     if not email:
         raise HTTPException(
@@ -321,47 +366,54 @@ def get_current_user_from_clerk(
             detail="Unable to determine user email",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     try:
         # Regular Clerk token handling
         # Get additional user data from Clerk API to include last sign-in
         additional_data = {}
         clerk_user_info = get_clerk_user_info(clerk_user_id) if CLERK_SECRET_KEY else None
-        
+
         if clerk_user_info:
             # Extract last sign-in time
-            if 'last_sign_in_at' in clerk_user_info:
-                additional_data['last_sign_in_at'] = clerk_user_info['last_sign_in_at']
-            
+            if "last_sign_in_at" in clerk_user_info:
+                additional_data["last_sign_in_at"] = clerk_user_info["last_sign_in_at"]
+
             # Extract email verification status
-            if 'email_addresses' in clerk_user_info and clerk_user_info['email_addresses']:
-                primary_email_id = clerk_user_info.get('primary_email_address_id')
-                for email_addr in clerk_user_info['email_addresses']:
-                    if email_addr.get('id') == primary_email_id and 'verification' in email_addr:
-                        additional_data['email_verified'] = email_addr['verification'].get('status') == 'verified'
+            if (
+                "email_addresses" in clerk_user_info
+                and clerk_user_info["email_addresses"]
+            ):
+                primary_email_id = clerk_user_info.get("primary_email_address_id")
+                for email_addr in clerk_user_info["email_addresses"]:
+                    if (
+                        email_addr.get("id") == primary_email_id
+                        and "verification" in email_addr
+                    ):
+                        additional_data["email_verified"] = (
+                            email_addr["verification"].get("status") == "verified"
+                        )
                         break
-        
+
         # Get or create user in local database with additional data
         user = sync_clerk_user_to_local_db(
             clerk_user_id=clerk_user_id,
             email=email,
             db=db,
-            additional_data=additional_data
+            additional_data=additional_data,
         )
-        
+
         if not user.is_active:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User account is inactive"
+                status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive"
             )
-        
+
         return user
-        
+
     except Exception as e:
         logger.error(f"Error getting/creating user from Clerk: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error processing authentication"
+            detail="Error processing authentication",
         )
 
 
@@ -369,21 +421,22 @@ def fix_placeholder_emails(db: Session) -> int:
     """
     Fix users with placeholder emails by fetching real emails from Clerk API.
     This is a utility function to clean up existing users with @clerk.placeholder emails.
-    
+
     Returns:
         int: Number of users updated
     """
     if not CLERK_SECRET_KEY:
         logger.error("CLERK_SECRET_KEY is not configured. Cannot fix placeholder emails.")
         return 0
-    
+
     try:
         # Find users with placeholder emails
-        placeholder_users = db.query(User).filter(
-            User.email.like("%@clerk.placeholder"),
-            User.clerk_id.isnot(None)
-        ).all()
-        
+        placeholder_users = (
+            db.query(User)
+            .filter(User.email.like("%@clerk.placeholder"), User.clerk_id.isnot(None))
+            .all()
+        )
+
         updated_count = 0
         for user in placeholder_users:
             try:
@@ -396,27 +449,34 @@ def fix_placeholder_emails(db: Session) -> int:
                             new_email = email_addr.get("email_address")
                             if new_email and new_email != user.email:
                                 # Check if this email is already taken by another user
-                                existing_user = db.query(User).filter(
-                                    User.email == new_email,
-                                    User.id != user.id
-                                ).first()
+                                existing_user = (
+                                    db.query(User)
+                                    .filter(User.email == new_email, User.id != user.id)
+                                    .first()
+                                )
                                 if not existing_user:
                                     user.email = new_email
                                     user.updated_at = datetime.utcnow()
                                     updated_count += 1
-                                    logger.info(f"Updated user {user.clerk_id} email from {user.email} to {new_email}")
+                                    logger.info(
+                                        f"Updated user {user.clerk_id} email from {user.email} to {new_email}"
+                                    )
                                 else:
-                                    logger.warning(f"Email {new_email} is already taken by another user")
+                                    logger.warning(
+                                        f"Email {new_email} is already taken by another user"
+                                    )
                             break
             except Exception as e:
-                logger.error(f"Failed to fix placeholder email for user {user.clerk_id}: {e}")
-        
+                logger.error(
+                    f"Failed to fix placeholder email for user {user.clerk_id}: {e}"
+                )
+
         if updated_count > 0:
             db.commit()
             logger.info(f"Fixed {updated_count} placeholder emails")
-        
+
         return updated_count
-        
+
     except Exception as e:
         logger.error(f"Error fixing placeholder emails: {e}")
         db.rollback()
@@ -425,32 +485,34 @@ def fix_placeholder_emails(db: Session) -> int:
 
 # Impersonation support
 
+
 class AuthContext(NamedTuple):
     """Authentication context with impersonation support."""
+
     effective_user: User  # The user whose permissions are being used
-    original_user: User   # The actual authenticated user (admin during impersonation)
+    original_user: User  # The actual authenticated user (admin during impersonation)
     is_impersonating: bool
 
 
 def get_current_user_with_impersonation(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
-    request: Optional[Any] = None
+    request: Optional[Any] = None,
 ) -> AuthContext:
     """
     Get the current authenticated user with impersonation support.
-    
+
     This function:
     1. Validates the Clerk JWT token to get the original user
     2. Checks for impersonation session cookie
     3. Validates impersonation session if present
     4. Returns AuthContext with effective and original users
-    
+
     During impersonation:
     - effective_user: The user being impersonated
     - original_user: The admin performing impersonation
     - is_impersonating: True
-    
+
     Normal authentication:
     - effective_user: The authenticated user
     - original_user: Same as effective_user
@@ -458,84 +520,86 @@ def get_current_user_with_impersonation(
     """
     # Get the original authenticated user
     original_user = get_current_user_from_clerk(credentials, db)
-    
+
     # If no request object, return normal auth context
     if not request:
         return AuthContext(
             effective_user=original_user,
             original_user=original_user,
-            is_impersonating=False
+            is_impersonating=False,
         )
-    
+
     # Check for impersonation session cookie
-    impersonation_cookie = getattr(request, 'cookies', {}).get('impersonation_session')
+    impersonation_cookie = getattr(request, "cookies", {}).get("impersonation_session")
     if not impersonation_cookie:
         return AuthContext(
             effective_user=original_user,
             original_user=original_user,
-            is_impersonating=False
+            is_impersonating=False,
         )
-    
+
     # Validate impersonation session
     try:
         from src.services.impersonation_service import validate_session
-        
+
         # Get client metadata for validation
         admin_ip = None
         admin_user_agent = None
-        if hasattr(request, 'headers'):
+        if hasattr(request, "headers"):
             # Extract IP from headers
             forwarded_for = request.headers.get("X-Forwarded-For")
             if forwarded_for:
                 admin_ip = forwarded_for.split(",")[0].strip()
-            elif hasattr(request, 'client') and request.client:
+            elif hasattr(request, "client") and request.client:
                 admin_ip = request.client.host
-            
+
             admin_user_agent = request.headers.get("User-Agent")
-        
+
         session = validate_session(db, impersonation_cookie, admin_ip, admin_user_agent)
         if not session:
             # Invalid session, return normal auth context
             return AuthContext(
                 effective_user=original_user,
                 original_user=original_user,
-                is_impersonating=False
+                is_impersonating=False,
             )
-        
+
         # Verify the original user is the admin for this session
         if original_user.id != session.admin_id:
-            logger.warning(f"Impersonation session admin mismatch: token user {original_user.id}, session admin {session.admin_id}")
+            logger.warning(
+                f"Impersonation session admin mismatch: token user {original_user.id}, session admin {session.admin_id}"
+            )
             return AuthContext(
                 effective_user=original_user,
                 original_user=original_user,
-                is_impersonating=False
+                is_impersonating=False,
             )
-        
+
         # Return impersonation context
         return AuthContext(
             effective_user=session.target_user,
             original_user=original_user,
-            is_impersonating=True
+            is_impersonating=True,
         )
-        
+
     except Exception as e:
         logger.error(f"Error validating impersonation session: {str(e)}")
         # On error, return normal auth context
         return AuthContext(
             effective_user=original_user,
             original_user=original_user,
-            is_impersonating=False
+            is_impersonating=False,
         )
 
 
 def get_effective_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """
     Get the effective user (the user whose permissions should be used).
-    
+
     This is a convenience function that returns just the effective user
     from the authentication context. Use this for most authorization checks.
     """
@@ -546,72 +610,70 @@ def get_effective_user(
 def require_admin_not_impersonating(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """
     Require admin privileges and ensure not currently impersonating.
-    
+
     This function should be used for admin-only operations that should
     not be available during impersonation (like starting new impersonation
     sessions or accessing sensitive admin functions).
     """
     auth_context = get_current_user_with_impersonation(credentials, db, request)
-    
+
     if not is_admin_user(auth_context.original_user):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
         )
-    
+
     if auth_context.is_impersonating:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin operations not available during impersonation"
+            detail="Admin operations not available during impersonation",
         )
-    
+
     return auth_context.original_user
 
 
 def require_admin_allow_impersonating(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """
     Require admin privileges but allow during impersonation.
-    
+
     This function should be used for admin-only operations that need to
     be available during impersonation (like ending impersonation sessions).
     """
     auth_context = get_current_user_with_impersonation(credentials, db, request)
-    
+
     if not is_admin_user(auth_context.original_user):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
         )
-    
+
     return auth_context.original_user
 
 
 # Alias for backward compatibility
 def get_current_user_lightweight(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """
     Lightweight user authentication for endpoints that don't need full user sync.
-    
+
     This function:
     1. Validates the Clerk JWT token
     2. Extracts user information
     3. Gets existing user from database (no Clerk API calls)
     4. Returns the local User object
-    
+
     Use this for high-frequency endpoints like impersonation status checks.
     """
     token = credentials.credentials
-    
+
     # Verify the Clerk token
     payload = verify_clerk_token(token)
     if not payload:
@@ -620,11 +682,11 @@ def get_current_user_lightweight(
             detail="Invalid authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Extract user information from token
     clerk_user_id = payload.get("sub")
     email = payload.get("email")
-    
+
     if not clerk_user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -634,20 +696,19 @@ def get_current_user_lightweight(
 
     # Get existing user from database (no Clerk API calls)
     user = db.query(User).filter(User.clerk_id == clerk_user_id).first()
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found in local database",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is inactive"
+            status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive"
         )
-    
+
     return user
 
 

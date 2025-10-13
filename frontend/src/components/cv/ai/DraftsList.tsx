@@ -1,15 +1,15 @@
 /**
  * Drafts List Component
- * 
+ *
  * This component displays all draft AI-generated sections for a CV.
  * It shows a list of draft sections with their content and actions.
- * 
+ *
  * Key responsibilities:
  * - Display all drafts for a CV
  * - Handle loading and error states
  * - Provide refresh functionality
  * - Show empty state when no drafts exist
- * 
+ *
  * Usage:
  * - Used in CV editor to show all pending AI-generated content
  * - Requires cvId prop to fetch drafts
@@ -83,8 +83,8 @@ const DraftsList: React.FC<DraftsListProps> = ({
 
   if (error) {
     return (
-      <Alert 
-        severity="error" 
+      <Alert
+        severity="error"
         action={
           <Button color="inherit" size="small" onClick={loadDrafts}>
             Retry

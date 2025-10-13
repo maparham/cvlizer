@@ -1,6 +1,6 @@
 /**
  * Admin dashboard types and interfaces.
- * 
+ *
  * This module defines TypeScript interfaces for the admin dashboard
  * data structures and API responses.
  */

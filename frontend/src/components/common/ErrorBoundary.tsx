@@ -1,6 +1,6 @@
 /**
  * Error Boundary Component
- * 
+ *
  * Catches JavaScript errors anywhere in the child component tree and displays
  * a fallback UI instead of the component tree that crashed.
  */
@@ -50,7 +50,7 @@ export interface ErrorFallbackProps {
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
-    
+
     this.state = {
       hasError: false,
       error: null,
@@ -62,7 +62,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Generate a unique error ID for tracking
     const errorId = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
+
     return {
       hasError: true,
       error,
@@ -72,7 +72,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
-    
+
     this.setState({
       errorInfo
     })
@@ -96,7 +96,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       console.error('Error Stack:', error.stack)
       console.groupEnd()
     }
-    
+
     // In production, you might send this to a service like Sentry, LogRocket, etc.
     // Example:
     // Sentry.captureException(error, {
@@ -187,7 +187,7 @@ URL: ${window.location.href}
             Something went wrong
           </AlertTitle>
           <Typography variant="body2" sx={{ mt: 1 }}>
-            An unexpected error occurred in this part of the application. 
+            An unexpected error occurred in this part of the application.
             You can try refreshing the page or contact support if the problem persists.
           </Typography>
         </Alert>
@@ -201,7 +201,7 @@ URL: ${window.location.href}
           >
             Try Again
           </Button>
-          
+
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
@@ -209,7 +209,7 @@ URL: ${window.location.href}
           >
             Reload Page
           </Button>
-          
+
           <Button
             variant="outlined"
             startIcon={<BugIcon />}
@@ -231,10 +231,10 @@ URL: ${window.location.href}
               <Typography variant="subtitle2" gutterBottom>
                 Error Message:
               </Typography>
-              <Box sx={{ 
-                bgcolor: 'grey.100', 
-                p: 1, 
-                borderRadius: 1, 
+              <Box sx={{
+                bgcolor: 'grey.100',
+                p: 1,
+                borderRadius: 1,
                 mb: 2,
                 wordBreak: 'break-word'
               }}>
@@ -244,10 +244,10 @@ URL: ${window.location.href}
               <Typography variant="subtitle2" gutterBottom>
                 Error Stack:
               </Typography>
-              <Box sx={{ 
-                bgcolor: 'grey.100', 
-                p: 1, 
-                borderRadius: 1, 
+              <Box sx={{
+                bgcolor: 'grey.100',
+                p: 1,
+                borderRadius: 1,
                 mb: 2,
                 maxHeight: 200,
                 overflow: 'auto',
@@ -263,9 +263,9 @@ URL: ${window.location.href}
                   <Typography variant="subtitle2" gutterBottom>
                     Component Stack:
                   </Typography>
-                  <Box sx={{ 
-                    bgcolor: 'grey.100', 
-                    p: 1, 
+                  <Box sx={{
+                    bgcolor: 'grey.100',
+                    p: 1,
                     borderRadius: 1,
                     maxHeight: 200,
                     overflow: 'auto',
@@ -293,8 +293,8 @@ export const CompactErrorFallback: React.FC<ErrorFallbackProps> = ({
   resetError
 }) => {
   return (
-    <Alert 
-      severity="error" 
+    <Alert
+      severity="error"
       sx={{ my: 2 }}
       action={
         <Button size="small" onClick={resetError}>
@@ -344,7 +344,7 @@ export const withErrorBoundary = <P extends object>(
   )
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`
-  
+
   return WrappedComponent
 }
 

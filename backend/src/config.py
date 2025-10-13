@@ -4,6 +4,7 @@ Application Configuration Module
 This module centralizes all configuration constants used throughout the backend.
 Values are read from environment variables with sensible defaults.
 """
+
 import os
 from typing import Dict, Any
 from dotenv import load_dotenv
@@ -14,16 +15,21 @@ load_dotenv()
 # AI / OpenAI Configuration
 # ============================================================================
 
+
 class AIConfig:
     """AI and OpenAI related configuration"""
 
     # OpenAI API Configuration
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL")  # Required: Must be set in .env
-    
+
     # Agent Model Configuration (for future agent-based features)
-    AGENT_MODEL: str = os.getenv("AGENT_MODEL")  # Optional: Reserved for future agent implementations
-    AGENT_PROCESSING_TIER: str = os.getenv("AGENT_PROCESSING_TIER", "flex")  # Processing tier: "flex" or "standard"
+    AGENT_MODEL: str = os.getenv(
+        "AGENT_MODEL"
+    )  # Optional: Reserved for future agent implementations
+    AGENT_PROCESSING_TIER: str = os.getenv(
+        "AGENT_PROCESSING_TIER", "flex"
+    )  # Processing tier: "flex" or "standard"
 
     # Token limits
     MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "4000"))
@@ -50,68 +56,69 @@ class AIConfig:
 # Database Configuration
 # ============================================================================
 
+
 class DatabaseConfig:
     """Database related configuration"""
 
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./cv_optimizer.db")
-    
+
     # Pool configuration - timeout and recycle
     POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
     POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "3600"))
-    
+
     @classmethod
     def is_test_environment(cls) -> bool:
         """
         Check if running in test environment.
-        
+
         Detects test execution via PYTEST_CURRENT_TEST environment variable,
         which is set by pytest during test runs (including Playwright tests).
         """
         return bool(os.getenv("PYTEST_CURRENT_TEST"))
-    
+
     @classmethod
     def get_database_type(cls) -> str:
         """
         Detect database type from DATABASE_URL.
-        
+
         Returns:
             'sqlite', 'postgresql', 'mysql', or 'unknown'
         """
         url = cls.DATABASE_URL.lower()
-        if url.startswith('sqlite'):
-            return 'sqlite'
-        elif url.startswith('postgresql') or url.startswith('postgres'):
-            return 'postgresql'
-        elif url.startswith('mysql'):
-            return 'mysql'
-        return 'unknown'
-    
+        if url.startswith("sqlite"):
+            return "sqlite"
+        elif url.startswith("postgresql") or url.startswith("postgres"):
+            return "postgresql"
+        elif url.startswith("mysql"):
+            return "mysql"
+        return "unknown"
+
     @classmethod
     def is_poolable_database(cls) -> bool:
         """
         Check if database supports standard connection pooling.
-        
+
         SQLite uses different pooling mechanisms (StaticPool) than
         PostgreSQL/MySQL which benefit from full connection pooling.
         """
-        return cls.get_database_type() in ['postgresql', 'mysql']
-    
+        return cls.get_database_type() in ["postgresql", "mysql"]
+
     @classmethod
     def get_pool_size(cls) -> int:
         """
         Get pool size with environment-aware defaults.
-        
+
         Environment-specific defaults:
         - Test: 20 connections (sized for 12 concurrent Playwright test streams on 8-core machine)
         - Production: 10 connections (MVP with up to 10 simultaneous users + background tasks)
         - Development: 5 connections (single developer testing)
-        
+
         Can be overridden via DB_POOL_SIZE environment variable.
         """
         env_value = os.getenv("DB_POOL_SIZE")
         if env_value:
             return int(env_value)
-        
+
         # Environment-aware defaults
         if cls.is_test_environment():
             return 20  # Handle 12 concurrent test streams with headroom
@@ -119,23 +126,23 @@ class DatabaseConfig:
             return 10  # 10 simultaneous users + background tasks
         else:
             return 5  # Single developer in development
-    
+
     @classmethod
     def get_max_overflow(cls) -> int:
         """
         Get max overflow with environment-aware defaults.
-        
+
         Environment-specific defaults:
         - Test: 10 overflow (additional capacity for test spikes)
         - Production: 10 overflow (production burst capacity)
         - Development: 5 overflow (development burst capacity)
-        
+
         Can be overridden via DB_MAX_OVERFLOW environment variable.
         """
         env_value = os.getenv("DB_MAX_OVERFLOW")
         if env_value:
             return int(env_value)
-        
+
         # Environment-aware defaults
         if cls.is_test_environment():
             return 10  # Additional capacity for test spikes
@@ -143,7 +150,7 @@ class DatabaseConfig:
             return 10  # Production overflow capacity
         else:
             return 5  # Development overflow
-    
+
     # Note: Use get_pool_size() and get_max_overflow() methods to retrieve values
     # with environment-aware defaults. Legacy code may access POOL_SIZE/MAX_OVERFLOW
     # but should migrate to using the getter methods.
@@ -152,6 +159,7 @@ class DatabaseConfig:
 # ============================================================================
 # Background Task Configuration
 # ============================================================================
+
 
 class BackgroundTaskConfig:
     """Background task processing configuration"""
@@ -174,6 +182,7 @@ class BackgroundTaskConfig:
 # File Upload Configuration
 # ============================================================================
 
+
 class FileConfig:
     """File upload related configuration"""
 
@@ -182,7 +191,7 @@ class FileConfig:
     ALLOWED_CV_TYPES: list = [
         "application/pdf",
         "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ]
 
     ALLOWED_CV_EXTENSIONS: list = [".pdf", ".doc", ".docx"]
@@ -195,11 +204,14 @@ class FileConfig:
 # Authentication Configuration
 # ============================================================================
 
+
 class AuthConfig:
     """Authentication and authorization configuration"""
 
     # JWT Configuration
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+    JWT_SECRET_KEY: str = os.getenv(
+        "JWT_SECRET_KEY", "your-secret-key-change-in-production"
+    )
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
@@ -214,18 +226,23 @@ class AuthConfig:
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "")
 
     # Session Configuration
-    USER_INFO_CACHE_TTL_SECONDS: int = int(os.getenv("USER_INFO_CACHE_TTL", "300"))  # 5 minutes
+    USER_INFO_CACHE_TTL_SECONDS: int = int(
+        os.getenv("USER_INFO_CACHE_TTL", "300")
+    )  # 5 minutes
 
 
 # ============================================================================
 # API Configuration
 # ============================================================================
 
+
 class APIConfig:
     """API related configuration"""
 
     # CORS
-    CORS_ALLOW_ORIGINS: list = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:5173").split(",")
+    CORS_ALLOW_ORIGINS: list = os.getenv(
+        "CORS_ALLOW_ORIGINS", "http://localhost:5173"
+    ).split(",")
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: list = ["*"]
     CORS_ALLOW_HEADERS: list = ["*"]
@@ -243,13 +260,13 @@ class APIConfig:
 # Logging Configuration
 # ============================================================================
 
+
 class LoggingConfig:
     """Logging configuration"""
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT: str = os.getenv(
-        "LOG_FORMAT",
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        "LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     LOG_FILE: str = os.getenv("LOG_FILE", "app.log")
     LOG_FILE_ENABLED: bool = os.getenv("LOG_FILE_ENABLED", "false").lower() == "true"
@@ -258,6 +275,7 @@ class LoggingConfig:
 # ============================================================================
 # Application Configuration
 # ============================================================================
+
 
 class AppConfig:
     """General application configuration"""
@@ -286,6 +304,7 @@ class AppConfig:
 # Validation Configuration
 # ============================================================================
 
+
 class ValidationConfig:
     """Validation rules and limits"""
 
@@ -309,31 +328,17 @@ class ValidationConfig:
 # AI Usage Tracking Configuration
 # ============================================================================
 
+
 class AIUsageConfig:
     """AI usage tracking and cost configuration"""
 
     # Model Pricing (per 1M tokens)
     MODEL_PRICING: Dict[str, Dict[str, float]] = {
-        "gpt-4o-mini": {
-            "input_price_per_1m": 0.150,
-            "output_price_per_1m": 0.600
-        },
-        "gpt-4o": {
-            "input_price_per_1m": 2.50,
-            "output_price_per_1m": 10.00
-        },
-        "gpt-3.5-turbo": {
-            "input_price_per_1m": 0.50,
-            "output_price_per_1m": 1.50
-        },
-        "gpt-5-mini": {
-            "input_price_per_1m": 0.250,
-            "output_price_per_1m": 2.000
-        },
-        "gpt-5-nano": {
-            "input_price_per_1m": 0.050,
-            "output_price_per_1m": 0.400
-        }
+        "gpt-4o-mini": {"input_price_per_1m": 0.150, "output_price_per_1m": 0.600},
+        "gpt-4o": {"input_price_per_1m": 2.50, "output_price_per_1m": 10.00},
+        "gpt-3.5-turbo": {"input_price_per_1m": 0.50, "output_price_per_1m": 1.50},
+        "gpt-5-mini": {"input_price_per_1m": 0.250, "output_price_per_1m": 2.000},
+        "gpt-5-nano": {"input_price_per_1m": 0.050, "output_price_per_1m": 0.400},
     }
 
     # Default pricing for unknown models
@@ -341,7 +346,9 @@ class AIUsageConfig:
     DEFAULT_OUTPUT_PRICE_PER_1M: float = 0.600
 
     # Usage limits
-    USAGE_TRACKING_ENABLED: bool = os.getenv("USAGE_TRACKING_ENABLED", "true").lower() == "true"
+    USAGE_TRACKING_ENABLED: bool = (
+        os.getenv("USAGE_TRACKING_ENABLED", "true").lower() == "true"
+    )
     MAX_TOKENS_PER_USER_PER_DAY: int = int(os.getenv("MAX_TOKENS_PER_USER_DAY", "100000"))
 
 
@@ -349,39 +356,46 @@ class AIUsageConfig:
 # OpenAI Pricing Helper
 # ============================================================================
 
+
 class OpenAIPricing:
     """Helper class for OpenAI pricing calculations"""
-    
+
     @classmethod
-    def estimate_cost(cls, model: str, prompt_tokens: int, completion_tokens: int) -> float:
+    def estimate_cost(
+        cls, model: str, prompt_tokens: int, completion_tokens: int
+    ) -> float:
         """
         Estimate the cost of an OpenAI API call based on token usage.
-        
+
         Args:
             model: OpenAI model name (e.g., "gpt-4o-mini", "gpt-4o")
             prompt_tokens: Number of input/prompt tokens used
             completion_tokens: Number of output/completion tokens generated
-            
+
         Returns:
             Estimated cost in USD
         """
         # Find the pricing for the model (case-insensitive match)
         model_lower = model.lower()
         pricing = None
-        
+
         for model_key, model_pricing in AIUsageConfig.MODEL_PRICING.items():
             if model_key.lower() in model_lower:
                 pricing = model_pricing
                 break
-        
+
         # Use default pricing if model not found
         if not pricing:
-            input_cost = (prompt_tokens / 1_000_000) * AIUsageConfig.DEFAULT_INPUT_PRICE_PER_1M
-            output_cost = (completion_tokens / 1_000_000) * AIUsageConfig.DEFAULT_OUTPUT_PRICE_PER_1M
+            input_cost = (
+                prompt_tokens / 1_000_000
+            ) * AIUsageConfig.DEFAULT_INPUT_PRICE_PER_1M
+            output_cost = (
+                completion_tokens / 1_000_000
+            ) * AIUsageConfig.DEFAULT_OUTPUT_PRICE_PER_1M
         else:
             input_cost = (prompt_tokens / 1_000_000) * pricing["input_price_per_1m"]
             output_cost = (completion_tokens / 1_000_000) * pricing["output_price_per_1m"]
-        
+
         return input_cost + output_cost
 
 
@@ -409,6 +423,7 @@ __all__ = [
 # Convenience Functions
 # ============================================================================
 
+
 def get_config_dict() -> Dict[str, Any]:
     """Get all configuration as a dictionary (useful for debugging)"""
     return {
@@ -429,7 +444,7 @@ def get_config_dict() -> Dict[str, Any]:
         "app": {
             "environment": AppConfig.ENVIRONMENT,
             "debug": AppConfig.DEBUG,
-        }
+        },
     }
 
 
@@ -442,15 +457,22 @@ def validate_config() -> list:
 
     if not AIConfig.OPENAI_MODEL:
         warnings.append("OPENAI_MODEL not configured in .env - REQUIRED for AI features")
-    
+
     if not AIConfig.AGENT_MODEL:
-        warnings.append("AGENT_MODEL not configured in .env - Optional (reserved for future agent features)")
+        warnings.append(
+            "AGENT_MODEL not configured in .env - Optional (reserved for future agent features)"
+        )
 
     if not AuthConfig.CLERK_SECRET_KEY:
         warnings.append("CLERK_SECRET_KEY not configured - authentication may fail")
 
-    if AuthConfig.JWT_SECRET_KEY == "your-secret-key-change-in-production" and AppConfig.is_production():
-        warnings.append("JWT_SECRET_KEY using default value in production - SECURITY RISK")
+    if (
+        AuthConfig.JWT_SECRET_KEY == "your-secret-key-change-in-production"
+        and AppConfig.is_production()
+    ):
+        warnings.append(
+            "JWT_SECRET_KEY using default value in production - SECURITY RISK"
+        )
 
     if AppConfig.is_production() and AppConfig.DEBUG:
         warnings.append("DEBUG mode enabled in production - not recommended")

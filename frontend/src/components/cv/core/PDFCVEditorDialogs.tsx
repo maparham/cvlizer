@@ -36,15 +36,15 @@ const PDFCVEditorDialogs: React.FC<PDFCVEditorDialogsProps> = ({
         <DialogTitle>Reset Section Order</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to reset the section order to the default arrangement? 
+            Are you sure you want to reset the section order to the default arrangement?
             This will restore the sections based on the data found in your CV.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={onCloseResetDialog}>Cancel</Button>
-          <Button 
-            onClick={onConfirmReset} 
-            variant="contained" 
+          <Button
+            onClick={onConfirmReset}
+            variant="contained"
             color="primary"
             startIcon={<ResetIcon />}
           >

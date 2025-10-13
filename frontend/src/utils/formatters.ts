@@ -1,6 +1,6 @@
 /**
  * Formatting utilities for displaying data in the admin dashboard.
- * 
+ *
  * This module provides utility functions for formatting costs, numbers,
  * durations, and other data types for consistent display across the UI.
  */
@@ -10,17 +10,17 @@
  */
 export const formatCost = (cost: number): string => {
   if (cost === 0) return '$0.00'
-  
+
   // For very small costs, show 5 decimal places to fit in card area
   if (cost < 0.01) {
     return `$${cost.toFixed(5)}`
   }
-  
+
   // For small costs, show 4 decimal places
   if (cost < 1) {
     return `$${cost.toFixed(4)}`
   }
-  
+
   // For larger costs, show 2 decimal places
   return `$${cost.toFixed(2)}`
 }
@@ -37,15 +37,15 @@ export const formatNumber = (num: number): string => {
  */
 export const formatTokens = (tokens: number): string => {
   if (tokens === 0) return '0'
-  
+
   if (tokens >= 1_000_000) {
     return `${(tokens / 1_000_000).toFixed(1)}M`
   }
-  
+
   if (tokens >= 1_000) {
     return `${(tokens / 1_000).toFixed(1)}K`
   }
-  
+
   return tokens.toString()
 }
 
@@ -54,24 +54,24 @@ export const formatTokens = (tokens: number): string => {
  */
 export const formatDuration = (ms: number): string => {
   if (ms === 0) return '0ms'
-  
+
   // For very short durations, show milliseconds
   if (ms < 1000) {
     return `${ms}ms`
   }
-  
+
   // For longer durations, show seconds with 2 decimal places
   const seconds = ms / 1000
   if (seconds < 60) {
     return `${seconds.toFixed(2)}s`
   }
-  
+
   // For very long durations, show minutes
   const minutes = seconds / 60
   if (minutes < 60) {
     return `${minutes.toFixed(1)}m`
   }
-  
+
   // For extremely long durations, show hours
   const hours = minutes / 60
   return `${hours.toFixed(1)}h`
@@ -90,11 +90,11 @@ export const formatPercentage = (value: number, decimals: number = 1): string =>
  */
 export const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'N/A'
-  
+
   try {
     // Handle different timestamp formats from backend
     let date: Date
-    
+
     if (dateString.includes(' ') && !dateString.includes('T') && !dateString.includes('Z')) {
       // Format: "YYYY-MM-DD HH:MM:SS" - treat as UTC
       date = new Date(dateString + 'Z')
@@ -105,7 +105,7 @@ export const formatDate = (dateString: string | null): string => {
       // Other formats (ISO with timezone, etc.) - let JavaScript handle it
       date = new Date(dateString)
     }
-    
+
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -122,11 +122,11 @@ export const formatDate = (dateString: string | null): string => {
  */
 export const formatDateTime = (dateString: string | null): string => {
   if (!dateString) return 'N/A'
-  
+
   try {
     // Handle different timestamp formats from backend
     let date: Date
-    
+
     if (dateString.includes(' ') && !dateString.includes('T') && !dateString.includes('Z')) {
       // Format: "YYYY-MM-DD HH:MM:SS" - treat as UTC
       date = new Date(dateString + 'Z')
@@ -137,7 +137,7 @@ export const formatDateTime = (dateString: string | null): string => {
       // Other formats (ISO with timezone, etc.) - let JavaScript handle it
       date = new Date(dateString)
     }
-    
+
     // Format in local timezone: YYYY-MM-DD HH:MM:SS
     const year = date.getFullYear()
     const month = (date.getMonth() + 1).toString().padStart(2, '0')
@@ -145,7 +145,7 @@ export const formatDateTime = (dateString: string | null): string => {
     const hours = date.getHours().toString().padStart(2, '0')
     const minutes = date.getMinutes().toString().padStart(2, '0')
     const seconds = date.getSeconds().toString().padStart(2, '0')
-    
+
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
   } catch {
     return 'Invalid Date'
@@ -158,11 +158,11 @@ export const formatDateTime = (dateString: string | null): string => {
  */
 export const formatRelativeTime = (dateString: string | null): string => {
   if (!dateString) return 'N/A'
-  
+
   try {
     // Handle different timestamp formats from backend
     let date: Date
-    
+
     if (dateString.includes(' ') && !dateString.includes('T') && !dateString.includes('Z')) {
       // Format: "YYYY-MM-DD HH:MM:SS" - treat as UTC
       date = new Date(dateString + 'Z')
@@ -173,30 +173,30 @@ export const formatRelativeTime = (dateString: string | null): string => {
       // Other formats (ISO with timezone, etc.) - let JavaScript handle it
       date = new Date(dateString)
     }
-    
+
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffSeconds = Math.floor(diffMs / 1000)
     const diffMinutes = Math.floor(diffSeconds / 60)
     const diffHours = Math.floor(diffMinutes / 60)
     const diffDays = Math.floor(diffHours / 24)
-    
+
     if (diffSeconds < 60) {
       return `${diffSeconds}s ago`
     }
-    
+
     if (diffMinutes < 60) {
       return `${diffMinutes}m ago`
     }
-    
+
     if (diffHours < 24) {
       return `${diffHours}h ago`
     }
-    
+
     if (diffDays < 7) {
       return `${diffDays}d ago`
     }
-    
+
     // For older dates, show the actual date
     return formatDate(dateString)
   } catch {
@@ -217,7 +217,7 @@ export const formatOperationType = (operationType: string): string => {
     'generate_suggestions': 'Generate Suggestions',
     'extract_job_description': 'Extract Job Description'
   }
-  
+
   return typeMap[operationType] || operationType
 }
 
@@ -232,7 +232,7 @@ export const formatModelName = (model: string): string => {
     'gpt-5-mini': 'GPT-5 Mini',
     'gpt-5-nano': 'GPT-5 Nano'
   }
-  
+
   return modelMap[model] || model
 }
 
@@ -249,7 +249,7 @@ export const getOperationTypeColor = (operationType: string): string => {
     'generate_suggestions': '#0088fe',
     'extract_job_description': '#ff00ff'
   }
-  
+
   return colorMap[operationType] || '#8884d8'
 }
 
@@ -257,7 +257,7 @@ export const getOperationTypeColor = (operationType: string): string => {
  * Format success status for display.
  */
 export const formatSuccessStatus = (success: boolean): { text: string; color: 'success' | 'error' } => {
-  return success 
+  return success
     ? { text: 'Success', color: 'success' as const }
     : { text: 'Failed', color: 'error' as const }
 }

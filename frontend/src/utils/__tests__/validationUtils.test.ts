@@ -60,7 +60,7 @@ describe('validationUtils', () => {
         phone: '+1234567890',
         linkedin_url: 'https://linkedin.com/in/test'
       }
-      
+
       const result = validateAllFields(data)
       expect(result.isValid).toBe(true)
       expect(result.errors).toEqual({})
@@ -72,7 +72,7 @@ describe('validationUtils', () => {
         phone: 'abc',
         linkedin_url: 'not-a-url'
       }
-      
+
       const result = validateAllFields(data)
       expect(result.isValid).toBe(false)
       expect(result.errors).toHaveProperty('email')
@@ -87,7 +87,7 @@ describe('validationUtils', () => {
         start_date: '2020-01-01',
         end_date: '2021-01-01'
       }
-      
+
       const result = validateCrossFields(data)
       expect(result.isValid).toBe(true)
     })
@@ -97,7 +97,7 @@ describe('validationUtils', () => {
         start_date: '2021-01-01',
         end_date: '2020-01-01'
       }
-      
+
       const result = validateCrossFields(data)
       expect(result.isValid).toBe(false)
       expect(result.errors).toContain('End date must be after start date')
@@ -108,7 +108,7 @@ describe('validationUtils', () => {
         current: true,
         end_date: ''
       }
-      
+
       const result = validateCrossFields(data)
       expect(result.isValid).toBe(true)
     })
@@ -118,7 +118,7 @@ describe('validationUtils', () => {
         current: true,
         end_date: '2021-01-01'
       }
-      
+
       const result = validateCrossFields(data)
       expect(result.isValid).toBe(false)
       expect(result.errors).toContain('End date should be empty when currently working')
@@ -131,7 +131,7 @@ describe('validationUtils', () => {
         { company: 'Company A', position: 'Developer' },
         { company: 'Company B', position: 'Manager' }
       ]
-      
+
       const result = checkForDuplicates(items, ['company', 'position'])
       expect(result.hasDuplicates).toBe(false)
       expect(result.duplicates).toEqual([])
@@ -143,7 +143,7 @@ describe('validationUtils', () => {
         { company: 'Company A', position: 'Developer' },
         { company: 'Company B', position: 'Manager' }
       ]
-      
+
       const result = checkForDuplicates(items, ['company', 'position'])
       expect(result.hasDuplicates).toBe(true)
       expect(result.duplicates).toEqual([1])
@@ -179,7 +179,7 @@ describe('validationUtils', () => {
     it('should validate CV data even with missing fields (validation is optional)', () => {
       const invalidData = { ...validCVData }
       invalidData.personal_info.full_name = undefined as any
-      
+
       const result = validateCVData(invalidData)
       expect(result.isValid).toBe(true) // The current implementation doesn't validate required fields
     })
@@ -192,7 +192,7 @@ describe('validationUtils', () => {
           email: 'invalid-email'
         }
       }
-      
+
       const result = validateCVData(invalidData)
       expect(result.isValid).toBe(true) // The current implementation only validates top-level fields
     })
@@ -206,7 +206,7 @@ describe('validationUtils', () => {
         crossFieldErrors: [],
         duplicates: { hasDuplicates: false, duplicates: [] }
       }
-      
+
       const summary = getValidationSummary(validation)
       expect(summary.hasErrors).toBe(false)
       expect(summary.errorCount).toBe(0)
@@ -220,7 +220,7 @@ describe('validationUtils', () => {
         crossFieldErrors: ['Date error'],
         duplicates: { hasDuplicates: true, duplicates: [0, 1] }
       }
-      
+
       const summary = getValidationSummary(validation)
       expect(summary.hasErrors).toBe(true)
       expect(summary.errorCount).toBe(4)

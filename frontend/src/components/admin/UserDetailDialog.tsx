@@ -1,6 +1,6 @@
 /**
  * User Detail Dialog Component
- * 
+ *
  * This component displays detailed user information including CVs and AI sections.
  * It provides a comprehensive view of user data for administrative purposes.
  */
@@ -50,8 +50,8 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   }
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="lg"
       fullWidth
@@ -79,8 +79,8 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                     <Typography variant="body2" color="textSecondary">
                       Status:
                     </Typography>
-                    <Chip 
-                      label={userDetail.is_active ? 'Active' : 'Inactive'} 
+                    <Chip
+                      label={userDetail.is_active ? 'Active' : 'Inactive'}
                       color={userDetail.is_active ? 'success' : 'error'}
                       size="small"
                     />
@@ -89,8 +89,8 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                     <Typography variant="body2" color="textSecondary">
                       Email Verified:
                     </Typography>
-                    <Chip 
-                      label={userDetail.email_verified ? 'Verified' : 'Unverified'} 
+                    <Chip
+                      label={userDetail.email_verified ? 'Verified' : 'Unverified'}
                       color={userDetail.email_verified ? 'success' : 'warning'}
                       size="small"
                     />
@@ -151,8 +151,8 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                         <TableCell>{formatFileSize(cv.file_size)}</TableCell>
                         <TableCell>{cv.file_type}</TableCell>
                         <TableCell>
-                          <Chip 
-                            label={cv.is_parsed ? 'Parsed' : 'Error'} 
+                          <Chip
+                            label={cv.is_parsed ? 'Parsed' : 'Error'}
                             color={cv.is_parsed ? 'success' : 'error'}
                             size="small"
                           />

@@ -1,6 +1,6 @@
 /**
  * JobDescriptionSummary Component Tests - Simplified Version
- * 
+ *
  * Basic unit tests for the JobDescriptionSummary component focusing on core functionality
  */
 
@@ -284,8 +284,8 @@ describe('JobDescriptionSummary - Basic Tests', () => {
     });
 
     renderWithTheme(
-      <JobDescriptionSummary 
-        cvId="cv-1" 
+      <JobDescriptionSummary
+        cvId="cv-1"
         onGenerateSuggestions={mockOnGenerateSuggestions}
       />
     );

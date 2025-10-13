@@ -12,7 +12,7 @@ export const formatDate = (date: Date | string): string => {
   const day = d.getDate().toString().padStart(2, '0')
   const month = (d.getMonth() + 1).toString().padStart(2, '0')
   const year = d.getFullYear()
-  
+
   return `${day}.${month}.${year}`
 }
 
@@ -26,7 +26,7 @@ export const formatDateTime = (date: Date | string): string => {
   const year = d.getFullYear()
   const hours = d.getHours().toString().padStart(2, '0')
   const minutes = d.getMinutes().toString().padStart(2, '0')
-  
+
   return `${day}.${month}.${year} ${hours}:${minutes}`
 }
 
@@ -41,7 +41,7 @@ export const formatDateTimeWithSeconds = (date: Date | string): string => {
   const hours = d.getHours().toString().padStart(2, '0')
   const minutes = d.getMinutes().toString().padStart(2, '0')
   const seconds = d.getSeconds().toString().padStart(2, '0')
-  
+
   return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`
 }
 
@@ -57,17 +57,17 @@ export const formatRelativeTime = (date: Date | string): string => {
  */
 export const formatDateGroupHeader = (date: Date | string): string => {
   const d = new Date(date)
-  
+
   const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ]
-  
+
   const weekday = weekdays[d.getDay()]
   const day = d.getDate()
   const month = months[d.getMonth()]
   const year = d.getFullYear()
-  
+
   return `${weekday}, ${day} ${month} ${year}`
 }

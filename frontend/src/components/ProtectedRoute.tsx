@@ -1,16 +1,16 @@
 /**
  * Protected Route Component
- * 
+ *
  * This module provides route protection for authenticated users using the custom AuthContext.
- * It ensures only signed-in users can access protected pages and redirects unauthenticated 
+ * It ensures only signed-in users can access protected pages and redirects unauthenticated
  * users to the login page.
- * 
+ *
  * Key responsibilities:
  * - Check user authentication status using AuthContext
  * - Show loading state while authentication is being verified
  * - Redirect unauthenticated users to login page
  * - Render protected content for authenticated users
- * 
+ *
  * Usage:
  * - Wrap protected routes with this component
  * - Automatically handles authentication state management
@@ -33,10 +33,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     // Show loading spinner while authentication is loading
     if (loading) {
       return (
-        <Box 
-          display="flex" 
-          justifyContent="center" 
-          alignItems="center" 
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
           minHeight="100vh"
         >
           <CircularProgress />
@@ -56,10 +56,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     // Fallback to showing loading spinner if there's an error
     return (
-      <Box 
-        display="flex" 
-        justifyContent="center" 
-        alignItems="center" 
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
         minHeight="100vh"
       >
         <CircularProgress />

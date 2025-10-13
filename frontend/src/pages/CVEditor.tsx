@@ -1,16 +1,16 @@
 /**
  * CV Editor Page Component
- * 
+ *
  * This module provides the main CV editing interface where users can modify their CV content.
  * It includes section-based editing, validation, and integration with the CV store.
- * 
+ *
  * Key responsibilities:
  * - Display CV content in editable sections
  * - Handle section-based editing and validation
  * - Manage unsaved changes and navigation warnings
  * - Provide export and delete functionality
  * - Integrate with CV store for data persistence
- * 
+ *
  * Usage:
  * - Rendered as the "/cv/:id" route for CV editing
  * - Uses CVEditorContext for state management
@@ -63,7 +63,7 @@ declare global {
 }
 
 // Component that handles back navigation with edit state checks
-const CVEditorHeader: React.FC<{ 
+const CVEditorHeader: React.FC<{
   onLogout: () => void,
   onMenuOpen: (event: React.MouseEvent<HTMLElement>) => void,
   onMenuClose: () => void,
@@ -98,9 +98,9 @@ const CVEditorHeader: React.FC<{
 
   return (
     <>
-      <AppBar 
-        position="static" 
-        sx={{ 
+      <AppBar
+        position="static"
+        sx={{
           backgroundColor: '#f5f5f5',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           color: '#333'
@@ -112,7 +112,7 @@ const CVEditorHeader: React.FC<{
               edge="start"
               onClick={handleBackClick}
               data-testid="cv-editor-back-button"
-              sx={{ 
+              sx={{
                 mr: 1,
                 color: '#666',
                 '&:hover': {
@@ -122,9 +122,9 @@ const CVEditorHeader: React.FC<{
             >
               <ArrowBackIcon />
             </IconButton>
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 color: '#666',
                 fontSize: '0.875rem',
                 mr: 2
@@ -134,8 +134,8 @@ const CVEditorHeader: React.FC<{
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
-          
-          
+
+
           {!isNewCV && (
             <Button
               variant="outlined"
@@ -147,7 +147,7 @@ const CVEditorHeader: React.FC<{
                 textTransform: 'none',
                 borderColor: 'error.main',
                 color: 'error.main',
-                '&:hover': { 
+                '&:hover': {
                   backgroundColor: 'error.light',
                   color: 'error.contrastText'
                 }
@@ -167,7 +167,7 @@ const CVEditorHeader: React.FC<{
                 textTransform: 'none',
                 borderColor: '#1976d2',
                 color: '#1976d2',
-                '&:hover': { 
+                '&:hover': {
                   backgroundColor: 'rgba(25, 118, 210, 0.04)',
                   borderColor: '#1565c0'
                 }
@@ -298,7 +298,7 @@ const CVEditorContent: React.FC<{
         isAdmin={isAdmin}
         isNewCV={isNewCV}
       />
-      <PDFCVEditor 
+      <PDFCVEditor
         title={activeCV?.original_filename || 'Untitled CV'}
         onTitleSave={onTitleSave}
         cvId={cvId !== 'new' ? cvId : undefined}
@@ -316,8 +316,8 @@ const CVEditor: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { showSuccess, showError, showValidationError, showInfo, notifications, removeNotification } = useNotifications()
-  
-  
+
+
   // Use CV store instead of local state
   const {
     currentCV,
@@ -333,17 +333,17 @@ const CVEditor: React.FC = () => {
     createSnapshotOnUserAction,
     deleteCV
   } = useCVStore()
-  
+
   // Determine if this is a new/temporary CV
   const isNewCV = Boolean(cvId === 'new' || cvId === undefined || (cvId && cvId.startsWith('temp-')))
-  
+
   // Get CV data from either current CV or temporary CV
   const activeCV = isNewCV ? temporaryCV : currentCV
   const cvData = useMemo(() => activeCV?.parsed_data, [activeCV])
 
 
   const { clearCacheForCV } = useAIStore()
-  
+
   // Fetch CV data on component mount (only for existing CVs)
   useEffect(() => {
     if (cvId && cvId !== 'new' && !cvId.startsWith('temp-')) {
@@ -353,7 +353,7 @@ const CVEditor: React.FC = () => {
       navigate('/dashboard')
     }
   }, [cvId, isNewCV, temporaryCV, navigate]) // Only depend on cvId to prevent infinite loops
-  
+
   // Clean up CV-specific state when leaving the editor
   useEffect(() => {
     return () => {
@@ -365,8 +365,8 @@ const CVEditor: React.FC = () => {
       }
     }
   }, [cvId, clearCacheForCV])
-  
-  
+
+
   // Show error notifications (but skip validation errors as they're handled separately)
   useEffect(() => {
     if (error && !error.includes('CV validation failed:')) {
@@ -378,10 +378,10 @@ const CVEditor: React.FC = () => {
   const handleSave = useCallback(async (updatedData?: CVData, message?: string) => {
     const dataToSave = updatedData || cvData
     if (!dataToSave) return
-    
+
     // Show immediate feedback that save is starting
     const savingNotificationId = showInfo('Saving...', 'Your changes are being saved.')
-    
+
     try {
       if (isNewCV) {
         // Save temporary CV to the backend for the first time
@@ -394,13 +394,13 @@ const CVEditor: React.FC = () => {
       } else {
         // Update existing CV
         if (!cvId) return
-        
+
         await updateCV(cvId, { parsed_data: dataToSave })
-        
+
         // Create snapshot for user-initiated changes (when message is provided)
         // or when we can detect actual changes through diff comparison
         let shouldCreateSnapshot = false
-        
+
         if (message) {
           // If a message is provided, this is a user-initiated change (add, edit, delete, reorder)
           shouldCreateSnapshot = true
@@ -409,7 +409,7 @@ const CVEditor: React.FC = () => {
           // Backend diff computation will determine if there are actual changes
           shouldCreateSnapshot = true
         }
-        
+
         if (shouldCreateSnapshot) {
           try {
             await createSnapshotOnUserAction(cvId, dataToSave, 'manual_save', message)
@@ -417,21 +417,21 @@ const CVEditor: React.FC = () => {
             // Snapshot creation failed
           }
         }
-        
+
         // Remove the saving notification and show success
         removeNotification(savingNotificationId)
         showSuccess('Success', message || 'CV saved successfully')
-        
+
         // Clear unsaved changes after successful save
         // We'll dispatch a custom event that the context can listen to
         // But skip for skills section auto-saves to prevent edit mode from closing
         const isSkillsAutoSave = message && (
-          message.includes('skill added') || 
-          message.includes('skill removed') || 
+          message.includes('skill added') ||
+          message.includes('skill removed') ||
           message.includes('AI suggested skill') ||
           message.includes('All AI suggested skills applied')
         )
-        
+
         if (!isSkillsAutoSave) {
           window.dispatchEvent(new CustomEvent('cv-saved'))
         }
@@ -439,12 +439,12 @@ const CVEditor: React.FC = () => {
     } catch (error: any) {
       // Remove the saving notification
       removeNotification(savingNotificationId)
-      
+
       const errorMessage = error?.message || error?.response?.data?.message || 'Failed to save CV'
-      
+
       // Dispatch error event for validation error handler
       window.dispatchEvent(new CustomEvent('cv-save-error', { detail: error }))
-      
+
       // Check if this is a validation error
       const validationErrors = parseValidationErrors(errorMessage)
       if (validationErrors.length > 0) {
@@ -456,9 +456,9 @@ const CVEditor: React.FC = () => {
       }
     }
   }, [cvId, cvData, isNewCV, updateCV, saveTemporaryCV, createSnapshotOnUserAction, showInfo, showSuccess, showError, removeNotification, navigate])
-  
+
   const handleUpdateCV = useCallback((data: CVData) => {
-    
+
     // Update the local CV state in the store
     if (isNewCV && temporaryCV) {
       // Update temporary CV
@@ -505,7 +505,7 @@ const CVEditor: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (!cvId || isNewCV) return
-    
+
     try {
       await deleteCV(cvId)
       showSuccess('Success', 'CV deleted successfully')
@@ -539,7 +539,7 @@ const CVEditor: React.FC = () => {
         showError('Error', 'Cannot update title: CV ID not found')
         return
       }
-      
+
       try {
         await updateCVTitle(cvId, newTitle)
         showSuccess('Success', 'CV title updated successfully')
@@ -549,7 +549,7 @@ const CVEditor: React.FC = () => {
       }
     }
   }
-  
+
 
   if (loading && !activeCV) {
     return (
@@ -560,7 +560,7 @@ const CVEditor: React.FC = () => {
   }
 
   if (!cvData || !activeCV) {
-    
+
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <Typography>CV not found</Typography>

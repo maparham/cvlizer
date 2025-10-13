@@ -1,17 +1,17 @@
 /**
  * Login Redirect Component
- * 
+ *
  * This module handles automatic redirection after successful login based on user role.
  * It determines whether to redirect users to the regular dashboard or admin dashboard
  * based on their admin status.
- * 
+ *
  * Key responsibilities:
  * - Check user authentication status and admin role
  * - Redirect admins to /admin dashboard
  * - Redirect regular users to /dashboard
  * - Show loading state during redirection
  * - Handle edge cases and errors gracefully
- * 
+ *
  * Usage:
  * - Used as a redirect target after successful Clerk authentication
  * - Automatically determines the appropriate dashboard based on user role
@@ -43,11 +43,11 @@ const LoginRedirect: React.FC = () => {
   // Show loading while authentication is being determined
   if (loading || !redirectPath) {
     return (
-      <Box 
-        display="flex" 
+      <Box
+        display="flex"
         flexDirection="column"
-        justifyContent="center" 
-        alignItems="center" 
+        justifyContent="center"
+        alignItems="center"
         minHeight="100vh"
         gap={2}
       >

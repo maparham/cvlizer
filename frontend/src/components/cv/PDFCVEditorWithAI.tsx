@@ -1,17 +1,17 @@
 /**
  * PDF CV Editor with AI Integration
- * 
+ *
  * Enhanced version of PDFCVEditor that includes AI suggestion capabilities
  * and inline diff functionality. This component wraps the original editor
  * with the InlineDiffProvider and adds AI-powered suggestion features.
- * 
+ *
  * Key responsibilities:
  * - Provide AI suggestion generation and management
  * - Integrate inline diff system with CV editing
  * - Handle floating suggestions panel
  * - Manage state between original CV editor and AI features
  * - Coordinate between AI services and CV data updates
- * 
+ *
  * Usage:
  * - Drop-in replacement for PDFCVEditor when AI features are needed
  * - Maintains full compatibility with original editor functionality
@@ -63,10 +63,10 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
 
       // Generate suggestions based on active job description
       await generateInlineSuggestions(cvId, activeJobDescription.id);
-      
+
       // Apply all suggestions to create temp state
       applyAllSuggestions(cvData);
-      
+
     } catch (err) {
       console.error('Error generating AI suggestions:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate AI suggestions');
@@ -79,11 +79,11 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
     // Scroll to the relevant section
     const sectionElement = document.querySelector(`[data-section="${suggestion.section}"]`);
     if (sectionElement) {
-      sectionElement.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'center' 
+      sectionElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
       });
-      
+
       // Add a temporary highlight effect
       sectionElement.classList.add('highlighted-section');
       setTimeout(() => {
@@ -107,7 +107,7 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
         />
 
         {/* AI Suggestions FAB */}
-        <Tooltip 
+        <Tooltip
           title={
             !cvId ? 'Save CV first to enable AI suggestions' :
             !activeJobDescription ? 'Select a job description to generate targeted suggestions' :
@@ -147,14 +147,14 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
           onClose={() => setError(null)}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
-          <Alert 
-            onClose={() => setError(null)} 
-            severity="error" 
+          <Alert
+            onClose={() => setError(null)}
+            severity="error"
             sx={{ width: '100%' }}
             action={
               <Tooltip title="Close">
-                <Close 
-                  fontSize="inherit" 
+                <Close
+                  fontSize="inherit"
                   onClick={() => setError(null)}
                   sx={{ cursor: 'pointer' }}
                 />
@@ -195,7 +195,7 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
             border-radius: 8px !important;
             transition: all 0.3s ease !important;
           }
-          
+
           @keyframes fadeIn {
             from {
               opacity: 0;

@@ -2,7 +2,7 @@
 
 /**
  * Job Description Test Runner
- * 
+ *
  * Runs all job description related tests with proper setup and reporting
  */
 
@@ -21,10 +21,10 @@ console.log('🧪 Running Job Description Tests...\n');
 testFiles.forEach((testFile, index) => {
   console.log(`\n📋 Test ${index + 1}/${testFiles.length}: ${testFile}`);
   console.log('─'.repeat(60));
-  
+
   try {
     const command = `npm test -- --testPathPattern="${testFile}" --verbose --no-coverage`;
-    execSync(command, { 
+    execSync(command, {
       stdio: 'inherit',
       cwd: path.join(__dirname, '..', '..')
     });

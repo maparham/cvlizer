@@ -4,6 +4,7 @@ Feature Flags Utility Module.
 This module provides utilities for checking feature flags from environment variables.
 Feature flags allow enabling/disabling functionality without code changes.
 """
+
 import os
 from typing import Optional
 
@@ -23,7 +24,7 @@ def _get_bool_env(key: str, default: bool = False) -> bool:
     if value is None:
         return default
 
-    return value.lower() in ('true', '1', 'yes', 'on')
+    return value.lower() in ("true", "1", "yes", "on")
 
 
 def is_cv_history_enabled() -> bool:
@@ -39,7 +40,7 @@ def is_cv_history_enabled() -> bool:
     Returns:
         True if CV history is enabled, False otherwise
     """
-    return _get_bool_env('ENABLE_CV_HISTORY', default=False)
+    return _get_bool_env("ENABLE_CV_HISTORY", default=False)
 
 
 def is_ai_enabled() -> bool:
@@ -50,7 +51,7 @@ def is_ai_enabled() -> bool:
         True if AI features are enabled, False otherwise
     """
     # AI is enabled if we have an OpenAI API key
-    api_key = os.getenv('OPENAI_API_KEY')
+    api_key = os.getenv("OPENAI_API_KEY")
     return bool(api_key and api_key.strip())
 
 
@@ -61,7 +62,7 @@ def is_impersonation_enabled() -> bool:
     Returns:
         True if impersonation is enabled, False otherwise
     """
-    return _get_bool_env('IMPERSONATION_ENABLED', default=True)
+    return _get_bool_env("IMPERSONATION_ENABLED", default=True)
 
 
 def is_dev_mode() -> bool:
@@ -71,7 +72,7 @@ def is_dev_mode() -> bool:
     Returns:
         True if dev mode is enabled, False otherwise
     """
-    return _get_bool_env('DEV_MODE', default=False)
+    return _get_bool_env("DEV_MODE", default=False)
 
 
 def is_debug_enabled() -> bool:
@@ -81,4 +82,4 @@ def is_debug_enabled() -> bool:
     Returns:
         True if debug is enabled, False otherwise
     """
-    return _get_bool_env('DEBUG', default=False)
+    return _get_bool_env("DEBUG", default=False)

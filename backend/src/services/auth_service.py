@@ -4,6 +4,7 @@ Authentication service for user management and JWT token handling.
 This module provides functions for password hashing, user authentication,
 JWT token creation and verification, and user management operations.
 """
+
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -40,7 +41,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -85,10 +86,7 @@ def create_user(db: Session, email: str, password: str) -> User:
     """Create a new user"""
     hashed_password = get_password_hash(password)
     user = User(
-        email=email,
-        password_hash=hashed_password,
-        is_active=True,
-        email_verified=False
+        email=email, password_hash=hashed_password, is_active=True, email_verified=False
     )
     db.add(user)
     db.commit()

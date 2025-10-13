@@ -22,7 +22,7 @@ from .ai_enhancement import AIEnhancement
 
 __all__ = [
     "Base",
-    "get_db", 
+    "get_db",
     "engine",
     "User",
     "CV",
@@ -38,5 +38,5 @@ __all__ = [
     "ImpersonationSession",
     "AIUsageLog",
     "ContentEnhancement",
-    "AIEnhancement"
+    "AIEnhancement",
 ]

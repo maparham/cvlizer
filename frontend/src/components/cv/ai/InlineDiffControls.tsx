@@ -1,17 +1,17 @@
 /**
  * Inline Diff Controls Component
- * 
+ *
  * This component provides controls for the inline diff system, replacing the old
  * ATS optimization display. It shows a summary of suggestions and provides
  * actions to generate, manage, and apply AI suggestions.
- * 
+ *
  * Key responsibilities:
  * - Display suggestion summary and statistics
  * - Provide generate suggestions button
  * - Show quick actions for managing suggestions
  * - Integrate with the floating suggestions panel
  * - Replace the old ATS optimization component
- * 
+ *
  * Usage:
  * - Used in the AI Tools tab of the sidebar
  * - Provides a clean interface for the inline diff system
@@ -92,7 +92,7 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
       setIsGenerating(true);
       setError(null);
       await generateSuggestions(cvId, activeJobDescription.id);
-      
+
       // Apply suggestions to create temp state
       if (cvData) {
         applyAllSuggestions(cvData);
@@ -113,13 +113,13 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
       console.warn('InlineDiffControls - Prevented commit with 0 approved suggestions');
       return;
     }
-    
+
     // Only allow explicit user clicks
     if (event && (!event.isTrusted || event.type !== 'click')) {
       console.warn('InlineDiffControls - Prevented commit from non-click event');
       return;
     }
-    
+
     const finalData = commitChanges();
     if (finalData && onContentUpdate) {
       // Trigger content update for the CV
@@ -226,7 +226,7 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
             >
               {isPanelOpen ? 'Hide' : 'Show'} Suggestions Panel
             </Button>
-            
+
             {approvedCount > 0 && (
               <Button
                 fullWidth
@@ -238,7 +238,7 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
                 Apply Changes ({approvedCount})
               </Button>
             )}
-            
+
             <Button
               fullWidth
               variant="outlined"
@@ -260,7 +260,7 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
         <Typography variant="h6" sx={{ mb: 2 }}>
           AI Suggestions
         </Typography>
-        
+
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Generate AI-powered suggestions to optimize your CV for specific job descriptions.
           Suggestions will appear directly in your CV sections for easy review and approval.

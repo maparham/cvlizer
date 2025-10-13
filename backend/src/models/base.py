@@ -14,6 +14,7 @@ Pool configuration automatically adjusts based on environment:
 - Production: Sized for concurrent users (10+10 connections)
 - Development: Minimal sizing for single developer (5+5 connections)
 """
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -36,14 +37,14 @@ if DatabaseConfig.is_poolable_database():
     # PostgreSQL/MySQL - use full connection pooling with QueuePool
     pool_size = DatabaseConfig.get_pool_size()
     max_overflow = DatabaseConfig.get_max_overflow()
-    
+
     engine = create_engine(
         DATABASE_URL,
         pool_size=pool_size,
         max_overflow=max_overflow,
         pool_timeout=DatabaseConfig.POOL_TIMEOUT,
         pool_recycle=DatabaseConfig.POOL_RECYCLE,
-        echo=False
+        echo=False,
     )
     logger.info(
         f"Database engine created with connection pool: "
@@ -58,14 +59,15 @@ else:
     # This prevents connection sharing and deadlocks in concurrent scenarios
     # Each request gets its own connection which is closed after use
     from sqlalchemy.pool import NullPool
+
     engine = create_engine(
         DATABASE_URL,
         connect_args={
             "check_same_thread": False,
-            "timeout": 30  # Wait up to 30 seconds for database lock
+            "timeout": 30,  # Wait up to 30 seconds for database lock
         },
         poolclass=NullPool,  # No connection pooling - fresh connection per request
-        echo=False
+        echo=False,
     )
     logger.info(
         f"Database engine created with NullPool for SQLite: "
@@ -76,10 +78,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
 def get_db():
     """
     Database session dependency for FastAPI endpoints.
-    
+
     Provides a SQLAlchemy session that is automatically closed after use.
     Includes error handling for SQLite connection reset issues under concurrent load.
     """
@@ -103,14 +106,14 @@ def get_db():
 def get_pool_status() -> Dict[str, Any]:
     """
     Get current connection pool status and statistics.
-    
+
     Returns comprehensive pool information for monitoring and debugging
     connection pool health. Useful for diagnosing connection exhaustion
     issues and verifying pool configuration.
-    
+
     For SQLite with StaticPool, returns simplified status as StaticPool
     doesn't provide the same metrics as QueuePool.
-    
+
     Returns:
         Dictionary containing:
         - database_type: Type of database (sqlite/postgresql/mysql)
@@ -123,7 +126,7 @@ def get_pool_status() -> Dict[str, Any]:
         - timeout: Pool timeout in seconds
         - recycle: Pool recycle time in seconds
         - note: Additional information for SQLite/StaticPool
-    
+
     Example:
         >>> status = get_pool_status()
         >>> print(f"Pool has {status['checked_out']} connections in use")
@@ -132,24 +135,26 @@ def get_pool_status() -> Dict[str, Any]:
         "database_type": DatabaseConfig.get_database_type(),
         "pool_class": engine.pool.__class__.__name__,
     }
-    
+
     if DatabaseConfig.is_poolable_database():
         # QueuePool provides detailed statistics
         pool = engine.pool
         try:
             checked_out = pool.checkedout()
             # For QueuePool, _pool is a queue.Queue of available connections
-            checked_in = len(pool._pool.queue) if hasattr(pool._pool, 'queue') else 0
-            
-            status.update({
-                "size": pool.size(),
-                "checked_out": checked_out,
-                "overflow": pool.overflow(),
-                "checked_in": checked_in,
-                "total_connections": checked_out + checked_in,
-                "timeout": DatabaseConfig.POOL_TIMEOUT,
-                "recycle": DatabaseConfig.POOL_RECYCLE,
-            })
+            checked_in = len(pool._pool.queue) if hasattr(pool._pool, "queue") else 0
+
+            status.update(
+                {
+                    "size": pool.size(),
+                    "checked_out": checked_out,
+                    "overflow": pool.overflow(),
+                    "checked_in": checked_in,
+                    "total_connections": checked_out + checked_in,
+                    "timeout": DatabaseConfig.POOL_TIMEOUT,
+                    "recycle": DatabaseConfig.POOL_RECYCLE,
+                }
+            )
         except Exception as e:
             # Fallback if pool internals change
             status["error"] = f"Could not retrieve detailed pool stats: {str(e)}"
@@ -161,5 +166,5 @@ def get_pool_status() -> Dict[str, Any]:
             status["checked_out"] = engine.pool.checkedout()
         except Exception:
             status["checked_out"] = "unknown"
-    
+
     return status

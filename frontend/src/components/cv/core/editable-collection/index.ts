@@ -1,6 +1,6 @@
 /**
  * Editable Collection Submodules
- * 
+ *
  * Exports all components, hooks, utilities, and types for managing editable collections
  * where each item can be independently edited, reordered, and managed.
  */

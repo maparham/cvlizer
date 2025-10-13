@@ -35,10 +35,10 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
   // Function to create sections dynamically based on CV data
   const createSectionsFromCVData = (cvData: any): CVSection[] => {
     if (!cvData) return []
-    
+
     const sections: CVSection[] = []
     let order = 0
-    
+
     // Get sections that have data in the CV
     const sectionsWithData = getSectionsInDisplayOrder(
       AVAILABLE_SECTIONS.filter(section => {
@@ -49,7 +49,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
         )
       }).map(s => s.id)
     )
-    
+
     sectionsWithData.forEach(sectionDef => {
       sections.push({
         id: sectionDef.id,
@@ -59,7 +59,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
         order: order++
       })
     })
-    
+
     return sections
   }
 
@@ -70,7 +70,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
     }
     return createSectionsFromCVData(cvData)
   })
-  
+
   const [activeId, setActiveId] = useState<string | null>(null)
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [editingSection, setEditingSection] = useState<string | null>(null)
@@ -78,7 +78,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null)
   const [editingIndividualItem, setEditingIndividualItem] = useState<EditingIndividualItem | null>(null)
   const [pendingIndividualItemRegistration, setPendingIndividualItemRegistration] = useState<{ sectionId: string; itemIndex: number; onCancel: () => void; onStartEdit: () => void } | null>(null)
-  
+
   // Update stateRef with latest values to prevent stale closures
   useEffect(() => {
     stateRef.current = {
@@ -86,7 +86,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
       editingIndividualItem
     }
   }, [editingIndividualItem])
-  
+
 
   // Update sections when cvData changes
   useEffect(() => {
@@ -124,11 +124,11 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && (editingSection || editingIndividualItem)) {
         event.preventDefault()
-        
+
         // Handle IndividualItemSection editing
         if (editingIndividualItem) {
           const hasCurrentSectionChanges = pendingChanges.has(editingIndividualItem.sectionId)
-          
+
           if (hasCurrentSectionChanges) {
             // Show unsaved changes dialog
             setShowUnsavedChangesDialog(true)
@@ -145,7 +145,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
         // Handle regular section editing
         else if (editingSection) {
           const hasCurrentSectionChanges = pendingChanges.has(editingSection)
-          
+
           if (hasCurrentSectionChanges) {
             // Show unsaved changes dialog
             setShowUnsavedChangesDialog(true)
@@ -240,12 +240,12 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
   // Functions to manage IndividualItemSection editing state
   const registerIndividualItemEditing = useCallback((sectionId: string, itemIndex: number, onCancel: () => void, onStartEdit?: () => void, skipDialog = false): 'success' | 'dialog_shown' => {
     const currentEditingItem = stateRef.current.editingIndividualItem
-    
+
     // If another item is already being edited, cancel it first
     if (currentEditingItem) {
       // Check if there are actual data changes in the current edit
       const hasRealDataChanges = pendingChanges.has(currentEditingItem.sectionId)
-      
+
       if (hasRealDataChanges && !skipDialog) {
         // Show dialog to confirm canceling current edit
         setPendingIndividualItemRegistration({ sectionId, itemIndex, onCancel, onStartEdit: onStartEdit || (() => {}) })
@@ -261,7 +261,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
         stateRef.current.onCancel()
       }
     }
-    
+
     // Register the new edit
     setEditingIndividualItem({ sectionId, itemIndex })
     stateRef.current.onCancel = onCancel
@@ -280,7 +280,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
     if (currentEditingItem && currentEditingItem.sectionId === sectionId) {
       // Check if there are actually unsaved data changes for this section
       const hasCurrentSectionChanges = pendingChanges.has(sectionId)
-      
+
       if (hasCurrentSectionChanges) {
         // Show confirmation dialog only if there are unsaved changes
         setShowUnsavedChangesDialog(true)
@@ -306,17 +306,17 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
       setSections((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id)
         const newIndex = items.findIndex((item) => item.id === over?.id)
-        
+
         const newSections = arrayMove(items, oldIndex, newIndex)
         // Update order property
         const updatedSections = newSections.map((section, index) => ({
           ...section,
           order: index
         }))
-        
+
         // Save section configuration
         saveSectionConfig(updatedSections, 'Section order updated')
-        
+
         return updatedSections
       })
     }
@@ -325,8 +325,8 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
   }
 
   const toggleSectionVisibility = (sectionId: string) => {
-    const updatedSections = sections.map(section => 
-      section.id === sectionId 
+    const updatedSections = sections.map(section =>
+      section.id === sectionId
         ? { ...section, visible: !section.visible }
         : section
     )
@@ -380,7 +380,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
 
   const isDefaultOrder = () => {
     const defaultSections = createSectionsFromCVData(cvData)
-    return sections.every((section, index) => 
+    return sections.every((section, index) =>
       defaultSections[index] && section.id === defaultSections[index].id && section.order === index
     )
   }
@@ -397,7 +397,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
     pendingChanges,
     onUnsavedChanges,
     editingIndividualItem,
-    
+
     // Actions
     handleSectionEdit,
     handleSectionClose,
@@ -415,7 +415,7 @@ export const usePDFCVEditor = ({ cvData, onUpdateCV, onSave }: PDFCVEditorProps)
     registerIndividualItemEditing,
     unregisterIndividualItemEditing,
     requestIndividualItemCancel,
-    
+
     // Computed values
     getAvailableSectionsToAdd,
     isDefaultOrder

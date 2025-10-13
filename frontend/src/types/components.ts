@@ -1,10 +1,10 @@
 /**
  * @fileoverview Component Type Definitions
- * 
+ *
  * This module defines TypeScript interfaces and types for all CV editor components.
  * It provides type safety and clear contracts for component props, ensuring consistent
  * data flow and API design across the CV editing system.
- * 
+ *
  * @module components
  * @author CV Lator Team
  * @version 1.0.0
@@ -16,7 +16,7 @@ import { CVData, CVSection } from './cv'
 /**
  * Base properties shared by all CV section components.
  * Provides common editing state management and UI controls.
- * 
+ *
  * @interface BaseSectionProps
  * @property {React.ReactNode} [children] - Child components to render
  * @property {string} [title] - Section title displayed in the header
@@ -86,7 +86,7 @@ export interface SectionProps<T = unknown> {
 /**
  * Properties for array-based sections that manage collections of items.
  * Used by sections like WorkExperience, Education, Projects, etc.
- * 
+ *
  * @interface ArraySectionProps
  * @template T - The type of items in the array
  * @property {T[]} data - Array of items to display and edit
@@ -128,7 +128,7 @@ export interface ArraySectionProps<T> {
 /**
  * Properties for individual item editing within array sections.
  * Used when editing a single item from a collection (e.g., one work experience entry).
- * 
+ *
  * @interface IndividualItemSectionProps
  * @template T - The type of the individual item being edited
  * @property {T} data - The current item data
@@ -152,7 +152,7 @@ export interface IndividualItemSectionProps<T> {
 /**
  * Properties for the main PDF CV Editor component.
  * Manages the overall CV data and provides save/update functionality.
- * 
+ *
  * @interface PDFCVEditorProps
  * @property {CVData} cvData - The complete CV data object
  * @property {(data: CVData) => void} onUpdateCV - Callback to update the entire CV data
@@ -167,7 +167,7 @@ export interface PDFCVEditorProps {
 /**
  * Hook interface for managing unsaved changes state.
  * Provides methods to track and manage unsaved changes across the application.
- * 
+ *
  * @interface UnsavedChangesHook
  * @property {boolean} hasUnsavedChanges - Whether there are currently unsaved changes
  * @property {(hasChanges: boolean) => void} setUnsavedChanges - Set the unsaved changes state
@@ -182,7 +182,7 @@ export interface UnsavedChangesHook {
 /**
  * Properties for sortable section items in the section manager sidebar.
  * Supports both individual properties and section object for flexibility.
- * 
+ *
  * @interface SortableSectionItemProps
  * @property {string} [id] - Section ID (falls back to section.id)
  * @property {string} [type] - Section type (falls back to section.type)
@@ -207,7 +207,7 @@ export interface SortableSectionItemProps {
 /**
  * Interface representing an individual item being edited.
  * Used to track which specific item is currently being edited within a section.
- * 
+ *
  * @interface EditingIndividualItem
  * @property {string} id - Unique identifier for the item being edited
  * @property {string} section - The section type (e.g., 'work_experience')

@@ -209,4 +209,3 @@ export const mockEmptyPaginationResponse = {
   limit: 10,
   pages: 0
 }
-

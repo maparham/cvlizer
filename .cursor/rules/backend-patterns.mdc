@@ -39,7 +39,8 @@ description: Backend development patterns and conventions for FastAPI, SQLAlchem
 - Always close sessions in finally blocks
 
 ## Code Quality
-- PEP 8 with Black (88 chars), type hints for all parameters
+- PEP 8 with Black (90 chars), type hints for all parameters
 - Comprehensive docstrings, meaningful names
 - Import organization: stdlib, third-party, local
 - Module docstrings for all files
+- Pre-commit hooks enforce formatting and linting

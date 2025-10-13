@@ -108,7 +108,7 @@ const ArrayFormSection = <T extends ArrayItem>({
       'Volunteer Experience': 'Volunteer Experience',
       'Skills': 'Skill'
     }
-    
+
     return titleMap[pluralTitle] || pluralTitle.slice(0, -1)
   }
 

@@ -98,18 +98,18 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({
 
   const handleSave = async () => {
     const trimmedValue = editValue.trim()
-    
+
     // Validation
     if (!trimmedValue) {
       handleCancel()
       return
     }
-    
+
     if (trimmedValue === title) {
       setIsEditing(false)
       return
     }
-    
+
     if (trimmedValue.length > maxLength) {
       setEditValue(trimmedValue.substring(0, maxLength))
       return
@@ -150,7 +150,7 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({
             fontFamily: 'Roboto, sans-serif'
           }}
         />
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ...sx }}>
           <TextField
             inputRef={inputRef}

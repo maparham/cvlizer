@@ -1,6 +1,6 @@
 /**
  * Personal Information Section Component
- * 
+ *
  * This module renders and manages the personal information section of a CV including:
  * - Contact details (name, email, phone, location)
  * - Social media links (LinkedIn, GitHub, website)
@@ -36,9 +36,9 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         error={!editData.full_name?.trim()}
         helperText={!editData.full_name?.trim() ? "Full name is required" : ""}
         data-testid="personal-info-full-name-input"
-        sx={{ 
-          '& .MuiInputBase-input': { 
-            fontSize: '2rem', 
+        sx={{
+          '& .MuiInputBase-input': {
+            fontSize: '2rem',
             fontWeight: 'bold',
             color: '#1976d2'
           }
@@ -65,7 +65,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
           helperText={!editData.email?.trim() ? "Email is required" : ""}
           placeholder="Email *"
           data-testid="personal-info-email-input"
-          sx={{ 
+          sx={{
             minWidth: 200,
             '& .MuiInputBase-input': {
             }
@@ -91,7 +91,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
           helperText=""
           placeholder="Phone"
           data-testid="personal-info-phone-input"
-          sx={{ 
+          sx={{
             minWidth: 200,
             '& .MuiInputBase-input': {
             }
@@ -127,7 +127,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
             }
           }}
           placeholder="LinkedIn URL"
-          sx={{ 
+          sx={{
             minWidth: 200,
             '& .MuiInputBase-input': {
             }
@@ -150,7 +150,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
             }
           }}
           placeholder="GitHub URL"
-          sx={{ 
+          sx={{
             minWidth: 200,
             '& .MuiInputBase-input': {
             }
@@ -173,7 +173,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
             }
           }}
           placeholder="Website URL"
-          sx={{ 
+          sx={{
             minWidth: 200,
             '& .MuiInputBase-input': {
             }

@@ -1,15 +1,15 @@
 /**
  * Form Utilities and Components
- * 
+ *
  * This module provides reusable form components and utilities for CV sections.
  * It includes form fields, date pickers, and validation components with consistent styling.
- * 
+ *
  * Key responsibilities:
  * - Provide reusable form field components (FormField, DateFieldComponent)
  * - Handle date picker integration with proper formatting
  * - Provide validation display components
  * - Ensure consistent form styling across CV sections
- * 
+ *
  * Usage:
  * - Import FormField for standard text inputs
  * - Use DateFieldComponent for date inputs with validation
@@ -21,13 +21,13 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { DateField as MUIDateField } from '@mui/x-date-pickers/DateField'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
-import { 
-  Save as SaveIcon, 
-  Cancel as CancelIcon, 
-  Delete as DeleteIcon, 
-  CheckCircle as CheckIcon, 
-  Warning as WarningIcon, 
-  CalendarToday as CalendarIcon 
+import {
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+  Delete as DeleteIcon,
+  CheckCircle as CheckIcon,
+  Warning as WarningIcon,
+  CalendarToday as CalendarIcon
 } from '@mui/icons-material'
 import { formatDateForBackend, parseDateForPicker } from '../../../utils/dateUtils'
 import dayjs from 'dayjs'
@@ -62,7 +62,7 @@ export const FormField: React.FC<{
   sx?: any
 }> = ({ config, value, onChange, onSave, sx }) => {
   const { name, label, placeholder, required, multiline, rows, type, minLength } = config
-  
+
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' && !multiline) {
       event.preventDefault()
@@ -75,12 +75,12 @@ export const FormField: React.FC<{
       return
     }
   }
-  
+
   const hasValue = value?.trim()
   const meetsMinLength = !minLength || (hasValue && hasValue.length >= minLength)
   const isError = Boolean((required && !hasValue) || (hasValue && !meetsMinLength))
   const isSuccess = Boolean(required && hasValue && meetsMinLength)
-  
+
   return (
     <TextField
       {...{
@@ -92,7 +92,7 @@ export const FormField: React.FC<{
         onKeyDown: handleKeyDown,
         error: isError,
         helperText: isError ? (
-          !hasValue ? `${label} is required` 
+          !hasValue ? `${label} is required`
           : !meetsMinLength ? `${label} must be at least ${minLength} characters long`
           : ''
         ) : '',
@@ -131,7 +131,7 @@ export const DateField: React.FC<{
   sx?: any
 }> = ({ config, value, onChange, onSave, sx }) => {
   const { label, required } = config
-  
+
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       event.preventDefault()
@@ -144,7 +144,7 @@ export const DateField: React.FC<{
       return
     }
   }
-  
+
   return (
     <DatePicker
       label={required ? `${label} *` : label}
@@ -181,7 +181,7 @@ export const DateFieldComponent: React.FC<{
   const [validationError, setValidationError] = React.useState<string>('')
   const [inputValue, setInputValue] = React.useState<string>('')
   const anchorRef = React.useRef<HTMLButtonElement>(null)
-  
+
   // Real-time validation function
   const validateDateValue = React.useCallback((dateValue: string): string => {
     if (!dateValue) {
@@ -216,13 +216,13 @@ export const DateFieldComponent: React.FC<{
 
     return ''
   }, [label, required, minDate, maxDate])
-  
+
   // Validate on value change
   React.useEffect(() => {
     const error = validateDateValue(value)
     setValidationError(error)
   }, [value, validateDateValue])
-  
+
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       event.preventDefault()
@@ -235,7 +235,7 @@ export const DateFieldComponent: React.FC<{
       return
     }
   }
-  
+
   // Initialize inputValue from prop value
   React.useEffect(() => {
     if (value && dayjs(value).isValid()) {
@@ -244,19 +244,19 @@ export const DateFieldComponent: React.FC<{
       setInputValue('')
     }
   }, [value])
-  
+
   const handleDateChange = (date: any) => {
     if (!date) {
       setInputValue('')
       onChange('')
       return
     }
-    
+
     // Always update the display value
     if (dayjs.isDayjs(date)) {
       const displayValue = date.format('DD.MM.YYYY')
       setInputValue(displayValue)
-      
+
       // Only update backend if valid
       if (date.isValid()) {
         const newValue = date.format('YYYY-MM-DD')
@@ -270,8 +270,8 @@ export const DateFieldComponent: React.FC<{
       onChange(newValue)
     }
   }
-  
-  
+
+
   const handlePickerDateChange = (date: any) => {
     if (date && dayjs.isDayjs(date)) {
       const displayValue = date.format('DD.MM.YYYY')
@@ -290,7 +290,7 @@ export const DateFieldComponent: React.FC<{
     }
     setPickerOpen(false)
   }
-  
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ position: 'relative', minHeight: '48px' }}>
@@ -317,7 +317,7 @@ export const DateFieldComponent: React.FC<{
           ref={anchorRef}
           onClick={() => setPickerOpen(true)}
           size="small"
-          sx={{ 
+          sx={{
             position: 'absolute',
             right: 0,
             bottom: 22, // Fixed position since we always have helper text space
@@ -370,9 +370,9 @@ export const SaveCancelButtons: React.FC<{
 
   return (
     <Box sx={{ display: 'flex', gap: 1 }}>
-      <Button 
-        size="small" 
-        startIcon={<SaveIcon />} 
+      <Button
+        size="small"
+        startIcon={<SaveIcon />}
         onClick={onSave}
         disabled={!isValid}
       >
@@ -396,11 +396,11 @@ export const ArrayItemContainer: React.FC<{
   children: React.ReactNode
   className?: string
 }> = ({ index, title, onEdit, onDelete, children, className }) => (
-  <Box 
-    sx={{ 
-      border: '1px solid #e0e0e0', 
-      borderRadius: 1, 
-      p: 2, 
+  <Box
+    sx={{
+      border: '1px solid #e0e0e0',
+      borderRadius: 1,
+      p: 2,
       mb: 2,
       position: 'relative',
       '&:hover .item-action-button': {

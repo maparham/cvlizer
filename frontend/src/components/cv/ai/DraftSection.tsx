@@ -1,15 +1,15 @@
 /**
  * Draft Section Component
- * 
+ *
  * This component displays draft AI-generated sections with approve/discard functionality.
  * It shows draft content with a "Draft" badge and provides buttons to approve or discard.
- * 
+ *
  * Key responsibilities:
  * - Display draft content with visual indicators
  * - Provide approve and discard actions
  * - Handle loading states and errors
  * - Show draft metadata (generation time, model, etc.)
- * 
+ *
  * Usage:
  * - Used in CV editor to show pending AI-generated content
  * - Requires cvId and draft data as props
@@ -32,6 +32,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Check as CheckIcon,
@@ -40,6 +42,7 @@ import {
   AutoAwesome as AutoAwesomeIcon,
   Schedule as ScheduleIcon,
   Psychology as PsychologyIcon,
+  ContentCopy as ContentCopyIcon,
 } from '@mui/icons-material';
 import { useAIStore } from '../../../stores/aiStore';
 import { useNotifications } from '../../../stores/uiStore';
@@ -92,6 +95,11 @@ const DraftSection: React.FC<DraftSectionProps> = ({
     }
   }, [cvId, deleteWhyGoodFitDraft, showSuccess, showError, onDiscard]);
 
+  const copyToClipboard = useCallback((text: string) => {
+    navigator.clipboard.writeText(text);
+    showSuccess('Copied to clipboard');
+  }, [showSuccess]);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -110,10 +118,10 @@ const DraftSection: React.FC<DraftSectionProps> = ({
   };
 
   return (
-    <Card 
-      variant="outlined" 
-      sx={{ 
-        border: 2, 
+    <Card
+      variant="outlined"
+      sx={{
+        border: 2,
         borderColor: 'warning.main',
         backgroundColor: 'warning.50',
         mb: 2
@@ -133,9 +141,19 @@ const DraftSection: React.FC<DraftSectionProps> = ({
               Why I'm a Good Fit
             </Typography>
           </Box>
-          <Typography variant="caption" color="text.secondary">
-            Generated: {formatDate(draft.created_at)}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="caption" color="text.secondary">
+              Generated: {formatDate(draft.created_at)}
+            </Typography>
+            <Tooltip title="Copy to clipboard">
+              <IconButton
+                size="small"
+                onClick={() => copyToClipboard(draft.draft_data?.fit_analysis || draft.draft_data?.content || 'No content available')}
+              >
+                <ContentCopyIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
 
         {/* Main content */}
@@ -175,7 +193,7 @@ const DraftSection: React.FC<DraftSectionProps> = ({
         <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
-            sx={{ 
+            sx={{
               minHeight: 'auto',
               py: 1,
               '& .MuiAccordionSummary-content': { margin: 0 }

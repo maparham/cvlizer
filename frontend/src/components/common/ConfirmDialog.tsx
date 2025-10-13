@@ -1,14 +1,14 @@
 /**
  * ConfirmDialog Component
- * 
+ *
  * A reusable confirmation dialog for actions requiring user confirmation.
  * Provides a simple yes/no confirmation with customizable messages and button text.
- * 
+ *
  * Key responsibilities:
  * - Display confirmation prompts for actions
  * - Handle user confirmation or cancellation
  * - Customizable title, message, and button styling
- * 
+ *
  * Usage context:
  * - Used throughout the application for confirmations
  * - Suitable for deletion confirmations, unsaved changes warnings, etc.
@@ -85,4 +85,3 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 };
 
 export default ConfirmDialog;
-

@@ -1,10 +1,10 @@
 /**
  * Impersonation Banner Component
- * 
+ *
  * This component displays a prominent banner when an admin is impersonating a user.
  * It provides clear visual indication of the impersonation state, shows the target
  * user information, displays a countdown timer, and offers a quick way to end the session.
- * 
+ *
  * Key responsibilities:
  * - Display impersonation status with high visibility
  * - Show target user information and remaining time
@@ -59,7 +59,7 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
 
     try {
       await contextEndImpersonation()
-      
+
       if (onImpersonationEnd) {
         onImpersonationEnd()
       }
@@ -140,7 +140,7 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
             onClick={handleEndImpersonation}
             disabled={isEnding}
             startIcon={isEnding ? <CircularProgress size={16} /> : <ExitIcon />}
-            sx={{ 
+            sx={{
               minWidth: 'auto',
               '&:hover': {
                 backgroundColor: 'rgba(255, 255, 255, 0.1)'
@@ -168,7 +168,7 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
             )}
           </Box>
         </AlertTitle>
-        
+
         <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
           <Box display="flex" alignItems="center" gap={1}>
             <PersonIcon fontSize="small" />
@@ -176,13 +176,13 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
               <strong>{status.target_user?.email}</strong>
             </Typography>
           </Box>
-          
+
           <Box display="flex" alignItems="center" gap={1}>
             <TimeIcon fontSize="small" />
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               component="span"
-              sx={{ 
+              sx={{
                 fontFamily: 'monospace',
                 color: isExpiringSoon ? theme.palette.warning.main : 'inherit'
               }}

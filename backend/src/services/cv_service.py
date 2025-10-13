@@ -6,6 +6,7 @@ This module provides functions for CRUD operations on CV records:
 - User-specific CV filtering and pagination
 - Database transaction management
 """
+
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 from src.models.cv import CV
@@ -14,8 +15,16 @@ import uuid
 import json
 
 
-def create_cv(db: Session, user_id: str, original_filename: str, file_path: str, 
-              file_size: int, file_type: str, parsed_data: dict, is_parsed: bool = True) -> CV:
+def create_cv(
+    db: Session,
+    user_id: str,
+    original_filename: str,
+    file_path: str,
+    file_size: int,
+    file_type: str,
+    parsed_data: dict,
+    is_parsed: bool = True,
+) -> CV:
     """Create a new CV record"""
     cv = CV(
         user_id=user_id,
@@ -24,7 +33,7 @@ def create_cv(db: Session, user_id: str, original_filename: str, file_path: str,
         file_size=file_size,
         file_type=file_type,
         parsed_data=parsed_data,
-        is_parsed=is_parsed
+        is_parsed=is_parsed,
     )
     db.add(cv)
     db.commit()
@@ -34,17 +43,27 @@ def create_cv(db: Session, user_id: str, original_filename: str, file_path: str,
 
 def get_cv_by_id(db: Session, cv_id: str, user_id: str) -> Optional[CV]:
     """Get a CV by ID for a specific user"""
-    return db.query(CV).options(joinedload(CV.history)).filter(
-        CV.id == cv_id,
-        CV.user_id == user_id
-    ).first()
+    return (
+        db.query(CV)
+        .options(joinedload(CV.history))
+        .filter(CV.id == cv_id, CV.user_id == user_id)
+        .first()
+    )
 
 
-def get_cvs_by_user(db: Session, user_id: str, skip: int = 0, limit: int = 10) -> List[CV]:
+def get_cvs_by_user(
+    db: Session, user_id: str, skip: int = 0, limit: int = 10
+) -> List[CV]:
     """Get all CVs for a user with pagination, ordered by most recently updated first"""
-    return db.query(CV).options(joinedload(CV.history)).filter(
-        CV.user_id == user_id
-    ).order_by(CV.updated_at.desc()).offset(skip).limit(limit).all()
+    return (
+        db.query(CV)
+        .options(joinedload(CV.history))
+        .filter(CV.user_id == user_id)
+        .order_by(CV.updated_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 def update_cv(db: Session, cv_id: str, user_id: str, parsed_data: dict) -> Optional[CV]:
@@ -52,7 +71,7 @@ def update_cv(db: Session, cv_id: str, user_id: str, parsed_data: dict) -> Optio
     cv = get_cv_by_id(db, cv_id, user_id)
     if not cv:
         return None
-    
+
     cv.parsed_data = parsed_data
     db.commit()
     db.refresh(cv)
@@ -64,7 +83,7 @@ def delete_cv(db: Session, cv_id: str, user_id: str) -> bool:
     cv = get_cv_by_id(db, cv_id, user_id)
     if not cv:
         return False
-    
+
     db.delete(cv)
     db.commit()
     return True

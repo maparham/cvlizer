@@ -1,6 +1,6 @@
 /**
  * ItemControls Component
- * 
+ *
  * Renders the edit and delete controls for an individual item.
  */
 import { Box, IconButton, Tooltip } from '@mui/material'
@@ -27,7 +27,7 @@ function ItemControls<T>({
             onClick={() => onDelete(index)}
             className="item-action-button"
             data-testid={`delete-${title.toLowerCase().replace(/ /g, '-')}-item-${index}`}
-            sx={{ 
+            sx={{
               color: 'text.secondary',
               bgcolor: 'transparent',
               opacity: 0.3,
@@ -69,7 +69,7 @@ function ItemControls<T>({
         </Tooltip>
       </Box>
 
-      <Box sx={{ 
+      <Box sx={{
         pl: editingItemIndex === null ? 5 : 0,
         transition: 'padding-left 0.3s ease'
       }}>

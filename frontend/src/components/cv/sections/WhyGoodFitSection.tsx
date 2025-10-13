@@ -1,15 +1,15 @@
 /**
  * Why I'm a Good Fit Section Component
- * 
+ *
  * This component renders the AI-generated "Why I'm a Good Fit" section in the CV.
  * It displays the generated content with confidence score and key matches.
- * 
+ *
  * Key responsibilities:
  * - Display AI-generated content in a professional format
  * - Show confidence score and key matches
  * - Allow editing and deletion of the section
  * - Integrate with CV editor context for updates
- * 
+ *
  * Usage:
  * - Used in CVContentArea to render the why_good_fit section
  * - Requires WhyGoodFit data and standard section props
@@ -100,7 +100,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
 
   const handleDelete = () => {
     if (!data) return;
-    
+
     // Set section to null to properly delete it
     onSave(null, 'Why I\'m a Good Fit section deleted');
     setShowDeleteDialog(false);
@@ -119,7 +119,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
     return 'Poor Match';
   };
 
-  
+
   if (!data || (!data.content && !data.fit_analysis)) {
     return null;
   }
@@ -174,10 +174,10 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
                   {showMarkdownPreview ? 'Edit' : 'Preview'}
                 </Button>
               </Box>
-              
+
               {showMarkdownPreview ? (
                 <Box
-                  sx={{ 
+                  sx={{
                     minHeight: '200px',
                     padding: 2,
                     border: '1px solid #ccc',
@@ -260,7 +260,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
 
             {/* Main Content */}
             <Box
-              sx={{ 
+              sx={{
                 lineHeight: 1.6,
                 textAlign: 'justify',
                 '& h1, & h2, & h3, & h4, & h5, & h6': {
@@ -304,7 +304,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
                         <ListItemIcon sx={{ minWidth: 32 }}>
                           <CheckCircleIcon color="success" fontSize="small" />
                         </ListItemIcon>
-                        <ListItemText 
+                        <ListItemText
                           primary={match}
                           primaryTypographyProps={{ variant: 'body2' }}
                         />

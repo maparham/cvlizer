@@ -27,21 +27,21 @@ export class TokenManager {
   static getAccessToken(): string | null {
     return localStorage.getItem('access_token')
   }
-  
+
   static getRefreshToken(): string | null {
     return localStorage.getItem('refresh_token')
   }
-  
+
   static setTokens(accessToken: string, refreshToken: string): void {
     localStorage.setItem('access_token', accessToken)
     localStorage.setItem('refresh_token', refreshToken)
   }
-  
+
   static clearTokens(): void {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
   }
-  
+
   static hasValidTokens(): boolean {
     return !!(this.getAccessToken() && this.getRefreshToken())
   }
@@ -56,14 +56,14 @@ export function withAsyncErrorHandling<T extends any[], R>(
 ) {
   return async (set: any, _get: any, ...args: T): Promise<R | null> => {
     set({ loading: true, error: null })
-    
+
     try {
       const result = await asyncFn(...args)
       set({ loading: false, error: null })
       return result
     } catch (error: any) {
       const errorMessage = normalizeApiError(error) || `${actionName} failed`
-      set({ 
+      set({
         error: errorMessage,
         loading: false
       })
@@ -79,7 +79,7 @@ export function createBaseStoreSlice() {
   return {
     loading: false as boolean,
     error: null as string | null,
-    
+
     setLoading: (loading: boolean) => ({ loading }),
     setError: (error: string | null) => ({ error }),
     clearError: () => ({ error: null }),
@@ -91,15 +91,15 @@ export function createBaseStoreSlice() {
  */
 export class PollingManager {
   private interval: NodeJS.Timeout | null = null
-  
+
   constructor(
     private pollingFn: () => Promise<void>,
     private intervalMs: number = 2000
   ) {}
-  
+
   start(): void {
     if (this.interval) return
-    
+
     this.interval = setInterval(async () => {
       try {
         await this.pollingFn()
@@ -108,14 +108,14 @@ export class PollingManager {
       }
     }, this.intervalMs)
   }
-  
+
   stop(): void {
     if (this.interval) {
       clearInterval(this.interval)
       this.interval = null
     }
   }
-  
+
   isActive(): boolean {
     return this.interval !== null
   }

@@ -1,15 +1,15 @@
 /**
  * Drag and Drop Hook
- * 
+ *
  * This module provides drag and drop functionality for reordering CV sections
  * using the @dnd-kit library. It handles drag start/end events and section reordering.
- * 
+ *
  * Key responsibilities:
  * - Manage active drag state and visual feedback
  * - Handle drag start and end events from @dnd-kit
  * - Reorder sections using arrayMove utility
  * - Provide clean interface for drag and drop operations
- * 
+ *
  * Usage:
  * - Use in components that need drag and drop functionality
  * - Pass sections array and reorder callback
@@ -31,9 +31,9 @@ interface UseDragAndDropProps {
   onReorderSections: (sections: CVSection[]) => void
 }
 
-export const useDragAndDrop = ({ 
-  sections, 
-  onReorderSections 
+export const useDragAndDrop = ({
+  sections,
+  onReorderSections
 }: UseDragAndDropProps): DragAndDropHook => {
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -47,7 +47,7 @@ export const useDragAndDrop = ({
     if (active.id !== over?.id) {
       const oldIndex = sections.findIndex((item) => item.id === active.id)
       const newIndex = sections.findIndex((item) => item.id === over?.id)
-      
+
       const newSections = arrayMove(sections, oldIndex, newIndex)
       onReorderSections(newSections)
     }

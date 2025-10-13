@@ -41,13 +41,12 @@ Real users do:
 
 ## Anti-Patterns to Avoid
 
-❌ Creating a new CV in every test  
-❌ Resetting all state between tests  
-❌ Isolated test fixtures with no shared context  
-❌ Parallel execution for workflows that should be sequential  
+❌ Creating a new CV in every test
+❌ Resetting all state between tests
+❌ Isolated test fixtures with no shared context
+❌ Parallel execution for workflows that should be sequential
 
-✅ One CV per suite, shared across tests  
-✅ Sequential execution with natural state progression  
-✅ Minimal cleanup (only close open UI elements)  
-✅ Tests build on each other's results  
-
+✅ One CV per suite, shared across tests
+✅ Sequential execution with natural state progression
+✅ Minimal cleanup (only close open UI elements)
+✅ Tests build on each other's results

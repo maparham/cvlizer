@@ -1,6 +1,6 @@
 /**
  * End-to-End Test: Create and Delete CV
- * 
+ *
  * This test covers the complete workflow of:
  * 1. User login with Clerk authentication
  * 2. Creating a new CV from scratch
@@ -17,7 +17,7 @@ test.describe('Create and Delete CV Workflow', () => {
     // Authentication handled by global-setup.ts - user already logged in
     // Navigate to root (admin users redirect to /admin, then go to dashboard)
     await page.goto('/');
-    
+
     const url = page.url();
     if (url.includes('/admin')) {
       await page.getByRole('button', { name: /back to dashboard/i }).click();
@@ -25,7 +25,7 @@ test.describe('Create and Delete CV Workflow', () => {
     } else if (!url.includes('/dashboard')) {
       await page.goto('/dashboard');
     }
-    
+
     await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible();
 
     // Start creating a new CV from scratch
@@ -45,13 +45,13 @@ test.describe('Create and Delete CV Workflow', () => {
     // Fill in all required personal information fields
     await nameInput.click();
     await page.getByTestId('personal-info-full-name-input').locator('input').fill(testUser.displayName);
-    
+
     await page.getByTestId('personal-info-email-input').locator('input').click();
     await page.getByTestId('personal-info-email-input').locator('input').fill(testUser.email);
-    
+
     await page.getByTestId('personal-info-phone-input').locator('input').click();
     await page.getByTestId('personal-info-phone-input').locator('input').fill('+1 234 567 8900');
-    
+
     await page.getByRole('combobox', { name: /location/i }).click();
     await page.getByRole('combobox', { name: /location/i }).fill('New York, NY');
     await page.keyboard.press('Tab'); // Close autocomplete
@@ -60,7 +60,7 @@ test.describe('Create and Delete CV Workflow', () => {
     // Save personal information - click the save icon button
     const saveButton = page.locator('button:has(svg[data-testid="SaveIcon"])').first();
     await expect(saveButton).toBeEnabled({ timeout: TEST_TIMEOUT });
-    
+
     // Capture temp CV ID before save
     const tempCvId = page.url().split('/cv/')[1];
     await saveButton.click();
@@ -71,7 +71,7 @@ test.describe('Create and Delete CV Workflow', () => {
 
     // Step 8: Add Professional Summary section
     await page.getByRole('button', { name: /add this section to your cv/i }).first().click();
-    
+
     // Wait for section to be added
     await expect(page.getByText(/professional summary section added/i)).toBeVisible({ timeout: TEST_TIMEOUT });
 
@@ -137,7 +137,7 @@ test.describe('Create and Delete CV Workflow', () => {
     await page.getByTestId('cv-editor-back-button').click();
     await page.waitForURL('**/dashboard');
     await expect(page.getByRole('heading', { name: /my cvs/i })).toBeVisible();
-    
+
     // The CV should already be in the Zustand store from the save operation
     // Wait for CV cards to render (the CV was added to store.cvs during saveTemporaryCV)
     await expect(page.getByTestId(`edit-cv-button-${cvId}`)).toBeVisible({ timeout: DASHBOARD_REFRESH_TIMEOUT });
@@ -162,4 +162,3 @@ test.describe('Create and Delete CV Workflow', () => {
     await expect(page.getByTestId(`delete-cv-button-${cvId}`)).not.toBeVisible({ timeout: TEST_TIMEOUT });
   });
 });
-

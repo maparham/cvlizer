@@ -1,17 +1,17 @@
 /**
  * Markdown Renderer Component
- * 
+ *
  * This component provides a reusable markdown renderer with Material-UI styling.
  * It uses react-markdown to parse and render markdown content with custom renderers
  * for seamless integration with Material-UI design system.
- * 
+ *
  * Key responsibilities:
  * - Render markdown content with Material-UI components
  * - Support line clamping for preview contexts
  * - Handle empty or null content gracefully
  * - Provide consistent typography styling
  * - Support custom styling via sx prop
- * 
+ *
  * Usage:
  * - Use for displaying any markdown content (job descriptions, AI-generated content, etc.)
  * - Supports line clamp for truncated previews
@@ -89,14 +89,14 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               {children}
             </Typography>
           ),
-          
+
           // Paragraphs
           p: ({ children }) => (
             <Typography variant={variant} sx={{ mb: 1, color, lineHeight: 1.6, mr: 0 }}>
               {children}
             </Typography>
           ),
-          
+
           // Lists
           ul: ({ children }) => (
             <List dense sx={{ py: 0, pl: 2 }}>
@@ -115,7 +115,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               </Typography>
             </ListItem>
           ),
-          
+
           // Links
           a: ({ href, children }) => (
             <Link
@@ -127,21 +127,21 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               {children}
             </Link>
           ),
-          
+
           // Strong/Bold
           strong: ({ children }) => (
             <Typography component="span" sx={{ fontWeight: 700, color }}>
               {children}
             </Typography>
           ),
-          
+
           // Emphasis/Italic
           em: ({ children }) => (
             <Typography component="span" sx={{ fontStyle: 'italic', color }}>
               {children}
             </Typography>
           ),
-          
+
           // Code (inline)
           code: ({ children }) => (
             <Typography
@@ -158,7 +158,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               {children}
             </Typography>
           ),
-          
+
           // Code block
           pre: ({ children }) => (
             <Box
@@ -183,7 +183,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               </Typography>
             </Box>
           ),
-          
+
           // Blockquote
           blockquote: ({ children }) => (
             <Box
@@ -211,4 +211,3 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 };
 
 export default MarkdownRenderer;
-

@@ -1,15 +1,15 @@
 /**
  * DeleteConfirmationDialog - Generic confirmation dialog for destructive actions
- * 
+ *
  * This component provides a reusable confirmation dialog for destructive actions.
  * Shows warnings, confirmation input, and action buttons.
- * 
+ *
  * Key responsibilities:
  * - Display warning messages for destructive actions
  * - Collect confirmation text input
  * - Handle confirmation and cancellation
  * - Show loading states during action
- * 
+ *
  * Usage context:
  * - Used in admin dashboard for destructive operations
  * - Can be reused for various confirmation scenarios
@@ -73,8 +73,8 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   }
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
@@ -93,11 +93,11 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
             {message}
           </Typography>
         </Alert>
-        
+
         <Typography variant="body2" color="text.secondary">
           Type <strong>{confirmText}</strong> in the box below to confirm:
         </Typography>
-        
+
         <TextField
           fullWidth
           label="Confirmation"
@@ -109,13 +109,13 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button 
+        <Button
           onClick={handleClose}
           disabled={loading}
         >
           Cancel
         </Button>
-        <Button 
+        <Button
           onClick={handleConfirm}
           variant="contained"
           color="error"

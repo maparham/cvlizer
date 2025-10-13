@@ -1,15 +1,15 @@
 /**
  * AIUsageTab - Admin dashboard AI usage tab component
- * 
+ *
  * This component displays AI usage statistics, charts, and management tools.
  * Shows usage data, charts, top users, and logs with filtering capabilities.
- * 
+ *
  * Key responsibilities:
  * - Display AI usage statistics and charts
  * - Show date range controls and filters
  * - Display top users and usage logs
  * - Handle export and delete operations
- * 
+ *
  * Usage context:
  * - Used in admin dashboard as the third tab
  * - Integrates with useAIUsageData hook
@@ -31,13 +31,13 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { Refresh, Delete, GetApp } from '@mui/icons-material'
 import dayjs from 'dayjs'
-import { 
-  SystemAIStats, 
-  UserAIUsage, 
-  OperationAIUsage, 
-  TimelineData, 
-  PaginatedAIUsageLogs, 
-  AIUsageFilters 
+import {
+  SystemAIStats,
+  UserAIUsage,
+  OperationAIUsage,
+  TimelineData,
+  PaginatedAIUsageLogs,
+  AIUsageFilters
 } from '../../../types/admin'
 import AIUsageStatsCards from '../AIUsageStatsCards'
 import AIUsageTimelineChart from '../AIUsageTimelineChart'
@@ -195,16 +195,16 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
         {/* Charts Row */}
         <Grid container spacing={3} sx={{ mt: 2 }}>
           <Grid item xs={12} lg={8}>
-            <AIUsageTimelineChart 
-              data={aiTimeline} 
-              loading={loading} 
+            <AIUsageTimelineChart
+              data={aiTimeline}
+              loading={loading}
               granularity={granularity}
               onGranularityChange={onGranularityChange}
             />
           </Grid>
           <Grid item xs={12} lg={4}>
-            <AIOperationBreakdownChart 
-              data={aiOperationUsage} 
+            <AIOperationBreakdownChart
+              data={aiOperationUsage}
               loading={loading}
             />
           </Grid>
@@ -215,8 +215,8 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
           <Typography variant="h6" gutterBottom>
             Top AI Users
           </Typography>
-          <AITopUsersTable 
-            users={aiUserUsage} 
+          <AITopUsersTable
+            users={aiUserUsage}
             loading={loading}
             onUserClick={onUserClick}
           />
@@ -227,15 +227,15 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
           <Typography variant="h6" gutterBottom>
             AI Usage Logs
           </Typography>
-          
+
           {filters.user_id && (
-            <Alert 
-              severity="info" 
+            <Alert
+              severity="info"
               sx={{ mb: 2 }}
               action={
-                <Button 
-                  color="inherit" 
-                  size="small" 
+                <Button
+                  color="inherit"
+                  size="small"
                   onClick={() => onFilterChange({ user_id: undefined })}
                 >
                   Clear User Filter
@@ -245,7 +245,7 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
               Showing logs for user: {aiUserUsage.find(u => u.user_id === filters.user_id)?.email || filters.user_id}
             </Alert>
           )}
-          
+
           <AIUsageLogsTable
             data={aiLogs}
             loading={loading}

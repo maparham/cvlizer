@@ -1,15 +1,15 @@
 /**
  * useAdminStats - Custom hook for managing admin statistics
- * 
+ *
  * This hook handles loading and managing system statistics for the admin dashboard.
  * Provides loading state, error handling, and data refresh functionality.
- * 
+ *
  * Key responsibilities:
  * - Load system statistics from API
  * - Manage loading and error states
  * - Provide refresh functionality
  * - Handle authentication and navigation
- * 
+ *
  * Usage context:
  * - Used in admin dashboard overview tab
  * - Integrates with admin API endpoints
@@ -33,7 +33,7 @@ export const useAdminStats = (): UseAdminStatsReturn => {
   const [stats, setStats] = useState<SystemStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
@@ -55,7 +55,7 @@ export const useAdminStats = (): UseAdminStatsReturn => {
       navigate('/login')
       return
     }
-    
+
     loadStats()
   }, [isAuthenticated, navigate])
 

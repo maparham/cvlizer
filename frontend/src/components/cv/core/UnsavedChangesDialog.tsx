@@ -66,24 +66,24 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
       disableEscapeKeyDown
       data-testid="unsaved-changes-dialog"
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 1, 
+      <DialogTitle sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
         pb: 1,
-        fontWeight: 500, 
+        fontWeight: 500,
         color: '#1976d2',
         fontSize: '1.25rem'
       }}>
         <InfoIcon color="info" sx={{ color: '#1976d2' }} />
         Unsaved Changes
       </DialogTitle>
-      
+
       <DialogContent>
         <Typography variant="body1" sx={{ mb: 2, color: 'text.primary' }}>
           You have unsaved changes in the following sections:
         </Typography>
-        
+
         <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
           <List dense>
             {changedSections.map((sectionId) => (
@@ -101,16 +101,16 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
             ))}
           </List>
         </Box>
-        
+
       </DialogContent>
-      
+
       <DialogActions sx={{ gap: 1, px: 3, pb: 3 }}>
         <Button
           onClick={onClose}
           variant="contained"
           color="primary"
           data-testid="unsaved-changes-continue-button"
-          sx={{ 
+          sx={{
             fontWeight: 500,
             px: 3,
             py: 1
@@ -123,7 +123,7 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
           variant="outlined"
           color="secondary"
           data-testid="unsaved-changes-discard-button"
-          sx={{ 
+          sx={{
             fontWeight: 500,
             px: 3,
             py: 1,

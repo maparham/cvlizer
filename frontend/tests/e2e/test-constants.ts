@@ -1,6 +1,6 @@
 /**
  * Shared constants for E2E tests
- * 
+ *
  * These constants ensure consistency across all E2E tests and make it easy
  * to adjust timeouts and other values globally.
  */
@@ -53,4 +53,3 @@ export const TEST_USERS = [
 
 // Backward compatibility - default to first user
 export const TEST_USER = TEST_USERS[0];
-

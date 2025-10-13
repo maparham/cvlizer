@@ -1,9 +1,9 @@
 /**
  * User Activity Logging Service
- * 
+ *
  * This module provides comprehensive logging of user activities, errors, and system events
  * to enable effective problem recreation and debugging by administrators.
- * 
+ *
  * Key responsibilities:
  * - Log user interactions and page views
  * - Capture JavaScript errors with context
@@ -103,12 +103,12 @@ class ActivityLogger {
     if (!this.isEnabled || !this.userId) return
 
     const now = Date.now()
-    
+
     // Throttle identical actions within 1 second
     if (now - this.lastActivityTime < this.activityThrottleMs) {
       return
     }
-    
+
     this.lastActivityTime = now
 
     const activity: UserActivity = {
@@ -134,12 +134,12 @@ class ActivityLogger {
     if (!this.isEnabled) return
 
     const currentUrl = pageUrl || window.location.pathname
-    
+
     // Skip if same page as last page view
     if (this.lastPageView === currentUrl) {
       return
     }
-    
+
     this.lastPageView = currentUrl
 
     const activity: UserActivity = {
@@ -288,18 +288,18 @@ class ActivityLogger {
       'privatekey', 'private_key', 'apikey', 'api_key', 'accesskey',
       'access_key', 'sessionid', 'session_id', 'cookie', 'cookies'
     ]
-    
+
     if (Array.isArray(data)) {
       return data.map(item => this.sanitizeData(item, depth + 1))
     }
-    
+
     if (typeof data === 'object' && data !== null) {
       const sanitized: any = {}
-      
+
       for (const key in data) {
         if (Object.prototype.hasOwnProperty.call(data, key)) {
           const normalizedKey = key.toLowerCase()
-          
+
           if (sensitiveKeys.some(sensitive => normalizedKey.includes(sensitive))) {
             sanitized[key] = '[REDACTED]'
           } else if (typeof data[key] === 'object' && data[key] !== null) {
@@ -309,7 +309,7 @@ class ActivityLogger {
           }
         }
       }
-      
+
       return sanitized
     }
 
@@ -341,10 +341,10 @@ class ActivityLogger {
     try {
       // Copy the queued activities
       const activitiesToFlush = [...this.activityQueue]
-      
+
       // Create a Blob with the activities data
       const blob = new Blob([JSON.stringify(activitiesToFlush)], { type: 'application/json' })
-      
+
       // Use navigator.sendBeacon if available, otherwise fall back to regular flush
       if (navigator.sendBeacon) {
         const success = navigator.sendBeacon('/api/user-activities/batch', blob)
@@ -408,10 +408,10 @@ class ActivityLogger {
     try {
       // Import api dynamically to avoid circular dependencies
       const { default: api } = await import('./api')
-      
+
       // Send activities to backend
       await api.post('/api/user-activities/batch', { activities })
-      
+
     } catch (error) {
       // Re-queue activities if sending failed
       this.activityQueue.unshift(...activities)

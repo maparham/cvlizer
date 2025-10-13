@@ -1,6 +1,6 @@
 /**
  * CV History Service
- * 
+ *
  * This service manages CV version history including:
  * - Creating and managing snapshots
  * - Local storage persistence
@@ -8,11 +8,11 @@
  * - Diff generation between versions
  */
 
-import { 
-  CVData, 
-  CVHistoryEntry, 
-  CVHistoryState, 
-  CVHistoryConfig, 
+import {
+  CVData,
+  CVHistoryEntry,
+  CVHistoryState,
+  CVHistoryConfig,
   CreateSnapshotOptions,
   HistoryStats,
   HistoryDiff,
@@ -22,7 +22,7 @@ import {
 
 export class CVHistoryService {
   private config: CVHistoryConfig
-  
+
   constructor(config: Partial<CVHistoryConfig> = {}) {
     this.config = { ...DEFAULT_HISTORY_CONFIG, ...config }
   }
@@ -31,8 +31,8 @@ export class CVHistoryService {
    * Create a new history snapshot
    */
   createSnapshot(
-    cvId: string, 
-    cvData: CVData, 
+    cvId: string,
+    cvData: CVData,
     options: CreateSnapshotOptions
   ): CVHistoryEntry {
     const now = new Date().toISOString()
@@ -58,7 +58,7 @@ export class CVHistoryService {
 
     // Get current history state
     const historyState = this.getHistoryState(cvId)
-    
+
     // Check if we should skip this snapshot (too recent)
     if (!options.force && this.shouldSkipSnapshot(historyState, entry)) {
       throw new Error('Snapshot skipped: too recent')
@@ -141,9 +141,9 @@ export class CVHistoryService {
   deleteHistoryEntry(cvId: string, entryId: string): boolean {
     const state = this.getHistoryState(cvId)
     const initialLength = state.entries.length
-    
+
     state.entries = state.entries.filter(entry => entry.id !== entryId)
-    
+
     if (state.currentEntryId === entryId) {
       state.currentEntryId = state.entries[0]?.id || null
     }
@@ -152,7 +152,7 @@ export class CVHistoryService {
       this.saveHistoryState(cvId, state)
       return true
     }
-    
+
     return false
   }
 
@@ -169,11 +169,11 @@ export class CVHistoryService {
    */
   getHistoryStats(cvId: string): HistoryStats {
     const entries = this.getHistoryEntries(cvId)
-    
+
     const autoSnapshots = entries.filter(e => e.isAutomatic).length
     const manualSnapshots = entries.filter(e => !e.isAutomatic).length
     const totalStorageUsed = entries.reduce((sum, entry) => sum + entry.dataSize, 0)
-    
+
     return {
       totalEntries: entries.length,
       autoSnapshots,
@@ -201,7 +201,7 @@ export class CVHistoryService {
     // Check for changes in each section
     const sections = [
       'personal_info',
-      'professional_summary', 
+      'professional_summary',
       'work_experience',
       'education',
       'skills',
@@ -215,7 +215,7 @@ export class CVHistoryService {
     sections.forEach(section => {
       const fromSection = fromData[section]
       const toSection = toData[section]
-      
+
       if (!fromSection && toSection) {
         changes.added.push(this.getSectionDisplayName(section))
       } else if (fromSection && !toSection) {
@@ -232,7 +232,7 @@ export class CVHistoryService {
     })
 
     // Create the result object first
-    const result = { 
+    const result = {
       added: changes.added,
       modified: changes.modified,
       removed: changes.removed,
@@ -250,10 +250,10 @@ export class CVHistoryService {
    */
   private shouldSkipSnapshot(state: CVHistoryState, newEntry: CVHistoryEntry): boolean {
     if (state.entries.length === 0) return false
-    
+
     const lastEntry = state.entries[0]
     const timeDiff = new Date(newEntry.timestamp).getTime() - new Date(lastEntry.timestamp).getTime()
-    
+
     return timeDiff < this.config.minSnapshotInterval
   }
 
@@ -279,10 +279,10 @@ export class CVHistoryService {
    * Emergency cleanup when localStorage is full
    */
   private emergencyCleanup(cvId: string, state: CVHistoryState): void {
-    
+
     // Keep only the most recent 5 entries
     state.entries = state.entries.slice(0, 5)
-    
+
     try {
       this.saveHistoryState(cvId, state)
     } catch (error) {
@@ -310,7 +310,7 @@ export class CVHistoryService {
       before_ai_optimize: 'Before AI optimization',
       restore_point: 'Restore point created'
     }
-    
+
     return descriptions[changeType as keyof typeof descriptions] || 'CV updated'
   }
 
@@ -330,7 +330,7 @@ export class CVHistoryService {
       publications: 'Publications',
       volunteer_experience: 'Volunteer Experience'
     }
-    
+
     return names[section as keyof typeof names] || section
   }
 
@@ -339,11 +339,11 @@ export class CVHistoryService {
    */
   private compareSections(fromSection: any, toSection: any): string[] {
     const changes: string[] = []
-    
+
     // Simple comparison - could be enhanced with deep diff
     const fromStr = JSON.stringify(fromSection)
     const toStr = JSON.stringify(toSection)
-    
+
     if (fromStr !== toStr) {
       if (Array.isArray(fromSection) && Array.isArray(toSection)) {
         if (fromSection.length !== toSection.length) {
@@ -355,7 +355,7 @@ export class CVHistoryService {
         changes.push('Content modified')
       }
     }
-    
+
     return changes
   }
 
@@ -364,19 +364,19 @@ export class CVHistoryService {
    */
   private generateDiffSummary(changes: HistoryDiff): string {
     const parts: string[] = []
-    
+
     if (changes.added.length > 0) {
       parts.push(`Added ${changes.added.join(', ')}`)
     }
-    
+
     if (changes.modified.length > 0) {
       parts.push(`Modified ${changes.modified.map(m => m.section).join(', ')}`)
     }
-    
+
     if (changes.removed.length > 0) {
       parts.push(`Removed ${changes.removed.join(', ')}`)
     }
-    
+
     return parts.length > 0 ? parts.join('; ') : 'No changes detected'
   }
 }

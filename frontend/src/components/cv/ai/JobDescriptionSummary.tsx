@@ -1,15 +1,15 @@
 /**
  * Job Description Summary Component
- * 
+ *
  * This component provides a compact summary of job descriptions in the sidebar,
  * showing the active job description and a button to open the full management modal.
- * 
+ *
  * Key responsibilities:
  * - Display active job description summary
  * - Show count of saved job descriptions
  * - Provide button to open full job description modal
  * - Show quick actions for the active job description
- * 
+ *
  * Usage:
  * - Used in the CV editor sidebar for compact job description display
  * - Requires cvId prop to associate with specific CV
@@ -94,7 +94,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
 
   // Debug log when component mounts and restore button state from global polling
   useEffect(() => {
-    
+
     // Check if there's an active generating task for this CV and restore button state
     const hasGeneratingTask = Array.from(activeTasks.values()).some(
       task => task.type === 'draft' && task.cvId === cvId && task.isGenerating
@@ -102,7 +102,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     if (hasGeneratingTask && !isGeneratingJobFit) {
       setIsGeneratingJobFit(true);
     }
-    
+
     // Clear processed tasks when cvId changes
     processedTasksRef.current.clear();
   }, [cvId, activeJobDescription, addTask, activeTasks, isGeneratingJobFit]);
@@ -120,16 +120,16 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   // Monitor active tasks for job fit analysis completion
   useEffect(() => {
     for (const [taskId, task] of activeTasks) {
-      
+
       if (task.type === 'draft' && task.cvId === cvId && !task.isGenerating) {
         // Check if we've already processed this task to prevent duplicate notifications
         if (processedTasksRef.current.has(taskId)) {
           continue;
         }
-        
+
         // Mark task as processed
         processedTasksRef.current.add(taskId);
-        
+
         if (task.generationError) {
           showErrorRef.current('Error', `Job fit analysis failed: ${task.generationError}`);
           setIsGeneratingJobFit(false);
@@ -137,7 +137,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
           // Task completed successfully
           showSuccessRef.current('Job fit analysis completed! Please review and approve the draft in the CV editor.');
           setIsGeneratingJobFit(false);
-          
+
           // Note: No need to reload drafts here - the polling mechanism already updated the draft in the store
           // Calling getCVDrafts here would remove the just-updated draft and replace with potentially stale API data
         }
@@ -243,9 +243,9 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
         </Box>
 
         {jobDescriptions.length === 0 ? (
-          <Card 
-            variant="outlined" 
-            sx={{ 
+          <Card
+            variant="outlined"
+            sx={{
               mb: 2,
               border: '2px dashed #e0e0e0',
               backgroundColor: 'rgba(0,0,0,0.02)',
@@ -269,7 +269,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                 size="medium"
                 onClick={() => setModalOpen(true)}
                 startIcon={<WorkIcon />}
-                sx={{ 
+                sx={{
                   textTransform: 'none',
                   fontWeight: 600,
                   px: 3,
@@ -303,10 +303,10 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   variant="sidebar"
                   maxChipWidth={120}
                 />
-                
-                <Box sx={{ 
+
+                <Box sx={{
                   display: 'flex',
-                  flexDirection: 'column', 
+                  flexDirection: 'column',
                   gap: 2,
                   mt: 2
                 }}>
@@ -317,7 +317,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                         suggestionsLoading ? (
                           <CircularProgress size={16} color="inherit" />
                         ) : (
-                          <AutoAwesomeIcon 
+                          <AutoAwesomeIcon
                             sx={{
                               animation: suggestionsLoading ? 'pulse 1.5s ease-in-out infinite' : 'none',
                               '@keyframes pulse': {
@@ -357,7 +357,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                       {suggestionsLoading ? 'Enhancing...' : 'Enhance CV for this Job'}
                     </Button>
                   )}
-                  
+
                   {onAddToCV && (
                     <Button
                       variant="outlined"
@@ -365,7 +365,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                         isGeneratingJobFit ? (
                           <CircularProgress size={16} />
                         ) : (
-                          <AutoAwesomeIcon 
+                          <AutoAwesomeIcon
                             sx={{
                               animation: isGeneratingJobFit ? 'pulse 1.5s ease-in-out infinite' : 'none',
                               '@keyframes pulse': {
@@ -408,9 +408,9 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                 </Box>
               </Box>
             ) : (
-              <Card 
-                variant="outlined" 
-                sx={{ 
+              <Card
+                variant="outlined"
+                sx={{
                   mb: 2,
                   border: '1px dashed #e0e0e0',
                   backgroundColor: 'rgba(0,0,0,0.02)',
@@ -430,7 +430,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                     variant="outlined"
                     size="small"
                     onClick={() => setModalOpen(true)}
-                    sx={{ 
+                    sx={{
                       textTransform: 'none',
                       fontWeight: 500,
                       '&:hover': {

@@ -17,7 +17,6 @@ from .common import (
 
 # Re-export job fit analysis functions
 from .job_fit import (
-    analyze_job_fit,
     analyze_job_fit_sync,
 )
 
@@ -56,25 +55,23 @@ from .cv_status import (
 # Define public API
 __all__ = [
     # Common utilities and types
-    'is_ai_enabled',
-    'JobFitResult',
-    'ATSOptimizationResult',
+    "is_ai_enabled",
+    "JobFitResult",
+    "ATSOptimizationResult",
     # Job fit analysis
-    'analyze_job_fit',
-    'analyze_job_fit_sync',
+    "analyze_job_fit_sync",
     # CV parsing
-    'parse_cv_text_with_openai',
+    "parse_cv_text_with_openai",
     # Section generation
-    'generate_cv_section',
+    "generate_cv_section",
     # Content enhancement
-    'enhance_content',
+    "enhance_content",
     # ATS optimization
-    'analyze_ats_optimization',
-    'create_optimization_suggestions',
+    "analyze_ats_optimization",
+    "create_optimization_suggestions",
     # Job extraction
-    'extract_job_description_with_ai',
+    "extract_job_description_with_ai",
     # CV status
-    'check_cv_ai_enhancement_status',
-    'mark_cv_as_ai_enhanced',
+    "check_cv_ai_enhancement_status",
+    "mark_cv_as_ai_enhanced",
 ]
-

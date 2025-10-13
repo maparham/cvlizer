@@ -9,6 +9,7 @@
     "build:prod": "vite build --mode production",
     "build:no-ts": "vite build --mode production",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "test": "jest",
     "test:coverage": "jest --coverage",
