@@ -104,7 +104,7 @@ Return JSON:
                     {"role": "user", "content": prompt},
                 ],
                 text_format=ContentEnhancementResponseSchema,
-                reasoning=Reasoning(effort="low"),
+                reasoning=Reasoning(effort=AIConfig.REASONING_EFFORT),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)

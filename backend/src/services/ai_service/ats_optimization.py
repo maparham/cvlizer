@@ -159,7 +159,7 @@ async def analyze_ats_optimization(
                     {"role": "user", "content": prompt},
                 ],
                 text_format=ATSOptimizationResponseSchema,
-                reasoning=Reasoning(effort="low"),
+                reasoning=Reasoning(effort=AIConfig.REASONING_EFFORT),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
@@ -417,7 +417,7 @@ async def create_optimization_suggestions(
                     {"role": "user", "content": prompt},
                 ],
                 text_format=OptimizationSuggestionsResponseSchema,
-                reasoning=Reasoning(effort="low"),
+                reasoning=Reasoning(effort=AIConfig.REASONING_EFFORT),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)

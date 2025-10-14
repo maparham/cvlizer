@@ -10,6 +10,7 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
+from openai.types.shared_params import Reasoning
 from sqlalchemy.orm import Session
 
 from src.config import AIConfig
@@ -98,36 +99,34 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
         def _call_openai():
             start_time = time.time()
             client = get_openai_client()
-            response = client.responses.create(
+            response = client.responses.parse(
                 model=AIConfig.OPENAI_MODEL,
-                instructions="You're a job posting extraction expert. Return valid JSON. Format 'content' as markdown (##, ###, bullets, **bold**, \\n\\n). Consolidate duplicate requirements (e.g., 'Strong programming' + 'Solid scripting' → one requirement). Keep unique requirements.",
-                input=prompt,
-                reasoning={"effort": "minimal", "summary": "auto"},
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "job_extraction",
-                        "schema": JobExtractionResponseSchema.model_json_schema(),
-                        "strict": True,
+                input=[
+                    {
+                        "role": "system",
+                        "content": "You're a job posting extraction expert. Return valid JSON. Format 'content' as markdown (##, ###, bullets, **bold**, \\n\\n). Consolidate duplicate requirements (e.g., 'Strong programming' + 'Solid scripting' → one requirement). Keep unique requirements.",
                     },
-                },
+                    {"role": "user", "content": prompt},
+                ],
+                text_format=JobExtractionResponseSchema,
+                reasoning=Reasoning(effort=AIConfig.PARSING_REASONING_EFFORT),
             )
             end_time = time.time()
 
-            # Extract content and token usage
-            content, prompt_tokens, completion_tokens = extract_response_data(response)
-            generation_time = int(
-                (end_time - start_time) * 1000
-            )  # Convert to milliseconds
+            # Extract parsed data and token usage
+            extracted_data = response.output_parsed.model_dump()
+            prompt_tokens = response.usage.input_tokens
+            completion_tokens = response.usage.output_tokens
+            generation_time = int((end_time - start_time) * 1000)
 
             return (
-                content.strip() if content else "",
+                extracted_data,
                 prompt_tokens,
                 completion_tokens,
                 generation_time,
             )
 
-        result, prompt_tokens, completion_tokens, generation_time = _call_openai()
+        extracted_data, prompt_tokens, completion_tokens, generation_time = _call_openai()
 
         # Log AI usage with actual token counts
         if user_id:
@@ -143,39 +142,24 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
                 cv_id=cv_id,
             )
 
-        # Parse the JSON response
-        # Parse JSON using centralized utility (handles markdown code blocks)
-        json_content = parse_json_from_markdown(result)
-
-        # Validate response with Pydantic schema
-        validated_model = validate_with_schema(
-            json_content, JobExtractionResponseSchema, "job_extraction"
-        )
-
-        if validated_model:
-            # Convert validated model to dict
-            extracted_data = validated_model.model_dump()
-            return {
-                "title": extracted_data.get("title", "Unknown Title"),
-                "company": extracted_data.get("company", "Unknown Company"),
-                "location": extracted_data.get("location", "Unknown Location"),
-                "content": extracted_data.get("content", ""),
-                "source": extracted_data.get("source", "ai_parsed"),
-            }
-        else:
-            # Validation failed, use fallback
-            logger.error(f"Job extraction validation failed. Result: {result[:500]}")
-            return {
-                "title": "Job Posting",
-                "company": "Unknown Company",
-                "location": "Unknown Location",
-                "content": (
-                    raw_content[:1000] + "..." if len(raw_content) > 1000 else raw_content
-                ),
-                "source": "ai_parsed_fallback",
-            }
+        # Data already validated and parsed by responses.parse()
+        return {
+            "title": extracted_data.get("title", "Unknown Title"),
+            "company": extracted_data.get("company", "Unknown Company"),
+            "location": extracted_data.get("location", "Unknown Location"),
+            "content": extracted_data.get("content", ""),
+            "source": extracted_data.get("source", "ai_parsed"),
+        }
 
     except Exception as e:
+        # Log the error with full details
+        logger.error(
+            f"Job extraction failed with error: {str(e)}",
+            exc_info=True,
+        )
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Content length: {len(raw_content)} characters")
+
         # Log failed AI usage
         if user_id:
             log_ai_usage_safe(
@@ -191,5 +175,4 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
                 cv_id=cv_id,
             )
 
-        logger.error(f"Error in extract_job_description_with_ai: {str(e)}")
         return {"error": f"Failed to extract job description: {str(e)}", "success": False}

@@ -6,10 +6,8 @@ matches a job description, generating confidence scores and detailed
 fit analysis narratives.
 """
 
-import asyncio
 import json
 import logging
-import re
 import time
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, cast
@@ -79,41 +77,27 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f'  "weaknesses": ["Limited cloud experience"]\n'
         f"}}\n\n"
         f"RULES:\n"
-        f"1. confidence_score: Integer 1-100 showing match quality\n"
+        f"1. confidence_score: Integer 1-100 showing match quality.\n"
         f"2. fit_analysis (markdown string, first person):\n"
-        f"   • Start: **Why I'm a Good Fit**\\n\\n[1 paragraph, 40-50 words: top 2-3 skills + enthusiasm]\n"
-        f"   • Then: **Your Requirements**\\n\\n\n"
-        f"   • List 5-8 TECHNICAL requirements ONLY (skip soft skills/mindsets)\n"
-        f'   • Format: **"Exact JD text"**\\n\\n[2-3 sentences about your experience]\\n\\n\n'
-        f"   • Vary sentence starters: Use 'My', 'Built', 'Over X years', not all 'I'\n"
-        f"   • Be honest about gaps: 'I haven't used X yet'\n"
-        f"   • STOP after last requirement - NO summary/extra paragraphs\n"
+        f"   • Header **Why I'm a Good Fit**\\n\\n[1 paragraph, 40-50 words: top 2-3 skills + enthusiasm].\n"
+        f"   • Then: **Your Requirements**\\n\\n.\n"
+        f"   • List concerete requirements verbatim as they appear in the JD (exclude skills/mindset requirements).\n"
+        f"   • Below each requirement item, write a short cover paragraph (max 40 words) about your experience in the context of the requirement item. Be brief and concise.\n"
+        f"   • If you don't have experience with the requirement item, be honest about it and explain how you could learn it.\n"
+        f"   • If you have experience with the requirement item, say so and include details.\n"
+        f'   • Format: **"<requirement item>"**\\n\\n[the cover paragraph]\\n\\n.\n'
+        f"   • Vary sentence starters and avoid using 'I' or 'I have' too often.\n"
+        f"   • Use passive voice if appropriate but avoid using it too often.\n"
+        f"   • Be honest about gaps: 'I haven't used X yet.'\n"
+        f"   • Do not refer to the CV directly since you are the candidate.\n"
         f"3. Separate arrays (NOT in fit_analysis):\n"
-        f"   • key_matches: 3-5 specific skills/technologies FROM YOUR CV that match JD requirements\n"
-        f"   • missing_skills: 2-4 skills mentioned in JD but not in your CV\n"
-        f"   • suggested_improvements: 3-5 specific CV improvement tips\n"
-        f"   • strengths: 3-5 specific candidate strengths for this role\n"
-        f"   • weaknesses: 2-4 specific gaps or areas needing development\n"
+        f"   • key_matches: 3-5 specific skills/technologies FROM YOUR CV that match JD requirements.\n"
+        f"   • missing_skills: 2-4 skills mentioned in JD but not in your CV.\n"
+        f"   • suggested_improvements: 3-5 specific CV improvement tips.\n"
+        f"   • strengths: 3-5 specific candidate strengths for this role.\n"
+        f"   • weaknesses: 2-4 specific gaps or areas needing development.\n"
         f"Note: Write 'position/job' not 'role'. ALL arrays must be populated. Output complete valid JSON only."
     )
-
-    # Ultra-compact alternative (70% reduction to ~550 tokens):
-    # Uncomment below for maximum token savings with slight quality trade-off
-    # return (
-    #     f"As the candidate, analyze fit for this position.\n\n"
-    #     f"CV: {json.dumps(cv_data, indent=2)}\n"
-    #     f"JOB: {job_description}\n\n"
-    #     f"Return JSON:\n"
-    #     f'{{"confidence_score": 75, "fit_analysis": "markdown", "key_matches": [], '
-    #     f'"missing_skills": [], "suggested_improvements": [], "strengths": [], "weaknesses": []}}\n\n'
-    #     f"fit_analysis format:\n"
-    #     f"**Why I'm a Good Fit**\\n\\n[40-50 words: 2-3 top alignments + enthusiasm]\\n\\n"
-    #     f"**Your Requirements**\\n\\n"
-    #     f'[5-8 technical requirements as: **"Exact JD quote"**\\n\\n2-3 sentences about your experience\\n\\n]\n\n'
-    #     f"Rules: First person. Vary starters (My/Built/Over). Honest about gaps. "
-    #     f"Technical requirements only (no soft skills). Stop after last requirement. "
-    #     f"Arrays separate from markdown. Use position/job not role."
-    # )
 
 
 def _execute_job_fit_analysis_sync(
@@ -161,7 +145,7 @@ def _execute_job_fit_analysis_sync(
                 {"role": "user", "content": prompt},
             ],
             text_format=JobFitAnalysisResponseSchema,
-            reasoning=Reasoning(effort="low"),
+            reasoning=Reasoning(effort=AIConfig.REASONING_EFFORT),
         )
 
         generation_time = int((time.time() - start_time) * 1000)
