@@ -85,9 +85,9 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"   • Below each requirement item, write a short cover paragraph (max 40 words) about your experience in the context of the requirement item. Be brief and concise.\n"
         f"   • If you don't have experience with the requirement item, be honest about it and explain how you could learn it.\n"
         f"   • If you have experience with the requirement item, say so and include details.\n"
-        f'   • Format: **"<requirement item>"**\\n\\n[the cover paragraph]\\n\\n.\n'
-        f"   • Vary sentence starters and avoid using 'I' or 'I have' too often.\n"
-        f"   • Use passive voice if appropriate but avoid using it too often.\n"
+        f'   • Format: **"<requirement item in bold>"**\\n\\n[the cover paragraph]\\n\\n.\n'
+        f"   • Vary sentence starters and avoid overusing 'I' or 'I have'.\n"
+        # f"   • Use passive voice if appropriate but avoid using it too often.\n"
         f"   • Be honest about gaps: 'I haven't used X yet.'\n"
         f"   • Do not refer to the CV directly since you are the candidate.\n"
         f"3. Separate arrays (NOT in fit_analysis):\n"

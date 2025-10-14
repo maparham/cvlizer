@@ -51,11 +51,11 @@ class AIConfig:
     # - low: Faster, cheaper, may take shortcuts
     # - medium: Balanced quality and cost (recommended)
     # - high: Better quality, slower, more expensive
-    REASONING_EFFORT: str = os.getenv("AI_REASONING_EFFORT", "medium")
+    REASONING_EFFORT: str = os.getenv("AI_REASONING_EFFORT", "low")
 
     # Parsing-specific reasoning effort (for CV and JD parsing)
     # Defaults to "low" for faster parsing operations
-    PARSING_REASONING_EFFORT: str = os.getenv("AI_PARSING_REASONING_EFFORT", "low")
+    PARSING_REASONING_EFFORT: str = os.getenv("AI_PARSING_REASONING_EFFORT", "minimal")
 
     @classmethod
     def is_enabled(cls) -> bool:
