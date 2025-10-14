@@ -5,9 +5,9 @@ This service provides robust diff computation using Python's built-in difflib,
 handling move+edit scenarios, phantom changes, and providing structured diff results.
 """
 
-from typing import Dict, List, Any, Optional
-import json
 import difflib
+import json
+from typing import Any, Dict, List, Optional
 
 
 class CVDiffService:

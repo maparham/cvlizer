@@ -18,7 +18,7 @@
  * - Maintains compatibility with existing CV data flow
  */
 
-import React from 'react';
+import React from "react";
 import {
   Box,
   Button,
@@ -30,17 +30,17 @@ import {
   Stack,
   Alert,
   CircularProgress,
-} from '@mui/material';
+} from "@mui/material";
 import {
   AutoFixHigh,
   CheckCircle,
   Cancel,
   Visibility,
   VisibilityOff,
-} from '@mui/icons-material';
-import { useInlineDiffContext } from '../../../contexts/InlineDiffContext';
-import { useActiveJobDescription } from '../../../stores/aiStore';
-import { useCVEditor } from '../../../contexts/CVEditorContext';
+} from "@mui/icons-material";
+import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
+import { useActiveJobDescription } from "../../../stores/aiStore";
+import { useCVEditor } from "../../../contexts/CVEditorContext";
 
 interface InlineDiffControlsProps {
   cvId: string;
@@ -75,7 +75,13 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
   const pendingCount = getPendingSuggestionsCount();
   const approvedCount = getApprovedSuggestionsCount();
   const totalCount = suggestions.length;
-  const progress = totalCount > 0 ? ((approvedCount + suggestions.filter(s => s.status === 'rejected').length) / totalCount) * 100 : 0;
+  const progress =
+    totalCount > 0
+      ? ((approvedCount +
+          suggestions.filter((s) => s.status === "rejected").length) /
+          totalCount) *
+        100
+      : 0;
 
   // Debug logging
   React.useEffect(() => {
@@ -84,7 +90,9 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
 
   const handleGenerateSuggestions = async () => {
     if (!activeJobDescription) {
-      setError('Please select a job description first to generate targeted suggestions');
+      setError(
+        "Please select a job description first to generate targeted suggestions",
+      );
       return;
     }
 
@@ -97,11 +105,13 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
       if (cvData) {
         applyAllSuggestions(cvData);
       } else {
-        console.warn('No CV data available to apply suggestions');
+        console.warn("No CV data available to apply suggestions");
       }
     } catch (err) {
-      console.error('Error generating suggestions:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate suggestions');
+      console.error("Error generating suggestions:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to generate suggestions",
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -110,20 +120,24 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
   const handleCommitChanges = (event?: React.MouseEvent) => {
     // Safety check: Only commit if there are actually approved suggestions
     if (approvedCount === 0) {
-      console.warn('InlineDiffControls - Prevented commit with 0 approved suggestions');
+      console.warn(
+        "InlineDiffControls - Prevented commit with 0 approved suggestions",
+      );
       return;
     }
 
     // Only allow explicit user clicks
-    if (event && (!event.isTrusted || event.type !== 'click')) {
-      console.warn('InlineDiffControls - Prevented commit from non-click event');
+    if (event && (!event.isTrusted || event.type !== "click")) {
+      console.warn(
+        "InlineDiffControls - Prevented commit from non-click event",
+      );
       return;
     }
 
     const finalData = commitChanges();
     if (finalData && onContentUpdate) {
       // Trigger content update for the CV
-      onContentUpdate(JSON.stringify(finalData), 'cv_data');
+      onContentUpdate(JSON.stringify(finalData), "cv_data");
     }
   };
 
@@ -131,19 +145,31 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
     exitDiffMode();
   };
 
-  const canGenerateSuggestions = !!(cvId && activeJobDescription && !isGenerating);
+  const canGenerateSuggestions = !!(
+    cvId &&
+    activeJobDescription &&
+    !isGenerating
+  );
 
   if (isInDiffMode) {
     return (
-      <Card sx={{ bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
+      <Card
+        sx={{
+          bgcolor: "primary.50",
+          border: "1px solid",
+          borderColor: "primary.200",
+        }}
+      >
         <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+          <Typography variant="h6" sx={{ mb: 2, color: "primary.main" }}>
             AI Suggestions Active
           </Typography>
 
           {/* Progress */}
           <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
+            >
               <Typography variant="body2" color="text.secondary">
                 Progress
               </Typography>
@@ -157,9 +183,9 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
               sx={{
                 height: 8,
                 borderRadius: 4,
-                bgcolor: 'grey.200',
-                '& .MuiLinearProgress-bar': {
-                  bgcolor: 'success.main',
+                bgcolor: "grey.200",
+                "& .MuiLinearProgress-bar": {
+                  bgcolor: "success.main",
                 },
               }}
             />
@@ -194,22 +220,24 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
             <Stack direction="row" spacing={1}>
               <Button
                 size="small"
-                variant={highlightMode === 'all' ? 'contained' : 'outlined'}
-                onClick={() => setHighlightMode('all')}
+                variant={highlightMode === "all" ? "contained" : "outlined"}
+                onClick={() => setHighlightMode("all")}
               >
                 All
               </Button>
               <Button
                 size="small"
-                variant={highlightMode === 'pending' ? 'contained' : 'outlined'}
-                onClick={() => setHighlightMode('pending')}
+                variant={highlightMode === "pending" ? "contained" : "outlined"}
+                onClick={() => setHighlightMode("pending")}
               >
                 Pending
               </Button>
               <Button
                 size="small"
-                variant={highlightMode === 'approved' ? 'contained' : 'outlined'}
-                onClick={() => setHighlightMode('approved')}
+                variant={
+                  highlightMode === "approved" ? "contained" : "outlined"
+                }
+                onClick={() => setHighlightMode("approved")}
               >
                 Approved
               </Button>
@@ -224,7 +252,7 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
               startIcon={isPanelOpen ? <VisibilityOff /> : <Visibility />}
               onClick={() => togglePanel()}
             >
-              {isPanelOpen ? 'Hide' : 'Show'} Suggestions Panel
+              {isPanelOpen ? "Hide" : "Show"} Suggestions Panel
             </Button>
 
             {approvedCount > 0 && (
@@ -262,8 +290,9 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
         </Typography>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Generate AI-powered suggestions to optimize your CV for specific job descriptions.
-          Suggestions will appear directly in your CV sections for easy review and approval.
+          Generate AI-powered suggestions to optimize your CV for specific job
+          descriptions. Suggestions will appear directly in your CV sections for
+          easy review and approval.
         </Typography>
 
         {error && (
@@ -281,12 +310,16 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
         <Button
           fullWidth
           variant="contained"
-          startIcon={isGenerating ? <CircularProgress size={20} /> : <AutoFixHigh />}
+          startIcon={
+            isGenerating ? <CircularProgress size={20} /> : <AutoFixHigh />
+          }
           onClick={handleGenerateSuggestions}
           disabled={!canGenerateSuggestions}
           sx={{ mb: 2 }}
         >
-          {isGenerating ? 'Generating Suggestions...' : 'Generate AI Suggestions'}
+          {isGenerating
+            ? "Generating Suggestions..."
+            : "Generate AI Suggestions"}
         </Button>
 
         <Typography variant="caption" color="text.secondary">

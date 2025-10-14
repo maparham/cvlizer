@@ -7,12 +7,12 @@ text extraction from PDF and DOCX files, and file management operations.
 
 import os
 import uuid
-from typing import Tuple, Optional
-from fastapi import UploadFile, HTTPException
+from io import BytesIO
+from typing import Optional, Tuple
+
 import aiofiles
 import docx
-from io import BytesIO
-
+from fastapi import HTTPException, UploadFile
 
 ALLOWED_FILE_TYPES = {
     "application/pdf",

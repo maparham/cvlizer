@@ -16,7 +16,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -30,19 +30,24 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
-} from '@mui/material';
+} from "@mui/material";
 import {
   AutoAwesome as AutoAwesomeIcon,
   Work as WorkIcon,
   Check as CheckIcon,
-} from '@mui/icons-material';
-import { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } from '../../../stores/aiStore';
-import { JobDescription } from '../../../types/ai';
-import { useNotifications } from '../../../stores/uiStore';
-import { useJobDescriptionPolling } from '../../../hooks/useJobDescriptionPolling';
-import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
-import JobDescriptionsModal from './JobDescriptionsModal';
-import JobDescriptionCard from './JobDescriptionCard';
+} from "@mui/icons-material";
+import {
+  useAIStore,
+  useVisibleJobDescriptions,
+  useJobDescriptions,
+  useActiveJobDescription,
+} from "../../../stores/aiStore";
+import { JobDescription } from "../../../types/ai";
+import { useNotifications } from "../../../stores/uiStore";
+import { useJobDescriptionPolling } from "../../../hooks/useJobDescriptionPolling";
+import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
+import JobDescriptionsModal from "./JobDescriptionsModal";
+import JobDescriptionCard from "./JobDescriptionCard";
 
 interface JobDescriptionSummaryProps {
   cvId: string;
@@ -61,17 +66,22 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingJobDescription, setEditingJobDescription] = useState<JobDescription | null>(null);
+  const [editingJobDescription, setEditingJobDescription] =
+    useState<JobDescription | null>(null);
   const [editForm, setEditForm] = useState({
-    title: '',
-    company: '',
-    location: '',
-    content: '',
+    title: "",
+    company: "",
+    location: "",
+    content: "",
   });
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [isGeneratingJobFit, setIsGeneratingJobFit] = useState(false);
 
-  const { hideJobDescriptionFromSidebar, updateJobDescription, createJobFitDraft } = useAIStore();
+  const {
+    hideJobDescriptionFromSidebar,
+    updateJobDescription,
+    createJobFitDraft,
+  } = useAIStore();
   const { showSuccess, showError } = useNotifications();
   const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
 
@@ -94,10 +104,10 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
 
   // Debug log when component mounts and restore button state from global polling
   useEffect(() => {
-
     // Check if there's an active generating task for this CV and restore button state
     const hasGeneratingTask = Array.from(activeTasks.values()).some(
-      task => task.type === 'draft' && task.cvId === cvId && task.isGenerating
+      (task) =>
+        task.type === "draft" && task.cvId === cvId && task.isGenerating,
     );
     if (hasGeneratingTask && !isGeneratingJobFit) {
       setIsGeneratingJobFit(true);
@@ -110,7 +120,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   // Use the centralized polling hook for job descriptions
   useJobDescriptionPolling(allJobDescriptions, {
     onParsingComplete: () => {
-      showSuccess('Job description parsed successfully');
+      showSuccess("Job description parsed successfully");
     },
     onParsingError: () => {
       // Error is displayed in the sidebar card - no need for temporary alert
@@ -120,8 +130,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   // Monitor active tasks for job fit analysis completion
   useEffect(() => {
     for (const [taskId, task] of activeTasks) {
-
-      if (task.type === 'draft' && task.cvId === cvId && !task.isGenerating) {
+      if (task.type === "draft" && task.cvId === cvId && !task.isGenerating) {
         // Check if we've already processed this task to prevent duplicate notifications
         if (processedTasksRef.current.has(taskId)) {
           continue;
@@ -131,11 +140,16 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
         processedTasksRef.current.add(taskId);
 
         if (task.generationError) {
-          showErrorRef.current('Error', `Job fit analysis failed: ${task.generationError}`);
+          showErrorRef.current(
+            "Error",
+            `Job fit analysis failed: ${task.generationError}`,
+          );
           setIsGeneratingJobFit(false);
         } else {
           // Task completed successfully
-          showSuccessRef.current('Job fit analysis completed! Please review and approve the draft in the CV editor.');
+          showSuccessRef.current(
+            "Job fit analysis completed! Please review and approve the draft in the CV editor.",
+          );
           setIsGeneratingJobFit(false);
 
           // Note: No need to reload drafts here - the polling mechanism already updated the draft in the store
@@ -146,21 +160,27 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     }
   }, [activeTasks, cvId]); // Remove notification functions from dependencies to prevent infinite loops
 
-  const handleJobDescriptionHide = useCallback((jobDescriptionId: string) => {
-    hideJobDescriptionFromSidebar(jobDescriptionId);
-    showSuccess('Job description removed from sidebar');
-  }, [hideJobDescriptionFromSidebar, showSuccess]);
+  const handleJobDescriptionHide = useCallback(
+    (jobDescriptionId: string) => {
+      hideJobDescriptionFromSidebar(jobDescriptionId);
+      showSuccess("Job description removed from sidebar");
+    },
+    [hideJobDescriptionFromSidebar, showSuccess],
+  );
 
-  const handleEditJobDescription = useCallback((jobDescription: JobDescription) => {
-    setEditingJobDescription(jobDescription);
-    setEditForm({
-      title: jobDescription.title || '',
-      company: jobDescription.company || '',
-      location: jobDescription.location || '',
-      content: jobDescription.content,
-    });
-    setEditDialogOpen(true);
-  }, []);
+  const handleEditJobDescription = useCallback(
+    (jobDescription: JobDescription) => {
+      setEditingJobDescription(jobDescription);
+      setEditForm({
+        title: jobDescription.title || "",
+        company: jobDescription.company || "",
+        location: jobDescription.location || "",
+        content: jobDescription.content,
+      });
+      setEditDialogOpen(true);
+    },
+    [],
+  );
 
   const handleEditSubmit = useCallback(async () => {
     if (!editingJobDescription || !editForm.content.trim()) {
@@ -173,26 +193,33 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
       // Update the job description using the proper update API
       await updateJobDescription(editingJobDescription.id, {
         content: editForm.content,
-        title: editForm.title || 'Manual Job Description',
-        company: editForm.company || 'Unknown Company',
-        location: editForm.location || 'Unknown Location',
+        title: editForm.title || "Manual Job Description",
+        company: editForm.company || "Unknown Company",
+        location: editForm.location || "Unknown Location",
       });
 
       setEditDialogOpen(false);
       setEditingJobDescription(null);
-      setEditForm({ title: '', company: '', location: '', content: '' });
-      showSuccess('Job description updated successfully');
+      setEditForm({ title: "", company: "", location: "", content: "" });
+      showSuccess("Job description updated successfully");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update job description';
-      showError('Error', errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update job description";
+      showError("Error", errorMessage);
     } finally {
       setIsEditLoading(false);
     }
-  }, [editingJobDescription, editForm, updateJobDescription, showSuccess, showError]);
+  }, [
+    editingJobDescription,
+    editForm,
+    updateJobDescription,
+    showSuccess,
+    showError,
+  ]);
 
   const handleGenerateJobFit = useCallback(async () => {
     if (!activeJobDescription) {
-      showError('Error', 'Please select a job description first');
+      showError("Error", "Please select a job description first");
       return;
     }
     setIsGeneratingJobFit(true);
@@ -204,31 +231,51 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
       if (response.is_generating) {
         const taskToAdd = {
           id: response.id,
-          type: 'draft' as const,
+          type: "draft" as const,
           cvId: cvId,
           isGenerating: true,
           data: response,
         };
         addTask(taskToAdd);
-        showSuccess('Job fit analysis started, generating in background...');
+        showSuccess("Job fit analysis started, generating in background...");
       } else {
         // Task completed immediately
         setIsGeneratingJobFit(false);
-        showSuccess('Job fit analysis completed successfully');
+        showSuccess("Job fit analysis completed successfully");
       }
     } catch (err) {
-      console.error('Error in handleGenerateJobFit:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate job fit analysis';
-      showError('Error', errorMessage);
+      console.error("Error in handleGenerateJobFit:", err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to generate job fit analysis";
+      showError("Error", errorMessage);
       setIsGeneratingJobFit(false);
     }
-  }, [activeJobDescription, cvId, createJobFitDraft, showSuccess, showError, addTask]);
+  }, [
+    activeJobDescription,
+    cvId,
+    createJobFitDraft,
+    showSuccess,
+    showError,
+    addTask,
+  ]);
 
   return (
     <>
       <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
             <WorkIcon />
             Job Description
           </Typography>
@@ -236,7 +283,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
             variant="outlined"
             size="small"
             onClick={() => setModalOpen(true)}
-            sx={{ textTransform: 'none' }}
+            sx={{ textTransform: "none" }}
           >
             Manage ({allJobDescriptions.length})
           </Button>
@@ -247,22 +294,38 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
             variant="outlined"
             sx={{
               mb: 2,
-              border: '2px dashed #e0e0e0',
-              backgroundColor: 'rgba(0,0,0,0.02)',
-              transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                borderColor: 'primary.light',
-                backgroundColor: 'rgba(25, 118, 210, 0.04)'
-              }
+              border: "2px dashed #e0e0e0",
+              backgroundColor: "rgba(0,0,0,0.02)",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                borderColor: "primary.light",
+                backgroundColor: "rgba(25, 118, 210, 0.04)",
+              },
             }}
           >
-            <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <WorkIcon sx={{ fontSize: 64, color: 'primary.light', mb: 2, opacity: 0.7 }} />
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'text.primary' }}>
+            <CardContent sx={{ textAlign: "center", py: 4 }}>
+              <WorkIcon
+                sx={{
+                  fontSize: 64,
+                  color: "primary.light",
+                  mb: 2,
+                  opacity: 0.7,
+                }}
+              />
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ fontWeight: 600, color: "text.primary" }}
+              >
                 No Job Description Yet
               </Typography>
-              <Typography color="text.secondary" variant="body2" sx={{ mb: 3, maxWidth: 280, mx: 'auto' }}>
-                Add a job description to get personalized AI suggestions and enhance your CV
+              <Typography
+                color="text.secondary"
+                variant="body2"
+                sx={{ mb: 3, maxWidth: 280, mx: "auto" }}
+              >
+                Add a job description to get personalized AI suggestions and
+                enhance your CV
               </Typography>
               <Button
                 variant="contained"
@@ -270,16 +333,16 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                 onClick={() => setModalOpen(true)}
                 startIcon={<WorkIcon />}
                 sx={{
-                  textTransform: 'none',
+                  textTransform: "none",
                   fontWeight: 600,
                   px: 3,
                   py: 1.5,
                   boxShadow: 2,
-                  '&:hover': {
+                  "&:hover": {
                     boxShadow: 4,
-                    transform: 'translateY(-1px)'
+                    transform: "translateY(-1px)",
                   },
-                  transition: 'all 0.2s ease-in-out'
+                  transition: "all 0.2s ease-in-out",
                 }}
               >
                 Add Job Description
@@ -290,11 +353,13 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
           <Stack spacing={2}>
             {/* Active Job Description */}
             {activeJobDescription ? (
-              <Box sx={{
-                backgroundColor: 'transparent',
-                borderRadius: 2,
-                p: 0
-              }}>
+              <Box
+                sx={{
+                  backgroundColor: "transparent",
+                  borderRadius: 2,
+                  p: 0,
+                }}
+              >
                 <JobDescriptionCard
                   jobDescription={activeJobDescription}
                   isActive={true}
@@ -304,12 +369,14 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   maxChipWidth={120}
                 />
 
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2,
-                  mt: 2
-                }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    mt: 2,
+                  }}
+                >
                   {onGenerateSuggestions && (
                     <Button
                       variant="contained"
@@ -319,42 +386,48 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                         ) : (
                           <AutoAwesomeIcon
                             sx={{
-                              animation: suggestionsLoading ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                              '@keyframes pulse': {
-                                '0%': { transform: 'scale(1)' },
-                                '50%': { transform: 'scale(1.1)' },
-                                '100%': { transform: 'scale(1)' }
-                              }
+                              animation: suggestionsLoading
+                                ? "pulse 1.5s ease-in-out infinite"
+                                : "none",
+                              "@keyframes pulse": {
+                                "0%": { transform: "scale(1)" },
+                                "50%": { transform: "scale(1.1)" },
+                                "100%": { transform: "scale(1)" },
+                              },
                             }}
                           />
                         )
                       }
                       onClick={onGenerateSuggestions}
-                      disabled={suggestionsLoading || activeJobDescription?.is_parsing}
+                      disabled={
+                        suggestionsLoading || activeJobDescription?.is_parsing
+                      }
                       fullWidth
                       sx={{
-                        textTransform: 'none',
-                        backgroundColor: 'transparent',
-                        color: '#1976d2',
-                        border: '1px solid #1976d2',
+                        textTransform: "none",
+                        backgroundColor: "transparent",
+                        color: "#1976d2",
+                        border: "1px solid #1976d2",
                         fontWeight: 600,
                         py: 1.5,
                         px: 2,
                         height: 48,
-                        '&:hover': {
-                          backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                          borderColor: '#1565c0',
-                          transform: 'translateY(-1px)',
-                          boxShadow: 2
+                        "&:hover": {
+                          backgroundColor: "rgba(25, 118, 210, 0.08)",
+                          borderColor: "#1565c0",
+                          transform: "translateY(-1px)",
+                          boxShadow: 2,
                         },
-                        '&:disabled': {
+                        "&:disabled": {
                           opacity: 0.7,
-                          transform: 'none'
+                          transform: "none",
                         },
-                        transition: 'all 0.2s ease-in-out'
+                        transition: "all 0.2s ease-in-out",
                       }}
                     >
-                      {suggestionsLoading ? 'Enhancing...' : 'Enhance CV for this Job'}
+                      {suggestionsLoading
+                        ? "Enhancing..."
+                        : "Enhance CV for this Job"}
                     </Button>
                   )}
 
@@ -367,42 +440,48 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                         ) : (
                           <AutoAwesomeIcon
                             sx={{
-                              animation: isGeneratingJobFit ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                              '@keyframes pulse': {
-                                '0%': { transform: 'scale(1)' },
-                                '50%': { transform: 'scale(1.1)' },
-                                '100%': { transform: 'scale(1)' }
-                              }
+                              animation: isGeneratingJobFit
+                                ? "pulse 1.5s ease-in-out infinite"
+                                : "none",
+                              "@keyframes pulse": {
+                                "0%": { transform: "scale(1)" },
+                                "50%": { transform: "scale(1.1)" },
+                                "100%": { transform: "scale(1)" },
+                              },
                             }}
                           />
                         )
                       }
                       onClick={handleGenerateJobFit}
-                      disabled={isGeneratingJobFit || activeJobDescription?.is_parsing}
+                      disabled={
+                        isGeneratingJobFit || activeJobDescription?.is_parsing
+                      }
                       fullWidth
                       sx={{
-                        textTransform: 'none',
-                        backgroundColor: 'transparent',
-                        color: '#1976d2',
-                        border: '1px solid #1976d2',
+                        textTransform: "none",
+                        backgroundColor: "transparent",
+                        color: "#1976d2",
+                        border: "1px solid #1976d2",
                         fontWeight: 600,
                         py: 1.5,
                         px: 2,
                         height: 48,
-                        '&:hover': {
-                          backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                          borderColor: '#1565c0',
-                          transform: 'translateY(-1px)',
-                          boxShadow: 2
+                        "&:hover": {
+                          backgroundColor: "rgba(25, 118, 210, 0.08)",
+                          borderColor: "#1565c0",
+                          transform: "translateY(-1px)",
+                          boxShadow: 2,
                         },
-                        '&:disabled': {
+                        "&:disabled": {
                           opacity: 0.7,
-                          transform: 'none'
+                          transform: "none",
                         },
-                        transition: 'all 0.2s ease-in-out'
+                        transition: "all 0.2s ease-in-out",
                       }}
                     >
-                      {isGeneratingJobFit ? 'Generating...' : 'Generate Job Fit Section'}
+                      {isGeneratingJobFit
+                        ? "Generating..."
+                        : "Generate Job Fit Section"}
                     </Button>
                   )}
                 </Box>
@@ -412,18 +491,30 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                 variant="outlined"
                 sx={{
                   mb: 2,
-                  border: '1px dashed #e0e0e0',
-                  backgroundColor: 'rgba(0,0,0,0.02)',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    borderColor: 'primary.light',
-                    backgroundColor: 'rgba(25, 118, 210, 0.04)'
-                  }
+                  border: "1px dashed #e0e0e0",
+                  backgroundColor: "rgba(0,0,0,0.02)",
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    borderColor: "primary.light",
+                    backgroundColor: "rgba(25, 118, 210, 0.04)",
+                  },
                 }}
               >
-                <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                  <WorkIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1.5, opacity: 0.6 }} />
-                  <Typography color="text.secondary" variant="body2" gutterBottom sx={{ fontWeight: 500 }}>
+                <CardContent sx={{ textAlign: "center", py: 3 }}>
+                  <WorkIcon
+                    sx={{
+                      fontSize: 48,
+                      color: "text.secondary",
+                      mb: 1.5,
+                      opacity: 0.6,
+                    }}
+                  />
+                  <Typography
+                    color="text.secondary"
+                    variant="body2"
+                    gutterBottom
+                    sx={{ fontWeight: 500 }}
+                  >
                     No job description selected
                   </Typography>
                   <Button
@@ -431,14 +522,14 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                     size="small"
                     onClick={() => setModalOpen(true)}
                     sx={{
-                      textTransform: 'none',
+                      textTransform: "none",
                       fontWeight: 500,
-                      '&:hover': {
-                        backgroundColor: 'primary.light',
-                        borderColor: 'primary.main',
-                        color: 'primary.contrastText'
+                      "&:hover": {
+                        backgroundColor: "primary.light",
+                        borderColor: "primary.main",
+                        color: "primary.contrastText",
                       },
-                      transition: 'all 0.2s ease-in-out'
+                      transition: "all 0.2s ease-in-out",
                     }}
                   >
                     Select Job Description
@@ -446,7 +537,6 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                 </CardContent>
               </Card>
             )}
-
           </Stack>
         )}
       </Box>
@@ -471,28 +561,36 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
             <TextField
               label="Job Title"
               value={editForm.title}
-              onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, title: e.target.value }))
+              }
               fullWidth
               disabled={isEditLoading}
             />
             <TextField
               label="Company"
               value={editForm.company}
-              onChange={(e) => setEditForm(prev => ({ ...prev, company: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, company: e.target.value }))
+              }
               fullWidth
               disabled={isEditLoading}
             />
             <TextField
               label="Location"
               value={editForm.location}
-              onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, location: e.target.value }))
+              }
               fullWidth
               disabled={isEditLoading}
             />
             <TextField
               label="Job Description"
               value={editForm.content}
-              onChange={(e) => setEditForm(prev => ({ ...prev, content: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, content: e.target.value }))
+              }
               multiline
               rows={8}
               fullWidth
@@ -501,16 +599,21 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)} disabled={isEditLoading}>
+          <Button
+            onClick={() => setEditDialogOpen(false)}
+            disabled={isEditLoading}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleEditSubmit}
             variant="contained"
             disabled={isEditLoading || !editForm.content.trim()}
-            startIcon={isEditLoading ? <CircularProgress size={20} /> : <CheckIcon />}
+            startIcon={
+              isEditLoading ? <CircularProgress size={20} /> : <CheckIcon />
+            }
           >
-            {isEditLoading ? 'Saving...' : 'Save Changes'}
+            {isEditLoading ? "Saving..." : "Save Changes"}
           </Button>
         </DialogActions>
       </Dialog>

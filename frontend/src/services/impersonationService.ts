@@ -12,54 +12,54 @@
  * - Provide type-safe interfaces for impersonation data
  * - Manage session state and expiration
  */
-import { apiClient } from './api'
+import { apiClient } from "./api";
 
 export interface ImpersonationSession {
-  id: string
-  target_user_id: string
-  target_user_email: string
-  started_at: string
-  expires_at: string
-  remaining_seconds: number
-  justification?: string
+  id: string;
+  target_user_id: string;
+  target_user_email: string;
+  started_at: string;
+  expires_at: string;
+  remaining_seconds: number;
+  justification?: string;
 }
 
 export interface ImpersonationStatus {
-  active: boolean
+  active: boolean;
   target_user?: {
-    id: string
-    email: string
-  }
-  expires_at?: string
-  remaining_seconds?: number
-  session_id?: string
+    id: string;
+    email: string;
+  };
+  expires_at?: string;
+  remaining_seconds?: number;
+  session_id?: string;
 }
 
 export interface StartImpersonationRequest {
-  target_user_id: string
-  justification?: string
+  target_user_id: string;
+  justification?: string;
 }
 
 export interface ActiveSession {
-  id: string
-  admin_id: string
-  admin_email: string
-  target_user_id: string
-  target_user_email: string
-  started_at: string
-  expires_at: string
-  remaining_seconds: number
-  justification?: string
+  id: string;
+  admin_id: string;
+  admin_email: string;
+  target_user_id: string;
+  target_user_email: string;
+  started_at: string;
+  expires_at: string;
+  remaining_seconds: number;
+  justification?: string;
 }
 
 export class ImpersonationError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public code?: string
+    public code?: string,
   ) {
-    super(message)
-    this.name = 'ImpersonationError'
+    super(message);
+    this.name = "ImpersonationError";
   }
 }
 
@@ -67,19 +67,35 @@ class ImpersonationService {
   /**
    * Start a new impersonation session
    */
-  async startImpersonation(request: StartImpersonationRequest): Promise<ImpersonationSession> {
+  async startImpersonation(
+    request: StartImpersonationRequest,
+  ): Promise<ImpersonationSession> {
     try {
-      const response = await apiClient.post('/api/admin/impersonations/start', request)
-      return response.data
+      const response = await apiClient.post(
+        "/api/admin/impersonations/start",
+        request,
+      );
+      return response.data;
     } catch (error: any) {
       if (error.response?.status === 403) {
-        throw new ImpersonationError('Admin privileges required', 403, 'ADMIN_REQUIRED')
+        throw new ImpersonationError(
+          "Admin privileges required",
+          403,
+          "ADMIN_REQUIRED",
+        );
       } else if (error.response?.status === 429) {
-        throw new ImpersonationError('Rate limit exceeded', 429, 'RATE_LIMITED')
+        throw new ImpersonationError(
+          "Rate limit exceeded",
+          429,
+          "RATE_LIMITED",
+        );
       } else if (error.response?.data?.detail) {
-        throw new ImpersonationError(error.response.data.detail, error.response.status)
+        throw new ImpersonationError(
+          error.response.data.detail,
+          error.response.status,
+        );
       }
-      throw new ImpersonationError('Failed to start impersonation session')
+      throw new ImpersonationError("Failed to start impersonation session");
     }
   }
 
@@ -88,15 +104,18 @@ class ImpersonationService {
    */
   async endImpersonation(): Promise<void> {
     try {
-      await apiClient.post('/api/admin/impersonations/end')
+      await apiClient.post("/api/admin/impersonations/end");
     } catch (error: any) {
       if (error.response?.status === 404) {
         // Session not found - this is okay, might already be ended
-        return
+        return;
       } else if (error.response?.data?.detail) {
-        throw new ImpersonationError(error.response.data.detail, error.response.status)
+        throw new ImpersonationError(
+          error.response.data.detail,
+          error.response.status,
+        );
       }
-      throw new ImpersonationError('Failed to end impersonation session')
+      throw new ImpersonationError("Failed to end impersonation session");
     }
   }
 
@@ -105,11 +124,11 @@ class ImpersonationService {
    */
   async getImpersonationStatus(): Promise<ImpersonationStatus> {
     try {
-      const response = await apiClient.get('/api/auth/impersonation/status')
-      return response.data
+      const response = await apiClient.get("/api/auth/impersonation/status");
+      return response.data;
     } catch (error: any) {
       // Return inactive status on error to avoid breaking the UI
-      return { active: false }
+      return { active: false };
     }
   }
 
@@ -118,15 +137,18 @@ class ImpersonationService {
    */
   async getActiveSessions(limit = 100, offset = 0): Promise<ActiveSession[]> {
     try {
-      const response = await apiClient.get('/api/admin/impersonations/active', {
-        params: { limit, offset }
-      })
-      return response.data
+      const response = await apiClient.get("/api/admin/impersonations/active", {
+        params: { limit, offset },
+      });
+      return response.data;
     } catch (error: any) {
       if (error.response?.data?.detail) {
-        throw new ImpersonationError(error.response.data.detail, error.response.status)
+        throw new ImpersonationError(
+          error.response.data.detail,
+          error.response.status,
+        );
       }
-      throw new ImpersonationError('Failed to get active sessions')
+      throw new ImpersonationError("Failed to get active sessions");
     }
   }
 
@@ -135,14 +157,21 @@ class ImpersonationService {
    */
   async revokeSession(sessionId: string): Promise<void> {
     try {
-      await apiClient.post(`/api/admin/impersonations/revoke/${sessionId}`)
+      await apiClient.post(`/api/admin/impersonations/revoke/${sessionId}`);
     } catch (error: any) {
       if (error.response?.status === 404) {
-        throw new ImpersonationError('Session not found or already ended', 404, 'SESSION_NOT_FOUND')
+        throw new ImpersonationError(
+          "Session not found or already ended",
+          404,
+          "SESSION_NOT_FOUND",
+        );
       } else if (error.response?.data?.detail) {
-        throw new ImpersonationError(error.response.data.detail, error.response.status)
+        throw new ImpersonationError(
+          error.response.data.detail,
+          error.response.status,
+        );
       }
-      throw new ImpersonationError('Failed to revoke session')
+      throw new ImpersonationError("Failed to revoke session");
     }
   }
 
@@ -150,20 +179,20 @@ class ImpersonationService {
    * Format remaining time as a human-readable string
    */
   formatRemainingTime(seconds: number): string {
-    if (seconds <= 0) return '0:00'
+    if (seconds <= 0) return "0:00";
 
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
 
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   }
 
   /**
    * Check if a session is about to expire (less than 5 minutes remaining)
    */
   isSessionExpiringSoon(remainingSeconds: number): boolean {
-    return remainingSeconds > 0 && remainingSeconds < 300 // 5 minutes
+    return remainingSeconds > 0 && remainingSeconds < 300; // 5 minutes
   }
 }
 
-export const impersonationService = new ImpersonationService()
+export const impersonationService = new ImpersonationService();

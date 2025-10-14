@@ -4,41 +4,41 @@
  * Common test utilities and mocks for job description testing
  */
 
-import { JobDescription } from '../../types/ai';
+import { JobDescription } from "../../types/ai";
 
 // Mock job description data
 export const mockJobDescription1: JobDescription = {
-  id: 'jd-1',
-  cv_id: 'cv-1',
-  content: 'First job description content',
-  title: 'Software Engineer',
-  company: 'Company A',
-  location: 'San Francisco, CA',
-  source_url: 'https://example.com/job1',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
+  id: "jd-1",
+  cv_id: "cv-1",
+  content: "First job description content",
+  title: "Software Engineer",
+  company: "Company A",
+  location: "San Francisco, CA",
+  source_url: "https://example.com/job1",
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
 };
 
 export const mockJobDescription2: JobDescription = {
-  id: 'jd-2',
-  cv_id: 'cv-1',
-  content: 'Second job description content',
-  title: 'Product Manager',
-  company: 'Company B',
-  location: 'New York, NY',
-  created_at: '2024-01-02T00:00:00Z',
-  updated_at: '2024-01-02T00:00:00Z',
+  id: "jd-2",
+  cv_id: "cv-1",
+  content: "Second job description content",
+  title: "Product Manager",
+  company: "Company B",
+  location: "New York, NY",
+  created_at: "2024-01-02T00:00:00Z",
+  updated_at: "2024-01-02T00:00:00Z",
 };
 
 export const mockJobDescription3: JobDescription = {
-  id: 'jd-3',
-  cv_id: 'cv-1',
-  content: 'Third job description content',
-  title: 'Designer',
-  company: 'Company C',
-  location: 'Seattle, WA',
-  created_at: '2024-01-03T00:00:00Z',
-  updated_at: '2024-01-03T00:00:00Z',
+  id: "jd-3",
+  cv_id: "cv-1",
+  content: "Third job description content",
+  title: "Designer",
+  company: "Company C",
+  location: "Seattle, WA",
+  created_at: "2024-01-03T00:00:00Z",
+  updated_at: "2024-01-03T00:00:00Z",
 };
 
 // Mock store state
@@ -72,7 +72,8 @@ export const createMockLocalStorage = () => ({
 });
 
 // Test utilities
-export const waitForAsync = () => new Promise(resolve => setTimeout(resolve, 0));
+export const waitForAsync = () =>
+  new Promise((resolve) => setTimeout(resolve, 0));
 
 export const createMockAIStore = (state = {}) => {
   const mockStore = {

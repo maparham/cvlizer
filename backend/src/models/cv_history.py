@@ -5,22 +5,24 @@ This module defines the CV history database model for tracking changes
 and versions of CV documents over time.
 """
 
-from sqlalchemy import (
-    Column,
-    String,
-    DateTime,
-    Text,
-    ForeignKey,
-    JSON,
-    Boolean,
-    Integer,
-    Index,
-)
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .base import Base
 import uuid
 from datetime import timezone
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class CVHistory(Base):

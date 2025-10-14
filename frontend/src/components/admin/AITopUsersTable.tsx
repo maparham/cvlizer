@@ -4,7 +4,7 @@
  * This component displays a table of users ranked by AI usage,
  * showing token consumption, costs, and operation counts.
  */
-import React from 'react'
+import React from "react";
 import {
   Card,
   CardContent,
@@ -20,48 +20,62 @@ import {
   Paper,
   Chip,
   IconButton,
-  Tooltip
-} from '@mui/material'
+  Tooltip,
+} from "@mui/material";
+import { Person, TrendingUp } from "@mui/icons-material";
+import { UserAIUsage } from "../../types/admin";
 import {
-  Person,
-  TrendingUp
-} from '@mui/icons-material'
-import { UserAIUsage } from '../../types/admin'
-import { formatCost, formatTokens, formatNumber, formatOperationType } from '../../utils/formatters'
+  formatCost,
+  formatTokens,
+  formatNumber,
+  formatOperationType,
+} from "../../utils/formatters";
 
 interface AITopUsersTableProps {
-  users: UserAIUsage[]
-  loading: boolean
-  onUserClick: (userId: string) => void
+  users: UserAIUsage[];
+  loading: boolean;
+  onUserClick: (userId: string) => void;
 }
 
 const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
   users,
   loading,
-  onUserClick
+  onUserClick,
 }) => {
   if (loading) {
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
+          >
             <CircularProgress />
           </Box>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (!users || users.length === 0) {
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
-            <Typography color="text.secondary">No user data available</Typography>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
+          >
+            <Typography color="text.secondary">
+              No user data available
+            </Typography>
           </Box>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -95,7 +109,7 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
                       </Typography>
                       {index < 3 && (
                         <Chip
-                          label={index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                          label={index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
                           size="small"
                           color="primary"
                         />
@@ -127,7 +141,11 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
                   </TableCell>
 
                   <TableCell align="right">
-                    <Typography variant="body2" fontWeight="medium" color="info.main">
+                    <Typography
+                      variant="body2"
+                      fontWeight="medium"
+                      color="info.main"
+                    >
                       {formatTokens(user.total_prompt_tokens)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -136,7 +154,11 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
                   </TableCell>
 
                   <TableCell align="right">
-                    <Typography variant="body2" fontWeight="medium" color="success.main">
+                    <Typography
+                      variant="body2"
+                      fontWeight="medium"
+                      color="success.main"
+                    >
                       {formatCost(user.total_cost)}
                     </Typography>
                   </TableCell>
@@ -180,7 +202,7 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
         </TableContainer>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default AITopUsersTable
+export default AITopUsersTable;

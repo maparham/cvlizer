@@ -6,7 +6,7 @@ across API endpoints, providing reusable functions for data cleaning
 and business rule validation.
 """
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 
 class CVDataValidator:

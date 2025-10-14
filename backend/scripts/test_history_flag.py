@@ -13,7 +13,7 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from src.utils.feature_flags import is_cv_history_enabled
+from src.utils.feature_flags import is_cv_history_enabled  # noqa: E402
 
 
 def test_feature_flag():
@@ -66,6 +66,7 @@ def test_feature_flag():
 
         # Import fresh to get new env value
         from importlib import reload
+
         from src.utils import feature_flags
 
         reload(feature_flags)

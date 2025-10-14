@@ -5,21 +5,21 @@
  * draft loading, positioning calculations, and state management.
  */
 
-import { renderHook } from '@testing-library/react';
-import { useInlineDrafts } from '../useInlineDrafts';
+import { renderHook } from "@testing-library/react";
+import { useInlineDrafts } from "../useInlineDrafts";
 // import { DraftResponse } from '../../types/ai';
 
 // Mock the entire hook dependencies
-jest.mock('../../stores/aiStore', () => ({
+jest.mock("../../stores/aiStore", () => ({
   useAIStore: jest.fn(),
   useCVDrafts: jest.fn(),
 }));
 
-jest.mock('../../stores/uiStore', () => ({
+jest.mock("../../stores/uiStore", () => ({
   useNotifications: jest.fn(),
 }));
 
-jest.mock('../../services/api', () => ({
+jest.mock("../../services/api", () => ({
   apiClient: {
     get: jest.fn(),
     post: jest.fn(),
@@ -53,7 +53,7 @@ jest.mock('../../services/api', () => ({
 //   },
 // ];
 
-describe('useInlineDrafts', () => {
+describe("useInlineDrafts", () => {
   const mockGetCVDrafts = jest.fn();
   const mockShowError = jest.fn();
 
@@ -61,8 +61,8 @@ describe('useInlineDrafts', () => {
     jest.clearAllMocks();
 
     // Mock the store hooks
-    const { useAIStore, useCVDrafts } = require('../../stores/aiStore');
-    const { useNotifications } = require('../../stores/uiStore');
+    const { useAIStore, useCVDrafts } = require("../../stores/aiStore");
+    const { useNotifications } = require("../../stores/uiStore");
 
     useAIStore.mockReturnValue({
       getCVDrafts: mockGetCVDrafts,
@@ -75,28 +75,28 @@ describe('useInlineDrafts', () => {
     });
   });
 
-  it('initializes with empty state', () => {
-    const { result } = renderHook(() => useInlineDrafts('cv-1'));
+  it("initializes with empty state", () => {
+    const { result } = renderHook(() => useInlineDrafts("cv-1"));
 
     expect(result.current.drafts).toEqual([]);
     expect(result.current.error).toBe(null);
-    expect(typeof result.current.loadDrafts).toBe('function');
-    expect(typeof result.current.getDraftPosition).toBe('function');
-    expect(typeof result.current.getDraftsAfterSection).toBe('function');
-    expect(typeof result.current.getDraftsBeforeSection).toBe('function');
-    expect(typeof result.current.handleDraftApproved).toBe('function');
-    expect(typeof result.current.handleDraftRejected).toBe('function');
+    expect(typeof result.current.loadDrafts).toBe("function");
+    expect(typeof result.current.getDraftPosition).toBe("function");
+    expect(typeof result.current.getDraftsAfterSection).toBe("function");
+    expect(typeof result.current.getDraftsBeforeSection).toBe("function");
+    expect(typeof result.current.handleDraftApproved).toBe("function");
+    expect(typeof result.current.handleDraftRejected).toBe("function");
   });
 
-  it('provides all required functions', () => {
-    const { result } = renderHook(() => useInlineDrafts('cv-1'));
+  it("provides all required functions", () => {
+    const { result } = renderHook(() => useInlineDrafts("cv-1"));
 
     // Test that all required functions are available
-    expect(typeof result.current.loadDrafts).toBe('function');
-    expect(typeof result.current.getDraftPosition).toBe('function');
-    expect(typeof result.current.getDraftsAfterSection).toBe('function');
-    expect(typeof result.current.getDraftsBeforeSection).toBe('function');
-    expect(typeof result.current.handleDraftApproved).toBe('function');
-    expect(typeof result.current.handleDraftRejected).toBe('function');
+    expect(typeof result.current.loadDrafts).toBe("function");
+    expect(typeof result.current.getDraftPosition).toBe("function");
+    expect(typeof result.current.getDraftsAfterSection).toBe("function");
+    expect(typeof result.current.getDraftsBeforeSection).toBe("function");
+    expect(typeof result.current.handleDraftApproved).toBe("function");
+    expect(typeof result.current.handleDraftRejected).toBe("function");
   });
 });

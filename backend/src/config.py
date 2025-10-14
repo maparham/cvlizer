@@ -6,7 +6,8 @@ Values are read from environment variables with sensible defaults.
 """
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
+
 from dotenv import load_dotenv
 
 load_dotenv()

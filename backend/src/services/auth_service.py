@@ -5,14 +5,16 @@ This module provides functions for password hashing, user authentication,
 JWT token creation and verification, and user management operations.
 """
 
+import os
 from datetime import datetime, timedelta
 from typing import Optional
+
+from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+
 from src.models.user import User
-import os
-from dotenv import load_dotenv
 
 load_dotenv()
 

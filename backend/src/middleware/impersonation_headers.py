@@ -12,10 +12,11 @@ Key responsibilities:
 - Maintain performance by leveraging existing auth context
 """
 
+import logging
+from typing import Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Callable
-import logging
 
 from src.middleware.clerk_auth import get_current_user_with_impersonation
 from src.models.base import get_db
@@ -42,14 +43,15 @@ class ImpersonationHeadersMiddleware(BaseHTTPMiddleware):
                 auth_context = request.state.impersonation_context
                 if auth_context.is_impersonating:
                     response.headers["X-Impersonating"] = "true"
-                    response.headers["X-Impersonating-User"] = (
-                        auth_context.effective_user.id
-                    )
+                    response.headers[
+                        "X-Impersonating-User"
+                    ] = auth_context.effective_user.id
             else:
                 # Try to establish auth context for this request
                 # This is a lightweight check that won't interfere with normal auth
                 try:
                     from fastapi.security import HTTPBearer
+
                     from src.models.base import get_db
 
                     security = HTTPBearer(auto_error=False)
@@ -64,9 +66,9 @@ class ImpersonationHeadersMiddleware(BaseHTTPMiddleware):
 
                             if auth_context.is_impersonating:
                                 response.headers["X-Impersonating"] = "true"
-                                response.headers["X-Impersonating-User"] = (
-                                    auth_context.effective_user.id
-                                )
+                                response.headers[
+                                    "X-Impersonating-User"
+                                ] = auth_context.effective_user.id
                         finally:
                             db.close()
                 except Exception:

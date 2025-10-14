@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   TextField,
   Chip,
@@ -11,24 +11,28 @@ import {
   ListItemButton,
   InputAdornment,
   IconButton,
-  Tooltip
-} from '@mui/material'
+  Tooltip,
+} from "@mui/material";
 import {
   Search as SearchIcon,
   Add as AddIcon,
-  Close as CloseIcon
-} from '@mui/icons-material'
-import { TECHNICAL_SKILLS, SOFT_SKILLS, searchSkills } from '../constants/skills'
+  Close as CloseIcon,
+} from "@mui/icons-material";
+import {
+  TECHNICAL_SKILLS,
+  SOFT_SKILLS,
+  searchSkills,
+} from "../constants/skills";
 
 interface SkillsAutocompleteProps {
-  value: string
-  onChange: (value: string) => void
-  onAdd: () => void
-  onAddDirect?: (skill: string) => void
-  placeholder: string
-  skillType: 'technical' | 'soft'
-  existingSkills?: string[]
-  disabled?: boolean
+  value: string;
+  onChange: (value: string) => void;
+  onAdd: () => void;
+  onAddDirect?: (skill: string) => void;
+  placeholder: string;
+  skillType: "technical" | "soft";
+  existingSkills?: string[];
+  disabled?: boolean;
 }
 
 const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
@@ -39,102 +43,103 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
   placeholder,
   skillType,
   existingSkills = [],
-  disabled = false
+  disabled = false,
 }) => {
-  const [open, setOpen] = useState(false)
-  const [inputValue, setInputValue] = useState('')
-  const [suggestions, setSuggestions] = useState<string[]>([])
-  const [showCategories, setShowCategories] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showCategories, setShowCategories] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const skillsList = useMemo(() =>
-    skillType === 'technical' ? TECHNICAL_SKILLS : SOFT_SKILLS,
-    [skillType]
-  )
+  const skillsList = useMemo(
+    () => (skillType === "technical" ? TECHNICAL_SKILLS : SOFT_SKILLS),
+    [skillType],
+  );
 
-  const existingSkillsSet = useMemo(() =>
-    new Set(existingSkills),
-    [existingSkills]
-  )
+  const existingSkillsSet = useMemo(
+    () => new Set(existingSkills),
+    [existingSkills],
+  );
 
   useEffect(() => {
     if (inputValue.trim()) {
-      const filteredSkills = searchSkills(inputValue, skillsList, 15)
-        .filter(skill => !existingSkillsSet.has(skill))
-      setSuggestions(filteredSkills)
-      setShowCategories(false)
+      const filteredSkills = searchSkills(inputValue, skillsList, 15).filter(
+        (skill) => !existingSkillsSet.has(skill),
+      );
+      setSuggestions(filteredSkills);
+      setShowCategories(false);
     } else {
-      setSuggestions([])
-      setShowCategories(true)
+      setSuggestions([]);
+      setShowCategories(true);
     }
-  }, [inputValue, skillsList, existingSkillsSet]) // Now safe to include dependencies
+  }, [inputValue, skillsList, existingSkillsSet]); // Now safe to include dependencies
 
   useEffect(() => {
-    setInputValue(value)
-  }, [value])
+    setInputValue(value);
+  }, [value]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = event.target.value
-    setInputValue(newValue)
-    onChange(newValue)
-  }
+    const newValue = event.target.value;
+    setInputValue(newValue);
+    onChange(newValue);
+  };
 
   const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion)
-    onChange(suggestion)
-    setOpen(false)
-  }
+    setInputValue(suggestion);
+    onChange(suggestion);
+    setOpen(false);
+  };
 
   const handleDirectSkillAdd = (skill: string) => {
     if (!existingSkillsSet.has(skill)) {
-      onAddDirect?.(skill)
-      clearInput()
+      onAddDirect?.(skill);
+      clearInput();
     }
-    setOpen(false)
-  }
+    setOpen(false);
+  };
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      event.preventDefault()
+    if (event.key === "Enter") {
+      event.preventDefault();
       if (inputValue.trim() && !existingSkillsSet.has(inputValue.trim())) {
-        onAdd()
+        onAdd();
       }
     }
-  }
+  };
 
   const handleAddClick = () => {
     if (inputValue.trim() && !existingSkillsSet.has(inputValue.trim())) {
-      onAdd()
+      onAdd();
     }
-  }
+  };
 
   const clearInput = () => {
-    setInputValue('')
-    onChange('')
-    inputRef.current?.focus()
-  }
+    setInputValue("");
+    onChange("");
+    inputRef.current?.focus();
+  };
 
   const renderSuggestions = () => {
-    if (!open && !showCategories) return null
+    if (!open && !showCategories) return null;
 
     return (
       <Paper
         sx={{
           maxHeight: 300,
-          overflow: 'auto',
+          overflow: "auto",
           mt: 1,
           boxShadow: 2,
-          border: '1px solid #e0e0e0'
+          border: "1px solid #e0e0e0",
         }}
       >
-        {showCategories && inputValue === '' ? (
+        {showCategories && inputValue === "" ? (
           <Box sx={{ p: 2 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-              Popular {skillType === 'technical' ? 'Technical' : 'Soft'} Skills
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
+              Popular {skillType === "technical" ? "Technical" : "Soft"} Skills
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
               {skillsList
-                .filter(skill => !existingSkillsSet.has(skill))
+                .filter((skill) => !existingSkillsSet.has(skill))
                 .slice(0, 20)
                 .map((skill) => (
                   <Chip
@@ -145,11 +150,13 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
                     onClick={() => handleDirectSkillAdd(skill)}
                     sx={{
                       mb: 0.5,
-                      bgcolor: skillType === 'technical' ? '#e3f2fd' : '#f3e5f5',
-                      color: skillType === 'technical' ? '#1976d2' : '#7b1fa2',
-                      '&:hover': {
-                        bgcolor: skillType === 'technical' ? '#bbdefb' : '#e1bee7'
-                      }
+                      bgcolor:
+                        skillType === "technical" ? "#e3f2fd" : "#f3e5f5",
+                      color: skillType === "technical" ? "#1976d2" : "#7b1fa2",
+                      "&:hover": {
+                        bgcolor:
+                          skillType === "technical" ? "#bbdefb" : "#e1bee7",
+                      },
                     }}
                   />
                 ))}
@@ -163,17 +170,18 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
                   <ListItemButton
                     onClick={() => handleSuggestionClick(suggestion)}
                     sx={{
-                      '&:hover': {
-                        bgcolor: skillType === 'technical' ? '#e3f2fd' : '#f3e5f5'
-                      }
+                      "&:hover": {
+                        bgcolor:
+                          skillType === "technical" ? "#e3f2fd" : "#f3e5f5",
+                      },
                     }}
                   >
                     <ListItemText
                       primary={suggestion}
                       sx={{
-                        '& .MuiListItemText-primary': {
-                          fontSize: '0.875rem'
-                        }
+                        "& .MuiListItemText-primary": {
+                          fontSize: "0.875rem",
+                        },
                       }}
                     />
                   </ListItemButton>
@@ -184,11 +192,11 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
                 <ListItemText
                   primary={`No ${skillType} skills found matching "${inputValue}"`}
                   sx={{
-                    '& .MuiListItemText-primary': {
-                      fontSize: '0.875rem',
-                      color: 'text.secondary',
-                      fontStyle: 'italic'
-                    }
+                    "& .MuiListItemText-primary": {
+                      fontSize: "0.875rem",
+                      color: "text.secondary",
+                      fontStyle: "italic",
+                    },
                   }}
                 />
               </ListItem>
@@ -196,13 +204,13 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
           </List>
         )}
       </Paper>
-    )
-  }
+    );
+  };
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-        <Box sx={{ flex: 1, position: 'relative' }}>
+      <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+        <Box sx={{ flex: 1, position: "relative" }}>
           <TextField
             ref={inputRef}
             size="small"
@@ -214,7 +222,7 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
             onFocus={() => setOpen(true)}
             onBlur={() => {
               // Delay closing to allow clicks on suggestions
-              setTimeout(() => setOpen(false), 200)
+              setTimeout(() => setOpen(false), 200);
             }}
             disabled={disabled}
             InputProps={{
@@ -234,12 +242,12 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
                     <CloseIcon fontSize="small" />
                   </IconButton>
                 </InputAdornment>
-              )
+              ),
             }}
             sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'background.paper'
-              }
+              "& .MuiOutlinedInput-root": {
+                backgroundColor: "background.paper",
+              },
             }}
           />
           {renderSuggestions()}
@@ -250,17 +258,21 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
             <IconButton
               size="small"
               onClick={handleAddClick}
-              disabled={disabled || !inputValue.trim() || existingSkillsSet.has(inputValue.trim())}
+              disabled={
+                disabled ||
+                !inputValue.trim() ||
+                existingSkillsSet.has(inputValue.trim())
+              }
               sx={{
-                bgcolor: skillType === 'technical' ? '#1976d2' : '#7b1fa2',
-                color: 'white',
-                '&:hover': {
-                  bgcolor: skillType === 'technical' ? '#1565c0' : '#6a1b9a'
+                bgcolor: skillType === "technical" ? "#1976d2" : "#7b1fa2",
+                color: "white",
+                "&:hover": {
+                  bgcolor: skillType === "technical" ? "#1565c0" : "#6a1b9a",
                 },
-                '&:disabled': {
-                  bgcolor: 'action.disabledBackground',
-                  color: 'action.disabled'
-                }
+                "&:disabled": {
+                  bgcolor: "action.disabledBackground",
+                  color: "action.disabled",
+                },
               }}
             >
               <AddIcon fontSize="small" />
@@ -270,12 +282,16 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
       </Box>
 
       {inputValue.trim() && existingSkillsSet.has(inputValue.trim()) && (
-        <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+        <Typography
+          variant="caption"
+          color="error"
+          sx={{ mt: 0.5, display: "block" }}
+        >
           This skill is already added
         </Typography>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default SkillsAutocomplete
+export default SkillsAutocomplete;

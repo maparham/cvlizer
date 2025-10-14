@@ -5,21 +5,23 @@ This module defines the AIUsageLog database model for comprehensive tracking
 of all OpenAI API calls, including token usage, costs, and performance metrics.
 """
 
-from sqlalchemy import (
-    Column,
-    String,
-    Integer,
-    Boolean,
-    DateTime,
-    Text,
-    ForeignKey,
-    Float,
-    Index,
-)
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .base import Base
 import uuid
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class AIUsageLog(Base):

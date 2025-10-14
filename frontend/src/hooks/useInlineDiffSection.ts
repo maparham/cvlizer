@@ -18,9 +18,9 @@
  * - Components can render highlighted content based on hook results
  */
 
-import { useMemo } from 'react';
-import { useInlineDiffContext } from '../contexts/InlineDiffContext';
-import { AISuggestion } from '../types/ai';
+import { useMemo } from "react";
+import { useInlineDiffContext } from "../contexts/InlineDiffContext";
+import { AISuggestion } from "../types/ai";
 
 interface SectionDiffData {
   // Data with suggestions applied
@@ -59,7 +59,7 @@ export const useInlineDiffSection = ({
   const sectionSuggestions = useMemo(() => {
     if (!isInDiffMode) return [];
 
-    return getSuggestionsBySection(section).filter(suggestion => {
+    return getSuggestionsBySection(section).filter((suggestion) => {
       // If fieldPath is specified, filter by it
       if (fieldPath) {
         return suggestion.fieldPath === fieldPath;
@@ -82,14 +82,14 @@ export const useInlineDiffSection = ({
     if (tempCV.tempData && section in tempCV.tempData) {
       // Only use temp data structure, not the content
       const tempSectionData = tempCV.tempData[section];
-      if (typeof tempSectionData === 'object' && tempSectionData !== null) {
+      if (typeof tempSectionData === "object" && tempSectionData !== null) {
         // Merge structure but keep original content
         data = { ...data, ...tempSectionData };
         // Restore original content
         if (Array.isArray(originalData)) {
           data = originalData;
-        } else if (typeof originalData === 'object' && originalData !== null) {
-          Object.keys(originalData).forEach(key => {
+        } else if (typeof originalData === "object" && originalData !== null) {
+          Object.keys(originalData).forEach((key) => {
             if (originalData[key] !== undefined) {
               data[key] = originalData[key];
             }
@@ -100,20 +100,25 @@ export const useInlineDiffSection = ({
 
     // Apply ONLY approved suggestions to display data
     sectionSuggestions
-      .filter(s => s.status === 'approved')
-      .forEach(suggestion => {
-        if (suggestion.type === 'add_keyword') {
+      .filter((s) => s.status === "approved")
+      .forEach((suggestion) => {
+        if (suggestion.type === "add_keyword") {
           if (suggestion.fieldPath && data[suggestion.fieldPath]) {
             // Add keyword if not already present
-            if (Array.isArray(data[suggestion.fieldPath]) &&
-                !data[suggestion.fieldPath].includes(suggestion.suggestedValue)) {
-              data[suggestion.fieldPath] = [...data[suggestion.fieldPath], suggestion.suggestedValue];
+            if (
+              Array.isArray(data[suggestion.fieldPath]) &&
+              !data[suggestion.fieldPath].includes(suggestion.suggestedValue)
+            ) {
+              data[suggestion.fieldPath] = [
+                ...data[suggestion.fieldPath],
+                suggestion.suggestedValue,
+              ];
             }
           }
-        } else if (suggestion.type === 'enhance_content') {
+        } else if (suggestion.type === "enhance_content") {
           if (suggestion.fieldPath && suggestion.fieldPath in data) {
             data[suggestion.fieldPath] = suggestion.suggestedValue;
-          } else if (!suggestion.fieldPath && typeof data === 'string') {
+          } else if (!suggestion.fieldPath && typeof data === "string") {
             data = suggestion.suggestedValue;
           }
         }
@@ -128,18 +133,18 @@ export const useInlineDiffSection = ({
     }
 
     switch (highlightMode) {
-      case 'pending':
-        return sectionSuggestions.some(s => s.status === 'pending');
-      case 'approved':
-        return sectionSuggestions.some(s => s.status === 'approved');
-      case 'all':
+      case "pending":
+        return sectionSuggestions.some((s) => s.status === "pending");
+      case "approved":
+        return sectionSuggestions.some((s) => s.status === "approved");
+      case "all":
       default:
         return true;
     }
   }, [isInDiffMode, sectionSuggestions, highlightMode]);
 
   const hasPendingSuggestions = useMemo(() => {
-    return sectionSuggestions.some(s => s.status === 'pending');
+    return sectionSuggestions.some((s) => s.status === "pending");
   }, [sectionSuggestions]);
 
   const hasSuggestions = sectionSuggestions.length > 0;
@@ -158,7 +163,7 @@ export const useInlineDiffSection = ({
 export const useHighlightedKeywords = (
   section: string,
   fieldPath: string,
-  originalKeywords: string[]
+  originalKeywords: string[],
 ): {
   highlightedKeywords: Array<{
     keyword: string;
@@ -171,21 +176,22 @@ export const useHighlightedKeywords = (
 
   const highlightedKeywords = useMemo(() => {
     const suggestions = getSuggestionsBySection(section).filter(
-      s => s.fieldPath === fieldPath && s.type === 'add_keyword'
+      (s) => s.fieldPath === fieldPath && s.type === "add_keyword",
     );
 
     // Create array with original keywords
-    const result = originalKeywords.map(keyword => ({
+    const result = originalKeywords.map((keyword) => ({
       keyword,
       isNew: false,
       suggestion: undefined,
     }));
 
     // Add new keywords from suggestions
-    suggestions.forEach(suggestion => {
-      const shouldShow = (suggestion.status === 'pending' && highlightMode !== 'approved') ||
-          (suggestion.status === 'approved' && highlightMode !== 'pending') ||
-          highlightMode === 'all';
+    suggestions.forEach((suggestion) => {
+      const shouldShow =
+        (suggestion.status === "pending" && highlightMode !== "approved") ||
+        (suggestion.status === "approved" && highlightMode !== "pending") ||
+        highlightMode === "all";
 
       if (shouldShow) {
         // Only add if not already in original keywords
@@ -199,11 +205,17 @@ export const useHighlightedKeywords = (
       }
     });
     return result;
-  }, [originalKeywords, section, fieldPath, getSuggestionsBySection, highlightMode]);
+  }, [
+    originalKeywords,
+    section,
+    fieldPath,
+    getSuggestionsBySection,
+    highlightMode,
+  ]);
 
   const newKeywords = highlightedKeywords
-    .filter(item => item.isNew)
-    .map(item => item.keyword);
+    .filter((item) => item.isNew)
+    .map((item) => item.keyword);
 
   return {
     highlightedKeywords,
@@ -215,7 +227,7 @@ export const useHighlightedKeywords = (
 export const useHighlightedContent = (
   section: string,
   fieldPath: string | undefined,
-  originalContent: string
+  originalContent: string,
 ): {
   displayContent: string;
   hasChanges: boolean;
@@ -224,17 +236,17 @@ export const useHighlightedContent = (
   const { getSuggestionsBySection, highlightMode } = useInlineDiffContext();
 
   const result = useMemo(() => {
-    const suggestions = getSuggestionsBySection(section).filter(s => {
+    const suggestions = getSuggestionsBySection(section).filter((s) => {
       if (fieldPath) {
-        return s.fieldPath === fieldPath && s.type === 'enhance_content';
+        return s.fieldPath === fieldPath && s.type === "enhance_content";
       }
-      return s.type === 'enhance_content' && !s.fieldPath;
+      return s.type === "enhance_content" && !s.fieldPath;
     });
 
-    const activeSuggestion = suggestions.find(s => {
-      if (highlightMode === 'pending' && s.status === 'pending') return true;
-      if (highlightMode === 'approved' && s.status === 'approved') return true;
-      if (highlightMode === 'all') return true;
+    const activeSuggestion = suggestions.find((s) => {
+      if (highlightMode === "pending" && s.status === "pending") return true;
+      if (highlightMode === "approved" && s.status === "approved") return true;
+      if (highlightMode === "all") return true;
       return false;
     });
 
@@ -243,7 +255,13 @@ export const useHighlightedContent = (
       hasChanges: !!activeSuggestion,
       suggestion: activeSuggestion,
     };
-  }, [section, fieldPath, originalContent, getSuggestionsBySection, highlightMode]);
+  }, [
+    section,
+    fieldPath,
+    originalContent,
+    getSuggestionsBySection,
+    highlightMode,
+  ]);
 
   return result;
 };

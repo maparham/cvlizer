@@ -2,17 +2,18 @@
 Integration tests for job fit draft approval flow.
 """
 
+from datetime import datetime, timezone
+from unittest.mock import Mock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch
-from datetime import datetime, timezone
 
 from main import app
-from src.models.base import Base, engine, SessionLocal
-from src.models.user import User
+from src.models.ai_draft import AIDraft
+from src.models.base import Base, SessionLocal, engine
 from src.models.cv import CV
 from src.models.job_description import JobDescription
-from src.models.ai_draft import AIDraft
+from src.models.user import User
 
 
 @pytest.fixture

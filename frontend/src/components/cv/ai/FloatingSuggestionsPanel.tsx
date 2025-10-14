@@ -20,7 +20,7 @@
  * - Responsive design adapts to different screen sizes
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Paper,
@@ -37,7 +37,7 @@ import {
   Tooltip,
   Badge,
   Stack,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Close,
   CheckCircle,
@@ -48,10 +48,10 @@ import {
   CancelOutlined,
   NavigateNext,
   Settings,
-} from '@mui/icons-material';
-import { useInlineDiffContext } from '../../../contexts/InlineDiffContext';
-import { AISuggestion } from '../../../types/ai';
-import { CVData } from '../../../types';
+} from "@mui/icons-material";
+import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
+import { AISuggestion } from "../../../types/ai";
+import { CVData } from "../../../types";
 
 interface SuggestionItemProps {
   suggestion: AISuggestion;
@@ -68,26 +68,26 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved':
-        return 'success';
-      case 'rejected':
-        return 'error';
-      case 'pending':
+      case "approved":
+        return "success";
+      case "rejected":
+        return "error";
+      case "pending":
       default:
-        return 'warning';
+        return "warning";
     }
   };
 
   const getChangeTypeColor = (changeType: string) => {
     switch (changeType) {
-      case 'addition':
-        return 'success';
-      case 'modification':
-        return 'warning';
-      case 'removal':
-        return 'error';
+      case "addition":
+        return "success";
+      case "modification":
+        return "warning";
+      case "removal":
+        return "error";
       default:
-        return 'default';
+        return "default";
     }
   };
 
@@ -96,9 +96,11 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({
       onNavigate(suggestion);
     } else {
       // Default navigation behavior - scroll to section
-      const sectionElement = document.querySelector(`[data-section="${suggestion.section}"]`);
+      const sectionElement = document.querySelector(
+        `[data-section="${suggestion.section}"]`,
+      );
       if (sectionElement) {
-        sectionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        sectionElement.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
   };
@@ -109,26 +111,35 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({
         borderLeft: 4,
         borderLeftColor: `${getChangeTypeColor(suggestion.changeType)}.main`,
         mb: 1,
-        bgcolor: 'background.paper',
+        bgcolor: "background.paper",
         borderRadius: 1,
-        '&:hover': {
-          bgcolor: 'action.hover',
+        "&:hover": {
+          bgcolor: "action.hover",
         },
       }}
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
           <Typography variant="body2" fontWeight="medium" component="div">
             {suggestion.description}
           </Typography>
           <Chip
             label={suggestion.changeType}
             size="small"
-            color={getChangeTypeColor(suggestion.changeType) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
+            color={
+              getChangeTypeColor(suggestion.changeType) as
+                | "default"
+                | "primary"
+                | "secondary"
+                | "error"
+                | "info"
+                | "success"
+                | "warning"
+            }
             variant="outlined"
           />
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
           <Typography variant="caption" color="text.secondary" component="div">
             {suggestion.section}
             {suggestion.fieldPath && ` • ${suggestion.fieldPath}`}
@@ -136,7 +147,16 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({
           <Chip
             label={suggestion.status}
             size="small"
-            color={getStatusColor(suggestion.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
+            color={
+              getStatusColor(suggestion.status) as
+                | "default"
+                | "primary"
+                | "secondary"
+                | "error"
+                | "info"
+                | "success"
+                | "warning"
+            }
             variant="filled"
             sx={{ height: 18 }}
           />
@@ -149,7 +169,7 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({
               <NavigateNext />
             </IconButton>
           </Tooltip>
-          {suggestion.status === 'pending' && (
+          {suggestion.status === "pending" && (
             <>
               <Tooltip title="Accept suggestion">
                 <IconButton
@@ -183,11 +203,9 @@ interface FloatingSuggestionsPanelProps {
   onSave?: (cvData?: CVData, message?: string) => Promise<void>;
 }
 
-export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> = ({
-  onNavigateToSuggestion,
-  onContentUpdate,
-  onSave,
-}) => {
+export const FloatingSuggestionsPanel: React.FC<
+  FloatingSuggestionsPanelProps
+> = ({ onNavigateToSuggestion, onContentUpdate, onSave }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const {
     isInDiffMode,
@@ -215,36 +233,46 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
 
   const isButtonDisabled = approvedCount === 0 || isApplyingAll;
   const totalCount = suggestions.length;
-  const progress = totalCount > 0 ? ((approvedCount + suggestions.filter(s => s.status === 'rejected').length) / totalCount) * 100 : 0;
+  const progress =
+    totalCount > 0
+      ? ((approvedCount +
+          suggestions.filter((s) => s.status === "rejected").length) /
+          totalCount) *
+        100
+      : 0;
 
   const handleAcceptAll = () => {
     suggestions
-      .filter(s => s.status === 'pending')
-      .forEach(s => acceptInlineSuggestion(s.id));
+      .filter((s) => s.status === "pending")
+      .forEach((s) => acceptInlineSuggestion(s.id));
   };
 
   const handleRejectAll = () => {
     suggestions
-      .filter(s => s.status === 'pending')
-      .forEach(s => rejectInlineSuggestion(s.id));
+      .filter((s) => s.status === "pending")
+      .forEach((s) => rejectInlineSuggestion(s.id));
   };
 
   const handleCommitChanges = async (event: React.MouseEvent) => {
     // Safety check: Only commit if there are actually approved suggestions
     if (approvedCount === 0) {
-      console.warn('FloatingSuggestionsPanel - Prevented commit with 0 approved suggestions');
+      console.warn(
+        "FloatingSuggestionsPanel - Prevented commit with 0 approved suggestions",
+      );
       return;
     }
 
     // Only allow explicit user clicks
-    if (!event?.isTrusted || event?.type !== 'click') {
-      console.warn('FloatingSuggestionsPanel - Prevented commit from non-click event');
+    if (!event?.isTrusted || event?.type !== "click") {
+      console.warn(
+        "FloatingSuggestionsPanel - Prevented commit from non-click event",
+      );
       return;
     }
 
     // Add confirmation dialog to prevent accidental commits
     const confirmed = window.confirm(
-      `Are you sure you want to apply ${approvedCount} approved suggestion${approvedCount > 1 ? 's' : ''} to your CV?`
+      `Are you sure you want to apply ${approvedCount} approved suggestion${approvedCount > 1 ? "s" : ""} to your CV?`,
     );
 
     if (!confirmed) {
@@ -260,15 +288,25 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
         // Automatically save the changes to persist them
         if (onSave) {
           try {
-            await onSave(finalData, `Applied ${approvedCount} AI suggestion${approvedCount > 1 ? 's' : ''}`);
+            await onSave(
+              finalData,
+              `Applied ${approvedCount} AI suggestion${approvedCount > 1 ? "s" : ""}`,
+            );
           } catch (error) {
-            console.error('FloatingSuggestionsPanel - Failed to save changes:', error);
+            console.error(
+              "FloatingSuggestionsPanel - Failed to save changes:",
+              error,
+            );
           }
         } else {
-          console.warn('FloatingSuggestionsPanel - onSave callback is not provided, changes will not be persisted');
+          console.warn(
+            "FloatingSuggestionsPanel - onSave callback is not provided, changes will not be persisted",
+          );
         }
       } else {
-        console.warn('FloatingSuggestionsPanel - onContentUpdate callback is not provided');
+        console.warn(
+          "FloatingSuggestionsPanel - onContentUpdate callback is not provided",
+        );
       }
     }
   };
@@ -277,42 +315,42 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
     <Paper
       elevation={8}
       sx={{
-        position: 'fixed',
+        position: "fixed",
         bottom: 20,
         right: 20,
         width: 380,
-        maxHeight: '60vh',
+        maxHeight: "60vh",
         zIndex: 1300,
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
         borderRadius: 2,
-        overflow: 'hidden',
+        overflow: "hidden",
       }}
     >
       {/* Header */}
       <Box
         sx={{
           p: 2,
-          bgcolor: 'primary.main',
-          color: 'primary.contrastText',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          bgcolor: "primary.main",
+          color: "primary.contrastText",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
             AI Suggestions
           </Typography>
           <Badge badgeContent={pendingCount} color="warning" showZero={false}>
             <Settings fontSize="small" />
           </Badge>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Tooltip title={isCollapsed ? 'Expand panel' : 'Collapse panel'}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Tooltip title={isCollapsed ? "Expand panel" : "Collapse panel"}>
             <IconButton
               size="small"
-              sx={{ color: 'inherit' }}
+              sx={{ color: "inherit" }}
               onClick={() => setIsCollapsed(!isCollapsed)}
             >
               {isCollapsed ? <ExpandMore /> : <ExpandLess />}
@@ -321,7 +359,7 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
           <Tooltip title="Close suggestions panel">
             <IconButton
               size="small"
-              sx={{ color: 'inherit' }}
+              sx={{ color: "inherit" }}
               onClick={() => togglePanel(false)}
             >
               <Close />
@@ -336,9 +374,9 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
         value={progress}
         sx={{
           height: 4,
-          bgcolor: 'grey.200',
-          '& .MuiLinearProgress-bar': {
-            bgcolor: 'success.main',
+          bgcolor: "grey.200",
+          "& .MuiLinearProgress-bar": {
+            bgcolor: "success.main",
           },
         }}
       />
@@ -347,7 +385,7 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
       <Collapse in={!isCollapsed}>
         <Box sx={{ p: 2 }}>
           {/* Stats */}
-          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+          <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
             <Chip
               label={`${totalCount} Total`}
               size="small"
@@ -375,22 +413,24 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
             <Stack direction="row" spacing={1}>
               <Button
                 size="small"
-                variant={highlightMode === 'all' ? 'contained' : 'outlined'}
-                onClick={() => setHighlightMode('all')}
+                variant={highlightMode === "all" ? "contained" : "outlined"}
+                onClick={() => setHighlightMode("all")}
               >
                 All
               </Button>
               <Button
                 size="small"
-                variant={highlightMode === 'pending' ? 'contained' : 'outlined'}
-                onClick={() => setHighlightMode('pending')}
+                variant={highlightMode === "pending" ? "contained" : "outlined"}
+                onClick={() => setHighlightMode("pending")}
               >
                 Pending
               </Button>
               <Button
                 size="small"
-                variant={highlightMode === 'approved' ? 'contained' : 'outlined'}
-                onClick={() => setHighlightMode('approved')}
+                variant={
+                  highlightMode === "approved" ? "contained" : "outlined"
+                }
+                onClick={() => setHighlightMode("approved")}
               >
                 Approved
               </Button>
@@ -400,16 +440,16 @@ export const FloatingSuggestionsPanel: React.FC<FloatingSuggestionsPanelProps> =
           <Divider sx={{ mb: 2 }} />
 
           {/* Suggestions List */}
-          <Box sx={{ maxHeight: 300, overflow: 'auto', mb: 2 }}>
+          <Box sx={{ maxHeight: 300, overflow: "auto", mb: 2 }}>
             {isApplyingAll ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Box sx={{ textAlign: "center", py: 4 }}>
                 <LinearProgress sx={{ mb: 2 }} />
                 <Typography variant="body2" color="text.secondary">
                   Generating suggestions...
                 </Typography>
               </Box>
             ) : suggestions.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Box sx={{ textAlign: "center", py: 4 }}>
                 <Typography variant="body2" color="text.secondary">
                   No suggestions available
                 </Typography>

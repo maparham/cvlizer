@@ -16,7 +16,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -24,25 +24,22 @@ import {
   Alert,
   Button,
   Stack,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Refresh as RefreshIcon,
   AutoAwesome as AutoAwesomeIcon,
-} from '@mui/icons-material';
-import { useAIStore, useCVDrafts } from '../../../stores/aiStore';
-import { useNotifications } from '../../../stores/uiStore';
-import { aiService } from '../../../services/aiService';
-import DraftSection from './DraftSection';
+} from "@mui/icons-material";
+import { useAIStore, useCVDrafts } from "../../../stores/aiStore";
+import { useNotifications } from "../../../stores/uiStore";
+import { aiService } from "../../../services/aiService";
+import DraftSection from "./DraftSection";
 
 interface DraftsListProps {
   cvId: string;
   onDraftChange?: () => void;
 }
 
-const DraftsList: React.FC<DraftsListProps> = ({
-  cvId,
-  onDraftChange,
-}) => {
+const DraftsList: React.FC<DraftsListProps> = ({ cvId, onDraftChange }) => {
   const { getCVDrafts } = useAIStore();
   const { showError } = useNotifications();
   const drafts = useCVDrafts(cvId);
@@ -55,8 +52,9 @@ const DraftsList: React.FC<DraftsListProps> = ({
       aiService.clearCacheForCV(cvId);
       await getCVDrafts(cvId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load drafts';
-      showError('Error', errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load drafts";
+      showError("Error", errorMessage);
     }
   }, [cvId, getCVDrafts, showError]);
 
@@ -75,7 +73,7 @@ const DraftsList: React.FC<DraftsListProps> = ({
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -98,8 +96,10 @@ const DraftsList: React.FC<DraftsListProps> = ({
 
   if (drafts.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <AutoAwesomeIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <AutoAwesomeIcon
+          sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+        />
         <Typography variant="h6" color="text.secondary" gutterBottom>
           No Drafts Available
         </Typography>
@@ -120,8 +120,18 @@ const DraftsList: React.FC<DraftsListProps> = ({
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+        >
           <AutoAwesomeIcon />
           AI Drafts ({drafts.length})
         </Typography>

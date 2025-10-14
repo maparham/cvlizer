@@ -17,15 +17,18 @@
  * - Falls back to original behavior when not in diff mode
  */
 
-import React, { useState } from 'react';
-import { Box, Typography, Chip, IconButton, Tooltip } from '@mui/material';
-import { CheckCircleOutline, CancelOutlined, Add } from '@mui/icons-material';
-import { SectionProps } from '../../../types';
-import SimpleFormSection from '../core/SimpleFormSection';
-import SkillsAutocomplete from '../ui/SkillsAutocomplete';
-import { SuggestionHighlight } from '../ai/SuggestionHighlight';
-import { useInlineDiffSection, useHighlightedKeywords } from '../../../hooks/useInlineDiffSection';
-import { useInlineDiffContext } from '../../../contexts/InlineDiffContext';
+import React, { useState } from "react";
+import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
+import { CheckCircleOutline, CancelOutlined, Add } from "@mui/icons-material";
+import { SectionProps } from "../../../types";
+import SimpleFormSection from "../core/SimpleFormSection";
+import SkillsAutocomplete from "../ui/SkillsAutocomplete";
+import { SuggestionHighlight } from "../ai/SuggestionHighlight";
+import {
+  useInlineDiffSection,
+  useHighlightedKeywords,
+} from "../../../hooks/useInlineDiffSection";
+import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
 
 const SkillsSectionWithDiff: React.FC<SectionProps> = ({
   data,
@@ -33,10 +36,10 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
   onSave,
   isEditing,
   onEdit,
-  onClose
+  onClose,
 }) => {
-  const [newTechnicalSkill, setNewTechnicalSkill] = useState('');
-  const [newSoftSkill, setNewSoftSkill] = useState('');
+  const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
+  const [newSoftSkill, setNewSoftSkill] = useState("");
 
   const {
     isInDiffMode,
@@ -46,27 +49,27 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
 
   // Use diff hooks for both technical and soft skills
   const technicalDiffData = useInlineDiffSection({
-    section: 'skills',
-    fieldPath: 'technical',
+    section: "skills",
+    fieldPath: "technical",
     originalData: (data as any)?.technical || [],
   });
 
   const softDiffData = useInlineDiffSection({
-    section: 'skills',
-    fieldPath: 'soft',
+    section: "skills",
+    fieldPath: "soft",
     originalData: (data as any)?.soft || [],
   });
 
   const technicalKeywords = useHighlightedKeywords(
-    'skills',
-    'technical',
-    (data as any)?.technical || []
+    "skills",
+    "technical",
+    (data as any)?.technical || [],
   );
 
   const softKeywords = useHighlightedKeywords(
-    'skills',
-    'soft',
-    (data as any)?.soft || []
+    "skills",
+    "soft",
+    (data as any)?.soft || [],
   );
 
   // Enhanced chip renderer that handles suggestions
@@ -76,20 +79,20 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
     isNew: boolean,
     suggestion: any,
     onRemove: (index: number) => void,
-    skillType: 'technical' | 'soft'
+    skillType: "technical" | "soft",
   ) => {
     const chipElement = (
       <Chip
         key={`${skill}-${index}`}
         label={skill}
         onDelete={!isNew ? () => onRemove(index) : undefined}
-        color={isNew ? 'success' : 'default'}
-        variant={isNew ? 'filled' : 'outlined'}
+        color={isNew ? "success" : "default"}
+        variant={isNew ? "filled" : "outlined"}
         size="small"
         sx={{
           m: 0.25,
           ...(isNew && {
-            animation: 'fadeIn 0.3s ease-in',
+            animation: "fadeIn 0.3s ease-in",
             boxShadow: 1,
           }),
         }}
@@ -98,7 +101,10 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
 
     if (isNew && suggestion) {
       return (
-        <Box key={`${skill}-${index}`} sx={{ position: 'relative', display: 'inline-block' }}>
+        <Box
+          key={`${skill}-${index}`}
+          sx={{ position: "relative", display: "inline-block" }}
+        >
           <SuggestionHighlight
             suggestion={suggestion}
             section="skills"
@@ -106,13 +112,13 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
           >
             {chipElement}
           </SuggestionHighlight>
-          {suggestion.status === 'pending' && (
+          {suggestion.status === "pending" && (
             <Box
               sx={{
-                position: 'absolute',
+                position: "absolute",
                 top: -8,
                 right: -8,
-                display: 'flex',
+                display: "flex",
                 gap: 0.5,
               }}
             >
@@ -124,9 +130,9 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
                   sx={{
                     width: 20,
                     height: 20,
-                    bgcolor: 'background.paper',
+                    bgcolor: "background.paper",
                     boxShadow: 1,
-                    '&:hover': { boxShadow: 2 }
+                    "&:hover": { boxShadow: 2 },
                   }}
                 >
                   <CheckCircleOutline fontSize="inherit" />
@@ -140,9 +146,9 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
                   sx={{
                     width: 20,
                     height: 20,
-                    bgcolor: 'background.paper',
+                    bgcolor: "background.paper",
                     boxShadow: 1,
-                    '&:hover': { boxShadow: 2 }
+                    "&:hover": { boxShadow: 2 },
                   }}
                 >
                   <CancelOutlined fontSize="inherit" />
@@ -157,16 +163,19 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
     return chipElement;
   };
 
-  const renderForm = (editData: any, updateData: (field: string, value: any) => void) => {
+  const renderForm = (
+    editData: any,
+    updateData: (field: string, value: any) => void,
+  ) => {
     const addTechnicalSkill = () => {
       if (newTechnicalSkill.trim()) {
         const updatedData = {
           ...editData,
-          technical: [...(editData.technical || []), newTechnicalSkill.trim()]
+          technical: [...(editData.technical || []), newTechnicalSkill.trim()],
         };
-        updateData('technical', updatedData.technical);
-        onSave?.(updatedData, 'Technical skill added');
-        setNewTechnicalSkill('');
+        updateData("technical", updatedData.technical);
+        onSave?.(updatedData, "Technical skill added");
+        setNewTechnicalSkill("");
       }
     };
 
@@ -174,48 +183,50 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
       if (newSoftSkill.trim()) {
         const updatedData = {
           ...editData,
-          soft: [...(editData.soft || []), newSoftSkill.trim()]
+          soft: [...(editData.soft || []), newSoftSkill.trim()],
         };
-        updateData('soft', updatedData.soft);
-        onSave?.(updatedData, 'Soft skill added');
-        setNewSoftSkill('');
+        updateData("soft", updatedData.soft);
+        onSave?.(updatedData, "Soft skill added");
+        setNewSoftSkill("");
       }
     };
 
     const addTechnicalSkillDirect = (skill: string) => {
       const updatedData = {
         ...editData,
-        technical: [...(editData.technical || []), skill]
+        technical: [...(editData.technical || []), skill],
       };
-      updateData('technical', updatedData.technical);
-      onSave?.(updatedData, 'Technical skill added');
+      updateData("technical", updatedData.technical);
+      onSave?.(updatedData, "Technical skill added");
     };
 
     const addSoftSkillDirect = (skill: string) => {
       const updatedData = {
         ...editData,
-        soft: [...(editData.soft || []), skill]
+        soft: [...(editData.soft || []), skill],
       };
-      updateData('soft', updatedData.soft);
-      onSave?.(updatedData, 'Soft skill added');
+      updateData("soft", updatedData.soft);
+      onSave?.(updatedData, "Soft skill added");
     };
 
     const removeTechnicalSkill = (index: number) => {
       const updatedData = {
         ...editData,
-        technical: (editData.technical || []).filter((_: any, i: number) => i !== index)
+        technical: (editData.technical || []).filter(
+          (_: any, i: number) => i !== index,
+        ),
       };
-      updateData('technical', updatedData.technical);
-      onSave?.(updatedData, 'Technical skill removed');
+      updateData("technical", updatedData.technical);
+      onSave?.(updatedData, "Technical skill removed");
     };
 
     const removeSoftSkill = (index: number) => {
       const updatedData = {
         ...editData,
-        soft: (editData.soft || []).filter((_: any, i: number) => i !== index)
+        soft: (editData.soft || []).filter((_: any, i: number) => i !== index),
       };
-      updateData('soft', updatedData.soft);
-      onSave?.(updatedData, 'Soft skill removed');
+      updateData("soft", updatedData.soft);
+      onSave?.(updatedData, "Soft skill removed");
     };
 
     // Prepare skills for rendering (combining original and new)
@@ -239,13 +250,13 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
       <Box>
         {/* Technical Skills Section */}
         <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
               Technical Skills
             </Typography>
             {isInDiffMode && technicalDiffData.hasPendingSuggestions && (
               <Chip
-                label={`${technicalDiffData.suggestions.filter(s => s.status === 'pending').length} new`}
+                label={`${technicalDiffData.suggestions.filter((s) => s.status === "pending").length} new`}
                 size="small"
                 color="success"
                 variant="outlined"
@@ -254,7 +265,7 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
             )}
           </Box>
 
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
             {displayTechnicalSkills.map((item: any, index: number) =>
               renderSkillChip(
                 item.keyword,
@@ -262,8 +273,8 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
                 item.isNew,
                 item.suggestion,
                 removeTechnicalSkill,
-                'technical'
-              )
+                "technical",
+              ),
             )}
           </Box>
 
@@ -280,13 +291,13 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
 
         {/* Soft Skills Section */}
         <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
               Soft Skills
             </Typography>
             {isInDiffMode && softDiffData.hasPendingSuggestions && (
               <Chip
-                label={`${softDiffData.suggestions.filter(s => s.status === 'pending').length} new`}
+                label={`${softDiffData.suggestions.filter((s) => s.status === "pending").length} new`}
                 size="small"
                 color="success"
                 variant="outlined"
@@ -295,7 +306,7 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
             )}
           </Box>
 
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
             {displaySoftSkills.map((item: any, index: number) =>
               renderSkillChip(
                 item.keyword,
@@ -303,8 +314,8 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
                 item.isNew,
                 item.suggestion,
                 removeSoftSkill,
-                'soft'
-              )
+                "soft",
+              ),
             )}
           </Box>
 
@@ -328,11 +339,17 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
     let softSkills = [];
 
     if (isInDiffMode) {
-      technicalSkills = Array.isArray(technicalDiffData.displayData) ? technicalDiffData.displayData : [];
-      softSkills = Array.isArray(softDiffData.displayData) ? softDiffData.displayData : [];
+      technicalSkills = Array.isArray(technicalDiffData.displayData)
+        ? technicalDiffData.displayData
+        : [];
+      softSkills = Array.isArray(softDiffData.displayData)
+        ? softDiffData.displayData
+        : [];
     } else {
-      if (displayData && typeof displayData === 'object') {
-        technicalSkills = Array.isArray(displayData.technical) ? displayData.technical : [];
+      if (displayData && typeof displayData === "object") {
+        technicalSkills = Array.isArray(displayData.technical)
+          ? displayData.technical
+          : [];
         softSkills = Array.isArray(displayData.soft) ? displayData.soft : [];
       }
     }
@@ -341,14 +358,16 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
       <Box data-section="skills">
         {technicalSkills && technicalSkills.length > 0 && (
           <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
               Technical Skills
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {technicalSkills.map((skill: string, index: number) => {
-                const isNewSkill = isInDiffMode && technicalKeywords.newKeywords.includes(skill);
-                const suggestion = technicalKeywords.highlightedKeywords
-                  .find(item => item.keyword === skill)?.suggestion;
+                const isNewSkill =
+                  isInDiffMode && technicalKeywords.newKeywords.includes(skill);
+                const suggestion = technicalKeywords.highlightedKeywords.find(
+                  (item) => item.keyword === skill,
+                )?.suggestion;
 
                 if (isNewSkill && suggestion) {
                   return (
@@ -383,14 +402,16 @@ const SkillsSectionWithDiff: React.FC<SectionProps> = ({
 
         {softSkills && softSkills.length > 0 && (
           <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
               Soft Skills
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {softSkills.map((skill: string, index: number) => {
-                const isNewSkill = isInDiffMode && softKeywords.newKeywords.includes(skill);
-                const suggestion = softKeywords.highlightedKeywords
-                  .find(item => item.keyword === skill)?.suggestion;
+                const isNewSkill =
+                  isInDiffMode && softKeywords.newKeywords.includes(skill);
+                const suggestion = softKeywords.highlightedKeywords.find(
+                  (item) => item.keyword === skill,
+                )?.suggestion;
 
                 if (isNewSkill && suggestion) {
                   return (

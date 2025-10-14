@@ -4,14 +4,14 @@
  * This component displays AI usage breakdown by operation type using Recharts,
  * showing token consumption and costs for each operation in a bar chart format.
  */
-import React from 'react'
+import React from "react";
 import {
   Card,
   CardContent,
   Typography,
   Box,
-  CircularProgress
-} from '@mui/material'
+  CircularProgress,
+} from "@mui/material";
 import {
   BarChart,
   Bar,
@@ -21,28 +21,33 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell
-} from 'recharts'
-import { OperationAIUsage } from '../../types/admin'
-import { formatCost, formatTokens, formatOperationType, getOperationTypeColor } from '../../utils/formatters'
+  Cell,
+} from "recharts";
+import { OperationAIUsage } from "../../types/admin";
+import {
+  formatCost,
+  formatTokens,
+  formatOperationType,
+  getOperationTypeColor,
+} from "../../utils/formatters";
 
 interface AIOperationBreakdownChartProps {
-  data: OperationAIUsage[]
-  loading: boolean
+  data: OperationAIUsage[];
+  loading: boolean;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload
+    const data = payload[0].payload;
 
     return (
       <Box
         sx={{
-          backgroundColor: 'white',
-          border: '1px solid #ccc',
+          backgroundColor: "white",
+          border: "1px solid #ccc",
           borderRadius: 1,
           p: 2,
-          boxShadow: 2
+          boxShadow: 2,
         }}
       >
         <Typography variant="subtitle2" gutterBottom>
@@ -56,11 +61,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 width: 12,
                 height: 12,
                 backgroundColor: entry.color,
-                borderRadius: '50%'
+                borderRadius: "50%",
               }}
             />
             <Typography variant="body2">
-              {entry.name}: {entry.name === 'Cost' ? formatCost(entry.value) : formatTokens(entry.value)}
+              {entry.name}:{" "}
+              {entry.name === "Cost"
+                ? formatCost(entry.value)
+                : formatTokens(entry.value)}
             </Typography>
           </Box>
         ))}
@@ -72,62 +80,77 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           Avg Tokens/Op: {formatTokens(data.average_tokens_per_operation)}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Input: {formatTokens(data.total_prompt_tokens)} | Output: {formatTokens(data.total_completion_tokens)}
+          Input: {formatTokens(data.total_prompt_tokens)} | Output:{" "}
+          {formatTokens(data.total_completion_tokens)}
         </Typography>
       </Box>
-    )
+    );
   }
 
-  return null
-}
+  return null;
+};
 
 const AIOperationBreakdownChart: React.FC<AIOperationBreakdownChartProps> = ({
   data,
-  loading
+  loading,
 }) => {
   if (loading) {
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
+          >
             <CircularProgress />
           </Box>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (!data || data.length === 0) {
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
-            <Typography color="text.secondary">No operation data available</Typography>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
+          >
+            <Typography color="text.secondary">
+              No operation data available
+            </Typography>
           </Box>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   // Format data for the chart
-  const chartData = data.map(item => ({
+  const chartData = data.map((item) => ({
     ...item,
     operation_type: formatOperationType(item.operation_type),
     tokens: item.total_tokens,
     promptTokens: item.total_prompt_tokens,
     completionTokens: item.total_completion_tokens,
-    cost: item.total_cost
-  }))
+    cost: item.total_cost,
+  }));
 
   // Sort by tokens descending
-  chartData.sort((a, b) => b.tokens - a.tokens)
+  chartData.sort((a, b) => b.tokens - a.tokens);
 
   // Get colors for each operation type
   const getBarColor = (operationType: string) => {
     // Find the original operation type from the formatted name
-    const originalType = data.find(d => formatOperationType(d.operation_type) === operationType)?.operation_type
-    return originalType ? getOperationTypeColor(originalType) : '#8884d8'
-  }
+    const originalType = data.find(
+      (d) => formatOperationType(d.operation_type) === operationType,
+    )?.operation_type;
+    return originalType ? getOperationTypeColor(originalType) : "#8884d8";
+  };
 
   return (
     <Card>
@@ -136,9 +159,12 @@ const AIOperationBreakdownChart: React.FC<AIOperationBreakdownChartProps> = ({
           Operation Breakdown
         </Typography>
 
-        <Box sx={{ width: '100%', height: 300 }}>
+        <Box sx={{ width: "100%", height: 300 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="operation_type"
@@ -169,7 +195,10 @@ const AIOperationBreakdownChart: React.FC<AIOperationBreakdownChartProps> = ({
                 radius={[4, 4, 0, 0]}
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-total-${index}`} fill={getBarColor(entry.operation_type)} />
+                  <Cell
+                    key={`cell-total-${index}`}
+                    fill={getBarColor(entry.operation_type)}
+                  />
                 ))}
               </Bar>
               <Bar
@@ -197,7 +226,7 @@ const AIOperationBreakdownChart: React.FC<AIOperationBreakdownChartProps> = ({
         </Box>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default AIOperationBreakdownChart
+export default AIOperationBreakdownChart;

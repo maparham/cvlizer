@@ -18,7 +18,7 @@
  * - Provides consistent action interface across all CVs
  * - Maintains compatibility with existing CV operations
  */
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import {
   IconButton,
   Dialog,
@@ -27,30 +27,30 @@ import {
   DialogContentText,
   DialogActions,
   Button,
-  Box
-} from '@mui/material'
+  Box,
+} from "@mui/material";
 import {
   MoreVert as MoreVertIcon,
   ContentCopy as DuplicateIcon,
   Edit as RenameIcon,
   GetApp as DownloadIcon,
   Create as CreateSimilarIcon,
-  Close as CloseIcon
-} from '@mui/icons-material'
-import { CV } from '../../types'
-import { commonStyles } from '../../styles/commonStyles'
-import MenuItems, { MenuItemData } from '../common/MenuItems'
-import { useDialogState, useMenuState } from '../../hooks/useDialogState'
+  Close as CloseIcon,
+} from "@mui/icons-material";
+import { CV } from "../../types";
+import { commonStyles } from "../../styles/commonStyles";
+import MenuItems, { MenuItemData } from "../common/MenuItems";
+import { useDialogState, useMenuState } from "../../hooks/useDialogState";
 
 export interface CVQuickActionsProps {
-  cv: CV
-  onDuplicate: (_cv: CV) => void
-  onRename: (_cv: CV, _newName: string) => void
-  onDownload: (_cv: CV) => void
-  onCreateSimilar: (_cv: CV) => void
-  duplicating?: boolean
-  downloading?: boolean
-  creatingSimilar?: boolean
+  cv: CV;
+  onDuplicate: (_cv: CV) => void;
+  onRename: (_cv: CV, _newName: string) => void;
+  onDownload: (_cv: CV) => void;
+  onCreateSimilar: (_cv: CV) => void;
+  duplicating?: boolean;
+  downloading?: boolean;
+  creatingSimilar?: boolean;
 }
 
 const CVQuickActions: React.FC<CVQuickActionsProps> = ({
@@ -61,97 +61,104 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
   onCreateSimilar,
   duplicating = false,
   downloading = false,
-  creatingSimilar = false
+  creatingSimilar = false,
 }) => {
-  const { anchorEl, openMenu, closeMenu, isOpen } = useMenuState()
-  const { anchorEl: contextMenuAnchor, openMenu: openContextMenu, closeMenu: closeContextMenu, isOpen: contextMenuOpen } = useMenuState()
-  const { open: renameDialogOpen, openDialog: openRenameDialog, closeDialog: closeRenameDialog } = useDialogState()
-  const [newName, setNewName] = useState(cv.original_filename)
+  const { anchorEl, openMenu, closeMenu, isOpen } = useMenuState();
+  const {
+    anchorEl: contextMenuAnchor,
+    openMenu: openContextMenu,
+    closeMenu: closeContextMenu,
+    isOpen: contextMenuOpen,
+  } = useMenuState();
+  const {
+    open: renameDialogOpen,
+    openDialog: openRenameDialog,
+    closeDialog: closeRenameDialog,
+  } = useDialogState();
+  const [newName, setNewName] = useState(cv.original_filename);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    event.stopPropagation()
-    openMenu(event)
-  }
+    event.stopPropagation();
+    openMenu(event);
+  };
 
   const handleContextMenu = (event: React.MouseEvent<HTMLElement>) => {
-    event.preventDefault()
-    event.stopPropagation()
-    openContextMenu(event)
-  }
+    event.preventDefault();
+    event.stopPropagation();
+    openContextMenu(event);
+  };
 
   const handleMenuClose = () => {
-    closeMenu()
-    closeContextMenu()
-  }
+    closeMenu();
+    closeContextMenu();
+  };
 
   const handleDuplicate = () => {
-    onDuplicate(cv)
-    handleMenuClose()
-  }
+    onDuplicate(cv);
+    handleMenuClose();
+  };
 
   const handleRename = () => {
-    openRenameDialog()
-    handleMenuClose()
-  }
-
+    openRenameDialog();
+    handleMenuClose();
+  };
 
   const handleDownload = () => {
-    onDownload(cv)
-    handleMenuClose()
-  }
+    onDownload(cv);
+    handleMenuClose();
+  };
 
   const handleCreateSimilar = () => {
-    onCreateSimilar(cv)
-    handleMenuClose()
-  }
+    onCreateSimilar(cv);
+    handleMenuClose();
+  };
 
   const handleRenameConfirm = () => {
     if (newName.trim() && newName !== cv.original_filename) {
-      onRename(cv, newName.trim())
+      onRename(cv, newName.trim());
     }
-    closeRenameDialog()
-    setNewName(cv.original_filename)
-  }
+    closeRenameDialog();
+    setNewName(cv.original_filename);
+  };
 
   const handleRenameCancel = () => {
-    closeRenameDialog()
-    setNewName(cv.original_filename)
-  }
-
+    closeRenameDialog();
+    setNewName(cv.original_filename);
+  };
 
   const menuItems: MenuItemData[] = [
     {
-      label: 'Duplicate',
+      label: "Duplicate",
       icon: <DuplicateIcon />,
       onClick: handleDuplicate,
       disabled: duplicating || !cv.is_parsed,
       loading: duplicating,
-      testId: `duplicate-cv-button-${cv.id}`
+      testId: `duplicate-cv-button-${cv.id}`,
     },
     {
-      label: 'Rename',
+      label: "Rename",
       icon: <RenameIcon />,
       onClick: handleRename,
       disabled: false,
-      testId: `rename-cv-button-${cv.id}`
+      testId: `rename-cv-button-${cv.id}`,
     },
     {
-      label: 'Download',
+      label: "Download",
       icon: <DownloadIcon />,
       onClick: handleDownload,
       disabled: downloading,
       loading: downloading,
-      testId: `download-cv-button-${cv.id}`
+      testId: `download-cv-button-${cv.id}`,
     },
     {
-      label: 'Create Similar',
+      label: "Create Similar",
       icon: <CreateSimilarIcon />,
       onClick: handleCreateSimilar,
       disabled: creatingSimilar || !cv.is_parsed,
       loading: creatingSimilar,
-      testId: `create-similar-cv-button-${cv.id}`
-    }
-  ]
+      testId: `create-similar-cv-button-${cv.id}`,
+    },
+  ];
 
   return (
     <>
@@ -172,12 +179,12 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
         open={contextMenuOpen}
         onClose={handleMenuClose}
         anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
         transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
       />
 
@@ -196,14 +203,18 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: commonStyles.dialog
+          sx: commonStyles.dialog,
         }}
       >
         <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ fontWeight: 600, fontSize: '1.25rem' }}>
-              Rename CV
-            </Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Box sx={{ fontWeight: 600, fontSize: "1.25rem" }}>Rename CV</Box>
             <IconButton onClick={handleRenameCancel} size="small">
               <CloseIcon />
             </IconButton>
@@ -219,22 +230,25 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleRenameConfirm()
+              if (e.key === "Enter") {
+                handleRenameConfirm();
               }
             }}
             sx={{
-              width: '100%',
+              width: "100%",
               p: 2,
-              border: '1px solid #ccc',
-              ...commonStyles.input.standard
+              border: "1px solid #ccc",
+              ...commonStyles.input.standard,
             }}
             placeholder="Enter CV name..."
             autoFocus
           />
         </DialogContent>
         <DialogActions sx={commonStyles.dialogActions}>
-          <Button onClick={handleRenameCancel} sx={commonStyles.button.secondary}>
+          <Button
+            onClick={handleRenameCancel}
+            sx={commonStyles.button.secondary}
+          >
             Cancel
           </Button>
           <Button
@@ -247,9 +261,8 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
-
     </>
-  )
-}
+  );
+};
 
-export default CVQuickActions
+export default CVQuickActions;

@@ -42,13 +42,13 @@ export const MENU_CLOSE_WAIT = 200;
  */
 export const TEST_USERS = [
   {
-    email: 'mahmoud.shahrood+testuser1@gmail.com',
-    password: 'pNm6h@n@q@fnHFM'
+    email: "mahmoud.shahrood+testuser1@gmail.com",
+    password: "pNm6h@n@q@fnHFM",
   },
   {
-    email: 'mahmoud.shahrood+testuser2@gmail.com',
-    password: 'pNm6h@n@q@fnHFM'
-  }
+    email: "mahmoud.shahrood+testuser2@gmail.com",
+    password: "pNm6h@n@q@fnHFM",
+  },
 ] as const;
 
 // Backward compatibility - default to first user

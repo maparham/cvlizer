@@ -1,17 +1,19 @@
-import pytest
+from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
+
+import pytest
+
+from src.models.user import User
 from src.services.auth_service import (
-    verify_password,
-    get_password_hash,
+    authenticate_user,
     create_access_token,
     create_refresh_token,
-    verify_token,
-    authenticate_user,
-    get_user_by_email,
     create_user,
+    get_password_hash,
+    get_user_by_email,
+    verify_password,
+    verify_token,
 )
-from src.models.user import User
-from datetime import datetime, timedelta
 
 
 class TestAuthService:

@@ -4,7 +4,7 @@
  * This component displays AI usage data over time using Recharts,
  * showing both token consumption and costs in a time-series format.
  */
-import React from 'react'
+import React from "react";
 import {
   Card,
   CardContent,
@@ -14,8 +14,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
-} from '@mui/material'
+  MenuItem,
+} from "@mui/material";
 import {
   LineChart,
   Line,
@@ -25,31 +25,31 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine
-} from 'recharts'
-import { TimelineData } from '../../types/admin'
-import { formatCost, formatTokens } from '../../utils/formatters'
-import { formatDate } from '../../utils/dateFormat'
+  ReferenceLine,
+} from "recharts";
+import { TimelineData } from "../../types/admin";
+import { formatCost, formatTokens } from "../../utils/formatters";
+import { formatDate } from "../../utils/dateFormat";
 
 interface AIUsageTimelineChartProps {
-  data: TimelineData[]
-  loading: boolean
-  granularity: 'day' | 'week' | 'month' | 'hour'
-  onGranularityChange: (granularity: 'day' | 'week' | 'month' | 'hour') => void
+  data: TimelineData[];
+  loading: boolean;
+  granularity: "day" | "week" | "month" | "hour";
+  onGranularityChange: (granularity: "day" | "week" | "month" | "hour") => void;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload
+    const data = payload[0].payload;
 
     return (
       <Box
         sx={{
-          backgroundColor: 'white',
-          border: '1px solid #ccc',
+          backgroundColor: "white",
+          border: "1px solid #ccc",
           borderRadius: 1,
           p: 2,
-          boxShadow: 2
+          boxShadow: 2,
         }}
       >
         <Typography variant="subtitle2" gutterBottom>
@@ -63,11 +63,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 width: 12,
                 height: 12,
                 backgroundColor: entry.color,
-                borderRadius: '50%'
+                borderRadius: "50%",
               }}
             />
             <Typography variant="body2">
-              {entry.name}: {entry.name === 'Cost' ? formatCost(entry.value) : formatTokens(entry.value)}
+              {entry.name}:{" "}
+              {entry.name === "Cost"
+                ? formatCost(entry.value)
+                : formatTokens(entry.value)}
             </Typography>
           </Box>
         ))}
@@ -76,81 +79,111 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           Operations: {data.operation_count}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Input: {formatTokens(data.total_prompt_tokens)} | Output: {formatTokens(data.total_completion_tokens)}
+          Input: {formatTokens(data.total_prompt_tokens)} | Output:{" "}
+          {formatTokens(data.total_completion_tokens)}
         </Typography>
       </Box>
-    )
+    );
   }
 
-  return null
-}
+  return null;
+};
 
 const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
   data,
   loading,
   granularity,
-  onGranularityChange
+  onGranularityChange,
 }) => {
   if (loading) {
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
+          >
             <CircularProgress />
           </Box>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (!data || data.length === 0) {
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
-            <Typography color="text.secondary">No timeline data available</Typography>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
+          >
+            <Typography color="text.secondary">
+              No timeline data available
+            </Typography>
           </Box>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   // Calculate max values for reference lines
-  const maxTokens = Math.max(...data.map(d => d.total_tokens))
-  const maxPromptTokens = Math.max(...data.map(d => d.total_prompt_tokens))
-  const maxCompletionTokens = Math.max(...data.map(d => d.total_completion_tokens))
-  const maxCost = Math.max(...data.map(d => d.total_cost))
+  const maxTokens = Math.max(...data.map((d) => d.total_tokens));
+  const maxPromptTokens = Math.max(...data.map((d) => d.total_prompt_tokens));
+  const maxCompletionTokens = Math.max(
+    ...data.map((d) => d.total_completion_tokens),
+  );
+  const maxCost = Math.max(...data.map((d) => d.total_cost));
 
   // Format data for the chart
-  const chartData = data.map(item => ({
+  const chartData = data.map((item) => ({
     ...item,
-    date: item.date ? (() => {
-      // Handle different timestamp formats from backend
-      let date: Date;
+    date: item.date
+      ? (() => {
+          // Handle different timestamp formats from backend
+          let date: Date;
 
-      if (item.date.includes(' ') && !item.date.includes('T') && !item.date.includes('Z')) {
-        // Format: "YYYY-MM-DD HH:MM:SS" - treat as UTC
-        date = new Date(item.date + 'Z');
-      } else if (item.date.includes('T') && !item.date.includes('Z') && !item.date.includes('+')) {
-        // Format: "YYYY-MM-DDTHH:MM:SS" - treat as UTC (ISO format without timezone)
-        date = new Date(item.date + 'Z');
-      } else {
-        // Other formats (ISO with timezone, etc.) - let JavaScript handle it
-        date = new Date(item.date);
-      }
+          if (
+            item.date.includes(" ") &&
+            !item.date.includes("T") &&
+            !item.date.includes("Z")
+          ) {
+            // Format: "YYYY-MM-DD HH:MM:SS" - treat as UTC
+            date = new Date(item.date + "Z");
+          } else if (
+            item.date.includes("T") &&
+            !item.date.includes("Z") &&
+            !item.date.includes("+")
+          ) {
+            // Format: "YYYY-MM-DDTHH:MM:SS" - treat as UTC (ISO format without timezone)
+            date = new Date(item.date + "Z");
+          } else {
+            // Other formats (ISO with timezone, etc.) - let JavaScript handle it
+            date = new Date(item.date);
+          }
 
-      return date.toLocaleDateString();
-    })() : 'Unknown',
+          return date.toLocaleDateString();
+        })()
+      : "Unknown",
     tokens: item.total_tokens,
     promptTokens: item.total_prompt_tokens,
     completionTokens: item.total_completion_tokens,
-    cost: item.total_cost
-  }))
+    cost: item.total_cost,
+  }));
 
   return (
     <Card>
       <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+        >
           <Typography variant="h6" component="div">
             AI Usage Timeline
           </Typography>
@@ -160,7 +193,11 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
             <Select
               value={granularity}
               label="Granularity"
-              onChange={(e) => onGranularityChange(e.target.value as 'day' | 'week' | 'month' | 'hour')}
+              onChange={(e) =>
+                onGranularityChange(
+                  e.target.value as "day" | "week" | "month" | "hour",
+                )
+              }
             >
               <MenuItem value="hour">Hour</MenuItem>
               <MenuItem value="day">Day</MenuItem>
@@ -170,9 +207,12 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
           </FormControl>
         </Box>
 
-        <Box sx={{ width: '100%', height: 300 }}>
+        <Box sx={{ width: "100%", height: 300 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
@@ -271,7 +311,7 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
         </Box>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default AIUsageTimelineChart
+export default AIUsageTimelineChart;

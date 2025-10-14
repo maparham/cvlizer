@@ -4,75 +4,83 @@
  * This component displays key AI usage statistics in a card format,
  * including total tokens, costs, success rates, and operation counts.
  */
-import React from 'react'
+import React from "react";
 import {
   Card,
   CardContent,
   Typography,
   Box,
   CircularProgress,
-  Grid
-} from '@mui/material'
+  Grid,
+} from "@mui/material";
 import {
   TrendingUp,
   TrendingDown,
   AttachMoney,
   Speed,
   CheckCircle,
-  Error
-} from '@mui/icons-material'
-import { SystemAIStats } from '../../types/admin'
-import { formatCost, formatNumber, formatTokens, formatPercentage } from '../../utils/formatters'
+  Error,
+} from "@mui/icons-material";
+import { SystemAIStats } from "../../types/admin";
+import {
+  formatCost,
+  formatNumber,
+  formatTokens,
+  formatPercentage,
+} from "../../utils/formatters";
 
 interface AIUsageStatsCardsProps {
-  stats: SystemAIStats | null
-  loading: boolean
+  stats: SystemAIStats | null;
+  loading: boolean;
 }
 
 const StatCard: React.FC<{
-  title: string
-  value: string
-  subtitle?: string
-  icon: React.ReactNode
-  trend?: 'up' | 'down' | 'neutral'
-  color?: 'primary' | 'secondary' | 'success' | 'error' | 'warning'
-}> = ({ title, value, subtitle, icon, trend, color = 'primary' }) => {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  trend?: "up" | "down" | "neutral";
+  color?: "primary" | "secondary" | "success" | "error" | "warning";
+}> = ({ title, value, subtitle, icon, trend, color = "primary" }) => {
   const getTrendIcon = () => {
     switch (trend) {
-      case 'up':
-        return <TrendingUp color="success" fontSize="small" />
-      case 'down':
-        return <TrendingDown color="error" fontSize="small" />
+      case "up":
+        return <TrendingUp color="success" fontSize="small" />;
+      case "down":
+        return <TrendingDown color="error" fontSize="small" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const getColor = () => {
     switch (color) {
-      case 'success':
-        return 'success.main'
-      case 'error':
-        return 'error.main'
-      case 'warning':
-        return 'warning.main'
-      case 'secondary':
-        return 'secondary.main'
+      case "success":
+        return "success.main";
+      case "error":
+        return "error.main";
+      case "warning":
+        return "warning.main";
+      case "secondary":
+        return "secondary.main";
       default:
-        return 'primary.main'
+        return "primary.main";
     }
-  }
+  };
 
   return (
-    <Card sx={{ height: '100%' }}>
+    <Card sx={{ height: "100%" }}>
       <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          mb={2}
+        >
           <Typography variant="h6" component="div" color="text.secondary">
             {title}
           </Typography>
-          <Box color={getColor()}>
-            {icon}
-          </Box>
+          <Box color={getColor()}>{icon}</Box>
         </Box>
 
         <Box display="flex" alignItems="center" gap={1} mb={1}>
@@ -89,33 +97,48 @@ const StatCard: React.FC<{
         )}
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading }) => {
+const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({
+  stats,
+  loading,
+}) => {
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={200}
+      >
         <CircularProgress />
       </Box>
-    )
+    );
   }
 
   if (!stats) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={200}
+      >
         <Typography color="text.secondary">No data available</Typography>
       </Box>
-    )
+    );
   }
 
-  const successRate = stats.total_operations > 0
-    ? (stats.successful_operations / stats.total_operations) * 100
-    : 0
+  const successRate =
+    stats.total_operations > 0
+      ? (stats.successful_operations / stats.total_operations) * 100
+      : 0;
 
-  const failureRate = stats.total_operations > 0
-    ? (stats.failed_operations / stats.total_operations) * 100
-    : 0
+  const failureRate =
+    stats.total_operations > 0
+      ? (stats.failed_operations / stats.total_operations) * 100
+      : 0;
 
   return (
     <Grid container spacing={3}>
@@ -175,22 +198,22 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({ stats, loading })
           value={formatPercentage(successRate)}
           subtitle={`${formatPercentage(failureRate)} failure rate`}
           icon={successRate >= 90 ? <CheckCircle /> : <Error />}
-          color={successRate >= 90 ? 'success' : 'warning'}
-          trend={successRate >= 90 ? 'up' : 'down'}
+          color={successRate >= 90 ? "success" : "warning"}
+          trend={successRate >= 90 ? "up" : "down"}
         />
       </Grid>
 
       <Grid item xs={12} sm={6} md={2}>
         <StatCard
           title="Most Expensive"
-          value={stats.most_expensive_operation_type || 'N/A'}
+          value={stats.most_expensive_operation_type || "N/A"}
           subtitle={`${formatTokens(stats.average_tokens_per_operation)} avg tokens/op`}
           icon={<TrendingUp />}
           color="warning"
         />
       </Grid>
     </Grid>
-  )
-}
+  );
+};
 
-export default AIUsageStatsCards
+export default AIUsageStatsCards;

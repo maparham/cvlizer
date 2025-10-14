@@ -5,7 +5,7 @@
  * It provides a clean interface for viewing user CV information
  * for administrative purposes.
  */
-import React from 'react'
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -20,37 +20,32 @@ import {
   TableBody,
   Chip,
   Button,
-  Box
-} from '@mui/material'
-import { UserCV } from '../../types/admin'
-import { formatDate } from '../../utils/dateFormat'
+  Box,
+} from "@mui/material";
+import { UserCV } from "../../types/admin";
+import { formatDate } from "../../utils/dateFormat";
 
 interface UserCVsDialogProps {
-  open: boolean
-  onClose: () => void
-  userCVs: UserCV[]
+  open: boolean;
+  onClose: () => void;
+  userCVs: UserCV[];
 }
 
 const UserCVsDialog: React.FC<UserCVsDialogProps> = ({
   open,
   onClose,
-  userCVs
+  userCVs,
 }) => {
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="lg"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>
         User CVs
         {userCVs.length > 0 && (
@@ -61,7 +56,11 @@ const UserCVsDialog: React.FC<UserCVsDialogProps> = ({
       </DialogTitle>
       <DialogContent>
         {userCVs.length === 0 ? (
-          <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', py: 4 }}>
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            sx={{ textAlign: "center", py: 4 }}
+          >
             No CVs found for this user
           </Typography>
         ) : (
@@ -92,15 +91,13 @@ const UserCVsDialog: React.FC<UserCVsDialogProps> = ({
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2">
-                        {cv.file_type}
-                      </Typography>
+                      <Typography variant="body2">{cv.file_type}</Typography>
                     </TableCell>
                     <TableCell>
                       <Box display="flex" gap={1}>
                         <Chip
-                          label={cv.is_parsed ? 'Parsed' : 'Error'}
-                          color={cv.is_parsed ? 'success' : 'error'}
+                          label={cv.is_parsed ? "Parsed" : "Error"}
+                          color={cv.is_parsed ? "success" : "error"}
                           size="small"
                         />
                         <Chip
@@ -136,7 +133,7 @@ const UserCVsDialog: React.FC<UserCVsDialogProps> = ({
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default UserCVsDialog
+export default UserCVsDialog;

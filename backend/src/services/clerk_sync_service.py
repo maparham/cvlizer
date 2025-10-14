@@ -6,10 +6,11 @@ ensuring that users authenticated via Clerk have corresponding records
 in the local database for CV and data relationships.
 """
 
-from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+from sqlalchemy.orm import Session
 
 from src.models.user import User
 

@@ -5,13 +5,15 @@ These tests ensure that the entire flow from API request to diff computation
 works correctly and doesn't produce phantom changes.
 """
 
+from datetime import datetime
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
-from src.models.user import User
+
 from src.models.cv import CV
 from src.models.cv_history import CVHistory
-from datetime import datetime
+from src.models.user import User
 
 
 class TestPhantomDiffAPIIntegration:

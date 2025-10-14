@@ -17,38 +17,38 @@
  * - Maintains compatibility with Material-UI Menu components
  */
 
-import React from 'react'
+import React from "react";
 import {
   Menu,
   MenuItem,
   ListItemIcon,
   ListItemText,
-  CircularProgress
-} from '@mui/material'
-import { commonStyles } from '../../styles/commonStyles'
+  CircularProgress,
+} from "@mui/material";
+import { commonStyles } from "../../styles/commonStyles";
 
 export interface MenuItemData {
-  label: string
-  icon: React.ReactNode
-  onClick: () => void
-  disabled?: boolean
-  loading?: boolean
-  testId?: string
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  testId?: string;
 }
 
 export interface MenuItemsProps {
-  items: MenuItemData[]
-  anchorEl: HTMLElement | null
-  open: boolean
-  onClose: () => void
+  items: MenuItemData[];
+  anchorEl: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
   anchorOrigin?: {
-    vertical: 'top' | 'center' | 'bottom'
-    horizontal: 'left' | 'center' | 'right'
-  }
+    vertical: "top" | "center" | "bottom";
+    horizontal: "left" | "center" | "right";
+  };
   transformOrigin?: {
-    vertical: 'top' | 'center' | 'bottom'
-    horizontal: 'left' | 'center' | 'right'
-  }
+    vertical: "top" | "center" | "bottom";
+    horizontal: "left" | "center" | "right";
+  };
 }
 
 const MenuItems: React.FC<MenuItemsProps> = ({
@@ -57,13 +57,13 @@ const MenuItems: React.FC<MenuItemsProps> = ({
   open,
   onClose,
   anchorOrigin = {
-    vertical: 'bottom',
-    horizontal: 'right',
+    vertical: "bottom",
+    horizontal: "right",
   },
   transformOrigin = {
-    vertical: 'top',
-    horizontal: 'right',
-  }
+    vertical: "top",
+    horizontal: "right",
+  },
 }) => {
   return (
     <Menu
@@ -73,7 +73,7 @@ const MenuItems: React.FC<MenuItemsProps> = ({
       anchorOrigin={anchorOrigin}
       transformOrigin={transformOrigin}
       PaperProps={{
-        sx: commonStyles.menu.standard
+        sx: commonStyles.menu.standard,
       }}
     >
       {items.map((item, index) => (
@@ -84,12 +84,8 @@ const MenuItems: React.FC<MenuItemsProps> = ({
           data-testid={item.testId}
           sx={{}}
         >
-          <ListItemIcon sx={{ color: 'inherit' }}>
-            {item.loading ? (
-              <CircularProgress size={16} />
-            ) : (
-              item.icon
-            )}
+          <ListItemIcon sx={{ color: "inherit" }}>
+            {item.loading ? <CircularProgress size={16} /> : item.icon}
           </ListItemIcon>
           <ListItemText>
             {item.loading ? `${item.label}...` : item.label}
@@ -97,7 +93,7 @@ const MenuItems: React.FC<MenuItemsProps> = ({
         </MenuItem>
       ))}
     </Menu>
-  )
-}
+  );
+};
 
-export default MenuItems
+export default MenuItems;

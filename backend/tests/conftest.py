@@ -4,10 +4,12 @@ Pytest configuration for impersonation tests
 This module provides shared fixtures and configuration for all impersonation tests.
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from src.models.base import Base
 
 # Test database configuration
@@ -46,7 +48,6 @@ def mock_clerk_auth():
         patch("src.middleware.clerk_auth.get_impersonation_session") as mock_get_session,
         patch("src.middleware.clerk_auth.get_user_by_id") as mock_get_user_by_id,
     ):
-
         yield {
             "get_user": mock_get_user,
             "get_session": mock_get_session,

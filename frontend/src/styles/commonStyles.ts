@@ -17,14 +17,14 @@
  * - Extend or override as needed for specific components
  */
 
-import { SxProps, Theme } from '@mui/material/styles'
+import { SxProps, Theme } from "@mui/material/styles";
 
 // Common border radius values
 export const borderRadius = {
   small: 1,
   medium: 2,
   large: 3,
-} as const
+} as const;
 
 // Common spacing values
 export const spacing = {
@@ -33,98 +33,98 @@ export const spacing = {
   md: 3,
   lg: 4,
   xl: 6,
-} as const
+} as const;
 
 // Common transition effects
 export const transitions = {
-  standard: 'all 0.2s ease-in-out',
-  opacity: 'opacity 0.2s',
-  transform: 'transform 0.2s ease-in-out',
-} as const
+  standard: "all 0.2s ease-in-out",
+  opacity: "opacity 0.2s",
+  transform: "transform 0.2s ease-in-out",
+} as const;
 
 // Dialog styles
 export const dialogStyles: SxProps<Theme> = {
   borderRadius: borderRadius.large,
-  '& .MuiDialog-paper': {
+  "& .MuiDialog-paper": {
     borderRadius: borderRadius.large,
   },
-}
+};
 
 // Button styles
 export const buttonStyles = {
   primary: {
     borderRadius: borderRadius.medium,
-    textTransform: 'none' as const,
+    textTransform: "none" as const,
   },
   secondary: {
     borderRadius: borderRadius.medium,
-    textTransform: 'none' as const,
+    textTransform: "none" as const,
   },
-} as const
+} as const;
 
 // Card styles
 export const cardStyles = {
   standard: {
     borderRadius: borderRadius.medium,
     transition: transitions.standard,
-    '&:hover': {
-      transform: 'translateY(-2px)',
+    "&:hover": {
+      transform: "translateY(-2px)",
       boxShadow: 4,
     },
   },
   static: {
     borderRadius: borderRadius.medium,
   },
-} as const
+} as const;
 
 // Icon button styles
 export const iconButtonStyles = {
   subtle: {
     opacity: 0.7,
-    '&:hover': {
+    "&:hover": {
       opacity: 1,
-      backgroundColor: 'action.hover',
+      backgroundColor: "action.hover",
     },
     transition: transitions.opacity,
   },
   transparent: {
-    '&:hover': {
-      backgroundColor: 'rgba(0,0,0,0.04)',
+    "&:hover": {
+      backgroundColor: "rgba(0,0,0,0.04)",
     },
   },
-} as const
+} as const;
 
 // Menu styles
 export const menuStyles = {
   standard: {
     minWidth: 160,
-    '& .MuiMenuItem-root': {
-      '&:hover': {
-        backgroundColor: 'action.hover',
+    "& .MuiMenuItem-root": {
+      "&:hover": {
+        backgroundColor: "action.hover",
       },
     },
   },
-} as const
+} as const;
 
 // Form input styles
 export const inputStyles = {
   standard: {
     borderRadius: borderRadius.small,
-    '& .MuiOutlinedInput-root.Mui-focused': {
-      '& .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'primary.main',
+    "& .MuiOutlinedInput-root.Mui-focused": {
+      "& .MuiOutlinedInput-notchedOutline": {
+        borderColor: "primary.main",
         borderWidth: 2,
       },
     },
   },
-} as const
+} as const;
 
 // Alert styles
 export const alertStyles = {
   standard: {
     marginBottom: spacing.sm,
   },
-} as const
+} as const;
 
 // Dialog content styles
 export const dialogContentStyles = {
@@ -132,70 +132,70 @@ export const dialogContentStyles = {
   paddingBottom: spacing.md,
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
-} as const
+} as const;
 
 // Dialog actions styles
 export const dialogActionsStyles = {
   padding: spacing.lg,
   paddingTop: spacing.sm,
   gap: spacing.sm,
-} as const
+} as const;
 
 // Chip styles
 export const chipStyles = {
   small: {
-    fontSize: '0.75rem',
+    fontSize: "0.75rem",
   },
   outlined: {
     marginBottom: 0.5,
   },
-} as const
+} as const;
 
 // Typography styles
 export const typographyStyles = {
   secondary: {
-    color: 'text.secondary',
+    color: "text.secondary",
   },
   muted: {
-    color: '#666',
-    fontSize: '0.875rem',
+    color: "#666",
+    fontSize: "0.875rem",
   },
-} as const
+} as const;
 
 // Flexbox utilities
 export const flexStyles = {
   center: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   between: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   start: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
-} as const
+} as const;
 
 // Box shadow utilities
 export const shadowStyles = {
   light: 1,
   medium: 3,
   heavy: 4,
-} as const
+} as const;
 
 // Color utilities
 export const colorStyles = {
-  success: '#2e7d32',
-  error: '#d32f2f',
-  warning: '#ed6c02',
-  info: '#1976d2',
-  muted: '#666',
-} as const
+  success: "#2e7d32",
+  error: "#d32f2f",
+  warning: "#ed6c02",
+  info: "#1976d2",
+  muted: "#666",
+} as const;
 
 // Combined common styles for specific use cases
 export const commonStyles = {
@@ -216,4 +216,4 @@ export const commonStyles = {
   borderRadius,
   spacing,
   transitions,
-} as const
+} as const;

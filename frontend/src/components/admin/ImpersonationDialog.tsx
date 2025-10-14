@@ -16,7 +16,7 @@
  * - Provides security warnings and audit trail
  */
 
-import React from 'react'
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -27,19 +27,19 @@ import {
   Box,
   Alert,
   Typography,
-  CircularProgress
-} from '@mui/material'
-import { SwitchAccount } from '@mui/icons-material'
-import { UserSummary } from '../../types/admin'
+  CircularProgress,
+} from "@mui/material";
+import { SwitchAccount } from "@mui/icons-material";
+import { UserSummary } from "../../types/admin";
 
 interface ImpersonationDialogProps {
-  open: boolean
-  onClose: () => void
-  target: UserSummary | null
-  justification: string
-  onJustificationChange: (justification: string) => void
-  onConfirm: () => Promise<void>
-  loading: boolean
+  open: boolean;
+  onClose: () => void;
+  target: UserSummary | null;
+  justification: string;
+  onJustificationChange: (justification: string) => void;
+  onConfirm: () => Promise<void>;
+  loading: boolean;
 }
 
 const ImpersonationDialog: React.FC<ImpersonationDialogProps> = ({
@@ -49,24 +49,17 @@ const ImpersonationDialog: React.FC<ImpersonationDialogProps> = ({
   justification,
   onJustificationChange,
   onConfirm,
-  loading
+  loading,
 }) => {
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-    >
-      <DialogTitle>
-        Confirm User Impersonation
-      </DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Confirm User Impersonation</DialogTitle>
       <DialogContent>
         <Box sx={{ mb: 2 }}>
           <Alert severity="warning">
             You are about to impersonate user <strong>{target?.email}</strong>.
-            This action will be logged for audit purposes. The session will automatically
-            expire in 30 minutes.
+            This action will be logged for audit purposes. The session will
+            automatically expire in 30 minutes.
           </Alert>
         </Box>
 
@@ -101,10 +94,7 @@ const ImpersonationDialog: React.FC<ImpersonationDialogProps> = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={onClose}
-          disabled={loading}
-        >
+        <Button onClick={onClose} disabled={loading}>
           Cancel
         </Button>
         <Button
@@ -112,13 +102,15 @@ const ImpersonationDialog: React.FC<ImpersonationDialogProps> = ({
           variant="contained"
           color="warning"
           disabled={!target || loading}
-          startIcon={loading ? <CircularProgress size={16} /> : <SwitchAccount />}
+          startIcon={
+            loading ? <CircularProgress size={16} /> : <SwitchAccount />
+          }
         >
-          {loading ? 'Starting...' : 'Start Impersonation'}
+          {loading ? "Starting..." : "Start Impersonation"}
         </Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default ImpersonationDialog
+export default ImpersonationDialog;

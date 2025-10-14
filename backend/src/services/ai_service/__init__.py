@@ -8,49 +8,29 @@ This is a package that organizes AI functionality into specialized
 submodules while maintaining backward compatibility through re-exports.
 """
 
+# Re-export ATS optimization functions
+from .ats_optimization import analyze_ats_optimization, create_optimization_suggestions
+
 # Re-export common utilities and types
-from .common import (
-    is_ai_enabled,
-    JobFitResult,
-    ATSOptimizationResult,
-)
-
-# Re-export job fit analysis functions
-from .job_fit import (
-    analyze_job_fit_sync,
-)
-
-# Re-export CV parsing functions
-from .cv_parsing import (
-    parse_cv_text_with_openai,
-)
-
-# Re-export section generation functions
-from .section_generation import (
-    generate_cv_section,
-)
+from .common import ATSOptimizationResult, JobFitResult, is_ai_enabled
 
 # Re-export content enhancement functions
-from .content_enhancement import (
-    enhance_content,
-)
+from .content_enhancement import enhance_content
 
-# Re-export ATS optimization functions
-from .ats_optimization import (
-    analyze_ats_optimization,
-    create_optimization_suggestions,
-)
-
-# Re-export job extraction functions
-from .job_extraction import (
-    extract_job_description_with_ai,
-)
+# Re-export CV parsing functions
+from .cv_parsing import parse_cv_text_with_openai
 
 # Re-export CV status functions
-from .cv_status import (
-    check_cv_ai_enhancement_status,
-    mark_cv_as_ai_enhanced,
-)
+from .cv_status import check_cv_ai_enhancement_status, mark_cv_as_ai_enhanced
+
+# Re-export job extraction functions
+from .job_extraction import extract_job_description_with_ai
+
+# Re-export job fit analysis functions
+from .job_fit import analyze_job_fit_sync
+
+# Re-export section generation functions
+from .section_generation import generate_cv_section
 
 # Define public API
 __all__ = [

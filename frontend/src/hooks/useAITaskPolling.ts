@@ -17,16 +17,16 @@
  * - Hook returns task state and utility functions
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAIStore } from '../stores/aiStore';
-import { useAISuggestionsStore } from '../stores/aiSuggestionsStore';
-import { useNotifications } from '../stores/uiStore';
-import { POLLING_CONFIG, STORAGE_KEYS } from '../config/constants';
-import { Logger } from '../utils/logger';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useAIStore } from "../stores/aiStore";
+import { useAISuggestionsStore } from "../stores/aiSuggestionsStore";
+import { useNotifications } from "../stores/uiStore";
+import { POLLING_CONFIG } from "../config/constants";
+import { Logger } from "../utils/logger";
 
 export interface AITask {
   id: string;
-  type: 'draft' | 'content_enhancement' | 'ai_enhancement';
+  type: "draft" | "content_enhancement" | "ai_enhancement";
   cvId: string;
   isGenerating: boolean;
   generationError?: string;
@@ -48,10 +48,10 @@ interface UseAITaskPollingReturn {
 }
 
 // Local storage key for persisting active tasks
-const ACTIVE_TASKS_STORAGE_KEY = 'cv_optimizer_active_ai_tasks';
+const ACTIVE_TASKS_STORAGE_KEY = "cv_optimizer_active_ai_tasks";
 
 export const useAITaskPolling = (
-  options: UseAITaskPollingOptions = {}
+  options: UseAITaskPollingOptions = {},
 ): UseAITaskPollingReturn => {
   const {
     onTaskComplete,
@@ -60,12 +60,14 @@ export const useAITaskPolling = (
   } = options;
 
   const [activeTasks, setActiveTasks] = useState<Map<string, AITask>>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const storedTasks = localStorage.getItem(ACTIVE_TASKS_STORAGE_KEY);
       if (storedTasks) {
         try {
           const parsedTasks = JSON.parse(storedTasks);
-          const tasksMap = new Map(parsedTasks.map((task: AITask) => [task.id, task]));
+          const tasksMap = new Map(
+            parsedTasks.map((task: AITask) => [task.id, task]),
+          );
           return tasksMap;
         } catch (e) {
           Logger.error("Failed to parse stored AI tasks", { error: e });
@@ -95,25 +97,30 @@ export const useAITaskPolling = (
 
   // Persist active tasks to localStorage whenever they change
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const tasksArray = Array.from(activeTasks.values());
-      localStorage.setItem(ACTIVE_TASKS_STORAGE_KEY, JSON.stringify(tasksArray));
+      localStorage.setItem(
+        ACTIVE_TASKS_STORAGE_KEY,
+        JSON.stringify(tasksArray),
+      );
     }
   }, [activeTasks]);
 
   const pollTasks = useCallback(async () => {
-    const tasksToUpdate = Array.from(activeTasks.values()).filter(task => task.isGenerating);
+    const tasksToUpdate = Array.from(activeTasks.values()).filter(
+      (task) => task.isGenerating,
+    );
     const newActiveTasks = new Map(activeTasks);
     let anyTaskStillGenerating = false;
 
     for (const task of tasksToUpdate) {
       try {
         let updatedTaskData: any;
-        if (task.type === 'draft') {
+        if (task.type === "draft") {
           updatedTaskData = await updateDraftStatus(task.id);
-        } else if (task.type === 'content_enhancement') {
+        } else if (task.type === "content_enhancement") {
           updatedTaskData = await updateContentEnhancementStatus(task.id);
-        } else if (task.type === 'ai_enhancement') {
+        } else if (task.type === "ai_enhancement") {
           updatedTaskData = await updateAIEnhancementStatus(task.id);
         } else {
           continue; // Skip unknown task types
@@ -121,21 +128,41 @@ export const useAITaskPolling = (
 
         if (!updatedTaskData.is_generating) {
           // Task completed
-          const completedTask = { ...task, isGenerating: false, data: updatedTaskData, generationError: updatedTaskData.generation_error };
+          const completedTask = {
+            ...task,
+            isGenerating: false,
+            data: updatedTaskData,
+            generationError: updatedTaskData.generation_error,
+          };
           newActiveTasks.set(task.id, completedTask);
           onTaskCompleteRef.current?.(completedTask);
         } else {
           // Task still generating
-          newActiveTasks.set(task.id, { ...task, data: updatedTaskData, generationError: updatedTaskData.generation_error });
+          newActiveTasks.set(task.id, {
+            ...task,
+            data: updatedTaskData,
+            generationError: updatedTaskData.generation_error,
+          });
           anyTaskStillGenerating = true;
         }
       } catch (error: any) {
-        Logger.error('Failed to update AI task', { taskId: task.id, taskType: task.type, error: error.message });
-        const errorMessage = error.error || error.message || 'Unknown error';
-        const failedTask = { ...task, isGenerating: false, generationError: errorMessage };
+        Logger.error("Failed to update AI task", {
+          taskId: task.id,
+          taskType: task.type,
+          error: error.message,
+        });
+        const errorMessage = error.error || error.message || "Unknown error";
+        const failedTask = {
+          ...task,
+          isGenerating: false,
+          generationError: errorMessage,
+        };
         newActiveTasks.set(task.id, failedTask);
         onTaskErrorRef.current?.(failedTask, errorMessage);
-        showErrorRef.current('AI Task Failed', `Task ${task.id} failed: ${errorMessage}`);
+        showErrorRef.current(
+          "AI Task Failed",
+          `Task ${task.id} failed: ${errorMessage}`,
+        );
       }
     }
 
@@ -146,7 +173,12 @@ export const useAITaskPolling = (
       pollingIntervalRef.current = null;
       setIsPolling(false);
     }
-  }, [activeTasks, updateDraftStatus, updateContentEnhancementStatus, updateAIEnhancementStatus]);
+  }, [
+    activeTasks,
+    updateDraftStatus,
+    updateContentEnhancementStatus,
+    updateAIEnhancementStatus,
+  ]);
 
   const startPolling = useCallback(() => {
     if (!pollingIntervalRef.current) {
@@ -163,17 +195,20 @@ export const useAITaskPolling = (
     setIsPolling(false);
   }, []);
 
-  const addTask = useCallback((task: AITask) => {
-    setActiveTasks(prev => {
-      const newMap = new Map(prev);
-      newMap.set(task.id, task);
-      return newMap;
-    });
-    startPolling();
-  }, [startPolling]);
+  const addTask = useCallback(
+    (task: AITask) => {
+      setActiveTasks((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(task.id, task);
+        return newMap;
+      });
+      startPolling();
+    },
+    [startPolling],
+  );
 
   const removeTask = useCallback((taskId: string) => {
-    setActiveTasks(prev => {
+    setActiveTasks((prev) => {
       const newMap = new Map(prev);
       newMap.delete(taskId);
       return newMap;
@@ -182,7 +217,9 @@ export const useAITaskPolling = (
 
   // Resume polling on component mount if there are active tasks
   useEffect(() => {
-    const hasGeneratingTasks = Array.from(activeTasks.values()).some(task => task.isGenerating);
+    const hasGeneratingTasks = Array.from(activeTasks.values()).some(
+      (task) => task.isGenerating,
+    );
     if (hasGeneratingTasks) {
       startPolling();
     }

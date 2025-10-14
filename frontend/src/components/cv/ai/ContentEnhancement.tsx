@@ -19,7 +19,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Box,
   Button,
@@ -44,26 +44,26 @@ import {
   FormControlLabel,
   FormControl,
   Alert,
-} from '@mui/material';
+} from "@mui/material";
 import {
   AutoAwesome as AutoAwesomeIcon,
   Check as CheckIcon,
   ContentCopy as CopyIcon,
   TrendingUp as TrendingUpIcon,
   Refresh as RefreshIcon,
-} from '@mui/icons-material';
-import { useAIStore, useSuggestions } from '../../../stores/aiStore';
-import { ContentSuggestion } from '../../../types/ai';
-import { useNotifications } from '../../../stores/uiStore';
-import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
+} from "@mui/icons-material";
+import { useAIStore, useSuggestions } from "../../../stores/aiStore";
+import { ContentSuggestion } from "../../../types/ai";
+import { useNotifications } from "../../../stores/uiStore";
+import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 
 interface EnhancementButtonProps {
   content: string;
   contentType?: string;
   cvId: string;
   onContentUpdate?: (newContent: string) => void;
-  size?: 'small' | 'medium' | 'large';
-  variant?: 'text' | 'outlined' | 'contained';
+  size?: "small" | "medium" | "large";
+  variant?: "text" | "outlined" | "contained";
   disabled?: boolean;
   className?: string;
 }
@@ -82,11 +82,11 @@ interface EnhancementModalProps {
 
 const EnhancementButton: React.FC<EnhancementButtonProps> = ({
   content,
-  contentType = 'bullet_point',
+  contentType = "bullet_point",
   cvId,
   onContentUpdate,
-  size = 'small',
-  variant: _variant = 'outlined',
+  size = "small",
+  variant: _variant = "outlined",
   disabled = false,
   className,
 }) => {
@@ -102,9 +102,16 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
   // Monitor active tasks for content enhancement completion
   useEffect(() => {
     for (const [taskId, task] of activeTasks) {
-      if (task.type === 'content_enhancement' && task.cvId === cvId && !task.isGenerating) {
+      if (
+        task.type === "content_enhancement" &&
+        task.cvId === cvId &&
+        !task.isGenerating
+      ) {
         if (task.generationError) {
-          showError('Error', `Content enhancement failed: ${task.generationError}`);
+          showError(
+            "Error",
+            `Content enhancement failed: ${task.generationError}`,
+          );
           setIsEnhancing(false);
         } else {
           // Task completed successfully, show the modal
@@ -118,19 +125,26 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
 
   const handleEnhance = useCallback(async () => {
     if (!content.trim()) {
-      showError('Error', 'No content to enhance');
+      showError("Error", "No content to enhance");
       return;
     }
 
     setIsEnhancing(true);
     try {
-      const enhancementResponse = await enhanceContent(cvId, content, contentType);
+      const enhancementResponse = await enhanceContent(
+        cvId,
+        content,
+        contentType,
+      );
 
       // Add the task to polling if it's still generating
-      if (enhancementResponse.is_generating && enhancementResponse.enhancement_id) {
+      if (
+        enhancementResponse.is_generating &&
+        enhancementResponse.enhancement_id
+      ) {
         addTask({
           id: enhancementResponse.enhancement_id,
-          type: 'content_enhancement',
+          type: "content_enhancement",
           cvId: cvId,
           isGenerating: true,
           data: enhancementResponse,
@@ -141,18 +155,22 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
         setIsEnhancing(false);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to enhance content';
-      showError('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to enhance content";
+      showError("Error", errorMessage);
       setIsEnhancing(false);
     }
   }, [content, contentType, cvId, enhanceContent, showError, addTask]);
 
-  const handleAccept = useCallback((suggestion: ContentSuggestion) => {
-    if (onContentUpdate) {
-      onContentUpdate(suggestion.content);
-    }
-    setShowModal(false);
-  }, [onContentUpdate]);
+  const handleAccept = useCallback(
+    (suggestion: ContentSuggestion) => {
+      if (onContentUpdate) {
+        onContentUpdate(suggestion.content);
+      }
+      setShowModal(false);
+    },
+    [onContentUpdate],
+  );
 
   const handleReject = useCallback(() => {
     setShowModal(false);
@@ -172,11 +190,7 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
             size={size}
             className={className}
           >
-            {isEnhancing ? (
-              <CircularProgress size={20} />
-            ) : (
-              <AutoAwesomeIcon />
-            )}
+            {isEnhancing ? <CircularProgress size={20} /> : <AutoAwesomeIcon />}
           </IconButton>
         </span>
       </Tooltip>
@@ -214,26 +228,29 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
   const handleAccept = useCallback(() => {
     if (suggestions[selectedSuggestion]) {
       onAccept(suggestions[selectedSuggestion]);
-      showSuccess('Content enhanced successfully');
+      showSuccess("Content enhanced successfully");
     }
   }, [suggestions, selectedSuggestion, onAccept, showSuccess]);
 
-  const copyToClipboard = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
-    showSuccess('Copied to clipboard');
-  }, [showSuccess]);
+  const copyToClipboard = useCallback(
+    (text: string) => {
+      navigator.clipboard.writeText(text);
+      showSuccess("Copied to clipboard");
+    },
+    [showSuccess],
+  );
 
   const getConfidenceColor = (score: number) => {
-    if (score >= 85) return 'success';
-    if (score >= 70) return 'warning';
-    return 'error';
+    if (score >= 85) return "success";
+    if (score >= 70) return "warning";
+    return "error";
   };
 
   const getConfidenceLabel = (score: number) => {
-    if (score >= 85) return 'Excellent';
-    if (score >= 70) return 'Good';
-    if (score >= 55) return 'Fair';
-    return 'Poor';
+    if (score >= 85) return "Excellent";
+    if (score >= 70) return "Good";
+    if (score >= 55) return "Fair";
+    return "Poor";
   };
 
   return (
@@ -243,14 +260,12 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { minHeight: '60vh' }
+        sx: { minHeight: "60vh" },
       }}
     >
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">
-            Enhance Content
-          </Typography>
+          <Typography variant="h6">Enhance Content</Typography>
           {onRegenerate && (
             <Tooltip title="Regenerate Suggestions">
               <span>
@@ -285,12 +300,15 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
                 <Typography variant="h6" gutterBottom color="text.secondary">
                   Original Content
                 </Typography>
-                <Typography variant="body1" sx={{
-                  p: 2,
-                  bgcolor: 'grey.50',
-                  borderRadius: 1,
-                  fontStyle: 'italic'
-                }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    p: 2,
+                    bgcolor: "grey.50",
+                    borderRadius: 1,
+                    fontStyle: "italic",
+                  }}
+                >
                   {originalContent}
                 </Typography>
               </CardContent>
@@ -308,7 +326,9 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
               <FormControl component="fieldset">
                 <RadioGroup
                   value={selectedSuggestion}
-                  onChange={(e) => setSelectedSuggestion(Number(e.target.value))}
+                  onChange={(e) =>
+                    setSelectedSuggestion(Number(e.target.value))
+                  }
                 >
                   {suggestions.map((suggestion, index) => (
                     <Card
@@ -317,11 +337,19 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
                       sx={{
                         mb: 2,
                         border: selectedSuggestion === index ? 2 : 1,
-                        borderColor: selectedSuggestion === index ? 'primary.main' : 'divider',
+                        borderColor:
+                          selectedSuggestion === index
+                            ? "primary.main"
+                            : "divider",
                       }}
                     >
                       <CardContent>
-                        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="flex-start"
+                          mb={1}
+                        >
                           <FormControlLabel
                             value={index}
                             control={<Radio />}
@@ -331,12 +359,18 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
                           <Box display="flex" alignItems="center" gap={1}>
                             <Chip
                               label={`${suggestion.confidence_score}%`}
-                              color={getConfidenceColor(suggestion.confidence_score)}
+                              color={getConfidenceColor(
+                                suggestion.confidence_score,
+                              )}
                               size="small"
                             />
                             <Chip
-                              label={getConfidenceLabel(suggestion.confidence_score)}
-                              color={getConfidenceColor(suggestion.confidence_score)}
+                              label={getConfidenceLabel(
+                                suggestion.confidence_score,
+                              )}
+                              color={getConfidenceColor(
+                                suggestion.confidence_score,
+                              )}
                               variant="outlined"
                               size="small"
                             />
@@ -353,17 +387,24 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
                               Improvements:
                             </Typography>
                             <List dense>
-                              {suggestion.improvements.map((improvement, impIndex) => (
-                                <ListItem key={impIndex} sx={{ py: 0 }}>
-                                  <ListItemIcon>
-                                    <TrendingUpIcon color="success" fontSize="small" />
-                                  </ListItemIcon>
-                                  <ListItemText
-                                    primary={improvement}
-                                    primaryTypographyProps={{ variant: 'body2' }}
-                                  />
-                                </ListItem>
-                              ))}
+                              {suggestion.improvements.map(
+                                (improvement, impIndex) => (
+                                  <ListItem key={impIndex} sx={{ py: 0 }}>
+                                    <ListItemIcon>
+                                      <TrendingUpIcon
+                                        color="success"
+                                        fontSize="small"
+                                      />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                      primary={improvement}
+                                      primaryTypographyProps={{
+                                        variant: "body2",
+                                      }}
+                                    />
+                                  </ListItem>
+                                ),
+                              )}
                             </List>
                           </Box>
                         )}
@@ -382,7 +423,9 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
           Cancel
         </Button>
         <Button
-          onClick={() => copyToClipboard(suggestions[selectedSuggestion]?.content || '')}
+          onClick={() =>
+            copyToClipboard(suggestions[selectedSuggestion]?.content || "")
+          }
           startIcon={<CopyIcon />}
           disabled={isLoading || suggestions.length === 0}
         >

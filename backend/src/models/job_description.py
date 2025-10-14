@@ -5,11 +5,13 @@ This module defines the JobDescription database model for storing
 job postings and requirements associated with CVs for optimization.
 """
 
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON, Boolean
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .base import Base
 import uuid
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class JobDescription(Base):

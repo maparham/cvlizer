@@ -5,7 +5,7 @@
  * It provides a clean interface for viewing user error information
  * for debugging and support purposes.
  */
-import React from 'react'
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -19,37 +19,32 @@ import {
   TableCell,
   TableBody,
   Chip,
-  Button
-} from '@mui/material'
+  Button,
+} from "@mui/material";
 
 interface UserError {
-  id: string
-  error_message: string
-  error_type: string
-  page_url: string
-  timestamp: string
+  id: string;
+  error_message: string;
+  error_type: string;
+  page_url: string;
+  timestamp: string;
 }
 
 interface UserErrorsDialogProps {
-  open: boolean
-  onClose: () => void
-  errors: UserError[]
-  formatDateTime: (_date: string) => string
+  open: boolean;
+  onClose: () => void;
+  errors: UserError[];
+  formatDateTime: (_date: string) => string;
 }
 
 const UserErrorsDialog: React.FC<UserErrorsDialogProps> = ({
   open,
   onClose,
   errors,
-  formatDateTime
+  formatDateTime,
 }) => {
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="lg"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>
         User Errors
         {errors.length > 0 && (
@@ -60,7 +55,11 @@ const UserErrorsDialog: React.FC<UserErrorsDialogProps> = ({
       </DialogTitle>
       <DialogContent>
         {errors.length === 0 ? (
-          <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', py: 4 }}>
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            sx={{ textAlign: "center", py: 4 }}
+          >
             No errors found for this user
           </Typography>
         ) : (
@@ -78,7 +77,11 @@ const UserErrorsDialog: React.FC<UserErrorsDialogProps> = ({
                 {errors.map((error) => (
                   <TableRow key={error.id}>
                     <TableCell>
-                      <Chip label={error.error_type} size="small" color="error" />
+                      <Chip
+                        label={error.error_type}
+                        size="small"
+                        color="error"
+                      />
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" noWrap>
@@ -87,12 +90,10 @@ const UserErrorsDialog: React.FC<UserErrorsDialogProps> = ({
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" noWrap>
-                        {error.page_url || 'N/A'}
+                        {error.page_url || "N/A"}
                       </Typography>
                     </TableCell>
-                    <TableCell>
-                      {formatDateTime(error.timestamp)}
-                    </TableCell>
+                    <TableCell>{formatDateTime(error.timestamp)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -104,7 +105,7 @@ const UserErrorsDialog: React.FC<UserErrorsDialogProps> = ({
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default UserErrorsDialog
+export default UserErrorsDialog;

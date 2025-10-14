@@ -6,11 +6,13 @@ of user actions, errors, and system events to enable effective problem recreatio
 and debugging by administrators.
 """
 
-from sqlalchemy import Column, String, DateTime, Text, JSON, ForeignKey, Integer
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .base import Base
 import uuid
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class UserActivity(Base):

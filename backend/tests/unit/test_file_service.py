@@ -1,16 +1,18 @@
-import pytest
 import os
-import tempfile
 import shutil
-from unittest.mock import patch, Mock, AsyncMock
-from fastapi import UploadFile, HTTPException
+import tempfile
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+from fastapi import HTTPException, UploadFile
+
 from src.services.file_service import (
-    save_uploaded_file,
     delete_file,
-    extract_text_from_file,
-    validate_file,
-    extract_text_from_pdf,
     extract_text_from_docx,
+    extract_text_from_file,
+    extract_text_from_pdf,
+    save_uploaded_file,
+    validate_file,
 )
 
 

@@ -15,14 +15,15 @@ Pool configuration automatically adjusts based on environment:
 - Development: Minimal sizing for single developer (5+5 connections)
 """
 
+import logging
+import os
+from typing import Any, Dict
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from typing import Dict, Any
-import os
-import logging
-from dotenv import load_dotenv
 
 # Import config after dotenv is loaded
 load_dotenv()

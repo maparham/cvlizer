@@ -7,8 +7,9 @@ Uses configuration from src/config.py LoggingConfig.
 
 import logging
 import os
-from pathlib import Path
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
+
 from src.config import LoggingConfig
 
 

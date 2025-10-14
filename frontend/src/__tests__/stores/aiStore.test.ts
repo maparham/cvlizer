@@ -9,12 +9,16 @@
  * - State updates and component re-renders
  */
 
-import { renderHook, act } from '@testing-library/react';
-import { useAIStore, useVisibleJobDescriptions, useActiveJobDescription } from '../../stores/aiStore';
-import { JobDescription } from '../../types/ai';
+import { renderHook, act } from "@testing-library/react";
+import {
+  useAIStore,
+  useVisibleJobDescriptions,
+  useActiveJobDescription,
+} from "../../stores/aiStore";
+import { JobDescription } from "../../types/ai";
 
 // Mock logger and errorHandler to avoid import.meta.env issues
-jest.mock('../../utils/logger', () => ({
+jest.mock("../../utils/logger", () => ({
   Logger: jest.fn().mockImplementation(() => ({
     info: jest.fn(),
     error: jest.fn(),
@@ -23,7 +27,7 @@ jest.mock('../../utils/logger', () => ({
   })),
 }));
 
-jest.mock('../../utils/errorHandler', () => ({
+jest.mock("../../utils/errorHandler", () => ({
   ErrorHandler: jest.fn().mockImplementation(() => ({
     handle: jest.fn(),
     logError: jest.fn(),
@@ -37,12 +41,12 @@ const localStorageMock = {
   removeItem: jest.fn(),
   clear: jest.fn(),
 };
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
 
 // Mock the AI service
-jest.mock('../../services/aiService', () => ({
+jest.mock("../../services/aiService", () => ({
   aiService: {
     checkAIFeatureStatus: jest.fn(),
     analyzeJobFit: jest.fn(),
@@ -62,39 +66,39 @@ jest.mock('../../services/aiService', () => ({
 
 // Test data
 const mockJobDescription1: JobDescription = {
-  id: 'jd-1',
-  cv_id: 'cv-1',
-  content: 'First job description content',
-  title: 'Software Engineer',
-  company: 'Company A',
-  location: 'San Francisco, CA',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
+  id: "jd-1",
+  cv_id: "cv-1",
+  content: "First job description content",
+  title: "Software Engineer",
+  company: "Company A",
+  location: "San Francisco, CA",
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
 };
 
 const mockJobDescription2: JobDescription = {
-  id: 'jd-2',
-  cv_id: 'cv-1',
-  content: 'Second job description content',
-  title: 'Product Manager',
-  company: 'Company B',
-  location: 'New York, NY',
-  created_at: '2024-01-02T00:00:00Z',
-  updated_at: '2024-01-02T00:00:00Z',
+  id: "jd-2",
+  cv_id: "cv-1",
+  content: "Second job description content",
+  title: "Product Manager",
+  company: "Company B",
+  location: "New York, NY",
+  created_at: "2024-01-02T00:00:00Z",
+  updated_at: "2024-01-02T00:00:00Z",
 };
 
 const mockJobDescription3: JobDescription = {
-  id: 'jd-3',
-  cv_id: 'cv-1',
-  content: 'Third job description content',
-  title: 'Designer',
-  company: 'Company C',
-  location: 'Seattle, WA',
-  created_at: '2024-01-03T00:00:00Z',
-  updated_at: '2024-01-03T00:00:00Z',
+  id: "jd-3",
+  cv_id: "cv-1",
+  content: "Third job description content",
+  title: "Designer",
+  company: "Company C",
+  location: "Seattle, WA",
+  created_at: "2024-01-03T00:00:00Z",
+  updated_at: "2024-01-03T00:00:00Z",
 };
 
-describe('AI Store Job Description Management', () => {
+describe("AI Store Job Description Management", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -112,20 +116,24 @@ describe('AI Store Job Description Management', () => {
 
     // Initialize localStorage with empty values for both keys
     localStorageMock.getItem.mockImplementation((key) => {
-      if (key === 'activeJobDescriptionIdPerCV') return '{}';
-      if (key === 'hiddenJobDescriptionIds') return '[]';
+      if (key === "activeJobDescriptionIdPerCV") return "{}";
+      if (key === "hiddenJobDescriptionIds") return "[]";
       return null;
     });
   });
 
-  describe('useVisibleJobDescriptions Selector', () => {
-    it('filters out hidden job descriptions', () => {
+  describe("useVisibleJobDescriptions Selector", () => {
+    it("filters out hidden job descriptions", () => {
       const { result } = renderHook(() => useVisibleJobDescriptions());
 
       act(() => {
         useAIStore.setState({
-          jobDescriptions: [mockJobDescription1, mockJobDescription2, mockJobDescription3],
-          hiddenJobDescriptionIds: ['jd-2'],
+          jobDescriptions: [
+            mockJobDescription1,
+            mockJobDescription2,
+            mockJobDescription3,
+          ],
+          hiddenJobDescriptionIds: ["jd-2"],
         });
       });
 
@@ -135,12 +143,16 @@ describe('AI Store Job Description Management', () => {
       expect(result.current).not.toContain(mockJobDescription2);
     });
 
-    it('returns all job descriptions when none are hidden', () => {
+    it("returns all job descriptions when none are hidden", () => {
       const { result } = renderHook(() => useVisibleJobDescriptions());
 
       act(() => {
         useAIStore.setState({
-          jobDescriptions: [mockJobDescription1, mockJobDescription2, mockJobDescription3],
+          jobDescriptions: [
+            mockJobDescription1,
+            mockJobDescription2,
+            mockJobDescription3,
+          ],
           hiddenJobDescriptionIds: [],
         });
       });
@@ -151,18 +163,26 @@ describe('AI Store Job Description Management', () => {
       expect(result.current).toContain(mockJobDescription3);
     });
 
-    it('returns empty array when all job descriptions are hidden', () => {
+    it("returns empty array when all job descriptions are hidden", () => {
       const { result } = renderHook(() => useVisibleJobDescriptions());
 
       act(() => {
-        useAIStore.getState().jobDescriptions = [mockJobDescription1, mockJobDescription2, mockJobDescription3];
-        useAIStore.getState().hiddenJobDescriptionIds = ['jd-1', 'jd-2', 'jd-3'];
+        useAIStore.getState().jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+          mockJobDescription3,
+        ];
+        useAIStore.getState().hiddenJobDescriptionIds = [
+          "jd-1",
+          "jd-2",
+          "jd-3",
+        ];
       });
 
       expect(result.current).toHaveLength(0);
     });
 
-    it('returns empty array when no job descriptions exist', () => {
+    it("returns empty array when no job descriptions exist", () => {
       const { result } = renderHook(() => useVisibleJobDescriptions());
 
       act(() => {
@@ -174,40 +194,52 @@ describe('AI Store Job Description Management', () => {
     });
   });
 
-  describe('useActiveJobDescription Selector', () => {
-    it('returns active job description when it exists and is not hidden', () => {
+  describe("useActiveJobDescription Selector", () => {
+    it("returns active job description when it exists and is not hidden", () => {
       const { result } = renderHook(() => useActiveJobDescription());
 
       act(() => {
         useAIStore.setState({
-          jobDescriptions: [mockJobDescription1, mockJobDescription2, mockJobDescription3],
-          activeJobDescriptionId: 'jd-1',
-          hiddenJobDescriptionIds: ['jd-2'],
+          jobDescriptions: [
+            mockJobDescription1,
+            mockJobDescription2,
+            mockJobDescription3,
+          ],
+          activeJobDescriptionId: "jd-1",
+          hiddenJobDescriptionIds: ["jd-2"],
         });
       });
 
       expect(result.current).toEqual(mockJobDescription1);
     });
 
-    it('returns undefined when active job description is hidden', () => {
+    it("returns undefined when active job description is hidden", () => {
       const { result } = renderHook(() => useActiveJobDescription());
 
       act(() => {
         useAIStore.setState({
-          jobDescriptions: [mockJobDescription1, mockJobDescription2, mockJobDescription3],
-          activeJobDescriptionId: 'jd-1',
-          hiddenJobDescriptionIds: ['jd-1'],
+          jobDescriptions: [
+            mockJobDescription1,
+            mockJobDescription2,
+            mockJobDescription3,
+          ],
+          activeJobDescriptionId: "jd-1",
+          hiddenJobDescriptionIds: ["jd-1"],
         });
       });
 
       expect(result.current).toBeUndefined();
     });
 
-    it('returns undefined when no active job description is set', () => {
+    it("returns undefined when no active job description is set", () => {
       const { result } = renderHook(() => useActiveJobDescription());
 
       act(() => {
-        useAIStore.getState().jobDescriptions = [mockJobDescription1, mockJobDescription2, mockJobDescription3];
+        useAIStore.getState().jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+          mockJobDescription3,
+        ];
         useAIStore.getState().activeJobDescriptionId = undefined;
         useAIStore.getState().hiddenJobDescriptionIds = [];
       });
@@ -215,12 +247,15 @@ describe('AI Store Job Description Management', () => {
       expect(result.current).toBeUndefined();
     });
 
-    it('returns undefined when active job description does not exist in job descriptions', () => {
+    it("returns undefined when active job description does not exist in job descriptions", () => {
       const { result } = renderHook(() => useActiveJobDescription());
 
       act(() => {
-        useAIStore.getState().jobDescriptions = [mockJobDescription1, mockJobDescription2];
-        useAIStore.getState().activeJobDescriptionId = 'jd-nonexistent';
+        useAIStore.getState().jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+        ];
+        useAIStore.getState().activeJobDescriptionId = "jd-nonexistent";
         useAIStore.getState().hiddenJobDescriptionIds = [];
       });
 
@@ -228,143 +263,172 @@ describe('AI Store Job Description Management', () => {
     });
   });
 
-  describe('hideJobDescriptionFromSidebar', () => {
-    it('adds job description ID to hidden list', () => {
+  describe("hideJobDescriptionFromSidebar", () => {
+    it("adds job description ID to hidden list", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.jobDescriptions = [mockJobDescription1, mockJobDescription2, mockJobDescription3];
-        result.current.hiddenJobDescriptionIds = ['jd-2'];
+        result.current.jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+          mockJobDescription3,
+        ];
+        result.current.hiddenJobDescriptionIds = ["jd-2"];
       });
 
       act(() => {
-        result.current.hideJobDescriptionFromSidebar('jd-1');
+        result.current.hideJobDescriptionFromSidebar("jd-1");
       });
 
-      expect(result.current.hiddenJobDescriptionIds).toContain('jd-1');
-      expect(result.current.hiddenJobDescriptionIds).toContain('jd-2');
-      expect(result.current.hiddenJobDescriptionIds).not.toContain('jd-3');
+      expect(result.current.hiddenJobDescriptionIds).toContain("jd-1");
+      expect(result.current.hiddenJobDescriptionIds).toContain("jd-2");
+      expect(result.current.hiddenJobDescriptionIds).not.toContain("jd-3");
     });
 
-    it('persists hidden job description IDs to localStorage', () => {
+    it("persists hidden job description IDs to localStorage", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.jobDescriptions = [mockJobDescription1, mockJobDescription2];
+        result.current.jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+        ];
         result.current.hiddenJobDescriptionIds = [];
       });
 
       act(() => {
-        result.current.hideJobDescriptionFromSidebar('jd-1');
+        result.current.hideJobDescriptionFromSidebar("jd-1");
       });
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('hiddenJobDescriptionIds', JSON.stringify(['jd-1']));
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        "hiddenJobDescriptionIds",
+        JSON.stringify(["jd-1"]),
+      );
     });
 
-    it('does not add duplicate IDs to hidden list', () => {
+    it("does not add duplicate IDs to hidden list", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.jobDescriptions = [mockJobDescription1, mockJobDescription2];
-        result.current.hiddenJobDescriptionIds = ['jd-1'];
+        result.current.jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+        ];
+        result.current.hiddenJobDescriptionIds = ["jd-1"];
       });
 
       act(() => {
-        result.current.hideJobDescriptionFromSidebar('jd-1');
+        result.current.hideJobDescriptionFromSidebar("jd-1");
       });
 
-      expect(result.current.hiddenJobDescriptionIds).toEqual(['jd-1']);
-    });
-  });
-
-  describe('showJobDescriptionInSidebar', () => {
-    it('removes job description ID from hidden list', () => {
-      const { result } = renderHook(() => useAIStore());
-
-      act(() => {
-        result.current.jobDescriptions = [mockJobDescription1, mockJobDescription2, mockJobDescription3];
-        result.current.hiddenJobDescriptionIds = ['jd-1', 'jd-2'];
-      });
-
-      act(() => {
-        result.current.showJobDescriptionInSidebar('jd-1');
-      });
-
-      expect(result.current.hiddenJobDescriptionIds).not.toContain('jd-1');
-      expect(result.current.hiddenJobDescriptionIds).toContain('jd-2');
-    });
-
-    it('persists updated hidden job description IDs to localStorage', () => {
-      const { result } = renderHook(() => useAIStore());
-
-      act(() => {
-        result.current.jobDescriptions = [mockJobDescription1, mockJobDescription2];
-        result.current.hiddenJobDescriptionIds = ['jd-1', 'jd-2'];
-      });
-
-      act(() => {
-        result.current.showJobDescriptionInSidebar('jd-1');
-      });
-
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('hiddenJobDescriptionIds', JSON.stringify(['jd-2']));
-    });
-
-    it('handles removing non-existent ID gracefully', () => {
-      const { result } = renderHook(() => useAIStore());
-
-      act(() => {
-        result.current.jobDescriptions = [mockJobDescription1, mockJobDescription2];
-        result.current.hiddenJobDescriptionIds = ['jd-1'];
-      });
-
-      act(() => {
-        result.current.showJobDescriptionInSidebar('jd-nonexistent');
-      });
-
-      expect(result.current.hiddenJobDescriptionIds).toEqual(['jd-1']);
+      expect(result.current.hiddenJobDescriptionIds).toEqual(["jd-1"]);
     });
   });
 
-  describe('setActiveJobDescription', () => {
-    it('sets active job description ID', () => {
+  describe("showJobDescriptionInSidebar", () => {
+    it("removes job description ID from hidden list", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.setActiveJobDescription('jd-1');
+        result.current.jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+          mockJobDescription3,
+        ];
+        result.current.hiddenJobDescriptionIds = ["jd-1", "jd-2"];
       });
 
-      expect(result.current.activeJobDescriptionId).toBe('jd-1');
+      act(() => {
+        result.current.showJobDescriptionInSidebar("jd-1");
+      });
+
+      expect(result.current.hiddenJobDescriptionIds).not.toContain("jd-1");
+      expect(result.current.hiddenJobDescriptionIds).toContain("jd-2");
     });
 
-    it('clears active job description when undefined is passed', () => {
+    it("persists updated hidden job description IDs to localStorage", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.activeJobDescriptionId = 'jd-1';
+        result.current.jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+        ];
+        result.current.hiddenJobDescriptionIds = ["jd-1", "jd-2"];
+      });
+
+      act(() => {
+        result.current.showJobDescriptionInSidebar("jd-1");
+      });
+
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        "hiddenJobDescriptionIds",
+        JSON.stringify(["jd-2"]),
+      );
+    });
+
+    it("handles removing non-existent ID gracefully", () => {
+      const { result } = renderHook(() => useAIStore());
+
+      act(() => {
+        result.current.jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+        ];
+        result.current.hiddenJobDescriptionIds = ["jd-1"];
+      });
+
+      act(() => {
+        result.current.showJobDescriptionInSidebar("jd-nonexistent");
+      });
+
+      expect(result.current.hiddenJobDescriptionIds).toEqual(["jd-1"]);
+    });
+  });
+
+  describe("setActiveJobDescription", () => {
+    it("sets active job description ID", () => {
+      const { result } = renderHook(() => useAIStore());
+
+      act(() => {
+        result.current.setActiveJobDescription("jd-1");
+      });
+
+      expect(result.current.activeJobDescriptionId).toBe("jd-1");
+    });
+
+    it("clears active job description when undefined is passed", () => {
+      const { result } = renderHook(() => useAIStore());
+
+      act(() => {
+        result.current.activeJobDescriptionId = "jd-1";
         result.current.setActiveJobDescription(undefined);
       });
 
       expect(result.current.activeJobDescriptionId).toBeUndefined();
     });
 
-    it('persists active job description ID to localStorage', () => {
+    it("persists active job description ID to localStorage", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
         result.current.jobDescriptions = [mockJobDescription1]; // Must have job description to find cv_id
-        result.current.setActiveJobDescription('jd-1');
+        result.current.setActiveJobDescription("jd-1");
       });
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('activeJobDescriptionIdPerCV', JSON.stringify({ 'cv-1': 'jd-1' }));
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        "activeJobDescriptionIdPerCV",
+        JSON.stringify({ "cv-1": "jd-1" }),
+      );
     });
 
-    it('removes active job description from localStorage when undefined', () => {
+    it("removes active job description from localStorage when undefined", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
         // First set a job description with CV context
         result.current.jobDescriptions = [mockJobDescription1];
-        result.current.setActiveJobDescription('jd-1');
+        result.current.setActiveJobDescription("jd-1");
       });
 
       act(() => {
@@ -372,13 +436,18 @@ describe('AI Store Job Description Management', () => {
       });
 
       // Should update the map to remove the CV key, not call removeItem
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('activeJobDescriptionIdPerCV', JSON.stringify({}));
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        "activeJobDescriptionIdPerCV",
+        JSON.stringify({}),
+      );
     });
   });
 
-  describe('State Updates and Re-renders', () => {
-    it('triggers re-render when job descriptions change', () => {
-      const { result, rerender } = renderHook(() => useVisibleJobDescriptions());
+  describe("State Updates and Re-renders", () => {
+    it("triggers re-render when job descriptions change", () => {
+      const { result, rerender } = renderHook(() =>
+        useVisibleJobDescriptions(),
+      );
 
       act(() => {
         useAIStore.setState({
@@ -399,8 +468,10 @@ describe('AI Store Job Description Management', () => {
       expect(result.current).toHaveLength(2);
     });
 
-    it('triggers re-render when hidden job description IDs change', () => {
-      const { result, rerender } = renderHook(() => useVisibleJobDescriptions());
+    it("triggers re-render when hidden job description IDs change", () => {
+      const { result, rerender } = renderHook(() =>
+        useVisibleJobDescriptions(),
+      );
 
       act(() => {
         useAIStore.setState({
@@ -413,7 +484,7 @@ describe('AI Store Job Description Management', () => {
 
       act(() => {
         useAIStore.setState({
-          hiddenJobDescriptionIds: ['jd-1'],
+          hiddenJobDescriptionIds: ["jd-1"],
         });
       });
 
@@ -422,7 +493,7 @@ describe('AI Store Job Description Management', () => {
       expect(result.current).toContain(mockJobDescription2);
     });
 
-    it('triggers re-render when active job description changes', () => {
+    it("triggers re-render when active job description changes", () => {
       const { result, rerender } = renderHook(() => useActiveJobDescription());
 
       act(() => {
@@ -437,7 +508,7 @@ describe('AI Store Job Description Management', () => {
 
       act(() => {
         useAIStore.setState({
-          activeJobDescriptionId: 'jd-1',
+          activeJobDescriptionId: "jd-1",
         });
       });
 
@@ -446,15 +517,16 @@ describe('AI Store Job Description Management', () => {
     });
   });
 
-  describe('localStorage Persistence', () => {
-    it('loads initial state from localStorage', () => {
+  describe("localStorage Persistence", () => {
+    it("loads initial state from localStorage", () => {
       // Set up localStorage mocks before getting store state
-      const activeMap = { 'cv-1': 'jd-1' };
-      const hiddenIds = ['jd-2'];
+      const activeMap = { "cv-1": "jd-1" };
+      const hiddenIds = ["jd-2"];
 
       localStorageMock.getItem.mockImplementation((key) => {
-        if (key === 'activeJobDescriptionIdPerCV') return JSON.stringify(activeMap);
-        if (key === 'hiddenJobDescriptionIds') return JSON.stringify(hiddenIds);
+        if (key === "activeJobDescriptionIdPerCV")
+          return JSON.stringify(activeMap);
+        if (key === "hiddenJobDescriptionIds") return JSON.stringify(hiddenIds);
         return null;
       });
 
@@ -466,13 +538,15 @@ describe('AI Store Job Description Management', () => {
 
       const { result } = renderHook(() => useAIStore());
 
-      expect(result.current.activeJobDescriptionIdPerCV).toEqual({ 'cv-1': 'jd-1' });
-      expect(result.current.hiddenJobDescriptionIds).toEqual(['jd-2']);
+      expect(result.current.activeJobDescriptionIdPerCV).toEqual({
+        "cv-1": "jd-1",
+      });
+      expect(result.current.hiddenJobDescriptionIds).toEqual(["jd-2"]);
     });
 
-    it('handles corrupted localStorage data gracefully', () => {
+    it("handles corrupted localStorage data gracefully", () => {
       localStorageMock.getItem.mockImplementation((key) => {
-        if (key === 'hiddenJobDescriptionIds') return 'invalid-json';
+        if (key === "hiddenJobDescriptionIds") return "invalid-json";
         return null;
       });
 
@@ -481,7 +555,7 @@ describe('AI Store Job Description Management', () => {
       expect(result.current.hiddenJobDescriptionIds).toEqual([]);
     });
 
-    it('handles missing localStorage data gracefully', () => {
+    it("handles missing localStorage data gracefully", () => {
       localStorageMock.getItem.mockReturnValue(null);
 
       const { result } = renderHook(() => useAIStore());
@@ -491,48 +565,58 @@ describe('AI Store Job Description Management', () => {
     });
   });
 
-  describe('Edge Cases', () => {
-    it('handles hiding the currently active job description', () => {
+  describe("Edge Cases", () => {
+    it("handles hiding the currently active job description", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.jobDescriptions = [mockJobDescription1, mockJobDescription2];
-        result.current.activeJobDescriptionId = 'jd-1';
+        result.current.jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+        ];
+        result.current.activeJobDescriptionId = "jd-1";
         result.current.hiddenJobDescriptionIds = [];
       });
 
       act(() => {
-        result.current.hideJobDescriptionFromSidebar('jd-1');
+        result.current.hideJobDescriptionFromSidebar("jd-1");
       });
 
-      expect(result.current.hiddenJobDescriptionIds).toContain('jd-1');
-      expect(result.current.activeJobDescriptionId).toBe('jd-1'); // ID remains but selector will return undefined
+      expect(result.current.hiddenJobDescriptionIds).toContain("jd-1");
+      expect(result.current.activeJobDescriptionId).toBe("jd-1"); // ID remains but selector will return undefined
     });
 
-    it('handles selecting a previously hidden job description', () => {
+    it("handles selecting a previously hidden job description", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.jobDescriptions = [mockJobDescription1, mockJobDescription2];
+        result.current.jobDescriptions = [
+          mockJobDescription1,
+          mockJobDescription2,
+        ];
         result.current.activeJobDescriptionId = undefined;
-        result.current.hiddenJobDescriptionIds = ['jd-1'];
+        result.current.hiddenJobDescriptionIds = ["jd-1"];
       });
 
       act(() => {
-        result.current.showJobDescriptionInSidebar('jd-1');
-        result.current.setActiveJobDescription('jd-1');
+        result.current.showJobDescriptionInSidebar("jd-1");
+        result.current.setActiveJobDescription("jd-1");
       });
 
-      expect(result.current.hiddenJobDescriptionIds).not.toContain('jd-1');
-      expect(result.current.activeJobDescriptionId).toBe('jd-1');
+      expect(result.current.hiddenJobDescriptionIds).not.toContain("jd-1");
+      expect(result.current.activeJobDescriptionId).toBe("jd-1");
     });
 
-    it('handles rapid state changes', () => {
+    it("handles rapid state changes", () => {
       const { result } = renderHook(() => useVisibleJobDescriptions());
 
       act(() => {
         useAIStore.setState({
-          jobDescriptions: [mockJobDescription1, mockJobDescription2, mockJobDescription3],
+          jobDescriptions: [
+            mockJobDescription1,
+            mockJobDescription2,
+            mockJobDescription3,
+          ],
           hiddenJobDescriptionIds: [],
         });
       });
@@ -542,9 +626,9 @@ describe('AI Store Job Description Management', () => {
       // Rapidly hide and show job descriptions using store actions
       act(() => {
         const store = useAIStore.getState();
-        store.hideJobDescriptionFromSidebar('jd-1');
-        store.hideJobDescriptionFromSidebar('jd-2');
-        store.showJobDescriptionInSidebar('jd-1');
+        store.hideJobDescriptionFromSidebar("jd-1");
+        store.hideJobDescriptionFromSidebar("jd-2");
+        store.showJobDescriptionInSidebar("jd-1");
       });
 
       expect(result.current).toHaveLength(2);
@@ -554,16 +638,20 @@ describe('AI Store Job Description Management', () => {
     });
   });
 
-  describe('Integration with Component State', () => {
-    it('maintains consistent state across multiple selectors', () => {
+  describe("Integration with Component State", () => {
+    it("maintains consistent state across multiple selectors", () => {
       const visibleHook = renderHook(() => useVisibleJobDescriptions());
       const activeHook = renderHook(() => useActiveJobDescription());
 
       act(() => {
         useAIStore.setState({
-          jobDescriptions: [mockJobDescription1, mockJobDescription2, mockJobDescription3],
-          activeJobDescriptionId: 'jd-1',
-          hiddenJobDescriptionIds: ['jd-2'],
+          jobDescriptions: [
+            mockJobDescription1,
+            mockJobDescription2,
+            mockJobDescription3,
+          ],
+          activeJobDescriptionId: "jd-1",
+          hiddenJobDescriptionIds: ["jd-2"],
         });
       });
 
@@ -574,7 +662,7 @@ describe('AI Store Job Description Management', () => {
 
       // Hide the active job description
       act(() => {
-        useAIStore.getState().hideJobDescriptionFromSidebar('jd-1');
+        useAIStore.getState().hideJobDescriptionFromSidebar("jd-1");
       });
 
       expect(visibleHook.result.current).toHaveLength(1);

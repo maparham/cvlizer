@@ -12,12 +12,14 @@ Key responsibilities:
 - Support session revocation and cleanup
 """
 
-from sqlalchemy import Column, String, DateTime, Text, Boolean, ForeignKey, Index
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .base import Base
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class ImpersonationSession(Base):

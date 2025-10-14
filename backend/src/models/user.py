@@ -5,11 +5,13 @@ This module defines the User database model with fields for authentication,
 profile information, and relationships to CVs.
 """
 
-from sqlalchemy import Column, String, Boolean, DateTime, Text
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .base import Base
 import uuid
+
+from sqlalchemy import Boolean, Column, DateTime, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class User(Base):

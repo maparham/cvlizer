@@ -1,19 +1,24 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Box } from '@mui/material'
-import { SectionProps } from '../../../types'
-import { useSectionAutoSave } from './hooks'
-import BaseSection from './BaseSection'
-import { createFormValidator } from './formUtils'
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Box } from "@mui/material";
+import { SectionProps } from "../../../types";
+import { useSectionAutoSave } from "./hooks";
+import BaseSection from "./BaseSection";
+import { createFormValidator } from "./formUtils";
 
 interface SimpleFormSectionProps extends SectionProps {
-  title: string
-  sectionId: string
-  requiredFields: string[]
-  renderForm: (_data: any, _updateData: (_field: string, _value: any) => void, _onSave: () => void, _onCancel: () => void) => React.ReactNode
-  renderDisplay: (_data: any) => React.ReactNode
-  autoSaveMessage: string
-  autoSaveMode?: boolean // If true, don't show Save/Cancel buttons
-  onTitleSave?: (newTitle: string) => Promise<void>
+  title: string;
+  sectionId: string;
+  requiredFields: string[];
+  renderForm: (
+    _data: any,
+    _updateData: (_field: string, _value: any) => void,
+    _onSave: () => void,
+    _onCancel: () => void,
+  ) => React.ReactNode;
+  renderDisplay: (_data: any) => React.ReactNode;
+  autoSaveMessage: string;
+  autoSaveMode?: boolean; // If true, don't show Save/Cancel buttons
+  onTitleSave?: (newTitle: string) => Promise<void>;
 }
 
 /**
@@ -34,47 +39,56 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   renderDisplay,
   autoSaveMessage,
   autoSaveMode = false,
-  onTitleSave
+  onTitleSave,
 }) => {
   // Memoize default data to prevent unnecessary re-renders
   const defaultData = useMemo(() => {
-    if (sectionId === 'professional_summary') {
-      return { content: "", keywords: [] }
-    } else if (sectionId === 'personal_info') {
-      return { full_name: "", email: "", phone: "", location: "", linkedin_url: "", website_url: "" }
-    } else if (sectionId === 'skills') {
-      return { technical: [], soft: [], languages: [] }
+    if (sectionId === "professional_summary") {
+      return { content: "", keywords: [] };
+    } else if (sectionId === "personal_info") {
+      return {
+        full_name: "",
+        email: "",
+        phone: "",
+        location: "",
+        linkedin_url: "",
+        website_url: "",
+      };
+    } else if (sectionId === "skills") {
+      return { technical: [], soft: [], languages: [] };
     }
-    return {}
-  }, [sectionId])
+    return {};
+  }, [sectionId]);
 
-  const actualData = data || defaultData
-  const [editData, setEditData] = useState(actualData)
+  const actualData = data || defaultData;
+  const [editData, setEditData] = useState(actualData);
 
   useEffect(() => {
-    setEditData(data || defaultData)
-  }, [data, defaultData])
+    setEditData(data || defaultData);
+  }, [data, defaultData]);
 
   // Reset local state when exiting edit mode
   useEffect(() => {
     if (!isEditing) {
-      setEditData(actualData)
+      setEditData(actualData);
     }
-  }, [isEditing, actualData])
+  }, [isEditing, actualData]);
 
-  const validateForm = useCallback((data: any): boolean => {
-    // First check basic required fields
-    const basicValidation = createFormValidator(requiredFields)(data)
-    if (!basicValidation) return false
+  const validateForm = useCallback(
+    (data: any): boolean => {
+      // First check basic required fields
+      const basicValidation = createFormValidator(requiredFields)(data);
+      if (!basicValidation) return false;
 
-    // Section-specific validation
-    if (sectionId === 'professional_summary') {
-      return data.content && data.content.trim().length >= 10
-    }
+      // Section-specific validation
+      if (sectionId === "professional_summary") {
+        return data.content && data.content.trim().length >= 10;
+      }
 
-    return true
-  }, [requiredFields, sectionId])
-
+      return true;
+    },
+    [requiredFields, sectionId],
+  );
 
   // Use common auto-save hook with validation (skip for skills section as it handles its own saving)
   useSectionAutoSave(
@@ -87,48 +101,47 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
     sectionId,
     onUnsavedChanges,
     validateForm,
-    autoSaveMode && sectionId !== 'skills' // Disable immediate save for skills as it handles its own saving
-  )
-
+    autoSaveMode && sectionId !== "skills", // Disable immediate save for skills as it handles its own saving
+  );
 
   const handleSave = async () => {
     if (!validateForm(editData)) {
-      return
+      return;
     }
-    onUpdate(editData)
+    onUpdate(editData);
     try {
-      await onSave(editData)
+      await onSave(editData);
       // Clear unsaved changes after successful save
       if (onUnsavedChanges) {
-        onUnsavedChanges(sectionId, false)
+        onUnsavedChanges(sectionId, false);
       }
       // Don't close for Skills section in auto-save mode
-      if (sectionId !== 'skills' || !autoSaveMode) {
-        onClose()
+      if (sectionId !== "skills" || !autoSaveMode) {
+        onClose();
       }
     } catch (error) {
       // Don't close on error so user can retry
     }
-  }
+  };
 
   const handleCancel = () => {
     if (autoSaveMode) {
       // For auto-save sections, just reset and close (no dialog needed)
-      setEditData(actualData)
+      setEditData(actualData);
       if (onUnsavedChanges) {
-        onUnsavedChanges(sectionId, false)
+        onUnsavedChanges(sectionId, false);
       }
-      onClose()
+      onClose();
     } else {
       // For non-auto-save sections, call onClose which will check for changes
       // and show dialog if needed. Data will be reset only if user confirms discard.
-      onClose()
+      onClose();
     }
-  }
+  };
 
   const updateData = (field: string, value: any) => {
-    setEditData({ ...editData, [field]: value })
-  }
+    setEditData({ ...editData, [field]: value });
+  };
 
   return (
     <BaseSection
@@ -144,14 +157,12 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       sectionId={sectionId}
     >
       {isEditing ? (
-        <Box>
-          {renderForm(editData, updateData, handleSave, handleCancel)}
-        </Box>
+        <Box>{renderForm(editData, updateData, handleSave, handleCancel)}</Box>
       ) : (
         renderDisplay(actualData)
       )}
     </BaseSection>
-  )
-}
+  );
+};
 
-export default SimpleFormSection
+export default SimpleFormSection;

@@ -28,40 +28,41 @@ Dependencies:
 - LaTeX export services for PDF document generation
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import FileResponse, Response
-from sqlalchemy.orm import Session
-from typing import List, Optional
-from pydantic import BaseModel, ValidationError, Field
-import uuid
 import asyncio
-import os
 import logging
+import os
+import uuid
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
+from typing import List, Optional
 
-from src.models.base import get_db, SessionLocal
-from src.models.user import User
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse, Response
+from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy.orm import Session
+
+from src.constants import DEFAULT_PARSED_CV
+from src.middleware.clerk_auth import get_effective_user
+from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
+from src.models.user import User
+from src.schemas.cv_schemas import CVDataSchema, CVUpdateRequestSchema
+from src.services.cv_parsing_service import parse_cv_with_openai
 from src.services.cv_service import (
     create_cv,
+    delete_cv,
     get_cv_by_id,
     get_cvs_by_user,
     update_cv,
-    delete_cv,
 )
-from src.services.cv_parsing_service import parse_cv_with_openai
-from src.services.file_service import validate_file, save_uploaded_file, delete_file
-from src.constants import DEFAULT_PARSED_CV
-from copy import deepcopy
-from src.schemas.cv_schemas import CVUpdateRequestSchema, CVDataSchema
-from src.utils.validation import CVDataValidator
-from src.middleware.clerk_auth import get_effective_user
+from src.services.file_service import delete_file, save_uploaded_file, validate_file
 from src.services.latex_export_service import (
-    generate_cv_latex,
     compile_pdf_from_latex,
+    generate_cv_latex,
     is_latex_available,
 )
 from src.utils.feature_flags import is_cv_history_enabled
+from src.utils.validation import CVDataValidator
 
 router = APIRouter(prefix="/api/cvs", tags=["cvs"])
 
@@ -101,8 +102,9 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
 
             # Create initial history entry after successful parsing (if feature is enabled)
             if not parsed_data.get("error") and is_cv_history_enabled():
-                from src.models.cv_history import CVHistory
                 import json
+
+                from src.models.cv_history import CVHistory
 
                 # Check if initial history entry already exists
                 existing_initial = (
@@ -459,8 +461,9 @@ async def duplicate_cv(
 
         # Create initial history entry for the duplicated CV (if feature is enabled)
         if is_cv_history_enabled():
-            from src.models.cv_history import CVHistory
             import json
+
+            from src.models.cv_history import CVHistory
 
             # Calculate data size
             data_size = len(json.dumps(duplicated_parsed_data).encode("utf-8"))

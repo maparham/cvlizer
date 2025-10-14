@@ -25,7 +25,9 @@ Dependencies:
 """
 
 from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from src.models.cv import CV
 from src.models.job_description import JobDescription
 

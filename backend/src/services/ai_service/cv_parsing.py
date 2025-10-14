@@ -8,19 +8,25 @@ into structured data with sections like personal_info, work_experience, educatio
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional
-from sqlalchemy.orm import Session
 from copy import deepcopy
-from src.constants import DEFAULT_PARSED_CV
+from typing import Any, Dict, Optional
+
+from openai.types.shared_params import Reasoning
+from sqlalchemy.orm import Session
+
 from src.config import AIConfig
+from src.constants import DEFAULT_PARSED_CV
+from src.schemas.ai_response_schemas import CVParsingResponseSchema
+
 from .common import (
-    get_openai_client,
-    is_ai_enabled,
-    extract_response_data,
-    log_ai_usage_safe,
-    with_retries,
     RETRY_ATTEMPTS,
     RETRY_DELAY,
+    extract_response_data,
+    get_openai_client,
+    is_ai_enabled,
+    log_ai_usage_safe,
+    validate_with_schema,
+    with_retries,
 )
 
 logger = logging.getLogger(__name__)
@@ -102,17 +108,25 @@ Return JSON (omit empty sections):
 
         async def _call():
             return await asyncio.to_thread(
-                client.responses.create,
+                client.responses.parse,
                 model=AIConfig.OPENAI_MODEL,
-                instructions="You are an expert CV parser. Extract structured information from CV text and return valid JSON.",
-                input=prompt,
-                reasoning={"effort": "minimal", "summary": "auto"},
+                input=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert CV parser. Extract structured information from CV text and return valid JSON.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                text_format=CVParsingResponseSchema,
+                reasoning=Reasoning(effort="low"),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
 
-        # Extract content and token usage
-        content, prompt_tokens, completion_tokens = extract_response_data(response)
+        # Extract parsed data and token usage
+        parsed_content = response.output_parsed.model_dump()
+        prompt_tokens = response.usage.input_tokens
+        completion_tokens = response.usage.output_tokens
 
         # Log AI usage
         if user_id:
@@ -128,38 +142,16 @@ Return JSON (omit empty sections):
                 cv_id=cv_id,
             )
 
-        # Clean up markdown code blocks if present
-        if content.startswith("```json"):
-            content = content[7:]  # Remove ```json
-        if content.startswith("```"):
-            content = content[3:]  # Remove ```
-        if content.endswith("```"):
-            content = content[:-3]  # Remove trailing ```
-        content = content.strip()
-
-        # Try to parse as JSON
-        try:
-            parsed_content = json.loads(content)
-            # Add section_config to the parsed content
-            parsed_content = _add_section_config(parsed_content)
-            return parsed_content
-        except json.JSONDecodeError:
-            # If JSON parsing fails, return a basic structure
-            fallback = deepcopy(DEFAULT_PARSED_CV)
-            # Inject a summary with raw text if available
-            content_preview = (
-                text_content[:500] + "..." if len(text_content) > 500 else text_content
-            )
-            fallback["professional_summary"] = {
-                "content": content_preview,
-                "keywords": [],
-            }
-            fallback["parse_error"] = "Failed to parse as JSON, using raw text"
-            # Add section_config to fallback
-            fallback = _add_section_config(fallback)
-            return fallback
+        # Add section_config to the parsed content
+        parsed_content = _add_section_config(parsed_content)
+        return parsed_content
 
     except Exception as e:
+        # Log the error with full details
+        logger.error(f"CV parsing failed with error: {str(e)}", exc_info=True)
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Text content length: {len(text_content)} characters")
+
         # Log failed AI usage
         if user_id:
             log_ai_usage_safe(

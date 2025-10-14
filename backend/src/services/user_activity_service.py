@@ -5,13 +5,15 @@ This module provides functions for logging user activities, errors, and system e
 to enable effective problem recreation and debugging by administrators.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
-from sqlalchemy.orm import Session
-from src.models.user_activity import UserActivity, UserSession
-from src.models.user import User
 import logging
 import uuid
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Optional
+
+from sqlalchemy.orm import Session
+
+from src.models.user import User
+from src.models.user_activity import UserActivity, UserSession
 
 logger = logging.getLogger(__name__)
 

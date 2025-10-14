@@ -16,53 +16,53 @@
  * - Provides consistent error handling
  */
 
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import api from '../services/api'
-import { SystemStats } from '../types/admin'
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import api from "../services/api";
+import { SystemStats } from "../types/admin";
 
 interface UseAdminStatsReturn {
-  stats: SystemStats | null
-  loading: boolean
-  error: string | null
-  loadStats: () => Promise<void>
+  stats: SystemStats | null;
+  loading: boolean;
+  error: string | null;
+  loadStats: () => Promise<void>;
 }
 
 export const useAdminStats = (): UseAdminStatsReturn => {
-  const [stats, setStats] = useState<SystemStats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [stats, setStats] = useState<SystemStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { isAuthenticated } = useAuth()
-  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const loadStats = async () => {
     try {
-      setLoading(true)
-      const response = await api.get('/admin/stats')
-      setStats(response.data)
-      setError(null)
+      setLoading(true);
+      const response = await api.get("/admin/stats");
+      setStats(response.data);
+      setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load dashboard data')
+      setError(err.response?.data?.detail || "Failed to load dashboard data");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login')
-      return
+      navigate("/login");
+      return;
     }
 
-    loadStats()
-  }, [isAuthenticated, navigate])
+    loadStats();
+  }, [isAuthenticated, navigate]);
 
   return {
     stats,
     loading,
     error,
-    loadStats
-  }
-}
+    loadStats,
+  };
+};

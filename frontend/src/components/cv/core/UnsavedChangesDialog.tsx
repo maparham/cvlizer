@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,52 +10,51 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemIcon
-} from '@mui/material'
-import {
-  Info as InfoIcon,
-  Edit as EditIcon
-} from '@mui/icons-material'
+  ListItemIcon,
+} from "@mui/material";
+import { Info as InfoIcon, Edit as EditIcon } from "@mui/icons-material";
 
 interface UnsavedChangesDialogProps {
-  open: boolean
-  onClose: () => void
-  onConfirm: () => void
-  pendingChanges: Map<string, any>
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  pendingChanges: Map<string, any>;
 }
 
 const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
   open,
   onClose,
   onConfirm,
-  pendingChanges
+  pendingChanges,
 }) => {
   const getSectionDisplayName = (sectionId: string): string => {
     const sectionNames: Record<string, string> = {
-      'personal_info': 'Personal Information',
-      'professional_summary': 'Professional Summary',
-      'work_experience': 'Work Experience',
-      'education': 'Education',
-      'skills': 'Skills',
-      'certifications': 'Certifications',
-      'projects': 'Projects',
-      'awards': 'Awards',
-      'publications': 'Publications',
-      'volunteer_experience': 'Volunteer Experience'
-    }
-    return sectionNames[sectionId] || sectionId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-  }
+      personal_info: "Personal Information",
+      professional_summary: "Professional Summary",
+      work_experience: "Work Experience",
+      education: "Education",
+      skills: "Skills",
+      certifications: "Certifications",
+      projects: "Projects",
+      awards: "Awards",
+      publications: "Publications",
+      volunteer_experience: "Volunteer Experience",
+    };
+    return (
+      sectionNames[sectionId] ||
+      sectionId.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+    );
+  };
 
   const getChangedSections = (): string[] => {
-    return Array.from((pendingChanges || new Map()).keys())
-  }
+    return Array.from((pendingChanges || new Map()).keys());
+  };
 
-  const changedSections = getChangedSections()
+  const changedSections = getChangedSections();
 
   if (changedSections.length === 0) {
-    return null
+    return null;
   }
-
 
   return (
     <Dialog
@@ -66,42 +65,45 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
       disableEscapeKeyDown
       data-testid="unsaved-changes-dialog"
     >
-      <DialogTitle sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1,
-        pb: 1,
-        fontWeight: 500,
-        color: '#1976d2',
-        fontSize: '1.25rem'
-      }}>
-        <InfoIcon color="info" sx={{ color: '#1976d2' }} />
+      <DialogTitle
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          pb: 1,
+          fontWeight: 500,
+          color: "#1976d2",
+          fontSize: "1.25rem",
+        }}
+      >
+        <InfoIcon color="info" sx={{ color: "#1976d2" }} />
         Unsaved Changes
       </DialogTitle>
 
       <DialogContent>
-        <Typography variant="body1" sx={{ mb: 2, color: 'text.primary' }}>
+        <Typography variant="body1" sx={{ mb: 2, color: "text.primary" }}>
           You have unsaved changes in the following sections:
         </Typography>
 
-        <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+        <Box sx={{ maxHeight: 200, overflow: "auto" }}>
           <List dense>
             {changedSections.map((sectionId) => (
               <ListItem key={sectionId} sx={{ px: 0 }}>
                 <ListItemIcon sx={{ minWidth: 36 }}>
-                  <EditIcon fontSize="small" sx={{ color: '#1976d2' }} />
+                  <EditIcon fontSize="small" sx={{ color: "#1976d2" }} />
                 </ListItemIcon>
                 <ListItemText
                   primary={getSectionDisplayName(sectionId)}
                   secondary="Has pending changes"
                   primaryTypographyProps={{ sx: { fontWeight: 500 } }}
-                  secondaryTypographyProps={{ sx: { color: 'text.secondary', fontSize: '0.875rem' } }}
+                  secondaryTypographyProps={{
+                    sx: { color: "text.secondary", fontSize: "0.875rem" },
+                  }}
                 />
               </ListItem>
             ))}
           </List>
         </Box>
-
       </DialogContent>
 
       <DialogActions sx={{ gap: 1, px: 3, pb: 3 }}>
@@ -113,7 +115,7 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
           sx={{
             fontWeight: 500,
             px: 3,
-            py: 1
+            py: 1,
           }}
         >
           Continue Editing
@@ -127,19 +129,19 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
             fontWeight: 500,
             px: 3,
             py: 1,
-            borderColor: '#e0e0e0',
-            color: '#666',
-            '&:hover': {
-              borderColor: '#bdbdbd',
-              backgroundColor: '#f5f5f5'
-            }
+            borderColor: "#e0e0e0",
+            color: "#666",
+            "&:hover": {
+              borderColor: "#bdbdbd",
+              backgroundColor: "#f5f5f5",
+            },
           }}
         >
           Discard Changes
         </Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default UnsavedChangesDialog
+export default UnsavedChangesDialog;

@@ -15,7 +15,7 @@
  * - Provides consistent confirmation UI across the app
  */
 
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -24,7 +24,7 @@ import {
   Button,
   Typography,
   Alert,
-} from '@mui/material';
+} from "@mui/material";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -33,8 +33,14 @@ interface ConfirmDialogProps {
   title: string;
   message: string;
   confirmButtonText?: string;
-  confirmButtonColor?: 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning';
-  severity?: 'error' | 'warning' | 'info' | 'success';
+  confirmButtonColor?:
+    | "error"
+    | "primary"
+    | "secondary"
+    | "success"
+    | "info"
+    | "warning";
+  severity?: "error" | "warning" | "info" | "success";
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -43,9 +49,9 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   title,
   message,
-  confirmButtonText = 'Confirm',
-  confirmButtonColor = 'primary',
-  severity = 'warning',
+  confirmButtonText = "Confirm",
+  confirmButtonColor = "primary",
+  severity = "warning",
 }) => {
   const handleConfirm = () => {
     onConfirm();
@@ -53,12 +59,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Alert severity={severity} sx={{ mb: 2 }}>
@@ -69,9 +70,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>
-          Cancel
-        </Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button
           onClick={handleConfirm}
           variant="contained"

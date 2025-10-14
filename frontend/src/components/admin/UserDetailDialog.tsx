@@ -4,7 +4,7 @@
  * This component displays detailed user information including CVs and AI sections.
  * It provides a comprehensive view of user data for administrative purposes.
  */
-import React from 'react'
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -22,43 +22,36 @@ import {
   Box,
   Grid,
   Card,
-  CardContent
-} from '@mui/material'
-import { UserDetail } from '../../types/admin'
-import { formatDate, formatDateTime } from '../../utils/dateFormat'
+  CardContent,
+} from "@mui/material";
+import { UserDetail } from "../../types/admin";
+import { formatDate, formatDateTime } from "../../utils/dateFormat";
 
 interface UserDetailDialogProps {
-  open: boolean
-  onClose: () => void
-  userDetail: UserDetail | null
+  open: boolean;
+  onClose: () => void;
+  userDetail: UserDetail | null;
 }
 
 const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
   open,
   onClose,
-  userDetail
+  userDetail,
 }) => {
   // Early return if dialog is not open or userDetail is null
-  if (!open || !userDetail) return null
+  if (!open || !userDetail) return null;
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="lg"
-      fullWidth
-    >
-      <DialogTitle>
-        User Details - {userDetail.email}
-      </DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+      <DialogTitle>User Details - {userDetail.email}</DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
           {/* User Information */}
@@ -73,25 +66,27 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                     Email: {userDetail.email}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Clerk ID: {userDetail.clerk_id || 'N/A'}
+                    Clerk ID: {userDetail.clerk_id || "N/A"}
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Typography variant="body2" color="textSecondary">
                       Status:
                     </Typography>
                     <Chip
-                      label={userDetail.is_active ? 'Active' : 'Inactive'}
-                      color={userDetail.is_active ? 'success' : 'error'}
+                      label={userDetail.is_active ? "Active" : "Inactive"}
+                      color={userDetail.is_active ? "success" : "error"}
                       size="small"
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Typography variant="body2" color="textSecondary">
                       Email Verified:
                     </Typography>
                     <Chip
-                      label={userDetail.email_verified ? 'Verified' : 'Unverified'}
-                      color={userDetail.email_verified ? 'success' : 'warning'}
+                      label={
+                        userDetail.email_verified ? "Verified" : "Unverified"
+                      }
+                      color={userDetail.email_verified ? "success" : "warning"}
                       size="small"
                     />
                   </Box>
@@ -99,7 +94,10 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                     Created: {formatDate(userDetail.created_at)}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Last Login: {userDetail.last_login ? formatDateTime(userDetail.last_login) : 'Never'}
+                    Last Login:{" "}
+                    {userDetail.last_login
+                      ? formatDateTime(userDetail.last_login)
+                      : "Never"}
                   </Typography>
                 </Box>
               </CardContent>
@@ -152,8 +150,8 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                         <TableCell>{cv.file_type}</TableCell>
                         <TableCell>
                           <Chip
-                            label={cv.is_parsed ? 'Parsed' : 'Error'}
-                            color={cv.is_parsed ? 'success' : 'error'}
+                            label={cv.is_parsed ? "Parsed" : "Error"}
+                            color={cv.is_parsed ? "success" : "error"}
                             size="small"
                           />
                         </TableCell>
@@ -193,7 +191,7 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" noWrap>
-                            {section.section_content || 'No content'}
+                            {section.section_content || "No content"}
                           </Typography>
                         </TableCell>
                         <TableCell>{formatDate(section.created_at)}</TableCell>
@@ -210,7 +208,7 @@ const UserDetailDialog: React.FC<UserDetailDialogProps> = ({
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default UserDetailDialog
+export default UserDetailDialog;

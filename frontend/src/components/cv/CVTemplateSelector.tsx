@@ -16,7 +16,7 @@
  * - Provides structured starting points for different career levels
  * - Maintains compatibility with existing CV data schema
  */
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -31,62 +31,65 @@ import {
   Chip,
   Stack,
   IconButton,
-} from '@mui/material'
+} from "@mui/material";
 import {
   School as SchoolIcon,
   Work as WorkIcon,
   Business as BusinessIcon,
   Close as CloseIcon,
-  Check as CheckIcon
-} from '@mui/icons-material'
-import { commonStyles } from '../../styles/commonStyles'
-import { CV_TEMPLATES, CVTemplate } from '../../data/cvTemplates'
+  Check as CheckIcon,
+} from "@mui/icons-material";
+import { commonStyles } from "../../styles/commonStyles";
+import { CV_TEMPLATES, CVTemplate } from "../../data/cvTemplates";
 
 // Template display configuration with icons and colors
 interface CVTemplateDisplay extends CVTemplate {
-  icon: React.ReactNode
-  color: string
+  icon: React.ReactNode;
+  color: string;
 }
 
-const TEMPLATE_DISPLAY_CONFIG: CVTemplateDisplay[] = CV_TEMPLATES.map((template, index) => {
-  const icons = [<SchoolIcon />, <WorkIcon />, <BusinessIcon />]
-  const colors = ['#1976d2', '#2e7d32', '#d32f2f']
+const TEMPLATE_DISPLAY_CONFIG: CVTemplateDisplay[] = CV_TEMPLATES.map(
+  (template, index) => {
+    const icons = [<SchoolIcon />, <WorkIcon />, <BusinessIcon />];
+    const colors = ["#1976d2", "#2e7d32", "#d32f2f"];
 
-  return {
-    ...template,
-    icon: icons[index] || <WorkIcon />,
-    color: colors[index] || '#666'
-  }
-})
+    return {
+      ...template,
+      icon: icons[index] || <WorkIcon />,
+      color: colors[index] || "#666",
+    };
+  },
+);
 
 interface CVTemplateSelectorProps {
-  open: boolean
-  onClose: () => void
-  onSelectTemplate: (_template: CVTemplate | null) => void
+  open: boolean;
+  onClose: () => void;
+  onSelectTemplate: (_template: CVTemplate | null) => void;
 }
 
 const CVTemplateSelector: React.FC<CVTemplateSelectorProps> = ({
   open,
   onClose,
-  onSelectTemplate
+  onSelectTemplate,
 }) => {
-  const [selectedTemplate, setSelectedTemplate] = useState<CVTemplate | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<CVTemplate | null>(
+    null,
+  );
 
   const handleTemplateSelect = (template: CVTemplate) => {
-    setSelectedTemplate(template)
-  }
+    setSelectedTemplate(template);
+  };
 
   const handleConfirm = () => {
-    onSelectTemplate(selectedTemplate)
-    setSelectedTemplate(null)
-    onClose()
-  }
-
+    onSelectTemplate(selectedTemplate);
+    setSelectedTemplate(null);
+    onClose();
+  };
 
   const handleClose = () => {
-    setSelectedTemplate(null)
-    onClose()
-  }
+    setSelectedTemplate(null);
+    onClose();
+  };
 
   return (
     <Dialog
@@ -95,7 +98,7 @@ const CVTemplateSelector: React.FC<CVTemplateSelectorProps> = ({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: commonStyles.dialog
+        sx: commonStyles.dialog,
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
@@ -118,29 +121,35 @@ const CVTemplateSelector: React.FC<CVTemplateSelectorProps> = ({
             <Grid item xs={12} md={4} key={template.id}>
               <Card
                 sx={{
-                  height: '100%',
-                  cursor: 'pointer',
+                  height: "100%",
+                  cursor: "pointer",
                   border: selectedTemplate?.id === template.id ? 2 : 1,
-                  borderColor: selectedTemplate?.id === template.id ? template.color : 'divider',
-                  ...commonStyles.card.standard
+                  borderColor:
+                    selectedTemplate?.id === template.id
+                      ? template.color
+                      : "divider",
+                  ...commonStyles.card.standard,
                 }}
                 onClick={() => handleTemplateSelect(template)}
               >
                 <CardContent sx={{ pb: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <Box
-                        sx={{
-                          p: 1,
-                          borderRadius: commonStyles.borderRadius.medium,
-                          backgroundColor: `${template.color}20`,
-                          color: template.color,
-                          mr: 2
-                        }}
+                      sx={{
+                        p: 1,
+                        borderRadius: commonStyles.borderRadius.medium,
+                        backgroundColor: `${template.color}20`,
+                        color: template.color,
+                        mr: 2,
+                      }}
                     >
                       {template.icon}
                     </Box>
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 600, mb: 0.5 }}
+                      >
                         {template.name}
                       </Typography>
                       {selectedTemplate?.id === template.id && (
@@ -150,15 +159,19 @@ const CVTemplateSelector: React.FC<CVTemplateSelectorProps> = ({
                           size="small"
                           sx={{
                             backgroundColor: template.color,
-                            color: 'white',
-                            '& .MuiChip-icon': { color: 'white' }
+                            color: "white",
+                            "& .MuiChip-icon": { color: "white" },
                           }}
                         />
                       )}
                     </Box>
                   </Box>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
                     {template.description}
                   </Typography>
 
@@ -166,7 +179,12 @@ const CVTemplateSelector: React.FC<CVTemplateSelectorProps> = ({
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                       Includes:
                     </Typography>
-                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      flexWrap="wrap"
+                      useFlexGap
+                    >
                       {template.sections.map((section, index) => (
                         <Chip
                           key={index}
@@ -199,7 +217,7 @@ const CVTemplateSelector: React.FC<CVTemplateSelectorProps> = ({
         </Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default CVTemplateSelector
+export default CVTemplateSelector;

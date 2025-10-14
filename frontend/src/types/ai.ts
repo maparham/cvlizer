@@ -219,7 +219,12 @@ export interface JobFitAnalysisState {
 }
 
 // Inline Diff System Types
-export type SuggestionType = 'add_keyword' | 'enhance_content' | 'add_section' | 'modify_content' | 'remove_content';
+export type SuggestionType =
+  | "add_keyword"
+  | "enhance_content"
+  | "add_section"
+  | "modify_content"
+  | "remove_content";
 
 export interface AISuggestion {
   id: string;
@@ -228,8 +233,8 @@ export interface AISuggestion {
   description: string; // Human-readable description
   originalValue: string;
   suggestedValue: string;
-  status: 'pending' | 'approved' | 'rejected';
-  changeType: 'addition' | 'modification' | 'removal';
+  status: "pending" | "approved" | "rejected";
+  changeType: "addition" | "modification" | "removal";
   fieldPath?: string; // Optional dot-notation path for nested fields
 }
 
@@ -245,7 +250,7 @@ export interface InlineDiffState {
   suggestions: AISuggestion[];
   isApplyingAll: boolean;
   isPanelOpen: boolean;
-  highlightMode: 'all' | 'pending' | 'approved';
+  highlightMode: "all" | "pending" | "approved";
   error?: string;
   cvId?: string; // Track which CV is being edited for cache clearing
 }
@@ -330,7 +335,7 @@ export interface InlineSuggestionData {
   description: string;
   originalValue: string;
   suggestedValue: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
 }
 
 /**

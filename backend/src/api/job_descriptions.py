@@ -5,41 +5,41 @@ This module provides endpoints for creating, retrieving, and deleting
 job descriptions associated with CVs for AI-powered optimization.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List, Optional
-from pydantic import BaseModel
-import uuid
 import asyncio
+import uuid
+from typing import List, Optional
 
-from src.models.base import get_db
-from src.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from src.config import BackgroundTaskConfig
+from src.middleware.clerk_auth import get_effective_user
+from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
 from src.models.job_description import JobDescription
+from src.models.user import User
 from src.services.job_description_service import (
-    get_cv_owned_by,
     create_job_description_for_cv,
-    list_job_descriptions_for_cv,
-    delete_job_description_owned_by,
-    hide_job_description_owned_by,
     create_job_description_for_user,
-    list_job_descriptions_for_user,
+    delete_job_description_owned_by,
+    get_cv_owned_by,
     get_job_description_by_id,
+    hide_job_description_owned_by,
+    list_job_descriptions_for_cv,
+    list_job_descriptions_for_user,
     update_job_description_owned_by,
 )
-from src.services.url_parsing_service import parse_job_url, _is_search_results_page
-from src.middleware.clerk_auth import get_effective_user
+from src.services.url_parsing_service import _is_search_results_page, parse_job_url
 from src.utils.background_tasks import run_task_in_background
-from src.models.base import SessionLocal
-from src.config import BackgroundTaskConfig
 
 router = APIRouter(prefix="/api", tags=["job-descriptions"])
 
 
 def parse_job_url_sync(task_id: str, url: str, user_id: str):
     """Synchronous job URL parsing function to run in thread pool"""
-    import time
     import logging
+    import time
 
     logger = logging.getLogger(__name__)
 

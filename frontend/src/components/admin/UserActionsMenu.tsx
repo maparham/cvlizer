@@ -15,7 +15,7 @@
  * - Provides actions like view details, view CVs, toggle active status, etc.
  * - Keeps impersonation as a separate button outside the menu
  */
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import {
   IconButton,
   Menu,
@@ -23,8 +23,8 @@ import {
   ListItemIcon,
   ListItemText,
   Tooltip,
-  CircularProgress
-} from '@mui/material'
+  CircularProgress,
+} from "@mui/material";
 import {
   MoreVert,
   Visibility,
@@ -33,19 +33,19 @@ import {
   CheckCircleOutline,
   TrendingUp,
   Email,
-  ErrorOutline
-} from '@mui/icons-material'
-import { UserSummary } from '../../types/admin'
+  ErrorOutline,
+} from "@mui/icons-material";
+import { UserSummary } from "../../types/admin";
 
 interface UserActionsMenuProps {
-  user: UserSummary
-  actionLoading: string | null
-  onViewDetails: (userId: string) => void
-  onViewCVs: (userId: string) => void
-  onToggleActive: (userId: string, currentStatus: boolean) => void
-  onViewActivities: (userId: string) => void
-  onViewErrors: (userId: string) => void
-  onContactUser: (email: string) => void
+  user: UserSummary;
+  actionLoading: string | null;
+  onViewDetails: (userId: string) => void;
+  onViewCVs: (userId: string) => void;
+  onToggleActive: (userId: string, currentStatus: boolean) => void;
+  onViewActivities: (userId: string) => void;
+  onViewErrors: (userId: string) => void;
+  onContactUser: (email: string) => void;
 }
 
 const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
@@ -56,20 +56,20 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
   onToggleActive,
   onViewActivities,
   onViewErrors,
-  onContactUser
+  onContactUser,
 }) => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const open = Boolean(anchorEl)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
+    setAnchorEl(event.currentTarget);
+  };
 
   const handleClose = () => {
-    setAnchorEl(null)
-  }
+    setAnchorEl(null);
+  };
 
-  const isLoading = actionLoading === user.id
+  const isLoading = actionLoading === user.id;
 
   return (
     <>
@@ -89,28 +89,32 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
         open={open}
         onClose={handleClose}
         anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
+          vertical: "bottom",
+          horizontal: "right",
         }}
         transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
+          vertical: "top",
+          horizontal: "right",
         }}
       >
-        <MenuItem onClick={() => {
-          onViewDetails(user.id)
-          handleClose()
-        }}>
+        <MenuItem
+          onClick={() => {
+            onViewDetails(user.id);
+            handleClose();
+          }}
+        >
           <ListItemIcon>
             <Visibility fontSize="small" />
           </ListItemIcon>
           <ListItemText>View Details</ListItemText>
         </MenuItem>
 
-        <MenuItem onClick={() => {
-          onViewCVs(user.id)
-          handleClose()
-        }}>
+        <MenuItem
+          onClick={() => {
+            onViewCVs(user.id);
+            handleClose();
+          }}
+        >
           <ListItemIcon>
             <Description fontSize="small" />
           </ListItemIcon>
@@ -119,8 +123,8 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
 
         <MenuItem
           onClick={() => {
-            onToggleActive(user.id, user.is_active)
-            handleClose()
+            onToggleActive(user.id, user.is_active);
+            handleClose();
           }}
         >
           <ListItemIcon>
@@ -131,14 +135,16 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
             )}
           </ListItemIcon>
           <ListItemText>
-            {user.is_active ? 'Deactivate User' : 'Activate User'}
+            {user.is_active ? "Deactivate User" : "Activate User"}
           </ListItemText>
         </MenuItem>
 
-        <MenuItem onClick={() => {
-          onViewActivities(user.id)
-          handleClose()
-        }}>
+        <MenuItem
+          onClick={() => {
+            onViewActivities(user.id);
+            handleClose();
+          }}
+        >
           <ListItemIcon>
             <TrendingUp fontSize="small" />
           </ListItemIcon>
@@ -147,10 +153,10 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
 
         <MenuItem
           onClick={() => {
-            onViewErrors(user.id)
-            handleClose()
+            onViewErrors(user.id);
+            handleClose();
           }}
-          sx={{ color: 'error.main' }}
+          sx={{ color: "error.main" }}
         >
           <ListItemIcon>
             <ErrorOutline fontSize="small" color="error" />
@@ -158,10 +164,12 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
           <ListItemText>View Errors</ListItemText>
         </MenuItem>
 
-        <MenuItem onClick={() => {
-          onContactUser(user.email)
-          handleClose()
-        }}>
+        <MenuItem
+          onClick={() => {
+            onContactUser(user.email);
+            handleClose();
+          }}
+        >
           <ListItemIcon>
             <Email fontSize="small" />
           </ListItemIcon>
@@ -169,7 +177,7 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
         </MenuItem>
       </Menu>
     </>
-  )
-}
+  );
+};
 
-export default UserActionsMenu
+export default UserActionsMenu;

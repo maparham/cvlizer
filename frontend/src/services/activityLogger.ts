@@ -13,52 +13,52 @@
  */
 
 interface ActivityDetails {
-  [key: string]: any
+  [key: string]: any;
 }
 
 interface BrowserInfo {
-  userAgent: string
-  language: string
-  platform: string
-  cookieEnabled: boolean
-  onLine: boolean
-  screenResolution: string
-  windowSize: string
-  timezone: string
+  userAgent: string;
+  language: string;
+  platform: string;
+  cookieEnabled: boolean;
+  onLine: boolean;
+  screenResolution: string;
+  windowSize: string;
+  timezone: string;
 }
 
 interface UserActivity {
-  activityType: string
-  action: string
-  description?: string
-  details?: ActivityDetails
-  pageUrl?: string
-  sessionId: string
+  activityType: string;
+  action: string;
+  description?: string;
+  details?: ActivityDetails;
+  pageUrl?: string;
+  sessionId: string;
 }
 
 interface ErrorContext {
-  component?: string
-  props?: any
-  state?: any
-  userId?: string
-  timestamp: string
+  component?: string;
+  props?: any;
+  state?: any;
+  userId?: string;
+  timestamp: string;
 }
 
 class ActivityLogger {
-  private sessionId: string
-  private userId: string | null = null
-  private isEnabled: boolean = true
-  private activityQueue: UserActivity[] = []
-  private flushInterval: number = 10000 // 10 seconds
-  private maxQueueSize: number = 100
-  private lastPageView: string | null = null
-  private lastActivityTime: number = 0
-  private activityThrottleMs: number = 1000 // 1 second throttle
+  private sessionId: string;
+  private userId: string | null = null;
+  private isEnabled: boolean = true;
+  private activityQueue: UserActivity[] = [];
+  private flushInterval: number = 10000; // 10 seconds
+  private maxQueueSize: number = 100;
+  private lastPageView: string | null = null;
+  private lastActivityTime: number = 0;
+  private activityThrottleMs: number = 1000; // 1 second throttle
 
   constructor() {
-    this.sessionId = this.generateSessionId()
-    this.setupErrorHandling()
-    this.setupActivityFlushing()
+    this.sessionId = this.generateSessionId();
+    this.setupErrorHandling();
+    this.setupActivityFlushing();
     // Don't log page view in constructor - wait for user authentication
   }
 
@@ -66,18 +66,18 @@ class ActivityLogger {
    * Initialize the activity logger with user information
    */
   init(userId: string) {
-    this.userId = userId
-    this.logUserAction('session_start', 'User session started', {
+    this.userId = userId;
+    this.logUserAction("session_start", "User session started", {
       sessionId: this.sessionId,
-      timestamp: new Date().toISOString()
-    })
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**
    * Generate a unique session ID
    */
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
@@ -92,59 +92,63 @@ class ActivityLogger {
       onLine: navigator.onLine,
       screenResolution: `${screen.width}x${screen.height}`,
       windowSize: `${window.innerWidth}x${window.innerHeight}`,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    }
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
   }
 
   /**
    * Log a user action with throttling
    */
-  logUserAction(action: string, description?: string, details?: ActivityDetails) {
-    if (!this.isEnabled || !this.userId) return
+  logUserAction(
+    action: string,
+    description?: string,
+    details?: ActivityDetails,
+  ) {
+    if (!this.isEnabled || !this.userId) return;
 
-    const now = Date.now()
+    const now = Date.now();
 
     // Throttle identical actions within 1 second
     if (now - this.lastActivityTime < this.activityThrottleMs) {
-      return
+      return;
     }
 
-    this.lastActivityTime = now
+    this.lastActivityTime = now;
 
     const activity: UserActivity = {
-      activityType: 'user_action',
+      activityType: "user_action",
       action,
       description,
       details: {
         ...details,
         browserInfo: this.getBrowserInfo(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       pageUrl: window.location.href,
-      sessionId: this.sessionId
-    }
+      sessionId: this.sessionId,
+    };
 
-    this.queueActivity(activity)
+    this.queueActivity(activity);
   }
 
   /**
    * Log a page view with deduplication
    */
   logPageView(pageUrl?: string) {
-    if (!this.isEnabled) return
+    if (!this.isEnabled) return;
 
-    const currentUrl = pageUrl || window.location.pathname
+    const currentUrl = pageUrl || window.location.pathname;
 
     // Skip if same page as last page view
     if (this.lastPageView === currentUrl) {
-      return
+      return;
     }
 
-    this.lastPageView = currentUrl
+    this.lastPageView = currentUrl;
 
     const activity: UserActivity = {
-      activityType: 'page_view',
-      action: 'page_view',
+      activityType: "page_view",
+      action: "page_view",
       description: `Viewed page: ${currentUrl}`,
       details: {
         pathname: window.location.pathname,
@@ -152,13 +156,13 @@ class ActivityLogger {
         hash: window.location.hash,
         referrer: document.referrer,
         browserInfo: this.getBrowserInfo(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       pageUrl: pageUrl || window.location.href,
-      sessionId: this.sessionId
-    }
+      sessionId: this.sessionId,
+    };
 
-    this.queueActivity(activity)
+    this.queueActivity(activity);
   }
 
   /**
@@ -170,13 +174,13 @@ class ActivityLogger {
     statusCode: number,
     responseTime?: number,
     requestData?: any,
-    responseData?: any
+    responseData?: any,
   ) {
-    if (!this.isEnabled || !this.userId) return
+    if (!this.isEnabled || !this.userId) return;
 
     const activity: UserActivity = {
-      activityType: 'api_call',
-      action: `${method.toLowerCase()}_${endpoint.replace(/\//g, '_').replace(/^_|_$/g, '')}`,
+      activityType: "api_call",
+      action: `${method.toLowerCase()}_${endpoint.replace(/\//g, "_").replace(/^_|_$/g, "")}`,
       description: `${method} ${endpoint} - ${statusCode}`,
       details: {
         endpoint,
@@ -185,13 +189,13 @@ class ActivityLogger {
         responseTime,
         requestData: this.sanitizeData(requestData),
         responseData: this.sanitizeData(responseData),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       pageUrl: window.location.href,
-      sessionId: this.sessionId
-    }
+      sessionId: this.sessionId,
+    };
 
-    this.queueActivity(activity)
+    this.queueActivity(activity);
   }
 
   /**
@@ -201,12 +205,12 @@ class ActivityLogger {
     error: Error,
     errorType: string,
     context?: ErrorContext,
-    additionalDetails?: ActivityDetails
+    additionalDetails?: ActivityDetails,
   ) {
-    if (!this.isEnabled) return
+    if (!this.isEnabled) return;
 
     const activity: UserActivity = {
-      activityType: 'error',
+      activityType: "error",
       action: `error_${errorType}`,
       description: `Error: ${error.message}`,
       details: {
@@ -216,62 +220,59 @@ class ActivityLogger {
         context: context || {},
         additionalDetails: additionalDetails || {},
         browserInfo: this.getBrowserInfo(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       pageUrl: window.location.href,
-      sessionId: this.sessionId
-    }
+      sessionId: this.sessionId,
+    };
 
-    this.queueActivity(activity)
-    this.flushActivities() // Immediately flush errors
+    this.queueActivity(activity);
+    this.flushActivities(); // Immediately flush errors
   }
 
   /**
    * Log a form submission
    */
   logFormSubmission(formName: string, formData?: any, success: boolean = true) {
-    if (!this.isEnabled || !this.userId) return
+    if (!this.isEnabled || !this.userId) return;
 
-    this.logUserAction(
-      'form_submission',
-      `Form submitted: ${formName}`,
-      {
-        formName,
-        success,
-        formData: this.sanitizeData(formData),
-        timestamp: new Date().toISOString()
-      }
-    )
+    this.logUserAction("form_submission", `Form submitted: ${formName}`, {
+      formName,
+      success,
+      formData: this.sanitizeData(formData),
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**
    * Log a file upload
    */
-  logFileUpload(fileName: string, fileSize: number, fileType: string, success: boolean = true) {
-    if (!this.isEnabled || !this.userId) return
+  logFileUpload(
+    fileName: string,
+    fileSize: number,
+    fileType: string,
+    success: boolean = true,
+  ) {
+    if (!this.isEnabled || !this.userId) return;
 
-    this.logUserAction(
-      'file_upload',
-      `File uploaded: ${fileName}`,
-      {
-        fileName,
-        fileSize,
-        fileType,
-        success,
-        timestamp: new Date().toISOString()
-      }
-    )
+    this.logUserAction("file_upload", `File uploaded: ${fileName}`, {
+      fileName,
+      fileSize,
+      fileType,
+      success,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**
    * Queue an activity for batch processing
    */
   private queueActivity(activity: UserActivity) {
-    this.activityQueue.push(activity)
+    this.activityQueue.push(activity);
 
     // Flush if queue is full
     if (this.activityQueue.length >= this.maxQueueSize) {
-      this.flushActivities()
+      this.flushActivities();
     }
   }
 
@@ -279,41 +280,65 @@ class ActivityLogger {
    * Sanitize data to remove sensitive information
    */
   private sanitizeData(data: any, depth: number = 0): any {
-    if (!data || depth > 10) return data
+    if (!data || depth > 10) return data;
 
     const sensitiveKeys = [
-      'password', 'token', 'secret', 'key', 'auth', 'credential',
-      'ssn', 'creditcard', 'credit_card', 'cardnumber', 'card_number',
-      'cvv', 'cvc', 'pin', 'pincode', 'pin_code', 'passphrase',
-      'privatekey', 'private_key', 'apikey', 'api_key', 'accesskey',
-      'access_key', 'sessionid', 'session_id', 'cookie', 'cookies'
-    ]
+      "password",
+      "token",
+      "secret",
+      "key",
+      "auth",
+      "credential",
+      "ssn",
+      "creditcard",
+      "credit_card",
+      "cardnumber",
+      "card_number",
+      "cvv",
+      "cvc",
+      "pin",
+      "pincode",
+      "pin_code",
+      "passphrase",
+      "privatekey",
+      "private_key",
+      "apikey",
+      "api_key",
+      "accesskey",
+      "access_key",
+      "sessionid",
+      "session_id",
+      "cookie",
+      "cookies",
+    ];
 
     if (Array.isArray(data)) {
-      return data.map(item => this.sanitizeData(item, depth + 1))
+      return data.map((item) => this.sanitizeData(item, depth + 1));
     }
 
-    if (typeof data === 'object' && data !== null) {
-      const sanitized: any = {}
+    if (typeof data === "object" && data !== null) {
+      const sanitized: any = {};
 
       for (const key in data) {
         if (Object.prototype.hasOwnProperty.call(data, key)) {
-          const normalizedKey = key.toLowerCase()
+          const normalizedKey = key.toLowerCase();
 
-          if (sensitiveKeys.some(sensitive => normalizedKey.includes(sensitive))) {
-            sanitized[key] = '[REDACTED]'
-          } else if (typeof data[key] === 'object' && data[key] !== null) {
-            sanitized[key] = this.sanitizeData(data[key], depth + 1)
+          if (
+            sensitiveKeys.some((sensitive) => normalizedKey.includes(sensitive))
+          ) {
+            sanitized[key] = "[REDACTED]";
+          } else if (typeof data[key] === "object" && data[key] !== null) {
+            sanitized[key] = this.sanitizeData(data[key], depth + 1);
           } else {
-            sanitized[key] = data[key]
+            sanitized[key] = data[key];
           }
         }
       }
 
-      return sanitized
+      return sanitized;
     }
 
-    return data
+    return data;
   }
 
   /**
@@ -321,13 +346,13 @@ class ActivityLogger {
    */
   private setupActivityFlushing() {
     setInterval(() => {
-      this.flushActivities()
-    }, this.flushInterval)
+      this.flushActivities();
+    }, this.flushInterval);
 
     // Flush on page unload using navigator.sendBeacon for reliable delivery
-    window.addEventListener('beforeunload', () => {
-      this.flushActivitiesOnUnload()
-    })
+    window.addEventListener("beforeunload", () => {
+      this.flushActivitiesOnUnload();
+    });
   }
 
   /**
@@ -335,33 +360,38 @@ class ActivityLogger {
    */
   private flushActivitiesOnUnload() {
     if (this.activityQueue.length === 0 || !this.userId) {
-      return
+      return;
     }
 
     try {
       // Copy the queued activities
-      const activitiesToFlush = [...this.activityQueue]
+      const activitiesToFlush = [...this.activityQueue];
 
       // Create a Blob with the activities data
-      const blob = new Blob([JSON.stringify(activitiesToFlush)], { type: 'application/json' })
+      const blob = new Blob([JSON.stringify(activitiesToFlush)], {
+        type: "application/json",
+      });
 
       // Use navigator.sendBeacon if available, otherwise fall back to regular flush
       if (navigator.sendBeacon) {
-        const success = navigator.sendBeacon('/api/user-activities/batch', blob)
+        const success = navigator.sendBeacon(
+          "/api/user-activities/batch",
+          blob,
+        );
         if (success) {
           // Clear the queue only if sendBeacon succeeded
-          this.activityQueue = []
+          this.activityQueue = [];
         } else {
           // Fall back to regular flush if sendBeacon failed
-          this.flushActivities()
+          this.flushActivities();
         }
       } else {
         // Fall back to regular flush if sendBeacon is not available
-        this.flushActivities()
+        this.flushActivities();
       }
     } catch (error) {
       // Fall back to regular flush on error
-      this.flushActivities()
+      this.flushActivities();
     }
   }
 
@@ -370,51 +400,46 @@ class ActivityLogger {
    */
   private setupErrorHandling() {
     // Global JavaScript error handler
-    window.addEventListener('error', (event) => {
-      this.logError(
-        new Error(event.message),
-        'javascript_error',
-        {
-          component: event.filename,
-          props: { lineno: event.lineno, colno: event.colno },
-          timestamp: new Date().toISOString()
-        }
-      )
-    })
+    window.addEventListener("error", (event) => {
+      this.logError(new Error(event.message), "javascript_error", {
+        component: event.filename,
+        props: { lineno: event.lineno, colno: event.colno },
+        timestamp: new Date().toISOString(),
+      });
+    });
 
     // Unhandled promise rejection handler
-    window.addEventListener('unhandledrejection', (event) => {
+    window.addEventListener("unhandledrejection", (event) => {
       this.logError(
-        new Error(event.reason?.message || 'Unhandled promise rejection'),
-        'promise_rejection',
+        new Error(event.reason?.message || "Unhandled promise rejection"),
+        "promise_rejection",
         {
-          component: 'promise_rejection',
+          component: "promise_rejection",
           props: { reason: event.reason },
-          timestamp: new Date().toISOString()
-        }
-      )
-    })
+          timestamp: new Date().toISOString(),
+        },
+      );
+    });
   }
 
   /**
    * Flush queued activities to the server
    */
   private async flushActivities() {
-    if (this.activityQueue.length === 0 || !this.userId) return
+    if (this.activityQueue.length === 0 || !this.userId) return;
 
-    const activities = [...this.activityQueue]
-    this.activityQueue = []
+    const activities = [...this.activityQueue];
+    this.activityQueue = [];
 
     try {
       // Import api dynamically to avoid circular dependencies
-      const { default: api } = await import('./api')
+      const { default: api } = await import("./api");
 
       // Send activities to backend
-      await api.post('/api/user-activities/batch', { activities })
-
+      await api.post("/api/user-activities/batch", { activities });
     } catch (error) {
       // Re-queue activities if sending failed
-      this.activityQueue.unshift(...activities)
+      this.activityQueue.unshift(...activities);
     }
   }
 
@@ -422,14 +447,14 @@ class ActivityLogger {
    * Enable or disable activity logging
    */
   setEnabled(enabled: boolean) {
-    this.isEnabled = enabled
+    this.isEnabled = enabled;
   }
 
   /**
    * Get current session ID
    */
   getSessionId(): string {
-    return this.sessionId
+    return this.sessionId;
   }
 
   /**
@@ -437,27 +462,27 @@ class ActivityLogger {
    */
   endSession() {
     if (this.userId) {
-      this.logUserAction('session_end', 'User session ended', {
+      this.logUserAction("session_end", "User session ended", {
         sessionId: this.sessionId,
-        timestamp: new Date().toISOString()
-      })
+        timestamp: new Date().toISOString(),
+      });
     }
-    this.flushActivities()
+    this.flushActivities();
   }
 
   /**
    * Manually flush activities (for testing/debugging)
    */
   async flushNow() {
-    await this.flushActivities()
+    await this.flushActivities();
   }
 }
 
 // Create a singleton instance
-export const activityLogger = new ActivityLogger()
+export const activityLogger = new ActivityLogger();
 
 // Export the class for testing
-export { ActivityLogger }
+export { ActivityLogger };
 
 // React hook for easy integration
 export const useActivityLogger = () => {
@@ -467,6 +492,6 @@ export const useActivityLogger = () => {
     logFormSubmission: activityLogger.logFormSubmission.bind(activityLogger),
     logFileUpload: activityLogger.logFileUpload.bind(activityLogger),
     logAPICall: activityLogger.logAPICall.bind(activityLogger),
-    getSessionId: activityLogger.getSessionId.bind(activityLogger)
-  }
-}
+    getSessionId: activityLogger.getSessionId.bind(activityLogger),
+  };
+};

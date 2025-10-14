@@ -16,19 +16,19 @@
  * - Automatically handles authentication state management
  * - Provides consistent loading and redirect behavior
  */
-import React from 'react'
-import { Navigate } from 'react-router-dom'
-import { Box, CircularProgress } from '@mui/material'
-import { useAuth } from '../contexts/AuthContext'
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { Box, CircularProgress } from "@mui/material";
+import { useAuth } from "../contexts/AuthContext";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   try {
-    const authContext = useAuth()
-    const { isAuthenticated, loading } = authContext
+    const authContext = useAuth();
+    const { isAuthenticated, loading } = authContext;
 
     // Show loading spinner while authentication is loading
     if (loading) {
@@ -41,19 +41,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         >
           <CircularProgress />
         </Box>
-      )
+      );
     }
 
     // Allow access if user is authenticated
     if (isAuthenticated) {
-      return <>{children}</>
+      return <>{children}</>;
     }
 
     // Redirect to login if user is not authenticated
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   } catch (error) {
-    console.error('ProtectedRoute error:', error)
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error("ProtectedRoute error:", error);
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
     // Fallback to showing loading spinner if there's an error
     return (
       <Box
@@ -64,8 +67,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       >
         <CircularProgress />
       </Box>
-    )
+    );
   }
-}
+};
 
-export default ProtectedRoute
+export default ProtectedRoute;

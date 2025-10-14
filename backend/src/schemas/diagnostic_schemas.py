@@ -3,6 +3,7 @@ Diagnostic schemas for OpenAI API testing.
 """
 
 from typing import Optional
+
 from pydantic import BaseModel, Field
 
 

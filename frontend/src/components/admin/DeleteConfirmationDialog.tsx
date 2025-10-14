@@ -16,7 +16,7 @@
  * - Provides consistent warning and confirmation UI
  */
 
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -27,18 +27,18 @@ import {
   Box,
   Alert,
   Typography,
-  CircularProgress
-} from '@mui/material'
-import { Delete } from '@mui/icons-material'
+  CircularProgress,
+} from "@mui/material";
+import { Delete } from "@mui/icons-material";
 
 interface DeleteConfirmationDialogProps {
-  open: boolean
-  onClose: () => void
-  onConfirm: () => Promise<void>
-  loading: boolean
-  title: string
-  message: string
-  confirmText: string
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  loading: boolean;
+  title: string;
+  message: string;
+  confirmText: string;
 }
 
 const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
@@ -48,37 +48,32 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   loading,
   title,
   message,
-  confirmText
+  confirmText,
 }) => {
-  const [confirmationText, setConfirmationText] = useState('')
-  const [isConfirmed, setIsConfirmed] = useState(false)
+  const [confirmationText, setConfirmationText] = useState("");
+  const [isConfirmed, setIsConfirmed] = useState(false);
 
   const handleConfirmationChange = (value: string) => {
-    setConfirmationText(value)
-    setIsConfirmed(value === confirmText)
-  }
+    setConfirmationText(value);
+    setIsConfirmed(value === confirmText);
+  };
 
   const handleConfirm = async () => {
     if (isConfirmed) {
-      await onConfirm()
-      setConfirmationText('')
-      setIsConfirmed(false)
+      await onConfirm();
+      setConfirmationText("");
+      setIsConfirmed(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    setConfirmationText('')
-    setIsConfirmed(false)
-    onClose()
-  }
+    setConfirmationText("");
+    setIsConfirmed(false);
+    onClose();
+  };
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <Delete color="error" />
@@ -87,11 +82,8 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
       </DialogTitle>
       <DialogContent>
         <Alert severity="error" sx={{ mb: 2 }}>
-          <Typography variant="h6" gutterBottom>
-          </Typography>
-          <Typography variant="body2">
-            {message}
-          </Typography>
+          <Typography variant="h6" gutterBottom></Typography>
+          <Typography variant="body2">{message}</Typography>
         </Alert>
 
         <Typography variant="body2" color="text.secondary">
@@ -109,10 +101,7 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
         />
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={handleClose}
-          disabled={loading}
-        >
+        <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
         <Button
@@ -122,11 +111,11 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
           disabled={loading || !isConfirmed}
           startIcon={loading ? <CircularProgress size={16} /> : <Delete />}
         >
-          {loading ? 'Processing...' : 'Confirm Delete'}
+          {loading ? "Processing..." : "Confirm Delete"}
         </Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default DeleteConfirmationDialog
+export default DeleteConfirmationDialog;

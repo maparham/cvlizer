@@ -17,9 +17,15 @@
  * - Components can check if they're in diff mode and react accordingly
  */
 
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useAIStore, useInlineDiff, useInlineDiffSuggestions, useTempCV, useIsDiffMode } from '../stores/aiStore';
-import { AISuggestion } from '../types/ai';
+import React, { createContext, useContext, ReactNode } from "react";
+import {
+  useAIStore,
+  useInlineDiff,
+  useInlineDiffSuggestions,
+  useTempCV,
+  useIsDiffMode,
+} from "../stores/aiStore";
+import { AISuggestion } from "../types/ai";
 
 interface InlineDiffContextValue {
   // State
@@ -28,16 +34,19 @@ interface InlineDiffContextValue {
   tempCV: any;
   isPanelOpen: boolean;
   isApplyingAll: boolean;
-  highlightMode: 'all' | 'pending' | 'approved';
+  highlightMode: "all" | "pending" | "approved";
   error?: string;
 
   // Actions
-  generateSuggestions: (cvId: string, jobDescriptionId: string) => Promise<void>;
+  generateSuggestions: (
+    cvId: string,
+    jobDescriptionId: string,
+  ) => Promise<void>;
   applyAllSuggestions: (cvData: any) => void;
   acceptSuggestion: (suggestionId: string) => void;
   rejectSuggestion: (suggestionId: string) => void;
   togglePanel: (isOpen?: boolean) => void;
-  setHighlightMode: (mode: 'all' | 'pending' | 'approved') => void;
+  setHighlightMode: (mode: "all" | "pending" | "approved") => void;
   exitDiffMode: () => void;
   commitChanges: () => any;
 
@@ -55,15 +64,23 @@ interface InlineDiffProviderProps {
   children: ReactNode;
 }
 
-export const InlineDiffProvider: React.FC<InlineDiffProviderProps> = ({ children }) => {
-  const generateInlineSuggestions = useAIStore((state) => state.generateInlineSuggestions);
+export const InlineDiffProvider: React.FC<InlineDiffProviderProps> = ({
+  children,
+}) => {
+  const generateInlineSuggestions = useAIStore(
+    (state) => state.generateInlineSuggestions,
+  );
   const applyAllSuggestions = useAIStore((state) => state.applyAllSuggestions);
   const acceptSuggestion = useAIStore((state) => state.acceptInlineSuggestion);
   const rejectSuggestion = useAIStore((state) => state.rejectInlineSuggestion);
-  const toggleSuggestionPanel = useAIStore((state) => state.toggleSuggestionPanel);
+  const toggleSuggestionPanel = useAIStore(
+    (state) => state.toggleSuggestionPanel,
+  );
   const setHighlightMode = useAIStore((state) => state.setHighlightMode);
   const exitDiffMode = useAIStore((state) => state.exitDiffMode);
-  const commitApprovedChanges = useAIStore((state) => state.commitApprovedChanges);
+  const commitApprovedChanges = useAIStore(
+    (state) => state.commitApprovedChanges,
+  );
 
   const inlineDiff = useInlineDiff();
   const suggestions = useInlineDiffSuggestions();
@@ -72,23 +89,25 @@ export const InlineDiffProvider: React.FC<InlineDiffProviderProps> = ({ children
 
   // Utility functions
   const getSuggestionsBySection = (section: string): AISuggestion[] => {
-    return suggestions.filter(suggestion => suggestion.section === section);
+    return suggestions.filter((suggestion) => suggestion.section === section);
   };
 
   const getSuggestionById = (id: string): AISuggestion | undefined => {
-    return suggestions.find(suggestion => suggestion.id === id);
+    return suggestions.find((suggestion) => suggestion.id === id);
   };
 
   const hasSuggestionsForSection = (section: string): boolean => {
-    return suggestions.some(suggestion => suggestion.section === section);
+    return suggestions.some((suggestion) => suggestion.section === section);
   };
 
   const getPendingSuggestionsCount = (): number => {
-    return suggestions.filter(suggestion => suggestion.status === 'pending').length;
+    return suggestions.filter((suggestion) => suggestion.status === "pending")
+      .length;
   };
 
   const getApprovedSuggestionsCount = (): number => {
-    return suggestions.filter(suggestion => suggestion.status === 'approved').length;
+    return suggestions.filter((suggestion) => suggestion.status === "approved")
+      .length;
   };
 
   const contextValue: InlineDiffContextValue = {
@@ -129,7 +148,9 @@ export const InlineDiffProvider: React.FC<InlineDiffProviderProps> = ({ children
 export const useInlineDiffContext = (): InlineDiffContextValue => {
   const context = useContext(InlineDiffContext);
   if (!context) {
-    throw new Error('useInlineDiffContext must be used within an InlineDiffProvider');
+    throw new Error(
+      "useInlineDiffContext must be used within an InlineDiffProvider",
+    );
   }
   return context;
 };

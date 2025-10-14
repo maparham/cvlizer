@@ -12,9 +12,13 @@
  * - Provide callbacks for completion and errors
  */
 
-import { aiService } from '../services/aiService';
-import { JobDescription, ContentEnhancementResponse, DraftResponse } from '../types/ai';
-import { POLLING_CONFIG } from '../config/constants';
+import { aiService } from "../services/aiService";
+import {
+  JobDescription,
+  ContentEnhancementResponse,
+  DraftResponse,
+} from "../types/ai";
+import { POLLING_CONFIG } from "../config/constants";
 
 export interface PollingOptions {
   interval?: number; // Polling interval in milliseconds
@@ -29,7 +33,7 @@ const DEFAULT_OPTIONS: Required<PollingOptions> = {
   timeout: POLLING_CONFIG.LONG_OPERATION_TIMEOUT,
   onProgress: () => {},
   onComplete: () => {},
-  onError: () => {}
+  onError: () => {},
 };
 
 /**
@@ -37,7 +41,7 @@ const DEFAULT_OPTIONS: Required<PollingOptions> = {
  */
 export async function pollJobDescriptionStatus(
   jobDescriptionId: string,
-  options: PollingOptions = {}
+  options: PollingOptions = {},
 ): Promise<JobDescription> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const startTime = Date.now();
@@ -47,14 +51,15 @@ export async function pollJobDescriptionStatus(
       try {
         // Check if we've exceeded the timeout
         if (Date.now() - startTime > opts.timeout) {
-          const error = new Error('Job description parsing timed out');
+          const error = new Error("Job description parsing timed out");
           opts.onError(error);
           reject(error);
           return;
         }
 
         // Get current status
-        const status = await aiService.getJobDescriptionStatus(jobDescriptionId);
+        const status =
+          await aiService.getJobDescriptionStatus(jobDescriptionId);
 
         // Call progress callback
         opts.onProgress(status);
@@ -90,7 +95,7 @@ export async function pollJobDescriptionStatus(
  */
 export async function pollContentEnhancementStatus(
   enhancementId: string,
-  options: PollingOptions = {}
+  options: PollingOptions = {},
 ): Promise<ContentEnhancementResponse> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const startTime = Date.now();
@@ -100,14 +105,15 @@ export async function pollContentEnhancementStatus(
       try {
         // Check if we've exceeded the timeout
         if (Date.now() - startTime > opts.timeout) {
-          const error = new Error('Content enhancement timed out');
+          const error = new Error("Content enhancement timed out");
           opts.onError(error);
           reject(error);
           return;
         }
 
         // Get current status
-        const status = await aiService.getContentEnhancementStatus(enhancementId);
+        const status =
+          await aiService.getContentEnhancementStatus(enhancementId);
 
         // Call progress callback
         opts.onProgress(status);
@@ -143,7 +149,7 @@ export async function pollContentEnhancementStatus(
  */
 export async function pollDraftStatus(
   draftId: string,
-  options: PollingOptions = {}
+  options: PollingOptions = {},
 ): Promise<DraftResponse> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const startTime = Date.now();
@@ -153,7 +159,7 @@ export async function pollDraftStatus(
       try {
         // Check if we've exceeded the timeout
         if (Date.now() - startTime > opts.timeout) {
-          const error = new Error('Draft generation timed out');
+          const error = new Error("Draft generation timed out");
           opts.onError(error);
           reject(error);
           return;
@@ -197,7 +203,7 @@ export async function pollDraftStatus(
 export async function pollBackgroundTask<T>(
   pollFunction: () => Promise<T>,
   isComplete: (data: T) => boolean,
-  options: PollingOptions = {}
+  options: PollingOptions = {},
 ): Promise<T> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const startTime = Date.now();
@@ -207,7 +213,7 @@ export async function pollBackgroundTask<T>(
       try {
         // Check if we've exceeded the timeout
         if (Date.now() - startTime > opts.timeout) {
-          const error = new Error('Background task timed out');
+          const error = new Error("Background task timed out");
           opts.onError(error);
           reject(error);
           return;

@@ -5,12 +5,14 @@ This module provides functions for logging admin actions
 and other important system events for security auditing and debugging purposes.
 """
 
+import logging
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from sqlalchemy.orm import Session
+
 from src.models.audit_log import AuditLog
 from src.models.user import User
-import logging
 
 logger = logging.getLogger(__name__)
 

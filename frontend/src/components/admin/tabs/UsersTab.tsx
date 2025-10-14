@@ -16,7 +16,7 @@
  * - Uses UserActionsMenu and various dialogs
  */
 
-import React from 'react'
+import React from "react";
 import {
   Box,
   Paper,
@@ -39,74 +39,81 @@ import {
   Tooltip,
   CircularProgress,
   Alert,
-  Typography
-} from '@mui/material'
+  Typography,
+} from "@mui/material";
 import {
   Search,
   Refresh,
   CheckCircle,
-  SwitchAccount
-} from '@mui/icons-material'
-import { UserSummary } from '../../../types/admin'
-import { formatDate, formatDateTime } from '../../../utils/dateFormat'
-import UserActionsMenu from '../UserActionsMenu'
-import UserDetailDialog from '../UserDetailDialog'
-import UserActivitiesDialog from '../UserActivitiesDialog'
-import UserErrorsDialog from '../UserErrorsDialog'
-import UserCVsDialog from '../UserCVsDialog'
-import ImpersonationDialog from '../ImpersonationDialog'
+  SwitchAccount,
+} from "@mui/icons-material";
+import { UserSummary } from "../../../types/admin";
+import { formatDate, formatDateTime } from "../../../utils/dateFormat";
+import UserActionsMenu from "../UserActionsMenu";
+import UserDetailDialog from "../UserDetailDialog";
+import UserActivitiesDialog from "../UserActivitiesDialog";
+import UserErrorsDialog from "../UserErrorsDialog";
+import UserCVsDialog from "../UserCVsDialog";
+import ImpersonationDialog from "../ImpersonationDialog";
 
 interface UsersTabProps {
-  users: UserSummary[]
-  loading: boolean
-  error: string | null
+  users: UserSummary[];
+  loading: boolean;
+  error: string | null;
   filters: {
-    searchTerm: string
-    clerkFilter: string
-    activeFilter: string
-  }
-  onFiltersChange: (filters: Partial<{
-    searchTerm: string
-    clerkFilter: string
-    activeFilter: string
-  }>) => void
-  onRefresh: () => void
-  onToggleUserActive: (userId: string, currentStatus: boolean) => Promise<void>
-  onLoadUserDetail: (userId: string) => Promise<void>
-  onLoadUserCVs: (userId: string) => Promise<void>
-  onLoadUserActivities: (userId: string, page?: number, limit?: number, activityType?: string) => Promise<void>
-  onLoadUserErrors: (userId: string) => Promise<void>
-  onStartImpersonation: (user: UserSummary) => void
-  onContactUser: (email: string) => void
-  actionLoading: string | null
-  selectedUser: any
-  userDetailOpen: boolean
-  onUserDetailClose: () => void
-  userCVs: any[]
-  userCVsOpen: boolean
-  onUserCVsClose: () => void
-  userActivities: any[]
-  activitiesOpen: boolean
-  onActivitiesClose: () => void
-  activitiesTotal: number
-  activitiesPage: number
-  activitiesLimit: number
-  activityTypeFilter: string
-  activitiesLoading: boolean
-  selectedUserId: string
-  onActivitiesPageChange: (page: number) => void
-  onActivitiesLimitChange: (limit: number) => void
-  onActivityTypeFilterChange: (filter: string) => void
-  onClearUserActivities: (userId: string) => Promise<void>
-  userErrors: any[]
-  errorsOpen: boolean
-  onErrorsClose: () => void
-  impersonationDialogOpen: boolean
-  onImpersonationDialogClose: () => void
-  impersonationTarget: UserSummary | null
-  impersonationJustification: string
-  onImpersonationJustificationChange: (justification: string) => void
-  onConfirmImpersonation: () => Promise<void>
+    searchTerm: string;
+    clerkFilter: string;
+    activeFilter: string;
+  };
+  onFiltersChange: (
+    filters: Partial<{
+      searchTerm: string;
+      clerkFilter: string;
+      activeFilter: string;
+    }>,
+  ) => void;
+  onRefresh: () => void;
+  onToggleUserActive: (userId: string, currentStatus: boolean) => Promise<void>;
+  onLoadUserDetail: (userId: string) => Promise<void>;
+  onLoadUserCVs: (userId: string) => Promise<void>;
+  onLoadUserActivities: (
+    userId: string,
+    page?: number,
+    limit?: number,
+    activityType?: string,
+  ) => Promise<void>;
+  onLoadUserErrors: (userId: string) => Promise<void>;
+  onStartImpersonation: (user: UserSummary) => void;
+  onContactUser: (email: string) => void;
+  actionLoading: string | null;
+  selectedUser: any;
+  userDetailOpen: boolean;
+  onUserDetailClose: () => void;
+  userCVs: any[];
+  userCVsOpen: boolean;
+  onUserCVsClose: () => void;
+  userActivities: any[];
+  activitiesOpen: boolean;
+  onActivitiesClose: () => void;
+  activitiesTotal: number;
+  activitiesPage: number;
+  activitiesLimit: number;
+  activityTypeFilter: string;
+  activitiesLoading: boolean;
+  selectedUserId: string;
+  onActivitiesPageChange: (page: number) => void;
+  onActivitiesLimitChange: (limit: number) => void;
+  onActivityTypeFilterChange: (filter: string) => void;
+  onClearUserActivities: (userId: string) => Promise<void>;
+  userErrors: any[];
+  errorsOpen: boolean;
+  onErrorsClose: () => void;
+  impersonationDialogOpen: boolean;
+  onImpersonationDialogClose: () => void;
+  impersonationTarget: UserSummary | null;
+  impersonationJustification: string;
+  onImpersonationJustificationChange: (justification: string) => void;
+  onConfirmImpersonation: () => Promise<void>;
 }
 
 const UsersTab: React.FC<UsersTabProps> = ({
@@ -151,14 +158,14 @@ const UsersTab: React.FC<UsersTabProps> = ({
   impersonationTarget,
   impersonationJustification,
   onImpersonationJustificationChange,
-  onConfirmImpersonation
+  onConfirmImpersonation,
 }) => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
         <CircularProgress />
       </Box>
-    )
+    );
   }
 
   return (
@@ -192,7 +199,9 @@ const UsersTab: React.FC<UsersTabProps> = ({
               <InputLabel>User Type</InputLabel>
               <Select
                 value={filters.clerkFilter}
-                onChange={(e) => onFiltersChange({ clerkFilter: e.target.value })}
+                onChange={(e) =>
+                  onFiltersChange({ clerkFilter: e.target.value })
+                }
                 label="User Type"
               >
                 <MenuItem value="all">All Users</MenuItem>
@@ -206,7 +215,9 @@ const UsersTab: React.FC<UsersTabProps> = ({
               <InputLabel>Status</InputLabel>
               <Select
                 value={filters.activeFilter}
-                onChange={(e) => onFiltersChange({ activeFilter: e.target.value })}
+                onChange={(e) =>
+                  onFiltersChange({ activeFilter: e.target.value })
+                }
                 label="Status"
               >
                 <MenuItem value="all">All Status</MenuItem>
@@ -250,30 +261,32 @@ const UsersTab: React.FC<UsersTabProps> = ({
                     <Typography variant="body2">{user.email}</Typography>
                     {user.email_verified && (
                       <Tooltip title="Email Verified">
-                        <CheckCircle color="success" fontSize="small" sx={{ ml: 1 }} />
+                        <CheckCircle
+                          color="success"
+                          fontSize="small"
+                          sx={{ ml: 1 }}
+                        />
                       </Tooltip>
                     )}
                   </Box>
                 </TableCell>
                 <TableCell>
                   <Chip
-                    label={user.is_clerk_user ? 'Clerk' : 'Legacy'}
-                    color={user.is_clerk_user ? 'primary' : 'default'}
+                    label={user.is_clerk_user ? "Clerk" : "Legacy"}
+                    color={user.is_clerk_user ? "primary" : "default"}
                     size="small"
                   />
                 </TableCell>
                 <TableCell>
                   <Chip
-                    label={user.is_active ? 'Active' : 'Inactive'}
-                    color={user.is_active ? 'success' : 'error'}
+                    label={user.is_active ? "Active" : "Inactive"}
+                    color={user.is_active ? "success" : "error"}
                     size="small"
                   />
                 </TableCell>
                 <TableCell>{user.cv_count}</TableCell>
                 <TableCell>{user.ai_sections_count}</TableCell>
-                <TableCell>
-                  {formatDate(user.created_at)}
-                </TableCell>
+                <TableCell>{formatDate(user.created_at)}</TableCell>
                 <TableCell>
                   <Box display="flex" gap={1} alignItems="center">
                     <Tooltip title="Impersonate User">
@@ -332,7 +345,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
         onFilterChange={onActivityTypeFilterChange}
         formatDateTime={formatDateTime}
         onClearActivities={onClearUserActivities}
-        userEmail={users.find(user => user.id === selectedUserId)?.email}
+        userEmail={users.find((user) => user.id === selectedUserId)?.email}
       />
 
       <UserErrorsDialog
@@ -352,7 +365,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
         loading={actionLoading === impersonationTarget?.id}
       />
     </Box>
-  )
-}
+  );
+};
 
-export default UsersTab
+export default UsersTab;

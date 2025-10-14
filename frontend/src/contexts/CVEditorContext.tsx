@@ -12,79 +12,87 @@
  * Note: This is a large context that coordinates multiple editor features.
  * Consider breaking into smaller contexts if complexity grows further.
  */
-import React, { createContext, useContext, ReactNode } from 'react'
-import { CVData, CVSection, EditingIndividualItem } from '../types'
-import { usePDFCVEditor } from '../hooks/usePDFCVEditor'
-import { ValidationError } from '../utils/validationUtils'
+import React, { createContext, useContext, ReactNode } from "react";
+import { CVData, CVSection, EditingIndividualItem } from "../types";
+import { usePDFCVEditor } from "../hooks/usePDFCVEditor";
+import { ValidationError } from "../utils/validationUtils";
 
 // Context type definition
 interface CVEditorContextType {
   // CV Data
-  cvData: CVData
-  onUpdateCV: (data: CVData) => void
-  onSave: (data?: CVData, message?: string) => Promise<void>
+  cvData: CVData;
+  onUpdateCV: (data: CVData) => void;
+  onSave: (data?: CVData, message?: string) => Promise<void>;
 
   // Section management
-  sections: CVSection[]
-  toggleSectionVisibility: (sectionId: string) => void
-  addNewSection: (sectionId: string) => void
-  removeSection: (sectionId: string) => void
-  resetToDefaultOrder: () => void
-  isDefaultOrder: () => boolean
-  getAvailableSectionsToAdd: () => Array<{id: string; name: string}>
-  updateSectionTitle: (sectionId: string, newTitle: string) => void
+  sections: CVSection[];
+  toggleSectionVisibility: (sectionId: string) => void;
+  addNewSection: (sectionId: string) => void;
+  removeSection: (sectionId: string) => void;
+  resetToDefaultOrder: () => void;
+  isDefaultOrder: () => boolean;
+  getAvailableSectionsToAdd: () => Array<{ id: string; name: string }>;
+  updateSectionTitle: (sectionId: string, newTitle: string) => void;
 
   // Drag and drop
-  activeId: string | null
-  handleDragStart: (event: any) => void
-  handleDragEnd: (event: any) => void
+  activeId: string | null;
+  handleDragStart: (event: any) => void;
+  handleDragEnd: (event: any) => void;
 
   // Editing state
-  editingSection: string | null
-  handleSectionEdit: (sectionType: string) => void
-  handleSectionClose: () => void
-  requestSectionCancel: () => void
-  editingIndividualItem: EditingIndividualItem | null
+  editingSection: string | null;
+  handleSectionEdit: (sectionType: string) => void;
+  handleSectionClose: () => void;
+  requestSectionCancel: () => void;
+  editingIndividualItem: EditingIndividualItem | null;
   registerIndividualItemEditing: (
     sectionId: string,
     itemIndex: number,
     onCancel: () => void,
-    onStartEdit?: () => void
-  ) => 'success' | 'dialog_shown'
-  unregisterIndividualItemEditing: (sectionId: string, itemIndex: number) => void
-  requestIndividualItemCancel: (sectionId: string, onCancel: () => void) => void
+    onStartEdit?: () => void,
+  ) => "success" | "dialog_shown";
+  unregisterIndividualItemEditing: (
+    sectionId: string,
+    itemIndex: number,
+  ) => void;
+  requestIndividualItemCancel: (
+    sectionId: string,
+    onCancel: () => void,
+  ) => void;
 
   // Unsaved changes
-  onUnsavedChanges: (sectionId: string, hasChanges: boolean) => void
-  hasUnsavedChanges: boolean
-  editingSections: Set<string>
-  pendingChanges: Map<string, unknown>
-  clearUnsavedChanges: () => void
-  clearEditingState: () => void
+  onUnsavedChanges: (sectionId: string, hasChanges: boolean) => void;
+  hasUnsavedChanges: boolean;
+  editingSections: Set<string>;
+  pendingChanges: Map<string, unknown>;
+  clearUnsavedChanges: () => void;
+  clearEditingState: () => void;
 
   // Dialog state
-  showUnsavedChangesDialog: boolean
-  handleUnsavedChangesDialogClose: () => void
-  handleUnsavedChangesDialogConfirm: () => void
-  showResetDialog: boolean
-  handleResetClick: () => void
-  setShowResetDialog: (show: boolean) => void
+  showUnsavedChangesDialog: boolean;
+  handleUnsavedChangesDialogClose: () => void;
+  handleUnsavedChangesDialogConfirm: () => void;
+  showResetDialog: boolean;
+  handleResetClick: () => void;
+  setShowResetDialog: (show: boolean) => void;
 
   // Validation errors
-  validationErrors: ValidationError[]
-  setValidationErrors: (errors: ValidationError[]) => void
-  clearValidationErrors: () => void
+  validationErrors: ValidationError[];
+  setValidationErrors: (errors: ValidationError[]) => void;
+  clearValidationErrors: () => void;
 }
 
 // Create context
-const CVEditorContext = createContext<CVEditorContextType | undefined>(undefined)
+const CVEditorContext = createContext<CVEditorContextType | undefined>(
+  undefined,
+);
 
 // Provider props
 interface CVEditorProviderProps {
-  children: ReactNode
-  cvData: CVData
-  onUpdateCV: (data: CVData) => void
-  onSave: (data?: CVData, message?: string) => Promise<void>
+  children: ReactNode;
+  cvData: CVData;
+  onUpdateCV: (data: CVData) => void;
+  onSave: (data?: CVData, message?: string) => Promise<void>;
 }
 
 // Provider component
@@ -92,14 +100,13 @@ export const CVEditorProvider: React.FC<CVEditorProviderProps> = ({
   children,
   cvData,
   onUpdateCV,
-  onSave
+  onSave,
 }) => {
-
   const editorState = usePDFCVEditor({
     cvData,
     onUpdateCV,
-    onSave
-  })
+    onSave,
+  });
 
   const contextValue: CVEditorContextType = {
     // Pass through the original props
@@ -108,28 +115,28 @@ export const CVEditorProvider: React.FC<CVEditorProviderProps> = ({
     onSave,
 
     // Spread all the editor state
-    ...editorState
-  }
+    ...editorState,
+  };
 
   return (
     <CVEditorContext.Provider value={contextValue}>
       {children}
     </CVEditorContext.Provider>
-  )
-}
+  );
+};
 
 // Hook to use the context
 export const useCVEditor = (): CVEditorContextType => {
-  const context = useContext(CVEditorContext)
+  const context = useContext(CVEditorContext);
   if (context === undefined) {
-    throw new Error('useCVEditor must be used within a CVEditorProvider')
+    throw new Error("useCVEditor must be used within a CVEditorProvider");
   }
-  return context
-}
+  return context;
+};
 
 // Simplified convenience hooks - consolidated from 4 to 2 focused hooks
 export const useCVEditorControls = () => {
-  const context = useCVEditor()
+  const context = useCVEditor();
 
   return {
     // Section management
@@ -157,12 +164,12 @@ export const useCVEditorControls = () => {
       onResetClick: context.handleResetClick,
       onCloseDialog: () => context.setShowResetDialog(false),
       onConfirmReset: context.resetToDefaultOrder,
-    }
-  }
-}
+    },
+  };
+};
 
 export const useCVEditorState = () => {
-  const context = useCVEditor()
+  const context = useCVEditor();
 
   return {
     // Editing state
@@ -186,6 +193,6 @@ export const useCVEditorState = () => {
       showDialog: context.showUnsavedChangesDialog,
       onCloseDialog: context.handleUnsavedChangesDialogClose,
       onConfirmDialog: context.handleUnsavedChangesDialogConfirm,
-    }
-  }
-}
+    },
+  };
+};

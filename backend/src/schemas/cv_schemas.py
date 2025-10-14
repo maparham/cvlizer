@@ -2,9 +2,11 @@
 Comprehensive Pydantic schemas for CV data validation with proper type safety.
 """
 
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
 from datetime import date
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, Field
+
 from src.config import AIConfig
 
 

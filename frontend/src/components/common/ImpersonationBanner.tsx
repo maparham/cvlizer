@@ -14,7 +14,7 @@
  * - Ensure keyboard accessibility and ARIA compliance
  * - Use hybrid event-driven status checking for optimal performance
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Alert,
   AlertTitle,
@@ -24,113 +24,131 @@ import {
   Typography,
   Snackbar,
   CircularProgress,
-  useTheme
-} from '@mui/material'
+  useTheme,
+} from "@mui/material";
 import {
   ExitToApp as ExitIcon,
   Person as PersonIcon,
   AccessTime as TimeIcon,
-  Warning as WarningIcon
-} from '@mui/icons-material'
-import { impersonationService, ImpersonationError } from '../../services/impersonationService'
-import { useImpersonationContext } from '../../contexts/ImpersonationContext'
+  Warning as WarningIcon,
+} from "@mui/icons-material";
+import {
+  impersonationService,
+  ImpersonationError,
+} from "../../services/impersonationService";
+import { useImpersonationContext } from "../../contexts/ImpersonationContext";
 
 interface ImpersonationBannerProps {
   /** Callback when impersonation ends */
-  onImpersonationEnd?: () => void
+  onImpersonationEnd?: () => void;
 }
 
 export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
-  onImpersonationEnd
+  onImpersonationEnd,
 }) => {
-  const theme = useTheme()
-  const { status, loading, endImpersonation: contextEndImpersonation } = useImpersonationContext()
-  const [error, setError] = useState<string | null>(null)
-  const [isEnding, setIsEnding] = useState(false)
-  const hasNotifiedRef = useRef(false)
-  const wasActiveRef = useRef(false)
+  const theme = useTheme();
+  const {
+    status,
+    loading,
+    endImpersonation: contextEndImpersonation,
+  } = useImpersonationContext();
+  const [error, setError] = useState<string | null>(null);
+  const [isEnding, setIsEnding] = useState(false);
+  const hasNotifiedRef = useRef(false);
+  const wasActiveRef = useRef(false);
 
   // End impersonation session
   const handleEndImpersonation = useCallback(async () => {
-    if (isEnding) return
+    if (isEnding) return;
 
-    setIsEnding(true)
-    setError(null)
+    setIsEnding(true);
+    setError(null);
 
     try {
-      await contextEndImpersonation()
+      await contextEndImpersonation();
 
       if (onImpersonationEnd) {
-        onImpersonationEnd()
+        onImpersonationEnd();
       }
     } catch (error) {
-      console.error('Failed to end impersonation:', error)
+      console.error("Failed to end impersonation:", error);
       if (error instanceof ImpersonationError) {
-        setError(error.message)
+        setError(error.message);
       } else {
-        setError('Failed to end impersonation session')
+        setError("Failed to end impersonation session");
       }
     } finally {
-      setIsEnding(false)
+      setIsEnding(false);
     }
-  }, [isEnding, contextEndImpersonation, onImpersonationEnd])
+  }, [isEnding, contextEndImpersonation, onImpersonationEnd]);
 
   // Notify parent when impersonation ends (but not during initial loading)
   useEffect(() => {
     // Only proceed if we're not loading and have a valid status
     if (loading) {
-      return
+      return;
     }
 
     // Track when impersonation was active
     if (status.active) {
-      wasActiveRef.current = true
+      wasActiveRef.current = true;
       // Reset the notification flag when impersonation becomes active again
-      hasNotifiedRef.current = false
-    } else if (wasActiveRef.current && !status.active && onImpersonationEnd && !hasNotifiedRef.current) {
+      hasNotifiedRef.current = false;
+    } else if (
+      wasActiveRef.current &&
+      !status.active &&
+      onImpersonationEnd &&
+      !hasNotifiedRef.current
+    ) {
       // Only call onImpersonationEnd if impersonation was previously active and is now inactive
-      hasNotifiedRef.current = true
-      onImpersonationEnd()
+      hasNotifiedRef.current = true;
+      onImpersonationEnd();
     }
-  }, [status.active, loading, onImpersonationEnd])
+  }, [status.active, loading, onImpersonationEnd]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Ctrl/Cmd + Shift + E to end impersonation
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'E') {
-        event.preventDefault()
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey &&
+        event.key === "E"
+      ) {
+        event.preventDefault();
         if (status.active && !isEnding) {
-          handleEndImpersonation()
+          handleEndImpersonation();
         }
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [status.active, isEnding, handleEndImpersonation])
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [status.active, isEnding, handleEndImpersonation]);
 
   // Don't render if not impersonating
   if (!status.active) {
-    return null
+    return null;
   }
 
-  const remainingSeconds = status.remaining_seconds || 0
-  const isExpiringSoon = impersonationService.isSessionExpiringSoon(remainingSeconds)
-  const timeDisplay = impersonationService.formatRemainingTime(remainingSeconds)
+  const remainingSeconds = status.remaining_seconds || 0;
+  const isExpiringSoon =
+    impersonationService.isSessionExpiringSoon(remainingSeconds);
+  const timeDisplay =
+    impersonationService.formatRemainingTime(remainingSeconds);
 
   return (
     <>
       <Alert
-        severity={isExpiringSoon ? 'warning' : 'info'}
+        severity={isExpiringSoon ? "warning" : "info"}
         sx={{
-          position: 'sticky',
+          position: "sticky",
           top: 0,
           zIndex: theme.zIndex.appBar + 1,
           borderRadius: 0,
-          '& .MuiAlert-message': {
-            width: '100%'
-          }
+          "& .MuiAlert-message": {
+            width: "100%",
+          },
         }}
         icon={<PersonIcon />}
         action={
@@ -141,14 +159,14 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
             disabled={isEnding}
             startIcon={isEnding ? <CircularProgress size={16} /> : <ExitIcon />}
             sx={{
-              minWidth: 'auto',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }
+              minWidth: "auto",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              },
             }}
             aria-label="End impersonation session"
           >
-            {isEnding ? 'Ending...' : 'Stop'}
+            {isEnding ? "Ending..." : "Stop"}
           </Button>
         }
       >
@@ -183,8 +201,8 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
               variant="body2"
               component="span"
               sx={{
-                fontFamily: 'monospace',
-                color: isExpiringSoon ? theme.palette.warning.main : 'inherit'
+                fontFamily: "monospace",
+                color: isExpiringSoon ? theme.palette.warning.main : "inherit",
               }}
               aria-live="polite"
               aria-label={`Time remaining: ${timeDisplay}`}
@@ -204,14 +222,14 @@ export const ImpersonationBanner: React.FC<ImpersonationBannerProps> = ({
         open={!!error}
         autoHideDuration={6000}
         onClose={() => setError(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert severity="error" onClose={() => setError(null)}>
           {error}
         </Alert>
       </Snackbar>
     </>
-  )
-}
+  );
+};
 
-export default ImpersonationBanner
+export default ImpersonationBanner;

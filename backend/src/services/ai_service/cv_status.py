@@ -7,6 +7,7 @@ content or suggestions.
 """
 
 import logging
+
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -29,8 +30,8 @@ def check_cv_ai_enhancement_status(db_session: Session, cv_id: str) -> bool:
         True if CV has accepted AI suggestions, False otherwise
     """
     try:
-        from src.models.ai_suggestion import AISuggestion
         from src.models.ai_section import AISection
+        from src.models.ai_suggestion import AISuggestion
 
         # Check for accepted AI suggestions
         accepted_suggestions = (

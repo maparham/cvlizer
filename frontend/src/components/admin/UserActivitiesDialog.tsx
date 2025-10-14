@@ -5,7 +5,7 @@
  * It provides a scalable interface for viewing user activity logs with proper pagination
  * and filtering capabilities.
  */
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -29,35 +29,35 @@ import {
   Pagination,
   Alert,
   IconButton,
-  Tooltip
-} from '@mui/material'
-import { DeleteSweep } from '@mui/icons-material'
+  Tooltip,
+} from "@mui/material";
+import { DeleteSweep } from "@mui/icons-material";
 
 interface UserActivity {
-  id: string
-  activity_type: string
-  action: string
-  description: string
-  page_url: string
-  timestamp: string
+  id: string;
+  activity_type: string;
+  action: string;
+  description: string;
+  page_url: string;
+  timestamp: string;
 }
 
 interface UserActivitiesDialogProps {
-  open: boolean
-  onClose: () => void
-  activities: UserActivity[]
-  activitiesTotal: number
-  activitiesPage: number
-  activitiesLimit: number
-  activityTypeFilter: string
-  activitiesLoading: boolean
-  selectedUserId: string
-  onPageChange: (page: number) => void
-  onLimitChange: (limit: number) => void
-  onFilterChange: (filter: string) => void
-  formatDateTime: (date: string) => string
-  onClearActivities?: (userId: string) => Promise<void>
-  userEmail?: string
+  open: boolean;
+  onClose: () => void;
+  activities: UserActivity[];
+  activitiesTotal: number;
+  activitiesPage: number;
+  activitiesLimit: number;
+  activityTypeFilter: string;
+  activitiesLoading: boolean;
+  selectedUserId: string;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
+  onFilterChange: (filter: string) => void;
+  formatDateTime: (date: string) => string;
+  onClearActivities?: (userId: string) => Promise<void>;
+  userEmail?: string;
 }
 
 const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
@@ -75,24 +75,24 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
   onFilterChange,
   formatDateTime,
   onClearActivities,
-  userEmail
+  userEmail,
 }) => {
-  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
-  const [clearing, setClearing] = useState(false)
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const handleClearActivities = async () => {
-    if (!onClearActivities || !selectedUserId) return
+    if (!onClearActivities || !selectedUserId) return;
 
     try {
-      setClearing(true)
-      await onClearActivities(selectedUserId)
-      setClearConfirmOpen(false)
+      setClearing(true);
+      await onClearActivities(selectedUserId);
+      setClearConfirmOpen(false);
     } catch (error) {
       // Error handling is done in the parent component
     } finally {
-      setClearing(false)
+      setClearing(false);
     }
-  }
+  };
 
   return (
     <Dialog
@@ -101,12 +101,12 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
       maxWidth="lg"
       fullWidth
       PaperProps={{
-        style: { maxHeight: '90vh' },
+        style: { maxHeight: "90vh" },
         sx: {
-          height: '90vh',
-          display: 'flex',
-          flexDirection: 'column'
-        }
+          height: "90vh",
+          display: "flex",
+          flexDirection: "column",
+        },
       }}
     >
       <DialogTitle>
@@ -120,7 +120,9 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
             )}
             {activitiesTotal > 0 && (
               <Typography variant="body2" color="textSecondary">
-                {activitiesTotal} total activities found (Page {activitiesPage + 1} of {Math.max(1, Math.ceil(activitiesTotal / activitiesLimit))})
+                {activitiesTotal} total activities found (Page{" "}
+                {activitiesPage + 1} of{" "}
+                {Math.max(1, Math.ceil(activitiesTotal / activitiesLimit))})
               </Typography>
             )}
           </Box>
@@ -138,18 +140,31 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
           )}
         </Box>
       </DialogTitle>
-      <DialogContent sx={{
-        flex: 1,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        pt: 3,
-        position: 'relative'
-      }}>
+      <DialogContent
+        sx={{
+          flex: 1,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          pt: 3,
+          position: "relative",
+        }}
+      >
         {/* Filter Controls and Top Pagination */}
-        <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'flex-start', pt: 1, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            mb: 2,
+            display: "flex",
+            gap: 2,
+            alignItems: "flex-start",
+            pt: 1,
+            flexWrap: "wrap",
+          }}
+        >
           <FormControl size="small" sx={{ minWidth: 150, mt: 0.5 }}>
-            <InputLabel id="activity-type-label" shrink>Activity Type</InputLabel>
+            <InputLabel id="activity-type-label" shrink>
+              Activity Type
+            </InputLabel>
             <Select
               labelId="activity-type-label"
               value={activityTypeFilter}
@@ -164,7 +179,9 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 100, mt: 0.5 }}>
-            <InputLabel id="per-page-label" shrink>Per Page</InputLabel>
+            <InputLabel id="per-page-label" shrink>
+              Per Page
+            </InputLabel>
             <Select
               labelId="per-page-label"
               value={activitiesLimit}
@@ -180,15 +197,18 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
 
           {/* Top Pagination - Only show if there are multiple pages */}
           {Math.ceil(activitiesTotal / activitiesLimit) > 1 && (
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              ml: 'auto',
-              mt: 0.5
-            }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                ml: "auto",
+                mt: 0.5,
+              }}
+            >
               <Typography variant="body2" color="textSecondary">
-                Page {activitiesPage + 1} of {Math.ceil(activitiesTotal / activitiesLimit)}
+                Page {activitiesPage + 1} of{" "}
+                {Math.ceil(activitiesTotal / activitiesLimit)}
               </Typography>
               <Pagination
                 count={Math.ceil(activitiesTotal / activitiesLimit)}
@@ -204,16 +224,20 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
         </Box>
 
         {activitiesLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         ) : activities.length === 0 ? (
-          <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', py: 4 }}>
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            sx={{ textAlign: "center", py: 4 }}
+          >
             No activities found for this user
           </Typography>
         ) : (
           <>
-            <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
+            <TableContainer sx={{ flex: 1, overflow: "auto" }}>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -233,12 +257,12 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
                       <TableCell>{activity.action}</TableCell>
                       <TableCell>
                         <Typography variant="body2" noWrap>
-                          {activity.description || 'N/A'}
+                          {activity.description || "N/A"}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" noWrap>
-                          {activity.page_url || 'N/A'}
+                          {activity.page_url || "N/A"}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -251,22 +275,29 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
             </TableContainer>
 
             {/* Bottom Pagination - Sticky at bottom */}
-            <Box sx={{
-              position: 'sticky',
-              bottom: 0,
-              backgroundColor: 'background.paper',
-              borderTop: '1px solid #e0e0e0',
-              mt: 2,
-              pt: 2,
-              pb: 1,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 2
-            }}>
+            <Box
+              sx={{
+                position: "sticky",
+                bottom: 0,
+                backgroundColor: "background.paper",
+                borderTop: "1px solid #e0e0e0",
+                mt: 2,
+                pt: 2,
+                pb: 1,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
               <Typography variant="body2" color="textSecondary">
-                Showing {activitiesPage * activitiesLimit + 1}-{Math.min((activitiesPage + 1) * activitiesLimit, activitiesTotal)} of {activitiesTotal} activities
+                Showing {activitiesPage * activitiesLimit + 1}-
+                {Math.min(
+                  (activitiesPage + 1) * activitiesLimit,
+                  activitiesTotal,
+                )}{" "}
+                of {activitiesTotal} activities
               </Typography>
               {Math.ceil(activitiesTotal / activitiesLimit) > 1 && (
                 <Pagination
@@ -294,14 +325,13 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          Clear Activity Log
-        </DialogTitle>
+        <DialogTitle>Clear Activity Log</DialogTitle>
         <DialogContent>
           <Box sx={{ mb: 2 }}>
             <Alert severity="warning">
-              You are about to permanently delete all activity logs for user <strong>{userEmail}</strong>.
-              This action cannot be undone and will remove all historical activity data for this user.
+              You are about to permanently delete all activity logs for user{" "}
+              <strong>{userEmail}</strong>. This action cannot be undone and
+              will remove all historical activity data for this user.
             </Alert>
           </Box>
 
@@ -323,7 +353,11 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
             </Typography>
           </Box>
 
-          <Typography variant="body2" color="error.main" sx={{ mt: 2, fontWeight: 'bold' }}>
+          <Typography
+            variant="body2"
+            color="error.main"
+            sx={{ mt: 2, fontWeight: "bold" }}
+          >
             This action is irreversible. Are you sure you want to proceed?
           </Typography>
         </DialogContent>
@@ -339,14 +373,16 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
             variant="contained"
             color="error"
             disabled={clearing}
-            startIcon={clearing ? <CircularProgress size={16} /> : <DeleteSweep />}
+            startIcon={
+              clearing ? <CircularProgress size={16} /> : <DeleteSweep />
+            }
           >
-            {clearing ? 'Clearing...' : 'Clear Activity Log'}
+            {clearing ? "Clearing..." : "Clear Activity Log"}
           </Button>
         </DialogActions>
       </Dialog>
     </Dialog>
-  )
-}
+  );
+};
 
-export default UserActivitiesDialog
+export default UserActivitiesDialog;

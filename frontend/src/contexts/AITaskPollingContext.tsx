@@ -17,8 +17,8 @@
  * - Components can add/remove tasks from global polling
  */
 
-import React, { createContext, useContext } from 'react';
-import { useAITaskPolling, AITask } from '../hooks/useAITaskPolling';
+import React, { createContext, useContext } from "react";
+import { useAITaskPolling, AITask } from "../hooks/useAITaskPolling";
 
 interface AITaskPollingContextType {
   activeTasks: Map<string, AITask>;
@@ -28,12 +28,16 @@ interface AITaskPollingContextType {
   stopPolling: () => void;
 }
 
-const AITaskPollingContext = createContext<AITaskPollingContextType | undefined>(undefined);
+const AITaskPollingContext = createContext<
+  AITaskPollingContextType | undefined
+>(undefined);
 
 export const useAITaskPollingContext = () => {
   const context = useContext(AITaskPollingContext);
   if (context === undefined) {
-    throw new Error('useAITaskPollingContext must be used within an AITaskPollingProvider');
+    throw new Error(
+      "useAITaskPollingContext must be used within an AITaskPollingProvider",
+    );
   }
   return context;
 };
@@ -42,16 +46,19 @@ interface AITaskPollingProviderProps {
   children: React.ReactNode;
 }
 
-export const AITaskPollingProvider: React.FC<AITaskPollingProviderProps> = ({ children }) => {
-  const { activeTasks, isPolling, addTask, removeTask, stopPolling } = useAITaskPolling({
-    onTaskComplete: (task) => {
-      // Task completion is handled by individual components
-    },
-    onTaskError: (task, error) => {
-      console.error('AI task failed:', task, error);
-      // Task errors are handled by individual components
-    },
-  });
+export const AITaskPollingProvider: React.FC<AITaskPollingProviderProps> = ({
+  children,
+}) => {
+  const { activeTasks, isPolling, addTask, removeTask, stopPolling } =
+    useAITaskPolling({
+      onTaskComplete: (_task) => {
+        // Task completion is handled by individual components
+      },
+      onTaskError: (_task, error) => {
+        console.error("AI task failed:", error);
+        // Task errors are handled by individual components
+      },
+    });
 
   return (
     <AITaskPollingContext.Provider

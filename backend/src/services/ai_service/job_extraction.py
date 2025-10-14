@@ -5,19 +5,24 @@ This module provides functions for extracting structured job description
 data from raw HTML/text content scraped from job posting websites.
 """
 
-import time
 import json
 import logging
-from typing import Dict, Any, Optional
+import time
+from typing import Any, Dict, Optional
+
 from sqlalchemy.orm import Session
+
 from src.config import AIConfig
+from src.schemas.ai_response_schemas import JobExtractionResponseSchema
+
 from .common import (
+    MAX_JOB_CONTENT_LENGTH,
+    extract_response_data,
     get_openai_client,
     is_ai_enabled,
-    extract_response_data,
-    parse_json_from_markdown,
     log_ai_usage_safe,
-    MAX_JOB_CONTENT_LENGTH,
+    parse_json_from_markdown,
+    validate_with_schema,
 )
 
 logger = logging.getLogger(__name__)
@@ -98,6 +103,14 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
                 instructions="You're a job posting extraction expert. Return valid JSON. Format 'content' as markdown (##, ###, bullets, **bold**, \\n\\n). Consolidate duplicate requirements (e.g., 'Strong programming' + 'Solid scripting' → one requirement). Keep unique requirements.",
                 input=prompt,
                 reasoning={"effort": "minimal", "summary": "auto"},
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "job_extraction",
+                        "schema": JobExtractionResponseSchema.model_json_schema(),
+                        "strict": True,
+                    },
+                },
             )
             end_time = time.time()
 
@@ -131,17 +144,17 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
             )
 
         # Parse the JSON response
-        try:
-            # Clean the response - remove markdown code blocks if present
-            # Parse JSON using centralized utility (handles markdown code blocks)
-            json_content = parse_json_from_markdown(result)
-            extracted_data = json.loads(json_content)
+        # Parse JSON using centralized utility (handles markdown code blocks)
+        json_content = parse_json_from_markdown(result)
 
-            # Validate required fields
-            if not isinstance(extracted_data, dict):
-                raise ValueError("Response is not a valid JSON object")
+        # Validate response with Pydantic schema
+        validated_model = validate_with_schema(
+            json_content, JobExtractionResponseSchema, "job_extraction"
+        )
 
-            # Ensure we have the required fields
+        if validated_model:
+            # Convert validated model to dict
+            extracted_data = validated_model.model_dump()
             return {
                 "title": extracted_data.get("title", "Unknown Title"),
                 "company": extracted_data.get("company", "Unknown Company"),
@@ -149,10 +162,9 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
                 "content": extracted_data.get("content", ""),
                 "source": extracted_data.get("source", "ai_parsed"),
             }
-
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response from OpenAI: {result}")
-            # Fallback: try to extract basic info manually
+        else:
+            # Validation failed, use fallback
+            logger.error(f"Job extraction validation failed. Result: {result[:500]}")
             return {
                 "title": "Job Posting",
                 "company": "Unknown Company",

@@ -6,23 +6,32 @@ to optimize for Applicant Tracking Systems (ATS), including keyword matching,
 skill suggestions, and content optimization recommendations.
 """
 
-import time
 import asyncio
 import json
 import logging
-from typing import Dict, Any, List, Optional
+import time
+from typing import Any, Dict, List, Optional
+
+from openai.types.shared_params import Reasoning
 from sqlalchemy.orm import Session
+
 from src.config import AIConfig
+from src.schemas.ai_response_schemas import (
+    ATSOptimizationResponseSchema,
+    OptimizationSuggestionsResponseSchema,
+)
+
 from .common import (
-    get_openai_client,
-    is_ai_enabled,
-    extract_response_data,
-    parse_json_from_markdown,
-    log_ai_usage_safe,
-    with_retries,
-    ATSOptimizationResult,
     RETRY_ATTEMPTS,
     RETRY_DELAY,
+    ATSOptimizationResult,
+    extract_response_data,
+    get_openai_client,
+    is_ai_enabled,
+    log_ai_usage_safe,
+    parse_json_from_markdown,
+    validate_with_schema,
+    with_retries,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,53 +85,6 @@ Return JSON:
   "weaknesses": ["Weakness 1", "Weakness 2"]
 }}
 """
-
-
-def _parse_ats_response(
-    content: str, tokens_used: int, generation_time: int
-) -> ATSOptimizationResult:
-    """
-    Parse and validate ATS optimization response.
-
-    Args:
-        content: Raw response content from AI
-        tokens_used: Total tokens used in generation
-        generation_time: Time taken for generation in milliseconds
-
-    Returns:
-        Parsed and validated ATS optimization result
-    """
-    # Parse JSON response - handle markdown code blocks
-    try:
-        json_content = parse_json_from_markdown(content)
-        analysis = json.loads(json_content)
-    except json.JSONDecodeError as e:
-        # Log the error for debugging
-        logger.error(f"Failed to parse ATS analysis JSON: {str(e)}")
-        logger.error(f"Raw content: {content[:500]}...")
-        # Fallback if JSON parsing fails
-        analysis = {
-            "ats_score": 50,
-            "missing_keywords": [],
-            "keyword_analysis": {},
-            "suggestions": ["Unable to parse detailed analysis"],
-            "content_optimization": [],
-            "strengths": [],
-            "weaknesses": [],
-        }
-
-    return {
-        "ats_score": analysis.get("ats_score", 50),
-        "missing_keywords": analysis.get("missing_keywords", []),
-        "keyword_analysis": analysis.get("keyword_analysis", {}),
-        "suggestions": analysis.get("suggestions", []),
-        "content_optimization": analysis.get("content_optimization", []),
-        "strengths": analysis.get("strengths", []),
-        "weaknesses": analysis.get("weaknesses", []),
-        "tokens_used": tokens_used,
-        "generation_time": generation_time,
-        "model_used": AIConfig.OPENAI_MODEL,
-    }
 
 
 async def analyze_ats_optimization(
@@ -187,19 +149,27 @@ async def analyze_ats_optimization(
         # Call OpenAI API with ATS analysis prompt
         async def _call():
             return await asyncio.to_thread(
-                client.responses.create,
+                client.responses.parse,
                 model=AIConfig.OPENAI_MODEL,
-                instructions="You're an ATS expert. Analyze CV vs job description for keywords. Check ALL CV sections before marking keywords missing. Extract ONLY actual JD keywords. Each keyword in ONE array. Valid JSON only.",
-                input=prompt,
-                reasoning={"effort": "minimal", "summary": "auto"},
+                input=[
+                    {
+                        "role": "system",
+                        "content": "You're an ATS expert. Analyze CV vs job description for keywords. Check ALL CV sections before marking keywords missing. Extract ONLY actual JD keywords. Each keyword in ONE array. Valid JSON only.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                text_format=ATSOptimizationResponseSchema,
+                reasoning=Reasoning(effort="low"),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
 
         generation_time = int((time.time() - start_time) * 1000)
 
-        # Extract content and token usage
-        raw_response, prompt_tokens, completion_tokens = extract_response_data(response)
+        # Extract parsed data and token usage
+        analysis = response.output_parsed.model_dump()
+        prompt_tokens = response.usage.input_tokens
+        completion_tokens = response.usage.output_tokens
         tokens_used = prompt_tokens + completion_tokens
 
         # Log AI usage
@@ -221,9 +191,24 @@ async def analyze_ats_optimization(
             f"ATS analysis complete - tokens={tokens_used}, time={generation_time}ms"
         )
 
-        return _parse_ats_response(raw_response, tokens_used, generation_time)
+        return {
+            "ats_score": analysis.get("ats_score", 50),
+            "missing_keywords": analysis.get("missing_keywords", []),
+            "keyword_analysis": analysis.get("keyword_analysis", {}),
+            "suggestions": analysis.get("suggestions", []),
+            "content_optimization": analysis.get("content_optimization", []),
+            "strengths": analysis.get("strengths", []),
+            "weaknesses": analysis.get("weaknesses", []),
+            "tokens_used": tokens_used,
+            "generation_time": generation_time,
+            "model_used": AIConfig.OPENAI_MODEL,
+        }
 
     except Exception as e:
+        # Log the error with full details
+        logger.error(f"ATS optimization failed with error: {str(e)}", exc_info=True)
+        logger.error(f"Error type: {type(e).__name__}")
+
         # Log failed AI usage
         if user_id:
             log_ai_usage_safe(
@@ -422,19 +407,27 @@ async def create_optimization_suggestions(
         # Call OpenAI API with unified prompt
         async def _call():
             return await asyncio.to_thread(
-                client.responses.create,
+                client.responses.parse,
                 model=AIConfig.OPENAI_MODEL,
-                instructions="You're a CV optimization assistant. Analyze CV vs job description. Extract real, tangible skills. Create natural professional content.",
-                input=prompt,
-                reasoning={"effort": "minimal", "summary": "auto"},
+                input=[
+                    {
+                        "role": "system",
+                        "content": "You're a CV optimization assistant. Analyze CV vs job description. Extract real, tangible skills. Create natural professional content.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                text_format=OptimizationSuggestionsResponseSchema,
+                reasoning=Reasoning(effort="low"),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
 
         generation_time = int((time.time() - start_time) * 1000)
 
-        # Extract content and token usage
-        raw_response, prompt_tokens, completion_tokens = extract_response_data(response)
+        # Extract parsed data and token usage
+        parsed_suggestions = response.output_parsed.model_dump()
+        prompt_tokens = response.usage.input_tokens
+        completion_tokens = response.usage.output_tokens
         tokens_used = prompt_tokens + completion_tokens
 
         # Log AI usage
@@ -456,56 +449,45 @@ async def create_optimization_suggestions(
             f"AI suggestions complete - tokens={tokens_used}, time={generation_time}ms"
         )
 
-        # Parse JSON response - handle markdown code blocks
-        try:
-            json_content = parse_json_from_markdown(raw_response)
-            parsed_suggestions = json.loads(json_content)
+        # Validate and filter skill suggestions
+        raw_technical = parsed_suggestions.get("skills", {}).get("technical", [])
+        raw_soft = parsed_suggestions.get("skills", {}).get("soft", [])
 
-            # Validate and filter skill suggestions
-            raw_technical = parsed_suggestions.get("skills", {}).get("technical", [])
-            raw_soft = parsed_suggestions.get("skills", {}).get("soft", [])
+        technical_suggestions = _validate_skill_suggestions(
+            raw_technical, current_technical_skills
+        )
+        soft_suggestions = _validate_skill_suggestions(raw_soft, current_soft_skills)
 
-            technical_suggestions = _validate_skill_suggestions(
-                raw_technical, current_technical_skills
-            )
-            soft_suggestions = _validate_skill_suggestions(raw_soft, current_soft_skills)
+        # Process professional summary suggestion
+        summary_data = parsed_suggestions.get("professional_summary", {})
+        suggested_text = summary_data.get("suggested_text", "").strip()
+        key_changes = summary_data.get("key_changes", [])
 
-            # Process professional summary suggestion
-            summary_data = parsed_suggestions.get("professional_summary", {})
-            suggested_text = summary_data.get("suggested_text", "").strip()
-            key_changes = summary_data.get("key_changes", [])
+        logger.info(
+            f"Processed AI suggestions - Technical: {len(technical_suggestions)}, Soft: {len(soft_suggestions)}"
+        )
 
-            logger.info(
-                f"Processed AI suggestions - Technical: {len(technical_suggestions)}, Soft: {len(soft_suggestions)}"
-            )
+        # Validate summary suggestion
+        if not suggested_text or len(suggested_text) < 10:
+            suggested_text = ""
+            key_changes = []
 
-            # Validate summary suggestion
-            if not suggested_text or len(suggested_text) < 10:
-                suggested_text = ""
-                key_changes = []
-
-            return {
-                "skills": {"technical": technical_suggestions, "soft": soft_suggestions},
-                "professional_summary": {
-                    "suggested_text": suggested_text,
-                    "original_text": current_summary,
-                    "key_changes": key_changes,
-                },
-            }
-
-        except json.JSONDecodeError as e:
-            # JSON parsing failed - return empty structures
-            logger.error(f"Failed to parse AI response JSON: {str(e)}")
-            return {
-                "skills": {"technical": [], "soft": []},
-                "professional_summary": {
-                    "suggested_text": "",
-                    "original_text": current_summary,
-                    "key_changes": [],
-                },
-            }
+        return {
+            "skills": {"technical": technical_suggestions, "soft": soft_suggestions},
+            "professional_summary": {
+                "suggested_text": suggested_text,
+                "original_text": current_summary,
+                "key_changes": key_changes,
+            },
+        }
 
     except Exception as e:
+        # Log the error with full details
+        logger.error(
+            f"Optimization suggestions failed with error: {str(e)}", exc_info=True
+        )
+        logger.error(f"Error type: {type(e).__name__}")
+
         # Log failed AI usage
         if user_id:
             log_ai_usage_safe(

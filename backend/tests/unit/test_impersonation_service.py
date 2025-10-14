@@ -5,22 +5,23 @@ This module provides comprehensive tests for the impersonation service functiona
 including session management, validation, and security checks.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 from sqlalchemy.orm import Session
 
+from src.models.impersonation_session import ImpersonationSession
+from src.models.user import User
 from src.services.impersonation_service import (
-    start_impersonation_session,
+    ImpersonationNotAllowedError,
+    cleanup_expired_sessions,
     end_impersonation_session,
     get_active_session_for_admin,
     get_active_sessions,
+    start_impersonation_session,
     validate_session,
-    cleanup_expired_sessions,
-    ImpersonationNotAllowedError,
 )
-from src.models.impersonation_session import ImpersonationSession
-from src.models.user import User
 
 
 class TestImpersonationService:

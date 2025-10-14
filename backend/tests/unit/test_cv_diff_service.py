@@ -9,9 +9,11 @@ Tests the semantic diff computation logic including:
 - Edge cases and error handling
 """
 
-import pytest
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.services.cv_diff_service import CVDiffService, cv_diff_service
 
 

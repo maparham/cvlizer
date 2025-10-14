@@ -9,6 +9,7 @@ and fix job descriptions that are stuck in the parsing state.
 import logging
 from datetime import datetime, timedelta
 from typing import List, Tuple
+
 from sqlalchemy.orm import Session
 
 from src.models.job_description import JobDescription

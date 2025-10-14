@@ -5,11 +5,13 @@ This module defines the AISuggestion database model for storing
 AI-generated content enhancement suggestions with confidence scores.
 """
 
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text, ForeignKey, JSON
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .base import Base
 import uuid
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class AISuggestion(Base):

@@ -5,11 +5,13 @@ This module defines the OptimizationHistory database model for storing
 ATS optimization analysis results and tracking improvements over time.
 """
 
-from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, JSON, Float
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .base import Base
 import uuid
+
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .base import Base
 
 
 class OptimizationHistory(Base):

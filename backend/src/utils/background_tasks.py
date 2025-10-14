@@ -8,12 +8,12 @@ Follows the same pattern as CV parsing for consistency.
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
+
 from sqlalchemy.orm import Session
 
-from src.models.base import SessionLocal
 from src.config import BackgroundTaskConfig
-
+from src.models.base import SessionLocal
 
 # Thread pool for background tasks (configurable via environment)
 executor = ThreadPoolExecutor(max_workers=max(1, BackgroundTaskConfig.WORKERS))

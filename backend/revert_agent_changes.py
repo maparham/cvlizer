@@ -3,9 +3,11 @@ Script to revert AI agent integration changes while preserving other modificatio
 This removes database columns added for agent parsing.
 """
 
-from sqlalchemy import text
-from src.database import engine
 import logging
+
+from sqlalchemy import text
+
+from src.database import engine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,7 +36,7 @@ def remove_agent_columns():
                 if column_name in columns:
                     # SQLite doesn't support DROP COLUMN easily, need to recreate table
                     logger.info(
-                        f"Column {column_name} exists, will need table recreation"
+                        "Column %s exists, will need table recreation", column_name
                     )
                 else:
                     logger.info(f"Column {column_name} doesn't exist, skipping")

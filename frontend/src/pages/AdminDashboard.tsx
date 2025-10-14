@@ -22,7 +22,7 @@
  * - Authentication utilities for admin verification
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Paper,
@@ -31,8 +31,8 @@ import {
   Button,
   Alert,
   Tabs,
-  Tab
-} from '@mui/material'
+  Tab,
+} from "@mui/material";
 import {
   Dashboard,
   People,
@@ -40,96 +40,95 @@ import {
   Refresh,
   Analytics,
   BugReport,
-} from '@mui/icons-material'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useImpersonation } from '../hooks/useImpersonation'
-import { useAdminStats } from '../hooks/useAdminStats'
-import { useAdminUsers } from '../hooks/useAdminUsers'
-import { useAIUsageData } from '../hooks/useAIUsageData'
-import { useUserActions } from '../hooks/useUserActions'
-import OverviewTab from '../components/admin/tabs/OverviewTab'
-import UsersTab from '../components/admin/tabs/UsersTab'
-import AIUsageTab from '../components/admin/tabs/AIUsageTab'
-import DiagnosticChatTab from '../components/admin/tabs/DiagnosticChatTab'
-
+} from "@mui/icons-material";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useImpersonation } from "../hooks/useImpersonation";
+import { useAdminStats } from "../hooks/useAdminStats";
+import { useAdminUsers } from "../hooks/useAdminUsers";
+import { useAIUsageData } from "../hooks/useAIUsageData";
+import { useUserActions } from "../hooks/useUserActions";
+import OverviewTab from "../components/admin/tabs/OverviewTab";
+import UsersTab from "../components/admin/tabs/UsersTab";
+import AIUsageTab from "../components/admin/tabs/AIUsageTab";
+import DiagnosticChatTab from "../components/admin/tabs/DiagnosticChatTab";
 
 const AdminDashboard: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [currentTab, setCurrentTab] = useState(0)
-  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [currentTab, setCurrentTab] = useState(0);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const { isAuthenticated } = useAuth()
-  const { isImpersonating } = useImpersonation()
-  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth();
+  const { isImpersonating } = useImpersonation();
+  const navigate = useNavigate();
 
   // Custom hooks for data management
-  const adminStats = useAdminStats()
-  const adminUsers = useAdminUsers()
-  const aiUsageData = useAIUsageData()
-  const userActions = useUserActions()
+  const adminStats = useAdminStats();
+  const adminUsers = useAdminUsers();
+  const aiUsageData = useAIUsageData();
+  const userActions = useUserActions();
 
   // Initialize tab from URL parameter
   useEffect(() => {
-    const tabParam = searchParams.get('tab')
-    if (tabParam === 'users') {
-      setCurrentTab(1)
-    } else if (tabParam === 'ai-usage') {
-      setCurrentTab(2)
-    } else if (tabParam === 'diagnostic') {
-      setCurrentTab(3)
-    } else if (tabParam === 'overview') {
-      setCurrentTab(0)
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "users") {
+      setCurrentTab(1);
+    } else if (tabParam === "ai-usage") {
+      setCurrentTab(2);
+    } else if (tabParam === "diagnostic") {
+      setCurrentTab(3);
+    } else if (tabParam === "overview") {
+      setCurrentTab(0);
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   // Handle tab changes and data loading
   const handleTabChange = (newValue: number) => {
-    setCurrentTab(newValue)
+    setCurrentTab(newValue);
     // Update URL parameter
-    const newSearchParams = new URLSearchParams(searchParams)
+    const newSearchParams = new URLSearchParams(searchParams);
     if (newValue === 1) {
-      newSearchParams.set('tab', 'users')
+      newSearchParams.set("tab", "users");
     } else if (newValue === 2) {
-      newSearchParams.set('tab', 'ai-usage')
+      newSearchParams.set("tab", "ai-usage");
     } else if (newValue === 3) {
-      newSearchParams.set('tab', 'diagnostic')
+      newSearchParams.set("tab", "diagnostic");
     } else {
-      newSearchParams.set('tab', 'overview')
+      newSearchParams.set("tab", "overview");
     }
-    setSearchParams(newSearchParams)
-  }
+    setSearchParams(newSearchParams);
+  };
 
   const handleRefresh = () => {
     if (currentTab === 0) {
-      adminStats.loadStats()
+      adminStats.loadStats();
     } else if (currentTab === 1) {
-      adminUsers.loadUsers()
+      adminUsers.loadUsers();
     } else if (currentTab === 2) {
-      aiUsageData.loadAIUsageData()
+      aiUsageData.loadAIUsageData();
     }
-  }
+  };
 
   const handleDeleteAllAILogs = async () => {
     try {
-      setIsDeleting(true)
-      await aiUsageData.handleDeleteAllLogs()
-      setDeleteAllDialogOpen(false)
+      setIsDeleting(true);
+      await aiUsageData.handleDeleteAllLogs();
+      setDeleteAllDialogOpen(false);
     } catch (error) {
       // Error handling is done in the hook
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   if (!isAuthenticated) {
-    navigate('/login')
-    return null
+    navigate("/login");
+    return null;
   }
 
   // Handle admin access errors from backend
-  if (adminStats.error && adminStats.error.includes('Admin access required')) {
+  if (adminStats.error && adminStats.error.includes("Admin access required")) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -138,12 +137,12 @@ const AdminDashboard: React.FC = () => {
         <Button
           variant="contained"
           startIcon={<ArrowBack />}
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate("/dashboard")}
         >
           Back to Dashboard
         </Button>
       </Container>
-    )
+    );
   }
 
   // Prevent access to admin dashboard during impersonation
@@ -151,24 +150,29 @@ const AdminDashboard: React.FC = () => {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Alert severity="warning" sx={{ mb: 2 }}>
-          Admin dashboard is not available during impersonation. Please end the impersonation session to access admin features.
+          Admin dashboard is not available during impersonation. Please end the
+          impersonation session to access admin features.
         </Alert>
         <Button
           variant="contained"
           startIcon={<ArrowBack />}
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate("/dashboard")}
         >
           Back to Dashboard
         </Button>
       </Container>
-    )
+    );
   }
-
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <Typography variant="h4" component="h1">
           Admin Dashboard
         </Typography>
@@ -176,7 +180,7 @@ const AdminDashboard: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate("/dashboard")}
             sx={{ mr: 2 }}
           >
             Back to Dashboard
@@ -235,7 +239,7 @@ const AdminDashboard: React.FC = () => {
           onLoadUserActivities={userActions.loadUserActivities}
           onLoadUserErrors={userActions.loadUserErrors}
           onStartImpersonation={userActions.startImpersonation}
-          onContactUser={(email) => window.open(`mailto:${email}`, '_blank')}
+          onContactUser={(email) => window.open(`mailto:${email}`, "_blank")}
           actionLoading={userActions.actionLoading}
           selectedUser={userActions.selectedUser}
           userDetailOpen={userActions.userDetailOpen}
@@ -253,21 +257,36 @@ const AdminDashboard: React.FC = () => {
           activitiesLoading={userActions.activitiesLoading}
           selectedUserId={userActions.selectedUserId}
           onActivitiesPageChange={(page) => {
-            userActions.setActivityTypeFilter(userActions.activityTypeFilter)
+            userActions.setActivityTypeFilter(userActions.activityTypeFilter);
             if (userActions.selectedUserId) {
-              userActions.loadUserActivities(userActions.selectedUserId, page, userActions.activitiesLimit, userActions.activityTypeFilter)
+              userActions.loadUserActivities(
+                userActions.selectedUserId,
+                page,
+                userActions.activitiesLimit,
+                userActions.activityTypeFilter,
+              );
             }
           }}
           onActivitiesLimitChange={(limit) => {
-            userActions.setActivityTypeFilter(userActions.activityTypeFilter)
+            userActions.setActivityTypeFilter(userActions.activityTypeFilter);
             if (userActions.selectedUserId) {
-              userActions.loadUserActivities(userActions.selectedUserId, 0, limit, userActions.activityTypeFilter)
+              userActions.loadUserActivities(
+                userActions.selectedUserId,
+                0,
+                limit,
+                userActions.activityTypeFilter,
+              );
             }
           }}
           onActivityTypeFilterChange={(filter) => {
-            userActions.setActivityTypeFilter(filter)
+            userActions.setActivityTypeFilter(filter);
             if (userActions.selectedUserId) {
-              userActions.loadUserActivities(userActions.selectedUserId, 0, userActions.activitiesLimit, filter)
+              userActions.loadUserActivities(
+                userActions.selectedUserId,
+                0,
+                userActions.activitiesLimit,
+                filter,
+              );
             }
           }}
           onClearUserActivities={userActions.clearUserActivities}
@@ -275,10 +294,14 @@ const AdminDashboard: React.FC = () => {
           errorsOpen={userActions.errorsOpen}
           onErrorsClose={() => userActions.setErrorsOpen(false)}
           impersonationDialogOpen={userActions.impersonationDialogOpen}
-          onImpersonationDialogClose={() => userActions.setImpersonationDialogOpen(false)}
+          onImpersonationDialogClose={() =>
+            userActions.setImpersonationDialogOpen(false)
+          }
           impersonationTarget={userActions.impersonationTarget}
           impersonationJustification={userActions.impersonationJustification}
-          onImpersonationJustificationChange={userActions.setImpersonationJustification}
+          onImpersonationJustificationChange={
+            userActions.setImpersonationJustification
+          }
           onConfirmImpersonation={userActions.confirmImpersonation}
         />
       )}
@@ -316,7 +339,7 @@ const AdminDashboard: React.FC = () => {
 
       {currentTab === 3 && <DiagnosticChatTab />}
     </Container>
-  )
-}
+  );
+};
 
-export default AdminDashboard
+export default AdminDashboard;

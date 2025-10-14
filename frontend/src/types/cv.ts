@@ -18,189 +18,189 @@
  * - Provides IntelliSense support for CV-related operations
  */
 export interface CV {
-  id: string
-  user_id: string
-  original_filename: string
-  file_size: number
-  file_type: string
-  created_at: string
-  updated_at: string
-  is_parsed: boolean
-  parse_error?: string
-  parsed_data?: CVData
-  is_imported: boolean
-  has_been_edited: boolean
+  id: string;
+  user_id: string;
+  original_filename: string;
+  file_size: number;
+  file_type: string;
+  created_at: string;
+  updated_at: string;
+  is_parsed: boolean;
+  parse_error?: string;
+  parsed_data?: CVData;
+  is_imported: boolean;
+  has_been_edited: boolean;
 }
 
 // CV Data Structure
 export interface CVData {
-  personal_info: PersonalInfo
-  professional_summary: ProfessionalSummary
-  why_good_fit?: WhyGoodFit
-  work_experience: WorkExperience[]
-  education: Education[]
-  skills: Skills
-  certifications: Certification[]
-  projects: Project[]
-  awards: Award[]
-  publications: Publication[]
-  volunteer_experience: VolunteerExperience[]
-  section_config?: SectionConfig
+  personal_info: PersonalInfo;
+  professional_summary: ProfessionalSummary;
+  why_good_fit?: WhyGoodFit;
+  work_experience: WorkExperience[];
+  education: Education[];
+  skills: Skills;
+  certifications: Certification[];
+  projects: Project[];
+  awards: Award[];
+  publications: Publication[];
+  volunteer_experience: VolunteerExperience[];
+  section_config?: SectionConfig;
 }
 
 // Personal Information
 export interface PersonalInfo {
-  full_name: string
-  email: string
-  phone: string
-  location: string
-  linkedin_url: string
-  website_url: string
-  github_url?: string
-  portfolio_url?: string
+  full_name: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin_url: string;
+  website_url: string;
+  github_url?: string;
+  portfolio_url?: string;
 }
 
 // Professional Summary
 export interface ProfessionalSummary {
-  content: string
-  keywords: string[]
+  content: string;
+  keywords: string[];
 }
 
 // Why I'm a Good Fit (AI Generated)
 export interface WhyGoodFit {
-  content?: string
-  fit_analysis?: string
-  confidence_score: number
-  key_matches: string[]
-  missing_skills?: string[]
-  suggested_improvements?: string[]
-  strengths?: string[]
-  weaknesses?: string[]
-  generated_at?: string
-  job_description_id?: string
+  content?: string;
+  fit_analysis?: string;
+  confidence_score: number;
+  key_matches: string[];
+  missing_skills?: string[];
+  suggested_improvements?: string[];
+  strengths?: string[];
+  weaknesses?: string[];
+  generated_at?: string;
+  job_description_id?: string;
 }
 
 // Work Experience
 export interface WorkExperience {
-  id: string
-  company: string
-  position: string
-  location: string
-  start_date: string
-  end_date: string
-  current: boolean
-  description: string
-  achievements: string[]
-  technologies: string[]
-  responsibilities?: string[]
+  id: string;
+  company: string;
+  position: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  current: boolean;
+  description: string;
+  achievements: string[];
+  technologies: string[];
+  responsibilities?: string[];
 }
 
 // Education
 export interface Education {
-  id: string
-  institution: string
-  degree: string
-  field_of_study: string
-  start_date: string
-  end_date: string
-  current: boolean
-  gpa?: string
-  honors: string[]
-  thesis_title?: string
+  id: string;
+  institution: string;
+  degree: string;
+  field_of_study: string;
+  start_date: string;
+  end_date: string;
+  current: boolean;
+  gpa?: string;
+  honors: string[];
+  thesis_title?: string;
 }
 
 // Skills
 export interface Skills {
-  technical: string[]
-  soft: string[]
-  languages: Language[]
-  frameworks?: string[]
-  tools?: string[]
-  databases?: string[]
+  technical: string[];
+  soft: string[];
+  languages: Language[];
+  frameworks?: string[];
+  tools?: string[];
+  databases?: string[];
 }
 
 export interface Language {
-  id: string
-  language: string
-  proficiency: 'Basic' | 'Intermediate' | 'Advanced' | 'Fluent' | 'Native'
+  id: string;
+  language: string;
+  proficiency: "Basic" | "Intermediate" | "Advanced" | "Fluent" | "Native";
 }
 
 // Certifications
 export interface Certification {
-  id: string
-  name: string
-  issuer: string
-  date: string
-  expiry_date?: string
-  description?: string
+  id: string;
+  name: string;
+  issuer: string;
+  date: string;
+  expiry_date?: string;
+  description?: string;
 }
 
 // Projects
 export interface Project {
-  id: string
-  name: string
-  description: string
-  technologies: string[]
-  url?: string
+  id: string;
+  name: string;
+  description: string;
+  technologies: string[];
+  url?: string;
 }
 
 // Awards
 export interface Award {
-  id: string
-  name: string
-  issuer: string
-  date: string
-  description?: string
+  id: string;
+  name: string;
+  issuer: string;
+  date: string;
+  description?: string;
 }
 
 // Publications
 export interface Publication {
-  id: string
-  title: string
-  authors: string
-  journal: string
-  date: string
-  url?: string
+  id: string;
+  title: string;
+  authors: string;
+  journal: string;
+  date: string;
+  url?: string;
 }
 
 // Volunteer Experience
 export interface VolunteerExperience {
-  id: string
-  organization: string
-  position: string
-  location: string
-  start_date: string
-  end_date: string
-  current: boolean
-  description: string
-  achievements?: string[]
+  id: string;
+  organization: string;
+  position: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  current: boolean;
+  description: string;
+  achievements?: string[];
 }
 
 // Section Configuration
 export interface SectionConfig {
-  sections: CVSection[]
+  sections: CVSection[];
 }
 
 export interface CVSection {
-  id: string
-  type: CVSectionType
-  title: string
-  visible: boolean
-  order: number
+  id: string;
+  type: CVSectionType;
+  title: string;
+  visible: boolean;
+  order: number;
 }
 
 export type CVSectionType =
-  | 'personal_info'
-  | 'professional_summary'
-  | 'why_good_fit'
-  | 'work_experience'
-  | 'education'
-  | 'skills'
-  | 'certifications'
-  | 'projects'
-  | 'awards'
-  | 'publications'
-  | 'volunteer_experience'
+  | "personal_info"
+  | "professional_summary"
+  | "why_good_fit"
+  | "work_experience"
+  | "education"
+  | "skills"
+  | "certifications"
+  | "projects"
+  | "awards"
+  | "publications"
+  | "volunteer_experience";
 
 // CV Section Data Union Type
 export type CVSectionData =
@@ -214,16 +214,16 @@ export type CVSectionData =
   | Project[]
   | Award[]
   | Publication[]
-  | VolunteerExperience[]
+  | VolunteerExperience[];
 
 // Utility Types
 export interface CVSectionDefinition {
-  id: CVSectionType
-  name: string
-  description: string
-  component: string
-  icon?: string
-  category: 'core' | 'experience' | 'achievements' | 'additional'
+  id: CVSectionType;
+  name: string;
+  description: string;
+  component: string;
+  icon?: string;
+  category: "core" | "experience" | "achievements" | "additional";
 }
 
 // Form States
@@ -231,20 +231,20 @@ export interface CVFormData extends Partial<CVData> {}
 
 export interface CVFormErrors {
   [sectionId: string]: {
-    [fieldId: string]: string
-  }
+    [fieldId: string]: string;
+  };
 }
 
 // CV Operations
 export interface CVUpdateRequest {
-  parsed_data: CVData
+  parsed_data: CVData;
 }
 
 export interface CVUploadRequest extends FormData {}
 
 export interface CVUploadResponse {
-  cv: CV
-  message: string
+  cv: CV;
+  message: string;
 }
 
 /**

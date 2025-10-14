@@ -6,43 +6,41 @@ static file serving, and includes all API routers for authentication,
 CV management, job descriptions, and AI features.
 """
 
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+import logging
+import os
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-import os
-from dotenv import load_dotenv
-import logging
-import asyncio
-import contextlib
+from fastapi.responses import JSONResponse
 
 # Rate limiting
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
-# Logging setup
-from src.utils.logging_setup import setup_logging
+from src.api.admin import router as admin_router
+from src.api.admin_ai_usage import router as admin_ai_usage_router
+from src.api.ai import router as ai_router
 
 # Import API routers
 from src.api.auth import router as auth_router
-from src.api.cvs import router as cvs_router
-from src.api.job_descriptions import router as job_descriptions_router
-from src.api.ai import router as ai_router
 from src.api.cv_history import router as cv_history_router
-from src.api.admin import router as admin_router
-from src.api.admin_ai_usage import router as admin_ai_usage_router
+from src.api.cvs import router as cvs_router
+from src.api.impersonation import auth_router as impersonation_auth_router
+from src.api.impersonation import router as impersonation_router
+from src.api.job_descriptions import router as job_descriptions_router
 from src.api.user_activities import router as user_activities_router
-from src.api.impersonation import (
-    router as impersonation_router,
-    auth_router as impersonation_auth_router,
-)
+
+# Import middleware
+from src.middleware.impersonation_headers import ImpersonationHeadersMiddleware
 
 # Import services for startup cleanup
 from src.services.cleanup_service import start_cleanup_service, stop_cleanup_service
 
-# Import middleware
-from src.middleware.impersonation_headers import ImpersonationHeadersMiddleware
+# Logging setup
+from src.utils.logging_setup import setup_logging
 
 load_dotenv()
 

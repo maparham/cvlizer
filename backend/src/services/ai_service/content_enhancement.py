@@ -5,22 +5,28 @@ This module provides functions for enhancing CV content with stronger
 language, action verbs, metrics, and professional terminology.
 """
 
-import time
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional
+import time
+from typing import Any, Dict, Optional
+
+from openai.types.shared_params import Reasoning
 from sqlalchemy.orm import Session
+
 from src.config import AIConfig
+from src.schemas.ai_response_schemas import ContentEnhancementResponseSchema
+
 from .common import (
-    get_openai_client,
-    is_ai_enabled,
-    extract_response_data,
-    parse_json_from_markdown,
-    log_ai_usage_safe,
-    with_retries,
     RETRY_ATTEMPTS,
     RETRY_DELAY,
+    extract_response_data,
+    get_openai_client,
+    is_ai_enabled,
+    log_ai_usage_safe,
+    parse_json_from_markdown,
+    validate_with_schema,
+    with_retries,
 )
 
 logger = logging.getLogger(__name__)
@@ -88,19 +94,27 @@ Return JSON:
 
         async def _call():
             return await asyncio.to_thread(
-                client.responses.create,
+                client.responses.parse,
                 model=AIConfig.OPENAI_MODEL,
-                instructions="You're a CV content expert. Enhance text to be impactful, specific, professional. Add metrics, strong verbs, industry terms.",
-                input=prompt,
-                reasoning={"effort": "minimal", "summary": "auto"},
+                input=[
+                    {
+                        "role": "system",
+                        "content": "You're a CV content expert. Enhance text to be impactful, specific, professional. Add metrics, strong verbs, industry terms.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                text_format=ContentEnhancementResponseSchema,
+                reasoning=Reasoning(effort="low"),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
 
         generation_time = int((time.time() - start_time) * 1000)
 
-        # Extract content and token usage
-        content, prompt_tokens, completion_tokens = extract_response_data(response)
+        # Extract parsed data and token usage
+        result = response.output_parsed.model_dump()
+        prompt_tokens = response.usage.input_tokens
+        completion_tokens = response.usage.output_tokens
         tokens_used = prompt_tokens + completion_tokens
 
         # Log AI usage
@@ -117,22 +131,9 @@ Return JSON:
                 cv_id=cv_id,
             )
 
-        # Parse JSON response - handle markdown code blocks
-        try:
-            json_content = parse_json_from_markdown(content)
-            result = json.loads(json_content)
-            suggestions = result.get("suggestions", [])
-            overall_improvements = result.get("overall_improvements", [])
-        except json.JSONDecodeError:
-            # Fallback if JSON parsing fails
-            suggestions = [
-                {
-                    "content": content,
-                    "improvements": ["Enhanced content"],
-                    "confidence_score": 75,
-                }
-            ]
-            overall_improvements = ["Content enhanced for better impact"]
+        # Extract data from validated response
+        suggestions = result.get("suggestions", [])
+        overall_improvements = result.get("overall_improvements", [])
 
         return {
             "suggestions": suggestions,
@@ -143,6 +144,13 @@ Return JSON:
         }
 
     except Exception as e:
+        # Log the error with full details
+        logger.error(f"Content enhancement failed with error: {str(e)}", exc_info=True)
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(
+            f"Content type: {content_type}, Original content length: {len(original_content)}"
+        )
+
         # Log failed AI usage
         if user_id:
             log_ai_usage_safe(

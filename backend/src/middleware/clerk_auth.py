@@ -5,30 +5,29 @@ This module provides authentication using Clerk JWT tokens and user synchronizat
 with the local database.
 """
 
-from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any, Tuple, NamedTuple
-import logging
-import os
-import requests
 import base64
 import json
+import logging
+import os
 import time
-from dotenv import load_dotenv
+from datetime import datetime, timezone
 from functools import lru_cache
+from typing import Any, Dict, NamedTuple, Optional, Tuple
+
+import requests
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+from dotenv import load_dotenv
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import jwt
+from sqlalchemy.orm import Session
 
 from src.models.base import get_db
 from src.models.user import User
+from src.services.auth_service import ALGORITHM as APP_JWT_ALG
+from src.services.auth_service import SECRET_KEY as APP_JWT_SECRET
 from src.services.clerk_sync_service import sync_clerk_user_to_local_db
-from src.services.auth_service import (
-    SECRET_KEY as APP_JWT_SECRET,
-    ALGORITHM as APP_JWT_ALG,
-)
-from datetime import datetime, timezone
-from jose import jwt
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.backends import default_backend
 
 load_dotenv()
 

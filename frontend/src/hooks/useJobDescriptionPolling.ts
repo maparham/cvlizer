@@ -16,10 +16,10 @@
  * - Hook returns parsing state and utility functions
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAIStore } from '../stores/aiStore';
-import { JobDescription } from '../types/ai';
-import { POLLING_CONFIG } from '../config/constants';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useAIStore } from "../stores/aiStore";
+import { JobDescription } from "../types/ai";
+import { POLLING_CONFIG } from "../config/constants";
 
 interface UseJobDescriptionPollingOptions {
   onParsingComplete?: (jobDescription: JobDescription) => void;
@@ -36,7 +36,7 @@ interface UseJobDescriptionPollingReturn {
 
 export const useJobDescriptionPolling = (
   jobDescriptions: JobDescription[],
-  options: UseJobDescriptionPollingOptions = {}
+  options: UseJobDescriptionPollingOptions = {},
 ): UseJobDescriptionPollingReturn => {
   const {
     onParsingComplete,
@@ -44,7 +44,9 @@ export const useJobDescriptionPolling = (
     pollingInterval = POLLING_CONFIG.JOB_DESCRIPTION_INTERVAL,
   } = options;
 
-  const [parsingJobDescriptions, setParsingJobDescriptions] = useState<Set<string>>(new Set());
+  const [parsingJobDescriptions, setParsingJobDescriptions] = useState<
+    Set<string>
+  >(new Set());
   const [isPolling, setIsPolling] = useState(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const processedJobDescriptionsRef = useRef<Set<string>>(new Set());
@@ -61,62 +63,65 @@ export const useJobDescriptionPolling = (
   }, [onParsingComplete, onParsingError]);
 
   // Start polling for specific job description IDs
-  const startPolling = useCallback((jobDescriptionIds: string[]) => {
-    if (jobDescriptionIds.length === 0) return;
+  const startPolling = useCallback(
+    (jobDescriptionIds: string[]) => {
+      if (jobDescriptionIds.length === 0) return;
 
-    setParsingJobDescriptions(new Set(jobDescriptionIds));
-    setIsPolling(true);
+      setParsingJobDescriptions(new Set(jobDescriptionIds));
+      setIsPolling(true);
 
-    // Clear any existing polling
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
+      // Clear any existing polling
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
 
-    pollingIntervalRef.current = setInterval(async () => {
-      const stillParsing = new Set<string>();
+      pollingIntervalRef.current = setInterval(async () => {
+        const stillParsing = new Set<string>();
 
-      for (const id of jobDescriptionIds) {
-        try {
-          const updated = await updateJobDescriptionStatus(id);
+        for (const id of jobDescriptionIds) {
+          try {
+            const updated = await updateJobDescriptionStatus(id);
 
-          if (updated.is_parsing) {
-            stillParsing.add(id);
-          } else {
-            // Parsing completed - check if we've already processed this job description
-            if (processedJobDescriptionsRef.current.has(id)) {
-              continue;
-            }
-
-            // Mark as processed
-            processedJobDescriptionsRef.current.add(id);
-
-            if (updated.parse_error) {
-              // Parsing failed - error will be displayed in the sidebar card
-              onParsingErrorRef.current?.(updated, updated.parse_error);
-              // Don't show temporary alert - the error appears in the sidebar
+            if (updated.is_parsing) {
+              stillParsing.add(id);
             } else {
-              // Parsing succeeded
-              onParsingCompleteRef.current?.(updated);
+              // Parsing completed - check if we've already processed this job description
+              if (processedJobDescriptionsRef.current.has(id)) {
+                continue;
+              }
+
+              // Mark as processed
+              processedJobDescriptionsRef.current.add(id);
+
+              if (updated.parse_error) {
+                // Parsing failed - error will be displayed in the sidebar card
+                onParsingErrorRef.current?.(updated, updated.parse_error);
+                // Don't show temporary alert - the error appears in the sidebar
+              } else {
+                // Parsing succeeded
+                onParsingCompleteRef.current?.(updated);
+              }
             }
+          } catch (error) {
+            console.error(`Failed to update job description ${id}:`, error);
+            // Remove from parsing set on error
           }
-        } catch (error) {
-          console.error(`Failed to update job description ${id}:`, error);
-          // Remove from parsing set on error
         }
-      }
 
-      setParsingJobDescriptions(stillParsing);
+        setParsingJobDescriptions(stillParsing);
 
-      // Stop polling if no more parsing job descriptions
-      if (stillParsing.size === 0) {
-        setIsPolling(false);
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
+        // Stop polling if no more parsing job descriptions
+        if (stillParsing.size === 0) {
+          setIsPolling(false);
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
         }
-      }
-    }, pollingInterval);
-  }, [updateJobDescriptionStatus, pollingInterval]); // Remove callback dependencies
+      }, pollingInterval);
+    },
+    [updateJobDescriptionStatus, pollingInterval],
+  ); // Remove callback dependencies
 
   // Stop polling
   const stopPolling = useCallback(() => {
@@ -132,12 +137,14 @@ export const useJobDescriptionPolling = (
   // Auto-start polling when job descriptions with is_parsing=true are detected
   useEffect(() => {
     const parsingIds = jobDescriptions
-      .filter(jd => jd.is_parsing)
-      .map(jd => jd.id);
+      .filter((jd) => jd.is_parsing)
+      .map((jd) => jd.id);
 
     // Only update polling if the parsing IDs have actually changed
-    const currentParsingIds = Array.from(parsingJobDescriptions).sort().join(',');
-    const newParsingIds = parsingIds.sort().join(',');
+    const currentParsingIds = Array.from(parsingJobDescriptions)
+      .sort()
+      .join(",");
+    const newParsingIds = parsingIds.sort().join(",");
 
     if (newParsingIds !== currentParsingIds) {
       if (parsingIds.length > 0) {

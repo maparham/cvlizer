@@ -5,46 +5,49 @@ This module provides administrative endpoints for user management,
 system statistics, and dashboard functionality.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
-from typing import List, Optional
-from pydantic import BaseModel
-from datetime import datetime, timedelta
 import asyncio
 import logging
 import os
+from datetime import datetime, timedelta
+from typing import List, Optional
+
 from dotenv import load_dotenv
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
 load_dotenv()
 
 # Configure rate limiter for admin endpoints
 limiter = Limiter(key_func=get_remote_address)
 
-from src.models.base import get_db
-from src.models.user import User
-from src.models.cv import CV
-from src.models.ai_section import AISection
-from src.models.job_description import JobDescription
-from src.models.user_activity import UserActivity
+import time
+
+import openai as openai_module
+
+from src.config import AIConfig, OpenAIPricing
 from src.middleware.clerk_auth import get_current_user, require_admin_not_impersonating
-from src.services.user_activity_service import (
-    get_user_activities,
-    get_user_recent_errors,
-    clear_user_activities,
-)
+from src.models.ai_section import AISection
+from src.models.base import get_db
+from src.models.cv import CV
+from src.models.job_description import JobDescription
+from src.models.user import User
+from src.models.user_activity import UserActivity
 from src.schemas.diagnostic_schemas import (
-    OpenAIDiagnosticRequest,
-    OpenAIDiagnosticResponse,
-    OpenAIConfigResponse,
     DiagnosticMetrics,
     DiagnosticRequestDetails,
+    OpenAIConfigResponse,
+    OpenAIDiagnosticRequest,
+    OpenAIDiagnosticResponse,
 )
-from src.config import AIConfig, OpenAIPricing
-import openai as openai_module
-import time
+from src.services.user_activity_service import (
+    clear_user_activities,
+    get_user_activities,
+    get_user_recent_errors,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])

@@ -1,8 +1,12 @@
-import React, { useEffect, useRef } from 'react'
-import { Box, Typography, IconButton, Divider, Tooltip } from '@mui/material'
-import { Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon } from '@mui/icons-material'
-import { BaseSectionProps } from '../../../types'
-import { EditableTitle } from '../EditableTitle'
+import React, { useEffect, useRef } from "react";
+import { Box, Typography, IconButton, Divider, Tooltip } from "@mui/material";
+import {
+  Edit as EditIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+} from "@mui/icons-material";
+import { BaseSectionProps } from "../../../types";
+import { EditableTitle } from "../EditableTitle";
 
 const BaseSection: React.FC<BaseSectionProps> = ({
   title,
@@ -15,31 +19,41 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   isEditing,
   isValid = true,
   onTitleSave,
-  sectionId
+  sectionId,
 }) => {
-  const sectionRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus first input when entering edit mode
   useEffect(() => {
     if (isEditing && sectionRef.current) {
-      const firstInput = sectionRef.current.querySelector('input, textarea') as HTMLInputElement
+      const firstInput = sectionRef.current.querySelector(
+        "input, textarea",
+      ) as HTMLInputElement;
       if (firstInput) {
         // Small delay to ensure the input is rendered
-        setTimeout(() => firstInput.focus(), 100)
+        setTimeout(() => firstInput.focus(), 100);
       }
     }
-  }, [isEditing])
+  }, [isEditing]);
 
   return (
     <Box
       ref={sectionRef}
       sx={{
-        position: 'relative'
+        position: "relative",
       }}
     >
       {isEditing && onCancel ? (
         // Show save and cancel icon buttons in edit mode (save button only if onSave is provided)
-        <Box sx={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 0.5 }}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            display: "flex",
+            gap: 0.5,
+          }}
+        >
           {onSave && (
             <Tooltip title="Save changes">
               <span>
@@ -48,12 +62,12 @@ const BaseSection: React.FC<BaseSectionProps> = ({
                   disabled={!isValid}
                   sx={{
                     opacity: 1,
-                    transition: 'opacity 0.2s',
-                    bgcolor: 'white',
+                    transition: "opacity 0.2s",
+                    bgcolor: "white",
                     boxShadow: 1,
-                    '&:disabled': {
-                      opacity: 0.5
-                    }
+                    "&:disabled": {
+                      opacity: 0.5,
+                    },
                   }}
                   size="small"
                 >
@@ -67,9 +81,9 @@ const BaseSection: React.FC<BaseSectionProps> = ({
               onClick={onCancel}
               sx={{
                 opacity: 1,
-                transition: 'opacity 0.2s',
-                bgcolor: 'white',
-                boxShadow: 1
+                transition: "opacity 0.2s",
+                bgcolor: "white",
+                boxShadow: 1,
               }}
               size="small"
             >
@@ -77,50 +91,62 @@ const BaseSection: React.FC<BaseSectionProps> = ({
             </IconButton>
           </Tooltip>
         </Box>
+      ) : // Show edit button or custom editButton in view mode
+      editButton !== null ? (
+        editButton
       ) : (
-        // Show edit button or custom editButton in view mode
-        editButton !== null ? editButton : (
-          <Tooltip title="Edit this section">
-            <IconButton
-              className="edit-button"
-              onClick={onEdit}
-              data-testid={sectionId ? `edit-section-${sectionId}-button` : undefined}
-              sx={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                opacity: 1,
-                color: 'text.secondary',
-                bgcolor: 'transparent',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  color: 'primary.main',
-                  bgcolor: 'rgba(227, 242, 253, 0.5)'
-                }
-              }}
-              size="small"
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )
+        <Tooltip title="Edit this section">
+          <IconButton
+            className="edit-button"
+            onClick={onEdit}
+            data-testid={
+              sectionId ? `edit-section-${sectionId}-button` : undefined
+            }
+            sx={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              opacity: 1,
+              color: "text.secondary",
+              bgcolor: "transparent",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: "primary.main",
+                bgcolor: "rgba(227, 242, 253, 0.5)",
+              },
+            }}
+            size="small"
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 2,
+        }}
+      >
         {onTitleSave ? (
           <EditableTitle
-            title={title || ''}
+            title={title || ""}
             onSave={onTitleSave}
             variant="h5"
             sx={{
-              '& .MuiTypography-root': {
-                fontWeight: 'bold',
-                color: '#1976d2'
-              }
+              "& .MuiTypography-root": {
+                fontWeight: "bold",
+                color: "#1976d2",
+              },
             }}
           />
         ) : (
-          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: "bold", color: "#1976d2" }}
+          >
             {title}
           </Typography>
         )}
@@ -130,7 +156,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
       {children}
       <Divider sx={{ my: 2 }} />
     </Box>
-  )
-}
+  );
+};
 
-export default BaseSection
+export default BaseSection;

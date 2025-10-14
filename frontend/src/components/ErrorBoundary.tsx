@@ -15,28 +15,28 @@
  * - Provides graceful error handling for the entire application
  * - Helps identify and debug rendering issues
  */
-import { Component, ErrorInfo, ReactNode } from 'react'
-import { Box, Typography, Button, Paper } from '@mui/material'
+import { Component, ErrorInfo, ReactNode } from "react";
+import { Box, Typography, Button, Paper } from "@mui/material";
 
 interface Props {
-  children: ReactNode
-  fallback?: ReactNode
+  children: ReactNode;
+  fallback?: ReactNode;
 }
 
 interface State {
-  hasError: boolean
-  error: Error | null
-  errorInfo: ErrorInfo | null
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
-    super(props)
+    super(props);
     this.state = {
       hasError: false,
       error: null,
-      errorInfo: null
-    }
+      errorInfo: null,
+    };
   }
 
   static getDerivedStateFromError(error: Error): State {
@@ -44,34 +44,34 @@ class ErrorBoundary extends Component<Props, State> {
     return {
       hasError: true,
       error,
-      errorInfo: null
-    }
+      errorInfo: null,
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error to console for debugging
-    console.error('ErrorBoundary caught an error:', error)
-    console.error('Error info:', errorInfo)
+    console.error("ErrorBoundary caught an error:", error);
+    console.error("Error info:", errorInfo);
 
     this.setState({
       error,
-      errorInfo
-    })
+      errorInfo,
+    });
   }
 
   handleRetry = () => {
     this.setState({
       hasError: false,
       error: null,
-      errorInfo: null
-    })
-  }
+      errorInfo: null,
+    });
+  };
 
   render() {
     if (this.state.hasError) {
       // Custom fallback UI
       if (this.props.fallback) {
-        return this.props.fallback
+        return this.props.fallback;
       }
 
       // Default error UI
@@ -89,8 +89,8 @@ class ErrorBoundary extends Component<Props, State> {
             sx={{
               padding: 4,
               maxWidth: 600,
-              width: '100%',
-              textAlign: 'center'
+              width: "100%",
+              textAlign: "center",
             }}
           >
             <Typography variant="h4" color="error" gutterBottom>
@@ -101,24 +101,32 @@ class ErrorBoundary extends Component<Props, State> {
               An unexpected error occurred. Please try refreshing the page.
             </Typography>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {process.env.NODE_ENV === "development" && this.state.error && (
               <Box
                 sx={{
                   marginTop: 2,
                   padding: 2,
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: "#f5f5f5",
                   borderRadius: 1,
-                  textAlign: 'left'
+                  textAlign: "left",
                 }}
               >
                 <Typography variant="h6" gutterBottom>
                   Error Details (Development):
                 </Typography>
-                <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
+                <Typography
+                  variant="body2"
+                  component="pre"
+                  sx={{ whiteSpace: "pre-wrap" }}
+                >
                   {this.state.error.message}
                 </Typography>
                 {this.state.errorInfo && (
-                  <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', marginTop: 1 }}>
+                  <Typography
+                    variant="body2"
+                    component="pre"
+                    sx={{ whiteSpace: "pre-wrap", marginTop: 1 }}
+                  >
                     {this.state.errorInfo.componentStack}
                   </Typography>
                 )}
@@ -135,11 +143,11 @@ class ErrorBoundary extends Component<Props, State> {
             </Button>
           </Paper>
         </Box>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }
 
-export default ErrorBoundary
+export default ErrorBoundary;

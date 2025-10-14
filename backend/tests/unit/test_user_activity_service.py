@@ -5,21 +5,22 @@ This module tests user activity tracking, session management,
 and activity data retrieval functionality.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
+
+import pytest
 from sqlalchemy.orm import Session
 
-from src.services.user_activity_service import (
-    log_user_activity,
-    get_user_activities,
-    cleanup_old_activities,
-    get_activity_stats,
-    create_user_session,
-    end_user_session,
-)
 from src.models.user import User
 from src.models.user_activity import UserActivity, UserSession
+from src.services.user_activity_service import (
+    cleanup_old_activities,
+    create_user_session,
+    end_user_session,
+    get_activity_stats,
+    get_user_activities,
+    log_user_activity,
+)
 
 
 class TestUserActivityService:

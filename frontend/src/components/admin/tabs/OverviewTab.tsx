@@ -16,16 +16,29 @@
  * - Uses StatCard components for consistent display
  */
 
-import React from 'react'
-import { Box, Grid, Card, CardContent, Typography, CircularProgress, Alert } from '@mui/material'
-import { People, Description, SmartToy, CheckCircle } from '@mui/icons-material'
-import { SystemStats } from '../../../types/admin'
-import StatCard from '../StatCard'
+import React from "react";
+import {
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
+import {
+  People,
+  Description,
+  SmartToy,
+  CheckCircle,
+} from "@mui/icons-material";
+import { SystemStats } from "../../../types/admin";
+import StatCard from "../StatCard";
 
 interface OverviewTabProps {
-  stats: SystemStats | null
-  loading: boolean
-  error: string | null
+  stats: SystemStats | null;
+  loading: boolean;
+  error: string | null;
 }
 
 const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
@@ -34,7 +47,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
       <Box display="flex" justifyContent="center" p={4}>
         <CircularProgress />
       </Box>
-    )
+    );
   }
 
   if (error) {
@@ -42,7 +55,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
       <Alert severity="error" sx={{ mb: 3 }}>
         {error}
       </Alert>
-    )
+    );
   }
 
   if (!stats) {
@@ -50,7 +63,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
       <Alert severity="info" sx={{ mb: 3 }}>
         No statistics available
       </Alert>
-    )
+    );
   }
 
   return (
@@ -62,7 +75,12 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
             title="Total Users"
             value={stats.total_users}
             icon={<People />}
-            trend={{ value: Math.round((stats.users_last_7_days / stats.total_users) * 100), label: 'new this week' }}
+            trend={{
+              value: Math.round(
+                (stats.users_last_7_days / stats.total_users) * 100,
+              ),
+              label: "new this week",
+            }}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -78,7 +96,12 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
             title="Total CVs"
             value={stats.total_cvs}
             icon={<Description />}
-            trend={{ value: Math.round((stats.cvs_last_7_days / stats.total_cvs) * 100), label: 'new this week' }}
+            trend={{
+              value: Math.round(
+                (stats.cvs_last_7_days / stats.total_cvs) * 100,
+              ),
+              label: "new this week",
+            }}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -109,7 +132,9 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
               </Box>
               <Box display="flex" justifyContent="space-between">
                 <Typography>Job Descriptions</Typography>
-                <Typography variant="h6">{stats.total_job_descriptions}</Typography>
+                <Typography variant="h6">
+                  {stats.total_job_descriptions}
+                </Typography>
               </Box>
             </CardContent>
           </Card>
@@ -137,7 +162,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
         </Grid>
       </Grid>
     </Box>
-  )
-}
+  );
+};
 
-export default OverviewTab
+export default OverviewTab;

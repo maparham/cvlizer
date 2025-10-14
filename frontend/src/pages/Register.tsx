@@ -1,13 +1,7 @@
-import React from 'react'
-import {
-  Container,
-  Paper,
-  Typography,
-  Box,
-  Link
-} from '@mui/material'
-import { Link as RouterLink } from 'react-router-dom'
-import { SignUp } from '@clerk/clerk-react'
+import React from "react";
+import { Container, Paper, Typography, Box, Link } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
+import { SignUp } from "@clerk/clerk-react";
 
 const Register: React.FC = () => {
   return (
@@ -15,13 +9,13 @@ const Register: React.FC = () => {
       <Box
         sx={{
           marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
+        <Paper elevation={3} sx={{ padding: 4, width: "100%" }}>
+          <Box sx={{ textAlign: "center", mb: 3 }}>
             <Typography component="h1" variant="h4">
               Create Account
             </Typography>
@@ -30,7 +24,7 @@ const Register: React.FC = () => {
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
             <SignUp
               routing="path"
               path="/register"
@@ -39,9 +33,9 @@ const Register: React.FC = () => {
             />
           </Box>
 
-          <Box sx={{ textAlign: 'center', mt: 2 }}>
+          <Box sx={{ textAlign: "center", mt: 2 }}>
             <Typography variant="body2">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <Link component={RouterLink} to="/login">
                 Sign in here
               </Link>
@@ -50,7 +44,7 @@ const Register: React.FC = () => {
         </Paper>
       </Box>
     </Container>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;

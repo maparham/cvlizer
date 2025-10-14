@@ -12,8 +12,9 @@ async def parse_cv_with_openai(
     file_content: bytes, filename: str, content_type: str
 ) -> dict:
     """Parse CV content using OpenAI"""
-    from .file_service import extract_text_from_file
     import uuid
+
+    from .file_service import extract_text_from_file
 
     try:
         # Extract text from file

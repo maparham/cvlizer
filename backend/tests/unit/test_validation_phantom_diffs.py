@@ -6,8 +6,9 @@ when users make unrelated edits.
 """
 
 import pytest
-from src.utils.validation import CVDataValidator
+
 from src.services.cv_diff_service import CVDiffService
+from src.utils.validation import CVDataValidator
 
 
 class TestPhantomDiffPrevention:

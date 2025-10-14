@@ -1,12 +1,14 @@
-import pytest
 from datetime import datetime
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from src.models.ai_section import AISection
 from src.models.base import Base
-from src.models.user import User
 from src.models.cv import CV
 from src.models.job_description import JobDescription
-from src.models.ai_section import AISection
+from src.models.user import User
 from src.services.auth_service import get_password_hash
 
 

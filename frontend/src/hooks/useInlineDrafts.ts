@@ -16,14 +16,14 @@
  * - Handles draft lifecycle events
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { useAIStore, useCVDrafts } from '../stores/aiStore';
-import { useNotifications } from '../stores/uiStore';
-import { DraftResponse } from '../types/ai';
+import { useState, useEffect, useCallback } from "react";
+import { useAIStore, useCVDrafts } from "../stores/aiStore";
+import { useNotifications } from "../stores/uiStore";
+import { DraftResponse } from "../types/ai";
 
 interface DraftPosition {
   sectionId: string;
-  position: 'before' | 'after';
+  position: "before" | "after";
   order: number;
 }
 
@@ -57,7 +57,7 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
   useEffect(() => {
     if (drafts && drafts.length >= 0) {
       // Filter out drafts that are still generating - wait for completion
-      const filteredDrafts = drafts.filter(draft => {
+      const filteredDrafts = drafts.filter((draft) => {
         // Don't show drafts that are still generating - wait for completion
         if (draft.is_generating) {
           return false;
@@ -69,9 +69,10 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
       });
 
       const positions = calculateDraftPositions(filteredDrafts);
-      setState(prev => {
+      setState((prev) => {
         // Only update if the drafts have actually changed
-        const draftsChanged = prev.drafts.length !== filteredDrafts.length ||
+        const draftsChanged =
+          prev.drafts.length !== filteredDrafts.length ||
           prev.drafts.some((prevDraft, index) => {
             const currentDraft = filteredDrafts[index];
             return !currentDraft || prevDraft.id !== currentDraft.id;
@@ -93,39 +94,42 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
   const loadDrafts = useCallback(async () => {
     if (!cvId) return;
 
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       await getCVDrafts(cvId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load drafts';
-      setState(prev => ({ ...prev, error: errorMessage }));
-      showError('Error', errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load drafts";
+      setState((prev) => ({ ...prev, error: errorMessage }));
+      showError("Error", errorMessage);
     } finally {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState((prev) => ({ ...prev, isLoading: false }));
     }
   }, [cvId, getCVDrafts, showError]);
 
   // Calculate where each draft should be positioned in the CV
-  const calculateDraftPositions = (drafts: DraftResponse[]): Map<string, DraftPosition> => {
+  const calculateDraftPositions = (
+    drafts: DraftResponse[],
+  ): Map<string, DraftPosition> => {
     const positions = new Map<string, DraftPosition>();
 
     drafts.forEach((draft, index) => {
       let sectionId: string;
-      let position: 'before' | 'after';
+      let position: "before" | "after";
       let order: number;
 
       switch (draft.section_type) {
-        case 'why_good_fit':
+        case "why_good_fit":
           // Position after personal info, before professional summary
-          sectionId = 'personal_info';
-          position = 'after';
+          sectionId = "personal_info";
+          position = "after";
           order = 150; // Between personal info (100) and professional summary (200)
           break;
         default:
           // Default positioning - add at the end
-          sectionId = 'personal_info'; // Use personal info as reference point
-          position = 'after';
+          sectionId = "personal_info"; // Use personal info as reference point
+          position = "after";
           order = 1000 + index * 10; // Place after all regular sections
       }
 
@@ -140,32 +144,48 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
   };
 
   // Get draft position for a specific draft
-  const getDraftPosition = useCallback((draftId: string): DraftPosition | null => {
-    return state.draftPositions.get(draftId) || null;
-  }, [state.draftPositions]);
+  const getDraftPosition = useCallback(
+    (draftId: string): DraftPosition | null => {
+      return state.draftPositions.get(draftId) || null;
+    },
+    [state.draftPositions],
+  );
 
   // Check if a section should show drafts
-  const shouldShowDraftsForSection = useCallback((sectionId: string): boolean => {
-    return Array.from(state.draftPositions.values()).some(
-      pos => pos.sectionId === sectionId
-    );
-  }, [state.draftPositions]);
+  const shouldShowDraftsForSection = useCallback(
+    (sectionId: string): boolean => {
+      return Array.from(state.draftPositions.values()).some(
+        (pos) => pos.sectionId === sectionId,
+      );
+    },
+    [state.draftPositions],
+  );
 
   // Get drafts that should appear after a specific section
-  const getDraftsAfterSection = useCallback((sectionId: string): DraftResponse[] => {
-    return state.drafts.filter(draft => {
-      const position = state.draftPositions.get(draft.id);
-      return position?.sectionId === sectionId && position?.position === 'after';
-    });
-  }, [state.drafts, state.draftPositions]);
+  const getDraftsAfterSection = useCallback(
+    (sectionId: string): DraftResponse[] => {
+      return state.drafts.filter((draft) => {
+        const position = state.draftPositions.get(draft.id);
+        return (
+          position?.sectionId === sectionId && position?.position === "after"
+        );
+      });
+    },
+    [state.drafts, state.draftPositions],
+  );
 
   // Get drafts that should appear before a specific section
-  const getDraftsBeforeSection = useCallback((sectionId: string): DraftResponse[] => {
-    return state.drafts.filter(draft => {
-      const position = state.draftPositions.get(draft.id);
-      return position?.sectionId === sectionId && position?.position === 'before';
-    });
-  }, [state.drafts, state.draftPositions]);
+  const getDraftsBeforeSection = useCallback(
+    (sectionId: string): DraftResponse[] => {
+      return state.drafts.filter((draft) => {
+        const position = state.draftPositions.get(draft.id);
+        return (
+          position?.sectionId === sectionId && position?.position === "before"
+        );
+      });
+    },
+    [state.drafts, state.draftPositions],
+  );
 
   // Handle draft approval - no need to update local state,
   // the effect will sync from Zustand store automatically

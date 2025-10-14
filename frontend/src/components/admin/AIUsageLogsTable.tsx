@@ -4,7 +4,7 @@
  * This component displays detailed AI usage logs in a table format
  * with filtering, pagination, and sorting capabilities.
  */
-import React from 'react'
+import React from "react";
 import {
   Card,
   CardContent,
@@ -26,8 +26,8 @@ import {
   MenuItem,
   TextField,
   Button,
-  Grid
-} from '@mui/material'
+  Grid,
+} from "@mui/material";
 import {
   Download,
   Refresh,
@@ -35,9 +35,9 @@ import {
   Error,
   Person,
   Speed,
-  AttachMoney
-} from '@mui/icons-material'
-import { PaginatedAIUsageLogs, AIUsageFilters } from '../../types/admin'
+  AttachMoney,
+} from "@mui/icons-material";
+import { PaginatedAIUsageLogs, AIUsageFilters } from "../../types/admin";
 import {
   formatCost,
   formatTokens,
@@ -45,19 +45,19 @@ import {
   formatDuration,
   formatOperationType,
   formatModelName,
-  formatSuccessStatus
-} from '../../utils/formatters'
+  formatSuccessStatus,
+} from "../../utils/formatters";
 
 interface AIUsageLogsTableProps {
-  data: PaginatedAIUsageLogs | null
-  loading: boolean
-  filters: AIUsageFilters
-  onFilterChange: (filters: Partial<AIUsageFilters>) => void
-  onPaginationChange: (page: number, rowsPerPage: number) => void
-  onRefresh: () => void
-  onExport?: () => void
-  onClearAllFilters?: () => void
-  availableUsers?: Array<{ user_id: string; email: string }>
+  data: PaginatedAIUsageLogs | null;
+  loading: boolean;
+  filters: AIUsageFilters;
+  onFilterChange: (filters: Partial<AIUsageFilters>) => void;
+  onPaginationChange: (page: number, rowsPerPage: number) => void;
+  onRefresh: () => void;
+  onExport?: () => void;
+  onClearAllFilters?: () => void;
+  availableUsers?: Array<{ user_id: string; email: string }>;
 }
 
 const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
@@ -69,54 +69,67 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
   onRefresh,
   onExport,
   onClearAllFilters,
-  availableUsers = []
+  availableUsers = [],
 }) => {
   const handlePageChange = (_event: unknown, newPage: number) => {
-    onPaginationChange(newPage, data?.limit || 50)
-  }
+    onPaginationChange(newPage, data?.limit || 50);
+  };
 
-  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onPaginationChange(0, parseInt(event.target.value, 10))
-  }
+  const handleRowsPerPageChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    onPaginationChange(0, parseInt(event.target.value, 10));
+  };
 
   if (loading) {
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
+          >
             <CircularProgress />
           </Box>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (!data || data.logs.length === 0) {
     return (
       <Card>
         <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
+          >
             <Typography color="text.secondary">No logs available</Typography>
           </Box>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
     <Card>
       <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+        >
           <Typography variant="h6" component="div">
             AI Usage Logs
           </Typography>
 
           <Box display="flex" gap={1}>
-            <Button
-              startIcon={<Refresh />}
-              onClick={onRefresh}
-              size="small"
-            >
+            <Button startIcon={<Refresh />} onClick={onRefresh} size="small">
               Refresh
             </Button>
 
@@ -139,9 +152,11 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
             <FormControl fullWidth size="small">
               <InputLabel>User</InputLabel>
               <Select
-                value={filters.user_id || ''}
+                value={filters.user_id || ""}
                 label="User"
-                onChange={(e) => onFilterChange({ user_id: e.target.value || undefined })}
+                onChange={(e) =>
+                  onFilterChange({ user_id: e.target.value || undefined })
+                }
               >
                 <MenuItem value="">All Users</MenuItem>
                 {availableUsers.map((user) => (
@@ -150,11 +165,14 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                   </MenuItem>
                 ))}
                 {/* Show current user if they're not in the available users list */}
-                {filters.user_id && !availableUsers.find(u => u.user_id === filters.user_id) && (
-                  <MenuItem value={filters.user_id}>
-                    {filters.user_id.slice(0, 8)}... (Selected)
-                  </MenuItem>
-                )}
+                {filters.user_id &&
+                  !availableUsers.find(
+                    (u) => u.user_id === filters.user_id,
+                  ) && (
+                    <MenuItem value={filters.user_id}>
+                      {filters.user_id.slice(0, 8)}... (Selected)
+                    </MenuItem>
+                  )}
               </Select>
             </FormControl>
           </Grid>
@@ -163,9 +181,13 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
             <FormControl fullWidth size="small">
               <InputLabel>Operation Type</InputLabel>
               <Select
-                value={filters.operation_type || ''}
+                value={filters.operation_type || ""}
                 label="Operation Type"
-                onChange={(e) => onFilterChange({ operation_type: e.target.value || undefined })}
+                onChange={(e) =>
+                  onFilterChange({
+                    operation_type: e.target.value || undefined,
+                  })
+                }
               >
                 <MenuItem value="">All Operations</MenuItem>
                 <MenuItem value="parse_cv">Parse CV</MenuItem>
@@ -173,8 +195,12 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                 <MenuItem value="job_fit_analysis">Job Fit Analysis</MenuItem>
                 <MenuItem value="enhance_content">Enhance Content</MenuItem>
                 <MenuItem value="ats_optimization">ATS Optimization</MenuItem>
-                <MenuItem value="generate_suggestions">Generate Suggestions</MenuItem>
-                <MenuItem value="extract_job_description">Extract Job Description</MenuItem>
+                <MenuItem value="generate_suggestions">
+                  Generate Suggestions
+                </MenuItem>
+                <MenuItem value="extract_job_description">
+                  Extract Job Description
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -183,11 +209,20 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
             <FormControl fullWidth size="small">
               <InputLabel>Status</InputLabel>
               <Select
-                value={filters.success === undefined ? '' : filters.success.toString()}
+                value={
+                  filters.success === undefined
+                    ? ""
+                    : filters.success.toString()
+                }
                 label="Status"
-                onChange={(e) => onFilterChange({
-                  success: e.target.value === '' ? undefined : e.target.value === 'true'
-                })}
+                onChange={(e) =>
+                  onFilterChange({
+                    success:
+                      e.target.value === ""
+                        ? undefined
+                        : e.target.value === "true",
+                  })
+                }
               >
                 <MenuItem value="">All Status</MenuItem>
                 <MenuItem value="true">Success</MenuItem>
@@ -202,8 +237,10 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               size="small"
               label="Start Date"
               type="date"
-              value={filters.start_date || ''}
-              onChange={(e) => onFilterChange({ start_date: e.target.value || undefined })}
+              value={filters.start_date || ""}
+              onChange={(e) =>
+                onFilterChange({ start_date: e.target.value || undefined })
+              }
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
@@ -214,8 +251,10 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               size="small"
               label="End Date"
               type="date"
-              value={filters.end_date || ''}
-              onChange={(e) => onFilterChange({ end_date: e.target.value || undefined })}
+              value={filters.end_date || ""}
+              onChange={(e) =>
+                onFilterChange({ end_date: e.target.value || undefined })
+              }
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
@@ -225,8 +264,10 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               fullWidth
               variant="outlined"
               size="small"
-              onClick={() => onClearAllFilters ? onClearAllFilters() : onFilterChange({})}
-              sx={{ height: '40px' }}
+              onClick={() =>
+                onClearAllFilters ? onClearAllFilters() : onFilterChange({})
+              }
+              sx={{ height: "40px" }}
             >
               Clear Filters
             </Button>
@@ -250,7 +291,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
             </TableHead>
             <TableBody>
               {data.logs.map((log) => {
-                const status = formatSuccessStatus(log.success)
+                const status = formatSuccessStatus(log.success);
 
                 return (
                   <TableRow key={log.id} hover>
@@ -303,7 +344,11 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                     <TableCell align="right">
                       <Box display="flex" alignItems="center" gap={0.5}>
                         <AttachMoney color="success" fontSize="small" />
-                        <Typography variant="body2" fontWeight="medium" color="success.main">
+                        <Typography
+                          variant="body2"
+                          fontWeight="medium"
+                          color="success.main"
+                        >
                           {formatCost(log.estimated_cost)}
                         </Typography>
                       </Box>
@@ -320,7 +365,13 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
 
                     <TableCell align="center">
                       <Chip
-                        icon={status.text === 'Success' ? <CheckCircle /> : <Error />}
+                        icon={
+                          status.text === "Success" ? (
+                            <CheckCircle />
+                          ) : (
+                            <Error />
+                          )
+                        }
                         label={status.text}
                         size="small"
                         color={status.color}
@@ -328,7 +379,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                       />
                     </TableCell>
                   </TableRow>
-                )
+                );
               })}
             </TableBody>
           </Table>
@@ -344,10 +395,9 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
           onPageChange={handlePageChange}
           onRowsPerPageChange={handleRowsPerPageChange}
         />
-
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default AIUsageLogsTable
+export default AIUsageLogsTable;

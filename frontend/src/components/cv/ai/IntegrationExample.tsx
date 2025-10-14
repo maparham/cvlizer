@@ -18,7 +18,7 @@
  * - Test different suggestion types and interactions
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -28,27 +28,31 @@ import {
   Alert,
   CircularProgress,
   Stack,
-} from '@mui/material';
-import { AutoFixHigh, ExitToApp, Save } from '@mui/icons-material';
-import { InlineDiffProvider, useInlineDiffContext } from '../../../contexts/InlineDiffContext';
+} from "@mui/material";
+import { AutoFixHigh, ExitToApp, Save } from "@mui/icons-material";
+import {
+  InlineDiffProvider,
+  useInlineDiffContext,
+} from "../../../contexts/InlineDiffContext";
 
 // Mock CV data for demonstration
 const mockCVData = {
   skills: {
-    technical: ['JavaScript', 'React', 'Node.js'],
-    soft: ['Communication', 'Leadership']
+    technical: ["JavaScript", "React", "Node.js"],
+    soft: ["Communication", "Leadership"],
   },
   professional_summary: {
-    content: 'Experienced software developer with 5 years in web development.'
+    content: "Experienced software developer with 5 years in web development.",
   },
 };
 
 // Mock job description
 const mockJobDescription = {
-  id: 'job-1',
-  title: 'Senior React Developer',
-  company: 'Tech Company',
-  content: 'Looking for a Senior React Developer with TypeScript, GraphQL, and team leadership experience.',
+  id: "job-1",
+  title: "Senior React Developer",
+  company: "Tech Company",
+  content:
+    "Looking for a Senior React Developer with TypeScript, GraphQL, and team leadership experience.",
 };
 
 /**
@@ -78,12 +82,12 @@ const AIIntegrationDemo: React.FC = () => {
       // await generateSuggestions(cvId, jobDescriptionId);
 
       // For demo purposes, we'll simulate the process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Mock suggestions would be generated here
-      setMessage('AI suggestions generated successfully!');
+      setMessage("AI suggestions generated successfully!");
     } catch (error) {
-      setMessage('Failed to generate suggestions. Please try again.');
+      setMessage("Failed to generate suggestions. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -93,25 +97,25 @@ const AIIntegrationDemo: React.FC = () => {
     const finalData = commitChanges();
     if (finalData) {
       setCvData(finalData);
-      setMessage('Changes applied successfully!');
+      setMessage("Changes applied successfully!");
     }
   };
 
   const handleExitDiffMode = () => {
     exitDiffMode();
-    setMessage('Exited diff mode. Changes discarded.');
+    setMessage("Exited diff mode. Changes discarded.");
   };
 
   const pendingCount = getPendingSuggestionsCount();
   const approvedCount = getApprovedSuggestionsCount();
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
+    <Box sx={{ p: 3, maxWidth: 800, mx: "auto" }}>
       <Typography variant="h4" gutterBottom>
         AI Suggestions Integration Demo
       </Typography>
 
-      <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
+      <Typography variant="body1" sx={{ mb: 3, color: "text.secondary" }}>
         This demo shows how to integrate AI suggestions with your CV editor.
         Click "Generate AI Suggestions" to see the inline diff system in action.
       </Typography>
@@ -124,7 +128,7 @@ const AIIntegrationDemo: React.FC = () => {
           </Typography>
           <Stack direction="row" spacing={2} alignItems="center">
             <Typography variant="body2">
-              Mode: {isInDiffMode ? 'Diff Mode' : 'Normal Editing'}
+              Mode: {isInDiffMode ? "Diff Mode" : "Normal Editing"}
             </Typography>
             {isInDiffMode && (
               <>
@@ -149,7 +153,11 @@ const AIIntegrationDemo: React.FC = () => {
             onClick={handleGenerateSuggestions}
             disabled={isLoading}
           >
-            {isLoading ? <CircularProgress size={20} /> : 'Generate AI Suggestions'}
+            {isLoading ? (
+              <CircularProgress size={20} />
+            ) : (
+              "Generate AI Suggestions"
+            )}
           </Button>
         ) : (
           <>
@@ -176,7 +184,7 @@ const AIIntegrationDemo: React.FC = () => {
       {/* Message Display */}
       {message && (
         <Alert
-          severity={message.includes('Failed') ? 'error' : 'success'}
+          severity={message.includes("Failed") ? "error" : "success"}
           sx={{ mb: 3 }}
           onClose={() => setMessage(null)}
         >
@@ -193,20 +201,20 @@ const AIIntegrationDemo: React.FC = () => {
 
           {/* Skills Section */}
           <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
               Technical Skills
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {cvData.skills.technical.map((skill, index) => (
                 <Box
                   key={index}
                   sx={{
                     px: 1.5,
                     py: 0.5,
-                    bgcolor: 'primary.light',
-                    color: 'primary.contrastText',
+                    bgcolor: "primary.light",
+                    color: "primary.contrastText",
                     borderRadius: 1,
-                    fontSize: '0.875rem',
+                    fontSize: "0.875rem",
                   }}
                 >
                   {skill}
@@ -217,20 +225,20 @@ const AIIntegrationDemo: React.FC = () => {
 
           {/* Soft Skills Section */}
           <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
               Soft Skills
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {cvData.skills.soft.map((skill, index) => (
                 <Box
                   key={index}
                   sx={{
                     px: 1.5,
                     py: 0.5,
-                    bgcolor: 'secondary.light',
-                    color: 'secondary.contrastText',
+                    bgcolor: "secondary.light",
+                    color: "secondary.contrastText",
                     borderRadius: 1,
-                    fontSize: '0.875rem',
+                    fontSize: "0.875rem",
                   }}
                 >
                   {skill}
@@ -241,7 +249,7 @@ const AIIntegrationDemo: React.FC = () => {
 
           {/* Professional Summary */}
           <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
               Professional Summary
             </Typography>
             <Typography variant="body2">
@@ -260,7 +268,7 @@ const AIIntegrationDemo: React.FC = () => {
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
             {mockJobDescription.title} at {mockJobDescription.company}
           </Typography>
-          <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+          <Typography variant="body2" sx={{ fontStyle: "italic" }}>
             {mockJobDescription.content}
           </Typography>
         </CardContent>
@@ -275,11 +283,25 @@ const AIIntegrationDemo: React.FC = () => {
           <Typography variant="body2" component="div">
             <strong>Key Integration Points:</strong>
             <ul>
-              <li>Wrap your CV editor with <code>InlineDiffProvider</code></li>
-              <li>Use <code>generateSuggestions(cvId, jobDescriptionId)</code> to start diff mode</li>
-              <li>Replace section components with <code>SectionFactory</code> for automatic diff support</li>
-              <li>Handle <code>commitChanges()</code> to apply approved suggestions to your CV data</li>
-              <li>Use <code>exitDiffMode()</code> to cancel and return to normal editing</li>
+              <li>
+                Wrap your CV editor with <code>InlineDiffProvider</code>
+              </li>
+              <li>
+                Use <code>generateSuggestions(cvId, jobDescriptionId)</code> to
+                start diff mode
+              </li>
+              <li>
+                Replace section components with <code>SectionFactory</code> for
+                automatic diff support
+              </li>
+              <li>
+                Handle <code>commitChanges()</code> to apply approved
+                suggestions to your CV data
+              </li>
+              <li>
+                Use <code>exitDiffMode()</code> to cancel and return to normal
+                editing
+              </li>
             </ul>
           </Typography>
         </CardContent>

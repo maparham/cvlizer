@@ -5,38 +5,38 @@ This module provides endpoints for generating AI-enhanced CV sections
 based on job descriptions using OpenAI's GPT models.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List, Dict, Optional
-from pydantic import BaseModel
-import uuid
 import asyncio
+import uuid
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
 
-from src.models.base import get_db
-from src.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from src.config import AIConfig
+from src.middleware.clerk_auth import get_effective_user
+from src.models.ai_draft import AIDraft
+from src.models.ai_enhancement import AIEnhancement
+from src.models.ai_section import AISection
+from src.models.base import SessionLocal, get_db
+from src.models.content_enhancement import ContentEnhancement
 from src.models.cv import CV
 from src.models.job_description import JobDescription
+from src.models.user import User
+from src.schemas.cv_schemas import WhyGoodFitSchema
+from src.services.ai_service import (
+    analyze_ats_optimization,
+    create_optimization_suggestions,
+    enhance_content,
+    generate_cv_section,
+    is_ai_enabled,
+)
 from src.services.job_description_service import (
     get_cv_owned_by,
     get_job_description_by_id,
 )
-from src.models.ai_section import AISection
-from src.models.ai_draft import AIDraft
-from src.config import AIConfig
-from src.models.content_enhancement import ContentEnhancement
-from src.models.ai_enhancement import AIEnhancement
-from src.services.ai_service import (
-    generate_cv_section,
-    is_ai_enabled,
-    enhance_content,
-    analyze_ats_optimization,
-    create_optimization_suggestions,
-)
-from src.middleware.clerk_auth import get_effective_user
 from src.utils.background_tasks import run_task_in_background
-from src.models.base import SessionLocal
-from src.schemas.cv_schemas import WhyGoodFitSchema
-from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api", tags=["ai"])
 

@@ -15,7 +15,7 @@
  * - Conditionally render admin features based on impersonation state
  * - Show different UI elements during impersonation
  */
-import { useImpersonationContext } from '../contexts/ImpersonationContext'
+import { useImpersonationContext } from "../contexts/ImpersonationContext";
 
 /**
  * Hook to access impersonation status
@@ -26,7 +26,7 @@ import { useImpersonationContext } from '../contexts/ImpersonationContext'
  * @returns {UseImpersonationReturn} Impersonation status and controls
  */
 export const useImpersonation = () => {
-  return useImpersonationContext()
-}
+  return useImpersonationContext();
+};
 
-export default useImpersonation
+export default useImpersonation;

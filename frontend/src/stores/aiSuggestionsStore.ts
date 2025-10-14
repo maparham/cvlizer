@@ -17,11 +17,11 @@
  * - Call clearAllSuggestions when switching context
  */
 
-import { create } from 'zustand';
-import { aiService } from '../services/aiService';
-import { Logger } from '../utils/logger';
-import { ErrorHandler } from '../utils/errorHandler';
-import { AllSuggestionsResponse } from '../types/ai';
+import { create } from "zustand";
+import { aiService } from "../services/aiService";
+import { Logger } from "../utils/logger";
+import { ErrorHandler } from "../utils/errorHandler";
+import { AllSuggestionsResponse } from "../types/ai";
 
 interface AIStore {
   // Unified state
@@ -32,11 +32,17 @@ interface AIStore {
   suggestionsError: string | null;
 
   // Actions
-  generateAllSuggestions: (cvId: string, jobDescId: string) => Promise<string | void>;
+  generateAllSuggestions: (
+    cvId: string,
+    jobDescId: string,
+  ) => Promise<string | void>;
   updateAIEnhancementStatus: (enhancementId: string) => Promise<any>;
   loadLatestAIEnhancement: (cvId: string) => Promise<void>;
   setSuggestionsLoading: (loading: boolean) => void;
-  dismissSkillSuggestion: (skill: string, type: 'technical' | 'soft') => Promise<void>;
+  dismissSkillSuggestion: (
+    skill: string,
+    type: "technical" | "soft",
+  ) => Promise<void>;
   dismissAllSkillSuggestions: () => Promise<void>;
   dismissSummarySuggestion: () => Promise<void>;
   clearAllSuggestions: () => void;
@@ -61,13 +67,13 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
 
       // Return the enhancement ID for global polling integration
       return result.enhancement_id;
-
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to generate AI suggestions';
+      const errorMessage =
+        error?.message || "Failed to generate AI suggestions";
       ErrorHandler.handle(error, {
-        feature: 'ai-suggestions',
-        action: 'create-enhancement',
-        metadata: { cvId, jobDescId }
+        feature: "ai-suggestions",
+        action: "create-enhancement",
+        metadata: { cvId, jobDescId },
       });
 
       set({
@@ -76,11 +82,11 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           professional_summary: {
             suggested_text: "",
             original_text: "",
-            key_changes: []
-          }
+            key_changes: [],
+          },
         },
         suggestionsLoading: false,
-        suggestionsError: errorMessage
+        suggestionsError: errorMessage,
       });
     }
   },
@@ -97,8 +103,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           professional_summary: {
             suggested_text: "",
             original_text: "",
-            key_changes: []
-          }
+            key_changes: [],
+          },
         };
 
         set({
@@ -106,13 +112,16 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           currentCvId: enhancement.cv_id,
           currentEnhancementId: enhancementId,
           suggestionsLoading: false,
-          suggestionsError: enhancement.generation_error || null
+          suggestionsError: enhancement.generation_error || null,
         });
       }
 
       return enhancement;
     } catch (error) {
-      Logger.error('Failed to update AI enhancement status', { enhancementId, error: error.message });
+      Logger.error("Failed to update AI enhancement status", {
+        enhancementId,
+        error: error.message,
+      });
       throw error;
     }
   },
@@ -120,8 +129,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
   // Load the latest AI enhancement from backend (for page refresh persistence)
   loadLatestAIEnhancement: async (cvId: string) => {
     // Skip loading for temporary CVs (not yet saved to backend)
-    if (cvId.startsWith('temp-')) {
-      Logger.debug('Skipping AI enhancement load for temporary CV', { cvId });
+    if (cvId.startsWith("temp-")) {
+      Logger.debug("Skipping AI enhancement load for temporary CV", { cvId });
       return;
     }
 
@@ -129,7 +138,11 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       const enhancement = await aiService.getLatestAIEnhancement(cvId);
 
       // Backend returns null when no enhancement exists (expected case - not an error)
-      if (enhancement && enhancement.enhancement_data && !enhancement.is_generating) {
+      if (
+        enhancement &&
+        enhancement.enhancement_data &&
+        !enhancement.is_generating
+      ) {
         // VALIDATE: Only set suggestions if they belong to this CV
         if (enhancement.cv_id === cvId) {
           set({
@@ -137,15 +150,16 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
             currentCvId: cvId,
             currentEnhancementId: enhancement.id,
             suggestionsLoading: false,
-            suggestionsError: enhancement.generation_error || null
+            suggestionsError: enhancement.generation_error || null,
           });
         }
-      } else {
-        Logger.debug('No suggestions to restore for CV', { cvId });
       }
     } catch (error) {
       // Only log actual errors (network issues, auth failures, etc.)
-      Logger.error('Error loading AI enhancement', { cvId, error: error.message });
+      Logger.error("Error loading AI enhancement", {
+        cvId,
+        error: error.message,
+      });
       // Don't throw - just fail silently since this is optional restoration
     }
   },
@@ -156,8 +170,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
   },
 
   // Dismiss a single skill suggestion from the UI
-  dismissSkillSuggestion: async (skill: string, type: 'technical' | 'soft') => {
-    Logger.debug('Dismissing skill suggestion', { skill, type, cvId });
+  dismissSkillSuggestion: async (skill: string, type: "technical" | "soft") => {
+    Logger.debug("Dismissing skill suggestion", { skill, type, cvId });
     const currentSuggestions = get().allSuggestions;
     const enhancementId = get().currentEnhancementId;
 
@@ -170,8 +184,10 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       ...currentSuggestions,
       skills: {
         ...currentSuggestions.skills,
-        [type]: currentSuggestions.skills[type].filter(s => s.skill !== skill)
-      }
+        [type]: currentSuggestions.skills[type].filter(
+          (s) => s.skill !== skill,
+        ),
+      },
     };
 
     set({ allSuggestions: updatedSuggestions });
@@ -190,7 +206,10 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       try {
         await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
       } catch (error) {
-        console.error('❌ [dismissSkillSuggestion] Failed to update backend:', error);
+        console.error(
+          "❌ [dismissSkillSuggestion] Failed to update backend:",
+          error,
+        );
       }
     }
   },
@@ -209,8 +228,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       ...currentSuggestions,
       skills: {
         technical: [],
-        soft: []
-      }
+        soft: [],
+      },
     };
 
     set({ allSuggestions: updatedSuggestions });
@@ -229,7 +248,10 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       try {
         await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
       } catch (error) {
-        console.error('❌ [dismissAllSkillSuggestions] Failed to update backend:', error);
+        console.error(
+          "❌ [dismissAllSkillSuggestions] Failed to update backend:",
+          error,
+        );
       }
     }
   },
@@ -249,8 +271,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       professional_summary: {
         suggested_text: "",
         original_text: currentSuggestions.professional_summary.original_text,
-        key_changes: []
-      }
+        key_changes: [],
+      },
     };
 
     set({ allSuggestions: updatedSuggestions });
@@ -270,7 +292,10 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
         // Update the enhancement_data in the backend with the new state
         await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
       } catch (error) {
-        console.error('❌ [dismissSummarySuggestion] Failed to update backend:', error);
+        console.error(
+          "❌ [dismissSummarySuggestion] Failed to update backend:",
+          error,
+        );
       }
     }
   },
@@ -290,10 +315,13 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
         currentCvId: null,
         currentEnhancementId: null,
         suggestionsLoading: false,
-        suggestionsError: null
+        suggestionsError: null,
       });
     } catch (error) {
-      Logger.error('Failed to delete AI enhancement', { enhancementId, error: error.message });
+      Logger.error("Failed to delete AI enhancement", {
+        enhancementId,
+        error: error.message,
+      });
       // Don't throw - just log the error
     }
   },
@@ -305,9 +333,9 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       currentCvId: null,
       currentEnhancementId: null,
       suggestionsLoading: false,
-      suggestionsError: null
+      suggestionsError: null,
     });
-  }
+  },
 }));
 
 // CV-validated selector: Only return suggestions if they belong to the current CV

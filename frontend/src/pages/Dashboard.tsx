@@ -18,7 +18,7 @@
  * - Integrates with notification system for user feedback
  * - Provides responsive grid layout for CV cards
  */
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
   Typography,
@@ -52,7 +52,7 @@ import {
   DialogContentText,
   DialogActions,
   Pagination,
-} from '@mui/material'
+} from "@mui/material";
 import {
   AccountCircle as AccountCircleIcon,
   Upload as UploadIcon,
@@ -66,43 +66,58 @@ import {
   Schedule as ScheduleIcon,
   EditNote as EditedIcon,
   Article as TemplateIcon,
-  Add as AddIcon
-} from '@mui/icons-material'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { CVUpload, EditableTitle } from '../components/cv'
-import CVTemplateSelector from '../components/cv/CVTemplateSelector'
-import CVQuickActions from '../components/cv/CVQuickActions'
-import { useCVStore } from '../stores/cvStore'
-import { useNotifications } from '../stores/uiStore'
-import { useActivityLogger } from '../hooks/useActivityLogger'
-import { cvApi } from '../services/api'
-import { CV } from '../types'
-import { isUploadedCV, hasBeenEdited, getCVStatusIcon, getSectionCount } from '../utils/dashboardUtils'
-import { formatDateTime } from '../utils/dateFormat'
+  Add as AddIcon,
+} from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { CVUpload, EditableTitle } from "../components/cv";
+import CVTemplateSelector from "../components/cv/CVTemplateSelector";
+import CVQuickActions from "../components/cv/CVQuickActions";
+import { useCVStore } from "../stores/cvStore";
+import { useNotifications } from "../stores/uiStore";
+import { useActivityLogger } from "../hooks/useActivityLogger";
+import { cvApi } from "../services/api";
+import { CV } from "../types";
+import {
+  isUploadedCV,
+  hasBeenEdited,
+  getCVStatusIcon,
+  getSectionCount,
+} from "../utils/dashboardUtils";
+import { formatDateTime } from "../utils/dateFormat";
 
 const Dashboard: React.FC = () => {
-  const [uploadOpen, setUploadOpen] = useState(false)
-  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false)
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [deleting, setDeleting] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [duplicating, setDuplicating] = useState(false)
-  const [creatingSimilar, setCreatingSimilar] = useState(false)
-  const [downloading, setDownloading] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [cvToDelete, setCvToDelete] = useState<CV | null>(null)
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [creatingSimilar, setCreatingSimilar] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cvToDelete, setCvToDelete] = useState<CV | null>(null);
 
   // Search and filter states
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'parsed' | 'parsing' | 'error'>('all')
-  const [sortBy, setSortBy] = useState<'name' | 'created' | 'modified'>('modified')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "parsed" | "parsing" | "error"
+  >("all");
+  const [sortBy, setSortBy] = useState<"name" | "created" | "modified">(
+    "modified",
+  );
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const { logout, isAdmin: authIsAdmin, isAuthenticated, loading: authLoading } = useAuth()
-  const navigate = useNavigate()
-  const { showSuccess, showError, notifications, removeNotification } = useNotifications()
-  const { logUserAction } = useActivityLogger()
+  const {
+    logout,
+    isAdmin: authIsAdmin,
+    isAuthenticated,
+    loading: authLoading,
+  } = useAuth();
+  const navigate = useNavigate();
+  const { showSuccess, showError, notifications, removeNotification } =
+    useNotifications();
+  const { logUserAction } = useActivityLogger();
 
   // Use CV store instead of local state
   const {
@@ -118,228 +133,243 @@ const Dashboard: React.FC = () => {
     saveTemporaryCV,
     updateCVTitle,
     deleteCV: deleteCVFromStore,
-    duplicateCV: duplicateCVFromStore
-  } = useCVStore()
+    duplicateCV: duplicateCVFromStore,
+  } = useCVStore();
 
   // Fetch CVs on component mount (only if authenticated)
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      fetchCVs()
+      fetchCVs();
       // Log dashboard view (page view is already logged by useActivityLogger)
-      logUserAction('dashboard_view', 'User viewed dashboard')
+      logUserAction("dashboard_view", "User viewed dashboard");
     }
-  }, [isAuthenticated, authLoading]) // Depend on auth state only
+  }, [isAuthenticated, authLoading]); // Depend on auth state only
 
   // Show error notifications
   useEffect(() => {
     if (error) {
-      showError('Error', error)
+      showError("Error", error);
     }
-  }, [error]) // Remove showError from dependencies to prevent infinite loop
+  }, [error]); // Remove showError from dependencies to prevent infinite loop
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
+    setAnchorEl(event.currentTarget);
+  };
 
   const handleMenuClose = () => {
-    setAnchorEl(null)
-  }
+    setAnchorEl(null);
+  };
 
   const handleLogout = () => {
-    logout()
-    navigate('/')
-    handleMenuClose()
-  }
+    logout();
+    navigate("/");
+    handleMenuClose();
+  };
 
   const handleDeleteClick = (cv: CV) => {
-    setCvToDelete(cv)
-    setDeleteDialogOpen(true)
-  }
+    setCvToDelete(cv);
+    setDeleteDialogOpen(true);
+  };
 
   const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false)
-    setCvToDelete(null)
-  }
+    setDeleteDialogOpen(false);
+    setCvToDelete(null);
+  };
 
   const handleDeleteConfirm = async () => {
-    if (!cvToDelete) return
+    if (!cvToDelete) return;
 
-    setDeleting(true)
+    setDeleting(true);
     try {
-      await deleteCVFromStore(cvToDelete.id)
+      await deleteCVFromStore(cvToDelete.id);
       // Log CV deletion
-      logUserAction('cv_delete', `User deleted CV: ${cvToDelete.original_filename}`, {
-        cvId: cvToDelete.id,
-        filename: cvToDelete.original_filename
-      })
-      showSuccess('Success', `${cvToDelete.original_filename} deleted successfully`)
-      setDeleteDialogOpen(false)
-      setCvToDelete(null)
+      logUserAction(
+        "cv_delete",
+        `User deleted CV: ${cvToDelete.original_filename}`,
+        {
+          cvId: cvToDelete.id,
+          filename: cvToDelete.original_filename,
+        },
+      );
+      showSuccess(
+        "Success",
+        `${cvToDelete.original_filename} deleted successfully`,
+      );
+      setDeleteDialogOpen(false);
+      setCvToDelete(null);
     } catch (error) {
-      showError('Error', 'Failed to delete CV')
+      showError("Error", "Failed to delete CV");
     } finally {
-      setDeleting(false)
+      setDeleting(false);
     }
-  }
+  };
 
   const handleCreateFromTemplate = () => {
-    setTemplateSelectorOpen(true)
-  }
+    setTemplateSelectorOpen(true);
+  };
 
   const handleStartFromScratch = async () => {
-    if (creating) return
+    if (creating) return;
 
-    setCreating(true)
+    setCreating(true);
     try {
-      const newCV = await createTemporaryCV()
-      navigate(`/cv/${newCV.id}`)
+      const newCV = await createTemporaryCV();
+      navigate(`/cv/${newCV.id}`);
     } catch (error) {
-      console.error('Error creating blank CV:', error)
-      showError('Error', 'Failed to create new CV')
+      console.error("Error creating blank CV:", error);
+      showError("Error", "Failed to create new CV");
     } finally {
-      setCreating(false)
+      setCreating(false);
     }
-  }
+  };
 
   const handleTemplateSelect = async (template: any) => {
-    if (creating) return
+    if (creating) return;
 
-    setCreating(true)
+    setCreating(true);
     try {
-      const newCV = await createTemporaryCV()
+      const newCV = await createTemporaryCV();
 
       // If a template was selected, apply its data
       if (template) {
         // Update the temporary CV with template data
-        newCV.parsed_data = { ...newCV.parsed_data, ...template.sampleData }
-        newCV.original_filename = `${template.name} - New CV`
+        newCV.parsed_data = { ...newCV.parsed_data, ...template.sampleData };
+        newCV.original_filename = `${template.name} - New CV`;
       }
 
-      navigate(`/cv/${newCV.id}`)
+      navigate(`/cv/${newCV.id}`);
     } catch (error) {
-      console.error('Error creating blank CV:', error)
-      showError('Error', 'Failed to create new CV')
+      console.error("Error creating blank CV:", error);
+      showError("Error", "Failed to create new CV");
     } finally {
-      setCreating(false)
+      setCreating(false);
     }
-  }
+  };
 
   const handleTitleSave = async (cv: CV, newTitle: string) => {
     try {
-      await updateCVTitle(cv.id, newTitle)
-      showSuccess('Success', 'CV title updated successfully')
+      await updateCVTitle(cv.id, newTitle);
+      showSuccess("Success", "CV title updated successfully");
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.detail || 'Failed to update CV title'
-      showError('Error', errorMessage)
+      const errorMessage =
+        error?.response?.data?.detail || "Failed to update CV title";
+      showError("Error", errorMessage);
     }
-  }
-
-
+  };
 
   const handleDownloadCV = async (cv: CV) => {
-    if (downloading) return
+    if (downloading) return;
 
-    setDownloading(true)
+    setDownloading(true);
     try {
-      await cvApi.downloadCV(cv.id, cv.original_filename)
-      showSuccess('Success', 'CV download started')
+      await cvApi.downloadCV(cv.id, cv.original_filename);
+      showSuccess("Success", "CV download started");
     } catch (error) {
-      showError('Error', 'Failed to download CV')
+      showError("Error", "Failed to download CV");
     } finally {
-      setDownloading(false)
+      setDownloading(false);
     }
-  }
+  };
 
   const handleDuplicateCV = async (cv: CV) => {
-    if (duplicating) return
+    if (duplicating) return;
 
-    setDuplicating(true)
+    setDuplicating(true);
     try {
-      await duplicateCVFromStore(cv.id)
-      showSuccess('Success', `CV "${cv.original_filename}" duplicated successfully`)
+      await duplicateCVFromStore(cv.id);
+      showSuccess(
+        "Success",
+        `CV "${cv.original_filename}" duplicated successfully`,
+      );
     } catch (error) {
-      showError('Error', 'Failed to duplicate CV')
+      showError("Error", "Failed to duplicate CV");
     } finally {
-      setDuplicating(false)
+      setDuplicating(false);
     }
-  }
+  };
 
   const handleCreateSimilarCV = async (cv: CV) => {
-    if (creatingSimilar) return
+    if (creatingSimilar) return;
 
-    setCreatingSimilar(true)
+    setCreatingSimilar(true);
     try {
       // Create a new CV based on the existing one
-      const newCV = await createTemporaryCV()
+      const newCV = await createTemporaryCV();
 
       // Copy the parsed data from the existing CV
       if (cv.parsed_data) {
-        newCV.parsed_data = JSON.parse(JSON.stringify(cv.parsed_data))
-        newCV.original_filename = `Similar to ${cv.original_filename}`
+        newCV.parsed_data = JSON.parse(JSON.stringify(cv.parsed_data));
+        newCV.original_filename = `Similar to ${cv.original_filename}`;
       }
 
       // Save the temporary CV to the backend
-      const savedCV = await saveTemporaryCV({ parsed_data: newCV.parsed_data! })
+      const savedCV = await saveTemporaryCV({
+        parsed_data: newCV.parsed_data!,
+      });
 
-      navigate(`/cv/${savedCV.id}`)
-      showSuccess('Success', `Created similar CV based on "${cv.original_filename}"`)
+      navigate(`/cv/${savedCV.id}`);
+      showSuccess(
+        "Success",
+        `Created similar CV based on "${cv.original_filename}"`,
+      );
     } catch (error) {
-      showError('Error', 'Failed to create similar CV')
+      showError("Error", "Failed to create similar CV");
     } finally {
-      setCreatingSimilar(false)
+      setCreatingSimilar(false);
     }
-  }
-
-
+  };
 
   // Filter and sort CVs
   const filteredAndSortedCVs = useMemo(() => {
-    let filtered = cvs.filter((cv) => {
+    const filtered = cvs.filter((cv) => {
       // Search filter
-      const matchesSearch = cv.original_filename.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSearch = cv.original_filename
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
       // Status filter
-      let matchesStatus = true
-      if (filterStatus === 'parsed') {
-        matchesStatus = cv.is_parsed && !cv.parse_error
-      } else if (filterStatus === 'parsing') {
-        matchesStatus = !cv.is_parsed && !cv.parse_error
-      } else if (filterStatus === 'error') {
-        matchesStatus = !!cv.parse_error
+      let matchesStatus = true;
+      if (filterStatus === "parsed") {
+        matchesStatus = cv.is_parsed && !cv.parse_error;
+      } else if (filterStatus === "parsing") {
+        matchesStatus = !cv.is_parsed && !cv.parse_error;
+      } else if (filterStatus === "error") {
+        matchesStatus = !!cv.parse_error;
       }
 
-      return matchesSearch && matchesStatus
-    })
+      return matchesSearch && matchesStatus;
+    });
 
     // Sort
     filtered.sort((a, b) => {
-      let comparison = 0
+      let comparison = 0;
 
-      if (sortBy === 'name') {
-        comparison = a.original_filename.localeCompare(b.original_filename)
-      } else if (sortBy === 'created') {
-        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      } else if (sortBy === 'modified') {
-        comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+      if (sortBy === "name") {
+        comparison = a.original_filename.localeCompare(b.original_filename);
+      } else if (sortBy === "created") {
+        comparison =
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      } else if (sortBy === "modified") {
+        comparison =
+          new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
       }
 
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
 
-    return filtered
-  }, [cvs, searchTerm, filterStatus, sortBy, sortOrder])
+    return filtered;
+  }, [cvs, searchTerm, filterStatus, sortBy, sortOrder]);
 
   // Get status counts for filter badges
   const statusCounts = useMemo(() => {
     const counts = {
       all: cvs.length,
-      parsed: cvs.filter(cv => cv.is_parsed && !cv.parse_error).length,
-      parsing: cvs.filter(cv => !cv.is_parsed && !cv.parse_error).length,
-      error: cvs.filter(cv => !!cv.parse_error).length
-    }
-    return counts
-  }, [cvs])
-
+      parsed: cvs.filter((cv) => cv.is_parsed && !cv.parse_error).length,
+      parsing: cvs.filter((cv) => !cv.is_parsed && !cv.parse_error).length,
+      error: cvs.filter((cv) => !!cv.parse_error).length,
+    };
+    return counts;
+  }, [cvs]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -364,30 +394,55 @@ const Dashboard: React.FC = () => {
             id="menu-appbar"
             anchorEl={anchorEl}
             anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
+              vertical: "top",
+              horizontal: "right",
             }}
             keepMounted
             transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
+              vertical: "top",
+              horizontal: "right",
             }}
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
             data-testid="user-menu"
+          >
+            <MenuItem
+              onClick={() => {
+                navigate("/profile");
+                handleMenuClose();
+              }}
+              data-testid="profile-menu-item"
             >
-              <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }} data-testid="profile-menu-item">Profile</MenuItem>
-              {authIsAdmin && (
-                <MenuItem onClick={() => { navigate('/admin'); handleMenuClose(); }} data-testid="admin-menu-item">Admin</MenuItem>
-              )}
-              <MenuItem onClick={handleLogout} data-testid="logout-menu-item">Logout</MenuItem>
-            </Menu>
+              Profile
+            </MenuItem>
+            {authIsAdmin && (
+              <MenuItem
+                onClick={() => {
+                  navigate("/admin");
+                  handleMenuClose();
+                }}
+                data-testid="admin-menu-item"
+              >
+                Admin
+              </MenuItem>
+            )}
+            <MenuItem onClick={handleLogout} data-testid="logout-menu-item">
+              Logout
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
+        >
           <Box>
             <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
               My CVs
@@ -398,7 +453,7 @@ const Dashboard: React.FC = () => {
           </Box>
           {/* Only show header buttons when there are CVs */}
           {cvs.length > 0 && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2 }}>
               <Button
                 variant="outlined"
                 startIcon={<TemplateIcon />}
@@ -407,11 +462,11 @@ const Dashboard: React.FC = () => {
                 data-testid="create-cv-from-template-button"
                 sx={{
                   borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600
+                  textTransform: "none",
+                  fontWeight: 600,
                 }}
               >
-                {creating ? 'Creating...' : 'Create CV from Template'}
+                {creating ? "Creating..." : "Create CV from Template"}
               </Button>
               <Button
                 variant="outlined"
@@ -421,11 +476,11 @@ const Dashboard: React.FC = () => {
                 data-testid="start-from-scratch-button"
                 sx={{
                   borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600
+                  textTransform: "none",
+                  fontWeight: 600,
                 }}
               >
-                {creating ? 'Creating...' : 'Start from Scratch'}
+                {creating ? "Creating..." : "Start from Scratch"}
               </Button>
               <Button
                 variant="outlined"
@@ -434,8 +489,8 @@ const Dashboard: React.FC = () => {
                 data-testid="upload-cv-button"
                 sx={{
                   borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600
+                  textTransform: "none",
+                  fontWeight: 600,
                 }}
               >
                 Upload CV
@@ -463,43 +518,43 @@ const Dashboard: React.FC = () => {
                   ),
                 }}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2
-                  }
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                  },
                 }}
               />
 
               {/* Filter and Sort Controls */}
               <Stack direction="row" spacing={2} alignItems="center">
                 {/* Status Filter Chips */}
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                   <FilterIcon color="action" fontSize="small" />
                   <Chip
                     label={`All (${statusCounts.all})`}
-                    variant={filterStatus === 'all' ? 'filled' : 'outlined'}
-                    onClick={() => setFilterStatus('all')}
+                    variant={filterStatus === "all" ? "filled" : "outlined"}
+                    onClick={() => setFilterStatus("all")}
                     color="primary"
                     size="small"
                   />
                   <Chip
                     label={`Ready (${statusCounts.parsed})`}
-                    variant={filterStatus === 'parsed' ? 'filled' : 'outlined'}
-                    onClick={() => setFilterStatus('parsed')}
+                    variant={filterStatus === "parsed" ? "filled" : "outlined"}
+                    onClick={() => setFilterStatus("parsed")}
                     color="success"
                     size="small"
                   />
                   <Chip
                     label={`Processing (${statusCounts.parsing})`}
-                    variant={filterStatus === 'parsing' ? 'filled' : 'outlined'}
-                    onClick={() => setFilterStatus('parsing')}
+                    variant={filterStatus === "parsing" ? "filled" : "outlined"}
+                    onClick={() => setFilterStatus("parsing")}
                     color="warning"
                     size="small"
                   />
                   {statusCounts.error > 0 && (
                     <Chip
                       label={`Errors (${statusCounts.error})`}
-                      variant={filterStatus === 'error' ? 'filled' : 'outlined'}
-                      onClick={() => setFilterStatus('error')}
+                      variant={filterStatus === "error" ? "filled" : "outlined"}
+                      onClick={() => setFilterStatus("error")}
                       color="error"
                       size="small"
                     />
@@ -509,14 +564,18 @@ const Dashboard: React.FC = () => {
                 <Divider orientation="vertical" flexItem />
 
                 {/* Sort Controls */}
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                   <SortIcon color="action" fontSize="small" />
                   <FormControl size="small" sx={{ minWidth: 120 }}>
                     <InputLabel>Sort by</InputLabel>
                     <Select
                       value={sortBy}
                       label="Sort by"
-                      onChange={(e) => setSortBy(e.target.value as 'name' | 'created' | 'modified')}
+                      onChange={(e) =>
+                        setSortBy(
+                          e.target.value as "name" | "created" | "modified",
+                        )
+                      }
                     >
                       <MenuItem value="modified">Last Modified</MenuItem>
                       <MenuItem value="created">Date Created</MenuItem>
@@ -526,10 +585,12 @@ const Dashboard: React.FC = () => {
                   <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    sx={{ minWidth: 'auto', px: 1 }}
+                    onClick={() =>
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    }
+                    sx={{ minWidth: "auto", px: 1 }}
                   >
-                    {sortOrder === 'asc' ? '↑' : '↓'}
+                    {sortOrder === "asc" ? "↑" : "↓"}
                   </Button>
                 </Box>
               </Stack>
@@ -538,23 +599,30 @@ const Dashboard: React.FC = () => {
         )}
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <LinearProgress sx={{ width: 200 }} />
           </Box>
         ) : cvs.length === 0 ? (
-          <Paper sx={{
-            p: 6,
-            textAlign: 'center',
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
-          }}>
-            <DocumentIcon sx={{ fontSize: 80, color: 'primary.main', mb: 3 }} />
+          <Paper
+            sx={{
+              p: 6,
+              textAlign: "center",
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+            }}
+          >
+            <DocumentIcon sx={{ fontSize: 80, color: "primary.main", mb: 3 }} />
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
               Welcome to CV Optimizer
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
-              Create professional CVs from scratch or upload existing ones to enhance them with AI-powered optimization.
-              Get started by creating your first CV or uploading an existing document.
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
+            >
+              Create professional CVs from scratch or upload existing ones to
+              enhance them with AI-powered optimization. Get started by creating
+              your first CV or uploading an existing document.
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="center">
               <Button
@@ -566,13 +634,13 @@ const Dashboard: React.FC = () => {
                 data-testid="create-cv-from-template-empty-state-button"
                 sx={{
                   borderRadius: 2,
-                  textTransform: 'none',
+                  textTransform: "none",
                   fontWeight: 600,
                   px: 4,
-                  py: 1.5
+                  py: 1.5,
                 }}
               >
-                {creating ? 'Creating...' : 'Create CV from Template'}
+                {creating ? "Creating..." : "Create CV from Template"}
               </Button>
               <Button
                 variant="outlined"
@@ -583,13 +651,13 @@ const Dashboard: React.FC = () => {
                 data-testid="start-from-scratch-empty-state-button"
                 sx={{
                   borderRadius: 2,
-                  textTransform: 'none',
+                  textTransform: "none",
                   fontWeight: 600,
                   px: 4,
-                  py: 1.5
+                  py: 1.5,
                 }}
               >
-                {creating ? 'Creating...' : 'Start from Scratch'}
+                {creating ? "Creating..." : "Start from Scratch"}
               </Button>
               <Button
                 variant="outlined"
@@ -599,10 +667,10 @@ const Dashboard: React.FC = () => {
                 data-testid="upload-cv-empty-state-button"
                 sx={{
                   borderRadius: 2,
-                  textTransform: 'none',
+                  textTransform: "none",
                   fontWeight: 600,
                   px: 4,
-                  py: 1.5
+                  py: 1.5,
                 }}
               >
                 Upload Existing CV
@@ -610,8 +678,8 @@ const Dashboard: React.FC = () => {
             </Stack>
           </Paper>
         ) : filteredAndSortedCVs.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
-            <SearchIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2 }}>
+            <SearchIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
             <Typography variant="h6" gutterBottom>
               No CVs match your search
             </Typography>
@@ -624,21 +692,30 @@ const Dashboard: React.FC = () => {
             <Grid container spacing={3}>
               {filteredAndSortedCVs.map((cv) => (
                 <Grid item xs={12} sm={6} lg={4} key={cv.id}>
-                  <Card sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 3,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    transition: 'all 0.3s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
-                    }
-                  }}>
+                  <Card
+                    sx={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      borderRadius: 3,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      transition: "all 0.3s ease-in-out",
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                      },
+                    }}
+                  >
                     <CardContent sx={{ flexGrow: 1, pb: 1 }}>
                       {/* CV Header with Status */}
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          mb: 2,
+                        }}
+                      >
                         <Box sx={{ flexGrow: 1, mr: 1 }}>
                           <EditableTitle
                             title={cv.original_filename}
@@ -647,15 +724,20 @@ const Dashboard: React.FC = () => {
                             sx={{
                               mb: 1,
                               fontWeight: 600,
-                              fontSize: '1.1rem',
-                              lineHeight: 1.2
+                              fontSize: "1.1rem",
+                              lineHeight: 1.2,
                             }}
                           />
                         </Box>
-                        <Tooltip title={
-                          cv.parse_error ? 'Parsing failed' :
-                          cv.is_parsed ? 'Ready to edit' : 'Processing'
-                        }>
+                        <Tooltip
+                          title={
+                            cv.parse_error
+                              ? "Parsing failed"
+                              : cv.is_parsed
+                                ? "Ready to edit"
+                                : "Processing"
+                          }
+                        >
                           {getCVStatusIcon(cv)}
                         </Tooltip>
                       </Box>
@@ -665,15 +747,15 @@ const Dashboard: React.FC = () => {
                         {isUploadedCV(cv) && (
                           <Tooltip title="Download original file">
                             <Chip
-                              label={cv.file_type.split('/')[1].toUpperCase()}
+                              label={cv.file_type.split("/")[1].toUpperCase()}
                               size="small"
                               color="primary"
                               variant="outlined"
                               icon={<DownloadIcon />}
                               clickable
                               onClick={(e) => {
-                                e.stopPropagation()
-                                handleDownloadCV(cv)
+                                e.stopPropagation();
+                                handleDownloadCV(cv);
                               }}
                               sx={{ borderRadius: 1.5 }}
                             />
@@ -703,14 +785,23 @@ const Dashboard: React.FC = () => {
 
                       {/* File Info */}
                       <Box sx={{ mb: 2 }}>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={1}
+                          sx={{ mb: 1 }}
+                        >
                           <ScheduleIcon fontSize="small" color="action" />
                           <Typography variant="body2" color="text.secondary">
                             Created {formatDateTime(cv.created_at)}
                           </Typography>
                         </Stack>
                         {cv.updated_at && cv.updated_at !== cv.created_at && (
-                          <Stack direction="row" alignItems="center" spacing={1}>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                          >
                             <EditIcon fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary">
                               Modified {formatDateTime(cv.updated_at)}
@@ -722,7 +813,11 @@ const Dashboard: React.FC = () => {
                       {/* Processing Status */}
                       {!cv.is_parsed && !cv.parse_error && (
                         <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 1 }}
+                          >
                             AI is analyzing your CV...
                           </Typography>
                           <LinearProgress sx={{ borderRadius: 1 }} />
@@ -740,7 +835,9 @@ const Dashboard: React.FC = () => {
                     </CardContent>
 
                     {/* Action Buttons */}
-                    <CardActions sx={{ p: 2, pt: 0, justifyContent: 'space-between' }}>
+                    <CardActions
+                      sx={{ p: 2, pt: 0, justifyContent: "space-between" }}
+                    >
                       <Button
                         size="medium"
                         variant="outlined"
@@ -750,13 +847,13 @@ const Dashboard: React.FC = () => {
                         data-testid={`edit-cv-button-${cv.id}`}
                         sx={{
                           borderRadius: 2,
-                          textTransform: 'none',
+                          textTransform: "none",
                           fontWeight: 600,
                           flexGrow: 1,
-                          mr: 1
+                          mr: 1,
                         }}
                       >
-                        {cv.is_parsed ? 'Edit CV' : 'Processing...'}
+                        {cv.is_parsed ? "Edit CV" : "Processing..."}
                       </Button>
 
                       <IconButton
@@ -766,8 +863,8 @@ const Dashboard: React.FC = () => {
                         color="error"
                         sx={{
                           opacity: 0.7,
-                          '&:hover': { opacity: 1 },
-                          transition: 'opacity 0.2s'
+                          "&:hover": { opacity: 1 },
+                          transition: "opacity 0.2s",
                         }}
                         data-testid={`delete-cv-button-${cv.id}`}
                       >
@@ -792,7 +889,14 @@ const Dashboard: React.FC = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  mt: 4,
+                }}
+              >
                 <Stack spacing={2} alignItems="center">
                   <Pagination
                     count={totalPages}
@@ -817,13 +921,15 @@ const Dashboard: React.FC = () => {
           open={uploadOpen}
           onClose={() => setUploadOpen(false)}
           onSuccess={() => {
-            setUploadOpen(false)
-            showSuccess('Success', 'CV uploaded successfully and is being parsed')
+            setUploadOpen(false);
+            showSuccess(
+              "Success",
+              "CV uploaded successfully and is being parsed",
+            );
             // The CV store already adds the new CV to the list, no need to fetch
             // The store will handle polling for parsing updates automatically
           }}
         />
-
 
         {/* Template Selector */}
         <CVTemplateSelector
@@ -839,17 +945,20 @@ const Dashboard: React.FC = () => {
           maxWidth="sm"
           fullWidth
           PaperProps={{
-            sx: { borderRadius: 2 }
+            sx: { borderRadius: 2 },
           }}
         >
           <DialogTitle sx={{ pb: 1 }}>
-            <Box sx={{ fontWeight: 600, fontSize: '1.25rem', color: 'error.main' }}>
+            <Box
+              sx={{ fontWeight: 600, fontSize: "1.25rem", color: "error.main" }}
+            >
               Delete CV
             </Box>
           </DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete "{cvToDelete?.original_filename}"? This action cannot be undone.
+              Are you sure you want to delete "{cvToDelete?.original_filename}"?
+              This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions sx={{ p: 3, pt: 1 }}>
@@ -863,25 +972,27 @@ const Dashboard: React.FC = () => {
               disabled={deleting}
               sx={{ borderRadius: 2 }}
             >
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogActions>
         </Dialog>
 
         {/* Notifications */}
         {notifications.map((notification) => (
-        <Snackbar
-          key={notification.id}
-          open={true}
-          autoHideDuration={notification.persistent ? null : notification.duration}
-          onClose={() => removeNotification(notification.id)}
-            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          <Snackbar
+            key={notification.id}
+            open={true}
+            autoHideDuration={
+              notification.persistent ? null : notification.duration
+            }
+            onClose={() => removeNotification(notification.id)}
+            anchorOrigin={{ vertical: "top", horizontal: "right" }}
             sx={{ mt: 0 }} // Directly below app bar
           >
             <Alert
               onClose={() => removeNotification(notification.id)}
               severity={notification.type}
-              sx={{ width: '100%' }}
+              sx={{ width: "100%" }}
             >
               <strong>{notification.title}</strong>
               {notification.message && (
@@ -894,7 +1005,7 @@ const Dashboard: React.FC = () => {
         ))}
       </Container>
     </Box>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;

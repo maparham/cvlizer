@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Dashboard Page Object Model
@@ -34,40 +34,49 @@ export class DashboardPage {
     this.page = page;
 
     // Navigation
-    this.userMenuButton = page.getByTestId('user-menu-button');
-    this.logoutMenuItem = page.getByTestId('logout-menu-item');
+    this.userMenuButton = page.getByTestId("user-menu-button");
+    this.logoutMenuItem = page.getByTestId("logout-menu-item");
 
     // CV Management
-    this.createNewCvButton = page.getByTestId('create-new-cv-button');
-    this.uploadCvButton = page.getByTestId('upload-cv-button');
-    this.createNewCvEmptyStateButton = page.getByTestId('create-new-cv-empty-state-button');
-    this.uploadCvEmptyStateButton = page.getByTestId('upload-cv-empty-state-button');
-    this.searchCvsInput = page.getByTestId('search-cvs-input');
+    this.createNewCvButton = page.getByTestId("create-new-cv-button");
+    this.uploadCvButton = page.getByTestId("upload-cv-button");
+    this.createNewCvEmptyStateButton = page.getByTestId(
+      "create-new-cv-empty-state-button",
+    );
+    this.uploadCvEmptyStateButton = page.getByTestId(
+      "upload-cv-empty-state-button",
+    );
+    this.searchCvsInput = page.getByTestId("search-cvs-input");
 
     // CV Cards
-    this.editCvButton = (cvId: string) => page.getByTestId(`edit-cv-button-${cvId}`);
-    this.deleteCvButton = (cvId: string) => page.getByTestId(`delete-cv-button-${cvId}`);
-    this.duplicateCvButton = (cvId: string) => page.getByTestId(`duplicate-cv-button-${cvId}`);
+    this.editCvButton = (cvId: string) =>
+      page.getByTestId(`edit-cv-button-${cvId}`);
+    this.deleteCvButton = (cvId: string) =>
+      page.getByTestId(`delete-cv-button-${cvId}`);
+    this.duplicateCvButton = (cvId: string) =>
+      page.getByTestId(`duplicate-cv-button-${cvId}`);
 
     // Dialogs
-    this.deleteCvDialog = page.getByTestId('delete-cv-dialog');
-    this.deleteCvConfirmButton = page.getByTestId('delete-dialog-confirm-button');
-    this.deleteCvCancelButton = page.getByTestId('delete-dialog-cancel-button');
-    this.cvUploadDialog = page.getByTestId('cv-upload-dialog');
+    this.deleteCvDialog = page.getByTestId("delete-cv-dialog");
+    this.deleteCvConfirmButton = page.getByTestId(
+      "delete-dialog-confirm-button",
+    );
+    this.deleteCvCancelButton = page.getByTestId("delete-dialog-cancel-button");
+    this.cvUploadDialog = page.getByTestId("cv-upload-dialog");
   }
 
   /**
    * Navigate to the dashboard page
    */
   async goto() {
-    await this.page.goto('/dashboard');
+    await this.page.goto("/dashboard");
   }
 
   /**
    * Wait for the dashboard to be loaded
    */
   async waitForLoad() {
-    await expect(this.page.locator('h1')).toContainText('My CVs');
+    await expect(this.page.locator("h1")).toContainText("My CVs");
   }
 
   /**
@@ -84,7 +93,7 @@ export class DashboardPage {
     }
 
     // Wait for navigation to CV editor
-    await this.page.waitForURL('/cv/new');
+    await this.page.waitForURL("/cv/new");
   }
 
   /**
@@ -109,14 +118,16 @@ export class DashboardPage {
     await this.openUploadDialog();
 
     // Upload file
-    const fileInput = this.page.getByTestId('cv-file-input');
+    const fileInput = this.page.getByTestId("cv-file-input");
     await fileInput.setInputFiles(filePath);
 
     // Wait for upload to complete
-    await expect(this.page.getByText('CV uploaded successfully!')).toBeVisible();
+    await expect(
+      this.page.getByText("CV uploaded successfully!"),
+    ).toBeVisible();
 
     // Close dialog
-    await this.page.getByTestId('cv-upload-dialog-close-button').click();
+    await this.page.getByTestId("cv-upload-dialog-close-button").click();
   }
 
   /**
@@ -143,7 +154,7 @@ export class DashboardPage {
     await this.deleteCvConfirmButton.click();
 
     // Wait for success notification
-    await expect(this.page.getByText('deleted successfully')).toBeVisible();
+    await expect(this.page.getByText("deleted successfully")).toBeVisible();
   }
 
   /**
@@ -153,7 +164,7 @@ export class DashboardPage {
     await this.duplicateCvButton(cvId).click();
 
     // Wait for success notification
-    await expect(this.page.getByText('duplicated successfully')).toBeVisible();
+    await expect(this.page.getByText("duplicated successfully")).toBeVisible();
   }
 
   /**
@@ -164,7 +175,7 @@ export class DashboardPage {
     await this.logoutMenuItem.click();
 
     // Wait for redirect to home page
-    await this.page.waitForURL('/');
+    await this.page.waitForURL("/");
   }
 
   /**

@@ -5,58 +5,57 @@
  * manages the entry count and state automatically.
  */
 
-import React, { useState, useEffect } from 'react'
-import HistoryPanelHandle from './HistoryPanelHandle'
-import { useCVStore } from '../../stores/cvStore'
+import React, { useState, useEffect } from "react";
+import HistoryPanelHandle from "./HistoryPanelHandle";
+import { useCVStore } from "../../stores/cvStore";
 
 interface ConnectedHistoryPanelHandleProps {
-  cvId: string
+  cvId: string;
 }
 
-const ConnectedHistoryPanelHandle: React.FC<ConnectedHistoryPanelHandleProps> = ({ cvId }) => {
-  const {
-    historyPanelOpen,
-    setHistoryPanelOpen,
-    getHistoryEntries
-  } = useCVStore()
+const ConnectedHistoryPanelHandle: React.FC<
+  ConnectedHistoryPanelHandleProps
+> = ({ cvId }) => {
+  const { historyPanelOpen, setHistoryPanelOpen, getHistoryEntries } =
+    useCVStore();
 
-  const [entryCount, setEntryCount] = useState(0)
+  const [entryCount, setEntryCount] = useState(0);
 
   // Load entry count when component mounts or cvId changes
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
 
     const loadEntryCount = async () => {
       // Skip history loading for temporary CVs (they don't exist on backend yet)
-      if (cvId.startsWith('temp-')) {
+      if (cvId.startsWith("temp-")) {
         if (mounted) {
-          setEntryCount(0)
+          setEntryCount(0);
         }
-        return
+        return;
       }
 
       try {
-        const entries = await getHistoryEntries(cvId)
+        const entries = await getHistoryEntries(cvId);
         if (mounted) {
-          setEntryCount(entries.length)
+          setEntryCount(entries.length);
         }
       } catch (error) {
         if (mounted) {
-          setEntryCount(0)
+          setEntryCount(0);
         }
       }
-    }
+    };
 
-    loadEntryCount()
+    loadEntryCount();
 
     return () => {
-      mounted = false
-    }
-  }, [cvId, getHistoryEntries])
+      mounted = false;
+    };
+  }, [cvId, getHistoryEntries]);
 
   const handleOpen = () => {
-    setHistoryPanelOpen(true)
-  }
+    setHistoryPanelOpen(true);
+  };
 
   return (
     <HistoryPanelHandle
@@ -65,7 +64,7 @@ const ConnectedHistoryPanelHandle: React.FC<ConnectedHistoryPanelHandleProps> = 
       entryCount={entryCount}
       showCount={true}
     />
-  )
-}
+  );
+};
 
-export default ConnectedHistoryPanelHandle
+export default ConnectedHistoryPanelHandle;

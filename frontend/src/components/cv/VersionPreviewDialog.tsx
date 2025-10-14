@@ -5,7 +5,7 @@
  * with semantic diff viewing and restore options.
  */
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -16,27 +16,27 @@ import {
   Typography,
   IconButton,
   Tabs,
-  Tab
-} from '@mui/material'
+  Tab,
+} from "@mui/material";
 import {
   Close as CloseIcon,
   Restore as RestoreIcon,
   History as HistoryIcon,
-  CompareArrows as CompareArrowsIcon
-} from '@mui/icons-material'
+  CompareArrows as CompareArrowsIcon,
+} from "@mui/icons-material";
 
-import { CVHistoryEntry } from '../../types'
-import SimpleCVDiffViewer from './SimpleCVDiffViewer'
+import { CVHistoryEntry } from "../../types";
+import SimpleCVDiffViewer from "./SimpleCVDiffViewer";
 
 interface VersionPreviewDialogProps {
-  open: boolean
-  onClose: () => void
-  selectedVersion: CVHistoryEntry | null
-  originalVersion: CVHistoryEntry | null
-  versionNumber?: number
-  cvId: string
-  onRestore?: (_version: CVHistoryEntry) => void
-  loading?: boolean
+  open: boolean;
+  onClose: () => void;
+  selectedVersion: CVHistoryEntry | null;
+  originalVersion: CVHistoryEntry | null;
+  versionNumber?: number;
+  cvId: string;
+  onRestore?: (_version: CVHistoryEntry) => void;
+  loading?: boolean;
 }
 
 const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
@@ -47,36 +47,39 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
   versionNumber,
   cvId,
   onRestore,
-  loading = false
+  loading = false,
 }) => {
-  const [selectedTab, setSelectedTab] = useState(0)
+  const [selectedTab, setSelectedTab] = useState(0);
 
   // Reset tab when dialog opens
   useEffect(() => {
     if (open) {
-      setSelectedTab(0)
+      setSelectedTab(0);
     }
-  }, [open])
+  }, [open]);
 
   const handleRestore = () => {
     if (selectedVersion && onRestore) {
-      onRestore(selectedVersion)
+      onRestore(selectedVersion);
     }
-  }
+  };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setSelectedTab(newValue)
-  }
+    setSelectedTab(newValue);
+  };
 
-  const isOriginalVersion = selectedVersion ? originalVersion?.id === selectedVersion.id : false
-  const canRestore = selectedVersion && !isOriginalVersion && onRestore
-  const hasOriginalVersion = selectedVersion && !!originalVersion && !isOriginalVersion
+  const isOriginalVersion = selectedVersion
+    ? originalVersion?.id === selectedVersion.id
+    : false;
+  const canRestore = selectedVersion && !isOriginalVersion && onRestore;
+  const hasOriginalVersion =
+    selectedVersion && !!originalVersion && !isOriginalVersion;
 
   // Generate simplified title based on changes from original
   const diffTitle = useMemo(() => {
-    if (!selectedVersion) return ""
-    return isOriginalVersion ? "Original Version" : "Changes from Original"
-  }, [isOriginalVersion, selectedVersion])
+    if (!selectedVersion) return "";
+    return isOriginalVersion ? "Original Version" : "Changes from Original";
+  }, [isOriginalVersion, selectedVersion]);
 
   return (
     <Dialog
@@ -85,14 +88,21 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
       maxWidth="lg"
       fullWidth
       PaperProps={{
-        sx: { height: '80vh' }
+        sx: { height: "80vh" },
       }}
     >
       <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Typography variant="h6">
-              {versionNumber ? `#${versionNumber} ` : ''}{diffTitle}
+              {versionNumber ? `#${versionNumber} ` : ""}
+              {diffTitle}
             </Typography>
           </Box>
           <IconButton onClick={onClose} size="small">
@@ -110,7 +120,7 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
               <Tabs
                 value={selectedTab}
                 onChange={handleTabChange}
-                sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}
+                sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}
               >
                 <Tab
                   icon={<CompareArrowsIcon />}
@@ -161,7 +171,7 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
             </Box>
           </>
         ) : (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Box sx={{ textAlign: "center", py: 4 }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               This is the original version
             </Typography>
@@ -173,9 +183,7 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>
-          Close
-        </Button>
+        <Button onClick={onClose}>Close</Button>
         {canRestore && (
           <Button
             onClick={handleRestore}
@@ -184,12 +192,14 @@ const VersionPreviewDialog: React.FC<VersionPreviewDialogProps> = ({
             startIcon={<RestoreIcon />}
             disabled={loading}
           >
-            {selectedVersion.isInitial ? 'Reset to Original' : 'Restore This Version'}
+            {selectedVersion.isInitial
+              ? "Reset to Original"
+              : "Restore This Version"}
           </Button>
         )}
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default VersionPreviewDialog
+export default VersionPreviewDialog;

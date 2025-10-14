@@ -6,12 +6,15 @@ including type definitions, configuration, OpenAI client initialization,
 and utility functions for API interaction and response processing.
 """
 
-import openai
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional, TypedDict, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type, TypedDict
+
+import openai
+from pydantic import BaseModel, ValidationError
 from sqlalchemy.orm import Session
+
 from src.config import AIConfig
 
 logger = logging.getLogger(__name__)
@@ -290,3 +293,32 @@ async def with_retries(
             if i < attempts - 1:
                 await asyncio.sleep(delay * (2**i))
     raise last_exc
+
+
+def validate_with_schema(
+    content: str, schema: Type[BaseModel], operation: str
+) -> Optional[BaseModel]:
+    """
+    Validate AI response content against Pydantic schema.
+
+    Args:
+        content: JSON string content to validate
+        schema: Pydantic BaseModel schema class to validate against
+        operation: Operation name for logging purposes
+
+    Returns:
+        Validated Pydantic model instance, or None if validation fails
+    """
+    try:
+        validated_model = schema.model_validate_json(content)
+        return validated_model
+    except ValidationError as e:
+        logger.error(
+            f"Schema validation failed for {operation}: {e.error_count()} errors"
+        )
+        logger.error(f"Validation errors: {e.errors()}")
+        logger.error(f"Content preview: {content[:500]}...")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error during schema validation for {operation}: {e}")
+        return None

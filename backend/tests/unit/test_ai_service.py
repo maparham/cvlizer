@@ -1,8 +1,10 @@
-import pytest
+import json
 from unittest.mock import Mock, patch
+
+import pytest
+
 from src.services.ai_service import generate_cv_section, parse_cv_text_with_openai
 from src.services.ai_usage_service import calculate_cost
-import json
 
 
 class TestAIService:
@@ -11,25 +13,26 @@ class TestAIService:
     @pytest.mark.asyncio
     @patch("src.services.ai_service.section_generation.get_openai_client")
     async def test_generate_cv_section_success(self, mock_get_client):
-        """Test successful AI section generation"""
-        # Setup mock client for Responses API
+        """Test successful AI section generation with responses.parse()"""
+        # Setup mock client for Responses API with parse()
         mock_client = Mock()
         mock_get_client.return_value = mock_client
 
-        mock_response = Mock()
-        # Responses API returns content in output items with type='message'
-        mock_output_item = Mock()
-        mock_output_item.type = "message"
-        mock_output_item.content = json.dumps(
-            {
-                "title": "Why I'm a Good Fit",
-                "content": "Generated content here",
-                "key_points": ["Point 1", "Point 2"],
-            }
+        # Mock parsed response object
+        from src.schemas.ai_response_schemas import CVSectionGenerationResponseSchema
+
+        mock_parsed_output = CVSectionGenerationResponseSchema(
+            title="Why I'm a Good Fit",
+            content="Generated content here",
+            key_points=["Point 1", "Point 2"],
         )
-        mock_response.output = [mock_output_item]
-        mock_response.usage = Mock(prompt_tokens=80, completion_tokens=70)
-        mock_client.responses.create.return_value = mock_response
+
+        mock_response = Mock(spec=["output_parsed", "usage"])
+        mock_response.output_parsed = mock_parsed_output
+        mock_response.usage = Mock()
+        mock_response.usage.input_tokens = 80
+        mock_response.usage.output_tokens = 70
+        mock_client.responses.parse.return_value = mock_response
 
         cv_data = {"experience": "5 years"}
         job_description = "Looking for experienced developer"
@@ -46,28 +49,25 @@ class TestAIService:
     @pytest.mark.asyncio
     @patch("src.services.ai_service.section_generation.get_openai_client")
     async def test_generate_cv_section_json_parse_error(self, mock_get_client):
-        """Test AI section generation with JSON parse error"""
-        # Setup mock client for Responses API
+        """Test AI section generation with parsing exception"""
+        # Setup mock client that raises exception during parsing
         mock_client = Mock()
         mock_get_client.return_value = mock_client
-
-        mock_response = Mock()
-        mock_output_item = Mock()
-        mock_output_item.type = "message"
-        mock_output_item.content = "Invalid JSON content"
-        mock_response.output = [mock_output_item]
-        mock_response.usage = Mock(prompt_tokens=60, completion_tokens=40)
-        mock_client.responses.create.return_value = mock_response
+        mock_client.responses.parse.side_effect = Exception("Parsing error")
 
         cv_data = {"experience": "5 years"}
         job_description = "Looking for experienced developer"
 
         result = await generate_cv_section(cv_data, job_description, "why_good_fit")
 
+        # Should use fallback due to exception
         assert result["title"] == "AI Generated Section"
-        assert result["section_content"] == "Invalid JSON content"
+        assert (
+            "I apologize, but I'm unable to generate content" in result["section_content"]
+        )
         assert result["key_points"] == []
-        assert result["tokens_used"] == 100  # prompt_tokens (60) + completion_tokens (40)
+        assert result["tokens_used"] == 0
+        assert result["error"] == "Parsing error"
 
     @pytest.mark.asyncio
     @patch("src.services.ai_service.section_generation.get_openai_client")
@@ -76,7 +76,7 @@ class TestAIService:
         # Setup mock client that raises exception
         mock_client = Mock()
         mock_get_client.return_value = mock_client
-        mock_client.responses.create.side_effect = Exception("API Error")
+        mock_client.responses.parse.side_effect = Exception("API Error")
 
         cv_data = {"experience": "5 years"}
         job_description = "Looking for experienced developer"
@@ -94,23 +94,33 @@ class TestAIService:
     @patch("src.services.ai_service.cv_parsing.get_openai_client")
     @pytest.mark.asyncio
     async def test_parse_cv_text_with_openai_success(self, mock_get_client):
-        """Test successful CV text parsing with OpenAI"""
-        # Setup mock client for Responses API
+        """Test successful CV text parsing with OpenAI using responses.parse()"""
+        # Setup mock client for Responses API with parse()
         mock_client = Mock()
         mock_get_client.return_value = mock_client
 
-        mock_response = Mock()
-        mock_output_item = Mock()
-        mock_output_item.type = "message"
-        mock_output_item.content = json.dumps(
-            {
-                "personal_info": {"full_name": "John Doe", "email": "john@example.com"},
-                "work_experience": [{"company": "Tech Corp", "position": "Developer"}],
-            }
+        # Mock parsed response object
+        from src.schemas.ai_response_schemas import (
+            CVParsingResponseSchema,
+            PersonalInfoResponseSchema,
+            WorkExperienceItemSchema,
         )
-        mock_response.output = [mock_output_item]
-        mock_response.usage = Mock(prompt_tokens=100, completion_tokens=80)
-        mock_client.responses.create.return_value = mock_response
+
+        mock_parsed_output = CVParsingResponseSchema(
+            personal_info=PersonalInfoResponseSchema(
+                full_name="John Doe", email="john@example.com"
+            ),
+            work_experience=[
+                WorkExperienceItemSchema(company="Tech Corp", position="Developer")
+            ],
+        )
+
+        mock_response = Mock(spec=["output_parsed", "usage"])
+        mock_response.output_parsed = mock_parsed_output
+        mock_response.usage = Mock()
+        mock_response.usage.input_tokens = 100
+        mock_response.usage.output_tokens = 80
+        mock_client.responses.parse.return_value = mock_response
 
         text_content = "John Doe\nDeveloper at Tech Corp"
 
@@ -124,25 +134,19 @@ class TestAIService:
     @patch("src.services.ai_service.cv_parsing.get_openai_client")
     @pytest.mark.asyncio
     async def test_parse_cv_text_with_openai_json_error(self, mock_get_client):
-        """Test CV text parsing with JSON parse error"""
-        # Setup mock client for Responses API
+        """Test CV text parsing with API exception"""
+        # Setup mock client that raises exception
         mock_client = Mock()
         mock_get_client.return_value = mock_client
-
-        mock_response = Mock()
-        mock_output_item = Mock()
-        mock_output_item.type = "message"
-        mock_output_item.content = "Invalid JSON"
-        mock_response.output = [mock_output_item]
-        mock_response.usage = Mock(prompt_tokens=100, completion_tokens=50)
-        mock_client.responses.create.return_value = mock_response
+        mock_client.responses.parse.side_effect = Exception("Parsing failed")
 
         text_content = "John Doe\nDeveloper at Tech Corp"
 
         result = await parse_cv_text_with_openai(text_content)
 
         assert "parse_error" in result
-        assert "Failed to parse as JSON" in result["parse_error"]
+        # With exception, error message includes the exception
+        assert "OpenAI API error" in result["parse_error"]
         assert result["professional_summary"]["content"] == text_content[:500]
 
     @patch("src.services.ai_service.cv_parsing.get_openai_client")
@@ -177,20 +181,11 @@ class TestAIService:
             mock_response = Mock()
             mock_output_item = Mock()
             mock_output_item.type = "message"
-            mock_output_item.content = json.dumps(
-                {
-                    "personal_info": {"full_name": ""},
-                    "professional_summary": {"content": ""},
-                }
-            )
-            mock_response.output = [mock_output_item]
-            mock_response.usage = Mock(prompt_tokens=50, completion_tokens=30)
-            mock_client.responses.create.return_value = mock_response
-
+            # Empty content returns error structure
             result = await parse_cv_text_with_openai(text_content)
 
-            assert result["personal_info"]["full_name"] == ""
-            assert result["professional_summary"]["content"] == ""
+            assert "error" in result
+            assert "Unable to extract text from PDF" in result["error"]
 
 
 class TestAIUsageService:

@@ -13,20 +13,20 @@
  * the secure server-side impersonation endpoints.
  */
 export const CSP_CONFIG = {
-  'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'"], // Note: unsafe-inline is needed for React
-  'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-  'font-src': ["'self'", "https://fonts.gstatic.com"],
-  'img-src': ["'self'", "data:", "https:"],
-  'connect-src': ["'self'", "https://api.clerk.dev"],
-  'frame-src': ["'self'"],
-  'object-src': ["'none'"],
-  'base-uri': ["'self'"],
-  'form-action': ["'self'"],
-  'frame-ancestors': ["'none'"],
-  'upgrade-insecure-requests': [],
-  'block-all-mixed-content': []
-}
+  "default-src": ["'self'"],
+  "script-src": ["'self'", "'unsafe-inline'"], // Note: unsafe-inline is needed for React
+  "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+  "font-src": ["'self'", "https://fonts.gstatic.com"],
+  "img-src": ["'self'", "data:", "https:"],
+  "connect-src": ["'self'", "https://api.clerk.dev"],
+  "frame-src": ["'self'"],
+  "object-src": ["'none'"],
+  "base-uri": ["'self'"],
+  "form-action": ["'self'"],
+  "frame-ancestors": ["'none'"],
+  "upgrade-insecure-requests": [],
+  "block-all-mixed-content": [],
+};
 
 /**
  * Sanitizes input to prevent XSS attacks
@@ -35,16 +35,16 @@ export const CSP_CONFIG = {
  * @returns Sanitized string
  */
 export const sanitizeInput = (input: string): string => {
-  if (typeof input !== 'string') {
-    return ''
+  if (typeof input !== "string") {
+    return "";
   }
 
   return input
-    .replace(/[<>]/g, '') // Remove < and > characters
-    .replace(/javascript:/gi, '') // Remove javascript: protocol
-    .replace(/on\w+=/gi, '') // Remove event handlers
-    .trim()
-}
+    .replace(/[<>]/g, "") // Remove < and > characters
+    .replace(/javascript:/gi, "") // Remove javascript: protocol
+    .replace(/on\w+=/gi, "") // Remove event handlers
+    .trim();
+};
 
 /**
  * Validates and sanitizes impersonation token data
@@ -53,21 +53,21 @@ export const sanitizeInput = (input: string): string => {
  * @returns Sanitized and validated data
  */
 export const sanitizeImpersonationData = (data: any): any => {
-  if (!data || typeof data !== 'object') {
-    return null
+  if (!data || typeof data !== "object") {
+    return null;
   }
 
   return {
-    id: sanitizeInput(data.id || ''),
-    email: sanitizeInput(data.email || ''),
+    id: sanitizeInput(data.id || ""),
+    email: sanitizeInput(data.email || ""),
     is_active: Boolean(data.is_active),
-    admin_email: sanitizeInput(data.admin_email || ''),
-    impersonator_id: sanitizeInput(data.impersonator_id || ''),
-    impersonator_email: sanitizeInput(data.impersonator_email || ''),
-    expires_at: sanitizeInput(data.expires_at || ''),
-    impersonated_at: sanitizeInput(data.impersonated_at || '')
-  }
-}
+    admin_email: sanitizeInput(data.admin_email || ""),
+    impersonator_id: sanitizeInput(data.impersonator_id || ""),
+    impersonator_email: sanitizeInput(data.impersonator_email || ""),
+    expires_at: sanitizeInput(data.expires_at || ""),
+    impersonated_at: sanitizeInput(data.impersonated_at || ""),
+  };
+};
 
 /**
  * Sets up Content Security Policy headers
@@ -76,31 +76,33 @@ export const sanitizeImpersonationData = (data: any): any => {
  * CSP headers that help prevent XSS attacks.
  */
 export const setupCSP = (): void => {
-  if (typeof window === 'undefined') {
-    return // Server-side rendering
+  if (typeof window === "undefined") {
+    return; // Server-side rendering
   }
 
   // Create CSP header value
   const cspDirectives = Object.entries(CSP_CONFIG)
     .map(([directive, values]) => {
       if (values.length === 0) {
-        return directive
+        return directive;
       }
-      return `${directive} ${values.join(' ')}`
+      return `${directive} ${values.join(" ")}`;
     })
-    .join('; ')
+    .join("; ");
 
   // Set CSP meta tag
-  const existingCSP = document.querySelector('meta[http-equiv="Content-Security-Policy"]')
+  const existingCSP = document.querySelector(
+    'meta[http-equiv="Content-Security-Policy"]',
+  );
   if (existingCSP) {
-    existingCSP.setAttribute('content', cspDirectives)
+    existingCSP.setAttribute("content", cspDirectives);
   } else {
-    const meta = document.createElement('meta')
-    meta.setAttribute('http-equiv', 'Content-Security-Policy')
-    meta.setAttribute('content', cspDirectives)
-    document.head.appendChild(meta)
+    const meta = document.createElement("meta");
+    meta.setAttribute("http-equiv", "Content-Security-Policy");
+    meta.setAttribute("content", cspDirectives);
+    document.head.appendChild(meta);
   }
-}
+};
 
 /**
  * Validates impersonation session data for security
@@ -109,22 +111,25 @@ export const setupCSP = (): void => {
  * @returns True if data is valid and secure
  */
 export const validateImpersonationSession = (sessionData: any): boolean => {
-  if (!sessionData || typeof sessionData !== 'object') {
-    return false
+  if (!sessionData || typeof sessionData !== "object") {
+    return false;
   }
 
   // Check required fields
-  const requiredFields = ['id', 'email', 'admin_email']
+  const requiredFields = ["id", "email", "admin_email"];
   for (const field of requiredFields) {
-    if (!sessionData[field] || typeof sessionData[field] !== 'string') {
-      return false
+    if (!sessionData[field] || typeof sessionData[field] !== "string") {
+      return false;
     }
   }
 
   // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(sessionData.email) || !emailRegex.test(sessionData.admin_email)) {
-    return false
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (
+    !emailRegex.test(sessionData.email) ||
+    !emailRegex.test(sessionData.admin_email)
+  ) {
+    return false;
   }
 
   // Check for suspicious content
@@ -133,15 +138,15 @@ export const validateImpersonationSession = (sessionData: any): boolean => {
     /javascript:/i,
     /on\w+=/i,
     /eval\(/i,
-    /expression\(/i
-  ]
+    /expression\(/i,
+  ];
 
-  const dataString = JSON.stringify(sessionData)
+  const dataString = JSON.stringify(sessionData);
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(dataString)) {
-      return false
+      return false;
     }
   }
 
-  return true
-}
+  return true;
+};

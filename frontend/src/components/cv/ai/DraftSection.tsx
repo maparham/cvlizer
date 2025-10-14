@@ -16,8 +16,8 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { useState, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   Box,
   Card,
@@ -34,7 +34,7 @@ import {
   AccordionDetails,
   IconButton,
   Tooltip,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Check as CheckIcon,
   Close as CloseIcon,
@@ -43,10 +43,10 @@ import {
   Schedule as ScheduleIcon,
   Psychology as PsychologyIcon,
   ContentCopy as ContentCopyIcon,
-} from '@mui/icons-material';
-import { useAIStore } from '../../../stores/aiStore';
-import { useNotifications } from '../../../stores/uiStore';
-import { DraftResponse } from '../../../types/ai';
+} from "@mui/icons-material";
+import { useAIStore } from "../../../stores/aiStore";
+import { useNotifications } from "../../../stores/uiStore";
+import { DraftResponse } from "../../../types/ai";
 
 interface DraftSectionProps {
   cvId: string;
@@ -71,42 +71,54 @@ const DraftSection: React.FC<DraftSectionProps> = ({
     setIsApproving(true);
     try {
       await approveWhyGoodFitDraft(cvId, draft.id);
-      showSuccess('Draft approved and committed successfully');
+      showSuccess("Draft approved and committed successfully");
       onApprove?.();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to approve draft';
-      showError('Error', errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to approve draft";
+      showError("Error", errorMessage);
     } finally {
       setIsApproving(false);
     }
-  }, [cvId, draft.id, approveWhyGoodFitDraft, showSuccess, showError, onApprove]);
+  }, [
+    cvId,
+    draft.id,
+    approveWhyGoodFitDraft,
+    showSuccess,
+    showError,
+    onApprove,
+  ]);
 
   const handleDiscard = useCallback(async () => {
     setIsDiscarding(true);
     try {
       await deleteWhyGoodFitDraft(cvId);
-      showSuccess('Draft discarded successfully');
+      showSuccess("Draft discarded successfully");
       onDiscard?.();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to discard draft';
-      showError('Error', errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to discard draft";
+      showError("Error", errorMessage);
     } finally {
       setIsDiscarding(false);
     }
   }, [cvId, deleteWhyGoodFitDraft, showSuccess, showError, onDiscard]);
 
-  const copyToClipboard = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
-    showSuccess('Copied to clipboard');
-  }, [showSuccess]);
+  const copyToClipboard = useCallback(
+    (text: string) => {
+      navigator.clipboard.writeText(text);
+      showSuccess("Copied to clipboard");
+    },
+    [showSuccess],
+  );
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -122,14 +134,21 @@ const DraftSection: React.FC<DraftSectionProps> = ({
       variant="outlined"
       sx={{
         border: 2,
-        borderColor: 'warning.main',
-        backgroundColor: 'warning.50',
-        mb: 2
+        borderColor: "warning.main",
+        backgroundColor: "warning.50",
+        mb: 2,
       }}
     >
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Chip
               icon={<AutoAwesomeIcon />}
               label="Draft"
@@ -141,14 +160,20 @@ const DraftSection: React.FC<DraftSectionProps> = ({
               Why I'm a Good Fit
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <Typography variant="caption" color="text.secondary">
               Generated: {formatDate(draft.created_at)}
             </Typography>
             <Tooltip title="Copy to clipboard">
               <IconButton
                 size="small"
-                onClick={() => copyToClipboard(draft.draft_data?.fit_analysis || draft.draft_data?.content || 'No content available')}
+                onClick={() =>
+                  copyToClipboard(
+                    draft.draft_data?.fit_analysis ||
+                      draft.draft_data?.content ||
+                      "No content available",
+                  )
+                }
               >
                 <ContentCopyIcon fontSize="small" />
               </IconButton>
@@ -161,42 +186,44 @@ const DraftSection: React.FC<DraftSectionProps> = ({
           sx={{
             mb: 2,
             lineHeight: 1.6,
-            '& h1, & h2, & h3, & h4, & h5, & h6': {
+            "& h1, & h2, & h3, & h4, & h5, & h6": {
               marginTop: 2,
               marginBottom: 1,
               fontWeight: 600,
             },
-            '& p': {
+            "& p": {
               marginBottom: 1,
             },
-            '& ul, & ol': {
+            "& ul, & ol": {
               marginBottom: 1,
               paddingLeft: 2,
             },
-            '& li': {
+            "& li": {
               marginBottom: 0.5,
             },
-            '& strong': {
+            "& strong": {
               fontWeight: 600,
             },
-            '& em': {
-              fontStyle: 'italic',
+            "& em": {
+              fontStyle: "italic",
             },
           }}
         >
           <ReactMarkdown>
-            {draft.draft_data?.fit_analysis || draft.draft_data?.content || 'No content available'}
+            {draft.draft_data?.fit_analysis ||
+              draft.draft_data?.content ||
+              "No content available"}
           </ReactMarkdown>
         </Box>
 
         {/* Additional details in accordion */}
-        <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
+        <Accordion sx={{ boxShadow: "none", "&:before": { display: "none" } }}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             sx={{
-              minHeight: 'auto',
+              minHeight: "auto",
               py: 1,
-              '& .MuiAccordionSummary-content': { margin: 0 }
+              "& .MuiAccordionSummary-content": { margin: 0 },
             }}
           >
             <Typography variant="caption" color="text.secondary">
@@ -208,7 +235,11 @@ const DraftSection: React.FC<DraftSectionProps> = ({
               {/* Confidence Score */}
               {draft.draft_data?.confidence_score !== undefined && (
                 <Box>
-                  <Typography variant="caption" color="text.secondary" display="block">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
                     Confidence Score
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -220,19 +251,26 @@ const DraftSection: React.FC<DraftSectionProps> = ({
               {/* Key Matches */}
               {draft.draft_data?.key_matches?.length > 0 && (
                 <Box>
-                  <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    gutterBottom
+                  >
                     Key Matches
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {draft.draft_data.key_matches.map((match: string, index: number) => (
-                      <Chip
-                        key={index}
-                        label={match}
-                        size="small"
-                        variant="outlined"
-                        color="success"
-                      />
-                    ))}
+                    {draft.draft_data.key_matches.map(
+                      (match: string, index: number) => (
+                        <Chip
+                          key={index}
+                          label={match}
+                          size="small"
+                          variant="outlined"
+                          color="success"
+                        />
+                      ),
+                    )}
                   </Stack>
                 </Box>
               )}
@@ -240,33 +278,40 @@ const DraftSection: React.FC<DraftSectionProps> = ({
               {/* Missing Skills */}
               {draft.draft_data?.missing_skills?.length > 0 && (
                 <Box>
-                  <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    gutterBottom
+                  >
                     Missing Skills
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {draft.draft_data.missing_skills.map((skill: string, index: number) => (
-                      <Chip
-                        key={index}
-                        label={skill}
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                      />
-                    ))}
+                    {draft.draft_data.missing_skills.map(
+                      (skill: string, index: number) => (
+                        <Chip
+                          key={index}
+                          label={skill}
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                        />
+                      ),
+                    )}
                   </Stack>
                 </Box>
               )}
 
               {/* Generation Metadata */}
               <Divider />
-              <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                   <PsychologyIcon fontSize="small" color="action" />
                   <Typography variant="caption" color="text.secondary">
                     {draft.ai_model}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                   <ScheduleIcon fontSize="small" color="action" />
                   <Typography variant="caption" color="text.secondary">
                     {formatDuration(draft.generation_time)}
@@ -287,22 +332,26 @@ const DraftSection: React.FC<DraftSectionProps> = ({
         <Button
           variant="contained"
           color="success"
-          startIcon={isApproving ? <CircularProgress size={16} /> : <CheckIcon />}
+          startIcon={
+            isApproving ? <CircularProgress size={16} /> : <CheckIcon />
+          }
           onClick={handleApprove}
           disabled={isApproving || isDiscarding}
-          sx={{ textTransform: 'none' }}
+          sx={{ textTransform: "none" }}
         >
-          {isApproving ? 'Approving...' : 'Approve'}
+          {isApproving ? "Approving..." : "Approve"}
         </Button>
         <Button
           variant="outlined"
           color="error"
-          startIcon={isDiscarding ? <CircularProgress size={16} /> : <CloseIcon />}
+          startIcon={
+            isDiscarding ? <CircularProgress size={16} /> : <CloseIcon />
+          }
           onClick={handleDiscard}
           disabled={isApproving || isDiscarding}
-          sx={{ textTransform: 'none' }}
+          sx={{ textTransform: "none" }}
         >
-          {isDiscarding ? 'Discarding...' : 'Discard'}
+          {isDiscarding ? "Discarding..." : "Discard"}
         </Button>
       </CardActions>
     </Card>

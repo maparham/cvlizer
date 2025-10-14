@@ -16,24 +16,24 @@
  * - Integrates with Material-UI theming
  */
 
-import React from 'react'
-import { Card, CardContent, Box, Typography } from '@mui/material'
-import { TrendingUp } from '@mui/icons-material'
+import React from "react";
+import { Card, CardContent, Box, Typography } from "@mui/material";
+import { TrendingUp } from "@mui/icons-material";
 
 interface StatCardProps {
-  title: string
-  value: number
-  icon: React.ReactNode
-  color?: string
-  trend?: { value: number; label: string }
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color?: string;
+  trend?: { value: number; label: string };
 }
 
 const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
   icon,
-  color = 'primary',
-  trend
+  color = "primary",
+  trend,
 }) => (
   <Card>
     <CardContent>
@@ -60,6 +60,6 @@ const StatCard: React.FC<StatCardProps> = ({
       </Box>
     </CardContent>
   </Card>
-)
+);
 
-export default StatCard
+export default StatCard;

@@ -1,6 +1,6 @@
-import { defineConfig, devices } from '@playwright/test';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import { defineConfig, devices } from "@playwright/test";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: "./tests/e2e",
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -20,18 +20,18 @@ export default defineConfig({
   workers: process.env.CI ? 1 : 2,
 
   /* Global setup - authenticate once for all tests */
-  globalSetup: resolve(__dirname, './tests/e2e/global-setup'),
+  globalSetup: resolve(__dirname, "./tests/e2e/global-setup"),
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html'],
-    ['junit', { outputFile: 'test-results/junit.xml' }],
-    ['json', { outputFile: 'test-results/results.json' }]
+    ["html"],
+    ["junit", { outputFile: "test-results/junit.xml" }],
+    ["json", { outputFile: "test-results/results.json" }],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3000',
+    baseURL: "http://localhost:3000",
 
     /* Authentication is handled dynamically per worker via fixtures.ts */
     /* storageState is set per worker in fixtures based on workerIndex */
@@ -40,13 +40,13 @@ export default defineConfig({
     headless: true,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: "on-first-retry",
 
     /* Take screenshot on failure */
-    screenshot: 'only-on-failure',
+    screenshot: "only-on-failure",
 
     /* Record video on failure */
-    video: 'retain-on-failure',
+    video: "retain-on-failure",
 
     /* Slow down all actions by X milliseconds (uncomment to use) */
     // launchOptions: {
@@ -58,19 +58,19 @@ export default defineConfig({
   projects: [
     // Chromium with User 1
     {
-      name: 'chromium',
+      name: "chromium",
       use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'tests/e2e/.auth/user1.json',
+        ...devices["Desktop Chrome"],
+        storageState: "tests/e2e/.auth/user1.json",
       },
     },
 
     // Firefox with User 2 (for user isolation across workers)
     {
-      name: 'firefox',
+      name: "firefox",
       use: {
-        ...devices['Desktop Firefox'],
-        storageState: 'tests/e2e/.auth/user2.json',
+        ...devices["Desktop Firefox"],
+        storageState: "tests/e2e/.auth/user2.json",
       },
     },
 
@@ -97,8 +97,8 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: "npm run dev",
+    url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

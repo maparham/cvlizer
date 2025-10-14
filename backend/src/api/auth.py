@@ -5,20 +5,21 @@ This module handles user registration, login, token management,
 and provides authentication dependency for protected routes.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
-from typing import Optional
 from datetime import timedelta
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import Session
 
 from src.models.base import get_db
 from src.services.auth_service import (
     authenticate_user,
-    create_user,
-    get_user_by_email,
     create_access_token,
     create_refresh_token,
+    create_user,
+    get_user_by_email,
     verify_token,
 )
 

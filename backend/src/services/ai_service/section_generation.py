@@ -5,21 +5,27 @@ This module provides functions for generating AI-enhanced CV sections
 based on job descriptions, such as "Why I'm a Good Fit" sections.
 """
 
-import time
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional
+import time
+from typing import Any, Dict, Optional
+
+from openai.types.shared_params import Reasoning
 from sqlalchemy.orm import Session
+
 from src.config import AIConfig
+from src.schemas.ai_response_schemas import CVSectionGenerationResponseSchema
+
 from .common import (
-    get_openai_client,
-    is_ai_enabled,
-    extract_response_data,
-    log_ai_usage_safe,
-    with_retries,
     RETRY_ATTEMPTS,
     RETRY_DELAY,
+    extract_response_data,
+    get_openai_client,
+    is_ai_enabled,
+    log_ai_usage_safe,
+    validate_with_schema,
+    with_retries,
 )
 
 logger = logging.getLogger(__name__)
@@ -98,11 +104,17 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
         # Run the synchronous OpenAI call in a thread pool to avoid blocking
         async def _call():
             return await asyncio.to_thread(
-                client.responses.create,
+                client.responses.parse,
                 model=AIConfig.OPENAI_MODEL,
-                instructions="You're a CV expert. Generate compelling, tailored content aligning candidates with job requirements.",
-                input=prompt,
-                reasoning={"effort": "minimal", "summary": "auto"},
+                input=[
+                    {
+                        "role": "system",
+                        "content": "You're a CV expert. Generate compelling, tailored content aligning candidates with job requirements.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                text_format=CVSectionGenerationResponseSchema,
+                reasoning=Reasoning(effort="low"),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
@@ -111,8 +123,10 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
             (time.time() - start_time) * 1000
         )  # Convert to milliseconds
 
-        # Extract content and token usage
-        content, prompt_tokens, completion_tokens = extract_response_data(response)
+        # Extract parsed data and token usage
+        parsed_content = response.output_parsed.model_dump()
+        prompt_tokens = response.usage.input_tokens
+        completion_tokens = response.usage.output_tokens
         tokens_used = prompt_tokens + completion_tokens
 
         # Log AI usage
@@ -129,18 +143,8 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
                 cv_id=cv_id,
             )
 
-        # Try to parse as JSON, fallback to plain text
-        try:
-            parsed_content = json.loads(content)
-        except json.JSONDecodeError:
-            parsed_content = {
-                "title": "AI Generated Section",
-                "content": content,
-                "key_points": [],
-            }
-
         return {
-            "section_content": parsed_content.get("content", content),
+            "section_content": parsed_content.get("content", ""),
             "title": parsed_content.get("title", "AI Generated Section"),
             "key_points": parsed_content.get("key_points", []),
             "tokens_used": tokens_used,
@@ -149,6 +153,11 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
         }
 
     except Exception as e:
+        # Log the error with full details
+        logger.error(f"Section generation failed with error: {str(e)}", exc_info=True)
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Section type: {section_type}")
+
         # Log failed AI usage
         if user_id:
             log_ai_usage_safe(

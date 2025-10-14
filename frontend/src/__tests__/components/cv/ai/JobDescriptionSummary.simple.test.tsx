@@ -4,14 +4,14 @@
  * Basic unit tests for the JobDescriptionSummary component focusing on core functionality
  */
 
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import JobDescriptionSummary from '../../../../components/cv/ai/JobDescriptionSummary';
-import { JobDescription } from '../../../../types/ai';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import JobDescriptionSummary from "../../../../components/cv/ai/JobDescriptionSummary";
+import { JobDescription } from "../../../../types/ai";
 
 // Mock logger and errorHandler to avoid import.meta.env issues
-jest.mock('../../../../utils/logger', () => ({
+jest.mock("../../../../utils/logger", () => ({
   Logger: jest.fn().mockImplementation(() => ({
     info: jest.fn(),
     error: jest.fn(),
@@ -20,7 +20,7 @@ jest.mock('../../../../utils/logger', () => ({
   })),
 }));
 
-jest.mock('../../../../utils/errorHandler', () => ({
+jest.mock("../../../../utils/errorHandler", () => ({
   ErrorHandler: jest.fn().mockImplementation(() => ({
     handle: jest.fn(),
     logError: jest.fn(),
@@ -28,7 +28,7 @@ jest.mock('../../../../utils/errorHandler', () => ({
 }));
 
 // Mock the AI store and selectors
-jest.mock('../../../../stores/aiStore', () => ({
+jest.mock("../../../../stores/aiStore", () => ({
   useAIStore: jest.fn(),
   useVisibleJobDescriptions: jest.fn(),
   useJobDescriptions: jest.fn(),
@@ -36,12 +36,12 @@ jest.mock('../../../../stores/aiStore', () => ({
 }));
 
 // Mock the notifications store
-jest.mock('../../../../stores/uiStore', () => ({
+jest.mock("../../../../stores/uiStore", () => ({
   useNotifications: jest.fn(),
 }));
 
 // Mock the AI service
-jest.mock('../../../../services/aiService', () => ({
+jest.mock("../../../../services/aiService", () => ({
   aiService: {
     parseJobDescriptionUrl: jest.fn(),
   },
@@ -54,7 +54,7 @@ const localStorageMock = {
   removeItem: jest.fn(),
   clear: jest.fn(),
 };
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
 
@@ -62,34 +62,35 @@ const theme = createTheme();
 
 // Test data
 const mockJobDescription: JobDescription = {
-  id: 'jd-1',
-  cv_id: 'cv-1',
-  content: 'Test job description content',
-  title: 'Software Engineer',
-  company: 'Test Company',
-  location: 'San Francisco, CA',
-  source_url: 'https://example.com/job',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
+  id: "jd-1",
+  cv_id: "cv-1",
+  content: "Test job description content",
+  title: "Software Engineer",
+  company: "Test Company",
+  location: "San Francisco, CA",
+  source_url: "https://example.com/job",
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
 };
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(
-    <ThemeProvider theme={theme}>
-      {component}
-    </ThemeProvider>
-  );
+  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
 };
 
-describe('JobDescriptionSummary - Basic Tests', () => {
+describe("JobDescriptionSummary - Basic Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.getItem.mockReturnValue(null);
   });
 
-  it('renders without crashing', () => {
-    const { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } = require('../../../../stores/aiStore');
-    const { useNotifications } = require('../../../../stores/uiStore');
+  it("renders without crashing", () => {
+    const {
+      useAIStore,
+      useVisibleJobDescriptions,
+      useJobDescriptions,
+      useActiveJobDescription,
+    } = require("../../../../stores/aiStore");
+    const { useNotifications } = require("../../../../stores/uiStore");
 
     useAIStore.mockReturnValue({
       hideJobDescriptionFromSidebar: jest.fn(),
@@ -107,16 +108,19 @@ describe('JobDescriptionSummary - Basic Tests', () => {
       showError: jest.fn(),
     });
 
-    renderWithTheme(
-      <JobDescriptionSummary cvId="cv-1" />
-    );
+    renderWithTheme(<JobDescriptionSummary cvId="cv-1" />);
 
-    expect(screen.getByText('Job Description')).toBeInTheDocument();
+    expect(screen.getByText("Job Description")).toBeInTheDocument();
   });
 
   it('shows "No Job Description Yet" when no job descriptions exist', () => {
-    const { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } = require('../../../../stores/aiStore');
-    const { useNotifications } = require('../../../../stores/uiStore');
+    const {
+      useAIStore,
+      useVisibleJobDescriptions,
+      useJobDescriptions,
+      useActiveJobDescription,
+    } = require("../../../../stores/aiStore");
+    const { useNotifications } = require("../../../../stores/uiStore");
 
     useAIStore.mockReturnValue({
       hideJobDescriptionFromSidebar: jest.fn(),
@@ -134,17 +138,20 @@ describe('JobDescriptionSummary - Basic Tests', () => {
       showError: jest.fn(),
     });
 
-    renderWithTheme(
-      <JobDescriptionSummary cvId="cv-1" />
-    );
+    renderWithTheme(<JobDescriptionSummary cvId="cv-1" />);
 
-    expect(screen.getByText('No Job Description Yet')).toBeInTheDocument();
-    expect(screen.getByText('Add Job Description')).toBeInTheDocument();
+    expect(screen.getByText("No Job Description Yet")).toBeInTheDocument();
+    expect(screen.getByText("Add Job Description")).toBeInTheDocument();
   });
 
-  it('shows active job description when one is selected', () => {
-    const { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } = require('../../../../stores/aiStore');
-    const { useNotifications } = require('../../../../stores/uiStore');
+  it("shows active job description when one is selected", () => {
+    const {
+      useAIStore,
+      useVisibleJobDescriptions,
+      useJobDescriptions,
+      useActiveJobDescription,
+    } = require("../../../../stores/aiStore");
+    const { useNotifications } = require("../../../../stores/uiStore");
 
     useAIStore.mockReturnValue({
       hideJobDescriptionFromSidebar: jest.fn(),
@@ -162,18 +169,23 @@ describe('JobDescriptionSummary - Basic Tests', () => {
       showError: jest.fn(),
     });
 
-    renderWithTheme(
-      <JobDescriptionSummary cvId="cv-1" />
-    );
+    renderWithTheme(<JobDescriptionSummary cvId="cv-1" />);
 
-    expect(screen.getByText('Software Engineer')).toBeInTheDocument();
-    expect(screen.getByText('Test Company')).toBeInTheDocument();
-    expect(screen.getByText('Test job description content')).toBeInTheDocument();
+    expect(screen.getByText("Software Engineer")).toBeInTheDocument();
+    expect(screen.getByText("Test Company")).toBeInTheDocument();
+    expect(
+      screen.getByText("Test job description content"),
+    ).toBeInTheDocument();
   });
 
-  it('shows correct count in Manage button', () => {
-    const { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } = require('../../../../stores/aiStore');
-    const { useNotifications } = require('../../../../stores/uiStore');
+  it("shows correct count in Manage button", () => {
+    const {
+      useAIStore,
+      useVisibleJobDescriptions,
+      useJobDescriptions,
+      useActiveJobDescription,
+    } = require("../../../../stores/aiStore");
+    const { useNotifications } = require("../../../../stores/uiStore");
 
     useAIStore.mockReturnValue({
       hideJobDescriptionFromSidebar: jest.fn(),
@@ -183,7 +195,10 @@ describe('JobDescriptionSummary - Basic Tests', () => {
     });
 
     useVisibleJobDescriptions.mockReturnValue([]);
-    useJobDescriptions.mockReturnValue([mockJobDescription, mockJobDescription]);
+    useJobDescriptions.mockReturnValue([
+      mockJobDescription,
+      mockJobDescription,
+    ]);
     useActiveJobDescription.mockReturnValue(undefined);
 
     useNotifications.mockReturnValue({
@@ -191,16 +206,19 @@ describe('JobDescriptionSummary - Basic Tests', () => {
       showError: jest.fn(),
     });
 
-    renderWithTheme(
-      <JobDescriptionSummary cvId="cv-1" />
-    );
+    renderWithTheme(<JobDescriptionSummary cvId="cv-1" />);
 
-    expect(screen.getByText('Manage (2)')).toBeInTheDocument();
+    expect(screen.getByText("Manage (2)")).toBeInTheDocument();
   });
 
-  it('calls hideJobDescriptionFromSidebar when X button is clicked', () => {
-    const { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } = require('../../../../stores/aiStore');
-    const { useNotifications } = require('../../../../stores/uiStore');
+  it("calls hideJobDescriptionFromSidebar when X button is clicked", () => {
+    const {
+      useAIStore,
+      useVisibleJobDescriptions,
+      useJobDescriptions,
+      useActiveJobDescription,
+    } = require("../../../../stores/aiStore");
+    const { useNotifications } = require("../../../../stores/uiStore");
 
     const mockHideJobDescriptionFromSidebar = jest.fn();
 
@@ -220,19 +238,22 @@ describe('JobDescriptionSummary - Basic Tests', () => {
       showError: jest.fn(),
     });
 
-    renderWithTheme(
-      <JobDescriptionSummary cvId="cv-1" />
-    );
+    renderWithTheme(<JobDescriptionSummary cvId="cv-1" />);
 
-    const hideButton = screen.getByLabelText('Remove from sidebar');
+    const hideButton = screen.getByLabelText("Remove from sidebar");
     fireEvent.click(hideButton);
 
-    expect(mockHideJobDescriptionFromSidebar).toHaveBeenCalledWith('jd-1');
+    expect(mockHideJobDescriptionFromSidebar).toHaveBeenCalledWith("jd-1");
   });
 
-  it('opens edit dialog when edit button is clicked', () => {
-    const { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } = require('../../../../stores/aiStore');
-    const { useNotifications } = require('../../../../stores/uiStore');
+  it("opens edit dialog when edit button is clicked", () => {
+    const {
+      useAIStore,
+      useVisibleJobDescriptions,
+      useJobDescriptions,
+      useActiveJobDescription,
+    } = require("../../../../stores/aiStore");
+    const { useNotifications } = require("../../../../stores/uiStore");
 
     useAIStore.mockReturnValue({
       hideJobDescriptionFromSidebar: jest.fn(),
@@ -250,20 +271,23 @@ describe('JobDescriptionSummary - Basic Tests', () => {
       showError: jest.fn(),
     });
 
-    renderWithTheme(
-      <JobDescriptionSummary cvId="cv-1" />
-    );
+    renderWithTheme(<JobDescriptionSummary cvId="cv-1" />);
 
-    const editButton = screen.getByLabelText('Edit');
+    const editButton = screen.getByLabelText("Edit");
     fireEvent.click(editButton);
 
-    expect(screen.getByText('Edit Job Description')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Software Engineer')).toBeInTheDocument();
+    expect(screen.getByText("Edit Job Description")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Software Engineer")).toBeInTheDocument();
   });
 
-  it('calls onGenerateSuggestions when Enhance CV button is clicked', () => {
-    const { useAIStore, useVisibleJobDescriptions, useJobDescriptions, useActiveJobDescription } = require('../../../../stores/aiStore');
-    const { useNotifications } = require('../../../../stores/uiStore');
+  it("calls onGenerateSuggestions when Enhance CV button is clicked", () => {
+    const {
+      useAIStore,
+      useVisibleJobDescriptions,
+      useJobDescriptions,
+      useActiveJobDescription,
+    } = require("../../../../stores/aiStore");
+    const { useNotifications } = require("../../../../stores/uiStore");
 
     const mockOnGenerateSuggestions = jest.fn();
 
@@ -287,10 +311,10 @@ describe('JobDescriptionSummary - Basic Tests', () => {
       <JobDescriptionSummary
         cvId="cv-1"
         onGenerateSuggestions={mockOnGenerateSuggestions}
-      />
+      />,
     );
 
-    const enhanceButton = screen.getByText('Enhance CV');
+    const enhanceButton = screen.getByText("Enhance CV");
     fireEvent.click(enhanceButton);
 
     expect(mockOnGenerateSuggestions).toHaveBeenCalled();

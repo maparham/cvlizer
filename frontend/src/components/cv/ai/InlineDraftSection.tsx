@@ -17,8 +17,8 @@
  * - Provides immediate approval/rejection without page refresh
  */
 
-import React, { useState, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { useState, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   Box,
   Paper,
@@ -34,7 +34,7 @@ import {
   Fade,
   IconButton,
   Tooltip,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Check as CheckIcon,
   Close as CloseIcon,
@@ -43,12 +43,12 @@ import {
   Schedule as ScheduleIcon,
   Psychology as PsychologyIcon,
   ContentCopy as ContentCopyIcon,
-} from '@mui/icons-material';
-import { useAIStore } from '../../../stores/aiStore';
-import { useNotifications } from '../../../stores/uiStore';
-import { useCVEditor } from '../../../contexts/CVEditorContext';
-import { useCVStore } from '../../../stores/cvStore';
-import { DraftResponse } from '../../../types/ai';
+} from "@mui/icons-material";
+import { useAIStore } from "../../../stores/aiStore";
+import { useNotifications } from "../../../stores/uiStore";
+import { useCVEditor } from "../../../contexts/CVEditorContext";
+import { useCVStore } from "../../../stores/cvStore";
+import { DraftResponse } from "../../../types/ai";
 
 interface InlineDraftSectionProps {
   cvId: string;
@@ -89,47 +89,61 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
         }
       }
 
-      showSuccess('Draft approved and added to CV successfully');
+      showSuccess("Draft approved and added to CV successfully");
 
       // Notify parent component (triggers UI re-render)
       onApproved?.();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to approve draft';
-      showError('Error', errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to approve draft";
+      showError("Error", errorMessage);
     } finally {
       setIsApproving(false);
     }
-  }, [cvId, draft.id, approveWhyGoodFitDraft, setCurrentCV, onUpdateCV, showSuccess, showError, onApproved]);
+  }, [
+    cvId,
+    draft.id,
+    approveWhyGoodFitDraft,
+    setCurrentCV,
+    onUpdateCV,
+    showSuccess,
+    showError,
+    onApproved,
+  ]);
 
   const handleReject = useCallback(async () => {
     setIsRejecting(true);
     try {
       await deleteWhyGoodFitDraft(cvId);
 
-      showSuccess('Draft rejected successfully');
+      showSuccess("Draft rejected successfully");
 
       // Notify parent component after successful rejection
       onRejected?.();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to reject draft';
-      showError('Error', errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to reject draft";
+      showError("Error", errorMessage);
     } finally {
       setIsRejecting(false);
     }
   }, [cvId, deleteWhyGoodFitDraft, showSuccess, showError, onRejected]);
 
-  const copyToClipboard = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
-    showSuccess('Copied to clipboard');
-  }, [showSuccess]);
+  const copyToClipboard = useCallback(
+    (text: string) => {
+      navigator.clipboard.writeText(text);
+      showSuccess("Copied to clipboard");
+    },
+    [showSuccess],
+  );
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -146,32 +160,39 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
         <Paper
           elevation={2}
           sx={{
-            border: '2px solid',
-            borderColor: 'warning.main',
-            backgroundColor: 'warning.50',
-            position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
+            border: "2px solid",
+            borderColor: "warning.main",
+            backgroundColor: "warning.50",
+            position: "relative",
+            overflow: "hidden",
+            "&::before": {
               content: '""',
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
               right: 0,
-              height: '4px',
-              background: 'linear-gradient(90deg, #ff9800, #ffc107, #ff9800)',
-              backgroundSize: '200% 100%',
-              animation: 'shimmer 2s infinite',
+              height: "4px",
+              background: "linear-gradient(90deg, #ff9800, #ffc107, #ff9800)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 2s infinite",
             },
-            '@keyframes shimmer': {
-              '0%': { backgroundPosition: '-200% 0' },
-              '100%': { backgroundPosition: '200% 0' },
+            "@keyframes shimmer": {
+              "0%": { backgroundPosition: "-200% 0" },
+              "100%": { backgroundPosition: "200% 0" },
             },
           }}
         >
           <Box sx={{ p: 3 }}>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Chip
                   icon={<AutoAwesomeIcon />}
                   label="AI Draft"
@@ -179,18 +200,27 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
                   size="small"
                   sx={{ fontWeight: 600 }}
                 />
-                <Typography variant="h6" sx={{ fontWeight: 600, color: 'warning.dark' }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: "warning.dark" }}
+                >
                   Why I'm a Good Fit
                 </Typography>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Typography variant="caption" color="text.secondary">
                   Generated: {formatDate(draft.created_at)}
                 </Typography>
                 <Tooltip title="Copy to clipboard">
                   <IconButton
                     size="small"
-                    onClick={() => copyToClipboard(draft.draft_data?.fit_analysis || draft.draft_data?.content || 'No content available')}
+                    onClick={() =>
+                      copyToClipboard(
+                        draft.draft_data?.fit_analysis ||
+                          draft.draft_data?.content ||
+                          "No content available",
+                      )
+                    }
                   >
                     <ContentCopyIcon fontSize="small" />
                   </IconButton>
@@ -203,67 +233,75 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
               sx={{
                 mb: 2,
                 lineHeight: 1.6,
-                color: 'text.primary',
-                '& h1, & h2, & h3, & h4, & h5, & h6': {
+                color: "text.primary",
+                "& h1, & h2, & h3, & h4, & h5, & h6": {
                   marginTop: 2,
                   marginBottom: 1,
                   fontWeight: 600,
                 },
-                '& p': {
+                "& p": {
                   marginBottom: 1,
                 },
-                '& ul, & ol': {
+                "& ul, & ol": {
                   marginBottom: 1,
                   paddingLeft: 2,
                 },
-                '& li': {
+                "& li": {
                   marginBottom: 0.5,
                 },
-                '& strong': {
+                "& strong": {
                   fontWeight: 600,
                 },
-                '& em': {
-                  fontStyle: 'italic',
+                "& em": {
+                  fontStyle: "italic",
                 },
               }}
             >
               <ReactMarkdown>
-                {draft.draft_data?.fit_analysis || draft.draft_data?.content || 'No content available'}
+                {draft.draft_data?.fit_analysis ||
+                  draft.draft_data?.content ||
+                  "No content available"}
               </ReactMarkdown>
             </Box>
 
             {/* Action buttons */}
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
               <Button
                 variant="contained"
                 color="success"
-                startIcon={isApproving ? <CircularProgress size={16} /> : <CheckIcon />}
+                startIcon={
+                  isApproving ? <CircularProgress size={16} /> : <CheckIcon />
+                }
                 onClick={handleApprove}
                 disabled={isApproving || isRejecting}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
+                sx={{ textTransform: "none", fontWeight: 600 }}
               >
-                {isApproving ? 'Approving...' : 'Approve & Add to CV'}
+                {isApproving ? "Approving..." : "Approve & Add to CV"}
               </Button>
               <Button
                 variant="outlined"
                 color="error"
-                startIcon={isRejecting ? <CircularProgress size={16} /> : <CloseIcon />}
+                startIcon={
+                  isRejecting ? <CircularProgress size={16} /> : <CloseIcon />
+                }
                 onClick={handleReject}
                 disabled={isApproving || isRejecting}
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: "none" }}
               >
-                {isRejecting ? 'Rejecting...' : 'Reject'}
+                {isRejecting ? "Rejecting..." : "Reject"}
               </Button>
             </Box>
 
             {/* Additional details in accordion */}
-            <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
+            <Accordion
+              sx={{ boxShadow: "none", "&:before": { display: "none" } }}
+            >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 sx={{
-                  minHeight: 'auto',
+                  minHeight: "auto",
                   py: 1,
-                  '& .MuiAccordionSummary-content': { margin: 0 }
+                  "& .MuiAccordionSummary-content": { margin: 0 },
                 }}
               >
                 <Typography variant="caption" color="text.secondary">
@@ -275,7 +313,11 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
                   {/* Confidence Score */}
                   {draft.draft_data?.confidence_score !== undefined && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
                         Confidence Score
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -287,19 +329,31 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
                   {/* Key Matches */}
                   {draft.draft_data?.key_matches?.length > 0 && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        gutterBottom
+                      >
                         Key Matches
                       </Typography>
-                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {draft.draft_data.key_matches.map((match: string, index: number) => (
-                          <Chip
-                            key={index}
-                            label={match}
-                            size="small"
-                            variant="outlined"
-                            color="success"
-                          />
-                        ))}
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        useFlexGap
+                      >
+                        {draft.draft_data.key_matches.map(
+                          (match: string, index: number) => (
+                            <Chip
+                              key={index}
+                              label={match}
+                              size="small"
+                              variant="outlined"
+                              color="success"
+                            />
+                          ),
+                        )}
                       </Stack>
                     </Box>
                   )}
@@ -307,33 +361,49 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
                   {/* Missing Skills */}
                   {draft.draft_data?.missing_skills?.length > 0 && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        gutterBottom
+                      >
                         Missing Skills
                       </Typography>
-                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {draft.draft_data.missing_skills.map((skill: string, index: number) => (
-                          <Chip
-                            key={index}
-                            label={skill}
-                            size="small"
-                            variant="outlined"
-                            color="error"
-                          />
-                        ))}
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        useFlexGap
+                      >
+                        {draft.draft_data.missing_skills.map(
+                          (skill: string, index: number) => (
+                            <Chip
+                              key={index}
+                              label={skill}
+                              size="small"
+                              variant="outlined"
+                              color="error"
+                            />
+                          ),
+                        )}
                       </Stack>
                     </Box>
                   )}
 
                   {/* Generation Metadata */}
                   <Divider />
-                  <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    >
                       <PsychologyIcon fontSize="small" color="action" />
                       <Typography variant="caption" color="text.secondary">
                         {draft.ai_model}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    >
                       <ScheduleIcon fontSize="small" color="action" />
                       <Typography variant="caption" color="text.secondary">
                         {formatDuration(draft.generation_time)}

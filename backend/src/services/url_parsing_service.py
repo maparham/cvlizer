@@ -28,19 +28,20 @@ Browser Automation Integration:
 - Maintains existing functionality for standard sites
 """
 
-import requests
-from typing import Dict, Any, Optional
-from urllib.parse import urlparse
-import time
-from bs4 import BeautifulSoup
 import logging
+import time
+from typing import Any, Dict, Optional
+from urllib.parse import urlparse
+
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.webdriver.support.ui import WebDriverWait
 
 from src.services.ai_service import extract_job_description_with_ai
 

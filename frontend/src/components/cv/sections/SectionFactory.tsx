@@ -18,40 +18,40 @@
  * - Maintains backward compatibility with existing section props
  */
 
-import React from 'react';
-import { SectionProps } from '../../../types';
-import { useInlineDiffContext } from '../../../contexts/InlineDiffContext';
+import React from "react";
+import { SectionProps } from "../../../types";
+import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
 
 // Import regular sections
-import PersonalInfoSection from './PersonalInfoSection';
-import ProfessionalSummarySection from './ProfessionalSummarySection';
-import WorkExperienceSection from './WorkExperienceSection';
-import EducationSection from './EducationSection';
-import SkillsSection from './SkillsSection';
-import CertificationsSection from './CertificationsSection';
-import ProjectsSection from './ProjectsSection';
-import AwardsSection from './AwardsSection';
-import PublicationsSection from './PublicationsSection';
-import VolunteerExperienceSection from './VolunteerExperienceSection';
-import WhyGoodFitSection from './WhyGoodFitSection';
+import PersonalInfoSection from "./PersonalInfoSection";
+import ProfessionalSummarySection from "./ProfessionalSummarySection";
+import WorkExperienceSection from "./WorkExperienceSection";
+import EducationSection from "./EducationSection";
+import SkillsSection from "./SkillsSection";
+import CertificationsSection from "./CertificationsSection";
+import ProjectsSection from "./ProjectsSection";
+import AwardsSection from "./AwardsSection";
+import PublicationsSection from "./PublicationsSection";
+import VolunteerExperienceSection from "./VolunteerExperienceSection";
+import WhyGoodFitSection from "./WhyGoodFitSection";
 
 // Import diff-enabled sections
-import SkillsSectionWithDiff from './SkillsSectionWithDiff';
-import ProfessionalSummarySectionWithDiff from './ProfessionalSummarySectionWithDiff';
+import SkillsSectionWithDiff from "./SkillsSectionWithDiff";
+import ProfessionalSummarySectionWithDiff from "./ProfessionalSummarySectionWithDiff";
 
 // Section type mapping
 type SectionType =
-  | 'personal_info'
-  | 'professional_summary'
-  | 'work_experience'
-  | 'education'
-  | 'skills'
-  | 'certifications'
-  | 'projects'
-  | 'awards'
-  | 'publications'
-  | 'volunteer_experience'
-  | 'why_good_fit';
+  | "personal_info"
+  | "professional_summary"
+  | "work_experience"
+  | "education"
+  | "skills"
+  | "certifications"
+  | "projects"
+  | "awards"
+  | "publications"
+  | "volunteer_experience"
+  | "why_good_fit";
 
 interface SectionFactoryProps extends SectionProps {
   sectionType: SectionType;
@@ -94,7 +94,10 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
   // Determine which component to render
   const getSectionComponent = () => {
     // If in diff mode and a diff-enabled version exists, use it
-    if (isInDiffMode && DIFF_SECTIONS[sectionType as keyof typeof DIFF_SECTIONS]) {
+    if (
+      isInDiffMode &&
+      DIFF_SECTIONS[sectionType as keyof typeof DIFF_SECTIONS]
+    ) {
       return DIFF_SECTIONS[sectionType as keyof typeof DIFF_SECTIONS];
     }
 
@@ -109,7 +112,15 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
     return null;
   }
 
-  return <SectionComponent {...props} data={props.data as any} onUnsavedChanges={props.onUnsavedChanges as any} title={sectionTitle} onTitleSave={onSectionTitleSave} />;
+  return (
+    <SectionComponent
+      {...props}
+      data={props.data as any}
+      onUnsavedChanges={props.onUnsavedChanges as any}
+      title={sectionTitle}
+      onTitleSave={onSectionTitleSave}
+    />
+  );
 };
 
 export default SectionFactory;

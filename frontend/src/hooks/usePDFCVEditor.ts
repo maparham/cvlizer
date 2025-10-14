@@ -1,102 +1,113 @@
-import { useState, useCallback } from 'react'
-import { PDFCVEditorProps, CVSection, CVData } from '../types'
-import { useSectionManagement } from './useSectionManagement'
-import { useEditingState } from './useEditingState'
-import { useDragAndDrop } from './useDragAndDrop'
-import { useKeyboardShortcuts } from './useKeyboardShortcuts'
-import { ValidationError } from '../utils/validationUtils'
+import { useState, useCallback } from "react";
+import { PDFCVEditorProps, CVSection, CVData } from "../types";
+import { useSectionManagement } from "./useSectionManagement";
+import { useEditingState } from "./useEditingState";
+import { useDragAndDrop } from "./useDragAndDrop";
+import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import { ValidationError } from "../utils/validationUtils";
 
 interface PDFCVEditorHook {
   // Section management
-  sections: CVSection[]
-  toggleSectionVisibility: (sectionId: string) => void
-  addNewSection: (sectionId: string) => void
-  removeSection: (sectionId: string) => void
-  resetToDefaultOrder: () => void
-  isDefaultOrder: () => boolean
-  getAvailableSectionsToAdd: () => Array<{id: string; name: string}>
-  updateSectionTitle: (sectionId: string, newTitle: string) => void
+  sections: CVSection[];
+  toggleSectionVisibility: (sectionId: string) => void;
+  addNewSection: (sectionId: string) => void;
+  removeSection: (sectionId: string) => void;
+  resetToDefaultOrder: () => void;
+  isDefaultOrder: () => boolean;
+  getAvailableSectionsToAdd: () => Array<{ id: string; name: string }>;
+  updateSectionTitle: (sectionId: string, newTitle: string) => void;
 
   // Drag and drop
-  activeId: string | null
-  handleDragStart: (event: any) => void
-  handleDragEnd: (event: any) => void
+  activeId: string | null;
+  handleDragStart: (event: any) => void;
+  handleDragEnd: (event: any) => void;
 
   // Editing state
-  editingSection: string | null
-  handleSectionEdit: (sectionType: string) => void
-  handleSectionClose: () => void
-  requestSectionCancel: () => void
-  editingIndividualItem: any
+  editingSection: string | null;
+  handleSectionEdit: (sectionType: string) => void;
+  handleSectionClose: () => void;
+  requestSectionCancel: () => void;
+  editingIndividualItem: any;
   registerIndividualItemEditing: (
     sectionId: string,
     itemIndex: number,
     onCancel: () => void,
-    onStartEdit?: () => void
-  ) => 'success' | 'dialog_shown'
-  unregisterIndividualItemEditing: (sectionId: string, itemIndex: number) => void
-  requestIndividualItemCancel: (sectionId: string, onCancel: () => void) => void
+    onStartEdit?: () => void,
+  ) => "success" | "dialog_shown";
+  unregisterIndividualItemEditing: (
+    sectionId: string,
+    itemIndex: number,
+  ) => void;
+  requestIndividualItemCancel: (
+    sectionId: string,
+    onCancel: () => void,
+  ) => void;
 
   // Unsaved changes
-  onUnsavedChanges: (sectionId: string, hasChanges: boolean) => void
-  hasUnsavedChanges: boolean
-  editingSections: Set<string>
-  pendingChanges: Map<string, unknown>
-  clearUnsavedChanges: () => void
-  clearEditingState: () => void
+  onUnsavedChanges: (sectionId: string, hasChanges: boolean) => void;
+  hasUnsavedChanges: boolean;
+  editingSections: Set<string>;
+  pendingChanges: Map<string, unknown>;
+  clearUnsavedChanges: () => void;
+  clearEditingState: () => void;
 
   // Dialog state
-  showUnsavedChangesDialog: boolean
-  handleUnsavedChangesDialogClose: () => void
-  handleUnsavedChangesDialogConfirm: () => void
+  showUnsavedChangesDialog: boolean;
+  handleUnsavedChangesDialogClose: () => void;
+  handleUnsavedChangesDialogConfirm: () => void;
 
   // Reset dialog
-  showResetDialog: boolean
-  handleResetClick: () => void
-  setShowResetDialog: (show: boolean) => void
+  showResetDialog: boolean;
+  handleResetClick: () => void;
+  setShowResetDialog: (show: boolean) => void;
 
   // Validation errors
-  validationErrors: ValidationError[]
-  setValidationErrors: (errors: ValidationError[]) => void
-  clearValidationErrors: () => void
+  validationErrors: ValidationError[];
+  setValidationErrors: (errors: ValidationError[]) => void;
+  clearValidationErrors: () => void;
 }
 
 export const usePDFCVEditor = ({
   cvData,
   onUpdateCV,
-  onSave
+  onSave,
 }: PDFCVEditorProps): PDFCVEditorHook => {
   // Reset dialog state (not managed by other hooks)
-  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   // Validation errors state
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
+    [],
+  );
 
   const clearValidationErrors = useCallback(() => {
-    setValidationErrors([])
-  }, [])
+    setValidationErrors([]);
+  }, []);
 
   // Wrap onSave to update CV data as well
-  const handleSave = useCallback((updatedData?: CVData, message?: string) => {
-    const dataToSave = updatedData || cvData
-    onUpdateCV(dataToSave)
-    return onSave(dataToSave, message)
-  }, [onUpdateCV, onSave, cvData])
+  const handleSave = useCallback(
+    (updatedData?: CVData, message?: string) => {
+      const dataToSave = updatedData || cvData;
+      onUpdateCV(dataToSave);
+      return onSave(dataToSave, message);
+    },
+    [onUpdateCV, onSave, cvData],
+  );
 
   // Section management
   const sectionManagement = useSectionManagement({
     cvData,
-    onSave: handleSave
-  })
+    onSave: handleSave,
+  });
 
   // Editing state management
-  const editingState = useEditingState()
+  const editingState = useEditingState();
 
   // Drag and drop
   const dragAndDrop = useDragAndDrop({
     sections: sectionManagement.sections,
-    onReorderSections: sectionManagement.reorderSections
-  })
+    onReorderSections: sectionManagement.reorderSections,
+  });
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -111,25 +122,25 @@ export const usePDFCVEditor = ({
       // In a real implementation, we might want to refactor this
       if (show) {
         // Trigger the dialog through the editing state
-        editingState.requestSectionCancel()
+        editingState.requestSectionCancel();
       }
     },
     onSetPendingNavigation: () => {
       // Note: This shows why we might need a different architecture
       // The keyboard shortcuts hook needs better integration
     },
-    onUnsavedChangesDialogClose: editingState.handleUnsavedChangesDialogClose
-  })
+    onUnsavedChangesDialogClose: editingState.handleUnsavedChangesDialogClose,
+  });
 
   // Reset dialog handlers
   const handleResetClick = useCallback(() => {
-    setShowResetDialog(true)
-  }, [])
+    setShowResetDialog(true);
+  }, []);
 
   const handleResetConfirm = useCallback(() => {
-    sectionManagement.resetToDefaultOrder()
-    setShowResetDialog(false)
-  }, [sectionManagement])
+    sectionManagement.resetToDefaultOrder();
+    setShowResetDialog(false);
+  }, [sectionManagement]);
 
   return {
     // Section management
@@ -154,7 +165,8 @@ export const usePDFCVEditor = ({
     requestSectionCancel: editingState.requestSectionCancel,
     editingIndividualItem: editingState.editingIndividualItem,
     registerIndividualItemEditing: editingState.registerIndividualItemEditing,
-    unregisterIndividualItemEditing: editingState.unregisterIndividualItemEditing,
+    unregisterIndividualItemEditing:
+      editingState.unregisterIndividualItemEditing,
     requestIndividualItemCancel: editingState.requestIndividualItemCancel,
 
     // Unsaved changes
@@ -167,8 +179,10 @@ export const usePDFCVEditor = ({
 
     // Dialog state
     showUnsavedChangesDialog: editingState.showUnsavedChangesDialog,
-    handleUnsavedChangesDialogClose: editingState.handleUnsavedChangesDialogClose,
-    handleUnsavedChangesDialogConfirm: editingState.handleUnsavedChangesDialogConfirm,
+    handleUnsavedChangesDialogClose:
+      editingState.handleUnsavedChangesDialogClose,
+    handleUnsavedChangesDialogConfirm:
+      editingState.handleUnsavedChangesDialogConfirm,
 
     // Reset dialog
     showResetDialog,
@@ -178,6 +192,6 @@ export const usePDFCVEditor = ({
     // Validation errors
     validationErrors,
     setValidationErrors,
-    clearValidationErrors
-  }
-}
+    clearValidationErrors,
+  };
+};

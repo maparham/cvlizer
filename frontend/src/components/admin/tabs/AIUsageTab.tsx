@@ -16,7 +16,7 @@
  * - Uses various AI usage components
  */
 
-import React from 'react'
+import React from "react";
 import {
   Box,
   Paper,
@@ -24,55 +24,55 @@ import {
   Typography,
   Button,
   Alert,
-  CircularProgress
-} from '@mui/material'
-import { DatePicker } from '@mui/x-date-pickers/DatePicker'
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
-import { Refresh, Delete, GetApp } from '@mui/icons-material'
-import dayjs from 'dayjs'
+  CircularProgress,
+} from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Refresh, Delete, GetApp } from "@mui/icons-material";
+import dayjs from "dayjs";
 import {
   SystemAIStats,
   UserAIUsage,
   OperationAIUsage,
   TimelineData,
   PaginatedAIUsageLogs,
-  AIUsageFilters
-} from '../../../types/admin'
-import AIUsageStatsCards from '../AIUsageStatsCards'
-import AIUsageTimelineChart from '../AIUsageTimelineChart'
-import AIOperationBreakdownChart from '../AIOperationBreakdownChart'
-import AITopUsersTable from '../AITopUsersTable'
-import AIUsageLogsTable from '../AIUsageLogsTable'
-import DeleteConfirmationDialog from '../DeleteConfirmationDialog'
+  AIUsageFilters,
+} from "../../../types/admin";
+import AIUsageStatsCards from "../AIUsageStatsCards";
+import AIUsageTimelineChart from "../AIUsageTimelineChart";
+import AIOperationBreakdownChart from "../AIOperationBreakdownChart";
+import AITopUsersTable from "../AITopUsersTable";
+import AIUsageLogsTable from "../AIUsageLogsTable";
+import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 
 interface AIUsageTabProps {
-  aiStats: SystemAIStats | null
-  aiUserUsage: UserAIUsage[]
-  aiOperationUsage: OperationAIUsage[]
-  aiTimeline: TimelineData[]
-  aiLogs: PaginatedAIUsageLogs | null
-  loading: boolean
-  error: string | null
-  dateRange: { start: string; end: string }
-  granularity: 'day' | 'week' | 'month' | 'hour'
-  filters: AIUsageFilters
-  logsPage: number
-  logsLimit: number
-  onDateRangeChange: (start: string, end: string) => void
-  onGranularityChange: (granularity: 'day' | 'week' | 'month' | 'hour') => void
-  onFilterChange: (filters: Partial<AIUsageFilters>) => void
-  onClearAllFilters: () => void
-  onRefresh: () => void
-  onUserClick: (userId: string) => void
-  onPaginationChange: (page: number, rowsPerPage: number) => void
-  onExportLogs: () => Promise<void>
-  onExportAllLogs: () => Promise<void>
-  onDeleteAllLogs: () => Promise<void>
-  deleteAllDialogOpen: boolean
-  onDeleteAllDialogClose: () => void
-  onDeleteAllDialogOpen: () => void
-  isDeleting: boolean
+  aiStats: SystemAIStats | null;
+  aiUserUsage: UserAIUsage[];
+  aiOperationUsage: OperationAIUsage[];
+  aiTimeline: TimelineData[];
+  aiLogs: PaginatedAIUsageLogs | null;
+  loading: boolean;
+  error: string | null;
+  dateRange: { start: string; end: string };
+  granularity: "day" | "week" | "month" | "hour";
+  filters: AIUsageFilters;
+  logsPage: number;
+  logsLimit: number;
+  onDateRangeChange: (start: string, end: string) => void;
+  onGranularityChange: (granularity: "day" | "week" | "month" | "hour") => void;
+  onFilterChange: (filters: Partial<AIUsageFilters>) => void;
+  onClearAllFilters: () => void;
+  onRefresh: () => void;
+  onUserClick: (userId: string) => void;
+  onPaginationChange: (page: number, rowsPerPage: number) => void;
+  onExportLogs: () => Promise<void>;
+  onExportAllLogs: () => Promise<void>;
+  onDeleteAllLogs: () => Promise<void>;
+  deleteAllDialogOpen: boolean;
+  onDeleteAllDialogClose: () => void;
+  onDeleteAllDialogOpen: () => void;
+  isDeleting: boolean;
 }
 
 const AIUsageTab: React.FC<AIUsageTabProps> = ({
@@ -99,14 +99,14 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
   deleteAllDialogOpen,
   onDeleteAllDialogClose,
   onDeleteAllDialogOpen,
-  isDeleting
+  isDeleting,
 }) => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
         <CircularProgress />
       </Box>
-    )
+    );
   }
 
   return (
@@ -127,7 +127,10 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
                 value={dayjs(dateRange.start)}
                 onChange={(date) => {
                   if (date) {
-                    onDateRangeChange(dayjs(date).format('YYYY-MM-DD'), dateRange.end)
+                    onDateRangeChange(
+                      dayjs(date).format("YYYY-MM-DD"),
+                      dateRange.end,
+                    );
                   }
                 }}
                 slotProps={{ textField: { fullWidth: true } }}
@@ -139,7 +142,10 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
                 value={dayjs(dateRange.end)}
                 onChange={(date) => {
                   if (date) {
-                    onDateRangeChange(dateRange.start, dayjs(date).format('YYYY-MM-DD'))
+                    onDateRangeChange(
+                      dateRange.start,
+                      dayjs(date).format("YYYY-MM-DD"),
+                    );
                   }
                 }}
                 slotProps={{ textField: { fullWidth: true } }}
@@ -161,10 +167,12 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
 
         {/* AI Usage Actions */}
         <Paper sx={{ p: 2, mb: 3 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">
-              AI Usage Data Management
-            </Typography>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography variant="h6">AI Usage Data Management</Typography>
             <Box display="flex" gap={1}>
               <Button
                 variant="outlined"
@@ -242,7 +250,9 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
                 </Button>
               }
             >
-              Showing logs for user: {aiUserUsage.find(u => u.user_id === filters.user_id)?.email || filters.user_id}
+              Showing logs for user:{" "}
+              {aiUserUsage.find((u) => u.user_id === filters.user_id)?.email ||
+                filters.user_id}
             </Alert>
           )}
 
@@ -255,9 +265,9 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
             onRefresh={onRefresh}
             onClearAllFilters={onClearAllFilters}
             onExport={onExportLogs}
-            availableUsers={aiUserUsage.map(user => ({
+            availableUsers={aiUserUsage.map((user) => ({
               user_id: user.user_id,
-              email: user.email
+              email: user.email,
             }))}
           />
         </Box>
@@ -274,7 +284,7 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
         />
       </Box>
     </LocalizationProvider>
-  )
-}
+  );
+};
 
-export default AIUsageTab
+export default AIUsageTab;

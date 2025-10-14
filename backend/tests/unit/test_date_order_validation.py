@@ -5,6 +5,7 @@ Tests ensure that start_date is always before end_date in CV entries.
 """
 
 import pytest
+
 from src.utils.validation import CVDataValidator
 
 

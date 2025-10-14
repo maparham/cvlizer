@@ -17,28 +17,27 @@
  * - Automatically determines the appropriate dashboard based on user role
  * - Provides consistent post-login experience
  */
-import React, { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Box, CircularProgress, Typography } from '@mui/material'
+import React, { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
 const LoginRedirect: React.FC = () => {
-  const { isAuthenticated, isAdmin, loading } = useAuth()
-  const [redirectPath, setRedirectPath] = useState<string | null>(null)
-
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   // Determine redirect path when authentication state is ready
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        setRedirectPath('/login')
+        setRedirectPath("/login");
       } else if (isAdmin) {
-        setRedirectPath('/admin')
+        setRedirectPath("/admin");
       } else {
-        setRedirectPath('/dashboard')
+        setRedirectPath("/dashboard");
       }
     }
-  }, [isAuthenticated, isAdmin, loading])
+  }, [isAuthenticated, isAdmin, loading]);
 
   // Show loading while authentication is being determined
   if (loading || !redirectPath) {
@@ -56,11 +55,11 @@ const LoginRedirect: React.FC = () => {
           Determining your access level...
         </Typography>
       </Box>
-    )
+    );
   }
 
   // Redirect to the determined path
-  return <Navigate to={redirectPath} replace />
-}
+  return <Navigate to={redirectPath} replace />;
+};
 
-export default LoginRedirect
+export default LoginRedirect;

@@ -30,12 +30,11 @@ Dependencies:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
 import os
 import shutil
 import subprocess
 import tempfile
-
+from typing import Any, Dict, List
 
 LATEX_REQUIRED_BIN = os.getenv("PDFLATEX_BIN", "pdflatex")
 

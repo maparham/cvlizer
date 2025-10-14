@@ -6,27 +6,33 @@ matches a job description, generating confidence scores and detailed
 fit analysis narratives.
 """
 
-import time
 import asyncio
-import re
 import json
 import logging
+import re
+import time
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, cast
+from typing import Any, Dict, Optional, cast
+
+from openai.types.shared_params import Reasoning
 from sqlalchemy.orm import Session
+
 from src.config import AIConfig
+from src.schemas.ai_response_schemas import JobFitAnalysisResponseSchema
+
 from .common import (
-    get_openai_client,
-    is_ai_enabled,
-    extract_response_data,
-    parse_json_from_markdown,
-    build_error_response,
-    log_ai_usage_safe,
-    with_retries,
-    JobFitResult,
+    API_TIMEOUT,
     RETRY_ATTEMPTS,
     RETRY_DELAY,
-    API_TIMEOUT,
+    JobFitResult,
+    build_error_response,
+    extract_response_data,
+    get_openai_client,
+    is_ai_enabled,
+    log_ai_usage_safe,
+    parse_json_from_markdown,
+    validate_with_schema,
+    with_retries,
 )
 
 logger = logging.getLogger(__name__)
@@ -78,7 +84,7 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"   • Start: **Why I'm a Good Fit**\\n\\n[1 paragraph, 40-50 words: top 2-3 skills + enthusiasm]\n"
         f"   • Then: **Your Requirements**\\n\\n\n"
         f"   • List 5-8 TECHNICAL requirements ONLY (skip soft skills/mindsets)\n"
-        f"   • Format: **\"Exact JD text\"**\\n\\n[2-3 sentences about your experience]\\n\\n\n"
+        f'   • Format: **"Exact JD text"**\\n\\n[2-3 sentences about your experience]\\n\\n\n'
         f"   • Vary sentence starters: Use 'My', 'Built', 'Over X years', not all 'I'\n"
         f"   • Be honest about gaps: 'I haven't used X yet'\n"
         f"   • STOP after last requirement - NO summary/extra paragraphs\n"
@@ -110,88 +116,6 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
     # )
 
 
-def _parse_job_fit_response(
-    content: str, tokens_used: int, generation_time: int
-) -> JobFitResult:
-    """
-    Parse and validate job fit analysis response.
-    
-    Args:
-        content: Raw response content from AI
-        tokens_used: Total tokens used in generation
-        generation_time: Time taken for generation in milliseconds
-        
-    Returns:
-        Parsed and validated job fit result
-    """
-    # Parse JSON response - handle markdown code blocks
-    try:
-        json_content = parse_json_from_markdown(content)
-        analysis = json.loads(json_content)
-        
-        # Clean up the fit_analysis field to ensure it's just the content
-        if "fit_analysis" in analysis and isinstance(analysis["fit_analysis"], str):
-            fit_analysis = analysis["fit_analysis"]
-            # If it contains JSON-like structure, try to extract just the content
-            if (
-                fit_analysis.strip().startswith("{")
-                and "confidence_score" in fit_analysis
-            ):
-                try:
-                    match = re.search(
-                        r'"fit_analysis":\s*"([^"]*(?:\\.[^"]*)*)"', fit_analysis
-                    )
-                    if match:
-                        analysis["fit_analysis"] = (
-                            match.group(1).replace("\\n", "\n").replace('\\"', '"')
-                        )
-                except:
-                    pass
-                    
-    except json.JSONDecodeError:
-        # Fallback if JSON parsing fails
-        logger.warning(
-            f"Job fit analysis JSON parse failed, using fallback. "
-            f"Content preview: {content[:200]}"
-        )
-        analysis = {
-            "confidence_score": 50,
-            "fit_analysis": content,
-            "key_matches": [],
-            "missing_skills": [],
-            "suggested_improvements": [],
-            "strengths": [],
-            "weaknesses": [],
-        }
-    
-    # Ensure required fields are always present
-    confidence_score = analysis.get("confidence_score", 50)
-    generated_at = analysis.get("generated_at") or datetime.now(timezone.utc).isoformat()
-    
-    # Log missing required fields for observability
-    if "confidence_score" not in analysis:
-        logger.warning("confidence_score missing in AI response; using fallback value 50")
-    if "generated_at" not in analysis:
-        logger.debug(
-            f"generated_at missing in AI response; using fallback "
-            f"timestamp {generated_at}"
-        )
-    
-    return {
-        "confidence_score": confidence_score,
-        "fit_analysis": analysis.get("fit_analysis", content),
-        "generated_at": generated_at,
-        "key_matches": analysis.get("key_matches", []),
-        "missing_skills": analysis.get("missing_skills", []),
-        "suggested_improvements": analysis.get("suggested_improvements", []),
-        "strengths": analysis.get("strengths", []),
-        "weaknesses": analysis.get("weaknesses", []),
-        "tokens_used": tokens_used,
-        "generation_time": generation_time,
-        "model_used": AIConfig.OPENAI_MODEL,
-    }
-
-
 def _execute_job_fit_analysis_sync(
     cv_data: Dict[str, Any],
     job_description: str,
@@ -201,16 +125,16 @@ def _execute_job_fit_analysis_sync(
 ) -> JobFitResult:
     """
     Core synchronous implementation of job fit analysis.
-    
+
     This is the shared implementation used by both sync and async wrappers.
-    
+
     Args:
         cv_data: Structured CV data
         job_description: Job description text
         user_id: User identifier for logging
         cv_id: CV identifier for logging
         db_session: Database session for logging
-        
+
     Returns:
         Job fit analysis result
     """
@@ -218,31 +142,36 @@ def _execute_job_fit_analysis_sync(
         return cast(
             JobFitResult,
             build_error_response(
-            "OpenAI API key not configured. AI features are disabled.",
+                "OpenAI API key not configured. AI features are disabled.",
                 "analyze_job_fit",
             ),
         )
-    
+
     prompt = _build_job_fit_prompt(cv_data, job_description)
     client = get_openai_client()
-    
+
     try:
         start_time = time.time()
-        
+
         # Make synchronous OpenAI API call using Response API
-        response = client.responses.create(
+        response = client.responses.parse(
             model=AIConfig.OPENAI_MODEL,
-            instructions=JOB_FIT_INSTRUCTIONS,
-            input=prompt,
-            reasoning={"effort": "minimal", "summary": "auto"},
+            input=[
+                {"role": "system", "content": JOB_FIT_INSTRUCTIONS},
+                {"role": "user", "content": prompt},
+            ],
+            text_format=JobFitAnalysisResponseSchema,
+            reasoning=Reasoning(effort="low"),
         )
-        
+
         generation_time = int((time.time() - start_time) * 1000)
-        
-        # Extract content and token usage
-        content, prompt_tokens, completion_tokens = extract_response_data(response)
+
+        # Extract parsed data and token usage
+        analysis = response.output_parsed.model_dump()
+        prompt_tokens = response.usage.input_tokens
+        completion_tokens = response.usage.output_tokens
         tokens_used = prompt_tokens + completion_tokens
-        
+
         # Log AI usage
         if user_id:
             log_ai_usage_safe(
@@ -256,10 +185,27 @@ def _execute_job_fit_analysis_sync(
                 success=True,
                 cv_id=cv_id,
             )
-        
-        return _parse_job_fit_response(content, tokens_used, generation_time)
+
+        # Add generated_at and return
+        return {
+            "confidence_score": analysis.get("confidence_score", 50),
+            "fit_analysis": analysis.get("fit_analysis", ""),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "key_matches": analysis.get("key_matches", []),
+            "missing_skills": analysis.get("missing_skills", []),
+            "suggested_improvements": analysis.get("suggested_improvements", []),
+            "strengths": analysis.get("strengths", []),
+            "weaknesses": analysis.get("weaknesses", []),
+            "tokens_used": tokens_used,
+            "generation_time": generation_time,
+            "model_used": AIConfig.OPENAI_MODEL,
+        }
 
     except Exception as e:
+        # Log the error with full details
+        logger.error(f"Job fit analysis failed with error: {str(e)}", exc_info=True)
+        logger.error(f"Error type: {type(e).__name__}")
+
         # Log failed AI usage
         if user_id:
             log_ai_usage_safe(
@@ -293,16 +239,16 @@ def analyze_job_fit_sync(
 ) -> JobFitResult:
     """
     Synchronous version of job fit analysis.
-    
+
     Used in background tasks to avoid async/sync issues.
-    
+
     Args:
         cv_data: Structured CV data
         job_description: Job description text
         user_id: User identifier for logging
         cv_id: CV identifier for logging
         db_session: Database session for logging
-        
+
     Returns:
         Dictionary containing:
         - confidence_score: 1-100% match confidence (always present)

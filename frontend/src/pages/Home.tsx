@@ -15,7 +15,7 @@
  * - Uses Clerk authentication components for user state management
  * - Provides responsive design with Material-UI components
  */
-import React from 'react'
+import React from "react";
 import {
   Container,
   Typography,
@@ -23,41 +23,50 @@ import {
   Box,
   Card,
   CardContent,
-  Grid
-} from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react'
+  Grid,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/clerk-react";
 
 const Home: React.FC = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const features = [
     {
-      title: 'Upload & Parse',
-      description: 'Upload your CV in PDF, DOC, or DOCX format and get it automatically parsed into structured data.',
-      icon: '📄'
+      title: "Upload & Parse",
+      description:
+        "Upload your CV in PDF, DOC, or DOCX format and get it automatically parsed into structured data.",
+      icon: "📄",
     },
     {
-      title: 'Smart Editing',
-      description: 'Edit your CV with an intuitive interface that lets you modify text and reorder sections easily.',
-      icon: '✏️'
+      title: "Smart Editing",
+      description:
+        "Edit your CV with an intuitive interface that lets you modify text and reorder sections easily.",
+      icon: "✏️",
     },
     {
-      title: 'AI Enhancement',
-      description: 'Get AI-generated sections tailored to specific job descriptions to make your CV stand out.',
-      icon: '🤖'
-    }
-  ]
+      title: "AI Enhancement",
+      description:
+        "Get AI-generated sections tailored to specific job descriptions to make your CV stand out.",
+      icon: "🤖",
+    },
+  ];
 
   return (
     <Box>
       {/* Hero Section */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
           py: 8,
-          textAlign: 'center'
+          textAlign: "center",
         }}
       >
         <Container maxWidth="md">
@@ -65,18 +74,19 @@ const Home: React.FC = () => {
             Optimize Your CV with AI
           </Typography>
           <Typography variant="h5" sx={{ mb: 4, opacity: 0.9 }}>
-            Upload, edit, and enhance your CV with AI-powered insights tailored to any job description
+            Upload, edit, and enhance your CV with AI-powered insights tailored
+            to any job description
           </Typography>
           <SignedIn>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
               <Button
                 variant="contained"
                 size="large"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate("/dashboard")}
                 sx={{
-                  bgcolor: 'white',
-                  color: 'primary.main',
-                  '&:hover': { bgcolor: 'grey.100' }
+                  bgcolor: "white",
+                  color: "primary.main",
+                  "&:hover": { bgcolor: "grey.100" },
                 }}
               >
                 Go to Dashboard
@@ -84,11 +94,14 @@ const Home: React.FC = () => {
               <Button
                 variant="outlined"
                 size="large"
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate("/profile")}
                 sx={{
-                  borderColor: 'white',
-                  color: 'white',
-                  '&:hover': { borderColor: 'grey.300', bgcolor: 'rgba(255,255,255,0.1)' }
+                  borderColor: "white",
+                  color: "white",
+                  "&:hover": {
+                    borderColor: "grey.300",
+                    bgcolor: "rgba(255,255,255,0.1)",
+                  },
                 }}
               >
                 My Profile
@@ -97,28 +110,28 @@ const Home: React.FC = () => {
                 appearance={{
                   elements: {
                     avatarBox: {
-                      width: '48px',
-                      height: '48px'
-                    }
-                  }
+                      width: "48px",
+                      height: "48px",
+                    },
+                  },
                 }}
               />
             </Box>
           </SignedIn>
           <SignedOut>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
               <SignUpButton mode="modal">
                 <button
                   style={{
-                    backgroundColor: 'white',
-                    color: '#1976d2',
-                    border: 'none',
-                    borderRadius: '4px',
-                    padding: '12px 24px',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit'
+                    backgroundColor: "white",
+                    color: "#1976d2",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "12px 24px",
+                    fontSize: "16px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
                   }}
                 >
                   Get Started
@@ -127,15 +140,15 @@ const Home: React.FC = () => {
               <SignInButton mode="modal">
                 <button
                   style={{
-                    backgroundColor: 'transparent',
-                    color: 'white',
-                    border: '1px solid white',
-                    borderRadius: '4px',
-                    padding: '12px 24px',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit'
+                    backgroundColor: "transparent",
+                    color: "white",
+                    border: "1px solid white",
+                    borderRadius: "4px",
+                    padding: "12px 24px",
+                    fontSize: "16px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
                   }}
                 >
                   Sign In
@@ -151,14 +164,19 @@ const Home: React.FC = () => {
         <Typography variant="h3" component="h2" textAlign="center" gutterBottom>
           How It Works
         </Typography>
-        <Typography variant="h6" textAlign="center" color="text.secondary" sx={{ mb: 6 }}>
+        <Typography
+          variant="h6"
+          textAlign="center"
+          color="text.secondary"
+          sx={{ mb: 6 }}
+        >
           Transform your CV in three simple steps
         </Typography>
 
         <Grid container spacing={4}>
           {features.map((feature, index) => (
             <Grid item xs={12} md={4} key={index}>
-              <Card sx={{ height: '100%', textAlign: 'center' }}>
+              <Card sx={{ height: "100%", textAlign: "center" }}>
                 <CardContent sx={{ p: 4 }}>
                   <Typography variant="h1" sx={{ mb: 2 }}>
                     {feature.icon}
@@ -177,27 +195,28 @@ const Home: React.FC = () => {
       </Container>
 
       {/* CTA Section */}
-      <Box sx={{ bgcolor: 'grey.50', py: 8 }}>
-        <Container maxWidth="md" sx={{ textAlign: 'center' }}>
+      <Box sx={{ bgcolor: "grey.50", py: 8 }}>
+        <Container maxWidth="md" sx={{ textAlign: "center" }}>
           <Typography variant="h4" component="h2" gutterBottom>
             Ready to optimize your CV?
           </Typography>
           <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-            Join thousands of job seekers who have improved their chances with AI-enhanced CVs
+            Join thousands of job seekers who have improved their chances with
+            AI-enhanced CVs
           </Typography>
           <SignedOut>
             <SignUpButton mode="modal">
               <button
                 style={{
-                  backgroundColor: '#1976d2',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit'
+                  backgroundColor: "#1976d2",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "12px 24px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
                 }}
               >
                 Start Free Today
@@ -207,7 +226,7 @@ const Home: React.FC = () => {
         </Container>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

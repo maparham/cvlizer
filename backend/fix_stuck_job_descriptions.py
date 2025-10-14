@@ -8,8 +8,8 @@ Usage:
     python fix_stuck_job_descriptions.py [--auto-confirm]
 """
 
-import sys
 import os
+import sys
 from datetime import datetime, timedelta
 
 # Add the backend directory to the path
@@ -35,7 +35,7 @@ def fix_stuck_job_descriptions(auto_confirm=False):
         stuck_jds = (
             db.query(JobDescription)
             .filter(
-                JobDescription.is_parsing == True,
+                JobDescription.is_parsing.is_(True),
                 JobDescription.created_at < ten_minutes_ago,
             )
             .all()
@@ -55,7 +55,7 @@ def fix_stuck_job_descriptions(auto_confirm=False):
             print(f"  Title: {jd.title or 'N/A'}")
             print(f"  Source URL: {jd.source_url or 'N/A'}")
             print(f"  Created: {jd.created_at}")
-            print(f"  Current Status: is_parsing=True")
+            print("  Current Status: is_parsing=True")
             print()
 
         if not auto_confirm:
@@ -73,7 +73,10 @@ def fix_stuck_job_descriptions(auto_confirm=False):
         fixed_count = 0
         for jd in stuck_jds:
             jd.is_parsing = False
-            jd.parse_error = "Parsing timed out or failed. Please try again or enter the job description manually."
+            jd.parse_error = (
+                "Parsing timed out or failed. Please try again or enter "
+                "the job description manually."
+            )
             fixed_count += 1
 
         db.commit()

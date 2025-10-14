@@ -5,22 +5,23 @@ This module provides endpoints for logging user activities and retrieving
 activity logs for admin debugging and support purposes.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List, Dict, Any
-from pydantic import BaseModel
 import logging
+from typing import Any, Dict, List
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from src.middleware.clerk_auth import get_current_user
 from src.models.base import get_db
 from src.models.user import User
 from src.services.user_activity_service import (
-    log_user_activity,
-    log_user_error,
-    log_api_call,
     create_user_session,
     end_user_session,
+    log_api_call,
+    log_user_activity,
+    log_user_error,
 )
-from src.middleware.clerk_auth import get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/user-activities", tags=["user-activities"])

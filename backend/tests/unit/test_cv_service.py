@@ -1,14 +1,16 @@
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
+
+from src.models.cv import CV
+from src.services.cv_parsing_service import parse_cv_with_openai
 from src.services.cv_service import (
     create_cv,
+    delete_cv,
     get_cv_by_id,
     get_cvs_by_user,
     update_cv,
-    delete_cv,
 )
-from src.services.cv_parsing_service import parse_cv_with_openai
-from src.models.cv import CV
 
 
 class TestCVService:

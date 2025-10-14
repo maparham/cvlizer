@@ -19,7 +19,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from "react";
 import {
   Box,
   Button,
@@ -44,7 +44,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Search as SearchIcon,
   TrendingUp as TrendingUpIcon,
@@ -54,10 +54,14 @@ import {
   Refresh as RefreshIcon,
   Add as AddIcon,
   Help as HelpIcon,
-} from '@mui/icons-material';
-import { useAIStore, useATSOptimization, useActiveJobDescription } from '../../../stores/aiStore';
-import { MissingKeyword } from '../../../types/ai';
-import { useNotifications } from '../../../stores/uiStore';
+} from "@mui/icons-material";
+import {
+  useAIStore,
+  useATSOptimization,
+  useActiveJobDescription,
+} from "../../../stores/aiStore";
+import { MissingKeyword } from "../../../types/ai";
+import { useNotifications } from "../../../stores/uiStore";
 
 interface ATSOptimizationProps {
   cvId: string;
@@ -71,35 +75,43 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
   className,
 }) => {
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [selectedKeyword, setSelectedKeyword] = useState<MissingKeyword | null>(null);
+  const [selectedKeyword, setSelectedKeyword] = useState<MissingKeyword | null>(
+    null,
+  );
   const [showKeywordDialog, setShowKeywordDialog] = useState(false);
 
   const { showSuccess, showError } = useNotifications();
-  const {
-    analyzeATSOptimization,
-    clearATSOptimization,
-  } = useAIStore();
+  const { analyzeATSOptimization, clearATSOptimization } = useAIStore();
 
   const atsOptimization = useATSOptimization();
   const activeJobDescription = useActiveJobDescription();
 
   const handleAnalyze = useCallback(async () => {
     if (!activeJobDescription) {
-      showError('Error', 'Please select a job description first');
+      showError("Error", "Please select a job description first");
       return;
     }
 
     setIsOptimizing(true);
     try {
       await analyzeATSOptimization(cvId, activeJobDescription.id);
-      showSuccess('ATS optimization analysis completed');
+      showSuccess("ATS optimization analysis completed");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to analyze ATS optimization';
-      showError('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to analyze ATS optimization";
+      showError("Error", errorMessage);
     } finally {
       setIsOptimizing(false);
     }
-  }, [cvId, activeJobDescription, analyzeATSOptimization, showSuccess, showError]);
+  }, [
+    cvId,
+    activeJobDescription,
+    analyzeATSOptimization,
+    showSuccess,
+    showError,
+  ]);
 
   const handleRegenerate = useCallback(() => {
     clearATSOptimization();
@@ -113,33 +125,41 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
 
   const handleConfirmAddKeyword = useCallback(() => {
     if (selectedKeyword && onKeywordAdd) {
-      onKeywordAdd(selectedKeyword.keyword, selectedKeyword.suggested_placement);
-      showSuccess(`Added "${selectedKeyword.keyword}" to ${selectedKeyword.suggested_placement}`);
+      onKeywordAdd(
+        selectedKeyword.keyword,
+        selectedKeyword.suggested_placement,
+      );
+      showSuccess(
+        `Added "${selectedKeyword.keyword}" to ${selectedKeyword.suggested_placement}`,
+      );
     }
     setShowKeywordDialog(false);
     setSelectedKeyword(null);
   }, [selectedKeyword, onKeywordAdd, showSuccess]);
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'success';
-    if (score >= 60) return 'warning';
-    return 'error';
+    if (score >= 80) return "success";
+    if (score >= 60) return "warning";
+    return "error";
   };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    if (score >= 40) return 'Fair';
-    return 'Poor';
+    if (score >= 80) return "Excellent";
+    if (score >= 60) return "Good";
+    if (score >= 40) return "Fair";
+    return "Poor";
   };
-
 
   const getImportanceColor = (importance: string) => {
     switch (importance) {
-      case 'high': return 'error';
-      case 'medium': return 'warning';
-      case 'low': return 'info';
-      default: return 'default';
+      case "high":
+        return "error";
+      case "medium":
+        return "warning";
+      case "low":
+        return "info";
+      default:
+        return "default";
     }
   };
 
@@ -155,25 +175,31 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
 
   return (
     <Box className={className}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
         <Box display="flex" alignItems="center" gap={1}>
-          <Typography variant="h6">
-            ATS Optimization
-          </Typography>
+          <Typography variant="h6">ATS Optimization</Typography>
           <Tooltip
             title={
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
                   ATS Analysis covers:
                 </Typography>
-                <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                <ul style={{ margin: 0, paddingLeft: "16px" }}>
                   <li>Keyword matching between CV and job description</li>
                   <li>Missing important keywords and where to add them</li>
                   <li>Industry-specific terminology usage</li>
                   <li>Content completeness and organization</li>
                   <li>Keyword placement within sections</li>
                 </ul>
-                <Typography variant="caption" sx={{ display: 'block', mt: 1, fontStyle: 'italic' }}>
+                <Typography
+                  variant="caption"
+                  sx={{ display: "block", mt: 1, fontStyle: "italic" }}
+                >
                   Note: Analyzes content only, not PDF formatting
                 </Typography>
               </Box>
@@ -207,21 +233,31 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
         <Card>
           <CardContent>
             <Box textAlign="center" py={2}>
-              <SearchIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+              <SearchIcon sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
               <Typography variant="h6" gutterBottom>
                 Optimize for ATS
               </Typography>
               <Typography color="text.secondary" paragraph>
-                Analyze your CV content for keyword optimization and ATS compatibility. This focuses on content and keywords, not formatting.
+                Analyze your CV content for keyword optimization and ATS
+                compatibility. This focuses on content and keywords, not
+                formatting.
               </Typography>
               <Button
                 variant="contained"
                 onClick={handleAnalyze}
                 disabled={isOptimizing || atsOptimization.isAnalyzing}
-                startIcon={isOptimizing || atsOptimization.isAnalyzing ? <CircularProgress size={20} /> : <SearchIcon />}
+                startIcon={
+                  isOptimizing || atsOptimization.isAnalyzing ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <SearchIcon />
+                  )
+                }
                 size="large"
               >
-                {isOptimizing || atsOptimization.isAnalyzing ? 'Analyzing...' : 'Analyze ATS Compatibility'}
+                {isOptimizing || atsOptimization.isAnalyzing
+                  ? "Analyzing..."
+                  : "Analyze ATS Compatibility"}
               </Button>
             </Box>
           </CardContent>
@@ -231,7 +267,12 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
           {/* ATS Score */}
           <Card>
             <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={2}
+              >
                 <Typography variant="h6">
                   ATS Keyword Optimization Score
                 </Typography>
@@ -244,8 +285,14 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 {getScoreLabel(atsOptimization.lastAnalysis.ats_score)}
               </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                Measures keyword matching and content optimization (not formatting - that happens during PDF export)
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                sx={{ mb: 1 }}
+              >
+                Measures keyword matching and content optimization (not
+                formatting - that happens during PDF export)
               </Typography>
               <LinearProgress
                 variant="determinate"
@@ -257,102 +304,112 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
           </Card>
 
           {/* Missing Keywords */}
-          {atsOptimization.lastAnalysis.missing_keywords && atsOptimization.lastAnalysis.missing_keywords.length > 0 && (
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="warning.main">
-                  <WarningIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-                  Missing Keywords
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  These important keywords from the job description are missing from your CV:
-                </Typography>
-                <Stack spacing={1}>
-                  {atsOptimization.lastAnalysis.missing_keywords.map((keyword, index) => (
-                    <Box
-                      key={index}
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      p={1}
-                      border={1}
-                      borderColor="divider"
-                      borderRadius={1}
-                    >
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Chip
-                          label={keyword.keyword}
-                          color={getImportanceColor(keyword.importance)}
-                          size="small"
-                        />
-                        <Typography variant="body2" color="text.secondary">
-                          {keyword.importance} importance • {keyword.frequency_in_jd} mentions
-                        </Typography>
-                      </Box>
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Typography variant="body2" color="text.secondary">
-                          Add to: {keyword.suggested_placement}
-                        </Typography>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<AddIcon />}
-                          onClick={() => handleAddKeyword(keyword)}
+          {atsOptimization.lastAnalysis.missing_keywords &&
+            atsOptimization.lastAnalysis.missing_keywords.length > 0 && (
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom color="warning.main">
+                    <WarningIcon sx={{ verticalAlign: "middle", mr: 1 }} />
+                    Missing Keywords
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    These important keywords from the job description are
+                    missing from your CV:
+                  </Typography>
+                  <Stack spacing={1}>
+                    {atsOptimization.lastAnalysis.missing_keywords.map(
+                      (keyword, index) => (
+                        <Box
+                          key={index}
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          p={1}
+                          border={1}
+                          borderColor="divider"
+                          borderRadius={1}
                         >
-                          Add
-                        </Button>
-                      </Box>
-                    </Box>
-                  ))}
-                </Stack>
-              </CardContent>
-            </Card>
-          )}
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Chip
+                              label={keyword.keyword}
+                              color={getImportanceColor(keyword.importance)}
+                              size="small"
+                            />
+                            <Typography variant="body2" color="text.secondary">
+                              {keyword.importance} importance •{" "}
+                              {keyword.frequency_in_jd} mentions
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Typography variant="body2" color="text.secondary">
+                              Add to: {keyword.suggested_placement}
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<AddIcon />}
+                              onClick={() => handleAddKeyword(keyword)}
+                            >
+                              Add
+                            </Button>
+                          </Box>
+                        </Box>
+                      ),
+                    )}
+                  </Stack>
+                </CardContent>
+              </Card>
+            )}
 
           {/* Keyword Analysis */}
-          {atsOptimization.lastAnalysis.keyword_analysis && Object.keys(atsOptimization.lastAnalysis.keyword_analysis).length > 0 && (
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Keyword Analysis
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  Analysis of important keywords from the job description:
-                </Typography>
-                <Stack spacing={1}>
-                  {Object.entries(atsOptimization.lastAnalysis.keyword_analysis).map(([keyword, analysis]) => (
-                    <Box
-                      key={keyword}
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      p={1}
-                      border={1}
-                      borderColor="divider"
-                      borderRadius={1}
-                    >
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Chip
-                          label={keyword}
-                          color={analysis.present ? 'success' : 'warning'}
-                          size="small"
-                        />
-                        <Typography variant="body2" color="text.secondary">
-                          {analysis.present ? 'Present' : 'Missing'}
-                          {analysis.frequency && ` • ${analysis.frequency} mentions`}
-                        </Typography>
+          {atsOptimization.lastAnalysis.keyword_analysis &&
+            Object.keys(atsOptimization.lastAnalysis.keyword_analysis).length >
+              0 && (
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Keyword Analysis
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Analysis of important keywords from the job description:
+                  </Typography>
+                  <Stack spacing={1}>
+                    {Object.entries(
+                      atsOptimization.lastAnalysis.keyword_analysis,
+                    ).map(([keyword, analysis]) => (
+                      <Box
+                        key={keyword}
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        p={1}
+                        border={1}
+                        borderColor="divider"
+                        borderRadius={1}
+                      >
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Chip
+                            label={keyword}
+                            color={analysis.present ? "success" : "warning"}
+                            size="small"
+                          />
+                          <Typography variant="body2" color="text.secondary">
+                            {analysis.present ? "Present" : "Missing"}
+                            {analysis.frequency &&
+                              ` • ${analysis.frequency} mentions`}
+                          </Typography>
+                        </Box>
+                        {analysis.suggested_sections && (
+                          <Typography variant="body2" color="text.secondary">
+                            Add to: {analysis.suggested_sections.join(", ")}
+                          </Typography>
+                        )}
                       </Box>
-                      {analysis.suggested_sections && (
-                        <Typography variant="body2" color="text.secondary">
-                          Add to: {analysis.suggested_sections.join(', ')}
-                        </Typography>
-                      )}
-                    </Box>
-                  ))}
-                </Stack>
-              </CardContent>
-            </Card>
-          )}
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+            )}
 
           {/* Optimization Suggestions */}
           <Accordion>
@@ -361,57 +418,68 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
             </AccordionSummary>
             <AccordionDetails>
               <Stack spacing={2}>
-                {atsOptimization.lastAnalysis.suggestions && atsOptimization.lastAnalysis.suggestions.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      General Recommendations
-                    </Typography>
-                    <List dense>
-                      {atsOptimization.lastAnalysis.suggestions.map((suggestion, index) => (
-                        <ListItem key={index}>
-                          <ListItemIcon>
-                            <TrendingUpIcon color="info" />
-                          </ListItemIcon>
-                          <ListItemText primary={suggestion} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
+                {atsOptimization.lastAnalysis.suggestions &&
+                  atsOptimization.lastAnalysis.suggestions.length > 0 && (
+                    <Box>
+                      <Typography variant="subtitle1" gutterBottom>
+                        General Recommendations
+                      </Typography>
+                      <List dense>
+                        {atsOptimization.lastAnalysis.suggestions.map(
+                          (suggestion, index) => (
+                            <ListItem key={index}>
+                              <ListItemIcon>
+                                <TrendingUpIcon color="info" />
+                              </ListItemIcon>
+                              <ListItemText primary={suggestion} />
+                            </ListItem>
+                          ),
+                        )}
+                      </List>
+                    </Box>
+                  )}
 
-                {atsOptimization.lastAnalysis.content_optimization && atsOptimization.lastAnalysis.content_optimization.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Content Optimization
-                    </Typography>
-                    {atsOptimization.lastAnalysis.content_optimization.map((section, index) => (
-                      <Card key={index} variant="outlined" sx={{ mb: 2 }}>
-                        <CardContent>
-                          <Typography variant="subtitle2" gutterBottom>
-                            {section.section.replace('_', ' ').toUpperCase()}
-                          </Typography>
-                          <Typography variant="body2" paragraph>
-                            {section.suggestion}
-                          </Typography>
-                          <Box display="flex" gap={1} flexWrap="wrap">
-                            <Typography variant="body2" fontWeight="medium">
-                              Missing keywords:
-                            </Typography>
-                            {section.missing_keywords.map((keyword, kwIndex) => (
-                              <Chip
-                                key={kwIndex}
-                                label={keyword}
-                                size="small"
-                                color="warning"
-                                variant="outlined"
-                              />
-                            ))}
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </Box>
-                )}
+                {atsOptimization.lastAnalysis.content_optimization &&
+                  atsOptimization.lastAnalysis.content_optimization.length >
+                    0 && (
+                    <Box>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Content Optimization
+                      </Typography>
+                      {atsOptimization.lastAnalysis.content_optimization.map(
+                        (section, index) => (
+                          <Card key={index} variant="outlined" sx={{ mb: 2 }}>
+                            <CardContent>
+                              <Typography variant="subtitle2" gutterBottom>
+                                {section.section
+                                  .replace("_", " ")
+                                  .toUpperCase()}
+                              </Typography>
+                              <Typography variant="body2" paragraph>
+                                {section.suggestion}
+                              </Typography>
+                              <Box display="flex" gap={1} flexWrap="wrap">
+                                <Typography variant="body2" fontWeight="medium">
+                                  Missing keywords:
+                                </Typography>
+                                {section.missing_keywords.map(
+                                  (keyword, kwIndex) => (
+                                    <Chip
+                                      key={kwIndex}
+                                      label={keyword}
+                                      size="small"
+                                      color="warning"
+                                      variant="outlined"
+                                    />
+                                  ),
+                                )}
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ),
+                      )}
+                    </Box>
+                  )}
               </Stack>
             </AccordionDetails>
           </Accordion>
@@ -423,37 +491,53 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
             </AccordionSummary>
             <AccordionDetails>
               <Stack spacing={2}>
-                {atsOptimization.lastAnalysis.strengths && atsOptimization.lastAnalysis.strengths.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle1" color="success.main" gutterBottom>
-                      <CheckCircleIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-                      Strengths
-                    </Typography>
-                    <List dense>
-                      {atsOptimization.lastAnalysis.strengths.map((strength, index) => (
-                        <ListItem key={index}>
-                          <ListItemText primary={strength} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
+                {atsOptimization.lastAnalysis.strengths &&
+                  atsOptimization.lastAnalysis.strengths.length > 0 && (
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        color="success.main"
+                        gutterBottom
+                      >
+                        <CheckCircleIcon
+                          sx={{ verticalAlign: "middle", mr: 1 }}
+                        />
+                        Strengths
+                      </Typography>
+                      <List dense>
+                        {atsOptimization.lastAnalysis.strengths.map(
+                          (strength, index) => (
+                            <ListItem key={index}>
+                              <ListItemText primary={strength} />
+                            </ListItem>
+                          ),
+                        )}
+                      </List>
+                    </Box>
+                  )}
 
-                {atsOptimization.lastAnalysis.weaknesses && atsOptimization.lastAnalysis.weaknesses.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle1" color="warning.main" gutterBottom>
-                      <WarningIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-                      Areas for Improvement
-                    </Typography>
-                    <List dense>
-                      {atsOptimization.lastAnalysis.weaknesses.map((weakness, index) => (
-                        <ListItem key={index}>
-                          <ListItemText primary={weakness} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
+                {atsOptimization.lastAnalysis.weaknesses &&
+                  atsOptimization.lastAnalysis.weaknesses.length > 0 && (
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        color="warning.main"
+                        gutterBottom
+                      >
+                        <WarningIcon sx={{ verticalAlign: "middle", mr: 1 }} />
+                        Areas for Improvement
+                      </Typography>
+                      <List dense>
+                        {atsOptimization.lastAnalysis.weaknesses.map(
+                          (weakness, index) => (
+                            <ListItem key={index}>
+                              <ListItemText primary={weakness} />
+                            </ListItem>
+                          ),
+                        )}
+                      </List>
+                    </Box>
+                  )}
               </Stack>
             </AccordionDetails>
           </Accordion>
@@ -472,10 +556,12 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
           {selectedKeyword && (
             <Stack spacing={2} sx={{ mt: 1 }}>
               <Typography variant="body1">
-                Add the keyword <strong>"{selectedKeyword.keyword}"</strong> to your CV.
+                Add the keyword <strong>"{selectedKeyword.keyword}"</strong> to
+                your CV.
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Suggested placement: <strong>{selectedKeyword.suggested_placement}</strong>
+                Suggested placement:{" "}
+                <strong>{selectedKeyword.suggested_placement}</strong>
               </Typography>
               <Box display="flex" alignItems="center" gap={1}>
                 <Typography variant="body2" color="text.secondary">
@@ -487,14 +573,21 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
                   size="small"
                 />
                 <Typography variant="body2" color="text.secondary">
-                  • Frequency in job description: {selectedKeyword.frequency_in_jd}
+                  • Frequency in job description:{" "}
+                  {selectedKeyword.frequency_in_jd}
                 </Typography>
               </Box>
-              {selectedKeyword.suggested_placement.includes('professional_summary') || selectedKeyword.suggested_placement.includes('professional summary') ? (
+              {selectedKeyword.suggested_placement.includes(
+                "professional_summary",
+              ) ||
+              selectedKeyword.suggested_placement.includes(
+                "professional summary",
+              ) ? (
                 <Alert severity="info" sx={{ mt: 1 }}>
                   <Typography variant="body2">
-                    <strong>Note:</strong> For professional summary, the keyword will be integrated naturally into your existing content.
-                    You may want to review and refine the result after adding.
+                    <strong>Note:</strong> For professional summary, the keyword
+                    will be integrated naturally into your existing content. You
+                    may want to review and refine the result after adding.
                   </Typography>
                 </Alert>
               ) : null}
@@ -502,9 +595,7 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowKeywordDialog(false)}>
-            Cancel
-          </Button>
+          <Button onClick={() => setShowKeywordDialog(false)}>Cancel</Button>
           <Button
             onClick={handleConfirmAddKeyword}
             variant="contained"

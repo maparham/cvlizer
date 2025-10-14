@@ -5,8 +5,8 @@ Test helper functions for common test operations
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.models.base import Base
 
+from src.models.base import Base
 
 # Test database configuration
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"

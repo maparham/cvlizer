@@ -14,15 +14,16 @@ Key responsibilities:
 
 import asyncio
 import logging
-from datetime import datetime, timezone, timedelta
+import os
+from datetime import datetime, timedelta, timezone
 from typing import Optional
+
 from sqlalchemy.orm import Session
 
-from src.models.base import get_db
-from src.services.impersonation_service import cleanup_expired_sessions
 from src.models.audit_log import AuditLog
+from src.models.base import get_db
 from src.models.impersonation_session import ImpersonationSession
-import os
+from src.services.impersonation_service import cleanup_expired_sessions
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from "react";
 
 interface UnsavedChangesState {
-  hasUnsavedChanges: boolean
-  editingSections: Set<string>
-  pendingChanges: Map<string, any>
+  hasUnsavedChanges: boolean;
+  editingSections: Set<string>;
+  pendingChanges: Map<string, any>;
 }
 
 export const useUnsavedChanges = () => {
@@ -11,84 +11,93 @@ export const useUnsavedChanges = () => {
     return {
       hasUnsavedChanges: false,
       editingSections: new Set(),
-      pendingChanges: new Map()
-    }
-  })
+      pendingChanges: new Map(),
+    };
+  });
 
   // Track when a section starts editing
   const startEditing = useCallback((sectionId: string) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      editingSections: new Set([...prev.editingSections, sectionId])
-    }))
-  }, [])
+      editingSections: new Set([...prev.editingSections, sectionId]),
+    }));
+  }, []);
 
   // Track when a section stops editing
   const stopEditing = useCallback((sectionId: string) => {
-    setState(prev => {
-      const newEditingSections = new Set(prev.editingSections)
-      newEditingSections.delete(sectionId)
+    setState((prev) => {
+      const newEditingSections = new Set(prev.editingSections);
+      newEditingSections.delete(sectionId);
 
-      const newPendingChanges = new Map(prev.pendingChanges)
-      newPendingChanges.delete(sectionId)
+      const newPendingChanges = new Map(prev.pendingChanges);
+      newPendingChanges.delete(sectionId);
 
       return {
         ...prev,
         editingSections: newEditingSections,
         pendingChanges: newPendingChanges,
         // Only consider actual pending changes as unsaved changes
-        hasUnsavedChanges: newPendingChanges.size > 0
-      }
-    })
-  }, [])
+        hasUnsavedChanges: newPendingChanges.size > 0,
+      };
+    });
+  }, []);
 
   // Track pending changes in a section
-  const updatePendingChanges = useCallback((sectionId: string, changes: any) => {
-    setState(prev => {
-      const newPendingChanges = new Map(prev.pendingChanges)
-      if (changes && Object.keys(changes).length > 0) {
-        newPendingChanges.set(sectionId, changes)
-      } else {
-        newPendingChanges.delete(sectionId)
-      }
+  const updatePendingChanges = useCallback(
+    (sectionId: string, changes: any) => {
+      setState((prev) => {
+        const newPendingChanges = new Map(prev.pendingChanges);
+        if (changes && Object.keys(changes).length > 0) {
+          newPendingChanges.set(sectionId, changes);
+        } else {
+          newPendingChanges.delete(sectionId);
+        }
 
-      return {
-        ...prev,
-        pendingChanges: newPendingChanges,
-        // Only consider actual pending changes as unsaved changes
-        hasUnsavedChanges: newPendingChanges.size > 0
-      }
-    })
-  }, [])
+        return {
+          ...prev,
+          pendingChanges: newPendingChanges,
+          // Only consider actual pending changes as unsaved changes
+          hasUnsavedChanges: newPendingChanges.size > 0,
+        };
+      });
+    },
+    [],
+  );
 
   // Clear all unsaved changes (e.g., after successful save)
   const clearUnsavedChanges = useCallback(() => {
     setState({
       hasUnsavedChanges: false,
       editingSections: new Set(),
-      pendingChanges: new Map()
-    })
-  }, [])
+      pendingChanges: new Map(),
+    });
+  }, []);
 
   // Check if a specific section has unsaved changes
-  const hasSectionUnsavedChanges = useCallback((sectionId: string) => {
-    return state.editingSections.has(sectionId) || state.pendingChanges.has(sectionId)
-  }, [state.editingSections, state.pendingChanges])
+  const hasSectionUnsavedChanges = useCallback(
+    (sectionId: string) => {
+      return (
+        state.editingSections.has(sectionId) ||
+        state.pendingChanges.has(sectionId)
+      );
+    },
+    [state.editingSections, state.pendingChanges],
+  );
 
   // Listen for save events to clear unsaved changes
   useEffect(() => {
     const handleCVSaved = () => {
-      clearUnsavedChanges()
+      clearUnsavedChanges();
       // Also dispatch an event to clear editing state
-      window.dispatchEvent(new CustomEvent('cv-editing-state-clear'))
-    }
+      window.dispatchEvent(new CustomEvent("cv-editing-state-clear"));
+    };
 
-    window.addEventListener('cv-saved', handleCVSaved)
+    window.addEventListener("cv-saved", handleCVSaved);
 
     return () => {
-      window.removeEventListener('cv-saved', handleCVSaved)
-    }
-  }, [clearUnsavedChanges])
+      window.removeEventListener("cv-saved", handleCVSaved);
+    };
+  }, [clearUnsavedChanges]);
 
   return {
     hasUnsavedChanges: state.hasUnsavedChanges,
@@ -98,6 +107,6 @@ export const useUnsavedChanges = () => {
     stopEditing,
     updatePendingChanges,
     clearUnsavedChanges,
-    hasSectionUnsavedChanges
-  }
-}
+    hasSectionUnsavedChanges,
+  };
+};

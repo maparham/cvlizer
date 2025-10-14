@@ -5,23 +5,23 @@ This module provides REST API endpoints for managing CV version history,
 including creating snapshots, retrieving history, and restoring versions.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_
-from typing import List, Optional, Dict
-from pydantic import BaseModel, Field
 import json
 from datetime import datetime
+from typing import Dict, List, Optional
 
-from src.models import get_db, CVHistory, CV, User
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+from sqlalchemy import and_, desc
+from sqlalchemy.orm import Session
+
+from src.middleware.clerk_auth import get_current_user, get_effective_user
+from src.models import CV, CVHistory, User, get_db
 from src.services.cv_diff_service import cv_diff_service
-from src.middleware.clerk_auth import get_effective_user, get_current_user
+from src.utils.feature_flags import is_cv_history_enabled
 from src.utils.history_validation import (
     ValidatedCreateHistoryRequest,
     calculate_data_size,
 )
-from src.utils.feature_flags import is_cv_history_enabled
-
 
 router = APIRouter(prefix="/api/cvs", tags=["cv-history"])
 

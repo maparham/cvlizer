@@ -58,26 +58,26 @@
  */
 export type EditingState =
   | {
-      mode: 'idle'
+      mode: "idle";
     }
   | {
-      mode: 'editing_section'
-      section: string
-      hasChanges: boolean
+      mode: "editing_section";
+      section: string;
+      hasChanges: boolean;
     }
   | {
-      mode: 'editing_item'
-      section: string
-      itemIndex: number
-      itemId: string
-      hasChanges: boolean
-      onCancel: () => void
+      mode: "editing_item";
+      section: string;
+      itemIndex: number;
+      itemId: string;
+      hasChanges: boolean;
+      onCancel: () => void;
     }
   | {
-      mode: 'discarding'
-      pendingChanges: string[]
-      targetState: EditingState
-    }
+      mode: "discarding";
+      pendingChanges: string[];
+      targetState: EditingState;
+    };
 
 /**
  * State Machine Actions
@@ -86,26 +86,43 @@ export type EditingState =
  * Each action is a discriminated union member.
  */
 export type EditingAction =
-  | { type: 'START_SECTION_EDIT', section: string }
-  | { type: 'START_ITEM_EDIT', section: string, itemIndex: number, itemId: string, onCancel: () => void }
-  | { type: 'UPDATE_CHANGES', hasChanges: boolean }
-  | { type: 'REQUEST_DISCARD', pendingChanges: string[], targetState: EditingState }
-  | { type: 'CONFIRM_DISCARD' }
-  | { type: 'CANCEL_DISCARD' }
-  | { type: 'CLOSE' }
-  | { type: 'RESET' }
+  | { type: "START_SECTION_EDIT"; section: string }
+  | {
+      type: "START_ITEM_EDIT";
+      section: string;
+      itemIndex: number;
+      itemId: string;
+      onCancel: () => void;
+    }
+  | { type: "UPDATE_CHANGES"; hasChanges: boolean }
+  | {
+      type: "REQUEST_DISCARD";
+      pendingChanges: string[];
+      targetState: EditingState;
+    }
+  | { type: "CONFIRM_DISCARD" }
+  | { type: "CANCEL_DISCARD" }
+  | { type: "CLOSE" }
+  | { type: "RESET" };
 
 /**
  * Type guards for state discrimination
  */
-export const isIdle = (state: EditingState): state is Extract<EditingState, { mode: 'idle' }> =>
-  state.mode === 'idle'
+export const isIdle = (
+  state: EditingState,
+): state is Extract<EditingState, { mode: "idle" }> => state.mode === "idle";
 
-export const isEditingSection = (state: EditingState): state is Extract<EditingState, { mode: 'editing_section' }> =>
-  state.mode === 'editing_section'
+export const isEditingSection = (
+  state: EditingState,
+): state is Extract<EditingState, { mode: "editing_section" }> =>
+  state.mode === "editing_section";
 
-export const isEditingItem = (state: EditingState): state is Extract<EditingState, { mode: 'editing_item' }> =>
-  state.mode === 'editing_item'
+export const isEditingItem = (
+  state: EditingState,
+): state is Extract<EditingState, { mode: "editing_item" }> =>
+  state.mode === "editing_item";
 
-export const isDiscarding = (state: EditingState): state is Extract<EditingState, { mode: 'discarding' }> =>
-  state.mode === 'discarding'
+export const isDiscarding = (
+  state: EditingState,
+): state is Extract<EditingState, { mode: "discarding" }> =>
+  state.mode === "discarding";

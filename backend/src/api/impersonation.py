@@ -13,32 +13,33 @@ Key endpoints:
 - POST /revoke/{session_id}: Revoke specific session (admin only)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
-from sqlalchemy.orm import Session
-from typing import Optional, List
-from pydantic import BaseModel, Field
 import logging
+from typing import List, Optional
 
-from src.models.base import get_db
-from src.models.user import User
-from src.models.impersonation_session import ImpersonationSession
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
 from src.middleware.clerk_auth import (
     get_current_user,
     get_current_user_lightweight,
     is_admin_user,
-    require_admin_not_impersonating,
     require_admin_allow_impersonating,
+    require_admin_not_impersonating,
 )
+from src.models.base import get_db
+from src.models.impersonation_session import ImpersonationSession
+from src.models.user import User
 from src.services.impersonation_service import (
-    start_impersonation_session,
+    ImpersonationError,
+    ImpersonationNotAllowedError,
+    ImpersonationRateLimitError,
     end_impersonation_session,
     get_active_session_for_admin,
     get_active_sessions,
-    validate_session,
     revoke_session,
-    ImpersonationNotAllowedError,
-    ImpersonationRateLimitError,
-    ImpersonationError,
+    start_impersonation_session,
+    validate_session,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ COOKIE_MAX_AGE = 1800  # 30 minutes
 
 # Derive cookie security from environment
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()

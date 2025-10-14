@@ -9,7 +9,7 @@
  * - Integration with CV store for state management
  * - Error handling and user feedback
  */
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -20,135 +20,146 @@ import {
   Typography,
   LinearProgress,
   Alert,
-  Paper
-} from '@mui/material'
-import { Upload as UploadIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material'
-import { useCVStore } from '../../stores/cvStore'
-import FilePreview from './FilePreview'
-import { validateCVFile } from '../../utils/fileValidation'
+  Paper,
+} from "@mui/material";
+import {
+  Upload as UploadIcon,
+  CheckCircle as CheckCircleIcon,
+} from "@mui/icons-material";
+import { useCVStore } from "../../stores/cvStore";
+import FilePreview from "./FilePreview";
+import { validateCVFile } from "../../utils/fileValidation";
 
 interface CVUploadProps {
-  open: boolean
-  onClose: () => void
-  onSuccess: () => void
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
-  const [dragActive, setDragActive] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Use the CV store's upload function
-  const { uploadCV: uploadCVToStore } = useCVStore()
+  const { uploadCV: uploadCVToStore } = useCVStore();
 
   const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
     }
-  }
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0])
+      handleFile(e.dataTransfer.files[0]);
     }
-  }
+  };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0])
+      handleFile(e.target.files[0]);
     }
-  }
+  };
 
   const handleFile = (file: File) => {
-    setError('')
-    setSuccess(false)
+    setError("");
+    setSuccess(false);
 
     // Validate the file before setting it
     try {
-      const validation = validateCVFile(file)
+      const validation = validateCVFile(file);
       if (!validation.isValid) {
-        setError(validation.error || 'Invalid file')
-        return
+        setError(validation.error || "Invalid file");
+        return;
       }
-      setSelectedFile(file)
+      setSelectedFile(file);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'File validation failed'
-      setError(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "File validation failed";
+      setError(errorMessage);
     }
-  }
+  };
 
   const handleUpload = async () => {
-    if (!selectedFile) return
+    if (!selectedFile) return;
 
-    setUploading(true)
-    setUploadProgress(0)
+    setUploading(true);
+    setUploadProgress(0);
 
     try {
       // Simulate upload progress
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
+        setUploadProgress((prev) => {
           if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
+            clearInterval(progressInterval);
+            return 90;
           }
-          return prev + 10
-        })
-      }, 200)
+          return prev + 10;
+        });
+      }, 200);
 
       // Use the store's upload function which handles state updates
-      await uploadCVToStore(selectedFile)
+      await uploadCVToStore(selectedFile);
 
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-      setSuccess(true)
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      setSuccess(true);
 
       // Close immediately after upload, parsing happens in background
       setTimeout(() => {
-        onSuccess() // This will refresh the CV list
-        setUploading(false)
-        setUploadProgress(0)
-        setSuccess(false)
-        setSelectedFile(null)
-        onClose() // Close the dialog after success callback
-      }, 1000) // Give a moment to show success message
-
+        onSuccess(); // This will refresh the CV list
+        setUploading(false);
+        setUploadProgress(0);
+        setSuccess(false);
+        setSelectedFile(null);
+        onClose(); // Close the dialog after success callback
+      }, 1000); // Give a moment to show success message
     } catch (err: unknown) {
-      const errorMessage = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Upload failed. Please try again.'
-      setError(errorMessage)
-      setUploading(false)
-      setUploadProgress(0)
+      const errorMessage =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail || "Upload failed. Please try again.";
+      setError(errorMessage);
+      setUploading(false);
+      setUploadProgress(0);
     }
-  }
+  };
 
   const handleRemoveFile = () => {
-    setSelectedFile(null)
-    setError('')
-    setSuccess(false)
-  }
+    setSelectedFile(null);
+    setError("");
+    setSuccess(false);
+  };
 
   const handleClose = () => {
     if (!uploading) {
-      onClose()
-      setError('')
-      setSuccess(false)
-      setUploadProgress(0)
-      setSelectedFile(null)
+      onClose();
+      setError("");
+      setSuccess(false);
+      setUploadProgress(0);
+      setSelectedFile(null);
     }
-  }
+  };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth data-testid="cv-upload-dialog">
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      data-testid="cv-upload-dialog"
+    >
       <DialogTitle>Upload CV</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
@@ -160,7 +171,8 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
 
           {success && (
             <Alert severity="success" sx={{ mb: 2 }} icon={<CheckCircleIcon />}>
-              CV uploaded successfully! AI is now parsing your CV in the background.
+              CV uploaded successfully! AI is now parsing your CV in the
+              background.
             </Alert>
           )}
 
@@ -187,21 +199,23 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
               data-testid="cv-upload-dropzone"
               sx={{
                 p: 4,
-                textAlign: 'center',
-                border: dragActive ? '2px dashed #1976d2' : '2px dashed #ccc',
-                backgroundColor: dragActive ? '#f5f5f5' : 'transparent',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
+                textAlign: "center",
+                border: dragActive ? "2px dashed #1976d2" : "2px dashed #ccc",
+                backgroundColor: dragActive ? "#f5f5f5" : "transparent",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
               }}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
-              onClick={() => document.getElementById('file-input')?.click()}
+              onClick={() => document.getElementById("file-input")?.click()}
             >
-              <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+              <UploadIcon
+                sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+              />
               <Typography variant="h6" gutterBottom>
-                {dragActive ? 'Drop your CV here' : 'Drag & drop your CV here'}
+                {dragActive ? "Drop your CV here" : "Drag & drop your CV here"}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 or click to browse files
@@ -214,7 +228,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={handleFileInput}
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 disabled={uploading}
                 data-testid="cv-file-input"
               />
@@ -223,12 +237,16 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={uploading} data-testid="cv-upload-dialog-close-button">
-          {success ? 'Close' : 'Cancel'}
+        <Button
+          onClick={handleClose}
+          disabled={uploading}
+          data-testid="cv-upload-dialog-close-button"
+        >
+          {success ? "Close" : "Cancel"}
         </Button>
       </DialogActions>
     </Dialog>
-  )
-}
+  );
+};
 
-export default CVUpload
+export default CVUpload;

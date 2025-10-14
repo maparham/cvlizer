@@ -10,8 +10,8 @@
  * @version 1.0.0
  */
 
-import React from 'react'
-import { CVData, CVSection } from './cv'
+import React from "react";
+import { CVData, CVSection } from "./cv";
 
 /**
  * Base properties shared by all CV section components.
@@ -31,18 +31,18 @@ import { CVData, CVSection } from './cv'
  * @property {(newTitle: string) => Promise<void>} [onTitleSave] - Callback to save section title
  */
 export interface BaseSectionProps {
-  children?: React.ReactNode
-  title?: string
-  isEditing?: boolean
-  onEdit?: () => void
-  onClose?: () => void
-  onSave?: () => void
-  onCancel?: () => void
-  editButton?: React.ReactNode
-  headerActions?: React.ReactNode
-  isValid?: boolean
-  onTitleSave?: (newTitle: string) => Promise<void>
-  sectionId?: string
+  children?: React.ReactNode;
+  title?: string;
+  isEditing?: boolean;
+  onEdit?: () => void;
+  onClose?: () => void;
+  onSave?: () => void;
+  onCancel?: () => void;
+  editButton?: React.ReactNode;
+  headerActions?: React.ReactNode;
+  isValid?: boolean;
+  onTitleSave?: (newTitle: string) => Promise<void>;
+  sectionId?: string;
 }
 
 /**
@@ -67,20 +67,28 @@ export interface BaseSectionProps {
  * @property {(newTitle: string) => Promise<void>} [onTitleSave] - Callback to save section title
  */
 export interface SectionProps<T = unknown> {
-  data: T
-  onUpdate: (data: T) => void
-  onSave: (data: T, message?: string) => Promise<void>
-  isEditing: boolean
-  onEdit: () => void
-  onClose: () => void
-  cvId?: string
-  onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void
-  registerIndividualItemEditing?: (sectionId: string, itemIndex: number, onCancel: () => void, onStartEdit?: () => void) => 'success' | 'dialog_shown'
-  unregisterIndividualItemEditing?: () => void
-  requestIndividualItemCancel?: (sectionId: string, onCancel: () => void) => void
-  isAnotherItemBeingEdited?: boolean
-  title?: string
-  onTitleSave?: (newTitle: string) => Promise<void>
+  data: T;
+  onUpdate: (data: T) => void;
+  onSave: (data: T, message?: string) => Promise<void>;
+  isEditing: boolean;
+  onEdit: () => void;
+  onClose: () => void;
+  cvId?: string;
+  onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void;
+  registerIndividualItemEditing?: (
+    sectionId: string,
+    itemIndex: number,
+    onCancel: () => void,
+    onStartEdit?: () => void,
+  ) => "success" | "dialog_shown";
+  unregisterIndividualItemEditing?: () => void;
+  requestIndividualItemCancel?: (
+    sectionId: string,
+    onCancel: () => void,
+  ) => void;
+  isAnotherItemBeingEdited?: boolean;
+  title?: string;
+  onTitleSave?: (newTitle: string) => Promise<void>;
 }
 
 /**
@@ -107,22 +115,34 @@ export interface SectionProps<T = unknown> {
  * @property {string} [autoSaveMessage] - Message for auto-save operations
  */
 export interface ArraySectionProps<T> {
-  data: T[]
-  onUpdate: (data: T[]) => void
-  onSave: (data: T[], message?: string) => Promise<void>
-  isEditing: boolean
-  onEdit: () => void
-  onClose: () => void
-  onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void
-  registerIndividualItemEditing?: (sectionId: string, itemIndex: number, onCancel: () => void, onStartEdit?: () => void) => 'success' | 'dialog_shown'
-  unregisterIndividualItemEditing?: () => void
-  requestIndividualItemCancel?: (sectionId: string, onCancel: () => void) => void
-  title?: string
-  emptyMessage?: string
-  renderEditForm?: (item: T, index: number, updateItem: (field: keyof T, value: any) => void) => React.ReactNode
-  renderItem?: (item: T, index: number) => React.ReactNode
-  createNewItem?: () => T
-  autoSaveMessage?: string
+  data: T[];
+  onUpdate: (data: T[]) => void;
+  onSave: (data: T[], message?: string) => Promise<void>;
+  isEditing: boolean;
+  onEdit: () => void;
+  onClose: () => void;
+  onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void;
+  registerIndividualItemEditing?: (
+    sectionId: string,
+    itemIndex: number,
+    onCancel: () => void,
+    onStartEdit?: () => void,
+  ) => "success" | "dialog_shown";
+  unregisterIndividualItemEditing?: () => void;
+  requestIndividualItemCancel?: (
+    sectionId: string,
+    onCancel: () => void,
+  ) => void;
+  title?: string;
+  emptyMessage?: string;
+  renderEditForm?: (
+    item: T,
+    index: number,
+    updateItem: (field: keyof T, value: any) => void,
+  ) => React.ReactNode;
+  renderItem?: (item: T, index: number) => React.ReactNode;
+  createNewItem?: () => T;
+  autoSaveMessage?: string;
 }
 
 /**
@@ -140,13 +160,13 @@ export interface ArraySectionProps<T> {
  * @property {(hasChanges: boolean) => void} [onUnsavedChanges] - Track unsaved changes for this item
  */
 export interface IndividualItemSectionProps<T> {
-  data: T
-  onUpdate: (data: T) => void
-  onSave: (data: T, message?: string) => Promise<void>
-  isEditing: boolean
-  onEdit: () => void
-  onClose: () => void
-  onUnsavedChanges?: (hasChanges: boolean) => void
+  data: T;
+  onUpdate: (data: T) => void;
+  onSave: (data: T, message?: string) => Promise<void>;
+  isEditing: boolean;
+  onEdit: () => void;
+  onClose: () => void;
+  onUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
 /**
@@ -159,9 +179,9 @@ export interface IndividualItemSectionProps<T> {
  * @property {(data: CVData, message?: string) => Promise<void>} onSave - Callback to save the CV with optional message
  */
 export interface PDFCVEditorProps {
-  cvData: CVData
-  onUpdateCV: (data: CVData) => void
-  onSave: (data: CVData, message?: string) => Promise<void>
+  cvData: CVData;
+  onUpdateCV: (data: CVData) => void;
+  onSave: (data: CVData, message?: string) => Promise<void>;
 }
 
 /**
@@ -174,9 +194,9 @@ export interface PDFCVEditorProps {
  * @property {() => void} clearUnsavedChanges - Clear all unsaved changes
  */
 export interface UnsavedChangesHook {
-  hasUnsavedChanges: boolean
-  setUnsavedChanges: (hasChanges: boolean) => void
-  clearUnsavedChanges: () => void
+  hasUnsavedChanges: boolean;
+  setUnsavedChanges: (hasChanges: boolean) => void;
+  clearUnsavedChanges: () => void;
 }
 
 /**
@@ -194,14 +214,14 @@ export interface UnsavedChangesHook {
  * @property {boolean} [isOverlay] - Whether this is a drag overlay item
  */
 export interface SortableSectionItemProps {
-  id?: string
-  type?: string
-  title?: string
-  visible?: boolean
-  order?: number
-  section?: CVSection
-  onToggleVisibility?: (sectionId: string) => void
-  isOverlay?: boolean
+  id?: string;
+  type?: string;
+  title?: string;
+  visible?: boolean;
+  order?: number;
+  section?: CVSection;
+  onToggleVisibility?: (sectionId: string) => void;
+  isOverlay?: boolean;
 }
 
 /**
@@ -215,8 +235,8 @@ export interface SortableSectionItemProps {
  * @property {any} data - The current data of the item being edited
  */
 export interface EditingIndividualItem {
-  id: string
-  section: string
-  sectionId: string
-  data: any
+  id: string;
+  section: string;
+  sectionId: string;
+  data: any;
 }

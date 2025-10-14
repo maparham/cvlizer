@@ -1,21 +1,25 @@
-import React, { useState, useEffect } from 'react'
-import { Box, Button } from '@mui/material'
-import { Add as AddIcon } from '@mui/icons-material'
-import { SectionProps } from '../../../types'
-import { useSectionAutoSave } from './hooks'
-import BaseSection from './BaseSection'
-import { useArraySection, ArrayItem } from './arrayUtils'
-import { ArrayItemContainer, EmptyState } from './formUtils'
+import React, { useState, useEffect } from "react";
+import { Box, Button } from "@mui/material";
+import { Add as AddIcon } from "@mui/icons-material";
+import { SectionProps } from "../../../types";
+import { useSectionAutoSave } from "./hooks";
+import BaseSection from "./BaseSection";
+import { useArraySection, ArrayItem } from "./arrayUtils";
+import { ArrayItemContainer, EmptyState } from "./formUtils";
 
 interface ArrayFormSectionProps<T extends ArrayItem> extends SectionProps {
-  title: string
-  emptyMessage: string
-  createNewItem: () => T
-  requiredFields: (keyof T)[]
-  renderItemForm: (_item: T, _index: number, _updateItem: (_field: keyof T, _value: unknown) => void) => React.ReactNode
-  renderItemDisplay: (_item: T, _index: number) => React.ReactNode
-  autoSaveMessage: string
-  onTitleSave?: (newTitle: string) => Promise<void>
+  title: string;
+  emptyMessage: string;
+  createNewItem: () => T;
+  requiredFields: (keyof T)[];
+  renderItemForm: (
+    _item: T,
+    _index: number,
+    _updateItem: (_field: keyof T, _value: unknown) => void,
+  ) => React.ReactNode;
+  renderItemDisplay: (_item: T, _index: number) => React.ReactNode;
+  autoSaveMessage: string;
+  onTitleSave?: (newTitle: string) => Promise<void>;
 }
 
 /**
@@ -36,17 +40,25 @@ const ArrayFormSection = <T extends ArrayItem>({
   renderItemForm,
   renderItemDisplay,
   autoSaveMessage,
-  onTitleSave
+  onTitleSave,
 }: ArrayFormSectionProps<T>) => {
-  const [editData, setEditData] = useState<T[]>(data as T[] || [])
+  const [editData, setEditData] = useState<T[]>((data as T[]) || []);
 
   useEffect(() => {
-    setEditData(data as T[] || [])
-  }, [data])
+    setEditData((data as T[]) || []);
+  }, [data]);
 
   // Use common auto-save hook
-  useSectionAutoSave(isEditing, editData, data, onUpdate, onSave, autoSaveMessage || 'Changes saved', title, onUnsavedChanges)
-
+  useSectionAutoSave(
+    isEditing,
+    editData,
+    data,
+    onUpdate,
+    onSave,
+    autoSaveMessage || "Changes saved",
+    title,
+    onUnsavedChanges,
+  );
 
   const {
     data: arrayData,
@@ -54,63 +66,63 @@ const ArrayFormSection = <T extends ArrayItem>({
     removeItem,
     updateItem,
     isFormValid,
-    resetData
+    resetData,
   } = useArraySection({
     data: editData,
     onUpdate: (newData: ArrayItem[]) => {
-      setEditData(newData as T[])
-      onUpdate(newData as T[])
+      setEditData(newData as T[]);
+      onUpdate(newData as T[]);
     },
     onSave: (newData: ArrayItem[], message?: string) => {
-      onSave(newData as T[], message)
+      onSave(newData as T[], message);
     },
     createNewItem,
-    requiredFields: requiredFields as string[]
-  })
+    requiredFields: requiredFields as string[],
+  });
 
-  if (!data) return null
+  if (!data) return null;
 
   const handleSave = () => {
     if (!isFormValid()) {
-      return
+      return;
     }
-    onUpdate(arrayData)
-    onClose()
-    onSave(arrayData)
-  }
+    onUpdate(arrayData);
+    onClose();
+    onSave(arrayData);
+  };
 
   const handleCancel = () => {
-    resetData()
-    onClose()
-  }
+    resetData();
+    onClose();
+  };
 
   const handleAddItem = () => {
-    addItem()
-  }
+    addItem();
+  };
 
   const handleRemoveItem = (index: number) => {
-    removeItem(index)
-  }
+    removeItem(index);
+  };
 
   const handleUpdateItem = (index: number, field: keyof T, value: unknown) => {
-    updateItem(index, field as keyof ArrayItem, value)
-  }
+    updateItem(index, field as keyof ArrayItem, value);
+  };
 
   // Helper function to convert plural titles to singular
   const getSingularTitle = (pluralTitle: string): string => {
     const titleMap: Record<string, string> = {
-      'Work Experience': 'Work Experience',
-      'Education': 'Education',
-      'Projects': 'Project',
-      'Awards': 'Award',
-      'Certifications': 'Certification',
-      'Publications': 'Publication',
-      'Volunteer Experience': 'Volunteer Experience',
-      'Skills': 'Skill'
-    }
+      "Work Experience": "Work Experience",
+      Education: "Education",
+      Projects: "Project",
+      Awards: "Award",
+      Certifications: "Certification",
+      Publications: "Publication",
+      "Volunteer Experience": "Volunteer Experience",
+      Skills: "Skill",
+    };
 
-    return titleMap[pluralTitle] || pluralTitle.slice(0, -1)
-  }
+    return titleMap[pluralTitle] || pluralTitle.slice(0, -1);
+  };
 
   return (
     <BaseSection
@@ -133,7 +145,9 @@ const ArrayFormSection = <T extends ArrayItem>({
               onEdit={() => {}} // Handled by the form itself
               onDelete={handleRemoveItem}
             >
-              {renderItemForm(item, index, (field, value) => handleUpdateItem(index, field, value))}
+              {renderItemForm(item, index, (field, value) =>
+                handleUpdateItem(index, field, value),
+              )}
             </ArrayItemContainer>
           ))}
           <Button
@@ -159,7 +173,7 @@ const ArrayFormSection = <T extends ArrayItem>({
         </Box>
       )}
     </BaseSection>
-  )
-}
+  );
+};
 
-export default ArrayFormSection
+export default ArrayFormSection;

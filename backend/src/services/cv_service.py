@@ -7,12 +7,14 @@ This module provides functions for CRUD operations on CV records:
 - Database transaction management
 """
 
+import json
+import uuid
 from typing import List, Optional
+
 from sqlalchemy.orm import Session, joinedload
+
 from src.models.cv import CV
 from src.models.user import User
-import uuid
-import json
 
 
 def create_cv(
