@@ -58,6 +58,9 @@ def _build_ats_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
     """
     return f"""Analyze CV for ATS keyword optimization.
 
+⚠️ LANGUAGE REQUIREMENT: Write ALL text content (suggestions, content_optimization suggestions) in the SAME LANGUAGE as the job description.
+If the job description is in German, write everything in German. If in English, write in English.
+
 CV: {json.dumps(cv_data, indent=2)}
 
 Job: {job_description}
@@ -155,7 +158,7 @@ async def analyze_ats_optimization(
                 input=[
                     {
                         "role": "system",
-                        "content": "You're an ATS expert. Analyze CV vs job description for keywords. Check ALL CV sections before marking keywords missing. Extract ONLY actual JD keywords. Each keyword in ONE array. Valid JSON only.",
+                        "content": "You're an ATS expert. CRITICAL: Write suggestions in the SAME LANGUAGE as the job description. Analyze CV vs job description for keywords. Check ALL CV sections before marking keywords missing. Extract ONLY actual JD keywords. Each keyword in ONE array. Valid JSON only.",
                     },
                     {"role": "user", "content": prompt},
                 ],

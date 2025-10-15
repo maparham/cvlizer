@@ -101,7 +101,7 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
             start_time = time.time()
             client = get_openai_client()
             response = client.responses.parse(
-                model=AIConfig.OPENAI_MODEL,
+                model=AIConfig.OPENAI_PARSING_MODEL,
                 input=[
                     {
                         "role": "system",
@@ -110,7 +110,7 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
                     {"role": "user", "content": prompt},
                 ],
                 text_format=JobExtractionResponseSchema,
-                reasoning=Reasoning(effort=AIConfig.PARSING_REASONING_EFFORT),
+                reasoning=Reasoning(effort=AIConfig.OPENAI_PARSING_EFFORT),
             )
             end_time = time.time()
 
@@ -143,7 +143,7 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
                 db_session=db_session,
                 user_id=user_id,
                 operation_type="extract_job_description",
-                model_used=AIConfig.OPENAI_MODEL,
+                model_used=AIConfig.OPENAI_PARSING_MODEL,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 generation_time=generation_time,
@@ -176,7 +176,7 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
                 db_session=db_session,
                 user_id=user_id,
                 operation_type="extract_job_description",
-                model_used=AIConfig.OPENAI_MODEL,
+                model_used=AIConfig.OPENAI_PARSING_MODEL,
                 prompt_tokens=0,
                 completion_tokens=0,
                 generation_time=0,

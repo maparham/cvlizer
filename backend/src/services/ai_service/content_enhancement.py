@@ -73,6 +73,7 @@ async def enhance_content(
 
     prompt = f"""Enhance this {content_type} with 4 improved versions.
 
+LANGUAGE REQUIREMENT: Write ALL enhanced content in the SAME LANGUAGE as the original content.
 Original: "{original_content}"
 
 Focus: Strong action verbs, metrics (%, numbers, time), industry terms, impact, professional tone

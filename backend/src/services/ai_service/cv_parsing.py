@@ -110,7 +110,7 @@ Return JSON (omit empty sections):
         async def _call():
             return await asyncio.to_thread(
                 client.responses.parse,
-                model=AIConfig.OPENAI_MODEL,
+                model=AIConfig.OPENAI_PARSING_MODEL,
                 input=[
                     {
                         "role": "system",
@@ -119,7 +119,7 @@ Return JSON (omit empty sections):
                     {"role": "user", "content": prompt},
                 ],
                 text_format=CVParsingResponseSchema,
-                reasoning=Reasoning(effort=AIConfig.PARSING_REASONING_EFFORT),
+                reasoning=Reasoning(effort=AIConfig.OPENAI_PARSING_EFFORT),
             )
 
         response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
@@ -136,7 +136,7 @@ Return JSON (omit empty sections):
                 db_session=db_session,
                 user_id=user_id,
                 operation_type="parse_cv",
-                model_used=AIConfig.OPENAI_MODEL,
+                model_used=AIConfig.OPENAI_PARSING_MODEL,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 generation_time=0,  # Not tracked in this function
@@ -161,7 +161,7 @@ Return JSON (omit empty sections):
                 db_session=db_session,
                 user_id=user_id,
                 operation_type="parse_cv",
-                model_used=AIConfig.OPENAI_MODEL,
+                model_used=AIConfig.OPENAI_PARSING_MODEL,
                 prompt_tokens=0,
                 completion_tokens=0,
                 generation_time=0,

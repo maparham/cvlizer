@@ -76,6 +76,9 @@ async def generate_cv_section(
     if section_type == "why_good_fit":
         prompt = f"""Generate "Why I'm a Good Fit" section aligning CV with job requirements.
 
+⚠️ LANGUAGE REQUIREMENT: Write ALL content (title, content, key_points) in the SAME LANGUAGE as the job description.
+If the job description is in German, write everything in German. If in English, write in English.
+
 CV: {cv_data}
 
 Job: {job_description}
@@ -110,7 +113,7 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
                 input=[
                     {
                         "role": "system",
-                        "content": "You're a CV expert. Generate compelling, tailored content aligning candidates with job requirements.",
+                        "content": "You're a CV expert. CRITICAL: Generate content in the SAME LANGUAGE as the job description. Generate compelling, tailored content aligning candidates with job requirements.",
                     },
                     {"role": "user", "content": prompt},
                 ],

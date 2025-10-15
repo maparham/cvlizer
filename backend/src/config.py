@@ -23,6 +23,9 @@ class AIConfig:
     # OpenAI API Configuration
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL")  # Required: Must be set in .env
+    OPENAI_PARSING_MODEL: str = os.getenv(
+        "OPENAI_PARSING_MODEL"
+    )  # Required: Used for CV and job description parsing
 
     # Agent Model Configuration (for future agent-based features)
     AGENT_MODEL: str = os.getenv(
@@ -54,8 +57,9 @@ class AIConfig:
     REASONING_EFFORT: str = os.getenv("AI_REASONING_EFFORT", "low")
 
     # Parsing-specific reasoning effort (for CV and JD parsing)
-    # Defaults to "low" for faster parsing operations
-    PARSING_REASONING_EFFORT: str = os.getenv("AI_PARSING_REASONING_EFFORT", "minimal")
+    # Defaults to "minimal" for faster parsing operations
+    # Options: "minimal", "low", "medium", "high"
+    OPENAI_PARSING_EFFORT: str = os.getenv("OPENAI_PARSING_EFFORT", "minimal")
 
     @classmethod
     def is_enabled(cls) -> bool:
@@ -473,6 +477,11 @@ def validate_config() -> list:
 
     if not AIConfig.OPENAI_MODEL:
         warnings.append("OPENAI_MODEL not configured in .env - REQUIRED for AI features")
+
+    if not AIConfig.OPENAI_PARSING_MODEL:
+        warnings.append(
+            "OPENAI_PARSING_MODEL not configured in .env - REQUIRED for CV and job description parsing"
+        )
 
     if not AIConfig.AGENT_MODEL:
         warnings.append(

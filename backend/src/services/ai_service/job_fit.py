@@ -38,7 +38,9 @@ logger = logging.getLogger(__name__)
 
 # Instructions for OpenAI API job fit analysis
 JOB_FIT_INSTRUCTIONS = (
-    "You're the candidate. Output JSON with fit_analysis and 5 REQUIRED arrays (key_matches, missing_skills, "
+    "You're the candidate. CRITICAL: Write in the SAME LANGUAGE as the job description. "
+    "If job is in German, write in German. If in English, write in English. "
+    "Output JSON with fit_analysis and 5 REQUIRED arrays (key_matches, missing_skills, "
     "suggested_improvements, strengths, weaknesses). ALL arrays must have values. First person. "
     "follow formatting instructions."
     "Stop after last requirement."
@@ -66,6 +68,7 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
     """
     return (
         f"Write as the candidate about your fit for this position.\n\n"
+        f"LANGUAGE REQUIREMENT: Write ALL content (fit_analysis and all arrays) in the SAME LANGUAGE as the job description below.\n"
         f"OUTPUT JSON:\n"
         f"{{\n"
         f'  "confidence_score": 75,\n'
