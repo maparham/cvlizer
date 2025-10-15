@@ -391,7 +391,7 @@ describe("AI Store Job Description Management", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.setActiveJobDescription("jd-1");
+        result.current.setActiveJobDescription("jd-1", "cv-1");
       });
 
       expect(result.current.activeJobDescriptionId).toBe("jd-1");
@@ -402,7 +402,7 @@ describe("AI Store Job Description Management", () => {
 
       act(() => {
         result.current.activeJobDescriptionId = "jd-1";
-        result.current.setActiveJobDescription(undefined);
+        result.current.setActiveJobDescription(undefined, "cv-1");
       });
 
       expect(result.current.activeJobDescriptionId).toBeUndefined();
@@ -412,8 +412,8 @@ describe("AI Store Job Description Management", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.jobDescriptions = [mockJobDescription1]; // Must have job description to find cv_id
-        result.current.setActiveJobDescription("jd-1");
+        result.current.jobDescriptions = [mockJobDescription1];
+        result.current.setActiveJobDescription("jd-1", "cv-1");
       });
 
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -428,11 +428,11 @@ describe("AI Store Job Description Management", () => {
       act(() => {
         // First set a job description with CV context
         result.current.jobDescriptions = [mockJobDescription1];
-        result.current.setActiveJobDescription("jd-1");
+        result.current.setActiveJobDescription("jd-1", "cv-1");
       });
 
       act(() => {
-        result.current.setActiveJobDescription(undefined);
+        result.current.setActiveJobDescription(undefined, "cv-1");
       });
 
       // Should update the map to remove the CV key, not call removeItem
@@ -600,7 +600,7 @@ describe("AI Store Job Description Management", () => {
 
       act(() => {
         result.current.showJobDescriptionInSidebar("jd-1");
-        result.current.setActiveJobDescription("jd-1");
+        result.current.setActiveJobDescription("jd-1", "cv-1");
       });
 
       expect(result.current.hiddenJobDescriptionIds).not.toContain("jd-1");

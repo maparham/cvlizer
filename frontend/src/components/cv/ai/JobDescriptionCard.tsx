@@ -416,6 +416,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                 flexWrap: "nowrap",
                 mb: 1.5,
                 justifyContent: "flex-start",
+                overflow: "hidden",
               }}
             >
               {jobDescription.company && (
@@ -430,8 +431,8 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                     "& .MuiChip-icon": {
                       fontSize: "16px",
                     },
-                    maxWidth: maxChipWidth ? `${maxChipWidth}px` : undefined,
-                    flex: "1 1 auto",
+                    flex: "1 1 0",
+                    minWidth: 0,
                     "& .MuiChip-label": {
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -452,8 +453,8 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                     "& .MuiChip-icon": {
                       fontSize: "16px",
                     },
-                    maxWidth: maxChipWidth ? `${maxChipWidth}px` : undefined,
-                    flex: "1 1 auto",
+                    flex: "1 1 0",
+                    minWidth: 0,
                     "& .MuiChip-label": {
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -622,7 +623,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
             </Typography>
             {/* Metadata chips */}
             {(jobDescription.company || jobDescription.location) && (
-              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "nowrap", overflow: "hidden" }}>
                 {jobDescription.company && (
                   <Chip
                     icon={<WorkIcon />}
@@ -635,8 +636,11 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                       "& .MuiChip-icon": {
                         fontSize: "16px",
                       },
-                      // No maxWidth constraint in modal - show full company name
+                      flex: "1 1 0",
+                      minWidth: 0,
                       "& .MuiChip-label": {
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
                       },
                     }}
@@ -654,8 +658,11 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                       "& .MuiChip-icon": {
                         fontSize: "16px",
                       },
-                      // No maxWidth constraint in modal - show full location
+                      flex: "1 1 0",
+                      minWidth: 0,
                       "& .MuiChip-label": {
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
                       },
                     }}

@@ -44,6 +44,15 @@ class CV(Base):
     job_descriptions = relationship(
         "JobDescription", back_populates="cv", cascade="all, delete-orphan"
     )
+
+    # Many-to-many relationship with Job Descriptions through junction table
+    job_description_associations = relationship(
+        "CVJobDescription",
+        foreign_keys="[CVJobDescription.cv_id]",
+        cascade="all, delete-orphan",
+        backref="cv_association",
+    )
+
     ai_sections = relationship(
         "AISection", back_populates="cv", cascade="all, delete-orphan"
     )

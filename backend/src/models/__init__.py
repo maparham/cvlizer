@@ -14,6 +14,7 @@ from .base import Base, engine, get_db
 from .content_enhancement import ContentEnhancement
 from .cv import CV
 from .cv_history import CVHistory
+from .cv_job_description import CVJobDescription
 from .impersonation_session import ImpersonationSession
 from .job_description import JobDescription
 from .optimization_history import OptimizationHistory
@@ -27,6 +28,7 @@ __all__ = [
     "User",
     "CV",
     "CVHistory",
+    "CVJobDescription",
     "JobDescription",
     "AISection",
     "AIDraft",

@@ -157,14 +157,15 @@ export interface AISectionListResponse {
 // Job Description Types (for AI features)
 export interface JobDescription {
   id: string;
-  cv_id: string;
+  cv_id: string | null;  // Original CV that created this JD (can be null)
+  cv_ids: string[];  // All CVs associated with this JD (many-to-many)
   content: string;
   title?: string;
   company?: string;
   location?: string;
   source_url?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   is_parsing?: boolean;
   parse_error?: string;
 }
@@ -261,8 +262,8 @@ export interface AIStoreState {
   jobFitAnalysis: JobFitAnalysisState;
   atsOptimization: ATSOptimizationState;
   suggestions: Record<string, AISuggestionState>; // keyed by content hash
-  jobDescriptions: JobDescription[];
-  activeJobDescriptionId?: string;
+  jobDescriptions: JobDescription[];  // User-level job descriptions (shared across CVs)
+  activeJobDescriptionId?: string;  // Deprecated: use activeJobDescriptionIdPerCV instead
   activeJobDescriptionIdPerCV: Record<string, string>; // Map of cvId -> activeJobDescriptionId
   hiddenJobDescriptionIds: string[]; // IDs of job descriptions hidden from sidebar
   inlineDiff: InlineDiffState;

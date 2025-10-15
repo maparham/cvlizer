@@ -49,7 +49,6 @@ import {
 } from "@mui/icons-material";
 import {
   useAIStore,
-  useCVJobDescriptions,
   useActiveJobDescription,
 } from "../../../stores/aiStore";
 import { JobDescription } from "../../../types/ai";
@@ -131,9 +130,10 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setActiveJobDescription,
     showJobDescriptionInSidebar,
     parseJobDescriptionUrl,
+    associateJobDescriptionWithCV,
   } = useAIStore();
 
-  const jobDescriptions = useCVJobDescriptions(cvId);
+  const jobDescriptions = useAIStore((state) => state.jobDescriptions);
   const activeJobDescription = useActiveJobDescription();
 
   // Use the centralized polling hook
@@ -305,7 +305,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       );
 
       // Automatically select the newly created job description
-      setActiveJobDescription(newJobDescription.id);
+      setActiveJobDescription(newJobDescription.id, cvId);
       if (onJobDescriptionSelect) {
         onJobDescriptionSelect(newJobDescription);
       }
@@ -343,14 +343,26 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   ]);
 
   const handleJobDescriptionSelect = useCallback(
-    (jobDescription: JobDescription) => {
-      setActiveJobDescription(jobDescription.id);
-      // Make sure the job description is visible in the sidebar
-      showJobDescriptionInSidebar(jobDescription.id);
-      // Close the modal after selection
-      onClose();
+    async (jobDescription: JobDescription) => {
+      try {
+        // Associate JD with current CV if not already associated
+        if (!jobDescription.cv_ids.includes(cvId)) {
+          await associateJobDescriptionWithCV(jobDescription.id, cvId);
+        }
+
+        // Set as active for this specific CV
+        setActiveJobDescription(jobDescription.id, cvId);
+        // Make sure the job description is visible in the sidebar
+        showJobDescriptionInSidebar(jobDescription.id);
+        // Close the modal after selection
+        onClose();
+        showSuccess('Job description selected');
+      } catch (error) {
+        showError('Failed to select job description');
+      }
     },
-    [setActiveJobDescription, showJobDescriptionInSidebar, onClose],
+    [cvId, associateJobDescriptionWithCV, setActiveJobDescription,
+     showJobDescriptionInSidebar, onClose, showSuccess, showError],
   );
 
   const handleDeleteClick = useCallback((jobDescription: JobDescription) => {

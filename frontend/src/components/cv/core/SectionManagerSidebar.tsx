@@ -106,13 +106,15 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   // Handle job description selection
   const handleJobDescriptionSelect = useCallback(
     (jobDescription: any) => {
-      if (jobDescription) {
-        setActiveJobDescription(jobDescription.id);
-      } else {
-        setActiveJobDescription(undefined);
+      if (cvId) {
+        if (jobDescription) {
+          setActiveJobDescription(jobDescription.id, cvId);
+        } else {
+          setActiveJobDescription(undefined, cvId);
+        }
       }
     },
-    [setActiveJobDescription],
+    [setActiveJobDescription, cvId],
   );
 
   // Handle generating AI suggestions

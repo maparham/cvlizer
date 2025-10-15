@@ -65,22 +65,24 @@ interface AIStoreActions {
   rejectSuggestion: (suggestionId: string) => void;
 
   // Job description actions
-  loadJobDescriptions: (cvId: string) => Promise<void>;
+  loadJobDescriptions: (cvId?: string) => Promise<void>;
   createJobDescription: (
     cvId: string,
     jobDescription: Omit<
       JobDescription,
-      "id" | "cv_id" | "created_at" | "updated_at"
+      "id" | "cv_id" | "cv_ids" | "created_at" | "updated_at"
     >,
   ) => Promise<JobDescription>;
   updateJobDescription: (
     jobDescriptionId: string,
     jobDescription: Partial<
-      Omit<JobDescription, "id" | "cv_id" | "created_at" | "updated_at">
+      Omit<JobDescription, "id" | "cv_id" | "cv_ids" | "created_at" | "updated_at">
     >,
   ) => Promise<JobDescription>;
   deleteJobDescription: (jobDescriptionId: string) => Promise<void>;
-  setActiveJobDescription: (jobDescriptionId: string | undefined) => void;
+  associateJobDescriptionWithCV: (jobDescriptionId: string, cvId: string) => Promise<void>;
+  disassociateJobDescriptionFromCV: (jobDescriptionId: string, cvId: string) => Promise<void>;
+  setActiveJobDescription: (jobDescriptionId: string | undefined, cvId: string) => void;
   hideJobDescriptionFromSidebar: (jobDescriptionId: string) => void;
   showJobDescriptionInSidebar: (jobDescriptionId: string) => void;
   clearJobDescriptionsForCV: (cvId: string) => void;
@@ -470,9 +472,9 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       },
 
       // Job description actions
-      loadJobDescriptions: async (cvId: string) => {
+      loadJobDescriptions: async (cvId?: string) => {
         // Skip loading for temporary CVs (not yet saved to backend)
-        if (cvId.startsWith("temp-")) {
+        if (cvId && cvId.startsWith("temp-")) {
           Logger.debug("Skipping job descriptions load for temporary CV", {
             cvId,
           });
@@ -480,30 +482,28 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
         }
 
         try {
-          const jobDescriptions = await aiService.getJobDescriptions(cvId);
+          // Load ALL user job descriptions (user-scoped, not CV-specific)
+          const jobDescriptions = await aiService.getJobDescriptions();
 
-          // Replace job descriptions for this CV only (CV-scoped)
           set((state) => {
-            // Remove old job descriptions for this CV and add new ones
-            const otherCVJobDescriptions = state.jobDescriptions.filter(
-              (jd) => jd.cv_id !== cvId,
-            );
-            const newJobDescriptions = [
-              ...otherCVJobDescriptions,
-              ...jobDescriptions,
-            ];
+            // Restore the CV-specific active job description selection if cvId provided
+            if (cvId) {
+              const activeIdForCV = state.activeJobDescriptionIdPerCV[cvId];
+              const isActiveIdValid =
+                activeIdForCV &&
+                jobDescriptions.some((jd) => jd.id === activeIdForCV && jd.cv_ids.includes(cvId));
 
-            // Restore the CV-specific active job description selection
-            const activeIdForCV = state.activeJobDescriptionIdPerCV[cvId];
-            const isActiveIdValid =
-              activeIdForCV &&
-              jobDescriptions.some((jd) => jd.id === activeIdForCV);
+              return {
+                jobDescriptions,
+                activeJobDescriptionId: isActiveIdValid
+                  ? activeIdForCV
+                  : undefined,
+              };
+            }
 
+            // If no cvId, just update the job descriptions
             return {
-              jobDescriptions: newJobDescriptions,
-              activeJobDescriptionId: isActiveIdValid
-                ? activeIdForCV
-                : state.activeJobDescriptionId,
+              jobDescriptions,
             };
           });
         } catch (error) {
@@ -517,9 +517,10 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
 
       createJobDescription: async (cvId: string, jobDescription) => {
         try {
+          // Create job description with CV association
           const newJobDescription = await aiService.createJobDescription(
-            cvId,
             jobDescription,
+            cvId,  // Associate with this CV
           );
           set((state) => ({
             jobDescriptions: [...state.jobDescriptions, newJobDescription],
@@ -610,30 +611,66 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
         }
       },
 
-      setActiveJobDescription: (jobDescriptionId) => {
+      associateJobDescriptionWithCV: async (
+        jobDescriptionId: string,
+        cvId: string,
+      ) => {
+        try {
+          await aiService.associateJobDescriptionWithCV(jobDescriptionId, cvId);
+
+          // Reload job descriptions to get updated associations
+          await get().loadJobDescriptions();
+
+          Logger.debug("Job description associated with CV", {
+            jobDescriptionId,
+            cvId,
+          });
+        } catch (error) {
+          ErrorHandler.handle(error, {
+            feature: "job-descriptions",
+            action: "associate",
+            userMessage: "Failed to associate job description with CV",
+            metadata: { jobDescriptionId, cvId },
+          });
+          throw error;
+        }
+      },
+
+      disassociateJobDescriptionFromCV: async (
+        jobDescriptionId: string,
+        cvId: string,
+      ) => {
+        try {
+          await aiService.disassociateJobDescriptionFromCV(
+            jobDescriptionId,
+            cvId,
+          );
+
+          // Reload job descriptions to get updated associations
+          await get().loadJobDescriptions();
+
+          Logger.debug("Job description disassociated from CV", {
+            jobDescriptionId,
+            cvId,
+          });
+        } catch (error) {
+          ErrorHandler.handle(error, {
+            feature: "job-descriptions",
+            action: "disassociate",
+            userMessage: "Failed to remove job description association",
+            metadata: { jobDescriptionId, cvId },
+          });
+          throw error;
+        }
+      },
+
+      setActiveJobDescription: (jobDescriptionId: string | undefined, cvId: string) => {
         set((state) => {
-          // Find the CV this job description belongs to
-          let cvId: string | undefined;
-
-          if (jobDescriptionId) {
-            // Setting a new active job description - find its CV
-            const jobDescription = state.jobDescriptions.find(
-              (jd) => jd.id === jobDescriptionId,
-            );
-            cvId = jobDescription?.cv_id;
-          } else {
-            // Clearing active job description - find CV from current active
-            const currentActive = state.jobDescriptions.find(
-              (jd) => jd.id === state.activeJobDescriptionId,
-            );
-            cvId = currentActive?.cv_id;
-          }
-
           // Update both the current active and the per-CV map
           const newMap = { ...state.activeJobDescriptionIdPerCV };
-          if (jobDescriptionId && cvId) {
+          if (jobDescriptionId) {
             newMap[cvId] = jobDescriptionId;
-          } else if (!jobDescriptionId && cvId) {
+          } else {
             delete newMap[cvId];
           }
 
@@ -688,11 +725,11 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       parseJobDescriptionUrl: async (cvId: string, url: string) => {
         try {
           Logger.info("Parsing job description from URL", { cvId, url });
-          const response = await aiService.parseJobDescriptionUrl(cvId, url);
+          // Pass url first, then cvId for association
+          const response = await aiService.parseJobDescriptionUrl(url, cvId);
 
           // Clear cache to ensure fresh data on next load
-          aiService.clearCacheForCV(cvId);
-          aiService.clearAllCache(); // Clear global job descriptions cache
+          aiService.clearAllCache();
 
           // Always create a placeholder job description immediately
           if (response.job_description_id) {
@@ -708,6 +745,7 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               cv_id: cvId,
+              cv_ids: [cvId],  // Initially associated with this CV
             };
 
             set((state) => {
@@ -1531,7 +1569,7 @@ export const useJobDescriptions = () =>
   useAIStore((state) => state.jobDescriptions);
 export const useCVJobDescriptions = (cvId: string) =>
   useAIStore(
-    (state) => state.jobDescriptions.filter((jd) => jd.cv_id === cvId),
+    (state) => state.jobDescriptions.filter((jd) => jd.cv_ids.includes(cvId)),
     shallow,
   );
 export const useVisibleJobDescriptions = () =>

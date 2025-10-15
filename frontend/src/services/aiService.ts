@@ -276,20 +276,22 @@ class AIService {
   }
 
   /**
-   * Create job description for a specific CV
+   * Create a new job description (user-level, optionally associated with a CV)
    */
   async createJobDescription(
-    cvId: string,
     request: JobDescriptionRequest,
+    cvId?: string,
   ): Promise<JobDescription> {
     try {
+      const params = cvId ? { cv_id: cvId } : {};
       const response = await api.post<JobDescription>(
-        `/api/cvs/${cvId}/job-descriptions`,
+        `/api/job-descriptions`,
         request,
+        { params },
       );
 
-      // Clear cache for this CV since we've added a new job description
-      this.clearCacheForCV(cvId);
+      // Clear cache since we've added a new job description
+      this.clearAllCache();
 
       return response.data;
     } catch (error: any) {
@@ -304,17 +306,19 @@ class AIService {
   }
 
   /**
-   * Parse job description from URL (now returns immediately with background processing)
+   * Parse job description from URL (user-level, optionally associated with a CV)
    */
-  async parseJobDescriptionUrl(cvId: string, url: string): Promise<any> {
+  async parseJobDescriptionUrl(url: string, cvId?: string): Promise<any> {
     try {
+      const params = cvId ? { cv_id: cvId } : {};
       const response = await api.post<any>(
-        `/api/cvs/${cvId}/job-descriptions/parse-url`,
+        `/api/job-descriptions/parse-url`,
         { url },
+        { params },
       );
 
-      // Clear cache for this CV since we've added a new job description
-      this.clearCacheForCV(cvId);
+      // Clear cache since we've added a new job description
+      this.clearAllCache();
 
       return response.data;
     } catch (error: any) {
@@ -353,10 +357,10 @@ class AIService {
   }
 
   /**
-   * Get job descriptions for a specific CV
+   * Get all job descriptions for the user (not filtered by CV)
    */
-  async getJobDescriptions(cvId: string): Promise<JobDescription[]> {
-    const cacheKey = `job-descriptions-${cvId}`;
+  async getJobDescriptions(): Promise<JobDescription[]> {
+    const cacheKey = `job-descriptions-user`;
     const cached = this.getCachedData<JobDescription[]>(cacheKey);
     if (cached) {
       return cached;
@@ -364,7 +368,7 @@ class AIService {
 
     try {
       const response = await api.get<{ job_descriptions: JobDescription[] }>(
-        `/api/cvs/${cvId}/job-descriptions`,
+        `/api/job-descriptions`,
       );
 
       this.setCachedData(cacheKey, response.data.job_descriptions);
@@ -414,12 +418,64 @@ class AIService {
     try {
       await api.delete(`/api/job-descriptions/${jobDescriptionId}`);
 
-      // Clear global job descriptions cache since we've deleted one
-      this.cache.delete("job-descriptions-global");
+      // Clear job descriptions cache since we've deleted one
+      this.clearAllCache();
     } catch (error: any) {
       const aiError: AIServiceError = {
         error:
           error.response?.data?.detail || "Failed to delete job description",
+        details: error.message,
+        code: error.response?.status?.toString(),
+      };
+      throw aiError;
+    }
+  }
+
+  /**
+   * Associate a job description with a CV
+   */
+  async associateJobDescriptionWithCV(
+    jobDescriptionId: string,
+    cvId: string,
+  ): Promise<void> {
+    try {
+      await api.post(
+        `/api/job-descriptions/${jobDescriptionId}/cvs/${cvId}`,
+      );
+
+      // Clear cache since associations changed
+      this.clearAllCache();
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error:
+          error.response?.data?.detail ||
+          "Failed to associate job description with CV",
+        details: error.message,
+        code: error.response?.status?.toString(),
+      };
+      throw aiError;
+    }
+  }
+
+  /**
+   * Remove association between a job description and a CV
+   */
+  async disassociateJobDescriptionFromCV(
+    jobDescriptionId: string,
+    cvId: string,
+  ): Promise<void> {
+    try {
+      await api.delete(
+        `/api/job-descriptions/${jobDescriptionId}/cvs/${cvId}`,
+      );
+
+      // Clear cache since associations changed
+      this.clearAllCache();
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error:
+          error.response?.data?.detail ||
+          "Failed to remove job description association",
         details: error.message,
         code: error.response?.status?.toString(),
       };

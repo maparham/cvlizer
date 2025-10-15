@@ -20,12 +20,18 @@ from src.models.cv import CV
 from src.models.job_description import JobDescription
 from src.models.user import User
 from src.services.job_description_service import (
+    associate_jd_with_cv,
     create_job_description_for_cv,
     create_job_description_for_user,
+    create_job_description_for_user_with_cvs,
     delete_job_description_owned_by,
+    disassociate_jd_from_cv,
+    get_cv_ids_for_job_description,
     get_cv_owned_by,
     get_job_description_by_id,
+    get_job_descriptions_for_cv_with_associations,
     hide_job_description_owned_by,
+    list_all_job_descriptions_for_user,
     list_job_descriptions_for_cv,
     list_job_descriptions_for_user,
     update_job_description_owned_by,
@@ -147,7 +153,8 @@ class JobDescriptionUpdate(BaseModel):
 class JobDescriptionResponse(BaseModel):
     id: str
     user_id: str
-    cv_id: Optional[str]
+    cv_id: Optional[str]  # Original CV that created this JD
+    cv_ids: List[str] = []  # All CVs associated with this JD
     content: str
     source_url: Optional[str]
     title: Optional[str]
@@ -183,6 +190,29 @@ class JobDescriptionParseResponse(BaseModel):
     error: Optional[str] = None
 
 
+# Helper function to convert JobDescription to response with cv_ids
+def _jd_to_response(jd: JobDescription, db: Session) -> JobDescriptionResponse:
+    """Helper function to convert JobDescription to response with cv_ids."""
+    # Get associated CV IDs from the cv_associations relationship
+    cv_ids = [str(assoc.cv_id) for assoc in jd.cv_associations]
+
+    return JobDescriptionResponse(
+        id=str(jd.id),
+        user_id=str(jd.user_id),
+        cv_id=str(jd.cv_id) if jd.cv_id else None,
+        cv_ids=cv_ids,
+        content=jd.content or "",
+        source_url=jd.source_url,
+        title=jd.title,
+        company=jd.company,
+        location=jd.location,
+        created_at=jd.created_at.isoformat(),
+        hidden=jd.hidden,
+        is_parsing=jd.is_parsing,
+        parse_error=jd.parse_error,
+    )
+
+
 @router.post("/cvs/{cv_id}/job-descriptions", response_model=JobDescriptionResponse)
 async def create_job_description(
     cv_id: str,
@@ -196,11 +226,12 @@ async def create_job_description(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    # Create job description with CV binding
-    jd = create_job_description_for_user(
+    # Create job description with CV binding (backward compatibility)
+    # Use new function that supports CV associations
+    jd = create_job_description_for_user_with_cvs(
         db,
         str(current_user.id),
-        cv_id,
+        [cv_id],  # Associate with this CV
         content=job_description.content,
         source_url=job_description.source_url,
         title=job_description.title,
@@ -208,20 +239,7 @@ async def create_job_description(
         location=job_description.location,
     )
 
-    return JobDescriptionResponse(
-        id=str(jd.id),
-        user_id=str(jd.user_id),
-        cv_id=str(jd.cv_id) if jd.cv_id else None,
-        content=jd.content,
-        source_url=jd.source_url,
-        title=jd.title,
-        company=jd.company,
-        location=jd.location,
-        created_at=jd.created_at.isoformat(),
-        hidden=jd.hidden,
-        is_parsing=jd.is_parsing,
-        parse_error=jd.parse_error,
-    )
+    return _jd_to_response(jd, db)
 
 
 @router.get("/cvs/{cv_id}/job-descriptions", response_model=JobDescriptionListResponse)
@@ -230,32 +248,22 @@ async def get_job_descriptions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
-    """Get all job descriptions for a specific CV"""
+    """
+    Get all job descriptions for the user (backward compatibility endpoint).
+    NOTE: This now returns ALL user job descriptions, not just CV-specific ones.
+    This allows job descriptions to be shared across all CVs.
+    """
     # Verify CV exists and belongs to user
     cv = get_cv_owned_by(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    # Get job descriptions for this specific CV
-    job_descriptions = list_job_descriptions_for_user(db, str(current_user.id), cv_id)
+    # Return all user job descriptions (new behavior for sharing across CVs)
+    job_descriptions = list_all_job_descriptions_for_user(
+        db, str(current_user.id), include_cv_ids=True
+    )
 
-    jd_responses = [
-        JobDescriptionResponse(
-            id=str(jd.id),
-            user_id=str(jd.user_id),
-            cv_id=str(jd.cv_id) if jd.cv_id else None,
-            content=jd.content,
-            source_url=jd.source_url,
-            title=jd.title,
-            company=jd.company,
-            location=jd.location,
-            created_at=jd.created_at.isoformat(),
-            hidden=jd.hidden,
-            is_parsing=jd.is_parsing,
-            parse_error=jd.parse_error,
-        )
-        for jd in job_descriptions
-    ]
+    jd_responses = [_jd_to_response(jd, db) for jd in job_descriptions]
 
     return JobDescriptionListResponse(job_descriptions=jd_responses)
 
@@ -283,20 +291,7 @@ async def update_job_description(
             status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
         )
 
-    return JobDescriptionResponse(
-        id=str(updated_jd.id),
-        user_id=str(updated_jd.user_id),
-        cv_id=str(updated_jd.cv_id) if updated_jd.cv_id else None,
-        content=updated_jd.content,
-        source_url=updated_jd.source_url,
-        title=updated_jd.title,
-        company=updated_jd.company,
-        location=updated_jd.location,
-        created_at=updated_jd.created_at.isoformat(),
-        hidden=updated_jd.hidden,
-        is_parsing=updated_jd.is_parsing,
-        parse_error=updated_jd.parse_error,
-    )
+    return _jd_to_response(updated_jd, db)
 
 
 @router.delete("/job-descriptions/{jd_id}")
@@ -342,7 +337,7 @@ async def parse_job_description_url(
     # Create JobDescription record immediately with parsing status
     jd = JobDescription(
         user_id=str(current_user.id),
-        cv_id=cv_id,
+        cv_id=cv_id,  # Track original CV
         source_url=request.url,
         is_parsing=True,
         content="",  # Will be populated by background task
@@ -352,6 +347,14 @@ async def parse_job_description_url(
     )
 
     db.add(jd)
+    db.flush()  # Get the ID
+
+    # Create association with CV
+    from src.models.cv_job_description import CVJobDescription
+
+    association = CVJobDescription(cv_id=cv_id, job_description_id=jd.id)
+    db.add(association)
+
     db.commit()
     db.refresh(jd)
 
@@ -392,17 +395,162 @@ async def get_job_description_status(
             status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
         )
 
-    return JobDescriptionResponse(
-        id=str(jd.id),
-        user_id=str(jd.user_id),
-        cv_id=str(jd.cv_id) if jd.cv_id else None,
-        content=jd.content,
-        source_url=jd.source_url,
-        title=jd.title,
-        company=jd.company,
-        location=jd.location,
-        created_at=jd.created_at.isoformat(),
-        hidden=jd.hidden,
-        is_parsing=jd.is_parsing,
-        parse_error=jd.parse_error,
+    return _jd_to_response(jd, db)
+
+
+# ============================================================================
+# NEW USER-SCOPED ENDPOINTS
+# ============================================================================
+
+
+@router.get("/job-descriptions", response_model=JobDescriptionListResponse)
+async def list_user_job_descriptions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Get all job descriptions for the current user (not filtered by CV)"""
+    job_descriptions = list_all_job_descriptions_for_user(
+        db, str(current_user.id), include_cv_ids=True
     )
+
+    jd_responses = [_jd_to_response(jd, db) for jd in job_descriptions]
+
+    return JobDescriptionListResponse(job_descriptions=jd_responses)
+
+
+@router.post("/job-descriptions", response_model=JobDescriptionResponse)
+async def create_user_job_description(
+    job_description: JobDescriptionCreate,
+    cv_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """
+    Create a new job description for the user.
+    Optionally associate it with a CV using the cv_id query parameter.
+    """
+    cv_ids = [cv_id] if cv_id else None
+
+    # Create job description with CV associations
+    jd = create_job_description_for_user_with_cvs(
+        db,
+        str(current_user.id),
+        cv_ids,
+        content=job_description.content,
+        source_url=job_description.source_url,
+        title=job_description.title,
+        company=job_description.company,
+        location=job_description.location,
+    )
+
+    return _jd_to_response(jd, db)
+
+
+@router.post("/job-descriptions/parse-url", response_model=JobDescriptionParseResponse)
+async def parse_user_job_description_url(
+    request: JobDescriptionParseRequest,
+    cv_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """
+    Parse a job description from a URL using background processing.
+    Optionally associate it with a CV using the cv_id query parameter.
+    """
+    # Validate URL before creating job description - check for search results pages
+    if _is_search_results_page(request.url):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab.",
+        )
+
+    # Create JobDescription record immediately with parsing status
+    jd = JobDescription(
+        user_id=str(current_user.id),
+        cv_id=cv_id,  # Track original CV if provided
+        source_url=request.url,
+        is_parsing=True,
+        content="",  # Will be populated by background task
+        title=None,
+        company=None,
+        location=None,
+    )
+
+    db.add(jd)
+    db.flush()  # Get the ID
+
+    # Create association if cv_id provided
+    if cv_id:
+        from src.models.cv_job_description import CVJobDescription
+
+        # Verify CV ownership
+        cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+        if not cv:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="CV not found"
+            )
+
+        association = CVJobDescription(cv_id=cv_id, job_description_id=jd.id)
+        db.add(association)
+
+    db.commit()
+    db.refresh(jd)
+
+    # Add small delay to ensure DB commit before starting background task
+    await asyncio.sleep(0.1)
+
+    # Start background parsing task
+    asyncio.create_task(
+        parse_job_url_background(str(jd.id), request.url, str(current_user.id))
+    )
+
+    return JobDescriptionParseResponse(
+        success=True,
+        job_description_id=str(jd.id),
+        is_parsing=True,
+        content=None,
+        title=None,
+        company=None,
+        location=None,
+        source_url=request.url,
+        source=None,
+        error=None,
+    )
+
+
+@router.post("/job-descriptions/{jd_id}/cvs/{cv_id}")
+async def associate_job_description_with_cv(
+    jd_id: str,
+    cv_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Associate a job description with a CV"""
+    success = associate_jd_with_cv(db, jd_id, cv_id, str(current_user.id))
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job description or CV not found",
+        )
+
+    return {"message": "Association created successfully"}
+
+
+@router.delete("/job-descriptions/{jd_id}/cvs/{cv_id}")
+async def disassociate_job_description_from_cv(
+    jd_id: str,
+    cv_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Remove association between a job description and a CV"""
+    success = disassociate_jd_from_cv(db, jd_id, cv_id, str(current_user.id))
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Association not found"
+        )
+
+    return {"message": "Association removed successfully"}
