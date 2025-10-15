@@ -42,6 +42,9 @@ class AIUsageLog(Base):
     )  # Model name from .env (e.g., gpt-5-nano)
     prompt_tokens = Column(Integer, nullable=False, default=0)
     completion_tokens = Column(Integer, nullable=False, default=0)
+    cached_tokens = Column(
+        Integer, nullable=False, default=0
+    )  # Cached input tokens (billed at 10% of input price)
     total_tokens = Column(Integer, nullable=False, default=0)
     estimated_cost = Column(
         Float(precision=6), nullable=False, default=0.0
@@ -80,6 +83,7 @@ class AIUsageLog(Base):
             "model_used": self.model_used,
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
+            "cached_tokens": self.cached_tokens,
             "total_tokens": self.total_tokens,
             "estimated_cost": self.estimated_cost,
             "generation_time": self.generation_time,

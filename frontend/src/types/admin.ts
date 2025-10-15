@@ -78,6 +78,7 @@ export interface SystemAIStats {
   total_tokens: number;
   total_prompt_tokens: number;
   total_completion_tokens: number;
+  total_cached_tokens: number;
   total_cost: number;
   total_operations: number;
   successful_operations: number;
@@ -85,7 +86,10 @@ export interface SystemAIStats {
   average_tokens_per_operation: number;
   average_prompt_tokens_per_operation: number;
   average_completion_tokens_per_operation: number;
+  average_cached_tokens_per_operation: number;
   average_cost_per_operation: number;
+  cache_hit_rate: number;
+  estimated_cache_savings: number;
   most_expensive_operation_type: string | null;
   date_range: {
     start: string;
@@ -134,6 +138,7 @@ export interface AIUsageLogDetail {
   model_used: string;
   prompt_tokens: number;
   completion_tokens: number;
+  cached_tokens: number;
   total_tokens: number;
   estimated_cost: number;
   generation_time: number;

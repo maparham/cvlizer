@@ -12,7 +12,12 @@ submodules while maintaining backward compatibility through re-exports.
 from .ats_optimization import analyze_ats_optimization, create_optimization_suggestions
 
 # Re-export common utilities and types
-from .common import ATSOptimizationResult, JobFitResult, is_ai_enabled
+from .common import (
+    ATSOptimizationResult,
+    JobFitResult,
+    extract_cached_tokens,
+    is_ai_enabled,
+)
 
 # Re-export content enhancement functions
 from .content_enhancement import enhance_content
@@ -36,6 +41,7 @@ from .section_generation import generate_cv_section
 __all__ = [
     # Common utilities and types
     "is_ai_enabled",
+    "extract_cached_tokens",
     "JobFitResult",
     "ATSOptimizationResult",
     # Job fit analysis

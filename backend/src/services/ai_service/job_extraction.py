@@ -18,6 +18,7 @@ from src.schemas.ai_response_schemas import JobExtractionResponseSchema
 
 from .common import (
     MAX_JOB_CONTENT_LENGTH,
+    extract_cached_tokens,
     extract_response_data,
     get_openai_client,
     is_ai_enabled,
@@ -118,15 +119,23 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
             prompt_tokens = response.usage.input_tokens
             completion_tokens = response.usage.output_tokens
             generation_time = int((end_time - start_time) * 1000)
+            cached_tokens = extract_cached_tokens(response)
 
             return (
                 extracted_data,
                 prompt_tokens,
                 completion_tokens,
                 generation_time,
+                cached_tokens,
             )
 
-        extracted_data, prompt_tokens, completion_tokens, generation_time = _call_openai()
+        (
+            extracted_data,
+            prompt_tokens,
+            completion_tokens,
+            generation_time,
+            cached_tokens,
+        ) = _call_openai()
 
         # Log AI usage with actual token counts
         if user_id:
@@ -140,6 +149,7 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
                 generation_time=generation_time,
                 success=True,
                 cv_id=cv_id,
+                cached_tokens=cached_tokens,
             )
 
         # Data already validated and parsed by responses.parse()

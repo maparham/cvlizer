@@ -36,6 +36,7 @@ class SystemAIStats(BaseModel):
     total_tokens: int
     total_prompt_tokens: int
     total_completion_tokens: int
+    total_cached_tokens: int
     total_cost: float
     total_operations: int
     successful_operations: int
@@ -43,7 +44,10 @@ class SystemAIStats(BaseModel):
     average_tokens_per_operation: float
     average_prompt_tokens_per_operation: float
     average_completion_tokens_per_operation: float
+    average_cached_tokens_per_operation: float
     average_cost_per_operation: float
+    cache_hit_rate: float
+    estimated_cache_savings: float
     most_expensive_operation_type: Optional[str]
     date_range: dict
 
@@ -91,6 +95,7 @@ class AIUsageLogDetail(BaseModel):
     model_used: str
     prompt_tokens: int
     completion_tokens: int
+    cached_tokens: int
     total_tokens: int
     estimated_cost: float
     generation_time: int
@@ -500,6 +505,7 @@ async def export_all_ai_usage_logs(
             "Model Used",
             "Prompt Tokens",
             "Completion Tokens",
+            "Cached Tokens",
             "Total Tokens",
             "Estimated Cost",
             "Generation Time (ms)",
@@ -522,6 +528,7 @@ async def export_all_ai_usage_logs(
                     sanitize_csv_field(usage_log.model_used),
                     usage_log.prompt_tokens or 0,
                     usage_log.completion_tokens or 0,
+                    usage_log.cached_tokens or 0,
                     usage_log.total_tokens or 0,
                     usage_log.estimated_cost or 0.0,
                     usage_log.generation_time or 0,

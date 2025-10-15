@@ -19,7 +19,9 @@ from src.models.user import User
 logger = logging.getLogger(__name__)
 
 
-def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
+def calculate_cost(
+    model: str, prompt_tokens: int, completion_tokens: int, cached_tokens: int = 0
+) -> float:
     """
     Calculate the estimated cost for OpenAI API usage.
 
@@ -27,6 +29,7 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
         model: The model used (e.g., "gpt-5-nano")
         prompt_tokens: Number of input tokens
         completion_tokens: Number of output tokens
+        cached_tokens: Number of cached input tokens (billed at 10% of input price)
 
     Returns:
         Estimated cost in USD
@@ -41,10 +44,17 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
             "output_price_per_1m": AIUsageConfig.DEFAULT_OUTPUT_PRICE_PER_1M,
         }
 
-    input_cost = (prompt_tokens / 1_000_000) * pricing["input_price_per_1m"]
+    # Calculate cost for non-cached input tokens
+    non_cached_input = prompt_tokens - cached_tokens
+    input_cost = (non_cached_input / 1_000_000) * pricing["input_price_per_1m"]
+
+    # Cached tokens cost 10% of regular input price
+    cached_cost = (cached_tokens / 1_000_000) * pricing["input_price_per_1m"] * 0.1
+
+    # Output tokens
     output_cost = (completion_tokens / 1_000_000) * pricing["output_price_per_1m"]
 
-    return round(input_cost + output_cost, 6)
+    return round(input_cost + cached_cost + output_cost, 6)
 
 
 def log_ai_usage(
@@ -58,6 +68,7 @@ def log_ai_usage(
     success: bool = True,
     error_message: Optional[str] = None,
     cv_id: Optional[str] = None,
+    cached_tokens: int = 0,
 ) -> Optional[AIUsageLog]:
     """
     Log AI usage to the database.
@@ -73,13 +84,16 @@ def log_ai_usage(
         success: Whether the operation was successful
         error_message: Error message if operation failed
         cv_id: Optional CV ID if operation was CV-related
+        cached_tokens: Number of cached input tokens (default: 0)
 
     Returns:
         Created AIUsageLog instance, or None if logging failed
     """
     try:
         total_tokens = prompt_tokens + completion_tokens
-        estimated_cost = calculate_cost(model_used, prompt_tokens, completion_tokens)
+        estimated_cost = calculate_cost(
+            model_used, prompt_tokens, completion_tokens, cached_tokens
+        )
 
         usage_log = AIUsageLog(
             user_id=user_id,
@@ -88,6 +102,7 @@ def log_ai_usage(
             model_used=model_used,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
+            cached_tokens=cached_tokens,
             total_tokens=total_tokens,
             estimated_cost=estimated_cost,
             generation_time=generation_time,
@@ -100,7 +115,7 @@ def log_ai_usage(
         db.refresh(usage_log)
 
         logger.info(
-            f"Logged AI usage: {operation_type} - {total_tokens} tokens - ${estimated_cost:.6f}"
+            f"Logged AI usage: {operation_type} - {total_tokens} tokens ({cached_tokens} cached) - ${estimated_cost:.6f}"
         )
         return usage_log
 
@@ -152,6 +167,7 @@ def get_usage_stats(
             func.sum(AIUsageLog.total_tokens).label("total_tokens"),
             func.sum(AIUsageLog.prompt_tokens).label("total_prompt_tokens"),
             func.sum(AIUsageLog.completion_tokens).label("total_completion_tokens"),
+            func.sum(AIUsageLog.cached_tokens).label("total_cached_tokens"),
             func.sum(AIUsageLog.estimated_cost).label("total_cost"),
             func.count(AIUsageLog.id).label("total_operations"),
             func.avg(AIUsageLog.total_tokens).label("avg_tokens_per_operation"),
@@ -159,6 +175,7 @@ def get_usage_stats(
             func.avg(AIUsageLog.completion_tokens).label(
                 "avg_completion_tokens_per_operation"
             ),
+            func.avg(AIUsageLog.cached_tokens).label("avg_cached_tokens_per_operation"),
             func.avg(AIUsageLog.estimated_cost).label("avg_cost_per_operation"),
         ).first()
 
@@ -181,10 +198,24 @@ def get_usage_stats(
             operation_costs.operation_type if operation_costs else None
         )
 
+        # Calculate cache hit rate (cached tokens / total prompt tokens)
+        total_cached = int(stats.total_cached_tokens or 0)
+        total_prompt = int(stats.total_prompt_tokens or 0)
+        cache_hit_rate = (total_cached / total_prompt * 100) if total_prompt > 0 else 0.0
+
+        # Calculate cost savings from caching
+        # Cached tokens save 90% of their cost (10% billing vs 100% billing)
+        # Assuming average model pricing, we can estimate savings
+        avg_cost_per_token = (
+            (float(stats.total_cost or 0.0) / total_prompt) if total_prompt > 0 else 0.0
+        )
+        estimated_savings = total_cached * avg_cost_per_token * 0.9
+
         return {
             "total_tokens": int(stats.total_tokens or 0),
-            "total_prompt_tokens": int(stats.total_prompt_tokens or 0),
+            "total_prompt_tokens": total_prompt,
             "total_completion_tokens": int(stats.total_completion_tokens or 0),
+            "total_cached_tokens": total_cached,
             "total_cost": float(stats.total_cost or 0.0),
             "total_operations": int(stats.total_operations or 0),
             "successful_operations": successful_operations,
@@ -196,7 +227,12 @@ def get_usage_stats(
             "average_completion_tokens_per_operation": float(
                 stats.avg_completion_tokens_per_operation or 0.0
             ),
+            "average_cached_tokens_per_operation": float(
+                stats.avg_cached_tokens_per_operation or 0.0
+            ),
             "average_cost_per_operation": float(stats.avg_cost_per_operation or 0.0),
+            "cache_hit_rate": round(cache_hit_rate, 2),
+            "estimated_cache_savings": round(estimated_savings, 6),
             "most_expensive_operation_type": most_expensive_operation,
             "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
         }

@@ -344,12 +344,17 @@ class AIUsageConfig:
     """AI usage tracking and cost configuration"""
 
     # Model Pricing (per 1M tokens)
+    # Last verified: October 2025
+    # Source: https://openai.com/api/pricing/
+    # Note: Cached input tokens cost 10% of regular input price
     MODEL_PRICING: Dict[str, Dict[str, float]] = {
         "gpt-4o-mini": {"input_price_per_1m": 0.150, "output_price_per_1m": 0.600},
         "gpt-4o": {"input_price_per_1m": 2.50, "output_price_per_1m": 10.00},
         "gpt-3.5-turbo": {"input_price_per_1m": 0.50, "output_price_per_1m": 1.50},
+        "gpt-5": {"input_price_per_1m": 1.25, "output_price_per_1m": 10.00},
         "gpt-5-mini": {"input_price_per_1m": 0.250, "output_price_per_1m": 2.000},
         "gpt-5-nano": {"input_price_per_1m": 0.050, "output_price_per_1m": 0.400},
+        "gpt-5-pro": {"input_price_per_1m": 15.00, "output_price_per_1m": 120.00},
     }
 
     # Default pricing for unknown models

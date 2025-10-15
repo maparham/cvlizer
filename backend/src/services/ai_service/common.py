@@ -97,6 +97,44 @@ def is_ai_enabled() -> bool:
     return _openai_client is not None
 
 
+def extract_cached_tokens(response: Any) -> int:
+    """
+    Extract cached token count from OpenAI Response API response.
+
+    OpenAI's prompt caching feature returns cached token counts in the usage details.
+    Cached tokens are billed at 10% of the regular input token price, providing
+    significant cost savings for repeated prompts.
+
+    Args:
+        response: OpenAI Response API response object
+
+    Returns:
+        Number of cached tokens (0 if not available or not using prompt caching)
+    """
+    if not hasattr(response, "usage"):
+        return 0
+
+    # Check for cached tokens in input_tokens_details (newer SDK format)
+    if (
+        hasattr(response.usage, "input_tokens_details")
+        and response.usage.input_tokens_details
+    ):
+        cached = getattr(response.usage.input_tokens_details, "cached_tokens", 0)
+        if cached:
+            return cached
+
+    # Check for cached tokens in prompt_tokens_details (alternative format)
+    if (
+        hasattr(response.usage, "prompt_tokens_details")
+        and response.usage.prompt_tokens_details
+    ):
+        cached = getattr(response.usage.prompt_tokens_details, "cached_tokens", 0)
+        if cached:
+            return cached
+
+    return 0
+
+
 def extract_response_data(response: Any) -> Tuple[Optional[str], int, int]:
     """
     Extract content and token usage from OpenAI Response API response.
@@ -226,6 +264,7 @@ def log_ai_usage_safe(
     success: bool = True,
     error_message: Optional[str] = None,
     cv_id: Optional[str] = None,
+    cached_tokens: int = 0,
 ) -> None:
     """
     Safely log AI usage without breaking existing functionality.
@@ -244,6 +283,7 @@ def log_ai_usage_safe(
         success: Whether operation succeeded
         error_message: Error message if operation failed
         cv_id: CV identifier (optional)
+        cached_tokens: Number of cached input tokens (default: 0)
     """
     try:
         if db_session:
@@ -260,6 +300,7 @@ def log_ai_usage_safe(
                 success=success,
                 error_message=error_message,
                 cv_id=cv_id,
+                cached_tokens=cached_tokens,
             )
     except Exception as e:
         # Log the error but don't raise it to avoid breaking main functionality

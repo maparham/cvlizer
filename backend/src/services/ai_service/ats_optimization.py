@@ -25,6 +25,7 @@ from .common import (
     RETRY_ATTEMPTS,
     RETRY_DELAY,
     ATSOptimizationResult,
+    extract_cached_tokens,
     extract_response_data,
     get_openai_client,
     is_ai_enabled,
@@ -171,6 +172,7 @@ async def analyze_ats_optimization(
         prompt_tokens = response.usage.input_tokens
         completion_tokens = response.usage.output_tokens
         tokens_used = prompt_tokens + completion_tokens
+        cached_tokens = extract_cached_tokens(response)
 
         # Log AI usage
         if user_id:
@@ -184,6 +186,7 @@ async def analyze_ats_optimization(
                 generation_time=generation_time,
                 success=True,
                 cv_id=cv_id,
+                cached_tokens=cached_tokens,
             )
 
         # Log response metrics for monitoring
@@ -430,6 +433,23 @@ async def create_optimization_suggestions(
         completion_tokens = response.usage.output_tokens
         tokens_used = prompt_tokens + completion_tokens
 
+        # Extract cached tokens if available (OpenAI prompt caching)
+        cached_tokens = 0
+        if (
+            hasattr(response.usage, "input_tokens_details")
+            and response.usage.input_tokens_details
+        ):
+            cached_tokens = getattr(
+                response.usage.input_tokens_details, "cached_tokens", 0
+            )
+        elif (
+            hasattr(response.usage, "prompt_tokens_details")
+            and response.usage.prompt_tokens_details
+        ):
+            cached_tokens = getattr(
+                response.usage.prompt_tokens_details, "cached_tokens", 0
+            )
+
         # Log AI usage
         if user_id:
             log_ai_usage_safe(
@@ -442,6 +462,7 @@ async def create_optimization_suggestions(
                 generation_time=generation_time,
                 success=True,
                 cv_id=cv_id,
+                cached_tokens=cached_tokens,
             )
 
         # Log response metrics for monitoring

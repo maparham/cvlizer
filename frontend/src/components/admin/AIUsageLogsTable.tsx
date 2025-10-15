@@ -337,6 +337,12 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {log.prompt_tokens} in / {log.completion_tokens} out
+                          {log.cached_tokens > 0 && (
+                            <span style={{ color: '#4caf50' }}>
+                              {' '}
+                              ({log.cached_tokens} cached)
+                            </span>
+                          )}
                         </Typography>
                       </Box>
                     </TableCell>

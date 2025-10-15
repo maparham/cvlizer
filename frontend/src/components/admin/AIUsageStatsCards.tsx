@@ -20,6 +20,8 @@ import {
   Speed,
   CheckCircle,
   Error,
+  Cached,
+  Savings,
 } from "@mui/icons-material";
 import { SystemAIStats } from "../../types/admin";
 import {
@@ -142,7 +144,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({
 
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} sm={6} md={2}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <StatCard
           title="Total Tokens"
           value={formatTokens(stats.total_tokens)}
@@ -152,7 +154,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({
         />
       </Grid>
 
-      <Grid item xs={12} sm={6} md={2}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <StatCard
           title="Input Tokens"
           value={formatTokens(stats.total_prompt_tokens)}
@@ -162,27 +164,28 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({
         />
       </Grid>
 
-      <Grid item xs={12} sm={6} md={2}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <StatCard
-          title="Output Tokens"
-          value={formatTokens(stats.total_completion_tokens)}
-          subtitle={`${formatNumber(stats.total_completion_tokens)} completion tokens`}
-          icon={<Speed />}
-          color="secondary"
+          title="Cached Tokens"
+          value={formatTokens(stats.total_cached_tokens)}
+          subtitle={`${formatPercentage(stats.cache_hit_rate)} cache hit rate`}
+          icon={<Cached />}
+          color="success"
+          trend={stats.cache_hit_rate > 0 ? "up" : "neutral"}
         />
       </Grid>
 
-      <Grid item xs={12} sm={6} md={2}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <StatCard
           title="Total Cost"
           value={formatCost(stats.total_cost)}
-          subtitle={`Average: ${formatCost(stats.average_cost_per_operation)} per operation`}
+          subtitle={`Saved ${formatCost(stats.estimated_cache_savings)} from caching`}
           icon={<AttachMoney />}
           color="success"
         />
       </Grid>
 
-      <Grid item xs={12} sm={6} md={2}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <StatCard
           title="Operations"
           value={formatNumber(stats.total_operations)}
@@ -192,7 +195,7 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({
         />
       </Grid>
 
-      <Grid item xs={12} sm={6} md={2}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <StatCard
           title="Success Rate"
           value={formatPercentage(successRate)}
@@ -203,7 +206,18 @@ const AIUsageStatsCards: React.FC<AIUsageStatsCardsProps> = ({
         />
       </Grid>
 
-      <Grid item xs={12} sm={6} md={2}>
+      <Grid item xs={12} sm={6} md={2.4}>
+        <StatCard
+          title="Cache Savings"
+          value={formatCost(stats.estimated_cache_savings)}
+          subtitle={`${formatPercentage(stats.cache_hit_rate)} avg cache rate`}
+          icon={<Savings />}
+          color="success"
+          trend={stats.estimated_cache_savings > 0 ? "up" : "neutral"}
+        />
+      </Grid>
+
+      <Grid item xs={12} sm={6} md={2.4}>
         <StatCard
           title="Most Expensive"
           value={stats.most_expensive_operation_type || "N/A"}

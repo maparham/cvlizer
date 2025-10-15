@@ -21,6 +21,7 @@ from src.schemas.ai_response_schemas import CVParsingResponseSchema
 from .common import (
     RETRY_ATTEMPTS,
     RETRY_DELAY,
+    extract_cached_tokens,
     extract_response_data,
     get_openai_client,
     is_ai_enabled,
@@ -127,6 +128,7 @@ Return JSON (omit empty sections):
         parsed_content = response.output_parsed.model_dump()
         prompt_tokens = response.usage.input_tokens
         completion_tokens = response.usage.output_tokens
+        cached_tokens = extract_cached_tokens(response)
 
         # Log AI usage
         if user_id:
@@ -140,6 +142,7 @@ Return JSON (omit empty sections):
                 generation_time=0,  # Not tracked in this function
                 success=True,
                 cv_id=cv_id,
+                cached_tokens=cached_tokens,
             )
 
         # Add section_config to the parsed content

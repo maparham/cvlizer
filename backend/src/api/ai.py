@@ -1060,7 +1060,7 @@ async def create_job_fit_draft(
     asyncio.create_task(
         generate_job_fit_background(
             str(draft.id),
-            cv.parsed_data,
+            {k: v for k, v in (cv.parsed_data or {}).items() if k != "why_good_fit"},
             job_description.content,
             str(current_user.id),
             cv_id,
