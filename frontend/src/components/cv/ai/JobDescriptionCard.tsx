@@ -635,10 +635,8 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                       "& .MuiChip-icon": {
                         fontSize: "16px",
                       },
-                      maxWidth: maxChipWidth ? `${maxChipWidth}px` : undefined,
+                      // No maxWidth constraint in modal - show full company name
                       "& .MuiChip-label": {
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
                       },
                     }}
@@ -656,10 +654,8 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                       "& .MuiChip-icon": {
                         fontSize: "16px",
                       },
-                      maxWidth: maxChipWidth ? `${maxChipWidth}px` : undefined,
+                      // No maxWidth constraint in modal - show full location
                       "& .MuiChip-label": {
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
                       },
                     }}
