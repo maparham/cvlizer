@@ -123,7 +123,6 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
 
   const { showSuccess, showError } = useNotifications();
   const {
-    loadJobDescriptions,
     createJobDescription,
     updateJobDescription,
     deleteJobDescription,
@@ -146,12 +145,9 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     },
   });
 
-  // Load job descriptions when modal opens
-  useEffect(() => {
-    if (open && cvId) {
-      loadJobDescriptions(cvId);
-    }
-  }, [open, cvId, loadJobDescriptions]); // Always load when modal opens to ensure fresh data
+  // Job descriptions are already loaded by JobDescriptionSummary component
+  // and kept fresh by polling hook and CRUD operations updating the store directly.
+  // No need to reload when modal opens - prevents unnecessary loading flicker.
 
   // Notify parent when active job description changes
   useEffect(() => {
