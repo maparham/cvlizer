@@ -205,12 +205,29 @@ export class CVValidationService {
     item: T | null,
     requiredFields: (keyof T)[],
     _sectionTitle: string,
+    fieldConstraints?: Partial<Record<keyof T, { minLength?: number }>>,
   ): boolean {
     if (!item) return false;
 
     return requiredFields.every((field) => {
       const value = item[field];
-      return value !== undefined && value !== null && value !== "";
+
+      // Check if field is non-empty
+      if (value === undefined || value === null || value === "") {
+        return false;
+      }
+
+      // Check minLength constraint if specified
+      if (fieldConstraints && fieldConstraints[field]) {
+        const constraint = fieldConstraints[field];
+        if (constraint.minLength && typeof value === "string") {
+          if (value.trim().length < constraint.minLength) {
+            return false;
+          }
+        }
+      }
+
+      return true;
     });
   }
 

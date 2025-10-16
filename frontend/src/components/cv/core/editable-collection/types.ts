@@ -20,6 +20,7 @@ export interface IndividualItemSectionProps<T> {
   emptyMessage: string
   createNewItem: () => T
   requiredFields: (keyof T)[]
+  fieldConstraints?: Partial<Record<keyof T, { minLength?: number }>>
   renderItemForm: (item: T, index: number, updateItem: (field: keyof T, value: any) => void, onSave?: () => void) => React.ReactNode
   renderItemDisplay: (item: T, index: number) => React.ReactNode
   autoSaveMessage: string

@@ -71,6 +71,7 @@ function IndividualItemSection<T>({
   emptyMessage,
   createNewItem,
   requiredFields,
+  fieldConstraints,
   renderItemForm,
   renderItemDisplay,
   autoSaveMessage,
@@ -406,8 +407,8 @@ function IndividualItemSection<T>({
 
   // Form validation - memoized to avoid unnecessary re-computations
   const isEditFormValid = useMemo((): boolean => {
-    return validateItem(editData, requiredFields, title);
-  }, [editData, requiredFields, title]);
+    return validateItem(editData, requiredFields, title, fieldConstraints);
+  }, [editData, requiredFields, title, fieldConstraints]);
 
   // Cancel handler with dialog support
   const handleCancelWithDialog = useCallback(() => {

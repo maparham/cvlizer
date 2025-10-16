@@ -67,11 +67,13 @@ export const validateItem = <T>(
   item: T | null,
   requiredFields: (keyof T)[],
   sectionTitle?: string,
+  fieldConstraints?: Partial<Record<keyof T, { minLength?: number }>>,
 ): boolean => {
   return CVValidationService.validateItem(
     item,
     requiredFields,
     sectionTitle || "",
+    fieldConstraints,
   );
 };
 

@@ -134,6 +134,9 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
       emptyMessage="No projects added yet."
       createNewItem={createNewProject}
       requiredFields={['name', 'description']}
+      fieldConstraints={{
+        description: { minLength: 10 }
+      }}
       renderItemForm={renderProjectForm}
       renderItemDisplay={renderProjectDisplay}
       autoSaveMessage="Project"
