@@ -20,6 +20,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   isValid = true,
   onTitleSave,
   sectionId,
+  enhancementButton,
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -95,31 +96,39 @@ const BaseSection: React.FC<BaseSectionProps> = ({
       editButton !== null ? (
         editButton
       ) : (
-        <Tooltip title="Edit this section">
-          <IconButton
-            className="edit-button"
-            onClick={onEdit}
-            data-testid={
-              sectionId ? `edit-section-${sectionId}-button` : undefined
-            }
-            sx={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              opacity: 1,
-              color: "text.secondary",
-              bgcolor: "transparent",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                color: "primary.main",
-                bgcolor: "rgba(227, 242, 253, 0.5)",
-              },
-            }}
-            size="small"
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            display: "flex",
+            gap: 0.5,
+          }}
+        >
+          {enhancementButton}
+          <Tooltip title="Edit this section">
+            <IconButton
+              className="edit-button"
+              onClick={onEdit}
+              data-testid={
+                sectionId ? `edit-section-${sectionId}-button` : undefined
+              }
+              sx={{
+                opacity: 1,
+                color: "text.secondary",
+                bgcolor: "transparent",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  color: "primary.main",
+                  bgcolor: "rgba(227, 242, 253, 0.5)",
+                },
+              }}
+              size="small"
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       )}
 
       <Box

@@ -13,7 +13,7 @@ interface Project {
   url?: string
 }
 
-const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Projects', onTitleSave }) => {
+const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Projects', onTitleSave, cvId }) => {
   const createNewProject = (): Project => ({
     id: generateSectionId('projects'),
     name: '',
@@ -143,6 +143,8 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
       sortOptions={[
         { field: 'name', label: 'Name' }
       ]}
+      cvId={cvId}
+      enhancementContentField="description"
     />
   )
 }

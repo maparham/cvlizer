@@ -35,6 +35,7 @@ const EducationSection: React.FC<SectionProps> = ({
   requestIndividualItemCancel,
   title = "Education",
   onTitleSave,
+  cvId,
 }) => {
   const createNewEducation = (): Education => ({
     id: generateSectionId("education"),
@@ -379,6 +380,8 @@ const EducationSection: React.FC<SectionProps> = ({
         { field: "start_date", label: "Start Date" },
         { field: "end_date", label: "End Date" },
       ]}
+      cvId={cvId}
+      enhancementContentField="description"
     />
   );
 };

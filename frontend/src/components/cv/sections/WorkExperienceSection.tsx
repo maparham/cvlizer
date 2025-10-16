@@ -43,6 +43,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
   requestIndividualItemCancel,
   title = "Work Experience",
   onTitleSave,
+  cvId,
 }) => {
   const createNewExperience = (): WorkExperience => ({
     id: generateSectionId("work_experience"),
@@ -173,6 +174,8 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
         { field: "start_date", label: "Start Date" },
         { field: "end_date", label: "End Date" },
       ]}
+      cvId={cvId}
+      enhancementContentField="description"
     />
   );
 };

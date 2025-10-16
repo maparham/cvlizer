@@ -71,7 +71,7 @@ async def enhance_content(
             "confidence_scores": [],
         }
 
-    prompt = f"""Enhance this {content_type} with 4 improved versions.
+    prompt = f"""Enhance this {content_type} with 3 improved versions.
 
 LANGUAGE REQUIREMENT: Write ALL enhanced content in the SAME LANGUAGE as the original content.
 Original: "{original_content}"
@@ -81,12 +81,11 @@ Focus: Strong action verbs, metrics (%, numbers, time), industry terms, impact, 
 Return JSON:
 {{
   "suggestions": [
-    {{"content": "Enhanced v1", "improvements": ["change1", "change2"], "confidence_score": 85}},
-    {{"content": "Enhanced v2", "improvements": ["change1", "change2"], "confidence_score": 90}},
-    {{"content": "Enhanced v3", "improvements": ["change1", "change2"], "confidence_score": 88}},
-    {{"content": "Enhanced v4", "improvements": ["change1", "change2"], "confidence_score": 82}}
+    {{"content": "Enhanced v1", "improvements": ["change1", "change2"], "confidence_score": 90}},
+    {{"content": "Enhanced v2", "improvements": ["change1", "change2"], "confidence_score": 88}},
+    {{"content": "Enhanced v3", "improvements": ["change1", "change2"], "confidence_score": 85}}
   ],
-  "overall_improvements": ["improvement1", "improvement2", "improvement3", "improvement4"]
+  "overall_improvements": ["improvement1", "improvement2", "improvement3"]
 }}
 """
 

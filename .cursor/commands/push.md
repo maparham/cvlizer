@@ -1,2 +1,2 @@
-- git commit and push
+- git commit -m "derailed message" and push
 - mention only important and major changes in the commit message

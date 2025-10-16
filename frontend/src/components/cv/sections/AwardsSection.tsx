@@ -13,7 +13,7 @@ interface Award {
   description: string
 }
 
-const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Awards & Recognition', onTitleSave }) => {
+const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Awards & Recognition', onTitleSave, cvId }) => {
   const createNewAward = (): Award => ({
     id: generateSectionId('awards'),
     name: '',
@@ -110,6 +110,8 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
       sortOptions={[
         { field: 'date', label: 'Date Received' }
       ]}
+      cvId={cvId}
+      enhancementContentField="description"
     />
   )
 }

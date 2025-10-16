@@ -14,7 +14,7 @@ interface Publication {
   url?: string
 }
 
-const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Publications', onTitleSave }) => {
+const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Publications', onTitleSave, cvId }) => {
   const createNewPublication = (): Publication => ({
     id: generateSectionId('publications'),
     title: '',
@@ -124,6 +124,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
       sortOptions={[
         { field: 'date', label: 'Publication Date' }
       ]}
+      cvId={cvId}
     />
   )
 }

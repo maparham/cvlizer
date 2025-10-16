@@ -14,7 +14,7 @@ interface Certification {
   description?: string
 }
 
-const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Certifications', onTitleSave }) => {
+const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Certifications', onTitleSave, cvId }) => {
   const createNewCertification = (): Certification => ({
     id: generateSectionId('certifications'),
     name: '',
@@ -127,6 +127,8 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         { field: 'date', label: 'Issue Date' },
         { field: 'expiry_date', label: 'Expiry Date' }
       ]}
+      cvId={cvId}
+      enhancementContentField="description"
     />
   )
 }

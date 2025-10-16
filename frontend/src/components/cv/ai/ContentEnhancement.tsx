@@ -92,6 +92,12 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
 }) => {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  // Store the enhancement response locally
+  const [enhancementData, setEnhancementData] = useState<{
+    suggestions: ContentSuggestion[];
+    isLoading: boolean;
+    error?: string;
+  } | null>(null);
 
   const { enhanceContent } = useAIStore();
   const { showError } = useNotifications();
@@ -113,8 +119,14 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
             `Content enhancement failed: ${task.generationError}`,
           );
           setIsEnhancing(false);
-        } else {
-          // Task completed successfully, show the modal
+          setEnhancementData(null);
+        } else if (task.data) {
+          // Task completed successfully, store data and show modal
+          setEnhancementData({
+            suggestions: task.data.suggestions || [],
+            isLoading: false,
+            error: task.data.generation_error,
+          });
           setShowModal(true);
           setIsEnhancing(false);
         }
@@ -130,6 +142,7 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
     }
 
     setIsEnhancing(true);
+    setEnhancementData(null);
     try {
       const enhancementResponse = await enhanceContent(
         cvId,
@@ -150,7 +163,12 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
           data: enhancementResponse,
         });
       } else {
-        // Task completed immediately
+        // Task completed immediately - store data and show modal
+        setEnhancementData({
+          suggestions: enhancementResponse.suggestions || [],
+          isLoading: false,
+          error: enhancementResponse.generation_error,
+        });
         setShowModal(true);
         setIsEnhancing(false);
       }
@@ -159,6 +177,7 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
         error instanceof Error ? error.message : "Failed to enhance content";
       showError("Error", errorMessage);
       setIsEnhancing(false);
+      setEnhancementData(null);
     }
   }, [content, contentType, cvId, enhanceContent, showError, addTask]);
 
@@ -168,17 +187,15 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
         onContentUpdate(suggestion.content);
       }
       setShowModal(false);
+      setEnhancementData(null);
     },
     [onContentUpdate],
   );
 
   const handleReject = useCallback(() => {
     setShowModal(false);
+    setEnhancementData(null);
   }, []);
-
-  const suggestions = useSuggestions();
-  const suggestionId = `${cvId}-${content.substring(0, 50)}`;
-  const suggestion = suggestions[suggestionId];
 
   return (
     <>
@@ -195,14 +212,14 @@ const EnhancementButton: React.FC<EnhancementButtonProps> = ({
         </span>
       </Tooltip>
 
-      {suggestion && (
+      {enhancementData && (
         <EnhancementModal
           open={showModal}
           onClose={handleReject}
           originalContent={content}
-          suggestions={suggestion.suggestions}
-          isLoading={suggestion.isLoading}
-          error={suggestion.error}
+          suggestions={enhancementData.suggestions}
+          isLoading={enhancementData.isLoading}
+          error={enhancementData.error}
           onAccept={handleAccept}
           onReject={handleReject}
         />
