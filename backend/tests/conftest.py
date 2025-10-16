@@ -60,3 +60,19 @@ def mock_audit_service():
     """Mock audit service for tests"""
     with patch("src.services.impersonation_service.audit_service") as mock_audit:
         yield mock_audit
+
+
+@pytest.fixture
+def mock_password_hash():
+    """
+    Provide a pre-computed bcrypt password hash for testing.
+
+    This avoids triggering bcrypt's initialization and wrap bug detection
+    which can cause test failures. Use this in tests instead of calling
+    get_password_hash() directly.
+
+    Password: "password123"
+    Hash: Pre-computed bcrypt hash
+    """
+    # Pre-computed bcrypt hash for "password123"
+    return "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU2fFGYqYpKm"

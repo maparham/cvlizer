@@ -1,43 +1,35 @@
 ---
 alwaysApply: true
-description: Documentation standards for new code and modules
+description: INLINE DOCUMENTATION ONLY - No separate documentation files allowed
 ---
 
 # Documentation Standards Rule
 
-Always add comprehensive documentation for new code and modules.
+## ⚠️ CRITICAL: INLINE DOCUMENTATION ONLY
 
-## File-Level Documentation
-- Every new file must start with a header comment explaining the module.
-- Place it before imports; use clear language on purpose and responsibilities.
-- Include when/how the module should be used.
+**ALL documentation MUST be inline within code files. NO separate documentation files are allowed.**
 
-## Documentation Format
-- Prefer text blocks over inline comments; use multi-line blocks for complex parts.
-- Keep inline comments minimal.
-- Use JSDoc for TS/JS; docstrings for Python.
+- ❌ **NEVER create NEW .md files** (README, documentation, guides, tutorials, specifications, etc.)
+- ✅ **Updating EXISTING .md files is allowed**
+
+## ONLY ALLOWED: Inline Documentation
+- ✅ File header comments/docstrings
+- ✅ Function/method/class docstrings
+- ✅ Inline code comments
+- ✅ JSDoc comments for TypeScript/JavaScript
+- ✅ Python docstrings
+- ✅ Multi-line comment blocks within code files
 
 ## Required Documentation Elements
-- Module purpose and rationale
+- Module purpose and rationale (in file header)
 - Key responsibilities (main functions/classes)
 - Usage context (when/how to use)
-- Dependencies/requirements
-- Examples for complex modules
-
-## Code Documentation Standards
-- Document all public functions/classes/methods.
-- Explain complex algorithms or business logic.
-- Document non-obvious implementation details.
-- Include parameter and return descriptions.
-- Add TODOs for known limitations or future improvements.
-
-## File Creation Guidelines
-- **NEVER create .md files (README, documentation, guides, etc.) unless explicitly instructed by the user.**
-- **NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.**
-- Only create code files when explicitly requested.
-- Prefer editing existing files over creating new ones.
+- Function parameters and return values
+- Complex algorithm explanations
+- Non-obvious implementation details
+- TODOs for known limitations or future improvements
 
 ## Enforcement
-- All new files must include proper documentation.
-- Update documentation when files are modified or functionality changes.
-- Review documentation quality during code reviews.
+- All new code files must include inline documentation
+- Update inline documentation when files are modified
+- If user requests "documentation," clarify they mean inline comments

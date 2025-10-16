@@ -166,15 +166,20 @@ test.describe("Authentication Flows", () => {
     await page.getByRole("button", { name: /back to dashboard/i }).click();
     await page.waitForURL("**/dashboard");
 
-    // Create a new CV
-    const startButton = (await page
-      .getByTestId("start-from-scratch-empty-state-button")
-      .isVisible({ timeout: 1000 })
-      .catch(() => false))
-      ? page.getByTestId("start-from-scratch-empty-state-button")
-      : page.getByTestId("start-from-scratch-button");
+    // Wait for dashboard to load completely
+    await page.waitForLoadState("networkidle");
 
-    await startButton.click();
+    // Create a new CV - try both button variants since we might have existing CVs
+    const emptyStateButton = page.getByTestId("start-from-scratch-empty-state-button");
+    const regularButton = page.getByTestId("start-from-scratch-button");
+
+    // Check which button is visible and click it
+    if (await emptyStateButton.isVisible().catch(() => false)) {
+      await emptyStateButton.click();
+    } else {
+      await regularButton.click();
+    }
+
     await page.waitForURL(/\/cv\//, { timeout: 10000 });
     await expect(
       page.getByRole("heading", { name: "Personal Information" }),

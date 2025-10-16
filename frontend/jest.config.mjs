@@ -25,12 +25,7 @@ export default {
     },
   },
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      useESM: true,
-      tsconfig: {
-        jsx: 'react-jsx',
-      },
-    }],
+    '^.+\\.(ts|tsx)$': '<rootDir>/jest-import-meta-transform.mjs',
   },
   // Note: import.meta is mocked in setupTests.ts
   globals: {},

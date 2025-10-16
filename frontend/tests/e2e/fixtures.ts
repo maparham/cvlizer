@@ -40,3 +40,6 @@ export const test = base.extend<{ testUser: TestUserInfo }>({
 // Re-export commonly used Playwright utilities and types
 export { expect } from "@playwright/test";
 export type { Page, Locator };
+
+// Re-export test data
+export * from "./fixtures/aiTestData";

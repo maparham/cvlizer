@@ -7,23 +7,30 @@ from unittest.mock import Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from main import app
 from src.models.ai_draft import AIDraft
-from src.models.base import Base, SessionLocal, engine
+from src.models.base import Base
 from src.models.cv import CV
 from src.models.job_description import JobDescription
 from src.models.user import User
 
+# CRITICAL: Use a separate test database, NOT the production database
+TEST_DATABASE_URL = "sqlite:///./test_job_fit_approval.db"
+test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
 
 @pytest.fixture
 def db_session():
-    """Create test database session"""
-    Base.metadata.create_all(bind=engine)
-    session = SessionLocal()
+    """Create test database session using separate test database"""
+    Base.metadata.create_all(bind=test_engine)
+    session = TestingSessionLocal()
     yield session
     session.close()
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=test_engine)
 
 
 @pytest.fixture

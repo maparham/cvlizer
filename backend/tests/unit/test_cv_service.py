@@ -70,7 +70,7 @@ class TestCVService:
         """Test getting CVs by user with pagination"""
         db = Mock()
         mock_cvs = [Mock(), Mock()]
-        db.query.return_value.options.return_value.filter.return_value.offset.return_value.limit.return_value.all.return_value = (
+        db.query.return_value.options.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = (
             mock_cvs
         )
 

@@ -38,12 +38,11 @@ logger = logging.getLogger(__name__)
 
 # Instructions for OpenAI API job fit analysis
 JOB_FIT_INSTRUCTIONS = (
-    "You're the candidate. CRITICAL: Write in the SAME LANGUAGE as the job description. "
-    "If job is in German, write in German. If in English, write in English. "
-    "Output JSON with fit_analysis and 5 REQUIRED arrays (key_matches, missing_skills, "
-    "suggested_improvements, strengths, weaknesses). ALL arrays must have values. First person. "
-    "follow formatting instructions."
-    "Stop after last requirement."
+    "Respond as if you are the candidate applying for this job. IMPORTANT: Write in the SAME LANGUAGE as the job description. "
+    "Do NOT fabricate experience or skills - use only facts from the provided CV and job description. "
+    "Output JSON with fit_analysis AND 5 REQUIRED arrays: key_matches, missing_skills, "
+    "suggested_improvements, strengths, weaknesses. All arrays must have at least one value. "
+    "Write in first person. Follow all formatting rules."
 )
 
 
@@ -88,7 +87,7 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"   • Below each requirement, write a short cover paragraph about your experience in the context of the requirement item.\n"
         f'   • Format each requirement as: \\*\\*"[requirement text]"\\*\\*\\n\\n[cover paragraph]\\n\\n\n'
         f"   • CRITICAL: Each requirement MUST be wrapped in \\*\\* (asterisks) for bold formatting.\n"
-        f"   • If you don't have experience with the requirement item, be honest about it and explain how you could learn it.\n"
+        f"   • If you don't have experience with the requirement item, say so and explain how you could learn it.\n"
         f"   • If you have experience with the requirement item, say so and include details from past experiences. E.g., I built/achieved/adapted... Y at Company X.\n"
         f"   • Vary sentence starters and avoid overusing 'I' or 'I have'.\n"
         f"   • Be honest about gaps: 'I haven't used X yet.'\n"

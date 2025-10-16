@@ -9,7 +9,6 @@ from src.models.base import Base
 from src.models.cv import CV
 from src.models.job_description import JobDescription
 from src.models.user import User
-from src.services.auth_service import get_password_hash
 
 
 class TestUserModel:
@@ -25,11 +24,11 @@ class TestUserModel:
         yield session
         session.close()
 
-    def test_user_creation(self, db_session):
+    def test_user_creation(self, db_session, mock_password_hash):
         """Test user creation with valid data"""
         user = User(
             email="test@example.com",
-            password_hash=get_password_hash("password123"),
+            password_hash=mock_password_hash,
             is_active=True,
             email_verified=True,
         )
@@ -45,18 +44,18 @@ class TestUserModel:
         assert user.created_at is not None
         assert user.updated_at is not None
 
-    def test_user_email_uniqueness(self, db_session):
+    def test_user_email_uniqueness(self, db_session, mock_password_hash):
         """Test that email must be unique"""
         user1 = User(
             email="test@example.com",
-            password_hash=get_password_hash("password123"),
+            password_hash=mock_password_hash,
             is_active=True,
             email_verified=True,
         )
 
         user2 = User(
             email="test@example.com",  # Same email
-            password_hash=get_password_hash("password456"),
+            password_hash=mock_password_hash,
             is_active=True,
             email_verified=True,
         )
@@ -68,11 +67,9 @@ class TestUserModel:
         with pytest.raises(Exception):  # Should raise integrity error
             db_session.commit()
 
-    def test_user_default_values(self, db_session):
+    def test_user_default_values(self, db_session, mock_password_hash):
         """Test user default values"""
-        user = User(
-            email="test@example.com", password_hash=get_password_hash("password123")
-        )
+        user = User(email="test@example.com", password_hash=mock_password_hash)
 
         db_session.add(user)
         db_session.commit()
@@ -81,11 +78,9 @@ class TestUserModel:
         assert user.is_active is True  # Default value
         assert user.email_verified is False  # Default value
 
-    def test_user_string_representation(self, db_session):
+    def test_user_string_representation(self, db_session, mock_password_hash):
         """Test user string representation"""
-        user = User(
-            email="test@example.com", password_hash=get_password_hash("password123")
-        )
+        user = User(email="test@example.com", password_hash=mock_password_hash)
 
         db_session.add(user)
         db_session.commit()
@@ -93,10 +88,10 @@ class TestUserModel:
 
         assert str(user) == f"<User {user.email}>"
 
-    def test_user_password_verification(self, db_session):
+    def test_user_password_verification(self, db_session, mock_password_hash):
         """Test password verification"""
         password = "password123"
-        user = User(email="test@example.com", password_hash=get_password_hash(password))
+        user = User(email="test@example.com", password_hash=mock_password_hash)
 
         db_session.add(user)
         db_session.commit()
@@ -218,11 +213,11 @@ class TestJobDescriptionModel:
         session.close()
 
     @pytest.fixture(scope="function")
-    def test_user(self, db_session):
+    def test_user(self, db_session, mock_password_hash):
         """Create a test user for JobDescription foreign key"""
         user = User(
             email="testuser@example.com",
-            password_hash=get_password_hash("password123"),
+            password_hash=mock_password_hash,
             is_active=True,
             email_verified=True,
         )
@@ -479,11 +474,9 @@ class TestModelRelationships:
         yield session
         session.close()
 
-    def test_user_cv_relationship(self, db_session):
+    def test_user_cv_relationship(self, db_session, mock_password_hash):
         """Test user-CV relationship"""
-        user = User(
-            email="test@example.com", password_hash=get_password_hash("password123")
-        )
+        user = User(email="test@example.com", password_hash=mock_password_hash)
 
         db_session.add(user)
         db_session.commit()
@@ -505,11 +498,9 @@ class TestModelRelationships:
         assert len(user_cvs) == 1
         assert user_cvs[0].original_filename == "test.pdf"
 
-    def test_cv_ai_section_relationship(self, db_session):
+    def test_cv_ai_section_relationship(self, db_session, mock_password_hash):
         """Test CV-AI section relationship"""
-        user = User(
-            email="test@example.com", password_hash=get_password_hash("password123")
-        )
+        user = User(email="test@example.com", password_hash=mock_password_hash)
 
         db_session.add(user)
         db_session.commit()

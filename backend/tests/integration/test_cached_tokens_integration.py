@@ -509,15 +509,26 @@ def client():
 
 @pytest.fixture
 def db_session():
-    """Create test database session."""
-    from src.database import SessionLocal, engine, Base
+    """Create test database session using separate test database."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from src.models.base import Base
 
-    Base.metadata.create_all(bind=engine)
-    session = SessionLocal()
+    # CRITICAL: Use a separate test database, NOT the production database
+    test_engine = create_engine(
+        "sqlite:///./test_cached_tokens_integration.db",
+        connect_args={"check_same_thread": False},
+    )
+    TestingSessionLocal = sessionmaker(
+        autocommit=False, autoflush=False, bind=test_engine
+    )
+
+    Base.metadata.create_all(bind=test_engine)
+    session = TestingSessionLocal()
     yield session
     session.rollback()
     session.close()
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=test_engine)
 
 
 @pytest.fixture

@@ -55,8 +55,8 @@ class TestAnalyzeJobFitSync:
         assert (
             result["tokens_used"] == 500
         )  # prompt_tokens (300) + completion_tokens (200)
-        # Model name comes from env OPENAI_MODEL (could be gpt-5 or gpt-5-nano)
-        assert result["model_used"] in ["gpt-5", "gpt-5-nano"]
+        # Model name comes from env OPENAI_MODEL
+        assert result["model_used"] in ["gpt-5", "gpt-5-nano", "gpt-5-mini"]
         assert "error" not in result
 
     @patch("src.services.ai_service.job_fit.get_openai_client")

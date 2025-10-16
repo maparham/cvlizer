@@ -520,12 +520,13 @@ test.describe("Critical User Journeys", () => {
 
     await page.getByTestId("add-new-education-button").click();
 
-    // Wait for form to be visible
-    await expect(page.getByRole("combobox", { name: "Degree" })).toBeVisible({
-      timeout: TEST_TIMEOUT,
-    });
+    // Wait for the form to appear with proper state checks
+    const degreeField = page.getByRole("combobox", { name: "Degree" });
+    await degreeField.waitFor({ state: "attached" });
+    await degreeField.waitFor({ state: "visible" });
 
-    await page.getByRole("combobox", { name: "Degree" }).click();
+    // Now interact with it
+    await degreeField.click();
     await page.getByRole("combobox", { name: "Degree" }).fill("MBA");
     await page.keyboard.press("Tab");
 

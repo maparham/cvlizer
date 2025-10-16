@@ -117,19 +117,19 @@ def extract_cached_tokens(response: Any) -> int:
     # Check for cached tokens in input_tokens_details (newer SDK format)
     if (
         hasattr(response.usage, "input_tokens_details")
-        and response.usage.input_tokens_details
+        and response.usage.input_tokens_details is not None
     ):
-        cached = getattr(response.usage.input_tokens_details, "cached_tokens", 0)
-        if cached:
+        cached = getattr(response.usage.input_tokens_details, "cached_tokens", None)
+        if cached is not None:
             return cached
 
     # Check for cached tokens in prompt_tokens_details (alternative format)
     if (
         hasattr(response.usage, "prompt_tokens_details")
-        and response.usage.prompt_tokens_details
+        and response.usage.prompt_tokens_details is not None
     ):
-        cached = getattr(response.usage.prompt_tokens_details, "cached_tokens", 0)
-        if cached:
+        cached = getattr(response.usage.prompt_tokens_details, "cached_tokens", None)
+        if cached is not None:
             return cached
 
     return 0

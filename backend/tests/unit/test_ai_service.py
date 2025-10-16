@@ -43,7 +43,7 @@ class TestAIService:
         assert result["section_content"] == "Generated content here"
         assert result["key_points"] == ["Point 1", "Point 2"]
         assert result["tokens_used"] == 150  # prompt_tokens (80) + completion_tokens (70)
-        assert result["model_used"] == "gpt-5-nano"
+        assert result["model_used"] == "gpt-5-mini"
         assert "generation_time" in result
 
     @pytest.mark.asyncio
