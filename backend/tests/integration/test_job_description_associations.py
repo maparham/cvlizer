@@ -783,3 +783,303 @@ class TestJDSharingBetweenCVs:
             jds = response.json()["job_descriptions"]
             jd_titles = [jd["title"] for jd in jds]
             assert "To Be Deleted" not in jd_titles
+
+
+class TestJobDescriptionPersistenceAfterCVDeletion:
+    """
+    Test that job descriptions persist when their original CV is deleted.
+
+    This test class prevents regression of the bug where SQLAlchemy ORM
+    cascade="all, delete-orphan" overrode the database FK constraint
+    ondelete="SET NULL", causing job descriptions to be deleted when
+    their original CV was deleted.
+    """
+
+    def test_job_description_persists_when_original_cv_deleted(
+        self, test_user, db_session
+    ):
+        """Test that JD persists when its original (creator) CV is deleted."""
+        # Create CV #1 with a job description
+        cv1 = create_test_cv(db_session, test_user.id, "CV1")
+        jd = create_test_job_description(
+            db_session,
+            test_user.id,
+            cv1.id,
+            title="Persistent Job",
+            company="Persistent Company",
+            content="This JD should persist after CV deletion",
+        )
+        associate_jd_with_cv(db_session, jd.id, cv1.id)
+
+        jd_id = jd.id
+        user_id = jd.user_id
+
+        # Delete CV #1 directly via database (bypassing API auth)
+        from src.services.cv_service import delete_cv
+
+        result = delete_cv(db_session, cv1.id, test_user.id)
+        assert result is True, "CV deletion should succeed"
+
+        # CRITICAL: Verify JD still exists in database
+        jd_after = (
+            db_session.query(JobDescription).filter(JobDescription.id == jd_id).first()
+        )
+        assert jd_after is not None, "Job description should persist after CV deletion"
+
+        # Verify JD's cv_id is NULL (original creator CV is gone)
+        assert jd_after.cv_id is None, "JD cv_id should be NULL after original CV deleted"
+
+        # Verify JD is not hidden
+        assert jd_after.hidden is False, "JD should not be hidden"
+
+        # Verify JD user_id is unchanged
+        assert jd_after.user_id == user_id, "JD user_id should remain unchanged"
+
+    def test_job_description_can_be_associated_after_original_cv_deleted(
+        self, test_user, db_session
+    ):
+        """Test that JD can be associated with new CV after original CV is deleted."""
+        # Create CV #1 with a job description
+        cv1 = create_test_cv(db_session, test_user.id, "CV1")
+        jd = create_test_job_description(
+            db_session,
+            test_user.id,
+            cv1.id,
+            title="Reusable Job",
+            company="Reusable Company",
+            content="This JD can be reused after original CV deletion",
+        )
+        associate_jd_with_cv(db_session, jd.id, cv1.id)
+
+        # Create CV #2
+        cv2 = create_test_cv(db_session, test_user.id, "CV2")
+
+        jd_id = jd.id
+
+        # Delete CV #1 (original creator) directly via database
+        from src.services.cv_service import delete_cv
+
+        result = delete_cv(db_session, cv1.id, test_user.id)
+        assert result is True, "CV deletion should succeed"
+
+        # CRITICAL: Verify JD can be associated with CV #2
+        from src.services.job_description_service import (
+            associate_jd_with_cv as service_associate,
+        )
+
+        success = service_associate(db_session, jd_id, cv2.id, test_user.id)
+        assert success is True, "Should be able to associate JD with new CV"
+
+        # Verify JD's cv_id and associations
+        jd_after = (
+            db_session.query(JobDescription).filter(JobDescription.id == jd_id).first()
+        )
+        assert jd_after is not None, "JD should still exist"
+
+        # Check associations
+        from src.models.cv_job_description import CVJobDescription
+
+        assoc = (
+            db_session.query(CVJobDescription)
+            .filter(
+                CVJobDescription.job_description_id == jd_id,
+                CVJobDescription.cv_id == cv2.id,
+            )
+            .first()
+        )
+        assert assoc is not None, "JD should be associated with CV #2"
+
+        # Verify JD still has NULL cv_id (original creator CV)
+        jd_after = (
+            db_session.query(JobDescription).filter(JobDescription.id == jd_id).first()
+        )
+        assert jd_after.cv_id is None, "JD cv_id should remain NULL"
+
+    def test_multiple_associations_persist_after_original_cv_deleted(
+        self, test_user, db_session
+    ):
+        """Test that multiple associations persist when original CV is deleted."""
+        # Create CV #1 with a job description
+        cv1 = create_test_cv(db_session, test_user.id, "CV1")
+        jd = create_test_job_description(
+            db_session,
+            test_user.id,
+            cv1.id,
+            title="Multi-Association Job",
+            company="Multi-Association Company",
+            content="This JD has multiple CV associations",
+        )
+        associate_jd_with_cv(db_session, jd.id, cv1.id)
+
+        # Create CV #2 and CV #3
+        cv2 = create_test_cv(db_session, test_user.id, "CV2")
+        cv3 = create_test_cv(db_session, test_user.id, "CV3")
+
+        # Associate JD with CV #2 and CV #3
+        associate_jd_with_cv(db_session, jd.id, cv2.id)
+        associate_jd_with_cv(db_session, jd.id, cv3.id)
+
+        jd_id = jd.id
+
+        # Delete CV #1 (original creator) directly via database
+        from src.services.cv_service import delete_cv
+
+        result = delete_cv(db_session, cv1.id, test_user.id)
+        assert result is True, "CV deletion should succeed"
+
+        # CRITICAL: Verify JD still exists
+        jd_after = (
+            db_session.query(JobDescription).filter(JobDescription.id == jd_id).first()
+        )
+        assert jd_after is not None, "JD should persist after original CV deletion"
+
+        # Verify JD's cv_id is NULL
+        assert jd_after.cv_id is None, "JD cv_id should be NULL"
+
+        # Verify JD still associated with CV #2 and CV #3
+        from src.models.cv_job_description import CVJobDescription
+
+        assoc2 = (
+            db_session.query(CVJobDescription)
+            .filter(
+                CVJobDescription.job_description_id == jd_id,
+                CVJobDescription.cv_id == cv2.id,
+            )
+            .first()
+        )
+        assoc3 = (
+            db_session.query(CVJobDescription)
+            .filter(
+                CVJobDescription.job_description_id == jd_id,
+                CVJobDescription.cv_id == cv3.id,
+            )
+            .first()
+        )
+        assoc1 = (
+            db_session.query(CVJobDescription)
+            .filter(
+                CVJobDescription.job_description_id == jd_id,
+                CVJobDescription.cv_id == cv1.id,
+            )
+            .first()
+        )
+
+        assert assoc2 is not None, "JD should still be associated with CV #2"
+        assert assoc3 is not None, "JD should still be associated with CV #3"
+        assert assoc1 is None, "CV #1 association should be removed"
+
+    def test_junction_table_association_removed_when_cv_deleted(
+        self, test_user, db_session
+    ):
+        """Test that junction table record is removed when non-original CV is deleted."""
+        # Create CV #1 with JD
+        cv1 = create_test_cv(db_session, test_user.id, "CV1")
+        jd = create_test_job_description(
+            db_session,
+            test_user.id,
+            cv1.id,
+            title="Junction Test Job",
+            company="Junction Test Company",
+            content="Testing junction table behavior",
+        )
+        associate_jd_with_cv(db_session, jd.id, cv1.id)
+
+        # Associate JD with CV #2
+        cv2 = create_test_cv(db_session, test_user.id, "CV2")
+        associate_jd_with_cv(db_session, jd.id, cv2.id)
+
+        jd_id = jd.id
+
+        # Delete CV #2 (not the original creator) directly via database
+        from src.services.cv_service import delete_cv
+
+        result = delete_cv(db_session, cv2.id, test_user.id)
+        assert result is True, "CV deletion should succeed"
+
+        # CRITICAL: Verify JD still exists
+        jd_after = (
+            db_session.query(JobDescription).filter(JobDescription.id == jd_id).first()
+        )
+        assert jd_after is not None, "JD should persist"
+
+        # Verify JD's cv_id still points to CV #1
+        assert jd_after.cv_id == cv1.id, "JD cv_id should still point to original CV"
+
+        # Verify junction table record for CV #2 is removed
+        association = (
+            db_session.query(CVJobDescription)
+            .filter(
+                CVJobDescription.cv_id == cv2.id,
+                CVJobDescription.job_description_id == jd_id,
+            )
+            .first()
+        )
+        assert association is None, "Junction table record should be removed"
+
+        # Verify JD still associated with CV #1
+        assoc1 = (
+            db_session.query(CVJobDescription)
+            .filter(
+                CVJobDescription.cv_id == cv1.id,
+                CVJobDescription.job_description_id == jd_id,
+            )
+            .first()
+        )
+        assert assoc1 is not None, "JD should still be associated with CV #1"
+
+    def test_all_associations_removed_when_all_cvs_deleted(self, test_user, db_session):
+        """Test that JD persists with no associations when all CVs are deleted."""
+        # Create CV #1 with JD
+        cv1 = create_test_cv(db_session, test_user.id, "CV1")
+        jd = create_test_job_description(
+            db_session,
+            test_user.id,
+            cv1.id,
+            title="Orphaned Job",
+            company="Orphaned Company",
+            content="This JD will have no CV associations",
+        )
+        associate_jd_with_cv(db_session, jd.id, cv1.id)
+
+        # Associate JD with CV #2 and CV #3
+        cv2 = create_test_cv(db_session, test_user.id, "CV2")
+        cv3 = create_test_cv(db_session, test_user.id, "CV3")
+        associate_jd_with_cv(db_session, jd.id, cv2.id)
+        associate_jd_with_cv(db_session, jd.id, cv3.id)
+
+        jd_id = jd.id
+
+        # Delete all CVs directly via database
+        from src.services.cv_service import delete_cv
+
+        for cv_id in [cv1.id, cv2.id, cv3.id]:
+            result = delete_cv(db_session, cv_id, test_user.id)
+            assert result is True, f"CV {cv_id} deletion should succeed"
+
+        # CRITICAL: Verify JD still exists
+        jd_after = (
+            db_session.query(JobDescription).filter(JobDescription.id == jd_id).first()
+        )
+        assert jd_after is not None, "JD should persist even with no CV associations"
+
+        # Verify JD's cv_id is NULL
+        assert jd_after.cv_id is None, "JD cv_id should be NULL"
+
+        # Verify JD has no associations (cv_ids is empty)
+        from src.models.cv_job_description import CVJobDescription
+
+        associations = (
+            db_session.query(CVJobDescription)
+            .filter(CVJobDescription.job_description_id == jd_id)
+            .all()
+        )
+        assert len(associations) == 0, "JD should have no CV associations"
+
+        # CRITICAL: Verify JD can still be associated with new CVs
+        cv_new = create_test_cv(db_session, test_user.id, "NewCV")
+        from src.services.job_description_service import (
+            associate_jd_with_cv as service_associate,
+        )
+
+        success = service_associate(db_session, jd_id, cv_new.id, test_user.id)
+        assert success is True, "Should be able to associate orphaned JD with new CV"

@@ -22,7 +22,7 @@ class JobDescription(Base):
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     cv_id = Column(
-        String(36), ForeignKey("cvs.id", ondelete="CASCADE"), nullable=True, index=True
+        String(36), ForeignKey("cvs.id", ondelete="SET NULL"), nullable=True, index=True
     )
     content = Column(Text, nullable=True)
     description = Column(Text, nullable=True)

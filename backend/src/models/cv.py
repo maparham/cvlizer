@@ -42,7 +42,10 @@ class CV(Base):
     # Relationships
     user = relationship("User", back_populates="cvs")
     job_descriptions = relationship(
-        "JobDescription", back_populates="cv", cascade="all, delete-orphan"
+        "JobDescription",
+        back_populates="cv"
+        # REMOVED cascade="all, delete-orphan" - job descriptions should persist
+        # when CV is deleted (handled by database FK with SET NULL)
     )
 
     # Many-to-many relationship with Job Descriptions through junction table
