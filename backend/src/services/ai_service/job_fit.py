@@ -69,11 +69,11 @@ def _is_cv_data_sufficient(cv_data: Dict[str, Any]) -> tuple[bool, list[str]]:
     # Check work experience
     work_experience = cv_data.get("work_experience", [])
     has_work_exp = len(work_experience) > 0 and any(
-        exp.get("responsibilities") or exp.get("achievements") for exp in work_experience
+        exp.get("description") or exp.get("achievements") for exp in work_experience
     )
     if not has_work_exp:
         missing_items.append(
-            "at least 1 work experience entry with responsibilities or achievements"
+            "at least 1 work experience entry with description or achievements"
         )
 
     # Check skills (technical + soft combined)

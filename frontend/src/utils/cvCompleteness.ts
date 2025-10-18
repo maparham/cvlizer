@@ -33,7 +33,7 @@ export interface CVCompletenessResult {
  * Calculate CV completeness score and identify missing content.
  *
  * Scoring:
- * - Work experience with responsibilities/achievements: 50 points
+ * - Work experience with description/achievements: 50 points
  * - At least 3 skills (technical + soft combined): 50 points
  * - Total: 100 points = complete and ready for AI features
  *
@@ -48,12 +48,12 @@ export function calculateCVCompleteness(cvData: any): CVCompletenessResult {
   const workExp = cvData?.work_experience || [];
   const hasWorkExp =
     workExp.length > 0 &&
-    workExp.some((exp: any) => exp.responsibilities || exp.achievements);
+    workExp.some((exp: any) => (exp.description && exp.description.trim().length > 0) || exp.achievements);
 
   if (hasWorkExp) {
     score += 50;
   } else {
-    missing.push("work experience with responsibilities or achievements");
+    missing.push("work experience with description or achievements");
   }
 
   // Check skills (50 points - requires 3+)
