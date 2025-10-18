@@ -44,9 +44,11 @@ import {
   AutoAwesome as AutoAwesomeIcon,
   CheckCircle as CheckCircleIcon,
   TrendingUp as TrendingUpIcon,
+  ContentCopy as ContentCopyIcon,
 } from "@mui/icons-material";
 import { WhyGoodFit } from "../../../types/cv";
 import { EditableTitle } from "../EditableTitle";
+import { useNotifications } from "../../../packages/notifications";
 
 interface WhyGoodFitSectionProps {
   data?: WhyGoodFit;
@@ -71,11 +73,31 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
   title = "Why I'm a Good Fit",
   onTitleSave,
 }) => {
+  const { showSuccess } = useNotifications();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editContent, setEditContent] = useState(
     data?.content || data?.fit_analysis || "",
   );
   const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
+
+  const copyToClipboard = () => {
+    const content = data?.content || data?.fit_analysis || "";
+    navigator.clipboard.writeText(content);
+    showSuccess("Copied to clipboard");
+  };
+
+  const copyKeyMatches = () => {
+    if (!data?.key_matches || data.key_matches.length === 0) return;
+
+    const keyMatchesText = [
+      "Key Matches",
+      "",
+      ...data.key_matches.map((match, index) => `${index + 1}. ${match}`),
+    ].join("\n");
+
+    navigator.clipboard.writeText(keyMatchesText);
+    showSuccess("Key matches copied to clipboard");
+  };
 
   const handleEdit = () => {
     setEditContent(data?.content || data?.fit_analysis || "");
@@ -158,6 +180,11 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
           <Tooltip title="Edit Section">
             <IconButton onClick={handleEdit} size="small">
               <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Copy Content">
+            <IconButton onClick={copyToClipboard} size="small">
+              <ContentCopyIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete Section">
@@ -313,14 +340,27 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
               <>
                 <Divider sx={{ my: 2 }} />
                 <Box>
-                  <Typography
-                    variant="h6"
-                    gutterBottom
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 1,
+                    }}
                   >
-                    <TrendingUpIcon color="primary" />
-                    Key Matches
-                  </Typography>
+                    <Typography
+                      variant="h6"
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <TrendingUpIcon color="primary" />
+                      Key Matches
+                    </Typography>
+                    <Tooltip title="Copy Key Matches">
+                      <IconButton onClick={copyKeyMatches} size="small">
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                   <List dense>
                     {data.key_matches.map((match, index) => (
                       <ListItem key={index} sx={{ py: 0.5 }}>
