@@ -114,27 +114,46 @@ const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerP
     <>
       {/* Floating Action Button */}
       <Fab
-        color="primary"
-        size="medium"
         onClick={handleToggleDrawer}
+        size="medium"
         sx={{
           position: "fixed",
           right: 16,
-          top: "50%",
-          transform: "translateY(-50%)",
+          bottom: 16,
           zIndex: 1000,
-          boxShadow: 3,
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          color: "#1976d2",
+          backdropFilter: "blur(10px)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
-            boxShadow: 6,
+            backgroundColor: "rgba(255, 255, 255, 1)",
+            color: "#1565c0",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)",
+            transform: "scale(1.05)",
+          },
+          "&:active": {
+            transform: "scale(0.98)",
           },
         }}
       >
         <Badge
           badgeContent={totalNotificationCount}
-          color="error"
-          max={99}
+          sx={{
+            "& .MuiBadge-badge": {
+              backgroundColor: "#ff4444",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              minWidth: "20px",
+              height: "20px",
+              border: "2px solid white",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+            },
+          }}
         >
-          <NotificationsIcon />
+          <NotificationsIcon sx={{ fontSize: "1.5rem" }} />
         </Badge>
       </Fab>
 
