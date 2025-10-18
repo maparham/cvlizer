@@ -1,8 +1,15 @@
 - git commit -m "detailed message" and push
-- Generate a detailed commit message that describes WHAT changed and WHY
+- FIRST: Always check git diff --cached to see the actual staged changes
+- Read the diff output literally - every line with a + is an addition, every line with a - is a deletion
+- Do NOT filter based on memory or assumptions about what was changed when
+- Do NOT distinguish between changes made in different edits - treat the entire diff as one atomic change
+- Generate a commit message that explains and covers ONLY what's in the git diff - no more, no less
+- Describe WHAT changed and WHY based on the actual changes
 - Include enough context that this message could be used as a prompt to reconstruct the changes
 - Focus on functional changes, user-facing impacts, and architectural decisions
 - Do NOT include: code snippets, function signatures, specific variable names, or implementation details
 - Do NOT use technical jargon unless necessary for clarity
+- Do NOT mention changes that aren't in the git diff
 - Structure: Brief title (50 chars), blank line, then detailed bullet points explaining the changes
 - Mention which features/components were affected and what behavior changed
+- IMPORTANT: If pre-commit hooks reject the commit and modify files, run 'git add' on those changed files again, then retry the commit
