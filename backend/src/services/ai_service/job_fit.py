@@ -24,6 +24,7 @@ from .common import (
     RETRY_DELAY,
     JobFitResult,
     build_error_response,
+    call_openai_with_schema,
     extract_cached_tokens,
     extract_response_data,
     get_openai_client,
@@ -70,16 +71,16 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"LANGUAGE REQUIREMENT: Write ALL content (fit_analysis and all arrays) in the SAME LANGUAGE as the job description below.\n"
         f"OUTPUT JSON:\n"
         f"{{\n"
-        f'  "confidence_score": 75,\n'
+        f'  "confidence_score": integer 1-100,\n'
         f'  "fit_analysis": "markdown-formatted",\n'
-        f'  "key_matches": ["Python", "REST APIs", "Pytest"],\n'
+        f'  "key_matches": list of strings, 3-5 specific skills/technologies FROM YOUR CV that match JD requirements,\n'
         f'  "missing_skills": ["AWS", "Kubernetes"],\n'
-        f'  "suggested_improvements": ["Add metrics", "Quantify coverage"],\n'
-        f'  "strengths": ["Strong Python", "API testing"],\n'
-        f'  "weaknesses": ["Limited cloud experience"]\n'
+        f'  "suggested_improvements": list of strings, 3-5 specific CV improvement tips,\n'
+        f'  "strengths": list of strings, 3-5 specific candidate strengths for this role,\n'
+        f'  "weaknesses": list of strings, 2-4 specific gaps or areas needing development,\n'
         f"}}\n\n"
         f"RULES:\n"
-        f"1. confidence_score: Integer 1-100 showing match quality.\n"
+        f"1. confidence_score: Integer 0-100 showing match quality.\n"
         f"2. fit_analysis (markdown string, first person):\n"
         f"   • Header \\*\\*Why I'm a Good Fit\\*\\*\\n\\n[1 paragraph, 40-50 words: top 2-3 skills + enthusiasm].\n"
         f"   • Then: \\*\\*Your Requirements\\*\\*\\n\\n.\n"
@@ -87,15 +88,15 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"   • Below each requirement, write a short cover paragraph about your experience in the context of the requirement item.\n"
         f'   • Format each requirement as: \\*\\*"[requirement text]"\\*\\*\\n\\n[cover paragraph]\\n\\n\n'
         f"   • CRITICAL: Each requirement MUST be wrapped in \\*\\* (asterisks) for bold formatting.\n"
-        f"   • If you don't have experience with the requirement item, say so and explain how you could learn it.\n"
+        f"   • IMPORTANT: If you don't have experience with the requirement item or a key skill is missing, say so. E.g., 'I don't have experience with [requirement item] but I am eager to learn and would be a quick study.'\n"
         f"   • If you have experience with the requirement item, say so and include details from past experiences. E.g., I built/achieved/adapted... Y at Company X.\n"
+        f"   • Do NOT refer to the candidate's CV explicitly in the output. Do not use the phrases 'My CV...', 'This CV...' or similar references.\n"
         f"   • Vary sentence starters and avoid overusing 'I' or 'I have'.\n"
         f"   • Be honest about gaps: 'I haven't used X yet.'\n"
-        f"3. Separate arrays (NOT in fit_analysis):\n"
         f"   • key_matches: 3-5 specific skills/technologies FROM YOUR CV that match JD requirements.\n"
         f"   • missing_skills: 2-4 skills mentioned in JD but not in your CV.\n"
         f"   • suggested_improvements: 3-5 specific CV improvement tips.\n"
-        f"   • strengths: 3-5 specific candidate strengths for this role.\n"
+        f"   • strengths: 3-5 specific candidate strengths for this role. Do not fabricate strengths.\n"
         f"   • weaknesses: 2-4 specific gaps or areas needing development.\n"
         f"Use the words 'position' or 'job' instead of 'role'. Make sure every array has values. Output just well-formed JSON, nothing else."
         f"CV: {json.dumps(cv_data, indent=2)}\n\n"
@@ -103,7 +104,7 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
     )
 
 
-def _execute_job_fit_analysis_sync(
+async def _execute_job_fit_analysis(
     cv_data: Dict[str, Any],
     job_description: str,
     user_id: Optional[str] = None,
@@ -111,9 +112,10 @@ def _execute_job_fit_analysis_sync(
     db_session: Optional[Session] = None,
 ) -> JobFitResult:
     """
-    Core synchronous implementation of job fit analysis.
+    Core async implementation of job fit analysis.
 
-    This is the shared implementation used by both sync and async wrappers.
+    This implementation is used by the sync wrapper (analyze_job_fit_sync) which
+    calls this async function using asyncio.run().
 
     Args:
         cv_data: Structured CV data
@@ -135,47 +137,20 @@ def _execute_job_fit_analysis_sync(
         )
 
     prompt = _build_job_fit_prompt(cv_data, job_description)
-    client = get_openai_client()
 
     try:
-        start_time = time.time()
-
-        # Make synchronous OpenAI API call using Response API
-        response = client.responses.parse(
-            model=AIConfig.OPENAI_MODEL,
-            input=[
-                {"role": "system", "content": JOB_FIT_INSTRUCTIONS},
-                {"role": "user", "content": prompt},
-            ],
-            text_format=JobFitAnalysisResponseSchema,
-            reasoning=Reasoning(effort=AIConfig.REASONING_EFFORT),
+        # Use unified OpenAI call builder
+        analysis, metadata = await call_openai_with_schema(
+            system_prompt=JOB_FIT_INSTRUCTIONS,
+            user_prompt=prompt,
+            response_schema=JobFitAnalysisResponseSchema,
+            user_id=user_id,
+            cv_id=cv_id,
+            operation_type="analyze_job_fit",
+            db_session=db_session,
         )
 
-        generation_time = int((time.time() - start_time) * 1000)
-
-        # Extract parsed data and token usage
-        analysis = response.output_parsed.model_dump()
-        prompt_tokens = response.usage.input_tokens
-        completion_tokens = response.usage.output_tokens
-        tokens_used = prompt_tokens + completion_tokens
-        cached_tokens = extract_cached_tokens(response)
-
-        # Log AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="analyze_job_fit",
-                model_used=AIConfig.OPENAI_MODEL,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                generation_time=generation_time,
-                success=True,
-                cv_id=cv_id,
-                cached_tokens=cached_tokens,
-            )
-
-        # Add generated_at and return
+        # Add generated_at and return with metadata
         return {
             "confidence_score": analysis.get("confidence_score", 50),
             "fit_analysis": analysis.get("fit_analysis", ""),
@@ -185,30 +160,13 @@ def _execute_job_fit_analysis_sync(
             "suggested_improvements": analysis.get("suggested_improvements", []),
             "strengths": analysis.get("strengths", []),
             "weaknesses": analysis.get("weaknesses", []),
-            "tokens_used": tokens_used,
-            "generation_time": generation_time,
-            "model_used": AIConfig.OPENAI_MODEL,
+            **metadata,  # Include tokens_used, generation_time, model_used, etc.
         }
 
     except Exception as e:
-        # Log the error with full details
-        logger.error(f"Job fit analysis failed with error: {str(e)}", exc_info=True)
+        # Error already logged by call_openai_with_schema
+        # Additional context logging only
         logger.error(f"Error type: {type(e).__name__}")
-
-        # Log failed AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="analyze_job_fit",
-                model_used=AIConfig.OPENAI_MODEL,
-                prompt_tokens=0,
-                completion_tokens=0,
-                generation_time=0,
-                success=False,
-                error_message=str(e),
-                cv_id=cv_id,
-            )
 
         result = build_error_response(
             f"Error analyzing job fit: {str(e)}", "analyze_job_fit"
@@ -229,7 +187,9 @@ def analyze_job_fit_sync(
     """
     Synchronous version of job fit analysis.
 
-    Used in background tasks to avoid async/sync issues.
+    Used in background tasks to avoid async/sync issues. This function wraps
+    the async implementation and runs it in the current event loop or creates
+    a new one if necessary.
 
     Args:
         cv_data: Structured CV data
@@ -247,6 +207,8 @@ def analyze_job_fit_sync(
         - missing_skills: Skills mentioned in JD but not in CV
         - suggested_improvements: Areas for improvement
     """
-    return _execute_job_fit_analysis_sync(
-        cv_data, job_description, user_id, cv_id, db_session
+    import asyncio
+
+    return asyncio.run(
+        _execute_job_fit_analysis(cv_data, job_description, user_id, cv_id, db_session)
     )

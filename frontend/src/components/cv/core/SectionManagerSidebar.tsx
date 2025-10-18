@@ -40,6 +40,7 @@ import { JobDescriptionSummary } from "../ai";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import { useActiveJobDescription, useAIStore } from "../../../stores/aiStore";
+import { useNotifications } from "../../../stores/uiStore";
 
 interface SectionManagerSidebarProps {
   sections: CVSection[];
@@ -85,6 +86,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
 
   // AI Suggestions store
   const {
+    allSuggestions,
     suggestionsLoading,
     generateAllSuggestions,
     clearAllSuggestions,
@@ -96,6 +98,9 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
 
   // AI store for job description management
   const { setActiveJobDescription } = useAIStore();
+
+  // Notifications for error and success handling
+  const { showError, showInfo } = useNotifications();
 
   // Active job description from existing AI store
   const activeJobDescription = useActiveJobDescription();
@@ -137,10 +142,22 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           });
         }
       } catch (error) {
-        console.error("Error generating suggestions:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to generate AI suggestions";
+        showError("Error", errorMessage);
+        setSuggestionsLoading(false);
       }
     }
-  }, [activeJobDescription, cvId, generateAllSuggestions, addTask]);
+  }, [
+    activeJobDescription,
+    cvId,
+    generateAllSuggestions,
+    addTask,
+    showError,
+    setSuggestionsLoading,
+  ]);
 
   // Clear suggestions when job description changes (only when switching between different JDs)
   useEffect(() => {
@@ -182,6 +199,21 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           // Clear loading state on error
           setSuggestionsLoading(false);
         } else {
+          // Check if suggestions are empty and notify user
+          const suggestions = allSuggestions;
+          const hasAnySuggestions =
+            suggestions &&
+            ((suggestions.skills.technical.length > 0) ||
+             (suggestions.skills.soft.length > 0) ||
+             (suggestions.professional_summary.suggested_text?.trim().length > 0));
+
+          if (!hasAnySuggestions && suggestionsLoading) {
+            // Suggestions completed but are empty - inform the user
+            showInfo(
+              "No suggestions available. Please add more content to your CV (work experience, skills, professional summary) to get AI-powered enhancement suggestions."
+            );
+          }
+
           // Ensure loading state is cleared when task completes
           if (suggestionsLoading) {
             setSuggestionsLoading(false);
@@ -198,6 +230,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     suggestionsLoading,
     setSuggestionsLoading,
     removeTask,
+    allSuggestions,
+    showInfo,
   ]);
   return (
     <Paper

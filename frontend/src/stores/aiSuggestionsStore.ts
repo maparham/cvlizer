@@ -46,6 +46,7 @@ interface AIStore {
   dismissAllSkillSuggestions: () => Promise<void>;
   dismissSummarySuggestion: () => Promise<void>;
   clearAllSuggestions: () => void;
+  clearSuggestionsError: () => void;
   deleteCurrentEnhancement: () => Promise<void>;
 }
 
@@ -335,6 +336,11 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       suggestionsLoading: false,
       suggestionsError: null,
     });
+  },
+
+  // Clear suggestions error (called when user dismisses error)
+  clearSuggestionsError: () => {
+    set({ suggestionsError: null });
   },
 }));
 

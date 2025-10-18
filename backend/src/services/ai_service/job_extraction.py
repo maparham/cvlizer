@@ -18,6 +18,7 @@ from src.schemas.ai_response_schemas import JobExtractionResponseSchema
 
 from .common import (
     MAX_JOB_CONTENT_LENGTH,
+    call_openai_with_schema,
     extract_cached_tokens,
     extract_response_data,
     get_openai_client,
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 
-def extract_job_description_with_ai(
+async def extract_job_description_with_ai(
     raw_content: str,
     source_url: str,
     user_id: Optional[str] = None,
@@ -97,60 +98,18 @@ MARKDOWN FORMAT for content:
 Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
 """
 
-        def _call_openai():
-            start_time = time.time()
-            client = get_openai_client()
-            response = client.responses.parse(
-                model=AIConfig.OPENAI_PARSING_MODEL,
-                input=[
-                    {
-                        "role": "system",
-                        "content": "You're a job posting extraction expert. Return valid JSON. Format 'content' as markdown (##, ###, bullets, **bold**, \\n\\n). Consolidate duplicate requirements (e.g., 'Strong programming' + 'Solid scripting' → one requirement). Keep unique requirements.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                text_format=JobExtractionResponseSchema,
-                reasoning=Reasoning(effort=AIConfig.OPENAI_PARSING_EFFORT),
-            )
-            end_time = time.time()
-
-            # Extract parsed data and token usage
-            extracted_data = response.output_parsed.model_dump()
-            prompt_tokens = response.usage.input_tokens
-            completion_tokens = response.usage.output_tokens
-            generation_time = int((end_time - start_time) * 1000)
-            cached_tokens = extract_cached_tokens(response)
-
-            return (
-                extracted_data,
-                prompt_tokens,
-                completion_tokens,
-                generation_time,
-                cached_tokens,
-            )
-
-        (
-            extracted_data,
-            prompt_tokens,
-            completion_tokens,
-            generation_time,
-            cached_tokens,
-        ) = _call_openai()
-
-        # Log AI usage with actual token counts
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="extract_job_description",
-                model_used=AIConfig.OPENAI_PARSING_MODEL,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                generation_time=generation_time,
-                success=True,
-                cv_id=cv_id,
-                cached_tokens=cached_tokens,
-            )
+        # Use unified OpenAI call builder
+        extracted_data, metadata = await call_openai_with_schema(
+            system_prompt="You're a job posting extraction expert. Return valid JSON. Format 'content' as markdown (##, ###, bullets, **bold**, \\n\\n). Consolidate duplicate requirements (e.g., 'Strong programming' + 'Solid scripting' → one requirement). Keep unique requirements.",
+            user_prompt=prompt,
+            response_schema=JobExtractionResponseSchema,
+            model=AIConfig.OPENAI_PARSING_MODEL,
+            reasoning_effort=AIConfig.OPENAI_PARSING_EFFORT,
+            user_id=user_id,
+            cv_id=cv_id,
+            operation_type="extract_job_description",
+            db_session=db_session,
+        )
 
         # Data already validated and parsed by responses.parse()
         return {
@@ -162,27 +121,9 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
         }
 
     except Exception as e:
-        # Log the error with full details
-        logger.error(
-            f"Job extraction failed with error: {str(e)}",
-            exc_info=True,
-        )
+        # Error already logged by call_openai_with_schema
+        # Additional context logging only
         logger.error(f"Error type: {type(e).__name__}")
         logger.error(f"Content length: {len(raw_content)} characters")
-
-        # Log failed AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="extract_job_description",
-                model_used=AIConfig.OPENAI_PARSING_MODEL,
-                prompt_tokens=0,
-                completion_tokens=0,
-                generation_time=0,
-                success=False,
-                error_message=str(e),
-                cv_id=cv_id,
-            )
 
         return {"error": f"Failed to extract job description: {str(e)}", "success": False}

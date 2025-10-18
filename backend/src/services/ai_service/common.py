@@ -363,3 +363,171 @@ def validate_with_schema(
     except Exception as e:
         logger.error(f"Unexpected error during schema validation for {operation}: {e}")
         return None
+
+
+def get_user_friendly_error_message(error: Exception) -> str:
+    """
+    Convert technical OpenAI errors to user-friendly messages.
+
+    This provides consistent, user-friendly error messages across all AI services
+    without exposing technical details or internal error codes.
+
+    Args:
+        error: Exception raised by OpenAI API
+
+    Returns:
+        User-friendly error message string
+    """
+    if isinstance(error, openai.RateLimitError):
+        return "Our AI service is temporarily at capacity. Please try again in a few minutes."
+    elif isinstance(error, openai.APIError):
+        return "There was an error connecting to our AI service. Please try again."
+    else:
+        return "An error occurred while processing your request. Please try again."
+
+
+async def call_openai_with_schema(
+    *,
+    system_prompt: str,
+    user_prompt: str,
+    response_schema: Type[BaseModel],
+    model: Optional[str] = None,
+    reasoning_effort: Optional[str] = None,
+    user_id: Optional[str] = None,
+    cv_id: Optional[str] = None,
+    operation_type: str,
+    db_session: Optional[Session] = None,
+    retry_attempts: int = RETRY_ATTEMPTS,
+    retry_delay: float = RETRY_DELAY,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    Unified OpenAI API call with schema validation, retry logic, and usage logging.
+
+    This function centralizes all OpenAI API interactions across AI services,
+    providing consistent error handling, retry logic, token tracking, and usage logging.
+
+    Handles:
+    - AI enabled check with standardized error response
+    - Async execution via thread pool (asyncio.to_thread)
+    - Automatic retry with exponential backoff
+    - Token usage extraction (including cached tokens)
+    - AI usage logging (success and failure)
+    - Consistent error handling and logging
+
+    Args:
+        system_prompt: System message content for OpenAI
+        user_prompt: User message content for OpenAI
+        response_schema: Pydantic schema for response parsing and validation
+        model: OpenAI model to use (defaults to AIConfig.OPENAI_MODEL)
+        reasoning_effort: Reasoning effort level (defaults to AIConfig.REASONING_EFFORT)
+        user_id: User identifier for logging
+        cv_id: CV identifier for logging
+        operation_type: Type of operation (for logging, e.g., "parse_cv", "enhance_content")
+        db_session: Database session for logging
+        retry_attempts: Number of retry attempts (defaults to RETRY_ATTEMPTS)
+        retry_delay: Base delay between retries in seconds (defaults to RETRY_DELAY)
+
+    Returns:
+        Tuple of (parsed_data, metadata) where:
+        - parsed_data: Dictionary with parsed response data
+        - metadata: Dictionary containing tokens_used, generation_time, model_used,
+                   prompt_tokens, completion_tokens, cached_tokens
+
+    Raises:
+        RuntimeError: If OpenAI API is not enabled or call fails after retries
+    """
+    import time
+
+    from openai.types.shared_params import Reasoning
+
+    if not is_ai_enabled():
+        raise RuntimeError("OpenAI API is not enabled")
+
+    model = model or AIConfig.OPENAI_MODEL
+    reasoning_effort = reasoning_effort or AIConfig.REASONING_EFFORT
+    client = get_openai_client()
+    start_time = time.time()
+
+    try:
+
+        async def _call():
+            return await asyncio.to_thread(
+                client.responses.parse,
+                model=model,
+                input=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                text_format=response_schema,
+                reasoning=Reasoning(effort=reasoning_effort),
+            )
+
+        response = await with_retries(_call, attempts=retry_attempts, delay=retry_delay)
+
+        generation_time = int((time.time() - start_time) * 1000)
+
+        # Extract parsed data and token usage
+        parsed_data = response.output_parsed.model_dump()
+        prompt_tokens = response.usage.input_tokens
+        completion_tokens = response.usage.output_tokens
+        tokens_used = prompt_tokens + completion_tokens
+        cached_tokens = extract_cached_tokens(response)
+
+        # Build metadata dictionary
+        metadata = {
+            "tokens_used": tokens_used,
+            "generation_time": generation_time,
+            "model_used": model,
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "cached_tokens": cached_tokens,
+        }
+
+        # Log successful AI usage
+        if user_id:
+            log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type=operation_type,
+                model_used=model,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                generation_time=generation_time,
+                success=True,
+                cv_id=cv_id,
+                cached_tokens=cached_tokens,
+            )
+
+        return parsed_data, metadata
+
+    except Exception as e:
+        # Convert to user-friendly message
+        user_friendly_message = get_user_friendly_error_message(e)
+
+        # Log based on error type - expected errors without stack trace
+        if isinstance(e, (openai.RateLimitError, openai.APIError)):
+            # Expected operational errors - no stack trace needed
+            logger.warning(f"{operation_type} failed: {str(e)}")
+            logger.info(f"User-friendly message: {user_friendly_message}")
+        else:
+            # Unexpected errors - include stack trace for debugging
+            logger.error(f"{operation_type} failed: {str(e)}", exc_info=True)
+            logger.error(f"User-friendly message: {user_friendly_message}")
+
+        # Log failed AI usage with user-friendly message
+        if user_id:
+            log_ai_usage_safe(
+                db_session=db_session,
+                user_id=user_id,
+                operation_type=operation_type,
+                model_used=model,
+                prompt_tokens=0,
+                completion_tokens=0,
+                generation_time=0,
+                success=False,
+                error_message=user_friendly_message,
+                cv_id=cv_id,
+            )
+
+        # Raise with user-friendly message
+        raise RuntimeError(user_friendly_message)

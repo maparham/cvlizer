@@ -20,6 +20,7 @@ from src.schemas.ai_response_schemas import CVSectionGenerationResponseSchema
 from .common import (
     RETRY_ATTEMPTS,
     RETRY_DELAY,
+    call_openai_with_schema,
     extract_cached_tokens,
     extract_response_data,
     get_openai_client,
@@ -102,82 +103,29 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
         )
 
     try:
-        start_time = time.time()
-        client = get_openai_client()
-
-        # Run the synchronous OpenAI call in a thread pool to avoid blocking
-        async def _call():
-            return await asyncio.to_thread(
-                client.responses.parse,
-                model=AIConfig.OPENAI_MODEL,
-                input=[
-                    {
-                        "role": "system",
-                        "content": "You're a CV expert. CRITICAL: Generate content in the SAME LANGUAGE as the job description. Generate compelling, tailored content aligning candidates with job requirements.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                text_format=CVSectionGenerationResponseSchema,
-                reasoning=Reasoning(effort=AIConfig.REASONING_EFFORT),
-            )
-
-        response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
-
-        generation_time = int(
-            (time.time() - start_time) * 1000
-        )  # Convert to milliseconds
-
-        # Extract parsed data and token usage
-        parsed_content = response.output_parsed.model_dump()
-        prompt_tokens = response.usage.input_tokens
-        completion_tokens = response.usage.output_tokens
-        tokens_used = prompt_tokens + completion_tokens
-        cached_tokens = extract_cached_tokens(response)
-
-        # Log AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="generate_section",
-                model_used=AIConfig.OPENAI_MODEL,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                generation_time=generation_time,
-                success=True,
-                cv_id=cv_id,
-                cached_tokens=cached_tokens,
-            )
+        # Use unified OpenAI call builder
+        parsed_content, metadata = await call_openai_with_schema(
+            system_prompt="You're a CV expert. CRITICAL: Generate content in the SAME LANGUAGE as the job description. Generate compelling, tailored content aligning candidates with job requirements.",
+            user_prompt=prompt,
+            response_schema=CVSectionGenerationResponseSchema,
+            user_id=user_id,
+            cv_id=cv_id,
+            operation_type="generate_section",
+            db_session=db_session,
+        )
 
         return {
             "section_content": parsed_content.get("content", ""),
             "title": parsed_content.get("title", "AI Generated Section"),
             "key_points": parsed_content.get("key_points", []),
-            "tokens_used": tokens_used,
-            "generation_time": generation_time,
-            "model_used": AIConfig.OPENAI_MODEL,
+            **metadata,  # Include tokens_used, generation_time, model_used, etc.
         }
 
     except Exception as e:
-        # Log the error with full details
-        logger.error(f"Section generation failed with error: {str(e)}", exc_info=True)
+        # Error already logged by call_openai_with_schema
+        # Additional context logging only
         logger.error(f"Error type: {type(e).__name__}")
         logger.error(f"Section type: {section_type}")
-
-        # Log failed AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="generate_section",
-                model_used=AIConfig.OPENAI_MODEL,
-                prompt_tokens=0,
-                completion_tokens=0,
-                generation_time=0,
-                success=False,
-                error_message=str(e),
-                cv_id=cv_id,
-            )
 
         # Fallback response in case of API error
         return {

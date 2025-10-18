@@ -21,6 +21,7 @@ from src.schemas.ai_response_schemas import CVParsingResponseSchema
 from .common import (
     RETRY_ATTEMPTS,
     RETRY_DELAY,
+    call_openai_with_schema,
     extract_cached_tokens,
     extract_response_data,
     get_openai_client,
@@ -105,70 +106,28 @@ Return JSON (omit empty sections):
         if not is_ai_enabled():
             raise RuntimeError("OpenAI disabled")
 
-        client = get_openai_client()
-
-        async def _call():
-            return await asyncio.to_thread(
-                client.responses.parse,
-                model=AIConfig.OPENAI_PARSING_MODEL,
-                input=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert CV parser. Extract structured information from CV text and return valid JSON.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                text_format=CVParsingResponseSchema,
-                reasoning=Reasoning(effort=AIConfig.OPENAI_PARSING_EFFORT),
-            )
-
-        response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
-
-        # Extract parsed data and token usage
-        parsed_content = response.output_parsed.model_dump()
-        prompt_tokens = response.usage.input_tokens
-        completion_tokens = response.usage.output_tokens
-        cached_tokens = extract_cached_tokens(response)
-
-        # Log AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="parse_cv",
-                model_used=AIConfig.OPENAI_PARSING_MODEL,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                generation_time=0,  # Not tracked in this function
-                success=True,
-                cv_id=cv_id,
-                cached_tokens=cached_tokens,
-            )
+        # Use unified OpenAI call builder
+        parsed_content, metadata = await call_openai_with_schema(
+            system_prompt="You are an expert CV parser. Extract structured information from CV text and return valid JSON.",
+            user_prompt=prompt,
+            response_schema=CVParsingResponseSchema,
+            model=AIConfig.OPENAI_PARSING_MODEL,
+            reasoning_effort=AIConfig.OPENAI_PARSING_EFFORT,
+            user_id=user_id,
+            cv_id=cv_id,
+            operation_type="parse_cv",
+            db_session=db_session,
+        )
 
         # Add section_config to the parsed content
         parsed_content = _add_section_config(parsed_content)
         return parsed_content
 
     except Exception as e:
-        # Log the error with full details
-        logger.error(f"CV parsing failed with error: {str(e)}", exc_info=True)
+        # Error already logged by call_openai_with_schema
+        # Additional context logging only
         logger.error(f"Error type: {type(e).__name__}")
         logger.error(f"Text content length: {len(text_content)} characters")
-
-        # Log failed AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="parse_cv",
-                model_used=AIConfig.OPENAI_PARSING_MODEL,
-                prompt_tokens=0,
-                completion_tokens=0,
-                generation_time=0,
-                success=False,
-                error_message=str(e),
-                cv_id=cv_id,
-            )
 
         # Fallback response in case of API error
         fallback = deepcopy(DEFAULT_PARSED_CV)

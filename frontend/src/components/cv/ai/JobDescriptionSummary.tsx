@@ -30,6 +30,7 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   AutoAwesome as AutoAwesomeIcon,
@@ -42,6 +43,7 @@ import {
   useJobDescriptions,
   useActiveJobDescription,
 } from "../../../stores/aiStore";
+import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { JobDescription } from "../../../types/ai";
 import { useNotifications } from "../../../stores/uiStore";
 import { useJobDescriptionPolling } from "../../../hooks/useJobDescriptionPolling";
@@ -82,6 +84,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     updateJobDescription,
     createJobFitDraft,
   } = useAIStore();
+  const { suggestionsError, clearSuggestionsError } = useAISuggestionsStore();
   const { showSuccess, showError } = useNotifications();
   const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
 
@@ -378,57 +381,68 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   }}
                 >
                   {onGenerateSuggestions && (
-                    <Button
-                      variant="contained"
-                      startIcon={
-                        suggestionsLoading ? (
-                          <CircularProgress size={16} color="inherit" />
-                        ) : (
-                          <AutoAwesomeIcon
-                            sx={{
-                              animation: suggestionsLoading
-                                ? "pulse 1.5s ease-in-out infinite"
-                                : "none",
-                              "@keyframes pulse": {
-                                "0%": { transform: "scale(1)" },
-                                "50%": { transform: "scale(1.1)" },
-                                "100%": { transform: "scale(1)" },
-                              },
-                            }}
-                          />
-                        )
-                      }
-                      onClick={onGenerateSuggestions}
-                      disabled={
-                        suggestionsLoading || activeJobDescription?.is_parsing
-                      }
-                      fullWidth
-                      sx={{
-                        textTransform: "none",
-                        backgroundColor: "transparent",
-                        color: "#1976d2",
-                        border: "1px solid #1976d2",
-                        fontWeight: 600,
-                        py: 1.5,
-                        px: 2,
-                        height: 48,
-                        "&:hover": {
-                          backgroundColor: "rgba(25, 118, 210, 0.08)",
-                          borderColor: "#1565c0",
-                          transform: "translateY(-1px)",
-                          boxShadow: 2,
-                        },
-                        "&:disabled": {
-                          opacity: 0.7,
-                          transform: "none",
-                        },
-                        transition: "all 0.2s ease-in-out",
-                      }}
-                    >
-                      {suggestionsLoading
-                        ? "Enhancing..."
-                        : "Enhance CV for this Job"}
-                    </Button>
+                    <>
+                      <Button
+                        variant="contained"
+                        startIcon={
+                          suggestionsLoading ? (
+                            <CircularProgress size={16} color="inherit" />
+                          ) : (
+                            <AutoAwesomeIcon
+                              sx={{
+                                animation: suggestionsLoading
+                                  ? "pulse 1.5s ease-in-out infinite"
+                                  : "none",
+                                "@keyframes pulse": {
+                                  "0%": { transform: "scale(1)" },
+                                  "50%": { transform: "scale(1.1)" },
+                                  "100%": { transform: "scale(1)" },
+                                },
+                              }}
+                            />
+                          )
+                        }
+                        onClick={onGenerateSuggestions}
+                        disabled={
+                          suggestionsLoading || activeJobDescription?.is_parsing
+                        }
+                        fullWidth
+                        sx={{
+                          textTransform: "none",
+                          backgroundColor: "transparent",
+                          color: "#1976d2",
+                          border: "1px solid #1976d2",
+                          fontWeight: 600,
+                          py: 1.5,
+                          px: 2,
+                          height: 48,
+                          "&:hover": {
+                            backgroundColor: "rgba(25, 118, 210, 0.08)",
+                            borderColor: "#1565c0",
+                            transform: "translateY(-1px)",
+                            boxShadow: 2,
+                          },
+                          "&:disabled": {
+                            opacity: 0.7,
+                            transform: "none",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                        }}
+                      >
+                        {suggestionsLoading
+                          ? "Enhancing..."
+                          : "Enhance CV for this Job"}
+                      </Button>
+                      {suggestionsError && (
+                        <Alert
+                          severity="error"
+                          onClose={() => clearSuggestionsError()}
+                          sx={{ mt: 1 }}
+                        >
+                          {suggestionsError}
+                        </Alert>
+                      )}
+                    </>
                   )}
 
                   {onAddToCV && (

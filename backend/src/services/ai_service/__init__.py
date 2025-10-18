@@ -6,6 +6,9 @@ and generating AI-enhanced CV sections tailored to job descriptions.
 
 This is a package that organizes AI functionality into specialized
 submodules while maintaining backward compatibility through re-exports.
+
+All OpenAI interactions are unified through call_openai_with_schema for
+consistent error handling, retry logic, token tracking, and usage logging.
 """
 
 # Re-export ATS optimization functions
@@ -15,6 +18,7 @@ from .ats_optimization import analyze_ats_optimization, create_optimization_sugg
 from .common import (
     ATSOptimizationResult,
     JobFitResult,
+    call_openai_with_schema,
     extract_cached_tokens,
     is_ai_enabled,
 )
@@ -42,6 +46,7 @@ __all__ = [
     # Common utilities and types
     "is_ai_enabled",
     "extract_cached_tokens",
+    "call_openai_with_schema",
     "JobFitResult",
     "ATSOptimizationResult",
     # Job fit analysis

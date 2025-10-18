@@ -324,11 +324,20 @@ def _extract_raw_content(url: str) -> str:
 def _parse_with_openai(
     raw_content: str, url: str, user_id: str = None, db_session=None
 ) -> Dict[str, Any]:
-    """Parse job description content using OpenAI AI service."""
+    """
+    Parse job description content using OpenAI AI service.
+
+    This is a synchronous wrapper around the async extract_job_description_with_ai.
+    It uses asyncio.run() to execute the async function in a new event loop.
+    """
+    import asyncio
+
     try:
-        # Use the AI service to parse the content
-        result = extract_job_description_with_ai(
-            raw_content, url, user_id=user_id, db_session=db_session
+        # Use the AI service to parse the content (async function)
+        result = asyncio.run(
+            extract_job_description_with_ai(
+                raw_content, url, user_id=user_id, db_session=db_session
+            )
         )
 
         # Check if AI service returned an error

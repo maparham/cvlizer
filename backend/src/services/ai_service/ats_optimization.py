@@ -25,6 +25,7 @@ from .common import (
     RETRY_ATTEMPTS,
     RETRY_DELAY,
     ATSOptimizationResult,
+    call_openai_with_schema,
     extract_cached_tokens,
     extract_response_data,
     get_openai_client,
@@ -143,58 +144,25 @@ async def analyze_ats_optimization(
     client = get_openai_client()
 
     try:
-        start_time = time.time()
-
         # Log metadata only (not full content)
         logger.info(
             f"Analyzing ATS optimization - user_id={user_id}, cv_id={cv_id}, operation=analyze_ats"
         )
 
-        # Call OpenAI API with ATS analysis prompt
-        async def _call():
-            return await asyncio.to_thread(
-                client.responses.parse,
-                model=AIConfig.OPENAI_MODEL,
-                input=[
-                    {
-                        "role": "system",
-                        "content": "You're an ATS expert. CRITICAL: Write suggestions in the SAME LANGUAGE as the job description. Analyze CV vs job description for keywords. Check ALL CV sections before marking keywords missing. Extract ONLY actual JD keywords. Each keyword in ONE array. Valid JSON only.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                text_format=ATSOptimizationResponseSchema,
-                reasoning=Reasoning(effort=AIConfig.REASONING_EFFORT),
-            )
-
-        response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
-
-        generation_time = int((time.time() - start_time) * 1000)
-
-        # Extract parsed data and token usage
-        analysis = response.output_parsed.model_dump()
-        prompt_tokens = response.usage.input_tokens
-        completion_tokens = response.usage.output_tokens
-        tokens_used = prompt_tokens + completion_tokens
-        cached_tokens = extract_cached_tokens(response)
-
-        # Log AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="analyze_ats",
-                model_used=AIConfig.OPENAI_MODEL,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                generation_time=generation_time,
-                success=True,
-                cv_id=cv_id,
-                cached_tokens=cached_tokens,
-            )
+        # Use unified OpenAI call builder
+        analysis, metadata = await call_openai_with_schema(
+            system_prompt="You're an ATS expert. CRITICAL: Write suggestions in the SAME LANGUAGE as the job description. Analyze CV vs job description for keywords. Check ALL CV sections before marking keywords missing. Extract ONLY actual JD keywords. Each keyword in ONE array. Valid JSON only.",
+            user_prompt=prompt,
+            response_schema=ATSOptimizationResponseSchema,
+            user_id=user_id,
+            cv_id=cv_id,
+            operation_type="analyze_ats",
+            db_session=db_session,
+        )
 
         # Log response metrics for monitoring
         logger.info(
-            f"ATS analysis complete - tokens={tokens_used}, time={generation_time}ms"
+            f"ATS analysis complete - tokens={metadata['tokens_used']}, time={metadata['generation_time']}ms"
         )
 
         return {
@@ -205,33 +173,15 @@ async def analyze_ats_optimization(
             "content_optimization": analysis.get("content_optimization", []),
             "strengths": analysis.get("strengths", []),
             "weaknesses": analysis.get("weaknesses", []),
-            "tokens_used": tokens_used,
-            "generation_time": generation_time,
-            "model_used": AIConfig.OPENAI_MODEL,
+            **metadata,  # Include tokens_used, generation_time, model_used, etc.
         }
 
     except Exception as e:
-        # Log the error with full details
-        logger.error(f"ATS optimization failed with error: {str(e)}", exc_info=True)
+        # Error already logged by call_openai_with_schema
+        # Additional context logging only
         logger.error(f"Error type: {type(e).__name__}")
 
-        # Log failed AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="analyze_ats",
-                model_used=AIConfig.OPENAI_MODEL,
-                prompt_tokens=0,
-                completion_tokens=0,
-                generation_time=0,
-                success=False,
-                error_message=str(e),
-                cv_id=cv_id,
-            )
-
-        # Log error and return fallback result
-        logger.error(f"Error in analyze_ats_optimization: {str(e)}")
+        # Return fallback result
         return {
             "ats_score": 0,
             "missing_keywords": [],
@@ -372,11 +322,25 @@ async def create_optimization_suggestions(
             },
         }
 
-    # Extract current CV data
-    skills_data = cv_data.get("skills", {})
-    current_technical_skills = skills_data.get("technical", [])
-    current_soft_skills = skills_data.get("soft", [])
-    current_summary = cv_data.get("professional_summary", {}).get("content", "")
+    # Handle None or empty cv_data
+    if not cv_data:
+        return {
+            "skills": {"technical": [], "soft": []},
+            "professional_summary": {
+                "suggested_text": "",
+                "original_text": "",
+                "key_changes": [],
+            },
+        }
+
+    # Extract current CV data with defensive null checks
+    skills_data = cv_data.get("skills") or {}
+    current_technical_skills = skills_data.get("technical") or []
+    current_soft_skills = skills_data.get("soft") or []
+
+    # Fix the nested .get() on potentially None value
+    summary_data = cv_data.get("professional_summary") or {}
+    current_summary = summary_data.get("content") or ""
 
     # Create brief work experience overview
     work_experience = cv_data.get("work_experience", [])
@@ -401,76 +365,25 @@ async def create_optimization_suggestions(
     )
 
     try:
-        start_time = time.time()
-
         # Log metadata only (not full content)
         logger.info(
             f"Generating AI suggestions - user_id={user_id}, cv_id={cv_id}, operation=generate_suggestions"
         )
 
-        client = get_openai_client()
-
-        # Call OpenAI API with unified prompt
-        async def _call():
-            return await asyncio.to_thread(
-                client.responses.parse,
-                model=AIConfig.OPENAI_MODEL,
-                input=[
-                    {
-                        "role": "system",
-                        "content": "You're a CV optimization assistant. Analyze CV vs job description. Extract real, tangible skills. Create natural professional content.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                text_format=OptimizationSuggestionsResponseSchema,
-                reasoning=Reasoning(effort=AIConfig.REASONING_EFFORT),
-            )
-
-        response = await with_retries(_call, attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY)
-
-        generation_time = int((time.time() - start_time) * 1000)
-
-        # Extract parsed data and token usage
-        parsed_suggestions = response.output_parsed.model_dump()
-        prompt_tokens = response.usage.input_tokens
-        completion_tokens = response.usage.output_tokens
-        tokens_used = prompt_tokens + completion_tokens
-
-        # Extract cached tokens if available (OpenAI prompt caching)
-        cached_tokens = 0
-        if (
-            hasattr(response.usage, "input_tokens_details")
-            and response.usage.input_tokens_details
-        ):
-            cached_tokens = getattr(
-                response.usage.input_tokens_details, "cached_tokens", 0
-            )
-        elif (
-            hasattr(response.usage, "prompt_tokens_details")
-            and response.usage.prompt_tokens_details
-        ):
-            cached_tokens = getattr(
-                response.usage.prompt_tokens_details, "cached_tokens", 0
-            )
-
-        # Log AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="generate_suggestions",
-                model_used=AIConfig.OPENAI_MODEL,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                generation_time=generation_time,
-                success=True,
-                cv_id=cv_id,
-                cached_tokens=cached_tokens,
-            )
+        # Use unified OpenAI call builder
+        parsed_suggestions, metadata = await call_openai_with_schema(
+            system_prompt="You're a CV optimization assistant. Analyze CV vs job description. Extract real, tangible skills. Create natural professional content.",
+            user_prompt=prompt,
+            response_schema=OptimizationSuggestionsResponseSchema,
+            user_id=user_id,
+            cv_id=cv_id,
+            operation_type="generate_suggestions",
+            db_session=db_session,
+        )
 
         # Log response metrics for monitoring
         logger.info(
-            f"AI suggestions complete - tokens={tokens_used}, time={generation_time}ms"
+            f"AI suggestions complete - tokens={metadata['tokens_used']}, time={metadata['generation_time']}ms"
         )
 
         # Validate and filter skill suggestions
@@ -506,29 +419,11 @@ async def create_optimization_suggestions(
         }
 
     except Exception as e:
-        # Log the error with full details
-        logger.error(
-            f"Optimization suggestions failed with error: {str(e)}", exc_info=True
-        )
+        # Error already logged by call_openai_with_schema
+        # Additional context logging only
         logger.error(f"Error type: {type(e).__name__}")
 
-        # Log failed AI usage
-        if user_id:
-            log_ai_usage_safe(
-                db_session=db_session,
-                user_id=user_id,
-                operation_type="generate_suggestions",
-                model_used=AIConfig.OPENAI_MODEL,
-                prompt_tokens=0,
-                completion_tokens=0,
-                generation_time=0,
-                success=False,
-                error_message=str(e),
-                cv_id=cv_id,
-            )
-
-        # Log error and return empty structures (graceful degradation)
-        logger.error(f"Error in create_optimization_suggestions: {str(e)}")
+        # Return empty structures (graceful degradation)
         return {
             "skills": {"technical": [], "soft": []},
             "professional_summary": {
