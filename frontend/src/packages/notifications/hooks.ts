@@ -85,15 +85,51 @@ export const useNotifications = () => {
  * @returns Filtered notifications and actions
  */
 export const useCVNotifications = (cvId?: string) => {
-  const { notifications, ...rest } = useNotifications();
+  // Get store methods directly, not through useNotifications() to avoid CVContext issues
+  const {
+    notifications,
+    addNotification: originalAddNotification,
+    removeNotification,
+    clearNotifications,
+    markNotificationAsShown,
+  } = useNotificationStore();
 
-  // Filter notifications: show global (no cvId) + current CV notifications
-  const filteredNotifications = notifications.filter(
-    notification => !notification.cvId || notification.cvId === cvId
-  );
+  // Create convenience methods that use explicit cvId directly
+  const showSuccess = (title: string, message?: string, toastOnly?: boolean) =>
+    originalAddNotification({ type: "success", title, message, toastOnly }, cvId);
+
+  const showError = (title: string, message?: string, toastOnly?: boolean) =>
+    originalAddNotification({ type: "error", title, message, toastOnly }, cvId);
+
+  const showWarning = (title: string, message?: string, toastOnly?: boolean) =>
+    originalAddNotification({ type: "warning", title, message, toastOnly }, cvId);
+
+  const showInfo = (title: string, message?: string, toastOnly?: boolean) =>
+    originalAddNotification({ type: "info", title, message, toastOnly }, cvId);
+
+  const showValidationError = (title: string, message?: string, toastOnly?: boolean) =>
+    originalAddNotification({ type: "error", title, message, persistent: true, toastOnly }, cvId);
+
+  // Wrapper for addNotification that uses explicit cvId
+  const addNotification = (notification: any, cvIdParam?: string) =>
+    originalAddNotification(notification, cvIdParam || cvId);
+
+  // Filter notifications: show notifications for the current CV
+  // If no cvId provided, show all notifications (for Dashboard)
+  const filteredNotifications = cvId
+    ? notifications.filter(notification => notification.cvId === cvId)
+    : notifications;
 
   return {
     notifications: filteredNotifications,
-    ...rest,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+    markNotificationAsShown,
+    showSuccess,
+    showError,
+    showValidationError,
+    showWarning,
+    showInfo,
   };
 };

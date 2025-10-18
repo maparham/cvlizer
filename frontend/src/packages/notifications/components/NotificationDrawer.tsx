@@ -48,7 +48,7 @@ import {
   OpenInNew as OpenInNewIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { useNotifications } from "../hooks";
+import { useNotificationStore } from "../store";
 import { formatRelativeTime } from "../utils";
 import { NotificationDrawerRef } from "../types";
 
@@ -57,14 +57,14 @@ interface NotificationDrawerProps {
 }
 
 const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerProps>(({ cvId }, ref) => {
-  const { notifications: allNotifications, removeNotification, clearNotifications } = useNotifications();
+  const { notifications: allNotifications, removeNotification, clearNotifications } = useNotificationStore();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Filter notifications if cvId provided
   const notifications = cvId
-    ? allNotifications.filter(n => !n.cvId || n.cvId === cvId)
+    ? allNotifications.filter(n => n.cvId === cvId)
     : allNotifications;
 
   // Calculate total count of individual notifications (including grouped ones)

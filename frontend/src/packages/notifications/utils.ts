@@ -81,20 +81,22 @@ export const generateNotificationId = (): string => {
 /**
  * Creates a new notification with default values
  * @param notification - Base notification data
+ * @param id - Optional ID to use (if not provided, generates a new one)
  * @returns Complete notification object with all required fields
  */
 export const createNotification = (
-  notification: Omit<Notification, "id" | "timestamp" | "shown" | "count" | "groupedIds" | "groupedTimestamps" | "cvId">
+  notification: Omit<Notification, "id" | "timestamp" | "shown" | "count" | "groupedIds" | "groupedTimestamps" | "cvId">,
+  id?: string
 ): Omit<Notification, "cvId"> => {
-  const id = generateNotificationId();
+  const notificationId = id || generateNotificationId();
   const timestamp = new Date();
   return {
     ...notification,
-    id,
+    id: notificationId,
     timestamp,
     shown: false,
     count: 1,
-    groupedIds: [id],
+    groupedIds: [notificationId],
     groupedTimestamps: [timestamp],
   };
 };

@@ -119,7 +119,7 @@ export const useNotificationStore = create<NotificationStore>()(
           } else {
             // Create new notification with cvId
             const newNotification = {
-              ...createNotification(notification),
+              ...createNotification(notification, id), // Pass the ID generated at the beginning
               cvId, // Add CV context
             };
             notifications.unshift(newNotification);

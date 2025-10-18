@@ -38,13 +38,13 @@ import {
   Close as CloseIcon,
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
-import { useNotifications } from "../hooks";
+import { useNotificationStore } from "../store";
 import { formatRelativeTime } from "../utils";
 import { NotificationToastProps } from "../types";
 import { toastNotificationEmitter } from "../store";
 
 const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvId }) => {
-  const { notifications: allNotifications, markNotificationAsShown } = useNotifications();
+  const { notifications: allNotifications, markNotificationAsShown } = useNotificationStore();
   const [currentToast, setCurrentToast] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [toastOnlyQueue, setToastOnlyQueue] = useState<any[]>([]);
@@ -52,7 +52,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
 
   // Filter notifications if cvId provided
   const notifications = cvId
-    ? allNotifications.filter(n => !n.cvId || n.cvId === cvId)
+    ? allNotifications.filter(n => n.cvId === cvId)
     : allNotifications;
 
   // Listen for toast-only notifications
