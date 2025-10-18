@@ -19,7 +19,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   Box,
@@ -64,9 +64,12 @@ import {
 } from "../../../stores/aiStore";
 import { useNotifications } from "../../../packages/notifications";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
+import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
+import CVCompletenessIndicator from "../../CVCompleteness/CVCompletenessIndicator";
 
 interface JobFitAnalysisProps {
   cvId: string;
+  cvData?: any; // Parsed CV data for completeness checking
   onAddToCV?: (content: string, sectionType: string) => void;
   className?: string;
   existingWhyGoodFit?: unknown; // Current why_good_fit section data if it exists
@@ -74,6 +77,7 @@ interface JobFitAnalysisProps {
 
 const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
   cvId,
+  cvData,
   onAddToCV,
   className,
   existingWhyGoodFit,
@@ -85,6 +89,24 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
 
   const { showSuccess, showError } = useNotifications();
   const { analyzeJobFit, clearJobFitAnalysis } = useAIStore();
+
+  // Calculate CV completeness
+  const completeness = useMemo(() => {
+    if (!cvData) {
+      return {
+        score: 0,
+        isComplete: false,
+        missing: ["CV data not available"],
+        details: {
+          hasWorkExperience: false,
+          hasSkills: false,
+          skillCount: 0,
+          workExpCount: 0,
+        },
+      };
+    }
+    return calculateCVCompleteness(cvData);
+  }, [cvData]);
 
   // Use global AI task polling for job fit analysis
   const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
@@ -148,6 +170,15 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
   const handleAnalyze = useCallback(async () => {
     if (!activeJobDescription) {
       showError("Error", "Please select a job description first");
+      return;
+    }
+
+    // Check CV completeness before attempting to generate
+    if (!completeness.isComplete) {
+      showError(
+        "CV Incomplete",
+        `Your CV needs more content before generating job fit analysis. Please add: ${completeness.missing.join(", ")}`
+      );
       return;
     }
 
@@ -216,6 +247,8 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
     showSuccess,
     showError,
     addTask,
+    completeness.isComplete,
+    completeness.missing,
   ]);
 
   const handleRegenerate = useCallback(() => {
@@ -364,23 +397,49 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
                 Create an AI-powered "Why I'm a Good Fit" section that
                 highlights your strengths and matches for this role.
               </Typography>
-              <Button
-                variant="contained"
-                onClick={handleAnalyze}
-                disabled={isGenerating || jobFitAnalysis.isAnalyzing}
-                startIcon={
-                  isGenerating || jobFitAnalysis.isAnalyzing ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    <AutoAwesomeIcon />
-                  )
+
+              {/* Show CV completeness indicator if not complete */}
+              {!completeness.isComplete && (
+                <Box sx={{ mb: 2, textAlign: "left" }}>
+                  <CVCompletenessIndicator
+                    completeness={completeness}
+                    variant="detailed"
+                  />
+                </Box>
+              )}
+
+              <Tooltip
+                title={
+                  !completeness.isComplete
+                    ? `CV needs more content: ${completeness.missing.join(", ")}`
+                    : ""
                 }
-                size="large"
+                arrow
               >
-                {isGenerating || jobFitAnalysis.isAnalyzing
-                  ? "Generating..."
-                  : "Generate Job Fit Section"}
-              </Button>
+                <span>
+                  <Button
+                    variant="contained"
+                    onClick={handleAnalyze}
+                    disabled={
+                      !completeness.isComplete ||
+                      isGenerating ||
+                      jobFitAnalysis.isAnalyzing
+                    }
+                    startIcon={
+                      isGenerating || jobFitAnalysis.isAnalyzing ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AutoAwesomeIcon />
+                      )
+                    }
+                    size="large"
+                  >
+                    {isGenerating || jobFitAnalysis.isAnalyzing
+                      ? "Generating..."
+                      : "Generate Job Fit Section"}
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
           </CardContent>
         </Card>

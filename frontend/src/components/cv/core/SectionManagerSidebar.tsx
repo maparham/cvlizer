@@ -66,7 +66,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   availableSectionsToAdd,
   title,
   cvId,
-  cvData: _cvData,
+  cvData,
   onTitleSave,
   onToggleVisibility,
   onAddNewSection,
@@ -558,6 +558,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             <Stack spacing={3}>
               <JobDescriptionSummary
                 cvId={cvId}
+                cvData={cvData}
                 onJobDescriptionSelect={handleJobDescriptionSelect}
                 onGenerateSuggestions={handleGenerateSuggestions}
                 suggestionsLoading={suggestionsLoading}

@@ -52,6 +52,43 @@ JOB_FIT_INSTRUCTIONS = (
 # ============================================================================
 
 
+def _is_cv_data_sufficient(cv_data: Dict[str, Any]) -> tuple[bool, list[str]]:
+    """
+    Validate if CV has sufficient content for job fit analysis.
+
+    Threshold: At least 1 work experience entry AND 3+ skills
+
+    Args:
+        cv_data: Structured CV data from parsed_data field
+
+    Returns:
+        Tuple of (is_valid, list_of_missing_items)
+    """
+    missing_items = []
+
+    # Check work experience
+    work_experience = cv_data.get("work_experience", [])
+    has_work_exp = len(work_experience) > 0 and any(
+        exp.get("responsibilities") or exp.get("achievements") for exp in work_experience
+    )
+    if not has_work_exp:
+        missing_items.append(
+            "at least 1 work experience entry with responsibilities or achievements"
+        )
+
+    # Check skills (technical + soft combined)
+    skills = cv_data.get("skills", {})
+    technical_skills = skills.get("technical", [])
+    soft_skills = skills.get("soft", [])
+    total_skills = len(technical_skills) + len(soft_skills)
+
+    if total_skills < 3:
+        missing_items.append(f"at least 3 skills (currently have {total_skills})")
+
+    is_valid = len(missing_items) == 0
+    return is_valid, missing_items
+
+
 def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
     """
     Build token-efficient prompt for job fit analysis (optimized for gpt-4o-nano).
@@ -132,6 +169,17 @@ async def _execute_job_fit_analysis(
             JobFitResult,
             build_error_response(
                 "OpenAI API key not configured. AI features are disabled.",
+                "analyze_job_fit",
+            ),
+        )
+
+    # Validate CV has sufficient content
+    is_valid, missing_items = _is_cv_data_sufficient(cv_data)
+    if not is_valid:
+        return cast(
+            JobFitResult,
+            build_error_response(
+                f"CV lacks sufficient content for job fit analysis. Please add: {', '.join(missing_items)}",
                 "analyze_job_fit",
             ),
         )

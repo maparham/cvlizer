@@ -54,32 +54,32 @@ export const useNotificationStore = create<NotificationStore>()(
 
         set((state) => {
           let notifications = [...state.notifications];
-          const lastNotification = notifications[notifications.length - 1];
+          const firstNotification = notifications[0];
 
           // Check if identical AND same CV context
-          const isIdentical = lastNotification &&
-            lastNotification.cvId === cvId &&
-            areNotificationsIdentical(lastNotification, notification);
+          const isIdentical = firstNotification &&
+            firstNotification.cvId === cvId &&
+            areNotificationsIdentical(firstNotification, notification);
 
           if (isIdentical) {
-            // Group with the last notification
+            // Group with the first notification
             const newTimestamp = new Date();
-            const updatedLastNotification = {
-              ...lastNotification,
-              count: lastNotification.count + 1,
-              groupedIds: [...lastNotification.groupedIds, id],
+            const updatedFirstNotification = {
+              ...firstNotification,
+              count: firstNotification.count + 1,
+              groupedIds: [...firstNotification.groupedIds, id],
               timestamp: newTimestamp, // Update to latest timestamp
-              groupedTimestamps: [...lastNotification.groupedTimestamps, newTimestamp],
+              groupedTimestamps: [...firstNotification.groupedTimestamps, newTimestamp],
             };
 
-            notifications[notifications.length - 1] = updatedLastNotification;
+            notifications[0] = updatedFirstNotification;
           } else {
             // Create new notification with cvId
             const newNotification = {
               ...createNotification(notification),
               cvId, // Add CV context
             };
-            notifications.push(newNotification);
+            notifications.unshift(newNotification);
           }
 
           // Clean up expired notifications

@@ -16,7 +16,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -31,6 +31,7 @@ import {
   TextField,
   CircularProgress,
   Alert,
+  Tooltip,
 } from "@mui/material";
 import {
   AutoAwesome as AutoAwesomeIcon,
@@ -50,9 +51,12 @@ import { useJobDescriptionPolling } from "../../../hooks/useJobDescriptionPollin
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import JobDescriptionsModal from "./JobDescriptionsModal";
 import JobDescriptionCard from "./JobDescriptionCard";
+import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
+import CVCompletenessIndicator from "../../CVCompleteness/CVCompletenessIndicator";
 
 interface JobDescriptionSummaryProps {
   cvId: string;
+  cvData?: any; // Parsed CV data for completeness checking
   onJobDescriptionSelect?: (jobDescription: JobDescription | null) => void;
   onGenerateSuggestions?: () => void;
   suggestionsLoading?: boolean;
@@ -61,6 +65,7 @@ interface JobDescriptionSummaryProps {
 
 const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   cvId,
+  cvData,
   onJobDescriptionSelect,
   onGenerateSuggestions,
   suggestionsLoading = false,
@@ -84,6 +89,24 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     updateJobDescription,
     createJobFitDraft,
   } = useAIStore();
+
+  // Calculate CV completeness
+  const completeness = useMemo(() => {
+    if (!cvData) {
+      return {
+        score: 0,
+        isComplete: false,
+        missing: ["CV data not available"],
+        details: {
+          hasWorkExperience: false,
+          hasSkills: false,
+          skillCount: 0,
+          workExpCount: 0,
+        },
+      };
+    }
+    return calculateCVCompleteness(cvData);
+  }, [cvData]);
   const { suggestionsError, clearSuggestionsError } = useAISuggestionsStore();
   const { showSuccess, showError } = useNotifications();
   const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
@@ -225,6 +248,16 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
       showError("Error", "Please select a job description first");
       return;
     }
+
+    // Check CV completeness before attempting to generate
+    if (!completeness.isComplete) {
+      showError(
+        "CV Incomplete",
+        `Your CV needs more content before generating job fit analysis. Please add: ${completeness.missing.join(", ")}`
+      );
+      return;
+    }
+
     setIsGeneratingJobFit(true);
     try {
       // Backend automatically deletes existing why_good_fit draft and store mirrors this
@@ -262,6 +295,8 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     showSuccess,
     showError,
     addTask,
+    completeness.isComplete,
+    completeness.missing,
   ]);
 
   return (
@@ -382,57 +417,70 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                 >
                   {onGenerateSuggestions && (
                     <>
-                      <Button
-                        variant="contained"
-                        startIcon={
-                          suggestionsLoading ? (
-                            <CircularProgress size={16} color="inherit" />
-                          ) : (
-                            <AutoAwesomeIcon
-                              sx={{
-                                animation: suggestionsLoading
-                                  ? "pulse 1.5s ease-in-out infinite"
-                                  : "none",
-                                "@keyframes pulse": {
-                                  "0%": { transform: "scale(1)" },
-                                  "50%": { transform: "scale(1.1)" },
-                                  "100%": { transform: "scale(1)" },
-                                },
-                              }}
-                            />
-                          )
+                      <Tooltip
+                        title={
+                          !completeness.isComplete
+                            ? `CV needs more content: ${completeness.missing.join(", ")}`
+                            : ""
                         }
-                        onClick={onGenerateSuggestions}
-                        disabled={
-                          suggestionsLoading || activeJobDescription?.is_parsing
-                        }
-                        fullWidth
-                        sx={{
-                          textTransform: "none",
-                          backgroundColor: "transparent",
-                          color: "#1976d2",
-                          border: "1px solid #1976d2",
-                          fontWeight: 600,
-                          py: 1.5,
-                          px: 2,
-                          height: 48,
-                          "&:hover": {
-                            backgroundColor: "rgba(25, 118, 210, 0.08)",
-                            borderColor: "#1565c0",
-                            transform: "translateY(-1px)",
-                            boxShadow: 2,
-                          },
-                          "&:disabled": {
-                            opacity: 0.7,
-                            transform: "none",
-                          },
-                          transition: "all 0.2s ease-in-out",
-                        }}
+                        arrow
                       >
-                        {suggestionsLoading
-                          ? "Enhancing..."
-                          : "Enhance CV for this Job"}
-                      </Button>
+                        <span style={{ width: "100%" }}>
+                          <Button
+                            variant="contained"
+                            startIcon={
+                              suggestionsLoading ? (
+                                <CircularProgress size={16} color="inherit" />
+                              ) : (
+                                <AutoAwesomeIcon
+                                  sx={{
+                                    animation: suggestionsLoading
+                                      ? "pulse 1.5s ease-in-out infinite"
+                                      : "none",
+                                    "@keyframes pulse": {
+                                      "0%": { transform: "scale(1)" },
+                                      "50%": { transform: "scale(1.1)" },
+                                      "100%": { transform: "scale(1)" },
+                                    },
+                                  }}
+                                />
+                              )
+                            }
+                            onClick={onGenerateSuggestions}
+                            disabled={
+                              !completeness.isComplete ||
+                              suggestionsLoading ||
+                              activeJobDescription?.is_parsing
+                            }
+                            fullWidth
+                            sx={{
+                              textTransform: "none",
+                              backgroundColor: "transparent",
+                              color: "#1976d2",
+                              border: "1px solid #1976d2",
+                              fontWeight: 600,
+                              py: 1.5,
+                              px: 2,
+                              height: 48,
+                              "&:hover": {
+                                backgroundColor: "rgba(25, 118, 210, 0.08)",
+                                borderColor: "#1565c0",
+                                transform: "translateY(-1px)",
+                                boxShadow: 2,
+                              },
+                              "&:disabled": {
+                                opacity: 0.7,
+                                transform: "none",
+                              },
+                              transition: "all 0.2s ease-in-out",
+                            }}
+                          >
+                            {suggestionsLoading
+                              ? "Enhancing..."
+                              : "Enhance CV for this Job"}
+                          </Button>
+                        </span>
+                      </Tooltip>
                       {suggestionsError && (
                         <Alert
                           severity="error"
@@ -446,57 +494,80 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   )}
 
                   {onAddToCV && (
-                    <Button
-                      variant="outlined"
-                      startIcon={
-                        isGeneratingJobFit ? (
-                          <CircularProgress size={16} />
-                        ) : (
-                          <AutoAwesomeIcon
-                            sx={{
-                              animation: isGeneratingJobFit
-                                ? "pulse 1.5s ease-in-out infinite"
-                                : "none",
-                              "@keyframes pulse": {
-                                "0%": { transform: "scale(1)" },
-                                "50%": { transform: "scale(1.1)" },
-                                "100%": { transform: "scale(1)" },
-                              },
-                            }}
-                          />
-                        )
+                    <Tooltip
+                      title={
+                        !completeness.isComplete
+                          ? `CV needs more content: ${completeness.missing.join(", ")}`
+                          : ""
                       }
-                      onClick={handleGenerateJobFit}
-                      disabled={
-                        isGeneratingJobFit || activeJobDescription?.is_parsing
-                      }
-                      fullWidth
-                      sx={{
-                        textTransform: "none",
-                        backgroundColor: "transparent",
-                        color: "#1976d2",
-                        border: "1px solid #1976d2",
-                        fontWeight: 600,
-                        py: 1.5,
-                        px: 2,
-                        height: 48,
-                        "&:hover": {
-                          backgroundColor: "rgba(25, 118, 210, 0.08)",
-                          borderColor: "#1565c0",
-                          transform: "translateY(-1px)",
-                          boxShadow: 2,
-                        },
-                        "&:disabled": {
-                          opacity: 0.7,
-                          transform: "none",
-                        },
-                        transition: "all 0.2s ease-in-out",
-                      }}
+                      arrow
                     >
-                      {isGeneratingJobFit
-                        ? "Generating..."
-                        : "Generate Job Fit Section"}
-                    </Button>
+                      <span style={{ width: "100%" }}>
+                        <Button
+                          variant="outlined"
+                          startIcon={
+                            isGeneratingJobFit ? (
+                              <CircularProgress size={16} />
+                            ) : (
+                              <AutoAwesomeIcon
+                                sx={{
+                                  animation: isGeneratingJobFit
+                                    ? "pulse 1.5s ease-in-out infinite"
+                                    : "none",
+                                  "@keyframes pulse": {
+                                    "0%": { transform: "scale(1)" },
+                                    "50%": { transform: "scale(1.1)" },
+                                    "100%": { transform: "scale(1)" },
+                                  },
+                                }}
+                              />
+                            )
+                          }
+                          onClick={handleGenerateJobFit}
+                          disabled={
+                            !completeness.isComplete ||
+                            isGeneratingJobFit ||
+                            activeJobDescription?.is_parsing
+                          }
+                          fullWidth
+                          sx={{
+                            textTransform: "none",
+                            backgroundColor: "transparent",
+                            color: "#1976d2",
+                            border: "1px solid #1976d2",
+                            fontWeight: 600,
+                            py: 1.5,
+                            px: 2,
+                            height: 48,
+                            "&:hover": {
+                              backgroundColor: "rgba(25, 118, 210, 0.08)",
+                              borderColor: "#1565c0",
+                              transform: "translateY(-1px)",
+                              boxShadow: 2,
+                            },
+                            "&:disabled": {
+                              opacity: 0.7,
+                              transform: "none",
+                            },
+                            transition: "all 0.2s ease-in-out",
+                          }}
+                        >
+                          {isGeneratingJobFit
+                            ? "Generating..."
+                            : "Generate Job Fit Section"}
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  )}
+
+                  {/* Show CV completeness indicator below buttons if not complete */}
+                  {!completeness.isComplete && (
+                    <Box sx={{ mt: 1 }}>
+                      <CVCompletenessIndicator
+                        completeness={completeness}
+                        variant="detailed"
+                      />
+                    </Box>
                   )}
                 </Box>
               </Box>

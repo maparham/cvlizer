@@ -226,7 +226,7 @@ const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerP
               </Box>
             ) : (
               <Stack spacing={1}>
-                {notifications.slice().reverse().map((notification, index) => {
+                {notifications.map((notification, index) => {
                   const isExpanded = expandedGroups.has(notification.id);
                   const isGrouped = notification.count > 1;
 
