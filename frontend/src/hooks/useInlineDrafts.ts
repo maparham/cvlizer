@@ -18,7 +18,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAIStore, useCVDrafts } from "../stores/aiStore";
-import { useNotifications } from "../stores/uiStore";
+import { useNotifications } from "../packages/notifications";
 import { DraftResponse } from "../types/ai";
 
 interface DraftPosition {

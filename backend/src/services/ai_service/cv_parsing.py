@@ -126,7 +126,6 @@ Return JSON (omit empty sections):
     except Exception as e:
         # Error already logged by call_openai_with_schema
         # Additional context logging only
-        logger.error(f"Error type: {type(e).__name__}")
         logger.error(f"Text content length: {len(text_content)} characters")
 
         # Fallback response in case of API error

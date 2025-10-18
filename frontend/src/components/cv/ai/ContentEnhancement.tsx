@@ -54,7 +54,7 @@ import {
 } from "@mui/icons-material";
 import { useAIStore, useSuggestions } from "../../../stores/aiStore";
 import { ContentSuggestion } from "../../../types/ai";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 
 interface EnhancementButtonProps {

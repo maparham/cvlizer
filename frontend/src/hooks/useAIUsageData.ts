@@ -19,7 +19,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { useNotifications } from "../stores/uiStore";
+import { useNotifications } from "../packages/notifications";
 import {
   getAIUsageStats,
   getAIUsageByUser,

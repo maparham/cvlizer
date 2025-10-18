@@ -45,7 +45,7 @@ import {
 } from "../../../stores/aiStore";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { JobDescription } from "../../../types/ai";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 import { useJobDescriptionPolling } from "../../../hooks/useJobDescriptionPolling";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import JobDescriptionsModal from "./JobDescriptionsModal";

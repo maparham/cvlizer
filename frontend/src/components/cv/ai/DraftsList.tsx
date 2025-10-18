@@ -30,7 +30,7 @@ import {
   AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import { useAIStore, useCVDrafts } from "../../../stores/aiStore";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 import { aiService } from "../../../services/aiService";
 import DraftSection from "./DraftSection";
 

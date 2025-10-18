@@ -62,7 +62,7 @@ import {
   useJobFitAnalysis,
   useActiveJobDescription,
 } from "../../../stores/aiStore";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 
 interface JobFitAnalysisProps {

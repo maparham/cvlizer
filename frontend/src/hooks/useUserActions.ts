@@ -18,7 +18,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useNotifications } from "../stores/uiStore";
+import { useNotifications } from "../packages/notifications";
 import { useImpersonation } from "./useImpersonation";
 import {
   impersonationService,

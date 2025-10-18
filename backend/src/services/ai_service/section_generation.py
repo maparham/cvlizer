@@ -124,7 +124,6 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
     except Exception as e:
         # Error already logged by call_openai_with_schema
         # Additional context logging only
-        logger.error(f"Error type: {type(e).__name__}")
         logger.error(f"Section type: {section_type}")
 
         # Fallback response in case of API error

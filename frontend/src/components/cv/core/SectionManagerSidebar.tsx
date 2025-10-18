@@ -40,7 +40,7 @@ import { JobDescriptionSummary } from "../ai";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import { useActiveJobDescription, useAIStore } from "../../../stores/aiStore";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 
 interface SectionManagerSidebarProps {
   sections: CVSection[];
@@ -56,8 +56,6 @@ interface SectionManagerSidebarProps {
   onDragStart: (_event: any) => void;
   onDragEnd: (_event: any) => void;
   onContentUpdate?: (content: string, sectionType: string) => void;
-  onUpdateCV?: (cvData: any) => void;
-  onSave?: (cvData: any, message?: string) => Promise<void>;
   activeTab?: number;
   onTabChange?: (tab: number) => void;
 }
@@ -75,8 +73,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   onDragStart,
   onDragEnd,
   onContentUpdate,
-  onUpdateCV,
-  onSave,
   activeTab: externalActiveTab,
   onTabChange,
 }) => {
@@ -566,8 +562,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                 onGenerateSuggestions={handleGenerateSuggestions}
                 suggestionsLoading={suggestionsLoading}
                 onAddToCV={onContentUpdate}
-                onUpdateCV={onUpdateCV}
-                onSave={onSave}
               />
             </Stack>
           </>

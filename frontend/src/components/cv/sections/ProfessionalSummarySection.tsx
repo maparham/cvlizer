@@ -20,7 +20,7 @@ import {
   useAISuggestionsStore,
   useValidatedSuggestions,
 } from "../../../stores/aiSuggestionsStore";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 import { EnhancementButton } from "../ai/ContentEnhancement";
 
 interface ProfessionalSummarySectionProps extends SectionProps {

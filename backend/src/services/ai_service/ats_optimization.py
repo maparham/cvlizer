@@ -178,9 +178,6 @@ async def analyze_ats_optimization(
 
     except Exception as e:
         # Error already logged by call_openai_with_schema
-        # Additional context logging only
-        logger.error(f"Error type: {type(e).__name__}")
-
         # Return fallback result
         return {
             "ats_score": 0,
@@ -420,9 +417,6 @@ async def create_optimization_suggestions(
 
     except Exception as e:
         # Error already logged by call_openai_with_schema
-        # Additional context logging only
-        logger.error(f"Error type: {type(e).__name__}")
-
         # Return empty structures (graceful degradation)
         return {
             "skills": {"technical": [], "soft": []},

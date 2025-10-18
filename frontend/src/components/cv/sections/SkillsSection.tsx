@@ -8,7 +8,7 @@ import {
   useAISuggestionsStore,
   useValidatedSuggestions,
 } from "../../../stores/aiSuggestionsStore";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 
 interface SkillsSectionProps extends SectionProps {
   cvId?: string;

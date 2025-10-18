@@ -45,7 +45,7 @@ import {
   ContentCopy as ContentCopyIcon,
 } from "@mui/icons-material";
 import { useAIStore } from "../../../stores/aiStore";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 import { useCVEditor } from "../../../contexts/CVEditorContext";
 import { useCVStore } from "../../../stores/cvStore";
 import { DraftResponse } from "../../../types/ai";

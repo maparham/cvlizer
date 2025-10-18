@@ -16,7 +16,7 @@
  * - Uses CVEditorContext for state management
  * - Provides responsive editing interface with Material-UI
  */
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   AppBar,
   Toolbar,
@@ -25,8 +25,6 @@ import {
   MenuItem,
   Typography,
   Box,
-  Snackbar,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -48,9 +46,11 @@ import { CVEditorProvider, useCVEditor } from "../contexts/CVEditorContext";
 import { PDFCVEditor } from "../components/cv";
 import { SaveWithValidationErrors } from "../components/cv/SaveWithValidationErrors";
 import { InitialValidation } from "../components/cv/InitialValidation";
+import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../packages/notifications";
 import { ErrorBoundary } from "../components/common";
+import { CVProvider } from "../contexts/CVContext";
 import { useCVStore } from "../stores/cvStore";
-import { useNotifications } from "../stores/uiStore";
+import { useCVNotifications } from "../packages/notifications";
 import { useAIStore } from "../stores/aiStore";
 import { CVData } from "../types";
 import { parseValidationErrors } from "../utils/validationUtils";
@@ -318,14 +318,14 @@ const CVEditorContent: React.FC<{
   isAdmin,
   isNewCV,
 }) => {
-  const { showError } = useNotifications();
+  const { showError } = useCVNotifications(cvId);
 
   const handleExport = async () => {
     try {
       if (!cvId || cvId === "new") {
         showError(
           "Export Unavailable",
-          "Please save your CV before exporting.",
+          "Please save your CV before exporting."
         );
         return;
       }
@@ -364,6 +364,7 @@ const CVEditor: React.FC = () => {
   const { logout, isAdmin } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const notificationDrawerRef = useRef<NotificationDrawerRef>(null);
   const {
     showSuccess,
     showError,
@@ -371,7 +372,7 @@ const CVEditor: React.FC = () => {
     showInfo,
     notifications,
     removeNotification,
-  } = useNotifications();
+  } = useCVNotifications(cvId);
 
   // Use CV store instead of local state
   const {
@@ -448,7 +449,7 @@ const CVEditor: React.FC = () => {
           removeNotification(savingNotificationId);
           showSuccess(
             "Success",
-            message || "CV created and saved successfully",
+            message || "CV created and saved successfully"
           );
           // Navigate to the saved CV's URL
           navigate(`/cv/${savedCV.id}`, { replace: true });
@@ -623,7 +624,7 @@ const CVEditor: React.FC = () => {
         setTemporaryCV(updatedTemporaryCV);
         showSuccess(
           "Success",
-          "Title updated (will be saved when you save the CV)",
+          "Title updated (will be saved when you save the CV)"
         );
       }
     } else {
@@ -661,20 +662,21 @@ const CVEditor: React.FC = () => {
   }
 
   return (
-    <ErrorBoundary>
-      <Box
-        sx={{
-          flexGrow: 1,
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Box sx={{ flex: 1, overflow: "hidden" }}>
-          <CVEditorProvider
-            cvData={cvData}
-            onUpdateCV={handleUpdateCV}
-            onSave={handleSave}
+    <CVProvider cvId={cvId}>
+      <ErrorBoundary>
+        <Box
+          sx={{
+            flexGrow: 1,
+            height: "100vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box sx={{ flex: 1, overflow: "hidden" }}>
+            <CVEditorProvider
+              cvData={cvData}
+              onUpdateCV={handleUpdateCV}
+              onSave={handleSave}
           >
             <SaveWithValidationErrors onSaveError={() => {}}>
               <InitialValidation>
@@ -696,32 +698,14 @@ const CVEditor: React.FC = () => {
           </CVEditorProvider>
         </Box>
 
-        {/* Notifications */}
-        {notifications.map((notification) => (
-          <Snackbar
-            key={notification.id}
-            open={true}
-            autoHideDuration={
-              notification.persistent ? null : notification.duration
-            }
-            onClose={() => removeNotification(notification.id)}
-            anchorOrigin={{ vertical: "top", horizontal: "right" }}
-            sx={{ mt: 0 }} // Directly below app bar
-          >
-            <Alert
-              onClose={() => removeNotification(notification.id)}
-              severity={notification.type}
-              sx={{ width: "100%" }}
-            >
-              <strong>{notification.title}</strong>
-              {notification.message && (
-                <Box component="div" sx={{ mt: 0.5 }}>
-                  {notification.message}
-                </Box>
-              )}
-            </Alert>
-          </Snackbar>
-        ))}
+        {/* Notification Toast */}
+        <NotificationToast
+          onOpenDrawer={() => notificationDrawerRef.current?.openDrawer()}
+          cvId={cvId}
+        />
+
+        {/* Notification Drawer */}
+        <NotificationDrawer ref={notificationDrawerRef} cvId={cvId} />
 
         {/* Delete Confirmation Dialog */}
         <Dialog
@@ -762,6 +746,7 @@ const CVEditor: React.FC = () => {
         </Dialog>
       </Box>
     </ErrorBoundary>
+    </CVProvider>
   );
 };
 

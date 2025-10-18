@@ -52,7 +52,7 @@ import {
   useActiveJobDescription,
 } from "../../../stores/aiStore";
 import { JobDescription } from "../../../types/ai";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 import {
   validateJobPostingUrl,
   FieldValidationResult,

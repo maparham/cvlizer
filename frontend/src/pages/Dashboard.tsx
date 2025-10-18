@@ -18,7 +18,7 @@
  * - Integrates with notification system for user feedback
  * - Provides responsive grid layout for CV cards
  */
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Container,
   Typography,
@@ -35,8 +35,6 @@ import {
   Paper,
   Chip,
   LinearProgress,
-  Snackbar,
-  Alert,
   TextField,
   InputAdornment,
   FormControl,
@@ -74,8 +72,9 @@ import { CVUpload, EditableTitle } from "../components/cv";
 import CVTemplateSelector from "../components/cv/CVTemplateSelector";
 import CVQuickActions from "../components/cv/CVQuickActions";
 import { useCVStore } from "../stores/cvStore";
-import { useNotifications } from "../stores/uiStore";
+import { useNotifications } from "../packages/notifications";
 import { useActivityLogger } from "../hooks/useActivityLogger";
+import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../packages/notifications";
 import { cvApi } from "../services/api";
 import { CV } from "../types";
 import {
@@ -97,6 +96,7 @@ const Dashboard: React.FC = () => {
   const [downloading, setDownloading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cvToDelete, setCvToDelete] = useState<CV | null>(null);
+  const notificationDrawerRef = useRef<NotificationDrawerRef>(null);
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -977,32 +977,14 @@ const Dashboard: React.FC = () => {
           </DialogActions>
         </Dialog>
 
-        {/* Notifications */}
-        {notifications.map((notification) => (
-          <Snackbar
-            key={notification.id}
-            open={true}
-            autoHideDuration={
-              notification.persistent ? null : notification.duration
-            }
-            onClose={() => removeNotification(notification.id)}
-            anchorOrigin={{ vertical: "top", horizontal: "right" }}
-            sx={{ mt: 0 }} // Directly below app bar
-          >
-            <Alert
-              onClose={() => removeNotification(notification.id)}
-              severity={notification.type}
-              sx={{ width: "100%" }}
-            >
-              <strong>{notification.title}</strong>
-              {notification.message && (
-                <Box component="div" sx={{ mt: 0.5 }}>
-                  {notification.message}
-                </Box>
-              )}
-            </Alert>
-          </Snackbar>
-        ))}
+        {/* Notification Toast */}
+        <NotificationToast
+          onOpenDrawer={() => notificationDrawerRef.current?.openDrawer()}
+        />
+
+        {/* Notification Drawer */}
+        <NotificationDrawer ref={notificationDrawerRef} />
+
       </Container>
     </Box>
   );

@@ -165,9 +165,6 @@ async def _execute_job_fit_analysis(
 
     except Exception as e:
         # Error already logged by call_openai_with_schema
-        # Additional context logging only
-        logger.error(f"Error type: {type(e).__name__}")
-
         result = build_error_response(
             f"Error analyzing job fit: {str(e)}", "analyze_job_fit"
         )

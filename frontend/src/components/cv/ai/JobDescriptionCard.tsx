@@ -52,7 +52,7 @@ import {
 import { JobDescription } from "../../../types/ai";
 import { formatRelativeTime } from "../../../utils/formatters";
 import { MarkdownRenderer } from "../../common";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 
 /**
  * Strip markdown formatting and convert to plain text

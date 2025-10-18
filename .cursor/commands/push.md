@@ -1,2 +1,8 @@
-- git commit -m "derailed message" and push
-- mention only important and major changes in the commit message
+- git commit -m "detailed message" and push
+- Generate a detailed commit message that describes WHAT changed and WHY
+- Include enough context that this message could be used as a prompt to reconstruct the changes
+- Focus on functional changes, user-facing impacts, and architectural decisions
+- Do NOT include: code snippets, function signatures, specific variable names, or implementation details
+- Do NOT use technical jargon unless necessary for clarity
+- Structure: Brief title (50 chars), blank line, then detailed bullet points explaining the changes
+- Mention which features/components were affected and what behavior changed

@@ -61,7 +61,7 @@ import {
   useActiveJobDescription,
 } from "../../../stores/aiStore";
 import { MissingKeyword } from "../../../types/ai";
-import { useNotifications } from "../../../stores/uiStore";
+import { useNotifications } from "../../../packages/notifications";
 
 interface ATSOptimizationProps {
   cvId: string;

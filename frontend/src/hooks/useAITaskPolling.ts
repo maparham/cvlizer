@@ -20,7 +20,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAIStore } from "../stores/aiStore";
 import { useAISuggestionsStore } from "../stores/aiSuggestionsStore";
-import { useNotifications } from "../stores/uiStore";
+import { useNotifications } from "../packages/notifications";
 import { POLLING_CONFIG } from "../config/constants";
 import { Logger } from "../utils/logger";
 

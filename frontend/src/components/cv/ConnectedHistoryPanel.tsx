@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import HistoryPanel from "./HistoryPanel";
 import VersionPreviewDialog from "./VersionPreviewDialog";
 import { useCVStore } from "../../stores/cvStore";
-import { useNotifications } from "../../stores/uiStore";
+import { useNotifications } from "../../packages/notifications";
 import {
   CVHistoryEntry,
   CreateSnapshotOptions,
