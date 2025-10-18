@@ -35,6 +35,7 @@ from .common import (
     validate_with_schema,
     with_retries,
 )
+from .cv_filter import filter_hidden_sections
 
 logger = logging.getLogger(__name__)
 
@@ -57,12 +58,15 @@ def _build_ats_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
     Returns:
         Formatted prompt string optimized for token efficiency
     """
+    # Filter out hidden sections before sending to AI
+    filtered_cv_data = filter_hidden_sections(cv_data)
+
     return f"""Analyze CV for ATS keyword optimization.
 
 ⚠️ LANGUAGE REQUIREMENT: Write ALL text content (suggestions, content_optimization suggestions) in the SAME LANGUAGE as the job description.
 If the job description is in German, write everything in German. If in English, write in English.
 
-CV: {json.dumps(cv_data, indent=2)}
+CV: {json.dumps(filtered_cv_data, indent=2)}
 
 Job: {job_description}
 

@@ -29,6 +29,7 @@ from .common import (
     validate_with_schema,
     with_retries,
 )
+from .cv_filter import filter_hidden_sections
 from .job_fit import analyze_job_fit_sync
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,9 @@ async def generate_cv_section(
             "suggestions": [],
         }
 
+    # Filter out hidden sections before sending to AI
+    filtered_cv_data = filter_hidden_sections(cv_data)
+
     # Create prompt based on section type
     if section_type == "why_good_fit":
         prompt = f"""Generate "Why I'm a Good Fit" section aligning CV with job requirements.
@@ -82,7 +86,7 @@ async def generate_cv_section(
 ⚠️ LANGUAGE REQUIREMENT: Write ALL content (title, content, key_points) in the SAME LANGUAGE as the job description.
 If the job description is in German, write everything in German. If in English, write in English.
 
-CV: {cv_data}
+CV: {filtered_cv_data}
 
 Job: {job_description}
 

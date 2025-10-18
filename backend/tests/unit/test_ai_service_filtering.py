@@ -1,0 +1,301 @@
+"""
+Tests for AI services using CV filtering.
+
+This module tests that AI services properly filter hidden sections before
+sending CV data to OpenAI.
+"""
+
+import json
+import pytest
+from unittest.mock import Mock, patch, MagicMock
+from src.services.ai_service.job_fit import _build_job_fit_prompt
+from src.services.ai_service.ats_optimization import _build_ats_prompt
+from src.services.ai_service.section_generation import generate_cv_section
+
+
+@pytest.fixture
+def cv_data_with_hidden_sections():
+    """CV data with some sections marked as hidden."""
+    return {
+        "personal_info": {
+            "full_name": "John Doe",
+            "email": "john@example.com",
+        },
+        "professional_summary": {
+            "content": "Senior software engineer with expertise in Python."
+        },
+        "work_experience": [
+            {
+                "id": "1",
+                "company": "Secret Company",
+                "position": "Secret Position",
+                "description": "Confidential work",
+            }
+        ],
+        "education": [
+            {
+                "id": "1",
+                "institution": "MIT",
+                "degree": "BS Computer Science",
+            }
+        ],
+        "skills": {
+            "technical": ["Python", "Django", "React"],
+            "soft": ["Leadership"],
+        },
+        "certifications": [
+            {
+                "id": "1",
+                "name": "Secret Certification",
+            }
+        ],
+        "section_config": {
+            "sections": [
+                {"id": "personal_info", "type": "personal_info", "visible": True},
+                {
+                    "id": "professional_summary",
+                    "type": "professional_summary",
+                    "visible": True,
+                },
+                {
+                    "id": "work_experience",
+                    "type": "work_experience",
+                    "visible": False,
+                },  # HIDDEN
+                {"id": "education", "type": "education", "visible": True},
+                {"id": "skills", "type": "skills", "visible": True},
+                {
+                    "id": "certifications",
+                    "type": "certifications",
+                    "visible": False,
+                },  # HIDDEN
+            ]
+        },
+    }
+
+
+class TestJobFitPromptFiltering:
+    """Test that job fit analysis filters hidden sections from prompts."""
+
+    def test_job_fit_prompt_excludes_hidden_work_experience(
+        self, cv_data_with_hidden_sections
+    ):
+        """Test that hidden work_experience is not in job fit prompt."""
+        job_description = "Looking for a Python developer"
+
+        prompt = _build_job_fit_prompt(cv_data_with_hidden_sections, job_description)
+
+        # Hidden sections should not appear in prompt
+        assert "Secret Company" not in prompt
+        assert "Secret Position" not in prompt
+        assert "Confidential work" not in prompt
+        assert "work_experience" not in prompt
+
+        # Visible sections should appear
+        assert "John Doe" in prompt
+        assert "Python" in prompt
+        assert "MIT" in prompt
+
+    def test_job_fit_prompt_excludes_hidden_certifications(
+        self, cv_data_with_hidden_sections
+    ):
+        """Test that hidden certifications are not in job fit prompt."""
+        job_description = "Looking for certified professionals"
+
+        prompt = _build_job_fit_prompt(cv_data_with_hidden_sections, job_description)
+
+        assert "Secret Certification" not in prompt
+        assert "certifications" not in prompt
+
+    def test_job_fit_prompt_includes_all_visible_sections(
+        self, cv_data_with_hidden_sections
+    ):
+        """Test that all visible sections are included in prompt."""
+        job_description = "Looking for a Python developer"
+
+        prompt = _build_job_fit_prompt(cv_data_with_hidden_sections, job_description)
+
+        # Parse the JSON from the prompt to verify structure
+        assert "personal_info" in prompt
+        assert "professional_summary" in prompt
+        assert "education" in prompt
+        assert "skills" in prompt
+
+
+class TestATSPromptFiltering:
+    """Test that ATS optimization filters hidden sections from prompts."""
+
+    def test_ats_prompt_excludes_hidden_sections(self, cv_data_with_hidden_sections):
+        """Test that hidden sections are not in ATS optimization prompt."""
+        job_description = "Python developer needed"
+
+        prompt = _build_ats_prompt(cv_data_with_hidden_sections, job_description)
+
+        # Hidden section data should not appear (the word may appear in instructions)
+        assert "Secret Company" not in prompt
+        assert "Secret Certification" not in prompt
+        assert "Confidential work" not in prompt
+
+        # Visible sections should appear
+        assert "MIT" in prompt
+        assert "Python" in prompt
+
+    def test_ats_prompt_filters_match_section_config(self, cv_data_with_hidden_sections):
+        """Test that ATS prompt filtering respects section_config."""
+        job_description = "Senior engineer position"
+
+        prompt = _build_ats_prompt(cv_data_with_hidden_sections, job_description)
+
+        # Verify the CV data in the prompt doesn't have hidden sections
+        # Extract the JSON portion from the prompt
+        cv_start = prompt.find("CV: {")
+        cv_end = prompt.find("\n\nJob:", cv_start)
+        cv_json_str = prompt[cv_start + 4 : cv_end]
+
+        cv_in_prompt = json.loads(cv_json_str)
+
+        assert "work_experience" not in cv_in_prompt
+        assert "certifications" not in cv_in_prompt
+        assert "education" in cv_in_prompt
+        assert "skills" in cv_in_prompt
+
+
+class TestSectionGenerationFiltering:
+    """Test that section generation filters hidden sections from prompts."""
+
+    @pytest.mark.asyncio
+    async def test_section_generation_excludes_hidden_sections(
+        self, cv_data_with_hidden_sections
+    ):
+        """Test that hidden sections are not sent to section generation."""
+        job_description = "Python developer role"
+
+        # Mock the OpenAI call
+        with patch(
+            "src.services.ai_service.section_generation.call_openai_with_schema"
+        ) as mock_openai:
+            mock_openai.return_value = (
+                {
+                    "title": "Why I'm a Good Fit",
+                    "content": "I am qualified...",
+                    "key_points": ["Point 1"],
+                },
+                {
+                    "tokens_used": 100,
+                    "generation_time": 500,
+                    "model_used": "gpt-4o-mini",
+                },
+            )
+
+            await generate_cv_section(
+                cv_data=cv_data_with_hidden_sections,
+                job_description=job_description,
+                section_type="why_good_fit",
+            )
+
+            # Get the prompt that was passed to OpenAI
+            call_args = mock_openai.call_args
+            user_prompt = call_args.kwargs["user_prompt"]
+
+            # Hidden sections should not be in the prompt
+            assert "Secret Company" not in user_prompt
+            assert "Secret Certification" not in user_prompt
+
+            # Visible sections should be in the prompt
+            assert "MIT" in user_prompt or "education" in user_prompt
+
+
+class TestFilteringWithNoSectionConfig:
+    """Test that AI services work correctly when section_config is missing."""
+
+    def test_job_fit_works_without_section_config(self):
+        """Test job fit prompt works when CV has no section_config."""
+        cv_data = {
+            "personal_info": {"full_name": "John Doe"},
+            "work_experience": [{"company": "Tech Corp"}],
+            "skills": {"technical": ["Python"]},
+        }
+        job_description = "Python developer"
+
+        prompt = _build_job_fit_prompt(cv_data, job_description)
+
+        # All sections should be included (backward compatibility)
+        assert "John Doe" in prompt
+        assert "Tech Corp" in prompt
+        assert "Python" in prompt
+
+    def test_ats_works_without_section_config(self):
+        """Test ATS prompt works when CV has no section_config."""
+        cv_data = {
+            "personal_info": {"full_name": "Jane Smith"},
+            "skills": {"technical": ["JavaScript"]},
+        }
+        job_description = "Frontend developer"
+
+        prompt = _build_ats_prompt(cv_data, job_description)
+
+        assert "Jane Smith" in prompt
+        assert "JavaScript" in prompt
+
+
+class TestPersonalInfoNeverFiltered:
+    """Test that personal_info is never filtered from AI prompts."""
+
+    def test_personal_info_included_even_if_marked_hidden(self):
+        """Test personal_info is always included (though UI prevents hiding it)."""
+        cv_data = {
+            "personal_info": {
+                "full_name": "John Doe",
+                "email": "john@example.com",
+            },
+            "skills": {"technical": ["Python"]},
+            "section_config": {
+                "sections": [
+                    # In practice, frontend prevents this, but test backend behavior
+                    {"id": "personal_info", "type": "personal_info", "visible": False},
+                    {"id": "skills", "type": "skills", "visible": True},
+                ]
+            },
+        }
+        job_description = "Python developer"
+
+        prompt = _build_job_fit_prompt(cv_data, job_description)
+
+        # personal_info should still be in prompt because it's not in filterable_sections
+        assert "John Doe" in prompt or "personal_info" in prompt
+
+
+class TestProfessionalSummaryFiltering:
+    """Test that professional_summary can be filtered when hidden."""
+
+    def test_hidden_professional_summary_excluded(self):
+        """Test that professional_summary is filtered when marked as hidden."""
+        cv_data = {
+            "personal_info": {"full_name": "John Doe"},
+            "professional_summary": {
+                "content": "This is my secret summary that should not be shared."
+            },
+            "skills": {"technical": ["Python"]},
+            "section_config": {
+                "sections": [
+                    {"id": "personal_info", "type": "personal_info", "visible": True},
+                    {
+                        "id": "professional_summary",
+                        "type": "professional_summary",
+                        "visible": False,
+                    },
+                    {"id": "skills", "type": "skills", "visible": True},
+                ]
+            },
+        }
+        job_description = "Python developer"
+
+        prompt = _build_job_fit_prompt(cv_data, job_description)
+
+        # professional_summary should be filtered out
+        assert "secret summary" not in prompt
+        assert "should not be shared" not in prompt
+
+        # Other sections should be present
+        assert "John Doe" in prompt or "personal_info" in prompt
+        assert "Python" in prompt

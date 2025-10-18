@@ -34,6 +34,7 @@ from .common import (
     validate_with_schema,
     with_retries,
 )
+from .cv_filter import filter_hidden_sections
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,9 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
     Returns:
         Formatted prompt string optimized for token efficiency
     """
+    # Filter out hidden sections before sending to AI
+    filtered_cv_data = filter_hidden_sections(cv_data)
+
     return (
         f"Write as the candidate about your fit for this position.\n\n"
         f"LANGUAGE REQUIREMENT: Write ALL content (fit_analysis and all arrays) in the SAME LANGUAGE as the job description below.\n"
@@ -138,7 +142,7 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"   • strengths: 3-5 specific candidate strengths for this role. Do not fabricate strengths.\n"
         f"   • weaknesses: 2-4 specific gaps or areas needing development.\n"
         f"Use the words 'position' or 'job' instead of 'role'. missing_skills, suggested_improvements, strengths, and weaknesses arrays must have at least one value. key_matches can be empty if no genuine overlaps exist. Output just well-formed JSON, nothing else."
-        f"CV: {json.dumps(cv_data, indent=2)}\n\n"
+        f"CV: {json.dumps(filtered_cv_data, indent=2)}\n\n"
         f"JOB: {job_description}\n\n"
     )
 

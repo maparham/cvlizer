@@ -39,6 +39,9 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
   const sectionVisible =
     visible !== undefined ? visible : (section?.visible ?? false);
 
+  // personal_info should always be visible and cannot be hidden
+  const isPersonalInfo = sectionId === "personal_info";
+
   const hasErrors = sectionId
     ? hasSectionErrors(validationErrors, sectionId)
     : false;
@@ -128,24 +131,33 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
           </Tooltip>
         )}
         <Tooltip
-          title={sectionVisible ? "Hide this section" : "Show this section"}
+          title={
+            isPersonalInfo
+              ? "Personal information is always visible and cannot be hidden"
+              : sectionVisible
+                ? "Hide this section"
+                : "Show this section"
+          }
         >
-          <IconButton
-            onClick={() => sectionId && onToggleVisibility?.(sectionId)}
-            color={sectionVisible ? "primary" : "default"}
-            size="small"
-            data-testid={
-              sectionId ? `hide-section-${sectionId}-button` : undefined
-            }
-            sx={{
-              "&:hover": {
-                bgcolor: sectionVisible ? "primary.light" : "action.hover",
-                color: sectionVisible ? "primary.contrastText" : "text.primary",
-              },
-            }}
-          >
-            {sectionVisible ? <ViewIcon /> : <HideIcon />}
-          </IconButton>
+          <span>
+            <IconButton
+              onClick={() => sectionId && onToggleVisibility?.(sectionId)}
+              color={sectionVisible ? "primary" : "default"}
+              size="small"
+              disabled={isPersonalInfo}
+              data-testid={
+                sectionId ? `hide-section-${sectionId}-button` : undefined
+              }
+              sx={{
+                "&:hover": {
+                  bgcolor: sectionVisible ? "primary.light" : "action.hover",
+                  color: sectionVisible ? "primary.contrastText" : "text.primary",
+                },
+              }}
+            >
+              {sectionVisible ? <ViewIcon /> : <HideIcon />}
+            </IconButton>
+          </span>
         </Tooltip>
       </Box>
     </ListItem>
