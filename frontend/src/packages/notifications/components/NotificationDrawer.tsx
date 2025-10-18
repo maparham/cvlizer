@@ -288,13 +288,8 @@ const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerP
                         >
                           <Box sx={{ width: "100%" }}>
                             <Typography variant="subtitle2" component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
-                              {notification.title}
+                              {notification.message || notification.title}
                             </Typography>
-                            {notification.message && (
-                              <Typography variant="body2" sx={{ mt: 0.5, color: "text.secondary" }}>
-                                {notification.message}
-                              </Typography>
-                            )}
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
                               <Typography
                                 variant="caption"

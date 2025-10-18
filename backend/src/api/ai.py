@@ -8,7 +8,7 @@ based on job descriptions using OpenAI's GPT models.
 import asyncio
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -361,6 +361,7 @@ class AISectionResponse(BaseModel):
     tokens_used: int
     generation_time: int
     created_at: str
+    low_fit_warning: Optional[Dict[str, Any]] = None
 
     class Config:
         from_attributes = True
@@ -613,6 +614,7 @@ async def generate_ai_section(
             tokens_used=ai_section.tokens_used or 0,
             generation_time=ai_section.generation_time or 0,
             created_at=ai_section.created_at.isoformat(),
+            low_fit_warning=ai_result.get("low_fit_warning"),
         )
 
     except HTTPException:

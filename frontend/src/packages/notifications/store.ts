@@ -26,6 +26,34 @@ import {
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+// Toast-only notifications (not persisted, not in drawer)
+interface ToastOnlyNotification {
+  id: string;
+  type: "success" | "error" | "warning" | "info";
+  title: string;
+  message?: string;
+  timestamp: Date;
+  cvId?: string;
+}
+
+// Simple event emitter for toast-only notifications
+class ToastNotificationEmitter {
+  private listeners: ((notification: ToastOnlyNotification) => void)[] = [];
+
+  subscribe(listener: (notification: ToastOnlyNotification) => void) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  emit(notification: ToastOnlyNotification) {
+    this.listeners.forEach(listener => listener(notification));
+  }
+}
+
+export const toastNotificationEmitter = new ToastNotificationEmitter();
+
 export const useNotificationStore = create<NotificationStore>()(
   devtools(
     persist(
@@ -51,6 +79,21 @@ export const useNotificationStore = create<NotificationStore>()(
         // Notification actions
         addNotification: (notification, cvId) => {
         const id = generateId();
+
+        // Check if this is a toast-only notification
+        if (notification.toastOnly) {
+          // Emit to toast-only system, don't add to store
+          const toastNotification: ToastOnlyNotification = {
+            id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            timestamp: new Date(),
+            cvId,
+          };
+          toastNotificationEmitter.emit(toastNotification);
+          return id;
+        }
 
         set((state) => {
           let notifications = [...state.notifications];
@@ -130,16 +173,16 @@ export const useNotificationStore = create<NotificationStore>()(
       },
 
       // Convenience methods
-      showSuccess: (title: string, message?: string, cvId?: string) =>
-        get().addNotification({ type: "success", title, message }, cvId),
-      showError: (title: string, message?: string, cvId?: string) =>
-        get().addNotification({ type: "error", title, message }, cvId),
-      showValidationError: (title: string, message?: string, cvId?: string) =>
-        get().addNotification({ type: "error", title, message, persistent: true }, cvId),
-      showWarning: (title: string, message?: string, cvId?: string) =>
-        get().addNotification({ type: "warning", title, message }, cvId),
-      showInfo: (title: string, message?: string, cvId?: string) =>
-        get().addNotification({ type: "info", title, message }, cvId),
+      showSuccess: (title: string, message?: string, cvId?: string, toastOnly?: boolean) =>
+        get().addNotification({ type: "success", title, message, toastOnly }, cvId),
+      showError: (title: string, message?: string, cvId?: string, toastOnly?: boolean) =>
+        get().addNotification({ type: "error", title, message, toastOnly }, cvId),
+      showValidationError: (title: string, message?: string, cvId?: string, toastOnly?: boolean) =>
+        get().addNotification({ type: "error", title, message, persistent: true, toastOnly }, cvId),
+      showWarning: (title: string, message?: string, cvId?: string, toastOnly?: boolean) =>
+        get().addNotification({ type: "warning", title, message, toastOnly }, cvId),
+      showInfo: (title: string, message?: string, cvId?: string, toastOnly?: boolean) =>
+        get().addNotification({ type: "info", title, message, toastOnly }, cvId),
       }),
       {
         name: "cv-optimizer-notifications", // localStorage key

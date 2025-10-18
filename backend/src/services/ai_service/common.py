@@ -64,6 +64,7 @@ class JobFitResult(TypedDict, total=False):
     generation_time: int
     model_used: str
     error: str
+    low_fit_warning: Dict[str, Any]
 
 
 class ATSOptimizationResult(TypedDict, total=False):

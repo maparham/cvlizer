@@ -148,6 +148,11 @@ export interface AISectionResponse {
   tokens_used: number;
   generation_time: number;
   created_at: string;
+  low_fit_warning?: {
+    message: string;
+    confidence_score: number;
+    severity: string;
+  };
 }
 
 export interface AISectionListResponse {

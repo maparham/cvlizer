@@ -42,20 +42,20 @@ export const useNotifications = () => {
   const { cvId } = useCVContext();
 
   // Wrap convenience methods to automatically inject cvId from context
-  const showSuccess = (title: string, message?: string) =>
-    originalShowSuccess(title, message, cvId);
+  const showSuccess = (title: string, message?: string, toastOnly?: boolean) =>
+    originalShowSuccess(title, message, cvId, toastOnly);
 
-  const showError = (title: string, message?: string) =>
-    originalShowError(title, message, cvId);
+  const showError = (title: string, message?: string, toastOnly?: boolean) =>
+    originalShowError(title, message, cvId, toastOnly);
 
-  const showWarning = (title: string, message?: string) =>
-    originalShowWarning(title, message, cvId);
+  const showWarning = (title: string, message?: string, toastOnly?: boolean) =>
+    originalShowWarning(title, message, cvId, toastOnly);
 
-  const showInfo = (title: string, message?: string) =>
-    originalShowInfo(title, message, cvId);
+  const showInfo = (title: string, message?: string, toastOnly?: boolean) =>
+    originalShowInfo(title, message, cvId, toastOnly);
 
-  const showValidationError = (title: string, message?: string) =>
-    originalShowValidationError(title, message, cvId);
+  const showValidationError = (title: string, message?: string, toastOnly?: boolean) =>
+    originalShowValidationError(title, message, cvId, toastOnly);
 
   return {
     notifications,

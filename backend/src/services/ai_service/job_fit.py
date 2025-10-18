@@ -41,8 +41,10 @@ logger = logging.getLogger(__name__)
 JOB_FIT_INSTRUCTIONS = (
     "Respond as if you are the candidate applying for this job. IMPORTANT: Write in the SAME LANGUAGE as the job description. "
     "Do NOT fabricate experience or skills - use only facts from the provided CV and job description. "
-    "Output JSON with fit_analysis AND 5 REQUIRED arrays: key_matches, missing_skills, "
-    "suggested_improvements, strengths, weaknesses. All arrays must have at least one value. "
+    "Output JSON with fit_analysis AND 5 arrays: key_matches, missing_skills, "
+    "suggested_improvements, strengths, weaknesses. "
+    "If there are NO genuine skill overlaps between CV and JD, key_matches can be empty. "
+    "Other arrays (missing_skills, suggested_improvements, strengths, weaknesses) must have at least one value. "
     "Write in first person. Follow all formatting rules."
 )
 
@@ -110,7 +112,7 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"{{\n"
         f'  "confidence_score": integer 1-100,\n'
         f'  "fit_analysis": "markdown-formatted",\n'
-        f'  "key_matches": list of strings, 3-5 specific skills/technologies FROM YOUR CV that match JD requirements,\n'
+        f'  "key_matches": list of strings (0-5), ONLY skills/technologies FROM YOUR CV that GENUINELY match JD requirements. Empty array [] if no real matches,\n'
         f'  "missing_skills": ["AWS", "Kubernetes"],\n'
         f'  "suggested_improvements": list of strings, 3-5 specific CV improvement tips,\n'
         f'  "strengths": list of strings, 3-5 specific candidate strengths for this role,\n'
@@ -130,12 +132,12 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"   • Do NOT refer to the candidate's CV explicitly in the output. Do not use the phrases 'My CV...', 'This CV...' or similar references.\n"
         f"   • Vary sentence starters and avoid overusing 'I' or 'I have'.\n"
         f"   • Be honest about gaps: 'I haven't used X yet.'\n"
-        f"   • key_matches: 3-5 specific skills/technologies FROM YOUR CV that match JD requirements.\n"
+        f"   • key_matches: ONLY list skills/technologies FROM YOUR CV that GENUINELY match JD requirements. If there are no real matches, return empty array [].\n"
         f"   • missing_skills: 2-4 skills mentioned in JD but not in your CV.\n"
         f"   • suggested_improvements: 3-5 specific CV improvement tips.\n"
         f"   • strengths: 3-5 specific candidate strengths for this role. Do not fabricate strengths.\n"
         f"   • weaknesses: 2-4 specific gaps or areas needing development.\n"
-        f"Use the words 'position' or 'job' instead of 'role'. Make sure every array has values. Output just well-formed JSON, nothing else."
+        f"Use the words 'position' or 'job' instead of 'role'. missing_skills, suggested_improvements, strengths, and weaknesses arrays must have at least one value. key_matches can be empty if no genuine overlaps exist. Output just well-formed JSON, nothing else."
         f"CV: {json.dumps(cv_data, indent=2)}\n\n"
         f"JOB: {job_description}\n\n"
     )
@@ -199,8 +201,11 @@ async def _execute_job_fit_analysis(
         )
 
         # Add generated_at and return with metadata
-        return {
-            "confidence_score": analysis.get("confidence_score", 50),
+        confidence_score = analysis.get("confidence_score", 50)
+
+        # Build result dictionary
+        result = {
+            "confidence_score": confidence_score,
             "fit_analysis": analysis.get("fit_analysis", ""),
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "key_matches": analysis.get("key_matches", []),
@@ -210,6 +215,19 @@ async def _execute_job_fit_analysis(
             "weaknesses": analysis.get("weaknesses", []),
             **metadata,  # Include tokens_used, generation_time, model_used, etc.
         }
+
+        # Add low fit warning if confidence score is below 30%
+        if confidence_score < 30:
+            result["low_fit_warning"] = {
+                "message": "Your CV doesn't have sufficient relevant experience for this position. Consider updating your CV or this may not be a good match.",
+                "confidence_score": confidence_score,
+                "severity": "high",
+            }
+            logger.info(
+                f"Low fit warning triggered in job fit analysis - confidence_score={confidence_score}, cv_id={cv_id}"
+            )
+
+        return cast(JobFitResult, result)
 
     except Exception as e:
         # Error already logged by call_openai_with_schema

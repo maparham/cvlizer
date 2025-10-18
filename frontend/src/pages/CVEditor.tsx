@@ -435,10 +435,11 @@ const CVEditor: React.FC = () => {
       const dataToSave = updatedData || cvData;
       if (!dataToSave) return;
 
-      // Show immediate feedback that save is starting
+      // Show immediate feedback that save is starting (toast-only)
       const savingNotificationId = showInfo(
         "Saving...",
         "Your changes are being saved.",
+        true // toastOnly = true
       );
 
       try {

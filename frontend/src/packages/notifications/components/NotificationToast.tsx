@@ -41,11 +41,13 @@ import {
 import { useNotifications } from "../hooks";
 import { formatRelativeTime } from "../utils";
 import { NotificationToastProps } from "../types";
+import { toastNotificationEmitter } from "../store";
 
 const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvId }) => {
   const { notifications: allNotifications, markNotificationAsShown } = useNotifications();
   const [currentToast, setCurrentToast] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [toastOnlyQueue, setToastOnlyQueue] = useState<any[]>([]);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Filter notifications if cvId provided
@@ -53,8 +55,27 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
     ? allNotifications.filter(n => !n.cvId || n.cvId === cvId)
     : allNotifications;
 
-  // Find the newest unshown notification
+  // Listen for toast-only notifications
+  useEffect(() => {
+    const unsubscribe = toastNotificationEmitter.subscribe((toastNotification) => {
+      // Check if this toast-only notification should be shown for current CV
+      const shouldShow = !toastNotification.cvId || toastNotification.cvId === cvId;
+      if (shouldShow) {
+        setToastOnlyQueue(prev => [...prev, toastNotification]);
+      }
+    });
+
+    return unsubscribe;
+  }, [cvId]);
+
+  // Find the newest unshown notification (from both persistent and toast-only)
   const getNewestUnshownNotification = () => {
+    // Check toast-only queue first (highest priority)
+    if (toastOnlyQueue.length > 0) {
+      return toastOnlyQueue[0];
+    }
+
+    // Then check persistent notifications
     const unshownNotifications = notifications.filter(n => !n.shown);
     if (unshownNotifications.length === 0) return null;
 
@@ -72,15 +93,17 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
       setCurrentToast(newestUnshown);
       setIsVisible(true);
 
-      // Mark as shown immediately
-      markNotificationAsShown(newestUnshown.id);
+      // Mark as shown immediately (only for persistent notifications)
+      if (newestUnshown.shown !== undefined) {
+        markNotificationAsShown(newestUnshown.id);
+      }
 
       // Auto-dismiss after 5 seconds
       timeoutRef.current = setTimeout(() => {
         handleClose();
       }, 5000);
     }
-  }, [notifications, currentToast, markNotificationAsShown]);
+  }, [notifications, toastOnlyQueue, currentToast, markNotificationAsShown]);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -91,6 +114,10 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
 
     // Clear current toast after animation completes
     setTimeout(() => {
+      // If it's a toast-only notification, remove it from queue
+      if (currentToast && !currentToast.shown) {
+        setToastOnlyQueue(prev => prev.filter(n => n.id !== currentToast.id));
+      }
       setCurrentToast(null);
     }, 300); // Match the slide animation duration
   };
@@ -181,7 +208,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
             <Box sx={{ width: "100%" }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
                 <Typography variant="subtitle2" component="div" sx={{ fontWeight: 600 }}>
-                  {currentToast.title}
+                  {currentToast.message || currentToast.title}
                 </Typography>
                 {currentToast.count > 1 && (
                   <Badge
@@ -201,22 +228,6 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
                   </Badge>
                 )}
               </Box>
-              {currentToast.message && (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    mt: 0.5,
-                    color: "text.secondary",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {currentToast.message}
-                </Typography>
-              )}
               <Typography
                 variant="caption"
                 sx={{

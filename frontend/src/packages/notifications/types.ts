@@ -12,6 +12,7 @@ export interface Notification {
   message?: string;
   duration?: number;
   persistent?: boolean; // For validation errors that shouldn't auto-dismiss
+  toastOnly?: boolean; // For transient notifications that only show in toast, not drawer
   timestamp: Date; // When the notification was created
   shown: boolean; // Whether the toast preview was displayed
   count: number; // Number of identical notifications grouped together
@@ -36,11 +37,11 @@ export interface NotificationStore {
   markNotificationAsShown: (id: string) => void;
 
   // Convenience methods
-  showSuccess: (title: string, message?: string, cvId?: string) => string;
-  showError: (title: string, message?: string, cvId?: string) => string;
-  showWarning: (title: string, message?: string, cvId?: string) => string;
-  showInfo: (title: string, message?: string, cvId?: string) => string;
-  showValidationError: (title: string, message?: string, cvId?: string) => string;
+  showSuccess: (title: string, message?: string, cvId?: string, toastOnly?: boolean) => string;
+  showError: (title: string, message?: string, cvId?: string, toastOnly?: boolean) => string;
+  showWarning: (title: string, message?: string, cvId?: string, toastOnly?: boolean) => string;
+  showInfo: (title: string, message?: string, cvId?: string, toastOnly?: boolean) => string;
+  showValidationError: (title: string, message?: string, cvId?: string, toastOnly?: boolean) => string;
 }
 
 export interface NotificationDrawerRef {

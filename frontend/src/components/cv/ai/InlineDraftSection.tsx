@@ -34,6 +34,7 @@ import {
   Fade,
   IconButton,
   Tooltip,
+  Alert,
 } from "@mui/material";
 import {
   Check as CheckIcon,
@@ -263,6 +264,22 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
                   "No content available"}
               </ReactMarkdown>
             </Box>
+
+            {/* Low Fit Warning */}
+            {draft.draft_data?.low_fit_warning && (
+              <Alert
+                severity="warning"
+                sx={{ mb: 2 }}
+                icon={<AutoAwesomeIcon />}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  Low Job Match Detected ({draft.draft_data.low_fit_warning.confidence_score}% confidence)
+                </Typography>
+                <Typography variant="body2">
+                  {draft.draft_data.low_fit_warning.message}
+                </Typography>
+              </Alert>
+            )}
 
             {/* Action buttons */}
             <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
