@@ -405,6 +405,7 @@ const Dashboard: React.FC = () => {
                         display: "flex",
                         gap: 2,
                         overflowX: "auto",
+                        pt: 1,
                         pb: 1,
                         "&::-webkit-scrollbar": {
                           height: 6,
@@ -589,10 +590,32 @@ const Dashboard: React.FC = () => {
                 </Stack>
               </Stack>
 
-              {/* Full CV Cards Grid */}
-              <Grid container spacing={3}>
-                {cvs.map((cv) => (
-                  <Grid item xs={12} sm={6} lg={4} key={cv.id}>
+              {/* Full CV Cards Grid - Scrollable */}
+              <Box
+                sx={{
+                  maxHeight: 600,
+                  overflowY: "auto",
+                  pr: 1,
+                  pt: 2,
+                  "&::-webkit-scrollbar": {
+                    width: 8,
+                  },
+                  "&::-webkit-scrollbar-track": {
+                    backgroundColor: "#f1f1f1",
+                    borderRadius: 4,
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    backgroundColor: "#c1c1c1",
+                    borderRadius: 4,
+                    "&:hover": {
+                      backgroundColor: "#a8a8a8",
+                    },
+                  },
+                }}
+              >
+                <Grid container spacing={3}>
+                  {cvs.map((cv) => (
+                    <Grid item xs={12} sm={6} lg={4} key={cv.id}>
                     <Card
                       sx={{
                         height: "100%",
@@ -843,6 +866,7 @@ const Dashboard: React.FC = () => {
                   </Grid>
                 ))}
               </Grid>
+              </Box>
             </CardContent>
           </Card>
         )}
