@@ -1,0 +1,65 @@
+---
+alwaysApply: true
+description: Communication patterns for AI assistant interactions
+---
+
+# Communication Patterns Rule
+
+## Core Rules
+
+**When the user is asking questions, exploring, or planning, provide textual explanations only.**
+
+### Text-Only Responses Required For
+- Questions about how something works
+- Architecture or design discussions
+- Planning or proposing solutions
+- Analyzing existing code
+
+### Code Output Allowed For
+- Explicit code change requests
+- Implementation mode (not exploration/planning)
+- Small illustrative snippets (1-5 lines max)
+- "Show me the code" requests
+
+### Key Principles
+- **Default to explanation** - If uncertain, use text not code
+- **Use references** - Cite file paths and function names, don't dump code
+- **Ask before implementing** - Discuss approach before coding
+- **Summarize, don't dump** - Describe what code does
+
+### Examples
+
+**Good (Question Response)**
+```
+The authentication flow works by using Clerk's JWT tokens. The `get_effective_user`
+dependency in backend/src/middleware/clerk_auth.py validates the token and retrieves
+the user. All API endpoints use this dependency to ensure only authenticated users
+can access resources.
+```
+
+**Bad (Question Response)**
+```python
+# backend/src/middleware/clerk_auth.py
+async def get_effective_user(...):
+    # ... 50 lines of code dumped ...
+```
+
+**Good (Planning Response)**
+```
+To implement this feature, we should:
+1. Add a new endpoint in backend/src/api/cvs.py
+2. Create a service function in backend/src/services/cv_service.py
+3. Update the frontend CVService to call the new endpoint
+4. Add UI components in frontend/src/components/cv/
+
+Would you like me to proceed with implementing this approach?
+```
+
+**Bad (Planning Response)**
+```python
+# Here's the complete implementation:
+# backend/src/api/cvs.py
+@router.post("/api/cvs/{cv_id}/optimize")
+async def optimize_cv(...):
+    # ... 100+ lines of code ...
+```

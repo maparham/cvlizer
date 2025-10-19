@@ -69,15 +69,30 @@ Be careful and precise when fixing issues.
 - **ISOLATE THE PROBLEM** - Focus on the specific issue, but don't hesitate to improve related code if it's clearly beneficial
 - **BETTER DESIGN WINS** - Choose the better implementation even if it changes how things currently work
 
-## Fix Verification
-- Do not claim fixed until the user tests and confirms, unless you verified directly.
-- Ask the user to test and be ready to iterate.
+## 🚨 CRITICAL: Fix Verification
+
+**NEVER claim a fix or feature is complete until the user confirms it works.**
+
+This applies to:
+- Bug fixes
+- New feature implementations
+- Refactoring changes
+- Any code modifications
+
+### Requirements
+- **WAIT FOR USER CONFIRMATION** - Do not claim "fixed" or "complete" until user tests and verifies
+- **ASK USER TO TEST** - Always provide clear testing instructions and ask user to verify
+- **BE READY TO ITERATE** - User feedback may reveal issues that need additional fixes
 - **NEW PROBLEMS AVOIDED** - Don't introduce new bugs while fixing existing ones
-- **USER CONFIRMS FIX** - Don't claim fixed until user verifies it works
 - **IMPROVEMENTS WELCOME** - If the fix improves behavior beyond the original issue, that's a bonus
 
-## Exception
-- You may claim complete only if you directly verified via static analysis, compilation, or automated tests.
+### Exception: Automated Verification Only
+You may claim complete ONLY if you directly verified via:
+- Static analysis showing the issue is resolved
+- Successful compilation proving syntax/type errors are fixed
+- Automated test suite runs confirming the fix works
+
+If you cannot automatically verify, you MUST wait for user confirmation.
 
 ## Communication
 - Explain what changed and why; provide testing instructions; acknowledge user verification; address follow-ups.
