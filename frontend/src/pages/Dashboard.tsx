@@ -62,6 +62,7 @@ import { CVUpload, EditableTitle } from "../components/cv";
 import CVTemplateSelector from "../components/cv/CVTemplateSelector";
 import CVQuickActions from "../components/cv/CVQuickActions";
 import { JobDescriptionsModal, JobDescriptionCard } from "../components/cv/ai";
+import JobDescriptionStatusDialog from "../components/cv/ai/JobDescriptionStatusDialog";
 import { useCVStore } from "../stores/cvStore";
 import { useAIStore } from "../stores/aiStore";
 import { useNotifications } from "../packages/notifications";
@@ -87,6 +88,8 @@ const Dashboard: React.FC = () => {
   const [cvToDelete, setCvToDelete] = useState<CV | null>(null);
   const [jobDescriptionModalOpen, setJobDescriptionModalOpen] = useState(false);
   const [editingJobDescription, setEditingJobDescription] = useState<JobDescription | null>(null);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusEditingJobDescription, setStatusEditingJobDescription] = useState<JobDescription | null>(null);
   const notificationDrawerRef = useRef<NotificationDrawerRef>(null);
 
   // Search and filter states
@@ -216,6 +219,32 @@ const Dashboard: React.FC = () => {
   const handleJobDescriptionModalClose = () => {
     setJobDescriptionModalOpen(false);
     setEditingJobDescription(null);
+  };
+
+  const handleUpdateStatus = (jd: JobDescription) => {
+    setStatusEditingJobDescription(jd);
+    setStatusDialogOpen(true);
+  };
+
+  const handleStatusDialogClose = () => {
+    setStatusDialogOpen(false);
+    setStatusEditingJobDescription(null);
+  };
+
+  const handleStatusSave = async (updates: {
+    status?: string;
+    application_date?: string;
+    notes?: string;
+  }) => {
+    if (!statusEditingJobDescription) return;
+
+    try {
+      const { updateJobDescription } = useAIStore.getState();
+      await updateJobDescription(statusEditingJobDescription.id, updates);
+      showSuccess("Status updated successfully");
+    } catch (error) {
+      showError("Error", "Failed to update status");
+    }
   };
 
   const handleCreateFromTemplate = () => {
@@ -440,13 +469,28 @@ const Dashboard: React.FC = () => {
                             sx={{
                               minWidth: 280,
                               maxWidth: 280,
-                              cursor: "pointer",
+                              // Visual distinction based on status
+                              opacity: (jd.status || "open") === "open" ? 1 : (jd.status || "open") === "applied" ? 0.75 : 0.6,
+                              filter: (jd.status || "open") === "open"
+                                ? "none"
+                                : (jd.status || "open") === "applied"
+                                ? "grayscale(15%) brightness(0.98)"
+                                : "grayscale(40%) brightness(0.96)",
+                              backgroundColor: (jd.status || "open") === "open"
+                                ? "transparent"
+                                : (jd.status || "open") === "applied"
+                                ? "rgba(0,0,0,0.02)"
+                                : "rgba(0,0,0,0.04)",
+                              borderRadius: 1,
                               "&:hover": {
-                                transform: "translateY(-2px)",
+                                transform: (jd.status || "open") === "open"
+                                  ? "translateY(-2px)"
+                                  : (jd.status || "open") === "applied"
+                                  ? "translateY(-1px)"
+                                  : "none",
                                 transition: "transform 0.2s ease-in-out",
                               },
                             }}
-                            onClick={() => navigate("/applications")}
                           >
                             <JobDescriptionCard
                               jobDescription={jd}
@@ -454,6 +498,7 @@ const Dashboard: React.FC = () => {
                               variant="default"
                               showSelectButton={false}
                               onEdit={handleEditJobDescription}
+                              onStatusUpdate={handleUpdateStatus}
                             />
                           </Box>
                         ))}
@@ -1026,6 +1071,14 @@ const Dashboard: React.FC = () => {
           }}
           cvId="" // No CV context when creating from Dashboard
           editingJobDescription={editingJobDescription}
+        />
+
+        {/* Status Update Dialog */}
+        <JobDescriptionStatusDialog
+          open={statusDialogOpen}
+          onClose={handleStatusDialogClose}
+          jobDescription={statusEditingJobDescription}
+          onSave={handleStatusSave}
         />
 
       </Container>
