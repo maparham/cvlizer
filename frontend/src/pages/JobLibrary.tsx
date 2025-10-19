@@ -329,6 +329,7 @@ const JobLibrary: React.FC = () => {
         open={isModalOpen}
         onClose={handleModalClose}
         cvId="" // No CV context in job library
+        editingJobDescription={editingJobDescription}
       />
 
       {/* Status Update Dialog */}

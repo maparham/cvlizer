@@ -68,6 +68,7 @@ import { useNotifications } from "../packages/notifications";
 import { useActivityLogger } from "../hooks/useActivityLogger";
 import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../packages/notifications";
 import { CV } from "../types";
+import { JobDescription } from "../types/ai";
 import {
   getCVStatusIcon,
   getSectionCount,
@@ -85,6 +86,7 @@ const Dashboard: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cvToDelete, setCvToDelete] = useState<CV | null>(null);
   const [jobDescriptionModalOpen, setJobDescriptionModalOpen] = useState(false);
+  const [editingJobDescription, setEditingJobDescription] = useState<JobDescription | null>(null);
   const notificationDrawerRef = useRef<NotificationDrawerRef>(null);
 
   // Search and filter states
@@ -206,6 +208,16 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleEditJobDescription = (jd: JobDescription) => {
+    setEditingJobDescription(jd);
+    setJobDescriptionModalOpen(true);
+  };
+
+  const handleJobDescriptionModalClose = () => {
+    setJobDescriptionModalOpen(false);
+    setEditingJobDescription(null);
+  };
+
   const handleCreateFromTemplate = () => {
     setTemplateSelectorOpen(true);
   };
@@ -252,9 +264,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
+      <AppBar position="static" sx={{ backgroundColor: "#f5f5f5", color: "#333" }}>
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: "#333" }}>
             CV Optimizer
           </Typography>
           <IconButton
@@ -264,7 +276,7 @@ const Dashboard: React.FC = () => {
             aria-controls="menu-appbar"
             aria-haspopup="true"
             onClick={handleMenuOpen}
-            color="inherit"
+            sx={{ color: "#333" }}
             data-testid="user-menu-button"
           >
             <AccountCircleIcon />
@@ -348,14 +360,15 @@ const Dashboard: React.FC = () => {
                   </Stack>
                   <Stack direction="row" spacing={2} sx={{ flex: 1, justifyContent: "flex-end" }}>
                     <Button
-                      variant="contained"
+                      variant="outlined"
                       startIcon={<AddIcon />}
                       onClick={() => setJobDescriptionModalOpen(true)}
                       sx={{
-                        backgroundColor: "#667eea",
-                        color: "white",
+                        borderColor: "#667eea",
+                        color: "#667eea",
                         "&:hover": {
-                          backgroundColor: "#5568d3",
+                          backgroundColor: "rgba(102, 126, 234, 0.1)",
+                          borderColor: "#667eea",
                         },
                         fontWeight: 600,
                         textTransform: "none",
@@ -439,6 +452,7 @@ const Dashboard: React.FC = () => {
                               isParsing={jd.is_parsing}
                               variant="default"
                               showSelectButton={false}
+                              onEdit={handleEditJobDescription}
                             />
                           </Box>
                         ))}
@@ -508,16 +522,17 @@ const Dashboard: React.FC = () => {
                 </Stack>
                 <Stack direction="row" spacing={1.5} sx={{ flex: 1, justifyContent: "flex-end" }}>
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     startIcon={<TemplateIcon />}
                     onClick={handleCreateFromTemplate}
                     disabled={creating}
                     data-testid="create-from-template-button"
                     sx={{
-                      backgroundColor: "#667eea",
-                      color: "white",
+                      borderColor: "#667eea",
+                      color: "#667eea",
                       "&:hover": {
-                        backgroundColor: "#5568d3",
+                        backgroundColor: "rgba(102, 126, 234, 0.1)",
+                        borderColor: "#667eea",
                       },
                       fontWeight: 600,
                       textTransform: "none",
@@ -979,13 +994,14 @@ const Dashboard: React.FC = () => {
         {/* Job Descriptions Modal */}
         <JobDescriptionsModal
           open={jobDescriptionModalOpen}
-          onClose={() => setJobDescriptionModalOpen(false)}
+          onClose={handleJobDescriptionModalClose}
           onJobDescriptionCreated={() => {
             // Force a re-render by reloading job descriptions
             // This ensures the Dashboard shows the newly created JD
             loadJobDescriptions();
           }}
           cvId="" // No CV context when creating from Dashboard
+          editingJobDescription={editingJobDescription}
         />
 
       </Container>

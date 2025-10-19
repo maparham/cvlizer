@@ -66,6 +66,7 @@ interface JobDescriptionsModalProps {
   cvId: string;
   onJobDescriptionSelect?: (jobDescription: JobDescription | null) => void;
   onJobDescriptionCreated?: () => void; // Optional callback after JD creation
+  editingJobDescription?: JobDescription | null; // External editing mode trigger
 }
 
 interface TabPanelProps {
@@ -94,6 +95,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   cvId,
   onJobDescriptionSelect,
   onJobDescriptionCreated,
+  editingJobDescription: externalEditingJobDescription,
 }) => {
   const [tabValue, setTabValue] = useState(0);
   const [urlInput, setUrlInput] = useState("");
@@ -157,6 +159,19 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       onJobDescriptionSelect(activeJobDescription || null);
     }
   }, [activeJobDescription, onJobDescriptionSelect]);
+
+  // Auto-open edit dialog when editingJobDescription prop is provided
+  useEffect(() => {
+    if (open && externalEditingJobDescription) {
+      // Use the same logic as handleEditJobDescription to avoid dependency issues
+      setEditingJobDescription(externalEditingJobDescription);
+      setEditTitle(externalEditingJobDescription.title || "");
+      setEditCompany(externalEditingJobDescription.company || "");
+      setEditLocation(externalEditingJobDescription.location || "");
+      setEditTextInput(externalEditingJobDescription.content);
+      setShowEditDialog(true);
+    }
+  }, [open, externalEditingJobDescription]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -407,6 +422,20 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     [],
   );
 
+  const handleEditDialogClose = useCallback(() => {
+    setShowEditDialog(false);
+    setEditingJobDescription(null);
+    setEditTextInput("");
+    setEditTitle("");
+    setEditCompany("");
+    setEditLocation("");
+
+    // Close parent modal if we're in external edit mode
+    if (externalEditingJobDescription) {
+      onClose();
+    }
+  }, [externalEditingJobDescription, onClose]);
+
   const handleEditSubmit = useCallback(async () => {
     if (!editingJobDescription || !editTextInput.trim()) {
       return;
@@ -424,13 +453,8 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
         location: editLocation || "Unknown Location",
       });
 
-      setShowEditDialog(false);
-      setEditingJobDescription(null);
-      setEditTextInput("");
-      setEditTitle("");
-      setEditCompany("");
-      setEditLocation("");
       showSuccess("Job description updated successfully");
+      handleEditDialogClose();
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to update job description";
@@ -448,6 +472,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     updateJobDescription,
     showSuccess,
     showError,
+    handleEditDialogClose,
   ]);
 
   const handleClose = useCallback(() => {
@@ -459,13 +484,20 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       isValid: false,
       message: "Please enter a job posting URL",
     });
+    // Clear edit dialog state
+    setShowEditDialog(false);
+    setEditingJobDescription(null);
+    setEditTextInput("");
+    setEditTitle("");
+    setEditCompany("");
+    setEditLocation("");
     onClose();
   }, [onClose]);
 
   return (
     <>
       <Dialog
-        open={open}
+        open={open && !externalEditingJobDescription}
         onClose={handleClose}
         maxWidth="lg"
         fullWidth
@@ -789,7 +821,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
       {/* Edit Dialog */}
       <Dialog
         open={showEditDialog}
-        onClose={() => setShowEditDialog(false)}
+        onClose={handleEditDialogClose}
         maxWidth="md"
         fullWidth
       >
@@ -829,7 +861,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowEditDialog(false)} disabled={isLoading}>
+          <Button onClick={handleEditDialogClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button
