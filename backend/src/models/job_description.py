@@ -35,6 +35,11 @@ class JobDescription(Base):
     location = Column(String(255), nullable=True)
     hidden = Column(Boolean, default=False, nullable=False)
 
+    # Status tracking fields
+    status = Column(String(50), default="open", nullable=False)
+    application_date = Column(DateTime(timezone=True), nullable=True)
+    notes = Column(Text, nullable=True)
+
     # Background task status fields
     is_parsing = Column(Boolean, default=False, nullable=False)
     parse_error = Column(Text, nullable=True)

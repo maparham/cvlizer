@@ -141,6 +141,9 @@ class JobDescriptionCreate(BaseModel):
     title: Optional[str] = None
     company: Optional[str] = None
     location: Optional[str] = None
+    status: Optional[str] = "open"
+    application_date: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class JobDescriptionUpdate(BaseModel):
@@ -148,6 +151,9 @@ class JobDescriptionUpdate(BaseModel):
     title: Optional[str] = None
     company: Optional[str] = None
     location: Optional[str] = None
+    status: Optional[str] = None
+    application_date: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class JobDescriptionResponse(BaseModel):
@@ -164,6 +170,9 @@ class JobDescriptionResponse(BaseModel):
     hidden: bool
     is_parsing: bool = False
     parse_error: Optional[str] = None
+    status: str = "open"
+    application_date: Optional[str] = None
+    notes: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -210,6 +219,9 @@ def _jd_to_response(jd: JobDescription, db: Session) -> JobDescriptionResponse:
         hidden=jd.hidden,
         is_parsing=jd.is_parsing,
         parse_error=jd.parse_error,
+        status=jd.status or "open",
+        application_date=jd.application_date.isoformat() if jd.application_date else None,
+        notes=jd.notes,
     )
 
 
@@ -237,6 +249,9 @@ async def create_job_description(
         title=job_description.title,
         company=job_description.company,
         location=job_description.location,
+        status=job_description.status,
+        application_date=job_description.application_date,
+        notes=job_description.notes,
     )
 
     return _jd_to_response(jd, db)
@@ -284,6 +299,9 @@ async def update_job_description(
         title=job_description.title,
         company=job_description.company,
         location=job_description.location,
+        status=job_description.status,
+        application_date=job_description.application_date,
+        notes=job_description.notes,
     )
 
     if not updated_jd:
@@ -441,6 +459,9 @@ async def create_user_job_description(
         title=job_description.title,
         company=job_description.company,
         location=job_description.location,
+        status=job_description.status,
+        application_date=job_description.application_date,
+        notes=job_description.notes,
     )
 
     return _jd_to_response(jd, db)

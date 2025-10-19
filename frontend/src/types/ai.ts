@@ -173,6 +173,9 @@ export interface JobDescription {
   updated_at?: string;
   is_parsing?: boolean;
   parse_error?: string;
+  status?: string;  // "open" | "applied" | "archived"
+  application_date?: string;
+  notes?: string;
 }
 
 export interface JobDescriptionRequest {

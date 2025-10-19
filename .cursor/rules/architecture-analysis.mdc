@@ -1,14 +1,22 @@
+---
+alwaysApply: true
+description: Architecture analysis rule - ALWAYS search for existing solutions first
+---
+
 # Architecture Analysis Rule
+
+**CRITICAL: ALWAYS search for existing implementations before creating new ones.**
 
 Always analyze existing architecture before implementing features.
 
 ## Required Steps (DO NOT SKIP)
 
 Follow "DEBUG FIRST" from careful-fixes rule, plus:
-1. Search the codebase for similar functionality (use `codebase_search`)
-2. Read related components to learn current patterns
-3. Identify existing state management and data flow
-4. Check existing UI patterns and component hierarchies
+1. **SEARCH FOR EXISTING CODE FIRST** - Use `codebase_search` to find similar functionality
+2. **Look for user hints** - If user mentions "existing code" or "like the other one", SEARCH IMMEDIATELY
+3. Read related components to learn current patterns
+4. Identify existing state management and data flow
+5. Check existing UI patterns and component hierarchies
 
 ## Checklist Before Implementation
 - [ ] No duplicate functionality
@@ -19,9 +27,9 @@ Follow "DEBUG FIRST" from careful-fixes rule, plus:
 - [ ] **Actual behavior understood from source code**
 
 ## Red Flags
-- Creating new state management when existing stores work
+- Creating new functionality when user hints at existing implementation
 - Duplicating UI components similar to existing ones
-- Placing functionality in the wrong location (e.g., header vs sidebar)
-- Ignoring existing component hierarchies
+- Not searching when user says "similar to" or "like the existing"
+- Ignoring user references to loading states, skeletons, or animations
 
-Goal: Enhance what exists; do not replace it.
+**Goal: Enhance what exists; do not replace it.**

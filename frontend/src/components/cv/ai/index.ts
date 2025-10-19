@@ -10,7 +10,9 @@
 export { default as JobFitAnalysis } from "./JobFitAnalysis";
 export { default as ATSOptimization } from "./ATSOptimization";
 export { default as JobDescriptionSummary } from "./JobDescriptionSummary";
+export { default as JobDescriptionCard } from "./JobDescriptionCard";
 export { default as JobDescriptionsModal } from "./JobDescriptionsModal";
+export { default as JobDescriptionStatusDialog } from "./JobDescriptionStatusDialog";
 
 // Draft management components
 export { default as DraftSection } from "./DraftSection";

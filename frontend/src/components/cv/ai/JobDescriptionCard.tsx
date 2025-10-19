@@ -117,6 +117,7 @@ export interface JobDescriptionCardProps {
   onDelete?: (jobDescription: JobDescription) => void;
   onHide?: (jobDescriptionId: string) => void;
   onSelect?: (jobDescription: JobDescription) => void;
+  onStatusUpdate?: (jobDescription: JobDescription) => void;
   showSelectButton?: boolean;
   variant?: "default" | "sidebar";
   maxChipWidth?: number;
@@ -130,6 +131,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   onDelete,
   onHide,
   onSelect,
+  onStatusUpdate,
   showSelectButton = false,
   variant = "default",
   maxChipWidth,
@@ -407,16 +409,15 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
             </Box>
           </Box>
 
-          {/* Company, Location chips */}
-          {(jobDescription.company || jobDescription.location) && (
+          {/* Company, Location, Status chips */}
+          {(jobDescription.company || jobDescription.location || jobDescription.status) && (
             <Box
               sx={{
                 display: "flex",
                 gap: 0.75,
-                flexWrap: "nowrap",
+                flexWrap: "wrap",
                 mb: 1.5,
                 justifyContent: "flex-start",
-                overflow: "hidden",
               }}
             >
               {jobDescription.company && (
@@ -460,6 +461,41 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                     },
+                  }}
+                />
+              )}
+              {jobDescription.status && (
+                <Chip
+                  label={jobDescription.status.charAt(0).toUpperCase() + jobDescription.status.slice(1)}
+                  size="small"
+                  onClick={
+                    onStatusUpdate
+                      ? (e) => {
+                          e.stopPropagation();
+                          onStatusUpdate(jobDescription);
+                        }
+                      : undefined
+                  }
+                  sx={{
+                    backgroundColor:
+                      jobDescription.status === "open"
+                        ? "rgba(33, 150, 243, 0.1)"
+                        : jobDescription.status === "applied"
+                        ? "rgba(255, 152, 0, 0.1)"
+                        : "rgba(158, 158, 158, 0.1)",
+                    color:
+                      jobDescription.status === "open"
+                        ? "#1976d2"
+                        : jobDescription.status === "applied"
+                        ? "#ed6c02"
+                        : "#757575",
+                    fontWeight: 600,
+                    cursor: onStatusUpdate ? "pointer" : "default",
+                    "&:hover": onStatusUpdate
+                      ? {
+                          opacity: 0.8,
+                        }
+                      : {},
                   }}
                 />
               )}

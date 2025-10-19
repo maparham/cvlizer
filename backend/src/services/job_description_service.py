@@ -173,6 +173,9 @@ def update_job_description_owned_by(
     title: Optional[str] = None,
     company: Optional[str] = None,
     location: Optional[str] = None,
+    status: Optional[str] = None,
+    application_date: Optional[str] = None,
+    notes: Optional[str] = None,
 ) -> Optional[JobDescription]:
     """Update a job description owned by a specific user"""
     jd = get_job_description_owned_by(db, jd_id, user_id)
@@ -188,6 +191,12 @@ def update_job_description_owned_by(
         jd.company = company
     if location is not None:
         jd.location = location
+    if status is not None:
+        jd.status = status
+    if application_date is not None:
+        jd.application_date = application_date
+    if notes is not None:
+        jd.notes = notes
 
     db.commit()
     db.refresh(jd)
@@ -232,6 +241,9 @@ def create_job_description_for_user_with_cvs(
     title: Optional[str] = None,
     company: Optional[str] = None,
     location: Optional[str] = None,
+    status: Optional[str] = "open",
+    application_date: Optional[str] = None,
+    notes: Optional[str] = None,
 ) -> JobDescription:
     """
     Create a job description for a user and optionally associate with CVs.
@@ -245,6 +257,9 @@ def create_job_description_for_user_with_cvs(
         title: Optional job title
         company: Optional company name
         location: Optional location
+        status: Status of the job description (default: "open")
+        application_date: Optional application date
+        notes: Optional notes
 
     Returns:
         Created JobDescription instance
@@ -260,6 +275,9 @@ def create_job_description_for_user_with_cvs(
         title=title,
         company=company,
         location=location,
+        status=status or "open",
+        application_date=application_date,
+        notes=notes,
     )
     db.add(jd)
     db.flush()  # Get the ID without committing

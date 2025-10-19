@@ -18,7 +18,7 @@
  * - Integrates with notification system for user feedback
  * - Provides responsive grid layout for CV cards
  */
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
   Typography,
@@ -26,7 +26,6 @@ import {
   Box,
   Card,
   CardContent,
-  Grid,
   AppBar,
   Toolbar,
   IconButton,
@@ -34,80 +33,61 @@ import {
   MenuItem,
   Paper,
   Chip,
-  LinearProgress,
-  TextField,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
   Stack,
-  Tooltip,
-  CardActions,
-  Divider,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
-  Pagination,
-  Alert,
+  Grid,
+  LinearProgress,
+  Tooltip,
+  CardActions,
 } from "@mui/material";
 import {
   AccountCircle as AccountCircleIcon,
   Upload as UploadIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  GetApp as DownloadIcon,
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  Sort as SortIcon,
   Description as DocumentIcon,
-  Schedule as ScheduleIcon,
-  EditNote as EditedIcon,
   Article as TemplateIcon,
   Add as AddIcon,
+  Warning as WarningIcon,
+  Edit as EditIcon,
+  Download as DownloadIcon,
+  Schedule as ScheduleIcon,
+  Delete as DeleteIcon,
+  FileCopy as DuplicateIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { CVUpload, EditableTitle } from "../components/cv";
 import CVTemplateSelector from "../components/cv/CVTemplateSelector";
 import CVQuickActions from "../components/cv/CVQuickActions";
+import { JobDescriptionsModal, JobDescriptionCard } from "../components/cv/ai";
 import { useCVStore } from "../stores/cvStore";
+import { useAIStore } from "../stores/aiStore";
 import { useNotifications } from "../packages/notifications";
 import { useActivityLogger } from "../hooks/useActivityLogger";
 import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../packages/notifications";
-import { cvApi } from "../services/api";
 import { CV } from "../types";
 import {
-  isUploadedCV,
-  hasBeenEdited,
   getCVStatusIcon,
   getSectionCount,
+  isUploadedCV,
+  hasBeenEdited,
 } from "../utils/dashboardUtils";
 import { formatDateTime } from "../utils/dateFormat";
+
 
 const Dashboard: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [deleting, setDeleting] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [duplicating, setDuplicating] = useState(false);
-  const [creatingSimilar, setCreatingSimilar] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cvToDelete, setCvToDelete] = useState<CV | null>(null);
+  const [jobDescriptionModalOpen, setJobDescriptionModalOpen] = useState(false);
   const notificationDrawerRef = useRef<NotificationDrawerRef>(null);
 
   // Search and filter states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "parsed" | "parsing" | "error"
-  >("all");
-  const [sortBy, setSortBy] = useState<"name" | "created" | "modified">(
-    "modified",
-  );
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const {
     logout,
@@ -116,42 +96,47 @@ const Dashboard: React.FC = () => {
     loading: authLoading,
   } = useAuth();
   const navigate = useNavigate();
-  const { showSuccess, showError, notifications, removeNotification } =
-    useNotifications();
+  const { showSuccess, showError } = useNotifications();
   const { logUserAction } = useActivityLogger();
 
   // Use CV store instead of local state
   const {
     cvs,
-    loading,
-    error,
-    currentPage,
-    totalPages,
-    totalCVs,
     fetchCVs,
-    setPage,
     createTemporaryCV,
-    saveTemporaryCV,
     updateCVTitle,
     deleteCV: deleteCVFromStore,
     duplicateCV: duplicateCVFromStore,
   } = useCVStore();
 
+  // Get job descriptions for the applications card
+  const { jobDescriptions, loadJobDescriptions } = useAIStore();
+
+  // Get CV status counts for filter badges (memoized to avoid repeated filtering)
+  const cvStatusCounts = React.useMemo(() => ({
+    all: cvs.length,
+    parsed: cvs.filter((cv) => cv.is_parsed && !cv.parse_error).length,
+    parsing: cvs.filter((cv) => !cv.is_parsed && !cv.parse_error).length,
+    error: cvs.filter((cv) => !!cv.parse_error).length,
+  }), [cvs]);
+
+  // Get JD status counts (memoized to avoid repeated filtering)
+  const jdStatusCounts = React.useMemo(() => ({
+    open: jobDescriptions.filter(jd => jd.status === "open").length,
+    applied: jobDescriptions.filter(jd => jd.status === "applied").length,
+    archived: jobDescriptions.filter(jd => jd.status === "archived").length,
+  }), [jobDescriptions]);
+
   // Fetch CVs on component mount (only if authenticated)
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       fetchCVs();
+      loadJobDescriptions();
       // Log dashboard view (page view is already logged by useActivityLogger)
       logUserAction("dashboard_view", "User viewed dashboard");
     }
   }, [isAuthenticated, authLoading]); // Depend on auth state only
 
-  // Show error notifications
-  useEffect(() => {
-    if (error) {
-      showError("Error", error);
-    }
-  }, [error]); // Remove showError from dependencies to prevent infinite loop
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -167,10 +152,6 @@ const Dashboard: React.FC = () => {
     handleMenuClose();
   };
 
-  const handleDeleteClick = (cv: CV) => {
-    setCvToDelete(cv);
-    setDeleteDialogOpen(true);
-  };
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
@@ -180,7 +161,6 @@ const Dashboard: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (!cvToDelete) return;
 
-    setDeleting(true);
     try {
       await deleteCVFromStore(cvToDelete.id);
       // Log CV deletion
@@ -200,8 +180,29 @@ const Dashboard: React.FC = () => {
       setCvToDelete(null);
     } catch (error) {
       showError("Error", "Failed to delete CV");
-    } finally {
-      setDeleting(false);
+    }
+  };
+
+  const handleDuplicate = async (cv: CV) => {
+    try {
+      await duplicateCVFromStore(cv.id);
+      showSuccess(
+        "Success",
+        `CV "${cv.original_filename}" duplicated successfully`,
+      );
+    } catch (error) {
+      showError("Error", "Failed to duplicate CV");
+    }
+  };
+
+  const handleTitleSave = async (cv: CV, newTitle: string) => {
+    try {
+      await updateCVTitle(cv.id, newTitle);
+      showSuccess("Success", "CV title updated successfully");
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.detail || "Failed to update CV title";
+      showError("Error", errorMessage);
     }
   };
 
@@ -247,130 +248,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleTitleSave = async (cv: CV, newTitle: string) => {
-    try {
-      await updateCVTitle(cv.id, newTitle);
-      showSuccess("Success", "CV title updated successfully");
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.detail || "Failed to update CV title";
-      showError("Error", errorMessage);
-    }
-  };
 
-  const handleDownloadCV = async (cv: CV) => {
-    if (downloading) return;
-
-    setDownloading(true);
-    try {
-      await cvApi.downloadCV(cv.id, cv.original_filename);
-      showSuccess("Success", "CV download started");
-    } catch (error) {
-      showError("Error", "Failed to download CV");
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const handleDuplicateCV = async (cv: CV) => {
-    if (duplicating) return;
-
-    setDuplicating(true);
-    try {
-      await duplicateCVFromStore(cv.id);
-      showSuccess(
-        "Success",
-        `CV "${cv.original_filename}" duplicated successfully`,
-      );
-    } catch (error) {
-      showError("Error", "Failed to duplicate CV");
-    } finally {
-      setDuplicating(false);
-    }
-  };
-
-  const handleCreateSimilarCV = async (cv: CV) => {
-    if (creatingSimilar) return;
-
-    setCreatingSimilar(true);
-    try {
-      // Create a new CV based on the existing one
-      const newCV = await createTemporaryCV();
-
-      // Copy the parsed data from the existing CV
-      if (cv.parsed_data) {
-        newCV.parsed_data = JSON.parse(JSON.stringify(cv.parsed_data));
-        newCV.original_filename = `Similar to ${cv.original_filename}`;
-      }
-
-      // Save the temporary CV to the backend
-      const savedCV = await saveTemporaryCV({
-        parsed_data: newCV.parsed_data!,
-      });
-
-      navigate(`/cv/${savedCV.id}`);
-      showSuccess(
-        "Success",
-        `Created similar CV based on "${cv.original_filename}"`,
-      );
-    } catch (error) {
-      showError("Error", "Failed to create similar CV");
-    } finally {
-      setCreatingSimilar(false);
-    }
-  };
-
-  // Filter and sort CVs
-  const filteredAndSortedCVs = useMemo(() => {
-    const filtered = cvs.filter((cv) => {
-      // Search filter
-      const matchesSearch = cv.original_filename
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
-      // Status filter
-      let matchesStatus = true;
-      if (filterStatus === "parsed") {
-        matchesStatus = cv.is_parsed && !cv.parse_error;
-      } else if (filterStatus === "parsing") {
-        matchesStatus = !cv.is_parsed && !cv.parse_error;
-      } else if (filterStatus === "error") {
-        matchesStatus = !!cv.parse_error;
-      }
-
-      return matchesSearch && matchesStatus;
-    });
-
-    // Sort
-    filtered.sort((a, b) => {
-      let comparison = 0;
-
-      if (sortBy === "name") {
-        comparison = a.original_filename.localeCompare(b.original_filename);
-      } else if (sortBy === "created") {
-        comparison =
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      } else if (sortBy === "modified") {
-        comparison =
-          new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
-      }
-
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
-
-    return filtered;
-  }, [cvs, searchTerm, filterStatus, sortBy, sortOrder]);
-
-  // Get status counts for filter badges
-  const statusCounts = useMemo(() => {
-    const counts = {
-      all: cvs.length,
-      parsed: cvs.filter((cv) => cv.is_parsed && !cv.parse_error).length,
-      parsing: cvs.filter((cv) => !cv.is_parsed && !cv.parse_error).length,
-      error: cvs.filter((cv) => !!cv.parse_error).length,
-    };
-    return counts;
-  }, [cvs]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -435,7 +313,145 @@ const Dashboard: React.FC = () => {
       </AppBar>
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        {/* Header */}
+            {/* Job Applications Card */}
+            <Card
+              sx={{
+                mb: 4,
+                borderRadius: 2,
+                border: "1px solid #e0e0e0",
+                "&:hover": {
+                  boxShadow: 2,
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Stack direction="row" alignItems="center" sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", flex: 1 }}>
+                    My Job Applications
+                  </Typography>
+                  <Stack direction="row" spacing={1} sx={{ flex: 1, justifyContent: "center" }}>
+                    <Chip
+                      label={`${jdStatusCounts.open} Open`}
+                      size="small"
+                      sx={{ backgroundColor: "rgba(33, 150, 243, 0.1)", color: "#1976d2" }}
+                    />
+                    <Chip
+                      label={`${jdStatusCounts.applied} Applied`}
+                      size="small"
+                      sx={{ backgroundColor: "rgba(255, 152, 0, 0.1)", color: "#ed6c02" }}
+                    />
+                    <Chip
+                      label={`${jdStatusCounts.archived} Archived`}
+                      size="small"
+                      sx={{ backgroundColor: "rgba(158, 158, 158, 0.1)", color: "#757575" }}
+                    />
+                  </Stack>
+                  <Stack direction="row" spacing={2} sx={{ flex: 1, justifyContent: "flex-end" }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={() => setJobDescriptionModalOpen(true)}
+                      sx={{
+                        backgroundColor: "#667eea",
+                        color: "white",
+                        "&:hover": {
+                          backgroundColor: "#5568d3",
+                        },
+                        fontWeight: 600,
+                        textTransform: "none",
+                        px: 3,
+                      }}
+                    >
+                      New Job
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => navigate("/applications")}
+                      sx={{
+                        borderColor: "#667eea",
+                        color: "#667eea",
+                        "&:hover": {
+                          backgroundColor: "rgba(102, 126, 234, 0.1)",
+                          borderColor: "#667eea",
+                        },
+                        fontWeight: 600,
+                        textTransform: "none",
+                        px: 3,
+                      }}
+                    >
+                      View All
+                    </Button>
+                  </Stack>
+                </Stack>
+
+                {/* Recent Job Applications - Horizontal Scrollable */}
+                {jobDescriptions.length > 0 && (
+                  <Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        overflowX: "auto",
+                        pb: 1,
+                        "&::-webkit-scrollbar": {
+                          height: 6,
+                        },
+                        "&::-webkit-scrollbar-track": {
+                          backgroundColor: "#f1f1f1",
+                          borderRadius: 3,
+                        },
+                        "&::-webkit-scrollbar-thumb": {
+                          backgroundColor: "#c1c1c1",
+                          borderRadius: 3,
+                          "&:hover": {
+                            backgroundColor: "#a8a8a8",
+                          },
+                        },
+                      }}
+                    >
+                      {jobDescriptions
+                        .sort((a, b) => {
+                          const dateA = new Date(a.created_at).getTime();
+                          const dateB = new Date(b.created_at).getTime();
+                          // Primary sort by date (descending), secondary sort by id for stability
+                          if (dateA !== dateB) {
+                            return dateB - dateA;
+                          }
+                          return b.id.localeCompare(a.id);
+                        })
+                        .slice(0, 10)
+                        .map((jd) => (
+                          <Box
+                            key={jd.id}
+                            sx={{
+                              minWidth: 280,
+                              maxWidth: 280,
+                              cursor: "pointer",
+                              "&:hover": {
+                                transform: "translateY(-2px)",
+                                transition: "transform 0.2s ease-in-out",
+                              },
+                            }}
+                            onClick={() => navigate("/applications")}
+                          >
+                            <JobDescriptionCard
+                              jobDescription={jd}
+                              isParsing={jd.is_parsing}
+                              variant="default"
+                              showSelectButton={false}
+                            />
+                          </Box>
+                        ))}
+                    </Box>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+
+        {/* CV Section - Hybrid Approach */}
+        {cvs.length === 0 ? (
+          // Empty state - keep existing welcome banner
+          <>
         <Box
           sx={{
             display: "flex",
@@ -452,158 +468,373 @@ const Dashboard: React.FC = () => {
               Manage and optimize your CV collection
             </Typography>
           </Box>
-          {/* Only show header buttons when there are CVs */}
-          {cvs.length > 0 && (
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<TemplateIcon />}
-                onClick={handleCreateFromTemplate}
-                disabled={creating}
-                data-testid="create-cv-from-template-button"
-                sx={{
-                  borderRadius: 2,
-                  textTransform: "none",
-                  fontWeight: 600,
-                }}
-              >
-                {creating ? "Creating..." : "Create CV from Template"}
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={handleStartFromScratch}
-                disabled={creating}
-                data-testid="start-from-scratch-button"
-                sx={{
-                  borderRadius: 2,
-                  textTransform: "none",
-                  fontWeight: 600,
-                }}
-              >
-                {creating ? "Creating..." : "Start from Scratch"}
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<UploadIcon />}
-                onClick={() => setUploadOpen(true)}
-                data-testid="upload-cv-button"
-                sx={{
-                  borderRadius: 2,
-                  textTransform: "none",
-                  fontWeight: 600,
-                }}
-              >
-                Upload CV
-              </Button>
             </Box>
-          )}
-        </Box>
-
-        {/* Search and Filter Controls */}
-        {cvs.length > 5 && (
-          <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-            <Stack spacing={3}>
-              {/* Search Bar */}
-              <TextField
-                fullWidth
-                placeholder="Search CVs by name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                data-testid="search-cvs-input"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-
-              {/* Filter and Sort Controls */}
-              <Stack direction="row" spacing={2} alignItems="center">
-                {/* Status Filter Chips */}
-                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                  <FilterIcon color="action" fontSize="small" />
+          </>
+        ) : (
+          // Compact card view when user has CVs - matching Job Applications style
+          <Card
+            sx={{
+              mb: 4,
+              borderRadius: 2,
+              border: "1px solid #e0e0e0",
+              "&:hover": {
+                boxShadow: 2,
+              },
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Stack direction="row" alignItems="center" sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", flex: 1 }}>
+                  My CVs
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ flex: 1, justifyContent: "center" }}>
                   <Chip
-                    label={`All (${statusCounts.all})`}
-                    variant={filterStatus === "all" ? "filled" : "outlined"}
-                    onClick={() => setFilterStatus("all")}
-                    color="primary"
+                    label={`${cvStatusCounts.parsed} Ready`}
                     size="small"
+                    sx={{ backgroundColor: "rgba(76, 175, 80, 0.1)", color: "#4caf50" }}
                   />
                   <Chip
-                    label={`Ready (${statusCounts.parsed})`}
-                    variant={filterStatus === "parsed" ? "filled" : "outlined"}
-                    onClick={() => setFilterStatus("parsed")}
-                    color="success"
+                    label={`${cvStatusCounts.parsing} Processing`}
                     size="small"
+                    sx={{ backgroundColor: "rgba(255, 152, 0, 0.1)", color: "#ed6c02" }}
                   />
-                  <Chip
-                    label={`Processing (${statusCounts.parsing})`}
-                    variant={filterStatus === "parsing" ? "filled" : "outlined"}
-                    onClick={() => setFilterStatus("parsing")}
-                    color="warning"
-                    size="small"
-                  />
-                  {statusCounts.error > 0 && (
+                  {cvStatusCounts.error > 0 && (
                     <Chip
-                      label={`Errors (${statusCounts.error})`}
-                      variant={filterStatus === "error" ? "filled" : "outlined"}
-                      onClick={() => setFilterStatus("error")}
-                      color="error"
+                      label={`${cvStatusCounts.error} Errors`}
                       size="small"
+                      sx={{ backgroundColor: "rgba(244, 67, 54, 0.1)", color: "#f44336" }}
                     />
                   )}
-                </Box>
-
-                <Divider orientation="vertical" flexItem />
-
-                {/* Sort Controls */}
-                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                  <SortIcon color="action" fontSize="small" />
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Sort by</InputLabel>
-                    <Select
-                      value={sortBy}
-                      label="Sort by"
-                      onChange={(e) =>
-                        setSortBy(
-                          e.target.value as "name" | "created" | "modified",
-                        )
-                      }
-                    >
-                      <MenuItem value="modified">Last Modified</MenuItem>
-                      <MenuItem value="created">Date Created</MenuItem>
-                      <MenuItem value="name">Name</MenuItem>
-                    </Select>
-                  </FormControl>
+                </Stack>
+                <Stack direction="row" spacing={1.5} sx={{ flex: 1, justifyContent: "flex-end" }}>
                   <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() =>
-                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                    }
-                    sx={{ minWidth: "auto", px: 1 }}
+                    variant="contained"
+                    startIcon={<TemplateIcon />}
+                    onClick={handleCreateFromTemplate}
+                    disabled={creating}
+                    data-testid="create-from-template-button"
+                    sx={{
+                      backgroundColor: "#667eea",
+                      color: "white",
+                      "&:hover": {
+                        backgroundColor: "#5568d3",
+                      },
+                      fontWeight: 600,
+                      textTransform: "none",
+                      px: 2,
+                      py: 1,
+                      whiteSpace: "nowrap",
+                    }}
                   >
-                    {sortOrder === "asc" ? "↑" : "↓"}
+                    From Template
                   </Button>
-                </Box>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={handleStartFromScratch}
+                    disabled={creating}
+                    data-testid="start-from-scratch-button"
+                    sx={{
+                      borderColor: "#667eea",
+                      color: "#667eea",
+                      "&:hover": {
+                        backgroundColor: "rgba(102, 126, 234, 0.1)",
+                        borderColor: "#667eea",
+                      },
+                      fontWeight: 600,
+                      textTransform: "none",
+                      px: 2,
+                      py: 1,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    From Scratch
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<UploadIcon />}
+                    onClick={() => setUploadOpen(true)}
+                    data-testid="upload-cv-button"
+                    sx={{
+                      borderColor: "#667eea",
+                      color: "#667eea",
+                      "&:hover": {
+                        backgroundColor: "rgba(102, 126, 234, 0.1)",
+                        borderColor: "#667eea",
+                      },
+                      fontWeight: 600,
+                      textTransform: "none",
+                      px: 2,
+                      py: 1,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Upload
+                  </Button>
+                </Stack>
               </Stack>
-            </Stack>
-          </Paper>
+
+              {/* Full CV Cards Grid */}
+              <Grid container spacing={3}>
+                {cvs.map((cv) => (
+                  <Grid item xs={12} sm={6} lg={4} key={cv.id}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        borderRadius: 3,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        transition: "all 0.3s ease-in-out",
+                        "&:hover": {
+                          transform: "translateY(-4px)",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                        },
+                      }}
+                    >
+                      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                        {/* CV Header with Status */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            justifyContent: "space-between",
+                            mb: 2,
+                          }}
+                        >
+                          <Box sx={{ flexGrow: 1, mr: 1 }}>
+                            <EditableTitle
+                              title={cv.original_filename}
+                              onSave={(newTitle) => handleTitleSave(cv, newTitle)}
+                              variant="h6"
+                              sx={{
+                                mb: 1,
+                                fontWeight: 600,
+                                fontSize: "1.1rem",
+                                lineHeight: 1.2,
+                              }}
+                            />
+                          </Box>
+                           <Tooltip
+                             title={
+                               cv.parse_error
+                                 ? "Parsing failed"
+                                 : cv.is_parsed
+                                 ? "Ready for editing"
+                                 : "Draft"
+                             }
+                           >
+                             <Box
+                               sx={{
+                                 display: "flex",
+                                 alignItems: "center",
+                                 justifyContent: "center",
+                                 width: 32,
+                                 height: 32,
+                               }}
+                             >
+                               {getCVStatusIcon(cv)}
+                             </Box>
+                           </Tooltip>
+                        </Box>
+
+                        {/* File Type and Metadata */}
+                        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                          {isUploadedCV(cv) && (
+                            <Tooltip title="Download original file">
+                              <Chip
+                                label={cv.file_type.split("/")[1].toUpperCase()}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                icon={<DownloadIcon />}
+                                clickable
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // handleDownloadCV(cv);
+                                }}
+                                sx={{ borderRadius: 1.5 }}
+                              />
+                            </Tooltip>
+                          )}
+                          {hasBeenEdited(cv) && (
+                            <Tooltip title="This CV has been modified">
+                              <Chip
+                                label="Modified"
+                                size="small"
+                                color="warning"
+                                variant="outlined"
+                                icon={<EditIcon />}
+                                sx={{ borderRadius: 1.5 }}
+                              />
+                            </Tooltip>
+                          )}
+                          {cv.is_parsed && (
+                            <Chip
+                              label={`${getSectionCount(cv)} sections`}
+                              size="small"
+                              variant="outlined"
+                              sx={{ borderRadius: 1.5 }}
+                            />
+                          )}
+                        </Stack>
+
+                        {/* File Info */}
+                        <Box sx={{ mb: 2 }}>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                            sx={{ mb: 1 }}
+                          >
+                            <ScheduleIcon fontSize="small" color="action" />
+                            <Typography variant="body2" color="text.secondary">
+                              Created {formatDateTime(cv.created_at)}
+                            </Typography>
+                          </Stack>
+                          {cv.updated_at && cv.updated_at !== cv.created_at && (
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              spacing={1}
+                            >
+                              <EditIcon fontSize="small" color="action" />
+                              <Typography variant="body2" color="text.secondary">
+                                Modified {formatDateTime(cv.updated_at)}
+                              </Typography>
+                            </Stack>
+                          )}
+                        </Box>
+
+                        {/* Processing Status */}
+                        {!cv.is_parsed && !cv.parse_error && (
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                              Processing your CV...
+                            </Typography>
+                            <LinearProgress sx={{ borderRadius: 1 }} />
+                          </Box>
+                        )}
+
+                        {/* Error Status */}
+                        {cv.parse_error && (
+                          <Box
+                            sx={{
+                              p: 2,
+                              backgroundColor: "error.light",
+                              borderRadius: 1,
+                              mb: 2,
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              color="error.dark"
+                              sx={{
+                                fontWeight: 600,
+                                mb: 0.5,
+                              }}
+                            >
+                              Processing Error
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color="error.dark"
+                              sx={{
+                                fontSize: "0.8rem",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                              }}
+                            >
+                              {cv.parse_error}
+                            </Typography>
+                          </Box>
+                        )}
+                      </CardContent>
+
+                      {/* CV Actions */}
+                      <CardActions sx={{ p: 2, pt: 0 }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          sx={{ width: "100%" }}
+                          alignItems="center"
+                        >
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            onClick={() => navigate(`/cv/${cv.id}`)}
+                            disabled={!cv.is_parsed && !cv.parse_error}
+                            data-testid={`edit-cv-button-${cv.id}`}
+                            sx={{
+                              textTransform: "none",
+                              fontWeight: 600,
+                              borderColor: "#1976d2",
+                              color: "#1976d2",
+                              flex: 1,
+                              "&:hover": {
+                                backgroundColor: "rgba(25, 118, 210, 0.1)",
+                                borderColor: "#1976d2",
+                              },
+                            }}
+                          >
+                            {!cv.is_parsed && !cv.parse_error ? "Processing..." : "Edit CV"}
+                          </Button>
+                          <Tooltip title="Duplicate this CV">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDuplicate(cv)}
+                              sx={{
+                                color: "#1976d2",
+                                "&:hover": {
+                                  backgroundColor: "rgba(25, 118, 210, 0.1)",
+                                },
+                              }}
+                            >
+                              <DuplicateIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete this CV">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setCvToDelete(cv);
+                                setDeleteDialogOpen(true);
+                              }}
+                              data-testid={`delete-cv-button-${cv.id}`}
+                              sx={{
+                                color: "#f44336",
+                                "&:hover": {
+                                  backgroundColor: "rgba(244, 67, 54, 0.1)",
+                                },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <CVQuickActions
+                            cv={cv}
+                            onDuplicate={handleDuplicate}
+                            onRename={(cv, newTitle) => handleTitleSave(cv, newTitle)}
+                            onDownload={() => {}}
+                            onCreateSimilar={() => {}}
+                          />
+                        </Stack>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </CardContent>
+          </Card>
         )}
 
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <LinearProgress sx={{ width: 200 }} />
-          </Box>
-        ) : cvs.length === 0 ? (
+
+        {/* Empty state - Welcome banner when no CVs */}
+        {cvs.length === 0 && (
           <Paper
             sx={{
               p: 6,
@@ -678,244 +909,6 @@ const Dashboard: React.FC = () => {
               </Button>
             </Stack>
           </Paper>
-        ) : filteredAndSortedCVs.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2 }}>
-            <SearchIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              No CVs match your search
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Try adjusting your search terms or filters
-            </Typography>
-          </Paper>
-        ) : (
-          <>
-            <Grid container spacing={3}>
-              {filteredAndSortedCVs.map((cv) => (
-                <Grid item xs={12} sm={6} lg={4} key={cv.id}>
-                  <Card
-                    sx={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      borderRadius: 3,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                      transition: "all 0.3s ease-in-out",
-                      "&:hover": {
-                        transform: "translateY(-4px)",
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                      },
-                    }}
-                  >
-                    <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                      {/* CV Header with Status */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          justifyContent: "space-between",
-                          mb: 2,
-                        }}
-                      >
-                        <Box sx={{ flexGrow: 1, mr: 1 }}>
-                          <EditableTitle
-                            title={cv.original_filename}
-                            onSave={(newTitle) => handleTitleSave(cv, newTitle)}
-                            variant="h6"
-                            sx={{
-                              mb: 1,
-                              fontWeight: 600,
-                              fontSize: "1.1rem",
-                              lineHeight: 1.2,
-                            }}
-                          />
-                        </Box>
-                        <Tooltip
-                          title={
-                            cv.parse_error
-                              ? "Parsing failed"
-                              : cv.is_parsed
-                                ? "Ready to edit"
-                                : "Processing"
-                          }
-                        >
-                          {getCVStatusIcon(cv)}
-                        </Tooltip>
-                      </Box>
-
-                      {/* File Type and Metadata */}
-                      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                        {isUploadedCV(cv) && (
-                          <Tooltip title="Download original file">
-                            <Chip
-                              label={cv.file_type.split("/")[1].toUpperCase()}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                              icon={<DownloadIcon />}
-                              clickable
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownloadCV(cv);
-                              }}
-                              sx={{ borderRadius: 1.5 }}
-                            />
-                          </Tooltip>
-                        )}
-                        {hasBeenEdited(cv) && (
-                          <Tooltip title="This CV has been modified">
-                            <Chip
-                              label="Modified"
-                              size="small"
-                              color="warning"
-                              variant="outlined"
-                              icon={<EditedIcon />}
-                              sx={{ borderRadius: 1.5 }}
-                            />
-                          </Tooltip>
-                        )}
-                        {cv.is_parsed && (
-                          <Chip
-                            label={`${getSectionCount(cv)} sections`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ borderRadius: 1.5 }}
-                          />
-                        )}
-                      </Stack>
-
-                      {/* File Info */}
-                      <Box sx={{ mb: 2 }}>
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          spacing={1}
-                          sx={{ mb: 1 }}
-                        >
-                          <ScheduleIcon fontSize="small" color="action" />
-                          <Typography variant="body2" color="text.secondary">
-                            Created {formatDateTime(cv.created_at)}
-                          </Typography>
-                        </Stack>
-                        {cv.updated_at && cv.updated_at !== cv.created_at && (
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={1}
-                          >
-                            <EditIcon fontSize="small" color="action" />
-                            <Typography variant="body2" color="text.secondary">
-                              Modified {formatDateTime(cv.updated_at)}
-                            </Typography>
-                          </Stack>
-                        )}
-                      </Box>
-
-                      {/* Processing Status */}
-                      {!cv.is_parsed && !cv.parse_error && (
-                        <Box sx={{ mb: 2 }}>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ mb: 1 }}
-                          >
-                            AI is analyzing your CV...
-                          </Typography>
-                          <LinearProgress sx={{ borderRadius: 1 }} />
-                        </Box>
-                      )}
-
-                      {/* Error State */}
-                      {cv.parse_error && (
-                        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-                          <Typography variant="body2">
-                            {cv.parse_error}
-                          </Typography>
-                        </Alert>
-                      )}
-                    </CardContent>
-
-                    {/* Action Buttons */}
-                    <CardActions
-                      sx={{ p: 2, pt: 0, justifyContent: "space-between" }}
-                    >
-                      <Button
-                        size="medium"
-                        variant="outlined"
-                        startIcon={<EditIcon />}
-                        onClick={() => navigate(`/cv/${cv.id}`)}
-                        disabled={!cv.is_parsed}
-                        data-testid={`edit-cv-button-${cv.id}`}
-                        sx={{
-                          borderRadius: 2,
-                          textTransform: "none",
-                          fontWeight: 600,
-                          flexGrow: 1,
-                          mr: 1,
-                        }}
-                      >
-                        {cv.is_parsed ? "Edit CV" : "Processing..."}
-                      </Button>
-
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteClick(cv)}
-                        disabled={deleting}
-                        color="error"
-                        sx={{
-                          opacity: 0.7,
-                          "&:hover": { opacity: 1 },
-                          transition: "opacity 0.2s",
-                        }}
-                        data-testid={`delete-cv-button-${cv.id}`}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-
-                      <CVQuickActions
-                        cv={cv}
-                        onDuplicate={handleDuplicateCV}
-                        onRename={handleTitleSave}
-                        onDownload={handleDownloadCV}
-                        onCreateSimilar={handleCreateSimilarCV}
-                        duplicating={duplicating}
-                        downloading={downloading}
-                        creatingSimilar={creatingSimilar}
-                      />
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  mt: 4,
-                }}
-              >
-                <Stack spacing={2} alignItems="center">
-                  <Pagination
-                    count={totalPages}
-                    page={currentPage}
-                    onChange={(_, page) => setPage(page)}
-                    color="primary"
-                    size="large"
-                    showFirstButton
-                    showLastButton
-                    data-testid="cv-pagination"
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    Showing {cvs.length} of {totalCVs} CVs
-                  </Typography>
-                </Stack>
-              </Box>
-            )}
-          </>
         )}
 
         <CVUpload
@@ -945,35 +938,32 @@ const Dashboard: React.FC = () => {
           onClose={handleDeleteCancel}
           maxWidth="sm"
           fullWidth
-          PaperProps={{
-            sx: { borderRadius: 2 },
-          }}
         >
-          <DialogTitle sx={{ pb: 1 }}>
+          <DialogTitle>
             <Box
-              sx={{ fontWeight: 600, fontSize: "1.25rem", color: "error.main" }}
+                    sx={{
+                      display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
             >
+              <WarningIcon color="warning" />
               Delete CV
             </Box>
           </DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete "{cvToDelete?.original_filename}"?
-              This action cannot be undone.
-            </DialogContentText>
+            <Typography>
+              Are you sure you want to delete "{cvToDelete?.original_filename}"? This action cannot be undone.
+            </Typography>
           </DialogContent>
-          <DialogActions sx={{ p: 3, pt: 1 }}>
-            <Button onClick={handleDeleteCancel} sx={{ borderRadius: 2 }}>
-              Cancel
-            </Button>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel}>Cancel</Button>
             <Button
               onClick={handleDeleteConfirm}
-              variant="contained"
               color="error"
-              disabled={deleting}
-              sx={{ borderRadius: 2 }}
+              variant="contained"
             >
-              {deleting ? "Deleting..." : "Delete"}
+              Delete CV
             </Button>
           </DialogActions>
         </Dialog>
@@ -985,6 +975,18 @@ const Dashboard: React.FC = () => {
 
         {/* Notification Drawer */}
         <NotificationDrawer ref={notificationDrawerRef} />
+
+        {/* Job Descriptions Modal */}
+        <JobDescriptionsModal
+          open={jobDescriptionModalOpen}
+          onClose={() => setJobDescriptionModalOpen(false)}
+          onJobDescriptionCreated={() => {
+            // Force a re-render by reloading job descriptions
+            // This ensures the Dashboard shows the newly created JD
+            loadJobDescriptions();
+          }}
+          cvId="" // No CV context when creating from Dashboard
+        />
 
       </Container>
     </Box>

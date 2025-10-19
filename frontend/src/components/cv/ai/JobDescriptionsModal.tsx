@@ -65,6 +65,7 @@ interface JobDescriptionsModalProps {
   onClose: () => void;
   cvId: string;
   onJobDescriptionSelect?: (jobDescription: JobDescription | null) => void;
+  onJobDescriptionCreated?: () => void; // Optional callback after JD creation
 }
 
 interface TabPanelProps {
@@ -92,6 +93,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   onClose,
   cvId,
   onJobDescriptionSelect,
+  onJobDescriptionCreated,
 }) => {
   const [tabValue, setTabValue] = useState(0);
   const [urlInput, setUrlInput] = useState("");
@@ -306,6 +308,11 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
         onJobDescriptionSelect(newJobDescription);
       }
 
+      // Call optional callback for parent components that need to refresh data
+      if (onJobDescriptionCreated) {
+        onJobDescriptionCreated();
+      }
+
       // Clear form fields
       setTextInput("");
       setTitle("");
@@ -334,6 +341,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     showSuccess,
     showError,
     onJobDescriptionSelect,
+    onJobDescriptionCreated,
     setActiveJobDescription,
     onClose,
   ]);

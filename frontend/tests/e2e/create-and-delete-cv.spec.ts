@@ -35,8 +35,18 @@ test.describe("Create and Delete CV Workflow", () => {
 
     await expect(page.getByRole("heading", { name: /my cvs/i })).toBeVisible();
 
+    // Wait for page to stabilize and CVs to load
+    await page.waitForLoadState("networkidle");
+
     // Start creating a new CV from scratch
-    await page.getByRole("button", { name: /start from scratch/i }).click();
+    const startButton = (await page
+      .getByTestId("start-from-scratch-empty-state-button")
+      .isVisible({ timeout: 5000 })
+      .catch(() => false))
+      ? page.getByTestId("start-from-scratch-empty-state-button")
+      : page.getByTestId("start-from-scratch-button");
+
+    await startButton.click();
 
     // Wait for CV editor to load
     await page.waitForURL(/\/cv\//, { timeout: TEST_TIMEOUT });
