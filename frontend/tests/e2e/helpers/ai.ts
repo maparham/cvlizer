@@ -44,8 +44,8 @@ export async function addJobDescriptionViaUrl(
     }
   }
 
-  // Wait for and click the add button
-  const addButton = page.getByRole("button", { name: /add job description/i });
+  // Wait for and click the select job description button
+  const addButton = page.getByRole("button", { name: /Select Job Description/i });
   await addButton.waitFor({ state: "visible", timeout: 10000 });
   await addButton.scrollIntoViewIfNeeded();
   await addButton.click();
@@ -103,8 +103,8 @@ export async function addJobDescriptionManually(
     }
   }
 
-  // Wait for and click the add button
-  const addButton = page.getByRole("button", { name: /add job description/i });
+  // Wait for and click the select job description button
+  const addButton = page.getByRole("button", { name: /Select Job Description/i });
   await addButton.waitFor({ state: "visible", timeout: 10000 });
   await addButton.scrollIntoViewIfNeeded();
   await addButton.click();
@@ -383,4 +383,108 @@ export async function closeNotifications(page: Page): Promise<void> {
   for (let i = 0; i < count; i++) {
     await closeButtons.first().click().catch(() => {});
   }
+}
+
+/**
+ * Switch to Sections tab in CV editor sidebar
+ */
+export async function switchToSectionsTab(page: Page): Promise<void> {
+  const sectionsTab = page.getByRole("tab", { name: /sections/i });
+  await sectionsTab.waitFor({ state: "visible", timeout: 5000 });
+  const isSelected = await sectionsTab.getAttribute("aria-selected");
+  if (isSelected !== "true") {
+    await sectionsTab.click();
+    await page.waitForTimeout(300); // Let tab content render
+  }
+}
+
+/**
+ * Switch to AI Tools tab in CV editor sidebar
+ */
+export async function switchToAIToolsTab(page: Page): Promise<void> {
+  const aiToolsTab = page.getByRole("tab", { name: /ai tools/i });
+  await aiToolsTab.waitFor({ state: "visible", timeout: 5000 });
+  const isSelected = await aiToolsTab.getAttribute("aria-selected");
+  if (isSelected !== "true") {
+    await aiToolsTab.click();
+    await page.waitForTimeout(300); // Let tab content render
+  }
+}
+
+/**
+ * Hide a CV section via the section manager
+ */
+export async function hideCVSection(
+  page: Page,
+  sectionId: string,
+): Promise<void> {
+  await switchToSectionsTab(page);
+
+  // Click the hide button using the correct test id
+  const hideButton = page.locator(`[data-testid="hide-section-${sectionId}-button"]`);
+  await hideButton.waitFor({ state: "visible", timeout: 5000 });
+  await hideButton.click();
+
+  // Wait for section to move to hidden sections area
+  await page.waitForTimeout(500);
+}
+
+/**
+ * Show a hidden CV section via the section manager
+ */
+export async function showCVSection(
+  page: Page,
+  sectionId: string,
+): Promise<void> {
+  await switchToSectionsTab(page);
+
+  // Click the add/restore button using the correct test id
+  const addButton = page.locator(`[data-testid="add-section-${sectionId}-button"]`);
+  await addButton.waitFor({ state: "visible", timeout: 5000 });
+  await addButton.click();
+
+  // Wait for section to move back to visible sections
+  await page.waitForTimeout(500);
+}
+
+/**
+ * Check if AI button is enabled/disabled
+ */
+export async function isAIButtonEnabled(
+  page: Page,
+  buttonName: RegExp,
+): Promise<boolean> {
+  await switchToAIToolsTab(page);
+
+  const button = page.getByRole("button", { name: buttonName });
+  await button.waitFor({ state: "visible", timeout: 5000 });
+
+  return !(await button.isDisabled());
+}
+
+/**
+ * Get completeness indicator messages
+ */
+export async function getCompletenessMessages(page: Page): Promise<string[]> {
+  await switchToAIToolsTab(page);
+
+  // Look for text indicating missing content
+  const messages: string[] = [];
+
+  // Check for work experience message
+  const workExpMsg = page.getByText(/work experience with description or achievements/i);
+  if (await workExpMsg.isVisible({ timeout: 1000 }).catch(() => false)) {
+    messages.push(await workExpMsg.textContent() || "");
+  }
+
+  // Check for skills message
+  const skillsMsg = page.getByText(/skill/i);
+  if (await skillsMsg.isVisible({ timeout: 1000 }).catch(() => false)) {
+    const text = await skillsMsg.textContent() || "";
+    if (text.match(/\d+.*skill/i)) {
+      messages.push(text);
+    }
+  }
+
+  return messages.filter(m => m.trim().length > 0);
 }
