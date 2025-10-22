@@ -21,6 +21,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Box, CircularProgress, Typography } from "@mui/material";
+import { getQuickStartSession } from "../services/quickStartService";
 
 const LoginRedirect: React.FC = () => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
@@ -31,10 +32,17 @@ const LoginRedirect: React.FC = () => {
     if (!loading) {
       if (!isAuthenticated) {
         setRedirectPath("/login");
-      } else if (isAdmin) {
-        setRedirectPath("/admin");
       } else {
-        setRedirectPath("/dashboard");
+        // Check if there's Quick Start session data
+        const quickStartData = getQuickStartSession();
+        if (quickStartData) {
+          console.log("📍 LoginRedirect: Quick Start session found, redirecting to /quick-start");
+          setRedirectPath("/quick-start");
+        } else if (isAdmin) {
+          setRedirectPath("/admin");
+        } else {
+          setRedirectPath("/dashboard");
+        }
       }
     }
   }, [isAuthenticated, isAdmin, loading]);
@@ -52,7 +60,7 @@ const LoginRedirect: React.FC = () => {
       >
         <CircularProgress size={40} />
         <Typography variant="body2" color="text.secondary">
-          Determining your access level...
+          Redirecting...
         </Typography>
       </Box>
     );

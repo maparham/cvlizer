@@ -39,7 +39,7 @@ import {
   Delete as DeleteIcon,
   AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { cvApi } from "../services/api";
 import { CVEditorProvider, useCVEditor } from "../contexts/CVEditorContext";
@@ -235,6 +235,14 @@ const CVEditorHeader: React.FC<{
           >
             <MenuItem
               onClick={() => {
+                navigate("/profile");
+                onMenuClose();
+              }}
+            >
+              Profile
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
                 onExport();
                 onMenuClose();
               }}
@@ -361,10 +369,15 @@ const CVEditorContent: React.FC<{
 const CVEditor: React.FC = () => {
   const { cvId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, isAdmin } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const notificationDrawerRef = useRef<NotificationDrawerRef>(null);
+
+  // Handle Quick Start navigation state
+  const locationState = location.state as { openAITools?: boolean; jobDescriptionId?: string } | null;
+  const autoOpenHandledRef = useRef(false);
   const {
     showSuccess,
     showError,
@@ -429,6 +442,49 @@ const CVEditor: React.FC = () => {
       showError("Error", error);
     }
   }, [error]); // Remove showError from dependencies to prevent infinite loop
+
+  // Handle Quick Start auto-open of AI Tools tab
+  useEffect(() => {
+    if (
+      !autoOpenHandledRef.current &&
+      locationState?.openAITools &&
+      locationState?.jobDescriptionId &&
+      cvId &&
+      activeCV &&
+      !loading
+    ) {
+      autoOpenHandledRef.current = true;
+
+      // First ensure job descriptions are loaded, then set active and open tab
+      const { loadJobDescriptions, setActiveJobDescription } = useAIStore.getState();
+
+      const performAutoOpen = async () => {
+        try {
+          await loadJobDescriptions(cvId);
+
+          // Wait a bit for the job descriptions to be processed
+          setTimeout(() => {
+            setActiveJobDescription(locationState.jobDescriptionId, cvId);
+
+            // Open AI Tools tab
+            if (window.switchToAITools) {
+              setTimeout(() => {
+                window.switchToAITools?.();
+              }, 100);
+            }
+          }, 500); // Wait for job descriptions to load
+
+        } catch (error) {
+          console.error("Failed to load job descriptions for Quick Start:", error);
+        }
+      };
+
+      performAutoOpen();
+
+      // Clear the navigation state to prevent re-triggering on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [cvId, activeCV, loading, locationState, navigate, location.pathname]);
 
   const handleSave = useCallback(
     async (updatedData?: CVData, message?: string) => {

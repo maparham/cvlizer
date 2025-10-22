@@ -56,7 +56,7 @@ import {
   Delete as DeleteIcon,
   FileCopy as DuplicateIcon,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { CVUpload, EditableTitle } from "../components/cv";
 import CVTemplateSelector from "../components/cv/CVTemplateSelector";
@@ -77,6 +77,7 @@ import {
   hasBeenEdited,
 } from "../utils/dashboardUtils";
 import { formatDateTime } from "../utils/dateFormat";
+import { cvApi } from "../services/api";
 
 
 const Dashboard: React.FC = () => {
@@ -247,6 +248,18 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleDownloadCV = async (cv: CV) => {
+    try {
+      await cvApi.downloadCV(cv.id, cv.original_filename);
+      showSuccess("Success", "CV downloaded successfully");
+      logUserAction("cv_downloaded", { cv_id: cv.id });
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.detail || error?.message || "Failed to download CV";
+      showError("Error", errorMessage);
+    }
+  };
+
   const handleCreateFromTemplate = () => {
     setTemplateSelectorOpen(true);
   };
@@ -295,9 +308,11 @@ const Dashboard: React.FC = () => {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static" sx={{ backgroundColor: "#f5f5f5", color: "#333" }}>
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: "#333" }}>
-            CV Optimizer
-          </Typography>
+          <Link to="/" style={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}>
+            <Typography variant="h6" component="div" sx={{ color: "#333", cursor: "pointer" }}>
+              CV Optimizer
+            </Typography>
+          </Link>
           <IconButton
             size="large"
             edge="end"
@@ -568,6 +583,26 @@ const Dashboard: React.FC = () => {
                 </Stack>
                 <Stack direction="row" spacing={1.5} sx={{ flex: 1, justifyContent: "flex-end" }}>
                   <Button
+                    variant="contained"
+                    onClick={() => navigate("/quick-start")}
+                    data-testid="quick-start-button"
+                    sx={{
+                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      color: "white",
+                      "&:hover": {
+                        background: "linear-gradient(135deg, #5568d3 0%, #63408a 100%)",
+                      },
+                      fontWeight: 600,
+                      textTransform: "none",
+                      px: 2,
+                      py: 1,
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+                    }}
+                  >
+                    ⚡ Quick Start
+                  </Button>
+                  <Button
                     variant="outlined"
                     startIcon={<TemplateIcon />}
                     onClick={handleCreateFromTemplate}
@@ -734,7 +769,7 @@ const Dashboard: React.FC = () => {
                                 clickable
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // handleDownloadCV(cv);
+                                  handleDownloadCV(cv);
                                 }}
                                 sx={{ borderRadius: 1.5 }}
                               />

@@ -31,6 +31,7 @@ from src.api.cvs import router as cvs_router
 from src.api.impersonation import auth_router as impersonation_auth_router
 from src.api.impersonation import router as impersonation_router
 from src.api.job_descriptions import router as job_descriptions_router
+from src.api.quick_start import router as quick_start_router
 from src.api.user_activities import router as user_activities_router
 
 # Import middleware
@@ -110,6 +111,7 @@ app.include_router(admin_ai_usage_router)
 app.include_router(user_activities_router)
 app.include_router(impersonation_router)
 app.include_router(impersonation_auth_router)
+app.include_router(quick_start_router)
 
 
 @app.get("/")

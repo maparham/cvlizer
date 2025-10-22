@@ -92,6 +92,7 @@ def setup_logging(log_dir: str = "logs") -> None:
     logging.getLogger("selenium.webdriver.remote.remote_connection").setLevel(
         logging.WARNING
     )  # Silence Selenium connection logs
+    logging.getLogger("multipart").setLevel(logging.INFO)  # Silence multipart debug logs
 
     logging.info(f"Logging configured - Level: {LoggingConfig.LOG_LEVEL}")
 

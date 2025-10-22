@@ -73,6 +73,15 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      // Don't redirect for impersonation status checks - these can fail benignly
+      // Don't redirect for Quick Start preview - it's meant to work without auth
+      if (
+        error.config?.url?.includes('/api/auth/impersonation/status') ||
+        error.config?.url?.includes('/api/quick-start/preview')
+      ) {
+        return Promise.reject(error);
+      }
+
       // Handle unauthorized errors - user needs to re-authenticate
       // Redirect to sign-in if Clerk is available
       if (typeof window !== "undefined" && isClerkAvailable(window)) {

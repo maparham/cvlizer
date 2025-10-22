@@ -37,6 +37,7 @@ const CVEditor = lazy(() => import("./pages/CVEditor"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Profile = lazy(() => import("./pages/Profile"));
 const JobLibrary = lazy(() => import("./pages/JobLibrary"));
+const QuickStart = lazy(() => import("./pages/QuickStart"));
 // Temporarily disable lazy loading for AdminDashboard to debug the issue
 import AdminDashboard from "./pages/AdminDashboard";
 const LoginRedirect = lazy(() => import("./components/LoginRedirect"));
@@ -92,6 +93,7 @@ const AppContent = () => {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/quick-start" element={<QuickStart />} />
           {/* Clerk email verification routes */}
           <Route path="/register/verify" element={<LoginRedirect />} />
           <Route path="/sign-in/verify" element={<LoginRedirect />} />

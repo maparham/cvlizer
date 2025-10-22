@@ -82,19 +82,19 @@ const Home: React.FC = () => {
               <Button
                 variant="contained"
                 size="large"
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/quick-start")}
                 sx={{
                   bgcolor: "white",
                   color: "primary.main",
                   "&:hover": { bgcolor: "grey.100" },
                 }}
               >
-                Go to Dashboard
+                Quick Start
               </Button>
               <Button
                 variant="outlined"
                 size="large"
-                onClick={() => navigate("/profile")}
+                onClick={() => navigate("/dashboard")}
                 sx={{
                   borderColor: "white",
                   color: "white",
@@ -104,7 +104,7 @@ const Home: React.FC = () => {
                   },
                 }}
               >
-                My Profile
+                Go to Dashboard
               </Button>
               <UserButton
                 appearance={{
@@ -120,12 +120,28 @@ const Home: React.FC = () => {
           </SignedIn>
           <SignedOut>
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+              <button
+                onClick={() => navigate("/quick-start")}
+                style={{
+                  backgroundColor: "white",
+                  color: "#1976d2",
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "12px 24px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                Try It Now
+              </button>
               <SignUpButton mode="modal">
                 <button
                   style={{
-                    backgroundColor: "white",
-                    color: "#1976d2",
-                    border: "none",
+                    backgroundColor: "transparent",
+                    color: "white",
+                    border: "1px solid white",
                     borderRadius: "4px",
                     padding: "12px 24px",
                     fontSize: "16px",
