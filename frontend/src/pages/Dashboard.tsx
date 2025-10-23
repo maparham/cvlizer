@@ -583,26 +583,6 @@ const Dashboard: React.FC = () => {
                 </Stack>
                 <Stack direction="row" spacing={1.5} sx={{ flex: 1, justifyContent: "flex-end" }}>
                   <Button
-                    variant="contained"
-                    onClick={() => navigate("/quick-start")}
-                    data-testid="quick-start-button"
-                    sx={{
-                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      color: "white",
-                      "&:hover": {
-                        background: "linear-gradient(135deg, #5568d3 0%, #63408a 100%)",
-                      },
-                      fontWeight: 600,
-                      textTransform: "none",
-                      px: 2,
-                      py: 1,
-                      whiteSpace: "nowrap",
-                      boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-                    }}
-                  >
-                    ⚡ Quick Start
-                  </Button>
-                  <Button
                     variant="outlined"
                     startIcon={<TemplateIcon />}
                     onClick={handleCreateFromTemplate}
