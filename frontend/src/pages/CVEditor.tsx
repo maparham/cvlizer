@@ -440,6 +440,38 @@ const CVEditor: React.FC = () => {
     }
   }, [error]); // Remove showError from dependencies to prevent infinite loop
 
+  // Handle location state for auto-opening AI Tools
+  useEffect(() => {
+    if (location.state?.openAITools) {
+      // Use setTimeout to ensure the PDFCVEditor has mounted and set window.switchToAITools
+      setTimeout(() => {
+        if (window.switchToAITools) {
+          window.switchToAITools();
+        } else {
+          // Try again after a longer delay if not available
+          setTimeout(() => {
+            if (window.switchToAITools) {
+              window.switchToAITools();
+            }
+          }, 500);
+        }
+      }, 100);
+    }
+  }, [location.state]);
+
+  // Handle setting active job description from location state
+  useEffect(() => {
+    const { setActiveJobDescription, loadJobDescriptions } = useAIStore.getState();
+    if (location.state?.jobDescriptionId && cvId) {
+      // Load job descriptions first, then set active
+      loadJobDescriptions(cvId).then(() => {
+        setActiveJobDescription(location.state.jobDescriptionId, cvId);
+      }).catch((error) => {
+        console.error("Failed to load job descriptions:", error);
+      });
+    }
+  }, [location.state?.jobDescriptionId, cvId]);
+
   const handleSave = useCallback(
     async (updatedData?: CVData, message?: string) => {
       const dataToSave = updatedData || cvData;

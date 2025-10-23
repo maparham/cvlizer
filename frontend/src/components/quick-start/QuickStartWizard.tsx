@@ -47,7 +47,7 @@ import { QuickStartPreviewResponse } from "../../types/quickStart";
 
 interface QuickStartWizardProps {
   onComplete: (data: {
-    cvFile: File;
+    cvFile?: File;
     jobUrl?: string;
     jobText?: string;
     previewResponse: QuickStartPreviewResponse;
@@ -129,16 +129,11 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
   };
 
   const handleSubmit = async () => {
-    if (!cvFile) {
-      setError("Please upload a CV file");
-      return;
-    }
-
     const jobInput = jobInputType === "url" ? jobUrl.trim() : jobText.trim();
-    if (!jobInput) {
-      setError(
-        `Please provide a job ${jobInputType === "url" ? "URL" : "description"}`
-      );
+
+    // Require at least one field: CV file OR job description
+    if (!cvFile && !jobInput) {
+      setError("Please upload a CV file or provide a job description");
       return;
     }
 
@@ -147,7 +142,7 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
 
     try {
       const response = await submitQuickStartPreview(
-        cvFile,
+        cvFile || undefined,
         jobInputType === "url" ? jobUrl : undefined,
         jobInputType === "text" ? jobText : undefined
       );
@@ -156,7 +151,7 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
 
       // Call onComplete with all the data
       onComplete({
-        cvFile,
+        cvFile: cvFile || undefined,
         jobUrl: jobInputType === "url" ? jobUrl : undefined,
         jobText: jobInputType === "text" ? jobText : undefined,
         previewResponse: response,
@@ -202,129 +197,133 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
             )}
 
             <Grid container spacing={3}>
-              {/* CV Preview */}
-              <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 2, height: "100%" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <DocumentIcon sx={{ mr: 1, color: "primary.main" }} />
-                    <Typography variant="h6">CV Preview</Typography>
-                  </Box>
+              {/* CV Preview - only show if CV data exists */}
+              {cv_preview && Object.keys(cv_preview).length > 0 && (
+                <Grid item xs={12} md={job_preview && Object.keys(job_preview).length > 0 ? 6 : 12}>
+                  <Paper sx={{ p: 2, height: "100%" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <DocumentIcon sx={{ mr: 1, color: "primary.main" }} />
+                      <Typography variant="h6">CV Preview</Typography>
+                    </Box>
 
-                  {cv_preview.error ? (
-                    <Alert severity="error">{cv_preview.error}</Alert>
-                  ) : (
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>File:</strong> {cv_preview.filename}
-                      </Typography>
-                      {cv_preview.full_name && (
+                    {cv_preview.error ? (
+                      <Alert severity="error">{cv_preview.error}</Alert>
+                    ) : (
+                      <Box>
                         <Typography variant="body2" color="text.secondary">
-                          <strong>Name:</strong> {cv_preview.full_name}
+                          <strong>File:</strong> {cv_preview.filename}
                         </Typography>
-                      )}
-                      {cv_preview.email && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Email:</strong> {cv_preview.email}
-                        </Typography>
-                      )}
-                      {cv_preview.phone && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Phone:</strong> {cv_preview.phone}
-                        </Typography>
-                      )}
-                      {cv_preview.location && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Location:</strong> {cv_preview.location}
-                        </Typography>
-                      )}
-
-                      <Divider sx={{ my: 2 }} />
-
-                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        {cv_preview.has_summary && (
-                          <Chip label="Has Summary" size="small" />
+                        {cv_preview.full_name && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Name:</strong> {cv_preview.full_name}
+                          </Typography>
                         )}
-                        {cv_preview.work_experience_count !== undefined &&
-                          cv_preview.work_experience_count > 0 && (
-                            <Chip
-                              label={`${cv_preview.work_experience_count} Work Experience`}
-                              size="small"
-                            />
+                        {cv_preview.email && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Email:</strong> {cv_preview.email}
+                          </Typography>
+                        )}
+                        {cv_preview.phone && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Phone:</strong> {cv_preview.phone}
+                          </Typography>
+                        )}
+                        {cv_preview.location && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Location:</strong> {cv_preview.location}
+                          </Typography>
+                        )}
+
+                        <Divider sx={{ my: 2 }} />
+
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          {cv_preview.has_summary && (
+                            <Chip label="Has Summary" size="small" />
                           )}
-                        {cv_preview.education_count !== undefined &&
-                          cv_preview.education_count > 0 && (
-                            <Chip
-                              label={`${cv_preview.education_count} Education`}
-                              size="small"
-                            />
-                          )}
+                          {cv_preview.work_experience_count !== undefined &&
+                            cv_preview.work_experience_count > 0 && (
+                              <Chip
+                                label={`${cv_preview.work_experience_count} Work Experience`}
+                                size="small"
+                              />
+                            )}
+                          {cv_preview.education_count !== undefined &&
+                            cv_preview.education_count > 0 && (
+                              <Chip
+                                label={`${cv_preview.education_count} Education`}
+                                size="small"
+                              />
+                            )}
+                        </Box>
                       </Box>
+                    )}
+                  </Paper>
+                </Grid>
+              )}
+
+              {/* Job Preview - only show if job data exists */}
+              {job_preview && Object.keys(job_preview).length > 0 && (
+                <Grid item xs={12} md={cv_preview && Object.keys(cv_preview).length > 0 ? 6 : 12}>
+                  <Paper sx={{ p: 2, height: "100%" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <WorkIcon sx={{ mr: 1, color: "primary.main" }} />
+                      <Typography variant="h6">Job Preview</Typography>
                     </Box>
-                  )}
-                </Paper>
-              </Grid>
 
-              {/* Job Preview */}
-              <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 2, height: "100%" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <WorkIcon sx={{ mr: 1, color: "primary.main" }} />
-                    <Typography variant="h6">Job Preview</Typography>
-                  </Box>
-
-                  {job_preview.error ? (
-                    <Alert severity="error">{job_preview.error}</Alert>
-                  ) : (
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Source:</strong>{" "}
-                        {job_preview.source === "url" ? "URL" : "Text"}
-                      </Typography>
-                      {job_preview.title && (
+                    {job_preview.error ? (
+                      <Alert severity="error">{job_preview.error}</Alert>
+                    ) : (
+                      <Box>
                         <Typography variant="body2" color="text.secondary">
-                          <strong>Title:</strong> {job_preview.title}
+                          <strong>Source:</strong>{" "}
+                          {job_preview.source === "url" ? "URL" : "Text"}
                         </Typography>
-                      )}
-                      {job_preview.company && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Company:</strong> {job_preview.company}
-                        </Typography>
-                      )}
-                      {job_preview.location && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Location:</strong> {job_preview.location}
-                        </Typography>
-                      )}
+                        {job_preview.title && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Title:</strong> {job_preview.title}
+                          </Typography>
+                        )}
+                        {job_preview.company && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Company:</strong> {job_preview.company}
+                          </Typography>
+                        )}
+                        {job_preview.location && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Location:</strong> {job_preview.location}
+                          </Typography>
+                        )}
 
-                      <Divider sx={{ my: 2 }} />
+                        <Divider sx={{ my: 2 }} />
 
-                      {job_preview.content_preview && (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            maxHeight: 100,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {job_preview.content_preview}
-                        </Typography>
-                      )}
+                        {job_preview.content_preview && (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              maxHeight: 100,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {job_preview.content_preview}
+                          </Typography>
+                        )}
 
-                      {job_preview.content_length !== undefined && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ mt: 1, display: "block" }}
-                        >
-                          {job_preview.content_length} characters
-                        </Typography>
-                      )}
-                    </Box>
-                  )}
-                </Paper>
-              </Grid>
+                        {job_preview.content_length !== undefined && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mt: 1, display: "block" }}
+                          >
+                            {job_preview.content_length} characters
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                  </Paper>
+                </Grid>
+              )}
             </Grid>
 
             <Box sx={{ display: "flex", gap: 2, mt: 3, flexDirection: "column" }}>
@@ -520,7 +519,7 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
               variant="contained"
               size="large"
               onClick={handleSubmit}
-              disabled={loading || !cvFile}
+              disabled={loading || (!cvFile && !jobUrl && !jobText)}
             >
               {loading ? "Processing..." : "Parse & Preview"}
             </Button>

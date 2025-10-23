@@ -46,9 +46,9 @@ export interface QuickStartPreviewResponse {
 }
 
 export interface QuickStartClaimResponse {
-  cv_id: string;
-  job_description_id: string;
-  message: string;
+    cv_id?: string;
+    job_description_id?: string;
+    message: string;
 }
 
 export interface QuickStartSessionData {

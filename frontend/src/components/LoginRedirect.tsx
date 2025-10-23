@@ -21,6 +21,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Box, CircularProgress, Typography } from "@mui/material";
+import { getQuickStartSession } from "../services/quickStartService";
 
 const LoginRedirect: React.FC = () => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
@@ -32,7 +33,12 @@ const LoginRedirect: React.FC = () => {
       if (!isAuthenticated) {
         setRedirectPath("/login");
       } else {
-        if (isAdmin) {
+        // Check if user has Quick Start session data
+        const quickStartSession = getQuickStartSession();
+
+        if (quickStartSession && (quickStartSession.previewResponse?.cv_preview || quickStartSession.previewResponse?.job_preview)) {
+          setRedirectPath("/quick-start");
+        } else if (isAdmin) {
           setRedirectPath("/admin");
         } else {
           setRedirectPath("/dashboard");

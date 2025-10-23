@@ -52,8 +52,8 @@ const QuickStart: React.FC = () => {
 
   // Function to handle claiming data from session
   const handleClaimFromSession = useCallback(async (
-    cvData: CVPreview,
-    jobPreview: JobPreview,
+    cvData: CVPreview | undefined,
+    jobPreview: JobPreview | undefined,
     jobUrl?: string,
     jobText?: string
   ) => {
@@ -61,7 +61,22 @@ const QuickStart: React.FC = () => {
     try {
       const { cvId, jobDescriptionId } = await claimQuickStartFromSession(cvData, jobPreview, jobUrl, jobText);
       clearQuickStartSession();
-      navigate(`/cv/${cvId}`, { state: { openAITools: true, jobDescriptionId } });
+
+      // Navigate based on what was claimed
+      if (cvId && jobDescriptionId) {
+        // Both - go to CV editor with AI Tools
+        navigate(`/cv/${cvId}`, { state: { openAITools: true, jobDescriptionId } });
+      } else if (cvId) {
+        // Only CV - go to dashboard
+        navigate('/dashboard');
+      } else if (jobDescriptionId) {
+        // Only job - go to dashboard
+        navigate('/dashboard');
+      } else {
+        // Nothing created (shouldn't happen)
+        showError("Failed to save data");
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       console.error("Failed to claim quick start data from session:", error);
       showError(error.message || "Failed to save your data. Please try again.");
@@ -103,15 +118,15 @@ const QuickStart: React.FC = () => {
     // Mark claim as initiated BEFORE calling the async function to prevent duplicates
     claimInitiatedRef.current = true;
 
-    if (sessionData.previewResponse?.cv_preview) {
+    if (sessionData.previewResponse?.cv_preview || sessionData.previewResponse?.job_preview) {
       // Merge session metadata (including base64) with preview data
-      const cvDataWithFile = {
+      const cvDataWithFile = sessionData.previewResponse?.cv_preview ? {
         ...sessionData.previewResponse.cv_preview,
         cvFileBase64: sessionData.cvFileBase64,
         cvFileName: sessionData.cvFileName,
         cvFileSize: sessionData.cvFileSize,
         cvFileType: sessionData.cvFileType,
-      };
+      } : undefined;
 
       // Use session-based claim for consistency
       handleClaimFromSession(
@@ -129,7 +144,7 @@ const QuickStart: React.FC = () => {
   }, [isAuthenticated, authLoading, handleClaimFromSession]);
 
   const handleWizardComplete = async (data: {
-    cvFile: File;
+    cvFile?: File;
     jobUrl?: string;
     jobText?: string;
     previewResponse: QuickStartPreviewResponse;
@@ -151,13 +166,13 @@ const QuickStart: React.FC = () => {
       const storedSession = getQuickStartSession();
       if (storedSession) {
         // Merge session metadata (including base64) with preview data
-        const cvDataWithFile = {
-          ...data.previewResponse.cv_preview,
+        const cvDataWithFile = storedSession.previewResponse?.cv_preview ? {
+          ...storedSession.previewResponse.cv_preview,
           cvFileBase64: storedSession.cvFileBase64,
           cvFileName: storedSession.cvFileName,
           cvFileSize: storedSession.cvFileSize,
           cvFileType: storedSession.cvFileType,
-        };
+        } : undefined;
 
         handleClaimFromSession(
           cvDataWithFile,

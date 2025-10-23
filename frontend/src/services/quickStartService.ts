@@ -27,13 +27,13 @@ const API_BASE_URL =
  * @returns Preview response with parsed data
  */
 export const submitQuickStartPreview = async (
-  cvFile: File,
+  cvFile?: File,
   jobUrl?: string,
   jobText?: string
 ): Promise<QuickStartPreviewResponse> => {
-  // Validate inputs
-  if (!jobUrl && !jobText) {
-    throw new Error("Either job URL or job text must be provided");
+  // Validate inputs - at least one field must be provided
+  if (!cvFile && !jobUrl && !jobText) {
+    throw new Error("At least one field must be provided: CV file or job description");
   }
 
   if (jobText && jobText.length > 10000) {
@@ -42,7 +42,10 @@ export const submitQuickStartPreview = async (
 
   // Create form data
   const formData = new FormData();
-  formData.append("cv_file", cvFile);
+
+  if (cvFile) {
+    formData.append("cv_file", cvFile);
+  }
 
   if (jobUrl) {
     formData.append("job_url", jobUrl);
@@ -93,14 +96,14 @@ export const submitQuickStartPreview = async (
  * Claim quick start data from session without requiring file re-upload
  */
 export const claimQuickStartFromSession = async (
-  cvData: CVPreview,
-  jobPreview: JobPreview,
+  cvData: CVPreview | undefined,
+  jobPreview: JobPreview | undefined,
   jobUrl?: string,
   jobText?: string
 ): Promise<{ cvId: string; jobDescriptionId: string }> => {
   // Combine CV data and job preview into a single object for the backend
   const sessionPayload = {
-    ...cvData,
+    ...(cvData || {}),
     job_preview: jobPreview,
   };
 
@@ -109,7 +112,7 @@ export const claimQuickStartFromSession = async (
   formData.append("cv_data", JSON.stringify(sessionPayload));
 
   // Add base64 file data if available
-  if (cvData.cvFileBase64) {
+  if (cvData && cvData.cvFileBase64) {
     formData.append("cv_file_base64", cvData.cvFileBase64);
   }
 
@@ -126,9 +129,10 @@ export const claimQuickStartFromSession = async (
         },
       }
     );
+
     return {
-      cvId: response.data.cv_id,
-      jobDescriptionId: response.data.job_description_id,
+      cvId: response.data.cv_id || "",
+      jobDescriptionId: response.data.job_description_id || "",
     };
   } catch (error: any) {
     throw error;
@@ -139,33 +143,45 @@ export const claimQuickStartFromSession = async (
  * Store quick start session data in sessionStorage
  */
 export const storeQuickStartSession = async (data: {
-  cvFile: File;
+  cvFile?: File;
   jobUrl?: string;
   jobText?: string;
   previewResponse?: QuickStartPreviewResponse;
 }): Promise<void> => {
   try {
-    // Check file size BEFORE encoding (base64 increases size by ~33%)
-    const MAX_FILE_SIZE_FOR_SESSION = 3 * 1024 * 1024; // 3MB limit
-    if (data.cvFile.size > MAX_FILE_SIZE_FOR_SESSION) {
-      throw new Error(
-        'File too large to save for later. Please sign in first, then upload your CV (max 10MB).'
-      );
+    let fileBase64: string | undefined;
+    let cvFileName: string | undefined;
+    let cvFileSize: number | undefined;
+    let cvFileType: string | undefined;
+
+    // Handle CV file if provided
+    if (data.cvFile) {
+      // Check file size BEFORE encoding (base64 increases size by ~33%)
+      const MAX_FILE_SIZE_FOR_SESSION = 3 * 1024 * 1024; // 3MB limit
+      if (data.cvFile.size > MAX_FILE_SIZE_FOR_SESSION) {
+        throw new Error(
+          'File too large to save for later. Please sign in first, then upload your CV (max 10MB).'
+        );
+      }
+
+      // Convert file to base64
+      fileBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(data.cvFile!);
+      });
+
+      cvFileName = data.cvFile.name;
+      cvFileSize = data.cvFile.size;
+      cvFileType = data.cvFile.type;
     }
 
-    // Convert file to base64
-    const fileBase64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(data.cvFile);
-    });
-
     const sessionData = {
-      cvFileName: data.cvFile.name,
-      cvFileSize: data.cvFile.size,
-      cvFileType: data.cvFile.type,
-      cvFileBase64: fileBase64, // Add base64 data
+      cvFileName,
+      cvFileSize,
+      cvFileType,
+      cvFileBase64: fileBase64,
       jobUrl: data.jobUrl,
       jobText: data.jobText,
       previewResponse: data.previewResponse,
@@ -198,10 +214,10 @@ export const storeQuickStartSession = async (data: {
  */
 export const getQuickStartSession = ():
   | {
-      cvFileName: string;
-      cvFileSize: number;
-      cvFileType: string;
-      cvFileBase64: string; // Add this
+      cvFileName?: string;
+      cvFileSize?: number;
+      cvFileType?: string;
+      cvFileBase64?: string;
       jobUrl?: string;
       jobText?: string;
       previewResponse?: QuickStartPreviewResponse;
