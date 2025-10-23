@@ -142,7 +142,7 @@ def test_quick_start_preview_rate_limit(client):
 
 
 def test_quick_start_claim_without_cv_data(client, test_user):
-    """Test error when claiming without cv_file or cv_file_base64"""
+    """Test successful claiming with only job description (no CV)"""
     form_data = {"job_text": "Software engineer position"}
 
     # Mock dependencies - override the dependency
@@ -157,13 +157,62 @@ def test_quick_start_claim_without_cv_data(client, test_user):
     try:
         response = client.post("/api/quick-start/claim", data=form_data)
 
-        assert response.status_code == 400
+        assert response.status_code == 200
         response_json = response.json()
-        response_detail = response_json.get("detail") or response_json.get("message", "")
-        assert (
-            "cv_file" in response_detail.lower()
-            or "cv_file_base64" in response_detail.lower()
-        )
+        assert response_json["cv_id"] is None
+        assert response_json["job_description_id"] is not None
+        assert response_json["message"] == "Data saved successfully"
+    finally:
+        main_app.dependency_overrides.clear()
+
+
+def test_quick_start_claim_without_job_data(client, test_user, mock_cv_data):
+    """Test successful claiming with only CV (no job description)"""
+    # Create base64 encoded file
+    cv_content = b"Mock PDF content"
+    cv_base64 = base64.b64encode(cv_content).decode("utf-8")
+    base64_with_header = f"data:application/pdf;base64,{cv_base64}"
+
+    session_data = {
+        "cvFileName": "test_cv.pdf",
+        "cvFileSize": len(cv_content),
+        "cvFileType": "application/pdf",
+        "cvFileBase64": base64_with_header,
+        "full_parsed_data": mock_cv_data,
+    }
+
+    form_data = {
+        "cv_data": json.dumps(session_data),
+        "cv_file_base64": base64_with_header,
+    }
+
+    # Mock dependencies - override the dependency
+    def override_get_effective_user():
+        return test_user
+
+    from src.middleware.clerk_auth import get_effective_user
+    from main import app as main_app
+
+    main_app.dependency_overrides[get_effective_user] = override_get_effective_user
+
+    try:
+        # Mock file saving
+        with patch(
+            "src.api.quick_start.save_uploaded_file", new_callable=AsyncMock
+        ) as mock_save_file:
+            mock_save_file.return_value = (
+                "uploads/test.pdf",
+                "test_cv.pdf",
+                len(cv_content),
+            )
+
+            response = client.post("/api/quick-start/claim", data=form_data)
+
+        assert response.status_code == 200
+        response_json = response.json()
+        assert response_json["cv_id"] is not None
+        assert response_json["job_description_id"] is None
+        assert response_json["message"] == "Data saved successfully"
     finally:
         main_app.dependency_overrides.clear()
 
@@ -206,7 +255,7 @@ def test_quick_start_claim_transaction_rollback(
             "src.api.quick_start.save_uploaded_file", new_callable=AsyncMock
         ) as mock_save_file:
             with patch(
-                "src.api.quick_start.create_job_description_for_user"
+                "src.services.job_description_service.create_job_description_for_user_with_cvs"
             ) as mock_create_jd:
                 mock_save_file.return_value = (
                     "uploads/test.pdf",

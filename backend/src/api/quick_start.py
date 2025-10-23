@@ -69,8 +69,8 @@ class QuickStartPreviewResponse(BaseModel):
 class QuickStartClaimResponse(BaseModel):
     """Response model for quick start claim"""
 
-    cv_id: str
-    job_description_id: str
+    cv_id: Optional[str] = None
+    job_description_id: Optional[str] = None
     message: str = "Data saved successfully"
 
 
@@ -78,7 +78,7 @@ class QuickStartClaimResponse(BaseModel):
 @limiter.limit("5/15minutes")
 async def quick_start_preview(
     request: Request,
-    cv_file: UploadFile = File(...),
+    cv_file: Optional[UploadFile] = File(None),
     job_url: Optional[str] = Form(None),
     job_text: Optional[str] = Form(None),
 ):
@@ -104,11 +104,11 @@ async def quick_start_preview(
     Raises:
         HTTPException: For validation errors or parsing failures
     """
-    # Validate that at least one job input is provided
-    if not job_url and not job_text:
+    # Validate that at least one field is provided
+    if not cv_file and not job_url and not job_text:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either job_url or job_text must be provided",
+            detail="At least one field must be provided: CV file or job description",
         )
 
     # Validate job text length if provided
@@ -118,97 +118,100 @@ async def quick_start_preview(
             detail="Job description text cannot exceed 10,000 characters",
         )
 
-    # Validate CV file
-    try:
-        file_content = await cv_file.read()
-        await cv_file.seek(0)  # Reset file pointer for potential re-read
+    # Validate CV file if provided
+    file_content = None
+    if cv_file:
+        try:
+            file_content = await cv_file.read()
+            await cv_file.seek(0)  # Reset file pointer for potential re-read
 
-        # Use existing file validation
-        is_valid, error_message = await validate_file(cv_file)
-        if not is_valid:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=error_message
-            )
+            # Use existing file validation
+            is_valid, error_message = await validate_file(cv_file)
+            if not is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail=error_message
+                )
 
-        # Check file size - 3MB limit for unauthenticated previews to fit in sessionStorage
-        # (base64 encoding increases size by ~33%, so 3MB becomes ~4MB)
-        MAX_PREVIEW_SIZE = 3 * 1024 * 1024  # 3MB
-        if len(file_content) > MAX_PREVIEW_SIZE:
+            # Check file size - 3MB limit for unauthenticated previews to fit in sessionStorage
+            # (base64 encoding increases size by ~33%, so 3MB becomes ~4MB)
+            MAX_PREVIEW_SIZE = 3 * 1024 * 1024  # 3MB
+            if len(file_content) > MAX_PREVIEW_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="CV file size cannot exceed 3MB for quick preview. Please sign in to upload larger files (up to 10MB).",
+                )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"CV file validation error: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="CV file size cannot exceed 3MB for quick preview. Please sign in to upload larger files (up to 10MB).",
+                detail=f"Invalid CV file: {str(e)}",
             )
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"CV file validation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid CV file: {str(e)}",
-        )
-
-    # Parse CV
+    # Parse CV if provided
     cv_preview: Dict[str, Any] = {}
-    try:
-        logger.info(
-            f"Parsing CV for quick start preview: {cv_file.filename} from IP {request.client.host if request.client else 'unknown'}"
-        )
-
-        # Wrap CV parsing with timeout
+    if cv_file and file_content:
         try:
-            parsed_cv = await asyncio.wait_for(
-                parse_cv_with_openai(
-                    file_content, cv_file.filename, cv_file.content_type
-                ),
-                timeout=QUICK_START_TIMEOUT,
+            logger.info(
+                f"Parsing CV for quick start preview: {cv_file.filename} from IP {request.client.host if request.client else 'unknown'}"
             )
-        except asyncio.TimeoutError:
-            logger.error(f"CV parsing timeout in quick start for {cv_file.filename}")
-            cv_preview = {
-                "error": "Parsing took too long. Please try a simpler CV or contact support.",
-                "filename": cv_file.filename,
-            }
-            parsed_cv = {"error": "timeout"}
 
-        # Check for parsing errors
-        if parsed_cv.get("error"):
-            if parsed_cv.get("error") != "timeout":  # Don't overwrite timeout error
+            # Wrap CV parsing with timeout
+            try:
+                parsed_cv = await asyncio.wait_for(
+                    parse_cv_with_openai(
+                        file_content, cv_file.filename, cv_file.content_type
+                    ),
+                    timeout=QUICK_START_TIMEOUT,
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"CV parsing timeout in quick start for {cv_file.filename}")
                 cv_preview = {
-                    "error": parsed_cv["error"],
+                    "error": "Parsing took too long. Please try a simpler CV or contact support.",
                     "filename": cv_file.filename,
                 }
-        else:
-            # Extract key information for preview
-            personal_info = parsed_cv.get("personal_info", {})
-            cv_preview = {
-                "filename": cv_file.filename,
-                "full_name": personal_info.get("full_name", ""),
-                "email": personal_info.get("email", ""),
-                "phone": personal_info.get("phone", ""),
-                "location": personal_info.get("location", ""),
-                "section_count": sum(
-                    [
-                        len(parsed_cv.get("work_experience", [])),
-                        len(parsed_cv.get("education", [])),
-                        len(parsed_cv.get("skills", [])),
-                        len(parsed_cv.get("certifications", [])),
-                        len(parsed_cv.get("projects", [])),
-                    ]
-                ),
-                "has_summary": bool(parsed_cv.get("summary")),
-                "work_experience_count": len(parsed_cv.get("work_experience", [])),
-                "education_count": len(parsed_cv.get("education", [])),
-                # Include full parsed data for later claiming
-                "full_parsed_data": parsed_cv,
-            }
+                parsed_cv = {"error": "timeout"}
 
-    except Exception as e:
-        logger.error(f"CV parsing error in quick start: {str(e)}")
-        cv_preview = {
-            "error": f"Failed to parse CV: {str(e)}",
-            "filename": cv_file.filename,
-        }
+            # Check for parsing errors
+            if parsed_cv.get("error"):
+                if parsed_cv.get("error") != "timeout":  # Don't overwrite timeout error
+                    cv_preview = {
+                        "error": parsed_cv["error"],
+                        "filename": cv_file.filename,
+                    }
+            else:
+                # Extract key information for preview
+                personal_info = parsed_cv.get("personal_info", {})
+                cv_preview = {
+                    "filename": cv_file.filename,
+                    "full_name": personal_info.get("full_name", ""),
+                    "email": personal_info.get("email", ""),
+                    "phone": personal_info.get("phone", ""),
+                    "location": personal_info.get("location", ""),
+                    "section_count": sum(
+                        [
+                            len(parsed_cv.get("work_experience", [])),
+                            len(parsed_cv.get("education", [])),
+                            len(parsed_cv.get("skills", [])),
+                            len(parsed_cv.get("certifications", [])),
+                            len(parsed_cv.get("projects", [])),
+                        ]
+                    ),
+                    "has_summary": bool(parsed_cv.get("summary")),
+                    "work_experience_count": len(parsed_cv.get("work_experience", [])),
+                    "education_count": len(parsed_cv.get("education", [])),
+                    # Include full parsed data for later claiming
+                    "full_parsed_data": parsed_cv,
+                }
+
+        except Exception as e:
+            logger.error(f"CV parsing error in quick start: {str(e)}")
+            cv_preview = {
+                "error": f"Failed to parse CV: {str(e)}",
+                "filename": cv_file.filename if cv_file else "unknown",
+            }
 
     # Parse job description
     job_preview: Dict[str, Any] = {}
@@ -363,13 +366,6 @@ async def claim_quick_start_data(
     Raises:
         HTTPException: For validation errors or creation failures
     """
-    # Validate that at least one job input is provided
-    if not job_url and not job_text:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either job_url or job_text must be provided",
-        )
-
     # Validate job text length if provided
     if job_text and len(job_text) > 10000:
         raise HTTPException(
@@ -377,16 +373,20 @@ async def claim_quick_start_data(
             detail="Job description text cannot exceed 10,000 characters",
         )
 
-    # Validate that either cv_file or cv_file_base64 is provided
-    if not cv_file and not cv_file_base64:
+    # Validate that at least one field is provided
+    if not cv_file and not cv_file_base64 and not job_url and not job_text:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either cv_file or cv_file_base64 must be provided",
+            detail="At least one field must be provided: CV file or job description",
         )
 
     import json
 
     try:
+        # Initialize CV variables
+        cv = None
+        cv_id = None
+
         # Handle CV file - either direct upload or base64 from session
         if cv_file:
             # Direct file upload (already authenticated user)
@@ -430,6 +430,7 @@ async def claim_quick_start_data(
                 parsed_data=parsed_cv_data,
                 is_parsed=True,
             )
+            cv_id = str(cv.id)
         elif cv_file_base64:
             # Base64 file from session (user signed up after preview)
             import base64
@@ -486,16 +487,15 @@ async def claim_quick_start_data(
                     parsed_data=full_parsed_data,
                     is_parsed=True,
                 )
+                cv_id = str(cv.id)
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid base64 file format",
                 )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Either cv_file or cv_file_base64 must be provided",
-            )
+        # Initialize job description variables
+        job_description = None
+        job_description_id = None
 
         # Extract job description content
         job_content = ""
@@ -579,28 +579,34 @@ async def claim_quick_start_data(
             logger.info("Using job text for claim")
             job_content = job_text
 
-        # Create job description record
-        job_description = create_job_description_for_user(
-            db=db,
-            user_id=str(current_user.id),
-            cv_id=str(cv.id),
-            content=job_content,
-            source_url=job_url,
-            title=job_title,
-            company=job_company,
-            location=job_location,
-        )
+        # Create job description record if job data exists
+        if job_url or job_text:
+            from src.services.job_description_service import (
+                create_job_description_for_user_with_cvs,
+            )
+
+            job_description = create_job_description_for_user_with_cvs(
+                db=db,
+                user_id=str(current_user.id),
+                cv_ids=[cv_id] if cv_id else None,
+                content=job_content,
+                source_url=job_url,
+                title=job_title,
+                company=job_company,
+                location=job_location,
+            )
+            job_description_id = str(job_description.id)
 
         # Explicit commit after all operations succeed
         db.commit()
 
         logger.info(
-            f"Successfully claimed quick start data: CV {cv.id}, JD {job_description.id} for user {current_user.id}"
+            f"Successfully claimed quick start data: CV {cv_id or 'None'}, JD {job_description_id or 'None'} for user {current_user.id}"
         )
 
         return QuickStartClaimResponse(
-            cv_id=str(cv.id),
-            job_description_id=str(job_description.id),
+            cv_id=cv_id,
+            job_description_id=job_description_id,
             message="Data saved successfully",
         )
 
