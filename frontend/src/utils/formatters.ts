@@ -265,19 +265,20 @@ export const formatModelName = (model: string): string => {
 
 /**
  * Get color for operation type (for charts).
+ * Using theme-based color palette for consistency.
  */
 export const getOperationTypeColor = (operationType: string): string => {
   const colorMap: Record<string, string> = {
-    parse_cv: "#8884d8",
-    generate_section: "#82ca9d",
-    job_fit_analysis: "#ffc658",
-    enhance_content: "#ff7300",
-    ats_optimization: "#00ff00",
-    generate_suggestions: "#0088fe",
-    extract_job_description: "#ff00ff",
+    parse_cv: "#1976d2", // primary.main
+    generate_section: "#2e7d32", // success.main
+    job_fit_analysis: "#ed6c02", // warning.main
+    enhance_content: "#d32f2f", // error.main
+    ats_optimization: "#7b1fa2", // purple
+    generate_suggestions: "#0288d1", // info.main
+    extract_job_description: "#5d4037", // brown
   };
 
-  return colorMap[operationType] || "#8884d8";
+  return colorMap[operationType] || "#1976d2";
 };
 
 /**

@@ -109,22 +109,25 @@ const CVEditorHeader: React.FC<{
       <AppBar
         position="static"
         sx={{
-          backgroundColor: "#f5f5f5",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          color: "#333",
+          backgroundColor: "background.paper",
+          boxShadow: 1,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          color: "text.primary",
         }}
       >
-        <Toolbar sx={{ minHeight: "48px !important", px: 2 }}>
+        <Toolbar sx={{ minHeight: "64px !important", px: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <IconButton
               edge="start"
               onClick={handleBackClick}
               data-testid="cv-editor-back-button"
               sx={{
-                mr: 1,
-                color: "#666",
+                mr: 2,
+                color: "text.secondary",
                 "&:hover": {
-                  backgroundColor: "rgba(0,0,0,0.04)",
+                  backgroundColor: "action.hover",
+                  color: "text.primary",
                 },
               }}
             >
@@ -133,9 +136,9 @@ const CVEditorHeader: React.FC<{
             <Typography
               variant="body2"
               sx={{
-                color: "#666",
+                color: "text.secondary",
                 fontSize: "0.875rem",
-                mr: 2,
+                fontWeight: 500,
               }}
             >
               Dashboard
@@ -150,13 +153,16 @@ const CVEditorHeader: React.FC<{
               startIcon={<DeleteIcon />}
               onClick={onDelete}
               sx={{
-                mr: 1,
+                mr: 2,
                 textTransform: "none",
+                fontWeight: 600,
+                borderRadius: 2,
                 borderColor: "error.main",
                 color: "error.main",
                 "&:hover": {
                   backgroundColor: "error.light",
                   color: "error.contrastText",
+                  borderColor: "error.dark",
                 },
               }}
             >
@@ -169,11 +175,16 @@ const CVEditorHeader: React.FC<{
             startIcon={<PictureAsPdfIcon />}
             onClick={onExport}
             sx={{
-              mr: 1,
+              mr: 2,
               textTransform: "none",
-              borderColor: "#ccc",
-              color: "#444",
-              "&:hover": { backgroundColor: "rgba(0,0,0,0.04)" },
+              fontWeight: 600,
+              borderRadius: 2,
+              borderColor: "divider",
+              color: "text.primary",
+              "&:hover": {
+                backgroundColor: "action.hover",
+                borderColor: "primary.light"
+              },
             }}
           >
             Export
@@ -187,9 +198,10 @@ const CVEditorHeader: React.FC<{
             onClick={onMenuOpen}
             data-testid="cv-editor-user-menu-button"
             sx={{
-              color: "#666",
+              color: "text.secondary",
               "&:hover": {
-                backgroundColor: "rgba(0,0,0,0.04)",
+                backgroundColor: "action.hover",
+                color: "text.primary",
               },
             }}
           >

@@ -185,21 +185,42 @@ const JobLibrary: React.FC = () => {
   );
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+    <Box sx={{ minHeight: "100vh", backgroundColor: "background.default" }}>
       {/* Header */}
       <Box
         sx={{
-          backgroundColor: "white",
-          borderBottom: "1px solid #e0e0e0",
-          py: 2,
+          backgroundColor: "background.paper",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          py: 3,
+          boxShadow: 1
         }}
       >
         <Container maxWidth="xl">
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <IconButton onClick={() => navigate("/dashboard")} edge="start">
+          <Stack direction="row" alignItems="center" spacing={3}>
+            <IconButton
+              onClick={() => navigate("/dashboard")}
+              edge="start"
+              sx={{
+                color: "text.secondary",
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                  color: "text.primary"
+                }
+              }}
+            >
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h4" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{
+                flexGrow: 1,
+                fontWeight: 700,
+                color: "text.primary",
+                letterSpacing: "-0.025em"
+              }}
+            >
               Job Applications
             </Typography>
             <Button
@@ -207,6 +228,19 @@ const JobLibrary: React.FC = () => {
               startIcon={<AddIcon />}
               onClick={() => setIsModalOpen(true)}
               size="large"
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                  transform: "translateY(-1px)"
+                },
+                transition: "all 0.2s ease-in-out"
+              }}
             >
               New Application
             </Button>
@@ -215,60 +249,118 @@ const JobLibrary: React.FC = () => {
       </Box>
 
       {/* Stats Bar */}
-      <Box sx={{ backgroundColor: "white", borderBottom: "1px solid #e0e0e0", py: 2 }}>
+      <Box sx={{
+        backgroundColor: "background.paper",
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        py: 3
+      }}>
         <Container maxWidth="xl">
-          <Stack direction="row" spacing={2}>
+          <Stack direction="row" spacing={2} flexWrap="wrap">
             <Chip
               label={`Total: ${statusCounts.total}`}
               color={statusFilter === "all" ? "primary" : "default"}
               onClick={() => setStatusFilter("all")}
-              sx={{ cursor: "pointer" }}
+              sx={{
+                cursor: "pointer",
+                fontWeight: 600,
+                "&:hover": {
+                  backgroundColor: statusFilter === "all" ? "primary.dark" : "action.hover"
+                }
+              }}
             />
             <Chip
               label={`Open: ${statusCounts.open}`}
-              color={statusFilter === "open" ? "primary" : "default"}
+              color={statusFilter === "open" ? "success" : "default"}
               onClick={() => setStatusFilter("open")}
-              sx={{ cursor: "pointer" }}
+              sx={{
+                cursor: "pointer",
+                fontWeight: 600,
+                "&:hover": {
+                  backgroundColor: statusFilter === "open" ? "success.dark" : "action.hover"
+                }
+              }}
             />
             <Chip
               label={`Applied: ${statusCounts.applied}`}
-              color={statusFilter === "applied" ? "primary" : "default"}
+              color={statusFilter === "applied" ? "info" : "default"}
               onClick={() => setStatusFilter("applied")}
-              sx={{ cursor: "pointer" }}
+              sx={{
+                cursor: "pointer",
+                fontWeight: 600,
+                "&:hover": {
+                  backgroundColor: statusFilter === "applied" ? "info.dark" : "action.hover"
+                }
+              }}
             />
             <Chip
               label={`Archived: ${statusCounts.archived}`}
-              color={statusFilter === "archived" ? "primary" : "default"}
+              color={statusFilter === "archived" ? "default" : "default"}
               onClick={() => setStatusFilter("archived")}
-              sx={{ cursor: "pointer" }}
+              sx={{
+                cursor: "pointer",
+                fontWeight: 600,
+                backgroundColor: statusFilter === "archived" ? "grey.200" : "grey.100",
+                color: statusFilter === "archived" ? "grey.800" : "grey.600",
+                "&:hover": {
+                  backgroundColor: statusFilter === "archived" ? "grey.300" : "grey.200"
+                }
+              }}
             />
           </Stack>
         </Container>
       </Box>
 
       {/* Search and Filters */}
-      <Container maxWidth="xl" sx={{ mt: 3, mb: 3 }}>
-        <Paper sx={{ p: 2 }}>
-          <Stack direction="row" spacing={2} alignItems="center">
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+        <Paper
+          sx={{
+            p: 3,
+            borderRadius: 3,
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow: 1,
+            "&:hover": {
+              boxShadow: 2
+            },
+            transition: "box-shadow 0.2s ease-in-out"
+          }}
+        >
+          <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
             <TextField
               fullWidth
               placeholder="Search by title, company, or location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{
+                minWidth: 300,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "primary.light"
+                  }
+                }
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon sx={{ color: "text.secondary" }} />
                   </InputAdornment>
                 ),
               }}
             />
-            <FormControl sx={{ minWidth: 150 }}>
+            <FormControl sx={{ minWidth: 180 }}>
               <InputLabel>Sort By</InputLabel>
               <Select
                 value={sortBy}
                 label="Sort By"
                 onChange={(e) => setSortBy(e.target.value)}
+                sx={{
+                  borderRadius: 2,
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "primary.light"
+                  }
+                }}
               >
                 <MenuItem value="recent">Most Recent</MenuItem>
                 <MenuItem value="company">Company</MenuItem>
@@ -280,15 +372,43 @@ const JobLibrary: React.FC = () => {
       </Container>
 
       {/* Job Descriptions Grid */}
-      <Container maxWidth="xl" sx={{ pb: 4 }}>
+      <Container maxWidth="xl" sx={{ pb: 6 }}>
         {filteredAndSortedJobs.length === 0 ? (
-          <Paper sx={{ p: 6, textAlign: "center" }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
+          <Paper
+            sx={{
+              p: 8,
+              textAlign: "center",
+              borderRadius: 4,
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: 2,
+              background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)"
+            }}
+          >
+            <Typography
+              variant="h5"
+              color="text.primary"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                letterSpacing: "-0.025em",
+                mb: 2
+              }}
+            >
               {searchQuery || statusFilter !== "all"
                 ? "No job descriptions match your filters"
                 : "No job descriptions yet"}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{
+                mb: 4,
+                maxWidth: 500,
+                mx: "auto",
+                lineHeight: 1.6
+              }}
+            >
               {searchQuery || statusFilter !== "all"
                 ? "Try adjusting your search or filters"
                 : "Add your first job description to start tracking your applications"}
@@ -299,13 +419,26 @@ const JobLibrary: React.FC = () => {
                 startIcon={<AddIcon />}
                 onClick={() => setIsModalOpen(true)}
                 size="large"
+                sx={{
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 5,
+                  py: 2,
+                  borderRadius: 3,
+                  boxShadow: 3,
+                  "&:hover": {
+                    boxShadow: 6,
+                    transform: "translateY(-1px)"
+                  },
+                  transition: "all 0.2s ease-in-out"
+                }}
               >
                 Add Job Description
               </Button>
             )}
           </Paper>
         ) : (
-          <Grid container spacing={3}>
+          <Grid container spacing={4}>
             {filteredAndSortedJobs.map((jd) => (
               <Grid item xs={12} sm={6} lg={4} key={jd.id}>
                 <JobDescriptionCard

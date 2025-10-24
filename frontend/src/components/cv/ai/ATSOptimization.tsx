@@ -230,14 +230,50 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
       )}
 
       {!atsOptimization.lastAnalysis ? (
-        <Card>
-          <CardContent>
+        <Card
+          sx={{
+            borderRadius: 3,
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow: 2,
+            "&:hover": {
+              boxShadow: 4,
+              transform: "translateY(-1px)"
+            },
+            transition: "all 0.3s ease-in-out"
+          }}
+        >
+          <CardContent sx={{ p: 4 }}>
             <Box textAlign="center" py={2}>
-              <SearchIcon sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
+              <SearchIcon sx={{
+                fontSize: 64,
+                color: "primary.main",
+                mb: 3,
+                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
+              }} />
+              <Typography
+                variant="h5"
+                gutterBottom
+                sx={{
+                  fontWeight: 700,
+                  color: "text.primary",
+                  letterSpacing: "-0.025em",
+                  mb: 2
+                }}
+              >
                 Optimize for ATS
               </Typography>
-              <Typography color="text.secondary" paragraph>
+              <Typography
+                color="text.secondary"
+                paragraph
+                sx={{
+                  fontSize: "1.1rem",
+                  lineHeight: 1.6,
+                  maxWidth: 500,
+                  mx: "auto",
+                  mb: 4
+                }}
+              >
                 Analyze your CV content for keyword optimization and ATS
                 compatibility. This focuses on content and keywords, not
                 formatting.
@@ -254,6 +290,23 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
                   )
                 }
                 size="large"
+                sx={{
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  boxShadow: 3,
+                  "&:hover": {
+                    boxShadow: 6,
+                    transform: "translateY(-1px)"
+                  },
+                  "&:disabled": {
+                    backgroundColor: "action.disabled",
+                    color: "action.disabled"
+                  },
+                  transition: "all 0.2s ease-in-out"
+                }}
               >
                 {isOptimizing || atsOptimization.isAnalyzing
                   ? "Analyzing..."

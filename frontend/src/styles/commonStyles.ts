@@ -157,7 +157,7 @@ export const typographyStyles = {
     color: "text.secondary",
   },
   muted: {
-    color: "#666",
+    color: "text.disabled",
     fontSize: "0.875rem",
   },
 } as const;
@@ -188,13 +188,13 @@ export const shadowStyles = {
   heavy: 4,
 } as const;
 
-// Color utilities
+// Color utilities - using theme tokens
 export const colorStyles = {
-  success: "#2e7d32",
-  error: "#d32f2f",
-  warning: "#ed6c02",
-  info: "#1976d2",
-  muted: "#666",
+  success: "success.main",
+  error: "error.main",
+  warning: "warning.main",
+  info: "info.main",
+  muted: "text.disabled",
 } as const;
 
 // Combined common styles for specific use cases

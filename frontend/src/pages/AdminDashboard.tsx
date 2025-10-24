@@ -165,23 +165,48 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 6, mb: 6 }}>
       {/* Header */}
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        mb={3}
+        mb={4}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          backgroundColor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow: 1
+        }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontWeight: 700,
+            color: "text.primary",
+            letterSpacing: "-0.025em"
+          }}
+        >
           Admin Dashboard
         </Typography>
-        <Box>
+        <Box sx={{ display: "flex", gap: 2 }}>
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}
             onClick={() => navigate("/dashboard")}
-            sx={{ mr: 2 }}
+            sx={{
+              fontWeight: 600,
+              textTransform: "none",
+              px: 3,
+              py: 1.5,
+              borderRadius: 3,
+              "&:hover": {
+                backgroundColor: "action.hover"
+              }
+            }}
           >
             Back to Dashboard
           </Button>
@@ -189,7 +214,19 @@ const AdminDashboard: React.FC = () => {
             variant="contained"
             startIcon={<Refresh />}
             onClick={handleRefresh}
-            sx={{ mr: 1 }}
+            sx={{
+              fontWeight: 600,
+              textTransform: "none",
+              px: 3,
+              py: 1.5,
+              borderRadius: 3,
+              boxShadow: 2,
+              "&:hover": {
+                boxShadow: 4,
+                transform: "translateY(-1px)"
+              },
+              transition: "all 0.2s ease-in-out"
+            }}
           >
             Refresh
           </Button>
@@ -204,10 +241,32 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <Paper sx={{ mb: 3 }}>
+      <Paper
+        sx={{
+          mb: 4,
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow: 1,
+          overflow: "hidden"
+        }}
+      >
         <Tabs
           value={currentTab}
           onChange={(_, newValue) => handleTabChange(newValue)}
+          sx={{
+            "& .MuiTab-root": {
+              fontWeight: 600,
+              textTransform: "none",
+              minHeight: 64,
+              "&:hover": {
+                backgroundColor: "action.hover"
+              }
+            },
+            "& .Mui-selected": {
+              color: "primary.main"
+            }
+          }}
         >
           <Tab icon={<Dashboard />} label="Overview" />
           <Tab icon={<People />} label="Users" />

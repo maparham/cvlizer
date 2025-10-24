@@ -286,16 +286,16 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
           height: "100%",
           display: "flex",
           flexDirection: "column",
+          borderRadius: 3,
           border: isActive ? 2 : 1,
           borderColor: isActive ? "primary.main" : "divider",
-          backgroundColor: "transparent",
-          boxShadow: isActive ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
-          transition: "all 0.2s ease-in-out",
+          backgroundColor: "background.paper",
+          boxShadow: isActive ? 3 : 1,
+          transition: "all 0.3s ease-in-out",
           "&:hover": {
-            boxShadow: isActive
-              ? "0 4px 12px rgba(0,0,0,0.12)"
-              : "0 2px 8px rgba(0,0,0,0.08)",
-            transform: "translateY(-1px)",
+            boxShadow: isActive ? 6 : 3,
+            transform: "translateY(-2px)",
+            borderColor: isActive ? "primary.dark" : "primary.light",
           },
         }}
       >

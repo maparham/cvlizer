@@ -51,14 +51,22 @@ const Profile: React.FC = () => {
 
   return (
     <Container component="main" maxWidth="md">
-      <Box sx={{ mt: 4, mb: 4 }}>
+      <Box sx={{ mt: 6, mb: 6 }}>
         {/* Header */}
         <Paper
           elevation={2}
           sx={{
-            p: 4,
-            mb: 3,
-            background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+            p: 5,
+            mb: 4,
+            borderRadius: 4,
+            background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow: 3,
+            "&:hover": {
+              boxShadow: 6
+            },
+            transition: "box-shadow 0.3s ease-in-out"
           }}
         >
           <Box
@@ -109,7 +117,11 @@ const Profile: React.FC = () => {
                   variant="h4"
                   component="h1"
                   gutterBottom
-                  sx={{ fontWeight: "bold" }}
+                  sx={{
+                    fontWeight: 700,
+                    color: "text.primary",
+                    letterSpacing: "-0.025em"
+                  }}
                 >
                   {user.fullName || user.firstName || "User Profile"}
                 </Typography>
@@ -160,8 +172,21 @@ const Profile: React.FC = () => {
             </Box>
           </Box>
 
-          <Stack direction="row" spacing={2}>
-            <Button variant="outlined" onClick={() => navigate("/dashboard")}>
+          <Stack direction="row" spacing={3} flexWrap="wrap">
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/dashboard")}
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                "&:hover": {
+                  backgroundColor: "action.hover"
+                }
+              }}
+            >
               Back to Dashboard
             </Button>
             <Button
@@ -174,6 +199,19 @@ const Profile: React.FC = () => {
                   profileSection.scrollIntoView({ behavior: "smooth" });
                 }
               }}
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                  transform: "translateY(-1px)"
+                },
+                transition: "all 0.2s ease-in-out"
+              }}
             >
               Edit Profile
             </Button>
@@ -181,21 +219,38 @@ const Profile: React.FC = () => {
         </Paper>
 
         {/* Profile Information Cards */}
-        <Grid container spacing={3} sx={{ mb: 6 }}>
+        <Grid container spacing={4} sx={{ mb: 8 }}>
           <Grid item xs={12} md={6}>
             <Card
               sx={{
                 height: "100%",
-                transition: "transform 0.2s",
-                "&:hover": { transform: "translateY(-2px)" },
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow: 2,
+                transition: "all 0.3s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: 6,
+                  borderColor: "primary.light"
+                },
               }}
             >
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Person sx={{ mr: 1, color: "primary.main", fontSize: 28 }} />
-                  <Typography variant="h6">Personal Information</Typography>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                  <Person sx={{ mr: 2, color: "primary.main", fontSize: 32 }} />
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 700,
+                      color: "text.primary",
+                      letterSpacing: "-0.025em"
+                    }}
+                  >
+                    Personal Information
+                  </Typography>
                 </Box>
-                <Divider sx={{ mb: 2 }} />
+                <Divider sx={{ mb: 3 }} />
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   First Name
                 </Typography>
@@ -224,16 +279,33 @@ const Profile: React.FC = () => {
             <Card
               sx={{
                 height: "100%",
-                transition: "transform 0.2s",
-                "&:hover": { transform: "translateY(-2px)" },
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow: 2,
+                transition: "all 0.3s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: 6,
+                  borderColor: "primary.light"
+                },
               }}
             >
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Email sx={{ mr: 1, color: "primary.main", fontSize: 28 }} />
-                  <Typography variant="h6">Contact Information</Typography>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                  <Email sx={{ mr: 2, color: "primary.main", fontSize: 32 }} />
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 700,
+                      color: "text.primary",
+                      letterSpacing: "-0.025em"
+                    }}
+                  >
+                    Contact Information
+                  </Typography>
                 </Box>
-                <Divider sx={{ mb: 2 }} />
+                <Divider sx={{ mb: 3 }} />
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Primary Email
                 </Typography>
@@ -284,18 +356,35 @@ const Profile: React.FC = () => {
             <Card
               sx={{
                 height: "100%",
-                transition: "transform 0.2s",
-                "&:hover": { transform: "translateY(-2px)" },
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow: 2,
+                transition: "all 0.3s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: 6,
+                  borderColor: "primary.light"
+                },
               }}
             >
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                   <CalendarToday
-                    sx={{ mr: 1, color: "primary.main", fontSize: 28 }}
+                    sx={{ mr: 2, color: "primary.main", fontSize: 32 }}
                   />
-                  <Typography variant="h6">Account Details</Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 700,
+                      color: "text.primary",
+                      letterSpacing: "-0.025em"
+                    }}
+                  >
+                    Account Details
+                  </Typography>
                 </Box>
-                <Divider sx={{ mb: 2 }} />
+                <Divider sx={{ mb: 3 }} />
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Account Created
                 </Typography>
@@ -327,18 +416,35 @@ const Profile: React.FC = () => {
             <Card
               sx={{
                 height: "100%",
-                transition: "transform 0.2s",
-                "&:hover": { transform: "translateY(-2px)" },
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow: 2,
+                transition: "all 0.3s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: 6,
+                  borderColor: "primary.light"
+                },
               }}
             >
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                   <Settings
-                    sx={{ mr: 1, color: "primary.main", fontSize: 28 }}
+                    sx={{ mr: 2, color: "primary.main", fontSize: 32 }}
                   />
-                  <Typography variant="h6">Account Settings</Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 700,
+                      color: "text.primary",
+                      letterSpacing: "-0.025em"
+                    }}
+                  >
+                    Account Settings
+                  </Typography>
                 </Box>
-                <Divider sx={{ mb: 2 }} />
+                <Divider sx={{ mb: 3 }} />
                 <Typography
                   variant="body2"
                   color="text.secondary"
@@ -357,6 +463,18 @@ const Profile: React.FC = () => {
                     if (profileSection) {
                       profileSection.scrollIntoView({ behavior: "smooth" });
                     }
+                  }}
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: "none",
+                    py: 1.5,
+                    borderRadius: 3,
+                    boxShadow: 2,
+                    "&:hover": {
+                      boxShadow: 4,
+                      transform: "translateY(-1px)"
+                    },
+                    transition: "all 0.2s ease-in-out"
                   }}
                 >
                   Go to Account Settings
@@ -394,26 +512,41 @@ const Profile: React.FC = () => {
         <Paper
           elevation={3}
           sx={{
-            p: 4,
-            borderRadius: 3,
+            p: 5,
+            borderRadius: 4,
             background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
-            border: "1px solid #e3f2fd",
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow: 3,
+            "&:hover": {
+              boxShadow: 6
+            },
+            transition: "box-shadow 0.3s ease-in-out"
           }}
           data-clerk-profile
         >
-          <Box sx={{ textAlign: "center", mb: 4 }}>
+          <Box sx={{ textAlign: "center", mb: 5 }}>
             <Typography
               variant="h5"
               component="h2"
               gutterBottom
-              sx={{ fontWeight: "bold" }}
+              sx={{
+                fontWeight: 700,
+                color: "text.primary",
+                letterSpacing: "-0.025em"
+              }}
             >
               Account Management
             </Typography>
             <Typography
-              variant="body2"
+              variant="body1"
               color="text.secondary"
-              sx={{ maxWidth: 600, mx: "auto" }}
+              sx={{
+                maxWidth: 600,
+                mx: "auto",
+                lineHeight: 1.6,
+                fontSize: "1.1rem"
+              }}
             >
               Update your profile information, manage security settings, and
               configure your account preferences using our secure interface.
