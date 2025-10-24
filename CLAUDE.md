@@ -12,6 +12,80 @@ CV Optimizer is a full-stack AI-powered CV enhancement SaaS application built wi
 - **Auth**: Clerk (primary) with JWT token verification
 - **Testing**: Pytest (backend), Jest (frontend), Playwright (E2E)
 
+## 🚨 CRITICAL: Two Non-Negotiable Rules
+
+These rules override all other instructions and MUST be followed without exception.
+
+### Rule 1: Always Debug Before Fixing
+
+**Never propose a fix without first:**
+
+1. **Using Read tool to examine actual code** - No assumptions based on file names or patterns
+2. **Quoting the relevant code sections** - Prove you've read the implementation
+3. **Explaining what the code currently does** - Show understanding of current behavior
+4. **Identifying the specific root cause** - Not just symptoms
+
+**❌ Red flags that you're violating this rule:**
+- You haven't used the Read tool before proposing a fix
+- You're making assumptions based on file names, conventions, or patterns
+- You're applying "common solutions" without understanding the specific code
+- You can't quote the actual code that's causing the problem
+- You're suggesting global/blanket fixes for targeted issues
+
+**✅ Correct approach:**
+```
+Investigation:
+- [x] Read actual code at: backend/src/services/ai_service.py:145-167
+- [x] Current behavior: [quote the actual code]
+      ```python
+      def process_cv(cv_data):
+          # Shows current implementation
+      ```
+- [x] Root cause: The function doesn't validate cv_data before processing
+- [x] Flow: User uploads → API receives → service processes without validation → error
+```
+
+### Rule 2: Never Claim Complete Without User Verification
+
+**Never say "fixed", "complete", "resolved", or "should work now" unless:**
+
+1. User has explicitly tested and confirmed it works, OR
+2. You've met ALL of these conditions:
+   - ✅ Added new automated tests that specifically verify the fix
+   - ✅ All tests pass (100% pass rate)
+   - ✅ The fix involves ONLY internal logic (no UI, API, integration, or user-facing changes)
+   - ✅ Static analysis confirms no errors
+
+**❌ You MUST wait for user confirmation when the issue involves:**
+- User-facing UI/UX behavior
+- API endpoints or responses
+- Cross-system integration
+- Database changes or migrations
+- Performance issues
+- Browser-specific behavior
+- Authentication/authorization
+- File uploads/downloads
+- External service integrations
+- Real-world data scenarios
+
+**✅ Required phrasing:**
+
+Instead of: ~~"Fixed!"~~, ~~"Done!"~~, ~~"Resolved!"~~, ~~"Should work now!"~~
+
+Always say: **"Changes implemented. Please verify by [specific test steps]. Let me know if the issue persists or if you see any problems."**
+
+**Example:**
+```
+Changes implemented. Please verify by:
+1. Running `npm run test:e2e`
+2. Testing the CV upload flow manually in the browser
+3. Checking that validation errors display correctly
+
+Let me know if the issue persists or if you see any problems.
+```
+
+---
+
 ## Development Commands
 
 ### Backend Commands

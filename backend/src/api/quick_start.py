@@ -47,6 +47,10 @@ from src.services.cv_parsing_service import parse_cv_with_openai
 from src.services.cv_service import create_cv
 from src.services.job_description_service import create_job_description_for_user
 from src.services.file_service import validate_file, save_uploaded_file
+from src.services.cv_preview_service import (
+    generate_cv_preview_image,
+    is_preview_generation_available,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -206,6 +210,29 @@ async def quick_start_preview(
                     "full_parsed_data": parsed_cv,
                 }
 
+                # Generate preview image if possible
+                if is_preview_generation_available():
+                    try:
+                        logger.info(f"Generating CV preview image for {cv_file.filename}")
+                        preview_image = await generate_cv_preview_image(
+                            parsed_cv,
+                            max_width=1000,  # Increased for better quality
+                            title=personal_info.get("full_name", "CV Preview"),
+                        )
+                        cv_preview["preview_image_base64"] = preview_image
+                        logger.info(
+                            f"Successfully generated CV preview image for {cv_file.filename}"
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to generate CV preview image for {cv_file.filename}: {e}"
+                        )
+                        # Continue without image - not critical for preview
+                else:
+                    logger.info(
+                        "CV preview image generation not available (missing dependencies)"
+                    )
+
         except Exception as e:
             logger.error(f"CV parsing error in quick start: {str(e)}")
             cv_preview = {
@@ -273,6 +300,9 @@ async def quick_start_preview(
                                     if len(job_result.get("content", "")) > 200
                                     else job_result.get("content", "")
                                 ),
+                                "content": job_result.get(
+                                    "content", ""
+                                ),  # Full content for markdown rendering
                                 "has_content": bool(job_result.get("content")),
                                 # Include full parsed data for later claiming
                                 "full_parsed_data": job_result,
@@ -300,6 +330,7 @@ async def quick_start_preview(
                 "content_preview": (
                     job_text[:200] + "..." if len(job_text) > 200 else job_text
                 ),
+                "content": job_text,  # Full content for markdown rendering
                 "has_content": bool(job_text.strip()),
                 "content_length": len(job_text),
             }

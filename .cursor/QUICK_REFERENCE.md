@@ -4,18 +4,38 @@
 
 ## 🚨 Critical Rules (Never Break These)
 
-### 1. Server Management
+### 1. Always Debug Before Fixing
+**NEVER propose a fix without first:**
+- Using Read tool to examine the actual code
+- Quoting the relevant code sections in your response
+- Explaining what the code currently does
+- Identifying the specific root cause
+
+**❌ FORBIDDEN:**
+- Assuming behavior based on file names or patterns
+- Proposing fixes without reading actual implementation
+- Applying "common solutions" without understanding the specific code
+
+### 2. Never Claim Complete Without User Verification
+**NEVER say "fixed", "done", or "resolved" until:**
+- User has tested and confirmed it works, OR
+- You've added new tests + 100% pass rate + internal logic only
+
+**✅ ALWAYS say instead:**
+"Changes implemented. Please verify by [specific steps]. Let me know if the issue persists."
+
+### 3. Server Management
 **NEVER start, stop, or restart servers** unless user explicitly requests.
 - Hot-reload handles all changes automatically
 - Applies to: frontend, backend, databases, all services
 
-### 2. Never Break Existing Functionality
+### 4. Never Break Existing Functionality
 - Preserve ALL existing behavior when fixing issues
 - Make the **smallest possible change**
 - Understand fully before changing anything
 - NO REGRESSIONS - test thoroughly
 
-### 3. Analyze Architecture First
+### 5. Analyze Architecture First
 - **Search codebase** for similar functionality before implementing
 - Check existing patterns, state management, UI components
 - Don't duplicate functionality or create new patterns when existing ones work
@@ -277,14 +297,29 @@ Example:
 
 ## 🐛 Bug Fix Workflow
 
-1. **Analyze**: Search codebase for related code
-2. **Root Cause**: Identify the actual problem source
-3. **Fix at Source**: Backend validation, API format, or data entry
-4. **Minimal Change**: Don't modify working code
-5. **Test E2E**: User action → API → DB → Response → UI
-6. **Add Logs**: `console.log('Debug:', JSON.stringify(obj, null, 2))`
-7. **Verify**: Don't claim fixed until user confirms
-8. **No Regressions**: Ensure no new problems
+1. **Read Actual Code**: Use Read tool, quote relevant sections, explain current behavior
+2. **Analyze**: Search codebase for related code and patterns
+3. **Root Cause**: Identify the actual problem source (not symptoms)
+4. **Fix at Source**: Backend validation, API format, or data entry
+5. **Minimal Change**: Don't modify working code, one line fix > ten lines
+6. **Test E2E**: User action → API → DB → Response → UI
+7. **Add Logs**: `console.log('Debug:', JSON.stringify(obj, null, 2))`
+8. **Wait for Verification**: Provide test steps, NEVER claim "fixed" until user confirms
+9. **No Regressions**: Ensure no new problems introduced
+
+**Required Response Format:**
+```
+Investigation:
+- [x] Read code at: [file:line]
+- [x] Current behavior: [quote code]
+- [x] Root cause: [explanation]
+
+Changes implemented. Please verify by:
+1. [specific test step]
+2. [expected result]
+
+Let me know if the issue persists.
+```
 
 ## 🎯 SOLID Principles Quick Reference
 

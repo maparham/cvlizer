@@ -13,6 +13,8 @@ Be careful and precise when fixing issues.
 
 ### Debugging Steps (REQUIRED BEFORE FIXING)
 1. **READ THE ACTUAL CODE** - Never assume behavior. Read the implementation first.
+   - ❌ FORBIDDEN: Proposing fixes without using Read tool to examine actual code
+   - ✅ REQUIRED: Quote the relevant code sections in your response
 2. **Reproduce the issue** - Understand exact conditions that trigger the problem
 3. **Identify the source** - Which specific component/test/function causes it?
 4. **Inspect state** - Use screenshots, logs, HTML reports to see actual state
@@ -25,11 +27,14 @@ Be careful and precise when fixing issues.
 - ❌ **Defensive Patterns** - "Just in case" fixes without understanding the actual problem
 - ❌ **Symptom Fixes** - Treating symptoms instead of the disease
 - ❌ **Pattern Matching** - Using common patterns without justification
+- ❌ **FORBIDDEN: Skipping Read tool** - Never propose fixes without examining actual code first
 
 ### Correct Actions
 - ✅ **READ THE SOURCE CODE** - Find the component/function and read its implementation
+- ✅ **QUOTE THE CODE** - Show the relevant code sections proving you've read them
 - ✅ **TRACE THE LOGIC** - Follow state updates, props, handlers to understand actual behavior
 - ✅ **VERIFY BEFORE IMPLEMENTING** - Look at the code before writing tests/fixes
+- ✅ **EXPLAIN CURRENT BEHAVIOR** - Describe what the code currently does before proposing changes
 
 ### Correct Approach
 - ✅ **Targeted Fix** - Fix exactly what's broken, where it's broken
@@ -86,19 +91,72 @@ This applies to:
 - **NEW PROBLEMS AVOIDED** - Don't introduce new bugs while fixing existing ones
 - **IMPROVEMENTS WELCOME** - If the fix improves behavior beyond the original issue, that's a bonus
 
-### Exception: Automated Verification Only
-You may claim complete ONLY if you directly verified via:
-- Static analysis showing the issue is resolved
-- Successful compilation proving syntax/type errors are fixed
-- Automated test suite runs confirming the fix works
+### Exception: Automated Verification Only (NARROW SCOPE)
+You may claim complete ONLY if **ALL** of these conditions are met:
+1. ✅ Automated test suite runs with 100% pass rate
+2. ✅ New tests were added that specifically reproduce and verify the fix
+3. ✅ The fix involves ONLY internal logic (no UI, API, or integration changes)
+4. ✅ Static analysis confirms no type errors or linting issues
+5. ✅ The issue was purely about code correctness (types, syntax, logic)
 
-If you cannot automatically verify, you MUST wait for user confirmation.
+### MUST Wait for User Confirmation When Issue Involves:
+- ❌ User-facing UI/UX behavior
+- ❌ API endpoints or responses
+- ❌ Cross-system integration
+- ❌ Data migrations or database changes
+- ❌ Performance issues
+- ❌ Browser-specific behavior
+- ❌ Authentication or authorization
+- ❌ File uploads or downloads
+- ❌ External service integrations
+- ❌ Real-world data scenarios
+
+**When in doubt, ALWAYS wait for user confirmation.**
+
+### Required Phrasing
+Instead of saying: "Fixed!", "Done!", "Resolved!", "Should work now!"
+
+**Always say:** "Changes implemented. Please verify by [specific test steps]. Let me know if the issue persists or if you see any problems."
 
 ## Communication
 - Explain what changed and why; provide testing instructions; acknowledge user verification; address follow-ups.
 - **EXPLAIN IMPACT** - Clearly state what will change and why it's an improvement
 - **GET APPROVAL FOR MAJOR CHANGES** - Confirm approach for significant architectural changes
 - **WHEN IN DOUBT** - Ask for clarification about requirements, not about preserving old behavior
+
+## Mandatory Response Format for Bug Fixes
+
+Every bug fix response MUST follow this structure:
+
+### 1. Investigation (REQUIRED - Cannot Skip)
+```
+**Investigation:**
+- [x] Read actual code at: [file:line reference]
+- [x] Current behavior: [quote relevant code showing what it does now]
+- [x] Root cause identified: [specific explanation]
+- [x] Flow traced: [step-by-step what happens]
+```
+
+### 2. Proposed Fix (REQUIRED)
+```
+**Proposed Fix:**
+- Minimal change: [describe exact change]
+- Why this fixes root cause: [explanation]
+- Potential side effects: [list any concerns]
+```
+
+### 3. Verification Plan (REQUIRED)
+```
+**Verification:**
+Changes implemented. Please verify by:
+1. [specific test step 1]
+2. [specific test step 2]
+3. [expected result]
+
+Let me know if the issue persists or if you see any problems.
+```
+
+**DO NOT use phrases like:** "Fixed!", "Resolved!", "Should work now!", "All set!", "Done!"
 
 ## Debug Logging
 - When uncertain, add diagnostic logs and request user logs after testing.

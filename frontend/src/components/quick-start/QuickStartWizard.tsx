@@ -29,6 +29,12 @@ import {
   Grid,
   Divider,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import {
   CloudUpload as CloudUploadIcon,
@@ -39,11 +45,13 @@ import {
   Link as LinkIcon,
   TextFields as TextIcon,
   Refresh as RefreshIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { useClerk } from "@clerk/clerk-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { submitQuickStartPreview } from "../../services/quickStartService";
 import { QuickStartPreviewResponse } from "../../types/quickStart";
+import MarkdownRenderer from "../common/MarkdownRenderer";
 
 interface QuickStartWizardProps {
   onComplete: (data: {
@@ -72,6 +80,11 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
   const [error, setError] = useState<string | null>(null);
   const [previewResponse, setPreviewResponse] =
     useState<QuickStartPreviewResponse | null>(null);
+
+  // CV preview dialog state
+  const [cvPreviewDialogOpen, setCvPreviewDialogOpen] = useState(false);
+
+
 
   // Handle drag and drop
   const handleDrag = (e: React.DragEvent) => {
@@ -210,6 +223,44 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
                       <Alert severity="error">{cv_preview.error}</Alert>
                     ) : (
                       <Box>
+                        {/* CV Preview Image */}
+                        {cv_preview.preview_image_base64 ? (
+                          <Box sx={{ mb: 2 }}>
+                            <Tooltip title="Click to view larger preview">
+                              <Box
+                                component="img"
+                                src={`data:image/png;base64,${cv_preview.preview_image_base64}`}
+                                alt="CV Preview"
+                                onClick={() => setCvPreviewDialogOpen(true)}
+                                sx={{
+                                  width: "100%",
+                                  maxWidth: 300, // Reduced to 300px for smaller thumbnail
+                                  height: "auto",
+                                  cursor: "pointer",
+                                  border: "1px solid",
+                                  borderColor: "divider",
+                                  borderRadius: 1,
+                                  transition: "all 0.2s",
+                                  "&:hover": {
+                                    borderColor: "primary.main",
+                                    boxShadow: 2,
+                                  },
+                                }}
+                              />
+                            </Tooltip>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1, textAlign: "center" }}>
+                              Click to enlarge
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Box sx={{ mb: 2, p: 2, bgcolor: "grey.50", borderRadius: 1, textAlign: "center" }}>
+                            <DocumentIcon sx={{ fontSize: 48, color: "grey.400", mb: 1 }} />
+                            <Typography variant="body2" color="text.secondary">
+                              Preview image not available
+                            </Typography>
+                          </Box>
+                        )}
+
                         <Typography variant="body2" color="text.secondary">
                           <strong>File:</strong> {cv_preview.filename}
                         </Typography>
@@ -296,18 +347,25 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
 
                         <Divider sx={{ my: 2 }} />
 
-                        {job_preview.content_preview && (
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
+                        {/* Full Job Description Content */}
+                        {job_preview.content && (
+                          <Box
                             sx={{
-                              maxHeight: 100,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
+                              maxHeight: 400,
+                              overflow: "auto",
+                              border: "1px solid",
+                              borderColor: "divider",
+                              borderRadius: 1,
+                              p: 2,
+                              bgcolor: "background.paper",
                             }}
                           >
-                            {job_preview.content_preview}
-                          </Typography>
+                            <MarkdownRenderer
+                              content={job_preview.content}
+                              variant="body2"
+                              color="text.primary"
+                            />
+                          </Box>
                         )}
 
                         {job_preview.content_length !== undefined && (
@@ -372,6 +430,47 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
             </Box>
           </CardContent>
         </Card>
+
+        {/* CV Preview Dialog */}
+        <Dialog
+          open={cvPreviewDialogOpen}
+          onClose={() => setCvPreviewDialogOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography variant="h6">CV Preview</Typography>
+              <IconButton
+                onClick={() => setCvPreviewDialogOpen(false)}
+                size="small"
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent dividers>
+            {previewResponse?.cv_preview?.preview_image_base64 && (
+              <Box
+                component="img"
+                src={`data:image/png;base64,${previewResponse.cv_preview.preview_image_base64}`}
+                alt="CV Preview"
+                sx={{
+                  width: "100%",
+                  height: "auto",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 1,
+                }}
+              />
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCvPreviewDialogOpen(false)} variant="outlined">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     );
   }
@@ -540,6 +639,7 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
           )}
         </CardContent>
       </Card>
+
     </Box>
   );
 };

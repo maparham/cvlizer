@@ -16,6 +16,7 @@ export interface CVPreview {
   work_experience_count?: number;
   education_count?: number;
   full_parsed_data?: any; // Full CV data from backend
+  preview_image_base64?: string; // Base64-encoded PNG preview image
   error?: string;
 
   // Session metadata fields (added by storeQuickStartSession)
@@ -31,6 +32,7 @@ export interface JobPreview {
   company?: string;
   location?: string;
   content_preview?: string;
+  content?: string; // Full content for markdown rendering
   has_content?: boolean;
   content_length?: number;
   url?: string;

@@ -158,14 +158,32 @@ def generate_cv_latex(parsed: Dict[str, Any], title: str) -> str:
     content = "\n\n".join(body)
 
     return f"""
-\\documentclass[11pt]{{article}}
-\\usepackage[margin=1in]{{geometry}}
+\\documentclass[12pt]{{article}}
+\\usepackage[margin=0.8in]{{geometry}}
 \\usepackage[T1]{{fontenc}}
 \\usepackage[utf8]{{inputenc}}
+\\usepackage{{lmodern}}
+\\usepackage{{microtype}}
 \\usepackage{{hyperref}}
 \\usepackage{{enumitem}}
-\\setlist[itemize]{{topsep=2pt, itemsep=2pt, parsep=0pt, partopsep=0pt}}
+\\usepackage{{xcolor}}
+\\usepackage{{fancyhdr}}
+
+% High quality font settings
+\\renewcommand{{\\rmdefault}}{{lmr}}
+\\renewcommand{{\\sfdefault}}{{lmss}}
+\\renewcommand{{\\ttdefault}}{{lmtt}}
+
+% Microtype for better typography
+\\microtypesetup{{protrusion=true, expansion=true}}
+
+% Better spacing
+\\setlist[itemize]{{topsep=3pt, itemsep=2pt, parsep=1pt, partopsep=0pt}}
 \\pagenumbering{{gobble}}
+
+% High quality PDF output
+\\pdfcompresslevel=0
+\\pdfobjcompresslevel=0
 
 \\begin{{document}}
 {content}
@@ -187,8 +205,16 @@ def compile_pdf_from_latex(tex_source: str) -> bytes:
         with open(tex_path, "w", encoding="utf-8") as f:
             f.write(tex_source)
 
-        # Run pdflatex (twice to settle references if needed)
-        cmd = [LATEX_REQUIRED_BIN, "-interaction=nonstopmode", "-halt-on-error", "cv.tex"]
+        # Run pdflatex with high quality settings (twice to settle references if needed)
+        cmd = [
+            LATEX_REQUIRED_BIN,
+            "-interaction=nonstopmode",
+            "-halt-on-error",
+            "-output-format=pdf",
+            "-output-directory=.",
+            "-synctex=1",
+            "cv.tex",
+        ]
         for _ in range(2):
             try:
                 proc = subprocess.run(
