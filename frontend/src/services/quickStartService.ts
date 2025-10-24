@@ -135,6 +135,20 @@ export const claimQuickStartFromSession = async (
       jobDescriptionId: response.data.job_description_id || "",
     };
   } catch (error: any) {
+    // Check if this is a validation error (HTTP 400)
+    if (error.response?.status === 400) {
+      // Clear session immediately for validation errors
+      clearQuickStartSession();
+
+      // Extract specific error message from backend
+      const errorMessage = error.response.data?.detail ||
+                          error.response.data?.message ||
+                          "Invalid data provided";
+
+      throw new Error(errorMessage);
+    }
+
+    // For other errors, preserve session (user might retry)
     throw error;
   }
 };

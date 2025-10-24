@@ -306,10 +306,21 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ backgroundColor: "#f5f5f5", color: "#333" }}>
-        <Toolbar>
+      <AppBar position="static" sx={{
+        backgroundColor: "background.paper",
+        color: "text.primary",
+        boxShadow: 1,
+        borderBottom: "1px solid",
+        borderColor: "divider"
+      }}>
+        <Toolbar sx={{ minHeight: "64px !important", px: 3 }}>
           <Link to="/" style={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}>
-            <Typography variant="h6" component="div" sx={{ color: "#333", cursor: "pointer" }}>
+            <Typography variant="h5" component="div" sx={{
+              color: "text.primary",
+              cursor: "pointer",
+              fontWeight: 700,
+              letterSpacing: "-0.025em"
+            }}>
               CV Optimizer
             </Typography>
           </Link>
@@ -320,7 +331,13 @@ const Dashboard: React.FC = () => {
             aria-controls="menu-appbar"
             aria-haspopup="true"
             onClick={handleMenuOpen}
-            sx={{ color: "#333" }}
+            sx={{
+              color: "text.secondary",
+              "&:hover": {
+                backgroundColor: "action.hover",
+                color: "text.primary"
+              }
+            }}
             data-testid="user-menu-button"
           >
             <AccountCircleIcon />
@@ -368,55 +385,86 @@ const Dashboard: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 6, mb: 6, px: 3 }}>
             {/* Job Applications Card */}
             <Card
               sx={{
-                mb: 4,
-                borderRadius: 2,
-                border: "1px solid #e0e0e0",
+                mb: 5,
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow: 1,
                 "&:hover": {
-                  boxShadow: 2,
+                  boxShadow: 4,
+                  transition: "box-shadow 0.2s ease-in-out"
                 },
               }}
             >
-              <CardContent sx={{ p: 3 }}>
-                <Stack direction="row" alignItems="center" sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", flex: 1 }}>
-                    My Job Applications
+              <CardContent sx={{ p: 4 }}>
+                <Stack direction="row" alignItems="center" sx={{ mb: 4 }}>
+                  <Typography variant="h5" sx={{
+                    fontWeight: 700,
+                    color: "text.primary",
+                    flex: 1,
+                    letterSpacing: "-0.025em"
+                  }}>
+                    Job Applications
                   </Typography>
-                  <Stack direction="row" spacing={1} sx={{ flex: 1, justifyContent: "center" }}>
+                  <Stack direction="row" spacing={1.5} sx={{ flex: 1, justifyContent: "center" }}>
                     <Chip
                       label={`${jdStatusCounts.open} Open`}
                       size="small"
-                      sx={{ backgroundColor: "rgba(33, 150, 243, 0.1)", color: "#1976d2" }}
+                      sx={{
+                        backgroundColor: "success.light",
+                        color: "success.dark",
+                        fontWeight: 600,
+                        "&:hover": {
+                          backgroundColor: "success.main",
+                          color: "success.contrastText"
+                        }
+                      }}
                     />
                     <Chip
                       label={`${jdStatusCounts.applied} Applied`}
                       size="small"
-                      sx={{ backgroundColor: "rgba(255, 152, 0, 0.1)", color: "#ed6c02" }}
+                      sx={{
+                        backgroundColor: "info.light",
+                        color: "info.dark",
+                        fontWeight: 600,
+                        "&:hover": {
+                          backgroundColor: "info.main",
+                          color: "info.contrastText"
+                        }
+                      }}
                     />
                     <Chip
                       label={`${jdStatusCounts.archived} Archived`}
                       size="small"
-                      sx={{ backgroundColor: "rgba(158, 158, 158, 0.1)", color: "#757575" }}
+                      sx={{
+                        backgroundColor: "grey.100",
+                        color: "grey.600",
+                        fontWeight: 600,
+                        "&:hover": {
+                          backgroundColor: "grey.200"
+                        }
+                      }}
                     />
                   </Stack>
                   <Stack direction="row" spacing={2} sx={{ flex: 1, justifyContent: "flex-end" }}>
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       startIcon={<AddIcon />}
                       onClick={() => setJobDescriptionModalOpen(true)}
                       sx={{
-                        borderColor: "#667eea",
-                        color: "#667eea",
-                        "&:hover": {
-                          backgroundColor: "rgba(102, 126, 234, 0.1)",
-                          borderColor: "#667eea",
-                        },
                         fontWeight: 600,
                         textTransform: "none",
                         px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        boxShadow: 2,
+                        "&:hover": {
+                          boxShadow: 4
+                        }
                       }}
                     >
                       New Job
@@ -425,15 +473,14 @@ const Dashboard: React.FC = () => {
                       variant="outlined"
                       onClick={() => navigate("/applications")}
                       sx={{
-                        borderColor: "#667eea",
-                        color: "#667eea",
-                        "&:hover": {
-                          backgroundColor: "rgba(102, 126, 234, 0.1)",
-                          borderColor: "#667eea",
-                        },
                         fontWeight: 600,
                         textTransform: "none",
                         px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        "&:hover": {
+                          backgroundColor: "action.hover"
+                        }
                       }}
                     >
                       View All
@@ -527,61 +574,76 @@ const Dashboard: React.FC = () => {
         {cvs.length === 0 ? (
           // Empty state - keep existing welcome banner
           <>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 4,
-          }}
-        >
-          <Box>
-            <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
-              My CVs
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Manage and optimize your CV collection
-            </Typography>
-          </Box>
-            </Box>
           </>
         ) : (
           // Compact card view when user has CVs - matching Job Applications style
           <Card
             sx={{
-              mb: 4,
-              borderRadius: 2,
-              border: "1px solid #e0e0e0",
+              mb: 5,
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: 1,
               "&:hover": {
-                boxShadow: 2,
+                boxShadow: 4,
+                transition: "box-shadow 0.2s ease-in-out"
               },
             }}
           >
-            <CardContent sx={{ p: 3 }}>
-              <Stack direction="row" alignItems="center" sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", flex: 1 }}>
+            <CardContent sx={{ p: 4 }}>
+              <Stack direction="row" alignItems="center" sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{
+                  fontWeight: 700,
+                  color: "text.primary",
+                  flex: 1,
+                  letterSpacing: "-0.025em"
+                }}>
                   My CVs
                 </Typography>
-                <Stack direction="row" spacing={1} sx={{ flex: 1, justifyContent: "center" }}>
+                <Stack direction="row" spacing={1.5} sx={{ flex: 1, justifyContent: "center" }}>
                   <Chip
                     label={`${cvStatusCounts.parsed} Ready`}
                     size="small"
-                    sx={{ backgroundColor: "rgba(76, 175, 80, 0.1)", color: "#4caf50" }}
+                    sx={{
+                      backgroundColor: "success.light",
+                      color: "success.dark",
+                      fontWeight: 600,
+                      "&:hover": {
+                        backgroundColor: "success.main",
+                        color: "success.contrastText"
+                      }
+                    }}
                   />
                   <Chip
                     label={`${cvStatusCounts.parsing} Processing`}
                     size="small"
-                    sx={{ backgroundColor: "rgba(255, 152, 0, 0.1)", color: "#ed6c02" }}
+                    sx={{
+                      backgroundColor: "warning.light",
+                      color: "warning.dark",
+                      fontWeight: 600,
+                      "&:hover": {
+                        backgroundColor: "warning.main",
+                        color: "warning.contrastText"
+                      }
+                    }}
                   />
                   {cvStatusCounts.error > 0 && (
                     <Chip
                       label={`${cvStatusCounts.error} Errors`}
                       size="small"
-                      sx={{ backgroundColor: "rgba(244, 67, 54, 0.1)", color: "#f44336" }}
+                      sx={{
+                        backgroundColor: "error.light",
+                        color: "error.dark",
+                        fontWeight: 600,
+                        "&:hover": {
+                          backgroundColor: "error.main",
+                          color: "error.contrastText"
+                        }
+                      }}
                     />
                   )}
                 </Stack>
-                <Stack direction="row" spacing={1.5} sx={{ flex: 1, justifyContent: "flex-end" }}>
+                <Stack direction="row" spacing={2} sx={{ flex: 1, justifyContent: "flex-end" }}>
                   <Button
                     variant="outlined"
                     startIcon={<TemplateIcon />}
@@ -589,17 +651,15 @@ const Dashboard: React.FC = () => {
                     disabled={creating}
                     data-testid="create-from-template-button"
                     sx={{
-                      borderColor: "#667eea",
-                      color: "#667eea",
-                      "&:hover": {
-                        backgroundColor: "rgba(102, 126, 234, 0.1)",
-                        borderColor: "#667eea",
-                      },
                       fontWeight: 600,
                       textTransform: "none",
-                      px: 2,
-                      py: 1,
+                      px: 3,
+                      py: 1.5,
+                      borderRadius: 2,
                       whiteSpace: "nowrap",
+                      "&:hover": {
+                        backgroundColor: "action.hover"
+                      }
                     }}
                   >
                     From Template
@@ -611,38 +671,35 @@ const Dashboard: React.FC = () => {
                     disabled={creating}
                     data-testid="start-from-scratch-button"
                     sx={{
-                      borderColor: "#667eea",
-                      color: "#667eea",
-                      "&:hover": {
-                        backgroundColor: "rgba(102, 126, 234, 0.1)",
-                        borderColor: "#667eea",
-                      },
                       fontWeight: 600,
                       textTransform: "none",
-                      px: 2,
-                      py: 1,
+                      px: 3,
+                      py: 1.5,
+                      borderRadius: 2,
                       whiteSpace: "nowrap",
+                      "&:hover": {
+                        backgroundColor: "action.hover"
+                      }
                     }}
                   >
                     From Scratch
                   </Button>
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     startIcon={<UploadIcon />}
                     onClick={() => setUploadOpen(true)}
                     data-testid="upload-cv-button"
                     sx={{
-                      borderColor: "#667eea",
-                      color: "#667eea",
-                      "&:hover": {
-                        backgroundColor: "rgba(102, 126, 234, 0.1)",
-                        borderColor: "#667eea",
-                      },
                       fontWeight: 600,
                       textTransform: "none",
-                      px: 2,
-                      py: 1,
+                      px: 3,
+                      py: 1.5,
+                      borderRadius: 2,
+                      boxShadow: 2,
                       whiteSpace: "nowrap",
+                      "&:hover": {
+                        boxShadow: 4
+                      }
                     }}
                   >
                     Upload
@@ -682,15 +739,18 @@ const Dashboard: React.FC = () => {
                         display: "flex",
                         flexDirection: "column",
                         borderRadius: 3,
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        transition: "all 0.3s ease-in-out",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        boxShadow: 2,
+                        transition: "all 0.2s ease-in-out",
                         "&:hover": {
-                          transform: "translateY(-4px)",
-                          boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                          transform: "translateY(-2px)",
+                          boxShadow: 6,
+                          borderColor: "primary.light"
                         },
                       }}
                     >
-                      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                      <CardContent sx={{ flexGrow: 1, pb: 1, p: 3 }}>
                         {/* CV Header with Status */}
                         <Box
                           sx={{
@@ -862,7 +922,7 @@ const Dashboard: React.FC = () => {
                         >
                           <Button
                             size="small"
-                            variant="outlined"
+                            variant="contained"
                             startIcon={<EditIcon />}
                             onClick={() => navigate(`/cv/${cv.id}`)}
                             disabled={!cv.is_parsed && !cv.parse_error}
@@ -870,13 +930,16 @@ const Dashboard: React.FC = () => {
                             sx={{
                               textTransform: "none",
                               fontWeight: 600,
-                              borderColor: "#1976d2",
-                              color: "#1976d2",
                               flex: 1,
+                              borderRadius: 2,
+                              boxShadow: 1,
                               "&:hover": {
-                                backgroundColor: "rgba(25, 118, 210, 0.1)",
-                                borderColor: "#1976d2",
+                                boxShadow: 2
                               },
+                              "&:disabled": {
+                                backgroundColor: "action.disabled",
+                                color: "action.disabled"
+                              }
                             }}
                           >
                             {!cv.is_parsed && !cv.parse_error ? "Processing..." : "Edit CV"}
@@ -886,9 +949,10 @@ const Dashboard: React.FC = () => {
                               size="small"
                               onClick={() => handleDuplicate(cv)}
                               sx={{
-                                color: "#1976d2",
+                                color: "primary.main",
                                 "&:hover": {
-                                  backgroundColor: "rgba(25, 118, 210, 0.1)",
+                                  backgroundColor: "primary.light",
+                                  color: "primary.dark"
                                 },
                               }}
                             >
@@ -904,9 +968,10 @@ const Dashboard: React.FC = () => {
                               }}
                               data-testid={`delete-cv-button-${cv.id}`}
                               sx={{
-                                color: "#f44336",
+                                color: "error.main",
                                 "&:hover": {
-                                  backgroundColor: "rgba(244, 67, 54, 0.1)",
+                                  backgroundColor: "error.light",
+                                  color: "error.dark"
                                 },
                               }}
                             >
@@ -936,26 +1001,30 @@ const Dashboard: React.FC = () => {
         {cvs.length === 0 && (
           <Paper
             sx={{
-              p: 6,
+              p: 8,
               textAlign: "center",
-              borderRadius: 3,
-              background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+              borderRadius: 4,
+              background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: 3
             }}
           >
-            <DocumentIcon sx={{ fontSize: 80, color: "primary.main", mb: 3 }} />
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-              Welcome to CV Optimizer
+            <DocumentIcon sx={{
+              fontSize: 96,
+              color: "primary.main",
+              mb: 4,
+              filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))"
+            }} />
+            <Typography variant="h4" gutterBottom sx={{
+              fontWeight: 700,
+              color: "text.primary",
+              letterSpacing: "-0.025em",
+              mb: 3
+            }}>
+              Create or import your CV
             </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
-            >
-              Create professional CVs from scratch or upload existing ones to
-              enhance them with AI-powered optimization. Get started by creating
-              your first CV or uploading an existing document.
-            </Typography>
-            <Stack direction="row" spacing={2} justifyContent="center">
+            <Stack direction="row" spacing={3} justifyContent="center" flexWrap="wrap">
               <Button
                 variant="outlined"
                 size="large"
@@ -964,11 +1033,18 @@ const Dashboard: React.FC = () => {
                 disabled={creating}
                 data-testid="create-cv-from-template-empty-state-button"
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: 3,
                   textTransform: "none",
                   fontWeight: 600,
-                  px: 4,
-                  py: 1.5,
+                  px: 5,
+                  py: 2,
+                  "&:hover": {
+                    backgroundColor: "action.hover"
+                  },
+                  "&:disabled": {
+                    backgroundColor: "action.disabled",
+                    color: "action.disabled"
+                  }
                 }}
               >
                 {creating ? "Creating..." : "Create CV from Template"}
@@ -981,27 +1057,38 @@ const Dashboard: React.FC = () => {
                 disabled={creating}
                 data-testid="start-from-scratch-empty-state-button"
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: 3,
                   textTransform: "none",
                   fontWeight: 600,
-                  px: 4,
-                  py: 1.5,
+                  px: 5,
+                  py: 2,
+                  "&:hover": {
+                    backgroundColor: "action.hover"
+                  },
+                  "&:disabled": {
+                    backgroundColor: "action.disabled",
+                    color: "action.disabled"
+                  }
                 }}
               >
                 {creating ? "Creating..." : "Start from Scratch"}
               </Button>
               <Button
-                variant="outlined"
+                variant="contained"
                 size="large"
                 startIcon={<UploadIcon />}
                 onClick={() => setUploadOpen(true)}
                 data-testid="upload-cv-empty-state-button"
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: 3,
                   textTransform: "none",
                   fontWeight: 600,
-                  px: 4,
-                  py: 1.5,
+                  px: 5,
+                  py: 2,
+                  boxShadow: 3,
+                  "&:hover": {
+                    boxShadow: 6
+                  }
                 }}
               >
                 Upload Existing CV

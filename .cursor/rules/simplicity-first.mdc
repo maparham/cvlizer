@@ -1,0 +1,36 @@
+---
+description: Simplicity-first - prevent over-engineering
+alwaysApply: false
+---
+# Simplicity-First Rule
+
+**ALWAYS ask: "What's the simplest thing that could work?" before implementing.**
+
+## Mandatory Simplicity Checkpoint (REQUIRED)
+
+Before implementation, answer these:
+
+1. ❓ **Simplest approach?** [one sentence]
+2. ❓ **Can reuse existing UI/functions?** [yes/no - what?]
+3. ❓ **Complexity level?** [simple/moderate/complex + why if complex]
+
+## The Simplicity Hierarchy
+
+Try in order (don't skip):
+1. **Use existing UI elements** - Can I click/trigger what's there?
+2. **Call existing functions** - Does a function already do this?
+3. **Extend existing patterns** - Can I add to what exists?
+4. **Create new** - Only if 1-3 genuinely don't work
+
+## Red Flags (Over-Engineering)
+
+- ❌ Duplicating logic existing UI already handles
+- ❌ Manually managing state/polling when code already does it
+- ❌ Calling internal APIs when public UI elements exist
+- ❌ Creating new patterns when existing ones work
+
+## Example
+
+**Task:** Auto-trigger button programmatically
+- ❌ Call service, manage polling, handle state manually
+- ✅ `button.click()` - button already orchestrates everything

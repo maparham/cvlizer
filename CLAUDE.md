@@ -12,7 +12,7 @@ CV Optimizer is a full-stack AI-powered CV enhancement SaaS application built wi
 - **Auth**: Clerk (primary) with JWT token verification
 - **Testing**: Pytest (backend), Jest (frontend), Playwright (E2E)
 
-## 🚨 CRITICAL: Two Non-Negotiable Rules
+## 🚨 CRITICAL: Three Non-Negotiable Rules
 
 These rules override all other instructions and MUST be followed without exception.
 
@@ -43,9 +43,33 @@ Investigation:
       ```
 - [x] Root cause: The function doesn't validate cv_data before processing
 - [x] Flow: User uploads → API receives → service processes without validation → error
+
+Simplicity Check:
+- Simplest approach: Add validation at API entry point
+- Can reuse existing? Yes, other endpoints use ValidationSchema
 ```
 
-### Rule 2: Never Claim Complete Without User Verification
+### Rule 2: Simplest Solution First
+
+**Before implementing, ALWAYS ask: "What's the simplest thing that could work?"**
+
+**❌ Common over-engineering mistakes:**
+- Calling internal APIs when UI elements already exist (just click the button!)
+- Duplicating logic that existing functions already handle
+- Manually managing state/polling when existing code does it
+- Creating new patterns when existing ones work fine
+
+**✅ Simplicity hierarchy (try in this order):**
+1. **Use existing UI elements** - Can I just click/trigger what already exists?
+2. **Call existing functions** - Does a function already do this?
+3. **Extend existing patterns** - Can I add to what's there?
+4. **Create new implementation** - Only if 1-3 genuinely don't work
+
+**Real example:**
+- ❌ Task: Auto-trigger button → "Let me call the service, manage polling, handle state..."
+- ✅ Simple solution: `button.click()` - the button already orchestrates everything!
+
+### Rule 3: Never Claim Complete Without User Verification
 
 **Never say "fixed", "complete", "resolved", or "should work now" unless:**
 

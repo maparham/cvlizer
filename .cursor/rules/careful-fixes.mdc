@@ -49,6 +49,7 @@ Be careful and precise when fixing issues.
 
 ## Problem-Solving Approach
 - **ROOT CAUSE FIRST** - See "DEBUG FIRST" section above. Never skip debugging.
+- **SIMPLEST SOLUTION FIRST** - Ask "What's the simplest thing that could work?" before implementing. See simplicity-first.mdc rule.
 - **ANALYZE EXISTING ARCHITECTURE FIRST**: Search the codebase for existing functionality before implementing.
 - **Fix problems at the source** - avoid band-aids:
   - If frontend fails due to unclean backend data, fix backend validation.
@@ -137,7 +138,15 @@ Every bug fix response MUST follow this structure:
 - [x] Flow traced: [step-by-step what happens]
 ```
 
-### 2. Proposed Fix (REQUIRED)
+### 2. Simplicity Check (REQUIRED)
+```
+**Simplicity Check:**
+- Simplest approach: [one sentence - what's the obvious solution?]
+- Can I reuse existing UI/functions? [yes/no - what exists?]
+- Complexity level: [simple/moderate/complex]
+```
+
+### 3. Proposed Fix (REQUIRED)
 ```
 **Proposed Fix:**
 - Minimal change: [describe exact change]
@@ -145,7 +154,7 @@ Every bug fix response MUST follow this structure:
 - Potential side effects: [list any concerns]
 ```
 
-### 3. Verification Plan (REQUIRED)
+### 4. Verification Plan (REQUIRED)
 ```
 **Verification:**
 Changes implemented. Please verify by:

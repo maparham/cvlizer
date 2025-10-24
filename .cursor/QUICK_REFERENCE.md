@@ -35,7 +35,18 @@
 - Understand fully before changing anything
 - NO REGRESSIONS - test thoroughly
 
-### 5. Analyze Architecture First
+### 5. Simplest Solution First
+**ALWAYS ask: "What's the simplest thing that could work?"**
+- Can I reuse existing UI elements (just click the button)?
+- Can I call existing functions instead of rewriting logic?
+- Am I over-engineering this?
+
+**Red flags:**
+- ❌ Duplicating logic that existing UI elements already handle
+- ❌ Manually managing state/polling when existing code does it
+- ❌ Calling internal APIs when public UI exists
+
+### 6. Analyze Architecture First
 - **Search codebase** for similar functionality before implementing
 - Check existing patterns, state management, UI components
 - Don't duplicate functionality or create new patterns when existing ones work
@@ -313,6 +324,10 @@ Investigation:
 - [x] Read code at: [file:line]
 - [x] Current behavior: [quote code]
 - [x] Root cause: [explanation]
+
+Simplicity Check:
+- Simplest approach: [one sentence]
+- Reuse existing? [yes/no - what exists?]
 
 Changes implemented. Please verify by:
 1. [specific test step]
