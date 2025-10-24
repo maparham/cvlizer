@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Email,
   ErrorOutline,
+  DeleteForever,
 } from "@mui/icons-material";
 import { UserSummary } from "../../types/admin";
 
@@ -46,6 +47,7 @@ interface UserActionsMenuProps {
   onViewActivities: (userId: string) => void;
   onViewErrors: (userId: string) => void;
   onContactUser: (email: string) => void;
+  onDeleteUser: (userId: string, userName: string) => void;
 }
 
 const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
@@ -57,6 +59,7 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
   onViewActivities,
   onViewErrors,
   onContactUser,
+  onDeleteUser,
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -174,6 +177,19 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
             <Email fontSize="small" />
           </ListItemIcon>
           <ListItemText>Contact User</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            onDeleteUser(user.id, user.email);
+            handleClose();
+          }}
+          sx={{ color: "error.main" }}
+        >
+          <ListItemIcon>
+            <DeleteForever fontSize="small" color="error" />
+          </ListItemIcon>
+          <ListItemText>Delete User</ListItemText>
         </MenuItem>
       </Menu>
     </>

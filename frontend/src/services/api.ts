@@ -359,6 +359,15 @@ export interface DiagnosticMessage {
   timestamp: Date;
 }
 
+// Auth API functions
+export const authApi = {
+  // Delete user account
+  deleteAccount: async () => {
+    const response = await api.delete("/auth/account");
+    return response.data;
+  },
+};
+
 // Admin API functions
 export const adminApi = {
   // Get OpenAI configuration
@@ -372,6 +381,12 @@ export const adminApi = {
     request: DiagnosticRequest,
   ): Promise<DiagnosticResponse> => {
     const response = await api.post("/admin/openai/test", request);
+    return response.data;
+  },
+
+  // Delete user account (admin only)
+  deleteUser: async (userId: string) => {
+    const response = await api.delete(`/admin/users/${userId}`);
     return response.data;
   },
 };

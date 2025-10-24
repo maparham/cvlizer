@@ -38,6 +38,40 @@ def sync_clerk_user_to_local_db(
         User: The local user record
     """
     try:
+        # First, verify the user actually exists in Clerk before syncing
+        import requests
+        import os
+
+        clerk_secret_key = os.getenv("CLERK_SECRET_KEY")
+        if clerk_secret_key:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {clerk_secret_key}",
+                    "Content-Type": "application/json",
+                }
+
+                # Check if user exists in Clerk
+                clerk_response = requests.get(
+                    f"https://api.clerk.com/v1/users/{clerk_user_id}", headers=headers
+                )
+
+                if clerk_response.status_code == 404:
+                    logger.warning(
+                        f"User {clerk_user_id} ({email}) does not exist in Clerk - preventing sync"
+                    )
+                    raise Exception(
+                        f"User {clerk_user_id} was deleted from Clerk and should not be synced"
+                    )
+                elif clerk_response.status_code != 200:
+                    logger.warning(
+                        f"Clerk API returned {clerk_response.status_code} for user {clerk_user_id} - proceeding with sync"
+                    )
+
+            except requests.RequestException as e:
+                logger.warning(
+                    f"Could not verify user existence in Clerk: {e} - proceeding with sync"
+                )
+
         # First, try to find user by Clerk ID
         user = db.query(User).filter(User.clerk_id == clerk_user_id).first()
 

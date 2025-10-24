@@ -29,7 +29,11 @@ import time
 import openai as openai_module
 
 from src.config import AIConfig, OpenAIPricing
-from src.middleware.clerk_auth import get_current_user, require_admin_not_impersonating
+from src.middleware.clerk_auth import (
+    get_current_user,
+    is_admin_user,
+    require_admin_not_impersonating,
+)
 from src.models.ai_section import AISection
 from src.models.base import get_db
 from src.models.cv import CV
@@ -48,6 +52,7 @@ from src.services.user_activity_service import (
     get_user_activities,
     get_user_recent_errors,
 )
+from src.services.user_service import delete_user_and_all_data
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -696,6 +701,98 @@ async def clear_user_activities_admin(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error clearing user activities",
+        )
+
+
+@router.delete("/users/{user_id}")
+async def delete_user_account_admin(
+    user_id: str,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin_not_impersonating),
+):
+    """
+    Delete a user account and all associated data (admin only).
+
+    This endpoint permanently deletes:
+    - User account from local database
+    - All CVs and their files from disk
+    - All job descriptions
+    - All AI enhancements and content
+    - All history and activity logs
+    - User account from Clerk (authentication provider)
+
+    Safety checks:
+    - Admin users cannot be deleted
+    - Requires admin authentication without impersonation
+
+    This action cannot be undone.
+    """
+    try:
+        # Verify user exists
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        # Prevent deletion of admin users
+        if is_admin_user(user):
+            logger.warning(
+                f"Admin {admin_user.email} attempted to delete admin user {user.email}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot delete admin users",
+            )
+
+        logger.info(
+            f"Admin {admin_user.email} initiated deletion of user: {user.email} (ID: {user_id})"
+        )
+
+        # Call deletion service
+        result = delete_user_and_all_data(
+            db=db,
+            user_id=user_id,
+            clerk_id=user.clerk_id,
+            delete_from_clerk=True,
+        )
+
+        if not result["success"]:
+            logger.error(f"User deletion failed for {user.email}: {result['message']}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result["message"],
+            )
+
+        # Log successful deletion
+        logger.info(
+            f"Admin {admin_user.email} successfully deleted user: {user.email} "
+            f"(CVs: {result['deleted_cvs']}, Files: {result['deleted_files']}, "
+            f"Clerk: {result['clerk_deleted']})"
+        )
+
+        # Return success with details
+        response = {
+            "message": f"User {user.email} successfully deleted",
+            "user_id": user_id,
+            "deleted_cvs": result["deleted_cvs"],
+            "deleted_files": result["deleted_files"],
+            "clerk_deleted": result["clerk_deleted"],
+        }
+
+        # Include warnings if Clerk deletion failed
+        if result.get("errors"):
+            response["warnings"] = result["errors"]
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error during user deletion by admin: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"User deletion failed: {str(e)}",
         )
 
 

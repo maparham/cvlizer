@@ -16,7 +16,7 @@
  * - Uses UserActionsMenu and various dialogs
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Paper,
@@ -55,6 +55,8 @@ import UserActivitiesDialog from "../UserActivitiesDialog";
 import UserErrorsDialog from "../UserErrorsDialog";
 import UserCVsDialog from "../UserCVsDialog";
 import ImpersonationDialog from "../ImpersonationDialog";
+import DeleteUserDialog from "../DeleteUserDialog";
+import { adminApi, normalizeApiError } from "../../../services/api";
 
 interface UsersTabProps {
   users: UserSummary[];
@@ -114,6 +116,7 @@ interface UsersTabProps {
   impersonationJustification: string;
   onImpersonationJustificationChange: (justification: string) => void;
   onConfirmImpersonation: () => Promise<void>;
+  onDeleteUser: (userId: string) => Promise<void>;
 }
 
 const UsersTab: React.FC<UsersTabProps> = ({
@@ -159,7 +162,30 @@ const UsersTab: React.FC<UsersTabProps> = ({
   impersonationJustification,
   onImpersonationJustificationChange,
   onConfirmImpersonation,
+  onDeleteUser,
 }) => {
+  // State for delete user dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; email: string } | null>(null);
+
+  const handleDeleteUserClick = (userId: string, userName: string) => {
+    setUserToDelete({ id: userId, name: userName, email: userName });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUserConfirm = async () => {
+    if (userToDelete) {
+      await onDeleteUser(userToDelete.id);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleDeleteDialogClose = () => {
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -308,6 +334,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
                       onViewActivities={onLoadUserActivities}
                       onViewErrors={onLoadUserErrors}
                       onContactUser={onContactUser}
+                      onDeleteUser={handleDeleteUserClick}
                     />
                   </Box>
                 </TableCell>
@@ -363,6 +390,14 @@ const UsersTab: React.FC<UsersTabProps> = ({
         onJustificationChange={onImpersonationJustificationChange}
         onConfirm={onConfirmImpersonation}
         loading={actionLoading === impersonationTarget?.id}
+      />
+
+      <DeleteUserDialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteDialogClose}
+        onConfirm={handleDeleteUserConfirm}
+        userName={userToDelete?.name || ""}
+        userEmail={userToDelete?.email || ""}
       />
     </Box>
   );

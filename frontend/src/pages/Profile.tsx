@@ -29,6 +29,7 @@ import {
   Warning,
 } from "@mui/icons-material";
 import { formatDate } from "../utils/dateFormat";
+import { DeleteAccountButton } from "../components/common/DeleteAccountButton";
 
 const Profile: React.FC = () => {
   const { user, isLoaded } = useUser();
@@ -51,6 +52,20 @@ const Profile: React.FC = () => {
 
   return (
     <Container component="main" maxWidth="md">
+      {/* Global CSS to hide Clerk's delete account button */}
+      <style>
+        {`
+          /* Hide Clerk's delete account button and section */
+          .cl-profileSectionPrimaryButton__danger,
+          .cl-profileSection__danger,
+          button[data-localization-key="userProfile.start.dangerSection.deleteAccountButton"],
+          [data-localization-key="userProfile.start.dangerSection.title"],
+          .cl-profileSectionTitle__danger,
+          .cl-profileSectionHeader__danger {
+            display: none !important;
+          }
+        `}
+      </style>
       <Box sx={{ mt: 6, mb: 6 }}>
         {/* Header */}
         <Paper
@@ -559,6 +574,19 @@ const Profile: React.FC = () => {
               "& .cl-userProfile": {
                 maxWidth: "100%",
                 width: "100%",
+                // Hide any delete account related elements
+                "& button[data-localization-key*='deleteAccount']": {
+                  display: "none !important",
+                },
+                "& [data-localization-key*='deleteAccount']": {
+                  display: "none !important",
+                },
+                "& button:contains('Delete')": {
+                  display: "none !important",
+                },
+                "& button:contains('delete')": {
+                  display: "none !important",
+                },
               },
             }}
           >
@@ -577,9 +605,82 @@ const Profile: React.FC = () => {
                   headerSubtitle: {
                     color: "#666",
                   },
+                  // Hide delete account button using CSS
+                  "button[data-localization-key='userProfile.navbar.deleteAccount']": {
+                    display: "none !important",
+                  },
+                  "button[data-localization-key='userProfile.navbar.deleteAccountButton']": {
+                    display: "none !important",
+                  },
+                  // Hide delete account page content
+                  "div[data-localization-key='userProfile.deleteAccountPage.title']": {
+                    display: "none !important",
+                  },
+                  "div[data-localization-key='userProfile.deleteAccountPage.subtitle']": {
+                    display: "none !important",
+                  },
+                  // Hide any button containing "delete" text
+                  "button:contains('Delete')": {
+                    display: "none !important",
+                  },
+                  "button:contains('delete')": {
+                    display: "none !important",
+                  },
                 },
               }}
             />
+          </Box>
+        </Paper>
+
+        {/* Visual Separator */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            my: 6,
+            "&::before": {
+              content: '""',
+              flex: 1,
+              height: "1px",
+              background:
+                "linear-gradient(to right, transparent, #e0e0e0, transparent)",
+            },
+          }}
+        >
+        </Box>
+
+        {/* Custom Delete Account Section */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            border: "2px solid",
+            borderColor: "error.main",
+            background: "linear-gradient(145deg, #fff5f5 0%, #ffffff 100%)",
+          }}
+        >
+          <Box sx={{ textAlign: "center", mb: 3 }}>
+            <Typography
+              variant="h5"
+              component="h2"
+              gutterBottom
+              sx={{ fontWeight: "bold", color: "error.main" }}
+            >
+              Delete Account
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ maxWidth: 600, mx: "auto" }}
+            >
+              Once you delete your account, there is no going back. This action
+              permanently removes all your data including CVs, job descriptions,
+              and AI-generated content.
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <DeleteAccountButton variant="contained" size="large" />
           </Box>
         </Paper>
       </Box>

@@ -48,6 +48,7 @@ import { useAdminStats } from "../hooks/useAdminStats";
 import { useAdminUsers } from "../hooks/useAdminUsers";
 import { useAIUsageData } from "../hooks/useAIUsageData";
 import { useUserActions } from "../hooks/useUserActions";
+import { adminApi, normalizeApiError } from "../services/api";
 import OverviewTab from "../components/admin/tabs/OverviewTab";
 import UsersTab from "../components/admin/tabs/UsersTab";
 import AIUsageTab from "../components/admin/tabs/AIUsageTab";
@@ -107,6 +108,18 @@ const AdminDashboard: React.FC = () => {
       adminUsers.loadUsers();
     } else if (currentTab === 2) {
       aiUsageData.loadAIUsageData();
+    }
+  };
+
+  // Handle delete user
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await adminApi.deleteUser(userId);
+      // Refresh the users list after successful deletion
+      adminUsers.loadUsers();
+    } catch (error: any) {
+      const errorMessage = normalizeApiError(error);
+      throw new Error(errorMessage);
     }
   };
 
@@ -362,6 +375,7 @@ const AdminDashboard: React.FC = () => {
             userActions.setImpersonationJustification
           }
           onConfirmImpersonation={userActions.confirmImpersonation}
+          onDeleteUser={handleDeleteUser}
         />
       )}
 
