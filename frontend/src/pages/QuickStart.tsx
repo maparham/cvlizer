@@ -48,6 +48,10 @@ const QuickStart: React.FC = () => {
   // Use ref to track if claim has been initiated to prevent duplicates
   const claimInitiatedRef = useRef(false);
 
+  // Add retry tracking ref
+  const retryCountRef = useRef(0);
+  const MAX_RETRY_ATTEMPTS = 3;
+
   // Note: We no longer need pendingClaimFile state since we always use session-based claims
 
   // Function to handle claiming data from session
@@ -57,15 +61,29 @@ const QuickStart: React.FC = () => {
     jobUrl?: string,
     jobText?: string
   ) => {
+    // Check retry limit
+    if (retryCountRef.current >= MAX_RETRY_ATTEMPTS) {
+      clearQuickStartSession();
+      showError("Maximum retry attempts reached. Please try again with valid data.");
+      claimInitiatedRef.current = false;
+      retryCountRef.current = 0;
+      return;
+    }
+
+    retryCountRef.current += 1;
     setClaiming(true);
+
     try {
       const { cvId, jobDescriptionId } = await claimQuickStartFromSession(cvData, jobPreview, jobUrl, jobText);
+
+      // Success - reset counter and clear session
+      retryCountRef.current = 0;
       clearQuickStartSession();
 
       // Navigate based on what was claimed
       if (cvId && jobDescriptionId) {
         // Both - go to CV editor with AI Tools
-        navigate(`/cv/${cvId}`, { state: { openAITools: true, jobDescriptionId } });
+        navigate(`/cv/${cvId}`, { state: { openAITools: true, jobDescriptionId, autoTriggerEnhancements: true } });
       } else if (cvId) {
         // Only CV - go to dashboard
         navigate('/dashboard');
@@ -79,9 +97,17 @@ const QuickStart: React.FC = () => {
       }
     } catch (error: any) {
       console.error("Failed to claim quick start data from session:", error);
-      showError(error.message || "Failed to save your data. Please try again.");
-      // Reset ref on error so user can try again
+
+      // Reset refs to allow retry
       claimInitiatedRef.current = false;
+
+      // If we've hit max retries, clear session
+      if (retryCountRef.current >= MAX_RETRY_ATTEMPTS) {
+        clearQuickStartSession();
+        retryCountRef.current = 0;
+      }
+
+      showError(error.message || "Failed to save your data. Please try again.");
     } finally {
       setClaiming(false);
     }
@@ -189,22 +215,6 @@ const QuickStart: React.FC = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
       <Box sx={{ mb: 4, textAlign: "center" }}>
-        <Typography
-          variant="h3"
-          component="h1"
-          gutterBottom
-          sx={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Try CV Optimizer
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          See how AI can enhance your CV in just a few clicks
-        </Typography>
       </Box>
 
       {/* Wizard */}

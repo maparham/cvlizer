@@ -37,7 +37,6 @@ import {
   AccountCircle as AccountCircleIcon,
   PictureAsPdf as PictureAsPdfIcon,
   Delete as DeleteIcon,
-  AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -70,7 +69,6 @@ const CVEditorHeader: React.FC<{
   anchorEl: null | HTMLElement;
   onExport: () => void;
   onDelete: () => void;
-  onAITools: () => void;
   isAdmin: boolean;
   isNewCV: boolean;
 }> = ({
@@ -80,7 +78,6 @@ const CVEditorHeader: React.FC<{
   anchorEl,
   onExport,
   onDelete,
-  onAITools,
   isAdmin,
   isNewCV,
 }) => {
@@ -164,26 +161,6 @@ const CVEditorHeader: React.FC<{
               }}
             >
               Delete
-            </Button>
-          )}
-          {!isNewCV && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<AutoAwesomeIcon />}
-              onClick={onAITools}
-              sx={{
-                mr: 1,
-                textTransform: "none",
-                borderColor: "#1976d2",
-                color: "#1976d2",
-                "&:hover": {
-                  backgroundColor: "rgba(25, 118, 210, 0.04)",
-                  borderColor: "#1565c0",
-                },
-              }}
-            >
-              AI Tools
             </Button>
           )}
           <Button
@@ -310,7 +287,6 @@ const CVEditorContent: React.FC<{
   anchorEl: null | HTMLElement;
   onTitleSave: (title: string) => Promise<void>;
   onDelete: () => void;
-  onAITools: () => void;
   isAdmin: boolean;
   isNewCV: boolean;
 }> = ({
@@ -322,7 +298,6 @@ const CVEditorContent: React.FC<{
   anchorEl,
   onTitleSave,
   onDelete,
-  onAITools,
   isAdmin,
   isNewCV,
 }) => {
@@ -352,7 +327,6 @@ const CVEditorContent: React.FC<{
         anchorEl={anchorEl}
         onExport={handleExport}
         onDelete={onDelete}
-        onAITools={onAITools}
         isAdmin={isAdmin}
         isNewCV={isNewCV}
       />
@@ -360,7 +334,6 @@ const CVEditorContent: React.FC<{
         title={activeCV?.original_filename || "Untitled CV"}
         onTitleSave={onTitleSave}
         cvId={cvId !== "new" ? cvId : undefined}
-        onAIToolsRequest={onAITools}
       />
     </>
   );
@@ -471,6 +444,33 @@ const CVEditor: React.FC = () => {
       });
     }
   }, [location.state?.jobDescriptionId, cvId]);
+
+  // Auto-trigger AI enhancements when coming from quick start with both CV and JD
+  // This simulates clicking the buttons to reuse all existing logic (polling, error handling, etc.)
+  useEffect(() => {
+    if (location.state?.autoTriggerEnhancements && cvId && location.state?.jobDescriptionId) {
+      // Wait for UI to load, then simulate button clicks
+      const timeoutId = setTimeout(() => {
+        // Simulate clicking the "Enhance CV for this Job" button
+        const enhanceButton = Array.from(document.querySelectorAll('button')).find(
+          button => button.textContent?.includes('Enhance CV for this Job')
+        ) as HTMLButtonElement;
+        if (enhanceButton && !enhanceButton.disabled) {
+          enhanceButton.click();
+        }
+
+        // Simulate clicking the "Generate Job Fit Section" button
+        const jobFitButton = Array.from(document.querySelectorAll('button')).find(
+          button => button.textContent?.includes('Generate Job Fit Section')
+        ) as HTMLButtonElement;
+        if (jobFitButton && !jobFitButton.disabled) {
+          jobFitButton.click();
+        }
+      }, 1000); // Wait 1 second for UI to load
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [location.state?.autoTriggerEnhancements, cvId, location.state?.jobDescriptionId]);
 
   const handleSave = useCallback(
     async (updatedData?: CVData, message?: string) => {
@@ -626,12 +626,6 @@ const CVEditor: React.FC = () => {
     handleMenuClose();
   };
 
-  const handleAITools = () => {
-    // Call the global function to switch to AI Tools tab
-    if (window.switchToAITools) {
-      window.switchToAITools();
-    }
-  };
 
   const handleDeleteClick = () => {
     setDeleteDialogOpen(true);
@@ -732,7 +726,6 @@ const CVEditor: React.FC = () => {
                   anchorEl={anchorEl}
                   onTitleSave={handleTitleSave}
                   onDelete={handleDeleteClick}
-                  onAITools={handleAITools}
                   isAdmin={isAdmin}
                   isNewCV={isNewCV}
                 />

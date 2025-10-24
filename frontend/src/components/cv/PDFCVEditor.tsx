@@ -35,14 +35,12 @@ interface PDFCVEditorProps {
   title?: string;
   onTitleSave?: (_newTitle: string) => Promise<void>;
   cvId?: string;
-  onAIToolsRequest?: () => void;
 }
 
 const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   title,
   onTitleSave,
   cvId,
-  onAIToolsRequest,
 }) => {
   // Use context instead of props
   // Use consolidated context hooks
@@ -72,6 +70,18 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   // Tab state management
   const [sidebarTab, setSidebarTab] = useState(0);
 
+  // Set up window.switchToAITools function for external access
+  useEffect(() => {
+    (window as any).switchToAITools = () => {
+      setSidebarTab(1); // Switch to AI Tools tab (index 1)
+    };
+
+    // Cleanup function to remove the global function when component unmounts
+    return () => {
+      delete (window as any).switchToAITools;
+    };
+  }, []);
+
   // Load job descriptions, drafts, and AI enhancements when CV changes
   useEffect(() => {
     if (cvId) {
@@ -94,13 +104,6 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     clearAllSuggestions,
   ]);
 
-  // Handle AI Tools request from header
-  useEffect(() => {
-    if (onAIToolsRequest) {
-      // Expose the switchToAITools function to parent
-      window.switchToAITools = () => setSidebarTab(1);
-    }
-  }, [onAIToolsRequest]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>

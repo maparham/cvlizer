@@ -192,22 +192,58 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
       <Box sx={{ maxWidth: 800, mx: "auto" }}>
         <Card elevation={3}>
           <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-              {success ? (
-                <CheckCircleIcon sx={{ color: "success.main", mr: 1 }} />
-              ) : (
+            {!success && (
+              <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                 <ErrorIcon sx={{ color: "warning.main", mr: 1 }} />
-              )}
-              <Typography variant="h5">
-                {success ? "Preview Ready" : "Partial Results"}
-              </Typography>
-            </Box>
+                <Typography variant="h5">
+                  Partial Results
+                </Typography>
+              </Box>
+            )}
 
             {!success && (
               <Alert severity="warning" sx={{ mb: 3 }}>
                 {previewResponse.message}
               </Alert>
             )}
+
+            {/* Action Buttons - moved to top */}
+            <Box sx={{ display: "flex", gap: 2, mb: 3, flexDirection: "column" }}>
+              {!isAuthenticated ? (
+                <>
+                  <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
+                    Create a free account to save your data and get AI-powered suggestions.
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap" }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={() => openSignUp()}
+                    >
+                      Fit your CV to job
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      onClick={() => openSignIn()}
+                    >
+                      Already have an account?
+                    </Button>
+                  </Box>
+                </>
+              ) : (
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => {
+                    // For authenticated users, they can proceed to dashboard
+                    // This will be handled by the parent component
+                  }}
+                >
+                  Continue to Dashboard
+                </Button>
+              )}
+            </Box>
 
             <Grid container spacing={3}>
               {/* CV Preview - only show if CV data exists */}
@@ -325,6 +361,40 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
                       <Alert severity="error">{job_preview.error}</Alert>
                     ) : (
                       <Box>
+                        {/* Full Job Description Content */}
+                        {job_preview.content && (
+                          <Box
+                            sx={{
+                              maxHeight: 400,
+                              overflow: "auto",
+                              border: "1px solid",
+                              borderColor: "divider",
+                              borderRadius: 1,
+                              p: 2,
+                              bgcolor: "background.paper",
+                              mb: 2,
+                            }}
+                          >
+                            <MarkdownRenderer
+                              content={job_preview.content}
+                              variant="body2"
+                              color="text.primary"
+                            />
+                          </Box>
+                        )}
+
+                        {job_preview.content_length !== undefined && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mb: 2, display: "block" }}
+                          >
+                            {job_preview.content_length} characters
+                          </Typography>
+                        )}
+
+                        <Divider sx={{ my: 2 }} />
+
                         <Typography variant="body2" color="text.secondary">
                           <strong>Source:</strong>{" "}
                           {job_preview.source === "url" ? "URL" : "Text"}
@@ -344,39 +414,6 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
                             <strong>Location:</strong> {job_preview.location}
                           </Typography>
                         )}
-
-                        <Divider sx={{ my: 2 }} />
-
-                        {/* Full Job Description Content */}
-                        {job_preview.content && (
-                          <Box
-                            sx={{
-                              maxHeight: 400,
-                              overflow: "auto",
-                              border: "1px solid",
-                              borderColor: "divider",
-                              borderRadius: 1,
-                              p: 2,
-                              bgcolor: "background.paper",
-                            }}
-                          >
-                            <MarkdownRenderer
-                              content={job_preview.content}
-                              variant="body2"
-                              color="text.primary"
-                            />
-                          </Box>
-                        )}
-
-                        {job_preview.content_length !== undefined && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ mt: 1, display: "block" }}
-                          >
-                            {job_preview.content_length} characters
-                          </Typography>
-                        )}
                       </Box>
                     )}
                   </Paper>
@@ -384,46 +421,11 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
               )}
             </Grid>
 
-            <Box sx={{ display: "flex", gap: 2, mt: 3, flexDirection: "column" }}>
-              {!isAuthenticated ? (
-                <>
-                  <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
-                    Ready to optimize your CV? Create a free account to save your data and get AI-powered suggestions.
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap" }}>
-                    <Button
-                      variant="contained"
-                      size="large"
-                      onClick={() => openSignUp()}
-                    >
-                      Fit your CV to job
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      onClick={() => openSignIn()}
-                    >
-                      Already have an account?
-                    </Button>
-                  </Box>
-                </>
-              ) : (
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={() => {
-                    // For authenticated users, they can proceed to dashboard
-                    // This will be handled by the parent component
-                  }}
-                >
-                  Continue to Dashboard
-                </Button>
-              )}
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
               <Button
                 variant="outlined"
                 startIcon={<RefreshIcon />}
                 onClick={handleStartOver}
-                sx={{ alignSelf: "center" }}
               >
                 Start Over
               </Button>
