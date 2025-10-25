@@ -487,6 +487,29 @@ async def quick_start_preview(
                 message="CV parsing failed",
             )
 
+        # IMMEDIATE RETURN: If job failed, return now without waiting for CV
+        if job_preview and job_preview.get("error"):
+            logger.debug(
+                f"Job parsing failed - returning immediately without waiting for CV parsing"
+            )
+
+            # Cancel pending tasks (fire and forget)
+            if pending:
+                for pending_task in pending:
+                    pending_task.cancel()
+
+            # Set empty cv_preview (cancelled)
+            if not cv_preview:
+                cv_preview = {}
+
+            # Return immediately with job error
+            return QuickStartPreviewResponse(
+                cv_preview=cv_preview,
+                job_preview=job_preview,
+                success=False,
+                message="Job description parsing failed",
+            )
+
         # NORMAL FLOW: Wait for remaining tasks to complete
         if pending:
             logger.debug(f"Waiting for {len(pending)} remaining tasks to complete")
