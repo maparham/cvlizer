@@ -61,113 +61,6 @@ limiter = Limiter(key_func=get_remote_address)
 QUICK_START_TIMEOUT = 30
 
 
-def _is_obviously_not_cv(text_content: str) -> bool:
-    """
-    Quick validation to detect obviously non-CV documents before AI parsing.
-
-    Args:
-        text_content: Extracted text from the document
-
-    Returns:
-        True if the document is obviously not a CV
-    """
-    if not text_content or len(text_content.strip()) < 50:
-        return True
-
-    text_lower = text_content.lower()
-
-    # Check for academic/research paper indicators
-    academic_indicators = [
-        "abstract",
-        "introduction",
-        "methodology",
-        "conclusion",
-        "references",
-        "bibliography",
-        "doi:",
-        "issn:",
-        "volume",
-        "issue",
-        "journal",
-        "proceedings",
-        "conference",
-        "research",
-        "study",
-        "experiment",
-        "hypothesis",
-        "data analysis",
-        "statistical",
-        "peer review",
-    ]
-
-    # Check for book/manual indicators
-    book_indicators = [
-        "chapter",
-        "table of contents",
-        "index",
-        "glossary",
-        "appendix",
-        "copyright",
-        "publisher",
-        "isbn:",
-        "edition",
-        "pages",
-    ]
-
-    # Check for form/document indicators
-    form_indicators = [
-        "form",
-        "application",
-        "registration",
-        "signature",
-        "date signed",
-        "please complete",
-        "fill out",
-        "submit by",
-        "deadline",
-    ]
-
-    # Count matches for each category
-    academic_matches = sum(
-        1 for indicator in academic_indicators if indicator in text_lower
-    )
-    book_matches = sum(1 for indicator in book_indicators if indicator in text_lower)
-    form_matches = sum(1 for indicator in form_indicators if indicator in text_lower)
-
-    # If we have multiple indicators from non-CV categories, it's probably not a CV
-    if academic_matches >= 3 or book_matches >= 3 or form_matches >= 2:
-        return True
-
-    # Check for CV-specific indicators (if present, it might be a CV)
-    cv_indicators = [
-        "curriculum vitae",
-        "resume",
-        "personal information",
-        "contact information",
-        "work experience",
-        "employment history",
-        "education",
-        "skills",
-        "professional summary",
-        "objective",
-        "career",
-        "position",
-        "company",
-    ]
-
-    cv_matches = sum(1 for indicator in cv_indicators if indicator in text_lower)
-
-    # If it has CV indicators, it's probably a CV
-    if cv_matches >= 2:
-        return False
-
-    # If it's very long (>10k chars) and has no CV indicators, probably not a CV
-    if len(text_content) > 10000 and cv_matches == 0:
-        return True
-
-    return False
-
-
 async def _parse_cv_for_preview(
     cv_file: UploadFile, file_content: bytes, request: Request
 ) -> Dict[str, Any]:
@@ -189,20 +82,14 @@ async def _parse_cv_for_preview(
             f"Parsing CV for quick start preview: {cv_file.filename} from IP {request.client.host if request.client else 'unknown'}"
         )
 
-        # Quick preliminary validation before AI call
+        # Extract text for AI processing
         from src.services.file_service import extract_text_from_file
 
         try:
             text_content = extract_text_from_file(file_content, cv_file.content_type)
-
-            # Quick check for obviously non-CV content
-            if _is_obviously_not_cv(text_content):
-                return {
-                    "error": "This document does not appear to be a CV. Please upload a resume or curriculum vitae with your professional information.",
-                    "filename": cv_file.filename,
-                }
         except Exception as e:
-            logger.warning(f"Quick text extraction failed, proceeding with AI: {e}")
+            logger.warning(f"Text extraction failed, proceeding with AI: {e}")
+            text_content = ""
 
         # Wrap CV parsing with timeout
         try:
@@ -219,10 +106,23 @@ async def _parse_cv_for_preview(
                 "filename": cv_file.filename,
             }
             parsed_cv = {"error": "timeout"}
+        except Exception as e:
+            logger.error(f"CV parsing error in quick start: {str(e)}")
+            logger.debug(
+                f"CV parsing failed for file: {cv_file.filename if cv_file else 'unknown'}, error: {str(e)}"
+            )
+            cv_preview = {
+                "error": f"Failed to parse CV: {str(e)}",
+                "filename": cv_file.filename if cv_file else "unknown",
+            }
+            parsed_cv = {"error": str(e)}
 
         # Check for parsing errors
         if parsed_cv.get("error"):
             if parsed_cv.get("error") != "timeout":  # Don't overwrite timeout error
+                logger.debug(
+                    f"CV parsing failed - AI service returned error: {parsed_cv.get('error')} for file: {cv_file.filename}"
+                )
                 cv_preview = {
                     "error": parsed_cv["error"],
                     "filename": cv_file.filename,
@@ -269,6 +169,9 @@ async def _parse_cv_for_preview(
                     logger.warning(
                         f"Failed to generate CV preview image for {cv_file.filename}: {e}"
                     )
+                    logger.debug(
+                        f"CV preview image generation failed for file: {cv_file.filename}, error: {str(e)}"
+                    )
                     # Continue without image - not critical for preview
             else:
                 logger.info(
@@ -277,6 +180,9 @@ async def _parse_cv_for_preview(
 
     except Exception as e:
         logger.error(f"CV parsing error in quick start: {str(e)}")
+        logger.debug(
+            f"CV parsing failed for file: {cv_file.filename if cv_file else 'unknown'}, error: {str(e)}"
+        )
         cv_preview = {
             "error": f"Failed to parse CV: {str(e)}",
             "filename": cv_file.filename if cv_file else "unknown",
@@ -558,6 +464,29 @@ async def quick_start_preview(
                         "source": "url" if job_url else "text",
                     }
 
+        # IMMEDIATE RETURN: If CV failed, return now without waiting for job
+        if cv_preview and cv_preview.get("error"):
+            logger.debug(
+                f"CV parsing failed - returning immediately without waiting for job parsing"
+            )
+
+            # Cancel pending tasks (fire and forget)
+            if pending:
+                for pending_task in pending:
+                    pending_task.cancel()
+
+            # Set empty job_preview (cancelled)
+            if not job_preview:
+                job_preview = {}
+
+            # Return immediately with CV error
+            return QuickStartPreviewResponse(
+                cv_preview=cv_preview,
+                job_preview=job_preview,
+                success=False,
+                message="CV parsing failed",
+            )
+
         # Cancel remaining tasks since we're returning immediately
         if pending:
             for task in pending:
@@ -574,12 +503,16 @@ async def quick_start_preview(
                 if task_name == "cv" and not cv_preview:
                     cv_preview = {"error": "Task cancelled - CV parsing incomplete"}
                 elif task_name == "job" and not job_preview:
-                    job_preview = {"error": "Task cancelled - Job parsing incomplete"}
+                    # Don't set error for cancelled job - leave empty
+                    job_preview = {}
 
     # Determine overall success
     cv_success = "error" not in cv_preview
     job_provided = bool(job_url or job_text)
-    job_success = job_provided and ("error" not in job_preview)
+
+    # Job is successful if: provided and (no error OR empty/cancelled)
+    job_actually_ran = job_provided and (job_preview and job_preview != {})
+    job_success = job_actually_ran and ("error" not in job_preview)
 
     # Overall success: CV must succeed, and job (if provided) must succeed
     overall_success = cv_success and (job_success if job_provided else True)
@@ -597,7 +530,12 @@ async def quick_start_preview(
         elif not cv_success and job_success:
             message = "Job description parsed successfully, but CV parsing failed"
         else:
-            message = "Failed to parse both CV and job description"
+            # CV failed - check if job actually ran
+            if job_actually_ran and not job_success:
+                message = "Failed to parse both CV and job description"
+            else:
+                # Job was cancelled or never ran
+                message = "CV parsing failed"
 
     return QuickStartPreviewResponse(
         cv_preview=cv_preview,
