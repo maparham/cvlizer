@@ -487,24 +487,49 @@ async def quick_start_preview(
                 message="CV parsing failed",
             )
 
-        # Cancel remaining tasks since we're returning immediately
+        # NORMAL FLOW: Wait for remaining tasks to complete
         if pending:
-            for task in pending:
-                task.cancel()
+            logger.debug(f"Waiting for {len(pending)} remaining tasks to complete")
+            remaining_done, _ = await asyncio.wait(
+                pending, return_when=asyncio.ALL_COMPLETED
+            )
 
-            # Set empty results for cancelled tasks
-            for task in pending:
-                task_name = None
-                for name, t in tasks.items():
-                    if t == task:
-                        task_name = name
-                        break
+            # Process remaining completed tasks
+            for task in remaining_done:
+                try:
+                    result = await task
 
-                if task_name == "cv" and not cv_preview:
-                    cv_preview = {"error": "Task cancelled - CV parsing incomplete"}
-                elif task_name == "job" and not job_preview:
-                    # Don't set error for cancelled job - leave empty
-                    job_preview = {}
+                    # Determine which task completed by checking the task name
+                    task_name = None
+                    for name, t in tasks.items():
+                        if t == task:
+                            task_name = name
+                            break
+
+                    if task_name == "cv":
+                        cv_preview = result
+                    elif task_name == "job":
+                        job_preview = result
+
+                except Exception as e:
+                    # Handle exceptions from remaining tasks
+                    task_name = None
+                    for name, t in tasks.items():
+                        if t == task:
+                            task_name = name
+                            break
+
+                    logger.error(f"{task_name} parsing failed: {str(e)}")
+                    if task_name == "cv":
+                        cv_preview = {
+                            "error": f"Failed to parse CV: {str(e)}",
+                            "filename": cv_file.filename if cv_file else "unknown",
+                        }
+                    elif task_name == "job":
+                        job_preview = {
+                            "error": f"Failed to parse job: {str(e)}",
+                            "source": "url" if job_url else "text",
+                        }
 
     # Determine overall success
     cv_success = "error" not in cv_preview
