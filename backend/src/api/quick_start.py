@@ -35,13 +35,13 @@ from fastapi import (
 )
 from pydantic import BaseModel
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 
 from src.middleware.clerk_auth import get_effective_user
 from src.models.base import get_db
 from src.models.user import User
+from src.config import APIConfig
 from src.services.ai_service import extract_job_description_with_ai
 from src.services.cv_parsing_service import parse_cv_with_openai
 from src.services.cv_service import create_cv
@@ -51,11 +51,12 @@ from src.services.cv_preview_service import (
     generate_cv_preview_image,
     is_preview_generation_available,
 )
+from src.utils.rate_limit import create_combined_limiter
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/quick-start", tags=["quick-start"])
-limiter = Limiter(key_func=get_remote_address)
+limiter = create_combined_limiter()
 
 # Timeout for AI parsing operations (in seconds)
 QUICK_START_TIMEOUT = 30
@@ -328,7 +329,7 @@ class QuickStartClaimResponse(BaseModel):
 
 
 @router.post("/preview", response_model=QuickStartPreviewResponse)
-@limiter.limit("5/15minutes")
+@limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
 async def quick_start_preview(
     request: Request,
     cv_file: Optional[UploadFile] = File(None),
@@ -343,7 +344,7 @@ async def quick_start_preview(
     2. Providing a job description via URL or text
     3. Receiving parsed previews of both
 
-    Rate limited to 5 requests per 15 minutes per IP address.
+    Rate limited to 5 requests per 15 minutes (tracks both IP address and user ID independently).
 
     Args:
         request: FastAPI request object (for rate limiting)

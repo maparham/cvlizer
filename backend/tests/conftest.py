@@ -1,21 +1,124 @@
 """
-Pytest configuration for impersonation tests
+Pytest configuration for shared test fixtures.
 
-This module provides shared fixtures and configuration for all impersonation tests.
+This file contains shared fixtures and configuration for all tests including
+rate limiting tests and impersonation tests.
 """
 
-from unittest.mock import Mock, patch
-
 import pytest
+import os
+from unittest.mock import patch, Mock
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.models.base import Base
 
-# Test database configuration
+# Set test environment variables
+os.environ["RATE_LIMIT_PER_MINUTE"] = "60"  # Higher limit for testing
+os.environ["DEV_MODE"] = "true"
+os.environ["CLERK_VERIFY_TOKENS"] = "false"  # Disable token verification for tests
+
+# Test database configuration for impersonation tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_impersonation.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+# ============================================================================
+# Rate Limiting Test Fixtures
+# ============================================================================
+
+
+@pytest.fixture
+def test_client():
+    """Create a test client with rate limiting enabled."""
+    from main import app
+
+    return TestClient(app)
+
+
+@pytest.fixture
+def mock_user():
+    """Create a mock user for testing."""
+    user = Mock()
+    user.id = "test_user_123"
+    user.email = "test@example.com"
+    user.is_active = True
+    return user
+
+
+@pytest.fixture
+def mock_request():
+    """Create a mock request for testing."""
+    request = Mock()
+    request.state = Mock()
+    return request
+
+
+@pytest.fixture
+def rate_limit_config():
+    """Rate limiting configuration for tests."""
+    return {
+        "quick_start_limit": "5/15minutes",
+        "admin_limit": "10/minute",
+        "test_timeout": 30,
+    }
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Reset rate limits before each test."""
+    # This fixture runs before each test to ensure clean state
+    # In a real implementation, you might want to clear Redis or other storage
+    pass
+
+
+@pytest.fixture
+def mock_authentication(mock_user):
+    """Mock authentication for tests that need it."""
+    with patch(
+        "src.middleware.rate_limit_user.get_effective_user", return_value=mock_user
+    ):
+        yield mock_user
+
+
+@pytest.fixture
+def mock_no_authentication():
+    """Mock no authentication for tests."""
+    with patch("src.middleware.rate_limit_user.get_effective_user", return_value=None):
+        yield
+
+
+@pytest.fixture
+def mock_ip_address(ip_address="192.168.1.100"):
+    """Mock IP address for tests."""
+    with patch("src.utils.rate_limit.get_remote_address", return_value=ip_address):
+        yield ip_address
+
+
+# Test data fixtures
+@pytest.fixture
+def sample_cv_file():
+    """Sample CV file content for testing."""
+    return b"fake pdf content for testing"
+
+
+@pytest.fixture
+def sample_job_text():
+    """Sample job description text for testing."""
+    return "Software Engineer position with Python and FastAPI experience"
+
+
+@pytest.fixture
+def sample_upload_files(sample_cv_file):
+    """Sample file upload data for testing."""
+    return {"cv_file": ("test.pdf", sample_cv_file, "application/pdf")}
+
+
+# ============================================================================
+# Impersonation Test Fixtures
+# ============================================================================
 
 
 @pytest.fixture(scope="function")

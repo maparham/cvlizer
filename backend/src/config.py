@@ -263,8 +263,17 @@ class APIConfig:
     CORS_ALLOW_HEADERS: list = ["*"]
 
     # Rate Limiting
-    RATE_LIMIT_ENABLED: bool = os.getenv("RATE_LIMIT_ENABLED", "false").lower() == "true"
+    # Note: Rate limiting is always enabled
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
+
+    # AI Rate Limiting - Parsing Tasks (CV/JD parsing from files/URLs)
+    AI_PARSING_RATE_LIMIT: str = os.getenv("AI_PARSING_RATE_LIMIT", "10/15minutes")
+
+    # AI Rate Limiting - Reasoning Tasks (enhancement, optimization, suggestions, analysis)
+    AI_REASONING_RATE_LIMIT: str = os.getenv("AI_REASONING_RATE_LIMIT", "5/15minutes")
+
+    # Admin/Testing Rate Limit
+    ADMIN_RATE_LIMIT: str = os.getenv("ADMIN_RATE_LIMIT", "10/minute")
 
     # API Versioning
     API_VERSION: str = os.getenv("API_VERSION", "v1")

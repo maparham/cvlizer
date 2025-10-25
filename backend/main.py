@@ -16,9 +16,8 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
 # Rate limiting
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 from src.api.admin import router as admin_router
 from src.api.admin_ai_usage import router as admin_ai_usage_router
@@ -36,6 +35,10 @@ from src.api.user_activities import router as user_activities_router
 
 # Import middleware
 from src.middleware.impersonation_headers import ImpersonationHeadersMiddleware
+from src.middleware.rate_limit_user import RateLimitUserMiddleware
+
+# Import rate limiting utilities
+from src.utils.rate_limit import create_combined_limiter
 
 # Import services for startup cleanup
 from src.services.cleanup_service import start_cleanup_service, stop_cleanup_service
@@ -67,13 +70,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Add rate limiting
-limiter = Limiter(key_func=get_remote_address)
+# Add rate limiting (always enabled, tracks both IP and user ID)
+limiter = create_combined_limiter()
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add compression middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Add rate limiting user middleware (must be before rate limiting)
+app.add_middleware(RateLimitUserMiddleware)
 
 # Add impersonation headers middleware
 app.add_middleware(ImpersonationHeadersMiddleware)

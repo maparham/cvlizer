@@ -1,16 +1,17 @@
 ---
 alwaysApply: true
-description: INLINE DOCUMENTATION ONLY - No separate documentation files allowed
+description: CODE DOCUMENTATION ONLY - Inline comments/docstrings only
 ---
 
 # Documentation Standards Rule
 
-## ⚠️ CRITICAL: INLINE DOCUMENTATION ONLY
+## ⚠️ CRITICAL: CODE DOCUMENTATION ONLY
 
-**ALL documentation MUST be inline within code files. NO separate documentation files are allowed.**
+**Documentation = inline code documentation only. NO separate .md files unless explicitly requested.**
 
-- ❌ **NEVER create NEW .md files** (README, documentation, guides, tutorials, specifications, etc.)
-- ✅ **Updating EXISTING .md files is allowed**
+- ❌ **NEVER create NEW .md files** (README, guides, tutorials, etc.)
+- ✅ **Update EXISTING .md files only if they exist**
+- ✅ **Create .md files ONLY when explicitly instructed**
 
 ## ONLY ALLOWED: Inline Documentation
 - ✅ File header comments/docstrings
@@ -32,4 +33,4 @@ description: INLINE DOCUMENTATION ONLY - No separate documentation files allowed
 ## Enforcement
 - All new code files must include inline documentation
 - Update inline documentation when files are modified
-- If user requests "documentation," clarify they mean inline comments
+- "Documentation" = inline code comments/docstrings only

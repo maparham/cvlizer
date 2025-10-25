@@ -10,11 +10,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from src.config import AIConfig
+from src.config import AIConfig, APIConfig
+from src.utils.rate_limit import create_combined_limiter
 from src.middleware.clerk_auth import get_effective_user
 from src.models.ai_draft import AIDraft
 from src.models.ai_enhancement import AIEnhancement
@@ -39,6 +40,7 @@ from src.services.job_description_service import (
 from src.utils.background_tasks import run_task_in_background
 
 router = APIRouter(prefix="/api", tags=["ai"])
+limiter = create_combined_limiter()
 
 
 def enhance_content_sync(
@@ -668,9 +670,11 @@ async def get_ai_sections(
 @router.post(
     "/cvs/{cv_id}/enhance-content", response_model=ContentEnhancementCreateResponse
 )
+@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def enhance_content_endpoint(
     cv_id: str,
     request: ContentEnhancementRequest,
+    request_obj: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -801,9 +805,11 @@ async def delete_content_enhancement(
 
 
 @router.post("/cvs/{cv_id}/optimize-ats", response_model=ATSOptimizationResponse)
+@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def optimize_ats_endpoint(
     cv_id: str,
     request: ATSOptimizationRequest,
+    request_obj: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -911,9 +917,11 @@ async def optimize_ats_endpoint(
 @router.post(
     "/cvs/{cv_id}/ai-suggestions/generate", response_model=AllSuggestionsResponse
 )
+@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def generate_all_suggestions_endpoint(
     cv_id: str,
     request: GenerateSuggestionsRequest,
+    request_obj: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -1002,9 +1010,11 @@ async def generate_all_suggestions_endpoint(
 
 # Draft Management Endpoints
 @router.post("/cvs/{cv_id}/analyze-job-fit", response_model=DraftResponse)
+@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def create_job_fit_draft(
     cv_id: str,
     request: DraftCreateRequest,
+    request_obj: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):

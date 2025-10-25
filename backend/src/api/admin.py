@@ -15,20 +15,22 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 load_dotenv()
 
-# Configure rate limiter for admin endpoints
-limiter = Limiter(key_func=get_remote_address)
+# Import rate limiting utilities
+from src.utils.rate_limit import create_combined_limiter
+
+# Configure rate limiter for admin endpoints (tracks both IP and user ID)
+limiter = create_combined_limiter()
 
 import time
 
 import openai as openai_module
 
-from src.config import AIConfig, OpenAIPricing
+from src.config import AIConfig, APIConfig, OpenAIPricing
 from src.middleware.clerk_auth import (
     get_current_user,
     is_admin_user,
@@ -908,7 +910,7 @@ async def get_openai_config(admin_user: User = Depends(require_admin_not_imperso
 
 
 @router.post("/openai/test", response_model=OpenAIDiagnosticResponse)
-@limiter.limit("10/minute")
+@limiter.limit(APIConfig.ADMIN_RATE_LIMIT)
 async def test_openai_api(
     request_obj: Request,
     request: OpenAIDiagnosticRequest,

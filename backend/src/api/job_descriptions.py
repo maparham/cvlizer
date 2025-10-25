@@ -9,11 +9,12 @@ import asyncio
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from src.config import BackgroundTaskConfig
+from src.config import BackgroundTaskConfig, APIConfig
+from src.utils.rate_limit import create_combined_limiter
 from src.middleware.clerk_auth import get_effective_user
 from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
@@ -40,6 +41,7 @@ from src.services.url_parsing_service import _is_search_results_page, parse_job_
 from src.utils.background_tasks import run_task_in_background
 
 router = APIRouter(prefix="/api", tags=["job-descriptions"])
+limiter = create_combined_limiter()
 
 
 def parse_job_url_sync(task_id: str, url: str, user_id: str):
@@ -332,9 +334,11 @@ async def delete_job_description(
 @router.post(
     "/cvs/{cv_id}/job-descriptions/parse-url", response_model=JobDescriptionParseResponse
 )
+@limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
 async def parse_job_description_url(
     cv_id: str,
     request: JobDescriptionParseRequest,
+    request_obj: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -468,8 +472,10 @@ async def create_user_job_description(
 
 
 @router.post("/job-descriptions/parse-url", response_model=JobDescriptionParseResponse)
+@limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
 async def parse_user_job_description_url(
     request: JobDescriptionParseRequest,
+    request_obj: Request,
     cv_id: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),

@@ -36,12 +36,14 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Request
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 
 from src.constants import DEFAULT_PARSED_CV
+from src.config import APIConfig
+from src.utils.rate_limit import create_combined_limiter
 from src.middleware.clerk_auth import get_effective_user
 from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
@@ -65,6 +67,7 @@ from src.utils.feature_flags import is_cv_history_enabled
 from src.utils.validation import CVDataValidator
 
 router = APIRouter(prefix="/api/cvs", tags=["cvs"])
+limiter = create_combined_limiter()
 
 # Thread pool for background parsing (configurable)
 _workers = int(os.getenv("CV_PARSE_WORKERS", "2"))
@@ -200,7 +203,9 @@ class CVListResponse(BaseModel):
 
 
 @router.post("/", response_model=CVResponse)
+@limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
 async def upload_cv(
+    request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
