@@ -122,6 +122,9 @@ def _extract_raw_content_with_fallback(url: str) -> str:
             content = _extract_with_browser_automation(url)
             if content and len(content) > 500:  # Ensure we got substantial content
                 return content
+        except ValueError as e:
+            # Re-raise user-friendly error messages
+            raise
         except Exception as e:
             pass  # Fall back to standard scraping
 
@@ -130,8 +133,11 @@ def _extract_raw_content_with_fallback(url: str) -> str:
         content = _extract_raw_content(url)
         if content and len(content) > 500:  # Ensure we got substantial content
             return content
+    except ValueError as e:
+        # Re-raise user-friendly error messages (404, 403, timeout, etc.)
+        raise
     except Exception as e:
-        pass  # Fall back to browser automation
+        pass  # Fall back to browser automation for other errors
 
     # Fall back to browser automation for JavaScript-heavy sites or if standard scraping had minimal content
     if not is_js_heavy_site:  # Only try if we haven't already
@@ -139,6 +145,9 @@ def _extract_raw_content_with_fallback(url: str) -> str:
             content = _extract_with_browser_automation(url)
             if content:
                 return content
+        except ValueError as e:
+            # Re-raise user-friendly error messages
+            raise
         except Exception as e:
             logger.error(f"Browser automation failed for {url}: {str(e)}")
 
