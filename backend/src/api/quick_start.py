@@ -194,13 +194,9 @@ async def _parse_cv_for_preview(
 
         try:
             text_content = extract_text_from_file(file_content, cv_file.content_type)
-            logger.info(f"Extracted text length: {len(text_content)} characters")
 
             # Quick check for obviously non-CV content
             if _is_obviously_not_cv(text_content):
-                logger.info(
-                    "Quick validation detected non-CV document - returning error immediately"
-                )
                 return {
                     "error": "This document does not appear to be a CV. Please upload a resume or curriculum vitae with your professional information.",
                     "filename": cv_file.filename,
@@ -286,9 +282,6 @@ async def _parse_cv_for_preview(
             "filename": cv_file.filename if cv_file else "unknown",
         }
 
-    logger.info(
-        f"CV parsing helper completed with error: {bool(cv_preview.get('error'))}"
-    )
     return cv_preview
 
 
@@ -408,9 +401,6 @@ async def _parse_job_for_preview(
             "source": "url" if job_url else "text",
         }
 
-    logger.info(
-        f"Job parsing helper completed with error: {bool(job_preview.get('error'))}"
-    )
     return job_preview
 
 
@@ -511,45 +501,29 @@ async def quick_start_preview(
     cv_preview: Dict[str, Any] = {}
     job_preview: Dict[str, Any] = {}
 
-    logger.info("=== STARTING PARALLEL PARSING ===")
-
     # Create tasks for parallel execution
     tasks = {}
 
     if cv_file and file_content:
-        logger.info("Creating CV parsing task")
         tasks["cv"] = asyncio.create_task(
             _parse_cv_for_preview(cv_file, file_content, request)
         )
 
     if job_url or job_text:
-        logger.info("Creating job parsing task")
         tasks["job"] = asyncio.create_task(
             _parse_job_for_preview(job_url, job_text, request)
         )
 
-    logger.info(f"Created {len(tasks)} tasks: {list(tasks.keys())}")
-
     # Execute tasks and return results as they complete
     if tasks:
-        logger.info("Starting asyncio.wait with FIRST_COMPLETED")
-        start_time = asyncio.get_event_loop().time()
-
         # Use asyncio.wait with return_when=asyncio.FIRST_COMPLETED to get immediate results
         done, pending = await asyncio.wait(
             tasks.values(), return_when=asyncio.FIRST_COMPLETED
         )
 
-        first_completed_time = asyncio.get_event_loop().time()
-        logger.info(
-            f"FIRST task completed after {first_completed_time - start_time:.2f} seconds"
-        )
-        logger.info(f"Completed tasks: {len(done)}, Pending tasks: {len(pending)}")
-
         # Process completed tasks
         for task in done:
             try:
-                logger.info("Processing completed task...")
                 result = await task
 
                 # Determine which task completed by checking the task name
@@ -559,13 +533,10 @@ async def quick_start_preview(
                         task_name = name
                         break
 
-                logger.info(f"Task '{task_name}' completed successfully")
                 if task_name == "cv":
                     cv_preview = result
-                    logger.info(f"CV preview result: {bool(result.get('error'))}")
                 elif task_name == "job":
                     job_preview = result
-                    logger.info(f"Job preview result: {bool(result.get('error'))}")
 
             except Exception as e:
                 # Handle exceptions from individual tasks
@@ -589,9 +560,6 @@ async def quick_start_preview(
 
         # Cancel remaining tasks since we're returning immediately
         if pending:
-            logger.info(
-                f"Cancelling {len(pending)} remaining tasks to return response immediately"
-            )
             for task in pending:
                 task.cancel()
 
@@ -607,11 +575,6 @@ async def quick_start_preview(
                     cv_preview = {"error": "Task cancelled - CV parsing incomplete"}
                 elif task_name == "job" and not job_preview:
                     job_preview = {"error": "Task cancelled - Job parsing incomplete"}
-
-    total_time = asyncio.get_event_loop().time() - start_time
-    logger.info(f"=== PARALLEL PARSING COMPLETED in {total_time:.2f} seconds ===")
-    logger.info(f"CV preview has error: {bool(cv_preview.get('error'))}")
-    logger.info(f"Job preview has error: {bool(job_preview.get('error'))}")
 
     # Determine overall success
     cv_success = "error" not in cv_preview
