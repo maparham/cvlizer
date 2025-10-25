@@ -149,6 +149,7 @@ const Home: React.FC = () => {
                   borderWidth: 2,
                   "&:hover": {
                     borderColor: "white",
+                    borderWidth: 2,
                     bgcolor: "rgba(255,255,255,0.15)",
                     transform: "translateY(-1px)"
                   },
@@ -209,6 +210,7 @@ const Home: React.FC = () => {
                     borderWidth: 2,
                     "&:hover": {
                       borderColor: "white",
+                      borderWidth: 2,
                       bgcolor: "rgba(255,255,255,0.15)",
                       transform: "translateY(-1px)"
                     },
@@ -233,6 +235,7 @@ const Home: React.FC = () => {
                     borderWidth: 2,
                     "&:hover": {
                       borderColor: "white",
+                      borderWidth: 2,
                       bgcolor: "rgba(255,255,255,0.15)",
                       transform: "translateY(-1px)"
                     },

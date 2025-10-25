@@ -84,7 +84,33 @@ async def parse_cv_text_with_openai(
             "volunteer_experience": [],
         }
 
+    # Check if text content is too long to be a CV
+    if len(text_content.strip()) > 15000:
+        return {
+            "error": "Document is too long to be a CV. Please upload a CV document (typically 500-10,000 characters).",
+            "personal_info": {
+                "full_name": "",
+                "email": "",
+                "phone": "",
+                "location": "",
+                "linkedin_url": "",
+                "website_url": "",
+                "github_url": "",
+            },
+            "professional_summary": {"content": "", "keywords": []},
+            "work_experience": [],
+            "education": [],
+            "skills": {"technical": [], "soft": [], "languages": []},
+            "certifications": [],
+            "projects": [],
+            "awards": [],
+            "publications": [],
+            "volunteer_experience": [],
+        }
+
     prompt = f"""Parse CV into 10 sections: personal_info, professional_summary, work_experience, education, skills, certifications, projects, awards, publications, volunteer_experience.
+
+IMPORTANT: First validate if this document is actually a CV/resume. If the content is NOT a CV (e.g., research paper, article, book, manual, academic paper, or any other non-CV document), set is_valid_cv to false and validation_error to: "This document does not appear to be a CV. Please upload a resume or curriculum vitae with your professional information."
 
 CV: {text_content}
 
@@ -99,7 +125,9 @@ Return JSON (omit empty sections):
   "projects": [{{"name": "str", "description": "str", "technologies": [], "url": "str|null"}}],
   "awards": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "description": "str"}}],
   "publications": [{{"title": "str", "authors": "str", "journal": "str", "date": "YYYY-MM-DD", "url": "str|null"}}],
-  "volunteer_experience": [{{"organization": "str", "role": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "str"}}]
+  "volunteer_experience": [{{"organization": "str", "role": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "str"}}],
+  "is_valid_cv": true,
+  "validation_error": null
 }}"""
 
     try:
@@ -108,7 +136,7 @@ Return JSON (omit empty sections):
 
         # Use unified OpenAI call builder
         parsed_content, metadata = await call_openai_with_schema(
-            system_prompt="You are an expert CV parser. Extract structured information from CV text and return valid JSON.",
+            system_prompt="You are an expert CV parser. First validate if the document is actually a CV/resume (not a research paper, article, book, manual, or other non-CV document). If it's not a CV, set is_valid_cv to false and use the standard validation_error message provided in the prompt. If it is a CV, extract structured information and return valid JSON.",
             user_prompt=prompt,
             response_schema=CVParsingResponseSchema,
             model=AIConfig.OPENAI_PARSING_MODEL,
@@ -118,6 +146,33 @@ Return JSON (omit empty sections):
             operation_type="parse_cv",
             db_session=db_session,
         )
+
+        # Check if AI determined this is not a valid CV
+        if not parsed_content.get("is_valid_cv", True):
+            validation_error = parsed_content.get(
+                "validation_error", "This document does not appear to be a CV."
+            )
+            return {
+                "error": validation_error,
+                "personal_info": {
+                    "full_name": "",
+                    "email": "",
+                    "phone": "",
+                    "location": "",
+                    "linkedin_url": "",
+                    "website_url": "",
+                    "github_url": "",
+                },
+                "professional_summary": {"content": "", "keywords": []},
+                "work_experience": [],
+                "education": [],
+                "skills": {"technical": [], "soft": [], "languages": []},
+                "certifications": [],
+                "projects": [],
+                "awards": [],
+                "publications": [],
+                "volunteer_experience": [],
+            }
 
         # Add section_config to the parsed content
         parsed_content = _add_section_config(parsed_content)

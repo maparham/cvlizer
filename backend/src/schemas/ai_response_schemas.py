@@ -143,6 +143,12 @@ class CVParsingResponseSchema(BaseModel):
     awards: List[AwardItemSchema] = Field(default_factory=list)
     publications: List[PublicationItemSchema] = Field(default_factory=list)
     volunteer_experience: List[VolunteerItemSchema] = Field(default_factory=list)
+    is_valid_cv: bool = Field(
+        default=True, description="Whether the document is a valid CV"
+    )
+    validation_error: Optional[str] = Field(
+        default=None, description="Error message if not a valid CV"
+    )
 
 
 # ============================================================================
