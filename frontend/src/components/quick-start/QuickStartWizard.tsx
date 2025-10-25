@@ -188,6 +188,9 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
   if (previewResponse) {
     const { cv_preview, job_preview, success } = previewResponse;
 
+    // Detect if there are any validation errors
+    const hasAnyError = Boolean(cv_preview?.error || job_preview?.error);
+
     return (
       <Box sx={{ maxWidth: 800, mx: "auto" }}>
         <Card elevation={3}>
@@ -207,43 +210,38 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
               </Alert>
             )}
 
-            {/* Action Buttons - moved to top */}
-            <Box sx={{ display: "flex", gap: 2, mb: 3, flexDirection: "column" }}>
-              {!isAuthenticated ? (
-                <>
-                  <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
-                    Create a free account to save your data and get AI-powered suggestions.
+            {/* Action Buttons - only show if no errors exist */}
+            {!hasAnyError && (
+              <Box sx={{ display: "flex", gap: 2, mb: 3, flexDirection: "column" }}>
+                {!isAuthenticated ? (
+                  <>
+                    <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
+                      Create a free account to save your data and get AI-powered suggestions.
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap" }}>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        onClick={() => openSignUp()}
+                      >
+                        Fit your CV to job
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="large"
+                        onClick={() => openSignIn()}
+                      >
+                        Already have an account?
+                      </Button>
+                    </Box>
+                  </>
+                ) : (
+                  <Typography variant="body1" sx={{ textAlign: "center" }}>
+                    Your data is ready. Continue to optimization.
                   </Typography>
-                  <Box sx={{ display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap" }}>
-                    <Button
-                      variant="contained"
-                      size="large"
-                      onClick={() => openSignUp()}
-                    >
-                      Fit your CV to job
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      onClick={() => openSignIn()}
-                    >
-                      Already have an account?
-                    </Button>
-                  </Box>
-                </>
-              ) : (
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={() => {
-                    // For authenticated users, they can proceed to dashboard
-                    // This will be handled by the parent component
-                  }}
-                >
-                  Continue to Dashboard
-                </Button>
-              )}
-            </Box>
+                )}
+              </Box>
+            )}
 
             <Grid container spacing={3}>
               {/* CV Preview - only show if CV data exists */}

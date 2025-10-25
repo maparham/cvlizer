@@ -61,187 +61,253 @@ limiter = Limiter(key_func=get_remote_address)
 QUICK_START_TIMEOUT = 30
 
 
-class QuickStartPreviewResponse(BaseModel):
-    """Response model for quick start preview"""
-
-    cv_preview: dict
-    job_preview: dict
-    success: bool
-    message: str
-
-
-class QuickStartClaimResponse(BaseModel):
-    """Response model for quick start claim"""
-
-    cv_id: Optional[str] = None
-    job_description_id: Optional[str] = None
-    message: str = "Data saved successfully"
-
-
-@router.post("/preview", response_model=QuickStartPreviewResponse)
-@limiter.limit("5/15minutes")
-async def quick_start_preview(
-    request: Request,
-    cv_file: Optional[UploadFile] = File(None),
-    job_url: Optional[str] = Form(None),
-    job_text: Optional[str] = Form(None),
-):
+def _is_obviously_not_cv(text_content: str) -> bool:
     """
-    Parse CV and job description for preview without authentication.
-
-    This endpoint allows unauthenticated users to try the service by:
-    1. Uploading a CV file (PDF, DOC, DOCX)
-    2. Providing a job description via URL or text
-    3. Receiving parsed previews of both
-
-    Rate limited to 5 requests per 15 minutes per IP address.
+    Quick validation to detect obviously non-CV documents before AI parsing.
 
     Args:
-        request: FastAPI request object (for rate limiting)
-        cv_file: Uploaded CV file
-        job_url: Optional job posting URL
-        job_text: Optional job description text
+        text_content: Extracted text from the document
 
     Returns:
-        QuickStartPreviewResponse with parsed CV and job data
-
-    Raises:
-        HTTPException: For validation errors or parsing failures
+        True if the document is obviously not a CV
     """
-    # Validate that at least one field is provided
-    if not cv_file and not job_url and not job_text:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least one field must be provided: CV file or job description",
-        )
+    if not text_content or len(text_content.strip()) < 50:
+        return True
 
-    # Validate job text length if provided
-    if job_text and len(job_text) > 10000:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Job description text cannot exceed 10,000 characters",
-        )
+    text_lower = text_content.lower()
 
-    # Validate CV file if provided
-    file_content = None
-    if cv_file:
-        try:
-            file_content = await cv_file.read()
-            await cv_file.seek(0)  # Reset file pointer for potential re-read
+    # Check for academic/research paper indicators
+    academic_indicators = [
+        "abstract",
+        "introduction",
+        "methodology",
+        "conclusion",
+        "references",
+        "bibliography",
+        "doi:",
+        "issn:",
+        "volume",
+        "issue",
+        "journal",
+        "proceedings",
+        "conference",
+        "research",
+        "study",
+        "experiment",
+        "hypothesis",
+        "data analysis",
+        "statistical",
+        "peer review",
+    ]
 
-            # Use existing file validation
-            is_valid, error_message = await validate_file(cv_file)
-            if not is_valid:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail=error_message
-                )
+    # Check for book/manual indicators
+    book_indicators = [
+        "chapter",
+        "table of contents",
+        "index",
+        "glossary",
+        "appendix",
+        "copyright",
+        "publisher",
+        "isbn:",
+        "edition",
+        "pages",
+    ]
 
-            # Check file size - 3MB limit for unauthenticated previews to fit in sessionStorage
-            # (base64 encoding increases size by ~33%, so 3MB becomes ~4MB)
-            MAX_PREVIEW_SIZE = 3 * 1024 * 1024  # 3MB
-            if len(file_content) > MAX_PREVIEW_SIZE:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="CV file size cannot exceed 3MB for quick preview. Please sign in to upload larger files (up to 10MB).",
-                )
+    # Check for form/document indicators
+    form_indicators = [
+        "form",
+        "application",
+        "registration",
+        "signature",
+        "date signed",
+        "please complete",
+        "fill out",
+        "submit by",
+        "deadline",
+    ]
 
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"CV file validation error: {str(e)}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid CV file: {str(e)}",
-            )
+    # Count matches for each category
+    academic_matches = sum(
+        1 for indicator in academic_indicators if indicator in text_lower
+    )
+    book_matches = sum(1 for indicator in book_indicators if indicator in text_lower)
+    form_matches = sum(1 for indicator in form_indicators if indicator in text_lower)
 
-    # Parse CV if provided
+    # If we have multiple indicators from non-CV categories, it's probably not a CV
+    if academic_matches >= 3 or book_matches >= 3 or form_matches >= 2:
+        return True
+
+    # Check for CV-specific indicators (if present, it might be a CV)
+    cv_indicators = [
+        "curriculum vitae",
+        "resume",
+        "personal information",
+        "contact information",
+        "work experience",
+        "employment history",
+        "education",
+        "skills",
+        "professional summary",
+        "objective",
+        "career",
+        "position",
+        "company",
+    ]
+
+    cv_matches = sum(1 for indicator in cv_indicators if indicator in text_lower)
+
+    # If it has CV indicators, it's probably a CV
+    if cv_matches >= 2:
+        return False
+
+    # If it's very long (>10k chars) and has no CV indicators, probably not a CV
+    if len(text_content) > 10000 and cv_matches == 0:
+        return True
+
+    return False
+
+
+async def _parse_cv_for_preview(
+    cv_file: UploadFile, file_content: bytes, request: Request
+) -> Dict[str, Any]:
+    """
+    Parse CV file for quick start preview.
+
+    Args:
+        cv_file: Uploaded CV file
+        file_content: File content bytes
+        request: FastAPI request object for logging
+
+    Returns:
+        Dictionary containing CV preview data or error information
+    """
     cv_preview: Dict[str, Any] = {}
-    if cv_file and file_content:
+
+    try:
+        logger.info(
+            f"Parsing CV for quick start preview: {cv_file.filename} from IP {request.client.host if request.client else 'unknown'}"
+        )
+
+        # Quick preliminary validation before AI call
+        from src.services.file_service import extract_text_from_file
+
         try:
-            logger.info(
-                f"Parsing CV for quick start preview: {cv_file.filename} from IP {request.client.host if request.client else 'unknown'}"
-            )
+            text_content = extract_text_from_file(file_content, cv_file.content_type)
+            logger.info(f"Extracted text length: {len(text_content)} characters")
 
-            # Wrap CV parsing with timeout
-            try:
-                parsed_cv = await asyncio.wait_for(
-                    parse_cv_with_openai(
-                        file_content, cv_file.filename, cv_file.content_type
-                    ),
-                    timeout=QUICK_START_TIMEOUT,
+            # Quick check for obviously non-CV content
+            if _is_obviously_not_cv(text_content):
+                logger.info(
+                    "Quick validation detected non-CV document - returning error immediately"
                 )
-            except asyncio.TimeoutError:
-                logger.error(f"CV parsing timeout in quick start for {cv_file.filename}")
-                cv_preview = {
-                    "error": "Parsing took too long. Please try a simpler CV or contact support.",
+                return {
+                    "error": "This document does not appear to be a CV. Please upload a resume or curriculum vitae with your professional information.",
                     "filename": cv_file.filename,
                 }
-                parsed_cv = {"error": "timeout"}
-
-            # Check for parsing errors
-            if parsed_cv.get("error"):
-                if parsed_cv.get("error") != "timeout":  # Don't overwrite timeout error
-                    cv_preview = {
-                        "error": parsed_cv["error"],
-                        "filename": cv_file.filename,
-                    }
-            else:
-                # Extract key information for preview
-                personal_info = parsed_cv.get("personal_info", {})
-                cv_preview = {
-                    "filename": cv_file.filename,
-                    "full_name": personal_info.get("full_name", ""),
-                    "email": personal_info.get("email", ""),
-                    "phone": personal_info.get("phone", ""),
-                    "location": personal_info.get("location", ""),
-                    "section_count": sum(
-                        [
-                            len(parsed_cv.get("work_experience", [])),
-                            len(parsed_cv.get("education", [])),
-                            len(parsed_cv.get("skills", [])),
-                            len(parsed_cv.get("certifications", [])),
-                            len(parsed_cv.get("projects", [])),
-                        ]
-                    ),
-                    "has_summary": bool(parsed_cv.get("summary")),
-                    "work_experience_count": len(parsed_cv.get("work_experience", [])),
-                    "education_count": len(parsed_cv.get("education", [])),
-                    # Include full parsed data for later claiming
-                    "full_parsed_data": parsed_cv,
-                }
-
-                # Generate preview image if possible
-                if is_preview_generation_available():
-                    try:
-                        logger.info(f"Generating CV preview image for {cv_file.filename}")
-                        preview_image = await generate_cv_preview_image(
-                            parsed_cv,
-                            max_width=1000,  # Increased for better quality
-                            title=personal_info.get("full_name", "CV Preview"),
-                        )
-                        cv_preview["preview_image_base64"] = preview_image
-                        logger.info(
-                            f"Successfully generated CV preview image for {cv_file.filename}"
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to generate CV preview image for {cv_file.filename}: {e}"
-                        )
-                        # Continue without image - not critical for preview
-                else:
-                    logger.info(
-                        "CV preview image generation not available (missing dependencies)"
-                    )
-
         except Exception as e:
-            logger.error(f"CV parsing error in quick start: {str(e)}")
+            logger.warning(f"Quick text extraction failed, proceeding with AI: {e}")
+
+        # Wrap CV parsing with timeout
+        try:
+            parsed_cv = await asyncio.wait_for(
+                parse_cv_with_openai(
+                    file_content, cv_file.filename, cv_file.content_type
+                ),
+                timeout=QUICK_START_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            logger.error(f"CV parsing timeout in quick start for {cv_file.filename}")
             cv_preview = {
-                "error": f"Failed to parse CV: {str(e)}",
-                "filename": cv_file.filename if cv_file else "unknown",
+                "error": "Parsing took too long. Please try a simpler CV or contact support.",
+                "filename": cv_file.filename,
+            }
+            parsed_cv = {"error": "timeout"}
+
+        # Check for parsing errors
+        if parsed_cv.get("error"):
+            if parsed_cv.get("error") != "timeout":  # Don't overwrite timeout error
+                cv_preview = {
+                    "error": parsed_cv["error"],
+                    "filename": cv_file.filename,
+                }
+        else:
+            # Extract key information for preview
+            personal_info = parsed_cv.get("personal_info", {})
+            cv_preview = {
+                "filename": cv_file.filename,
+                "full_name": personal_info.get("full_name", ""),
+                "email": personal_info.get("email", ""),
+                "phone": personal_info.get("phone", ""),
+                "location": personal_info.get("location", ""),
+                "section_count": sum(
+                    [
+                        len(parsed_cv.get("work_experience", [])),
+                        len(parsed_cv.get("education", [])),
+                        len(parsed_cv.get("skills", [])),
+                        len(parsed_cv.get("certifications", [])),
+                        len(parsed_cv.get("projects", [])),
+                    ]
+                ),
+                "has_summary": bool(parsed_cv.get("summary")),
+                "work_experience_count": len(parsed_cv.get("work_experience", [])),
+                "education_count": len(parsed_cv.get("education", [])),
+                # Include full parsed data for later claiming
+                "full_parsed_data": parsed_cv,
             }
 
-    # Parse job description
+            # Generate preview image if possible
+            if is_preview_generation_available():
+                try:
+                    logger.info(f"Generating CV preview image for {cv_file.filename}")
+                    preview_image = await generate_cv_preview_image(
+                        parsed_cv,
+                        max_width=1000,  # Increased for better quality
+                        title=personal_info.get("full_name", "CV Preview"),
+                    )
+                    cv_preview["preview_image_base64"] = preview_image
+                    logger.info(
+                        f"Successfully generated CV preview image for {cv_file.filename}"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to generate CV preview image for {cv_file.filename}: {e}"
+                    )
+                    # Continue without image - not critical for preview
+            else:
+                logger.info(
+                    "CV preview image generation not available (missing dependencies)"
+                )
+
+    except Exception as e:
+        logger.error(f"CV parsing error in quick start: {str(e)}")
+        cv_preview = {
+            "error": f"Failed to parse CV: {str(e)}",
+            "filename": cv_file.filename if cv_file else "unknown",
+        }
+
+    logger.info(
+        f"CV parsing helper completed with error: {bool(cv_preview.get('error'))}"
+    )
+    return cv_preview
+
+
+async def _parse_job_for_preview(
+    job_url: Optional[str], job_text: Optional[str], request: Request
+) -> Dict[str, Any]:
+    """
+    Parse job description for quick start preview.
+
+    Args:
+        job_url: Optional job posting URL
+        job_text: Optional job description text
+        request: FastAPI request object for logging
+
+    Returns:
+        Dictionary containing job preview data or error information
+    """
     job_preview: Dict[str, Any] = {}
+
     try:
         if job_url:
             logger.info(
@@ -342,20 +408,233 @@ async def quick_start_preview(
             "source": "url" if job_url else "text",
         }
 
+    logger.info(
+        f"Job parsing helper completed with error: {bool(job_preview.get('error'))}"
+    )
+    return job_preview
+
+
+class QuickStartPreviewResponse(BaseModel):
+    """Response model for quick start preview"""
+
+    cv_preview: dict
+    job_preview: dict
+    success: bool
+    message: str
+
+
+class QuickStartClaimResponse(BaseModel):
+    """Response model for quick start claim"""
+
+    cv_id: Optional[str] = None
+    job_description_id: Optional[str] = None
+    message: str = "Data saved successfully"
+
+
+@router.post("/preview", response_model=QuickStartPreviewResponse)
+@limiter.limit("5/15minutes")
+async def quick_start_preview(
+    request: Request,
+    cv_file: Optional[UploadFile] = File(None),
+    job_url: Optional[str] = Form(None),
+    job_text: Optional[str] = Form(None),
+):
+    """
+    Parse CV and job description for preview without authentication.
+
+    This endpoint allows unauthenticated users to try the service by:
+    1. Uploading a CV file (PDF, DOC, DOCX)
+    2. Providing a job description via URL or text
+    3. Receiving parsed previews of both
+
+    Rate limited to 5 requests per 15 minutes per IP address.
+
+    Args:
+        request: FastAPI request object (for rate limiting)
+        cv_file: Uploaded CV file
+        job_url: Optional job posting URL
+        job_text: Optional job description text
+
+    Returns:
+        QuickStartPreviewResponse with parsed CV and job data
+
+    Raises:
+        HTTPException: For validation errors or parsing failures
+    """
+    # CV file is mandatory
+    if not cv_file:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CV file is required",
+        )
+
+    # Validate job text length if provided
+    if job_text and len(job_text) > 10000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Job description text cannot exceed 10,000 characters",
+        )
+
+    # Validate CV file if provided
+    file_content = None
+    if cv_file:
+        try:
+            file_content = await cv_file.read()
+            await cv_file.seek(0)  # Reset file pointer for potential re-read
+
+            # Use existing file validation
+            is_valid, error_message = await validate_file(cv_file)
+            if not is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail=error_message
+                )
+
+            # Check file size - 3MB limit for unauthenticated previews to fit in sessionStorage
+            # (base64 encoding increases size by ~33%, so 3MB becomes ~4MB)
+            MAX_PREVIEW_SIZE = 3 * 1024 * 1024  # 3MB
+            if len(file_content) > MAX_PREVIEW_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="CV file size cannot exceed 3MB for quick preview. Please sign in to upload larger files (up to 10MB).",
+                )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"CV file validation error: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid CV file: {str(e)}",
+            )
+
+    # Parse CV and job description in parallel
+    cv_preview: Dict[str, Any] = {}
+    job_preview: Dict[str, Any] = {}
+
+    logger.info("=== STARTING PARALLEL PARSING ===")
+
+    # Create tasks for parallel execution
+    tasks = {}
+
+    if cv_file and file_content:
+        logger.info("Creating CV parsing task")
+        tasks["cv"] = asyncio.create_task(
+            _parse_cv_for_preview(cv_file, file_content, request)
+        )
+
+    if job_url or job_text:
+        logger.info("Creating job parsing task")
+        tasks["job"] = asyncio.create_task(
+            _parse_job_for_preview(job_url, job_text, request)
+        )
+
+    logger.info(f"Created {len(tasks)} tasks: {list(tasks.keys())}")
+
+    # Execute tasks and return results as they complete
+    if tasks:
+        logger.info("Starting asyncio.wait with FIRST_COMPLETED")
+        start_time = asyncio.get_event_loop().time()
+
+        # Use asyncio.wait with return_when=asyncio.FIRST_COMPLETED to get immediate results
+        done, pending = await asyncio.wait(
+            tasks.values(), return_when=asyncio.FIRST_COMPLETED
+        )
+
+        first_completed_time = asyncio.get_event_loop().time()
+        logger.info(
+            f"FIRST task completed after {first_completed_time - start_time:.2f} seconds"
+        )
+        logger.info(f"Completed tasks: {len(done)}, Pending tasks: {len(pending)}")
+
+        # Process completed tasks
+        for task in done:
+            try:
+                logger.info("Processing completed task...")
+                result = await task
+
+                # Determine which task completed by checking the task name
+                task_name = None
+                for name, t in tasks.items():
+                    if t == task:
+                        task_name = name
+                        break
+
+                logger.info(f"Task '{task_name}' completed successfully")
+                if task_name == "cv":
+                    cv_preview = result
+                    logger.info(f"CV preview result: {bool(result.get('error'))}")
+                elif task_name == "job":
+                    job_preview = result
+                    logger.info(f"Job preview result: {bool(result.get('error'))}")
+
+            except Exception as e:
+                # Handle exceptions from individual tasks
+                task_name = None
+                for name, t in tasks.items():
+                    if t == task:
+                        task_name = name
+                        break
+
+                logger.error(f"{task_name} parsing failed: {str(e)}")
+                if task_name == "cv":
+                    cv_preview = {
+                        "error": f"Failed to parse CV: {str(e)}",
+                        "filename": cv_file.filename if cv_file else "unknown",
+                    }
+                elif task_name == "job":
+                    job_preview = {
+                        "error": f"Failed to parse job: {str(e)}",
+                        "source": "url" if job_url else "text",
+                    }
+
+        # Cancel remaining tasks since we're returning immediately
+        if pending:
+            logger.info(
+                f"Cancelling {len(pending)} remaining tasks to return response immediately"
+            )
+            for task in pending:
+                task.cancel()
+
+            # Set empty results for cancelled tasks
+            for task in pending:
+                task_name = None
+                for name, t in tasks.items():
+                    if t == task:
+                        task_name = name
+                        break
+
+                if task_name == "cv" and not cv_preview:
+                    cv_preview = {"error": "Task cancelled - CV parsing incomplete"}
+                elif task_name == "job" and not job_preview:
+                    job_preview = {"error": "Task cancelled - Job parsing incomplete"}
+
+    total_time = asyncio.get_event_loop().time() - start_time
+    logger.info(f"=== PARALLEL PARSING COMPLETED in {total_time:.2f} seconds ===")
+    logger.info(f"CV preview has error: {bool(cv_preview.get('error'))}")
+    logger.info(f"Job preview has error: {bool(job_preview.get('error'))}")
+
     # Determine overall success
     cv_success = "error" not in cv_preview
-    job_success = "error" not in job_preview
-    overall_success = cv_success and job_success
+    job_provided = bool(job_url or job_text)
+    job_success = job_provided and ("error" not in job_preview)
 
-    # Generate appropriate message
-    if overall_success:
-        message = "Successfully parsed CV and job description"
-    elif cv_success and not job_success:
-        message = "CV parsed successfully, but job description parsing failed"
-    elif not cv_success and job_success:
-        message = "Job description parsed successfully, but CV parsing failed"
+    # Overall success: CV must succeed, and job (if provided) must succeed
+    overall_success = cv_success and (job_success if job_provided else True)
+
+    # Generate appropriate message based on what was provided
+    if not job_provided:
+        # CV only
+        message = "Successfully parsed CV" if cv_success else "CV parsing failed"
     else:
-        message = "Failed to parse both CV and job description"
+        # CV + Job
+        if overall_success:
+            message = "Successfully parsed CV and job description"
+        elif cv_success and not job_success:
+            message = "CV parsed successfully, but job description parsing failed"
+        elif not cv_success and job_success:
+            message = "Job description parsed successfully, but CV parsing failed"
+        else:
+            message = "Failed to parse both CV and job description"
 
     return QuickStartPreviewResponse(
         cv_preview=cv_preview,
