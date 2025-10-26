@@ -56,10 +56,19 @@ class JobFitService {
 
       return response.data;
     } catch (error: any) {
-      Logger.error("Error getting draft status", {
-        draftId,
-        error: error.message,
-      });
+      const is429 = error.response?.status === 429;
+
+      if (is429) {
+        Logger.warn("Rate limit reached for getDraftStatus", {
+          draftId,
+        });
+      } else {
+        Logger.error("Error getting draft status", {
+          draftId,
+          error: error.message,
+        });
+      }
+
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || "Failed to get draft status",
         details: error.message,
@@ -86,11 +95,21 @@ class JobFitService {
 
       return response.data;
     } catch (error: any) {
-      Logger.error("createJobFitDraft API error", {
-        cvId,
-        jobDescriptionId,
-        error: error.message,
-      });
+      const is429 = error.response?.status === 429;
+
+      if (is429) {
+        Logger.warn("Rate limit reached for createJobFitDraft", {
+          cvId,
+          jobDescriptionId,
+        });
+      } else {
+        Logger.error("createJobFitDraft API error", {
+          cvId,
+          jobDescriptionId,
+          error: error.message,
+        });
+      }
+
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || "Failed to create job fit draft",
         details: error.message,

@@ -135,9 +135,11 @@ async def accept_ai_suggestion(
 
 
 @router.post("/cvs/{cv_id}/ai-enhancements", response_model=AIEnhancementCreateResponse)
+@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def create_ai_enhancement(
+    request: Request,
     cv_id: str,
-    request: AIEnhancementRequest,
+    enhancement_request: AIEnhancementRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -150,7 +152,7 @@ async def create_ai_enhancement(
 
     # Verify job description exists
     job_description = get_job_description_by_id(
-        db, request.job_description_id, str(current_user.id)
+        db, enhancement_request.job_description_id, str(current_user.id)
     )
 
     if not job_description:
@@ -165,7 +167,7 @@ async def create_ai_enhancement(
             id=enhancement_id,
             user_id=str(current_user.id),
             cv_id=cv_id,
-            job_description_id=request.job_description_id,
+            job_description_id=enhancement_request.job_description_id,
             is_generating=True,
             generation_error=None,
         )
@@ -181,7 +183,7 @@ async def create_ai_enhancement(
                 job_description.content,
                 str(current_user.id),
                 cv_id,
-                request.job_description_id,
+                enhancement_request.job_description_id,
             )
         )
 

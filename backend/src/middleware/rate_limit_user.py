@@ -79,14 +79,11 @@ class RateLimitUserMiddleware(BaseHTTPMiddleware):
                             if session and session.is_active:
                                 # Use impersonated user's ID for rate limiting
                                 request.state.user_id = session.impersonated_user_id
-                                logger.debug(
-                                    f"Set user_id in request state (impersonated): {session.impersonated_user_id}"
-                                )
                             else:
                                 # Invalid/expired session - use original user ID
                                 request.state.user_id = clerk_user_id
-                                logger.debug(
-                                    f"Set user_id in request state (invalid impersonation): {clerk_user_id}"
+                                logger.warning(
+                                    f"Invalid or expired impersonation session for user: {clerk_user_id}"
                                 )
                         finally:
                             db.close()
@@ -95,15 +92,15 @@ class RateLimitUserMiddleware(BaseHTTPMiddleware):
                         # Note: We use clerk_user_id for performance (avoids DB query)
                         # The actual User.id will be set during auth
                         request.state.user_id = clerk_user_id
-                        logger.debug(f"Set user_id in request state: {clerk_user_id}")
                 else:
                     logger.debug("Invalid or missing token payload")
             else:
-                logger.debug("No authorization header found")
+                # No auth header - this is normal for unauthenticated requests
+                pass
 
         except Exception as e:
             # If user extraction fails, treat as unauthenticated (no user_id set)
-            logger.debug(f"Failed to extract user for rate limiting: {e}")
+            logger.warning(f"Failed to extract user for rate limiting: {e}")
 
         # Continue to next middleware/handler
         response = await call_next(request)

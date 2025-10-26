@@ -30,7 +30,6 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
-  Alert,
   Tooltip,
 } from "@mui/material";
 import {
@@ -44,7 +43,6 @@ import {
   useJobDescriptions,
   useActiveJobDescription,
 } from "../../../stores/ai";
-import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { JobDescription } from "../../../types/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useJobDescriptionPolling } from "../../../hooks/useJobDescriptionPolling";
@@ -107,7 +105,6 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     }
     return calculateCVCompleteness(cvData);
   }, [cvData]);
-  const { suggestionsError, clearSuggestionsError } = useAISuggestionsStore();
   const { showSuccess, showError } = useNotifications();
   const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
 
@@ -280,11 +277,28 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
         showSuccess("Job fit analysis completed successfully");
       }
     } catch (err) {
-      console.error("Error in handleGenerateJobFit:", err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Failed to generate job fit analysis";
+      // Check for rate limit errors first
+      const isRateLimitError =
+        (err as any)?.code === '429' ||
+        (err as any)?.code === 429 ||
+        (err as any)?.response?.status === 429 ||
+        (err as Error)?.message?.includes('429');
+
+      // Only log errors that aren't rate limits
+      if (!isRateLimitError) {
+        console.error("Error in handleGenerateJobFit:", err);
+      }
+
+      let errorMessage: string;
+      if (isRateLimitError) {
+        errorMessage = "Too many requests. Please wait a moment and try again.";
+      } else {
+        errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to generate job fit analysis";
+      }
+
       showError("Error", errorMessage);
       setIsGeneratingJobFit(false);
     }
@@ -481,15 +495,6 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                           </Button>
                         </span>
                       </Tooltip>
-                      {suggestionsError && (
-                        <Alert
-                          severity="error"
-                          onClose={() => clearSuggestionsError()}
-                          sx={{ mt: 1 }}
-                        >
-                          {suggestionsError}
-                        </Alert>
-                      )}
                     </>
                   )}
 

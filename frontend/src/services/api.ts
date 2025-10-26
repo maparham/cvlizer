@@ -96,6 +96,18 @@ api.interceptors.response.use(
       }
     }
 
+    // For rate limit (429) errors, return a cleaner error object
+    // to reduce console noise - these are expected and handled gracefully
+    if (error.response?.status === 429) {
+      // Create a minimal error without axios's verbose logging
+      return Promise.reject({
+        response: error.response,
+        config: error.config,
+        message: 'Rate limit reached',
+        code: '429',
+      });
+    }
+
     return Promise.reject(error);
   },
 );

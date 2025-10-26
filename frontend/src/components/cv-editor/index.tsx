@@ -82,6 +82,9 @@ const CVEditor: React.FC = () => {
 
   const { clearCacheForCV } = useAIStore();
 
+  // Track if auto-trigger has already fired to prevent re-renders
+  const hasAutoTriggeredRef = useRef(false);
+
   // Fetch CV data on component mount (only for existing CVs)
   useEffect(() => {
     if (cvId && cvId !== "new" && !cvId.startsWith("temp-")) {
@@ -146,7 +149,20 @@ const CVEditor: React.FC = () => {
   // Auto-trigger AI enhancements when coming from quick start with both CV and JD
   // This simulates clicking the buttons to reuse all existing logic (polling, error handling, etc.)
   useEffect(() => {
-    if (location.state?.autoTriggerEnhancements && cvId && location.state?.jobDescriptionId) {
+    if (location.state?.autoTriggerEnhancements && cvId && location.state?.jobDescriptionId && !hasAutoTriggeredRef.current) {
+      // Mark as triggered to prevent re-execution
+      hasAutoTriggeredRef.current = true;
+
+      // Clear the location state immediately to prevent re-trigger on refresh
+      navigate(location.pathname, {
+        replace: true,
+        state: {
+          openAITools: location.state.openAITools,
+          jobDescriptionId: location.state.jobDescriptionId,
+          // autoTriggerEnhancements is intentionally omitted to prevent re-trigger
+        }
+      });
+
       // Wait for UI to load, then simulate button clicks
       const timeoutId = setTimeout(() => {
         // Simulate clicking the "Enhance CV for this Job" button

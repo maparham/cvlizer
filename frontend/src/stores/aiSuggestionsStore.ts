@@ -71,12 +71,22 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
     } catch (error: any) {
       const errorMessage =
         error?.message || "Failed to generate AI suggestions";
+
+      // Check if this is a rate limit error - don't set inline error for rate limits
+      const isRateLimitError =
+        error?.code === '429' ||
+        error?.code === 429 ||
+        error?.response?.status === 429 ||
+        error?.message?.includes('429');
+
       ErrorHandler.handle(error, {
         feature: "ai-suggestions",
         action: "create-enhancement",
         metadata: { cvId, jobDescId },
       });
 
+      // Only set inline error if it's NOT a rate limit error
+      // Rate limit errors are shown as toast notifications only
       set({
         allSuggestions: {
           skills: { technical: [], soft: [] },
@@ -87,7 +97,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           },
         },
         suggestionsLoading: false,
-        suggestionsError: errorMessage,
+        suggestionsError: isRateLimitError ? null : errorMessage,
       });
     }
   },

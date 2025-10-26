@@ -96,7 +96,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const { setActiveJobDescription } = useAIStore();
 
   // Notifications for error and success handling
-  const { showError, showInfo } = useNotifications();
+  const { showInfo } = useNotifications();
 
   // Active job description from existing AI store
   const activeJobDescription = useActiveJobDescription();
@@ -138,11 +138,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           });
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to generate AI suggestions";
-        showError("Error", errorMessage);
+        // ErrorHandler.handle() is called in aiSuggestionsStore which handles the notification
+        // Just update local state, don't duplicate error notification
         setSuggestionsLoading(false);
       }
     }
@@ -151,7 +148,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     cvId,
     generateAllSuggestions,
     addTask,
-    showError,
     setSuggestionsLoading,
   ]);
 

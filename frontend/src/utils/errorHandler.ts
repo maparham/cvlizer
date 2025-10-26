@@ -19,7 +19,7 @@
  */
 
 import { normalizeApiError } from '../services/api';
-import { useUIStore } from '../stores/uiStore';
+import { useNotificationStore } from '../packages/notifications';
 
 /**
  * Error categories for classification
@@ -67,6 +67,16 @@ export interface ErrorInfo {
  */
 function categorizeError(error: unknown): ErrorCategory {
   const errorMessage = normalizeApiError(error).toLowerCase();
+  const errorObj = error as any;
+
+  // Check for status code in the error object (for axios errors and AIServiceError)
+  if (errorObj?.response?.status === 429 || errorObj?.code === '429') {
+    return ErrorCategory.Network;
+  }
+
+  if (errorMessage.includes('429') || errorMessage.includes('too many requests') || errorMessage.includes('rate limit')) {
+    return ErrorCategory.Network;
+  }
 
   if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('connection')) {
     return ErrorCategory.Network;
@@ -98,7 +108,21 @@ function categorizeError(error: unknown): ErrorCategory {
 /**
  * Generate user-friendly message based on error category
  */
-function getUserFriendlyMessage(category: ErrorCategory, originalMessage: string, context?: ErrorContext): string {
+function getUserFriendlyMessage(category: ErrorCategory, originalMessage: string, context?: ErrorContext, originalError?: unknown): string {
+  // Check for rate limit first, before using custom message
+  // Check both axios error format and AIServiceError format
+  const errorObj = originalError as any;
+  const isRateLimit =
+    originalMessage.includes('429') ||
+    originalMessage.toLowerCase().includes('too many requests') ||
+    errorObj?.response?.status === 429 ||
+    errorObj?.code === '429' ||
+    errorObj?.code === 429;
+
+  if (isRateLimit) {
+    return 'Too many requests. Please wait a moment and try again.';
+  }
+
   // Use custom message if provided
   if (context?.userMessage) {
     return context.userMessage;
@@ -173,7 +197,7 @@ export class ErrorHandler {
   static handle(error: unknown, context?: ErrorContext): ErrorInfo {
     const category = categorizeError(error);
     const message = normalizeApiError(error);
-    const userMessage = getUserFriendlyMessage(category, message, context);
+    const userMessage = getUserFriendlyMessage(category, message, context, error);
     const timestamp = new Date().toISOString();
 
     const errorInfo: ErrorInfo = {
@@ -204,7 +228,7 @@ export class ErrorHandler {
   static handleSilent(error: unknown, context?: ErrorContext): ErrorInfo {
     const category = categorizeError(error);
     const message = normalizeApiError(error);
-    const userMessage = getUserFriendlyMessage(category, message, context);
+    const userMessage = getUserFriendlyMessage(category, message, context, error);
     const timestamp = new Date().toISOString();
 
     const errorInfo: ErrorInfo = {
@@ -226,16 +250,22 @@ export class ErrorHandler {
    * Show user notification based on error category
    */
   private static notifyUser(errorInfo: ErrorInfo): void {
-    const { showError, showWarning } = useUIStore.getState();
+    const { addNotification } = useNotificationStore.getState();
 
     const title = this.getNotificationTitle(errorInfo.category, errorInfo.context);
 
     // Use warning for validation errors, error for others
-    if (errorInfo.category === ErrorCategory.Validation) {
-      showWarning(title, errorInfo.userMessage);
-    } else {
-      showError(title, errorInfo.userMessage);
-    }
+    const notificationType = errorInfo.category === ErrorCategory.Validation ? 'warning' : 'error';
+
+    // Extract cvId from metadata if available for proper context
+    const cvId = errorInfo.context?.metadata?.cvId as string | undefined;
+
+    addNotification({
+      type: notificationType,
+      title,
+      message: errorInfo.userMessage,
+      toastOnly: true, // Show as toast notification, don't save to drawer for errors
+    }, cvId);
   }
 
   /**

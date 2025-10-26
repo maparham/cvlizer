@@ -320,9 +320,6 @@ def get_current_user_from_clerk(
                         for email_addr in email_addresses:
                             if email_addr.get("id") == primary_email_id:
                                 email = email_addr.get("email_address")
-                                logger.debug(
-                                    f"Successfully retrieved email {email} for Clerk user {clerk_user_id}"
-                                )
                                 break
                     else:
                         logger.warning(

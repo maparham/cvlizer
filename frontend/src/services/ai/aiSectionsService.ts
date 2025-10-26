@@ -96,11 +96,21 @@ class AISectionsService {
 
       return response.data;
     } catch (error: any) {
-      Logger.error("Error creating AI enhancement", {
-        cvId,
-        jobDescriptionId,
-        error: error.message,
-      });
+      const is429 = error.response?.status === 429;
+
+      if (is429) {
+        Logger.warn("Rate limit reached for createAIEnhancement", {
+          cvId,
+          jobDescriptionId,
+        });
+      } else {
+        Logger.error("Error creating AI enhancement", {
+          cvId,
+          jobDescriptionId,
+          error: error.message,
+        });
+      }
+
       throw error;
     }
   }

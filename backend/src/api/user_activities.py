@@ -88,10 +88,6 @@ async def log_batch_activities(
                 }
             )
 
-        logger.debug(
-            f"Logged {len(logged_activities)} activities for user {current_user.email}"
-        )
-
         return {
             "message": f"Successfully logged {len(logged_activities)} activities",
             "logged_activities": logged_activities,
