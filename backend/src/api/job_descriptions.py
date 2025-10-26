@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from src.config import BackgroundTaskConfig, APIConfig
 from src.utils.rate_limit import create_combined_limiter
-from src.middleware.clerk_auth import get_effective_user
+from src.middleware.clerk_auth import get_current_user_lightweight
 from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
 from src.models.job_description import JobDescription
@@ -232,7 +232,7 @@ async def create_job_description(
     cv_id: str,
     job_description: JobDescriptionCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """Add a job description for a specific CV"""
     # Verify CV exists and belongs to user
@@ -263,7 +263,7 @@ async def create_job_description(
 async def get_job_descriptions(
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """
     Get all job descriptions for the user (backward compatibility endpoint).
@@ -290,7 +290,7 @@ async def update_job_description(
     jd_id: str,
     job_description: JobDescriptionUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """Update a job description"""
     updated_jd = update_job_description_owned_by(
@@ -318,7 +318,7 @@ async def update_job_description(
 async def delete_job_description(
     jd_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """Hide a job description (soft delete)"""
     # Hide the job description instead of actually deleting it
@@ -340,7 +340,7 @@ async def parse_job_description_url(
     cv_id: str,
     parse_request: JobDescriptionParseRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """Parse a job description from a URL using background processing"""
     # Verify CV exists and belongs to user
@@ -406,7 +406,7 @@ async def parse_job_description_url(
 async def get_job_description_status(
     jd_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """Get the current status of a job description parsing task"""
     # Get job description and verify ownership
@@ -428,7 +428,7 @@ async def get_job_description_status(
 @router.get("/job-descriptions", response_model=JobDescriptionListResponse)
 async def list_user_job_descriptions(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """Get all job descriptions for the current user (not filtered by CV)"""
     job_descriptions = list_all_job_descriptions_for_user(
@@ -445,7 +445,7 @@ async def create_user_job_description(
     job_description: JobDescriptionCreate,
     cv_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """
     Create a new job description for the user.
@@ -478,7 +478,7 @@ async def parse_user_job_description_url(
     parse_request: JobDescriptionParseRequest,
     cv_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """
     Parse a job description from a URL using background processing.
@@ -551,7 +551,7 @@ async def associate_job_description_with_cv(
     jd_id: str,
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """Associate a job description with a CV"""
     success = associate_jd_with_cv(db, jd_id, cv_id, str(current_user.id))
@@ -570,7 +570,7 @@ async def disassociate_job_description_from_cv(
     jd_id: str,
     cv_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
+    current_user: User = Depends(get_current_user_lightweight),
 ):
     """Remove association between a job description and a CV"""
     success = disassociate_jd_from_cv(db, jd_id, cv_id, str(current_user.id))

@@ -56,10 +56,10 @@ if DatabaseConfig.is_poolable_database():
         f"recycle={DatabaseConfig.POOL_RECYCLE}s"
     )
 else:
-    # SQLite - use NullPool to create a new connection per request
-    # This prevents connection sharing and deadlocks in concurrent scenarios
-    # Each request gets its own connection which is closed after use
-    from sqlalchemy.pool import NullPool
+    # SQLite - use StaticPool for connection reuse
+    # This maintains a single persistent connection that's reused across requests
+    # Safe for development and single-threaded SQLite usage
+    # Note: StaticPool is imported at the top of the file
 
     engine = create_engine(
         DATABASE_URL,
@@ -67,12 +67,12 @@ else:
             "check_same_thread": False,
             "timeout": 30,  # Wait up to 30 seconds for database lock
         },
-        poolclass=NullPool,  # No connection pooling - fresh connection per request
+        poolclass=StaticPool,  # Reuse single connection across requests
         echo=False,
     )
     logger.info(
-        f"Database engine created with NullPool for SQLite: "
-        f"url={DATABASE_URL}, timeout=30s (fresh connection per request)"
+        f"Database engine created with StaticPool for SQLite: "
+        f"url={DATABASE_URL}, timeout=30s (single persistent connection)"
     )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

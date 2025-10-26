@@ -85,29 +85,27 @@ class CV(Base):
     def __str__(self):
         return f"<CV {self.original_filename}>"
 
-    def to_response_dict(self) -> dict:
+    def to_response_dict(self, include_parsed_data: bool = True) -> dict:
         """
         Convert CV model to response dictionary.
 
         This centralizes the response formatting logic that was previously
         duplicated across multiple API endpoints.
         """
-        # Check if this CV has been edited (has non-initial history entries)
-        has_been_edited = False
-        if hasattr(self, "history") and self.history:
-            # Check if there are any non-initial history entries
-            has_been_edited = any(not entry.is_initial for entry in self.history)
-
         # Check if this is an imported CV (has file_size > 0)
         is_imported = self.file_size > 0
 
-        return {
+        # REMOVED: has_been_edited check to avoid N+1 query on history
+        # This was causing 3+ second delays on CV list endpoints
+        # History can be loaded separately when viewing individual CVs
+        has_been_edited = False
+
+        data = {
             "id": str(self.id),
             "user_id": str(self.user_id),
             "original_filename": self.original_filename,
             "file_size": self.file_size,
             "file_type": self.file_type,
-            "parsed_data": self.parsed_data,
             "is_parsed": self.is_parsed,
             "parse_error": self.parse_error,
             "created_at": self.created_at.replace(tzinfo=timezone.utc).isoformat(),
@@ -115,3 +113,9 @@ class CV(Base):
             "is_imported": is_imported,
             "has_been_edited": has_been_edited,
         }
+
+        # Only include parsed_data if explicitly requested (for list views, exclude it)
+        if include_parsed_data:
+            data["parsed_data"] = self.parsed_data
+
+        return data

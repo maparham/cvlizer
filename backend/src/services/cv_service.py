@@ -11,7 +11,7 @@ import json
 import uuid
 from typing import List, Optional
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from src.models.cv import CV
 from src.models.user import User
@@ -45,12 +45,7 @@ def create_cv(
 
 def get_cv_by_id(db: Session, cv_id: str, user_id: str) -> Optional[CV]:
     """Get a CV by ID for a specific user"""
-    return (
-        db.query(CV)
-        .options(joinedload(CV.history))
-        .filter(CV.id == cv_id, CV.user_id == user_id)
-        .first()
-    )
+    return db.query(CV).filter(CV.id == cv_id, CV.user_id == user_id).first()
 
 
 def get_cvs_by_user(
@@ -59,7 +54,6 @@ def get_cvs_by_user(
     """Get all CVs for a user with pagination, ordered by most recently updated first"""
     return (
         db.query(CV)
-        .options(joinedload(CV.history))
         .filter(CV.user_id == user_id)
         .order_by(CV.updated_at.desc())
         .offset(skip)

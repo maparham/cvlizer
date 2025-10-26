@@ -7,7 +7,7 @@ job postings and requirements associated with CVs for optimization.
 
 import uuid
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Index, JSON, Boolean, Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -53,6 +53,9 @@ class JobDescription(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    # Table args for composite indexes
+    __table_args__ = (Index("ix_job_descriptions_user_id_hidden", "user_id", "hidden"),)
 
     # Relationships
     user = relationship("User", back_populates="job_descriptions")

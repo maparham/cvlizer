@@ -47,8 +47,15 @@ class ImpersonationHeadersMiddleware(BaseHTTPMiddleware):
                         "X-Impersonating-User"
                     ] = auth_context.effective_user.id
             else:
-                # Try to establish auth context for this request
-                # This is a lightweight check that won't interfere with normal auth
+                # OPTIMIZATION: Skip expensive auth check for non-impersonation scenarios
+                # Only check for impersonation cookie - if no cookie exists, skip the expensive API call
+                impersonation_cookie = request.cookies.get("impersonation_session")
+
+                if not impersonation_cookie:
+                    # No impersonation cookie = no impersonation happening, skip expensive checks
+                    return response
+
+                # Only do expensive auth check if impersonation cookie exists
                 try:
                     from fastapi.security import HTTPBearer
 
