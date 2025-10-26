@@ -75,7 +75,7 @@ export const getSectionCount = (cv: CV): number => {
   };
 
   // If there's no section config, fall back to counting all sections with data
-  if (!cv.parsed_data.section_config?.sections) {
+  if (!cv.parsed_data?.section_config?.sections) {
     let count = 0;
     const sectionTypes = [
       "personal_info",
@@ -99,7 +99,7 @@ export const getSectionCount = (cv: CV): number => {
   }
 
   // Count only visible sections that have data
-  return cv.parsed_data.section_config.sections.filter(
+  return cv.parsed_data?.section_config?.sections?.filter(
     (section) => section.visible && hasData(section.type),
-  ).length;
+  ).length || 0;
 };

@@ -711,4 +711,71 @@ def get_current_user_lightweight(
     return user
 
 
+def get_effective_user_lightweight(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+) -> User:
+    """
+    Get the effective user (the user whose permissions should be used) with
+    lightweight authentication and impersonation support.
+
+    This function combines the performance benefits of get_current_user_lightweight
+    (no expensive Clerk API calls) with impersonation cookie checking from
+    get_effective_user. Perfect for CV and job description endpoints that need
+    to work efficiently while respecting admin impersonation.
+
+    During impersonation:
+    - Returns the target user being impersonated
+    - Admin's real identity is authenticated via JWT token
+
+    Normal authentication:
+    - Returns the authenticated user directly from database
+    """
+    # Get the original authenticated user (lightweight - no Clerk API calls)
+    original_user = get_current_user_lightweight(credentials, db)
+
+    # Check for impersonation session cookie
+    impersonation_cookie = request.cookies.get("impersonation_session")
+    if not impersonation_cookie:
+        return original_user
+
+    # Validate impersonation session
+    try:
+        from src.services.impersonation_service import validate_session
+
+        # Get client metadata for validation
+        admin_ip = None
+        admin_user_agent = None
+        if hasattr(request, "headers"):
+            # Extract IP from headers
+            forwarded_for = request.headers.get("X-Forwarded-For")
+            if forwarded_for:
+                admin_ip = forwarded_for.split(",")[0].strip()
+            elif hasattr(request, "client") and request.client:
+                admin_ip = request.client.host
+
+            admin_user_agent = request.headers.get("User-Agent")
+
+        session = validate_session(db, impersonation_cookie, admin_ip, admin_user_agent)
+        if not session:
+            # Invalid session, return original user
+            return original_user
+
+        # Verify the original user is the admin for this session
+        if original_user.id != session.admin_id:
+            logger.warning(
+                f"Impersonation session admin mismatch: token user {original_user.id}, session admin {session.admin_id}"
+            )
+            return original_user
+
+        # Return impersonated user
+        return session.target_user
+
+    except Exception as e:
+        logger.error(f"Error validating impersonation session: {str(e)}")
+        # On error, return original user
+        return original_user
+
+
 get_current_user = get_current_user_from_clerk

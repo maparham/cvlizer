@@ -44,7 +44,7 @@ from sqlalchemy.orm import Session
 from src.constants import DEFAULT_PARSED_CV
 from src.config import APIConfig
 from src.utils.rate_limit import create_combined_limiter
-from src.middleware.clerk_auth import get_effective_user, get_current_user_lightweight
+from src.middleware.clerk_auth import get_effective_user, get_effective_user_lightweight
 from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
 from src.models.user import User
@@ -208,7 +208,7 @@ async def upload_cv(
     request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Upload a CV file and start background parsing"""
     # Validate file
@@ -259,10 +259,11 @@ async def upload_cv(
 
 @router.get("/", response_model=CVListResponse)
 async def list_cvs(
+    request: Request,
     page: int = 1,
     limit: int = 100,  # Increased default limit to show more CVs
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Get all CVs for the current user with pagination support"""
     skip = (page - 1) * limit
@@ -285,8 +286,9 @@ async def list_cvs(
 @router.get("/{cv_id}", response_model=CVResponse)
 async def get_cv(
     cv_id: str,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Get a specific CV by ID"""
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
@@ -300,8 +302,9 @@ async def get_cv(
 async def update_cv_data(
     cv_id: str,
     cv_update: CVUpdateRequestSchema,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Update CV parsed data with comprehensive validation"""
     try:
@@ -339,8 +342,9 @@ async def update_cv_data(
 
 @router.post("/create-blank", response_model=CVResponse)
 async def create_blank_cv(
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Create a new blank CV from scratch without file upload"""
     try:
@@ -379,8 +383,9 @@ class CVTitleUpdateRequest(BaseModel):
 async def update_cv_title(
     cv_id: str,
     title_request: CVTitleUpdateRequest,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Update CV title (original_filename)"""
     # Get CV to verify ownership
@@ -399,8 +404,9 @@ async def update_cv_title(
 @router.get("/{cv_id}/download")
 async def download_cv_file(
     cv_id: str,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Download the original CV file"""
     # Get CV to verify ownership and get file path
@@ -431,8 +437,9 @@ async def download_cv_file(
 @router.post("/{cv_id}/duplicate", response_model=CVResponse)
 async def duplicate_cv(
     cv_id: str,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Duplicate a CV - copies content but not version history"""
     # Get the original CV
@@ -505,8 +512,9 @@ async def duplicate_cv(
 @router.delete("/{cv_id}")
 async def delete_cv_data(
     cv_id: str,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Delete a CV"""
     # Get CV to find file path
@@ -531,8 +539,9 @@ async def delete_cv_data(
 @router.get("/{cv_id}/export/pdf")
 async def export_cv_pdf(
     cv_id: str,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_lightweight),
+    current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Export CV as PDF via LaTeX (pdflatex)."""
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
