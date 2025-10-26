@@ -1,0 +1,419 @@
+"""
+Job fit analysis and draft management endpoints.
+
+This module provides endpoints for generating job fit analysis drafts and
+managing their lifecycle including approval and deletion.
+"""
+
+import asyncio
+import logging
+from datetime import timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
+
+from src.config import APIConfig, AIConfig
+from src.middleware.clerk_auth import get_effective_user
+from src.models.ai_draft import AIDraft
+from src.models.base import get_db
+from src.models.user import User
+from src.schemas.cv_schemas import WhyGoodFitSchema
+from src.services.ai_service import is_ai_enabled
+from src.services.job_description_service import (
+    get_cv_owned_by,
+    get_job_description_by_id,
+)
+from src.utils.rate_limit import create_combined_limiter
+
+from .background_tasks import generate_job_fit_background
+from .models import (
+    DraftApproveRequest,
+    DraftCreateRequest,
+    DraftListResponse,
+    DraftResponse,
+)
+
+router = APIRouter(tags=["ai"])
+limiter = create_combined_limiter()
+logger = logging.getLogger(__name__)
+
+
+@router.post("/cvs/{cv_id}/analyze-job-fit", response_model=DraftResponse)
+@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
+async def create_job_fit_draft(
+    cv_id: str,
+    body: DraftCreateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Create a draft job fit analysis for a CV based on job description using background processing"""
+    # Verify CV exists and belongs to user
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Verify job description exists (global lookup)
+    job_description = get_job_description_by_id(
+        db, body.job_description_id, str(current_user.id)
+    )
+
+    if not job_description:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
+        )
+
+    if not is_ai_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI features are disabled",
+        )
+
+    # Delete any existing draft for this CV and section type
+    existing_draft = (
+        db.query(AIDraft)
+        .filter(AIDraft.cv_id == cv_id, AIDraft.section_type == "why_good_fit")
+        .first()
+    )
+
+    if existing_draft:
+        db.delete(existing_draft)
+
+    # Create new draft with generation status
+    draft = AIDraft(
+        cv_id=cv_id,
+        job_description_id=body.job_description_id,
+        section_type="why_good_fit",
+        draft_data={},  # Will be populated by background task
+        ai_model=AIConfig.OPENAI_MODEL,
+        tokens_used=0,
+        generation_time=0,
+        is_generating=True,
+    )
+
+    db.add(draft)
+    db.commit()
+    db.refresh(draft)
+
+    # Start background generation task
+    asyncio.create_task(
+        generate_job_fit_background(
+            str(draft.id),
+            {k: v for k, v in (cv.parsed_data or {}).items() if k != "why_good_fit"},
+            job_description.content,
+            str(current_user.id),
+            cv_id,
+            body.job_description_id,
+        )
+    )
+
+    # Add small delay to ensure DB commit
+    await asyncio.sleep(0.1)
+
+    return DraftResponse(
+        id=str(draft.id),
+        cv_id=str(draft.cv_id),
+        job_description_id=str(draft.job_description_id),
+        section_type=draft.section_type,
+        draft_data=draft.draft_data,
+        ai_model=draft.ai_model,
+        tokens_used=draft.tokens_used or 0,
+        generation_time=draft.generation_time or 0,
+        created_at=draft.created_at.isoformat(),
+        is_generating=True,
+        generation_error=None,
+    )
+
+
+@router.get("/drafts/{draft_id}/status", response_model=DraftResponse)
+async def get_draft_status(
+    draft_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Get the current status of a draft generation task"""
+    # Get draft and verify ownership through CV
+    draft = db.query(AIDraft).filter(AIDraft.id == draft_id).first()
+
+    if not draft:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found"
+        )
+
+    # Verify CV belongs to user
+    cv = get_cv_owned_by(db, draft.cv_id, str(current_user.id))
+    if not cv:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found"
+        )
+
+    return DraftResponse(
+        id=str(draft.id),
+        cv_id=str(draft.cv_id),
+        job_description_id=str(draft.job_description_id),
+        section_type=draft.section_type,
+        draft_data=draft.draft_data,
+        ai_model=draft.ai_model,
+        tokens_used=draft.tokens_used or 0,
+        generation_time=draft.generation_time or 0,
+        created_at=draft.created_at.isoformat(),
+        is_generating=draft.is_generating,
+        generation_error=draft.generation_error,
+    )
+
+
+@router.get("/cvs/{cv_id}/drafts", response_model=DraftListResponse)
+async def get_cv_drafts(
+    cv_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Get all drafts for a CV"""
+    # Verify CV exists and belongs to user
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Get drafts
+    drafts = db.query(AIDraft).filter(AIDraft.cv_id == cv_id).all()
+
+    draft_responses = [
+        DraftResponse(
+            id=str(draft.id),
+            cv_id=str(draft.cv_id),
+            job_description_id=str(draft.job_description_id),
+            section_type=draft.section_type,
+            draft_data=draft.draft_data,
+            ai_model=draft.ai_model,
+            tokens_used=draft.tokens_used or 0,
+            generation_time=draft.generation_time or 0,
+            created_at=draft.created_at.isoformat(),
+            is_generating=draft.is_generating,
+            generation_error=draft.generation_error,
+        )
+        for draft in drafts
+    ]
+
+    return DraftListResponse(drafts=draft_responses)
+
+
+@router.post("/cvs/{cv_id}/why_good_fit/approve")
+async def approve_why_good_fit_draft(
+    cv_id: str,
+    request: DraftApproveRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Approve a why_good_fit draft and move it to parsed_data"""
+    # Verify CV exists and belongs to user
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Find the draft
+    draft = (
+        db.query(AIDraft)
+        .filter(
+            AIDraft.id == request.draft_id,
+            AIDraft.cv_id == cv_id,
+            AIDraft.section_type == "why_good_fit",
+        )
+        .first()
+    )
+
+    if not draft:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found"
+        )
+
+    try:
+        # Update CV parsed_data with the draft content
+        if not cv.parsed_data:
+            cv.parsed_data = {}
+
+        # Normalize draft data to WhyGoodFitSchema to avoid Pydantic extra/required errors
+        raw = draft.draft_data or {}
+        logger.info(
+            f"approve_why_good_fit_draft: Processing draft {request.draft_id} with keys: {list(raw.keys())}"
+        )
+
+        # Build a compliant payload, mapping possible alternative keys
+        content_value = (
+            raw.get("content")
+            or raw.get("fit_analysis")
+            or raw.get("cleanedFitAnalysis")
+            or raw.get("originalFitAnalysis")
+            or ""
+        )
+
+        confidence_score = raw.get("confidence_score")
+        generated_at = raw.get("generated_at") or (
+            draft.updated_at.isoformat() if getattr(draft, "updated_at", None) else None
+        )
+
+        # Log presence of required fields before validation
+        logger.info(
+            f"approve_why_good_fit_draft: confidence_score={confidence_score}, generated_at={generated_at}"
+        )
+        if confidence_score is None:
+            logger.warning(
+                f"approve_why_good_fit_draft: confidence_score is missing in draft {request.draft_id}"
+            )
+
+        normalized = {
+            "content": content_value,
+            # confidence_score must be present; do not default here
+            "confidence_score": confidence_score,
+            "fit_analysis": content_value,
+            "key_matches": raw.get("key_matches", []),
+            "missing_skills": raw.get("missing_skills", []),
+            "suggested_improvements": raw.get("suggested_improvements", []),
+            "strengths": raw.get("strengths", []),
+            "weaknesses": raw.get("weaknesses", []),
+            "tokens_used": draft.tokens_used or raw.get("tokens_used", 0),
+            "generation_time": draft.generation_time or raw.get("generation_time", 0),
+            "model_used": draft.ai_model or raw.get("model_used", AIConfig.OPENAI_MODEL),
+            "generated_at": generated_at,
+            "job_description_id": (
+                str(draft.job_description_id)
+                if draft.job_description_id
+                else raw.get("job_description_id")
+            ),
+        }
+        # Validate and strip extras strictly via Pydantic
+        try:
+            validated = WhyGoodFitSchema(**normalized)
+            compliant_data = validated.dict()
+            logger.info(
+                f"approve_why_good_fit_draft: Validation succeeded for draft {request.draft_id}"
+            )
+        except Exception as e:
+            logger.error(
+                f"approve_why_good_fit_draft: Validation failed for draft {request.draft_id}: {str(e)}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Draft data invalid for why_good_fit: {str(e)}",
+            )
+
+        # Move draft to parsed_data.why_good_fit
+        # Create a copy to ensure SQLAlchemy detects the change
+        updated_parsed_data = dict(cv.parsed_data) if cv.parsed_data else {}
+        updated_parsed_data["why_good_fit"] = compliant_data
+
+        # Update section configuration to position why_good_fit after personal_info (order 2)
+        if "section_config" not in updated_parsed_data:
+            updated_parsed_data["section_config"] = {"sections": []}
+
+        # Remove existing why_good_fit section if it exists
+        sections = [
+            s
+            for s in updated_parsed_data["section_config"]["sections"]
+            if s.get("type") != "why_good_fit"
+        ]
+
+        # Add why_good_fit section with order 2 (after personal_info)
+        why_good_fit_section = {
+            "id": "why_good_fit",
+            "type": "why_good_fit",
+            "title": "Why I'm a Good Fit",
+            "visible": True,
+            "order": 2,
+        }
+        sections.append(why_good_fit_section)
+
+        # Reorder all sections to account for the new positioning
+        # personal_info (1), why_good_fit (2), professional_summary (3), work_experience (4), education (5), skills (6), etc.
+        section_order_map = {
+            "personal_info": 1,
+            "why_good_fit": 2,
+            "professional_summary": 3,
+            "work_experience": 4,
+            "education": 5,
+            "skills": 6,
+            "certifications": 7,
+            "projects": 8,
+            "awards": 9,
+            "publications": 10,
+            "volunteer_experience": 11,
+        }
+
+        # Update order for all sections
+        for section in sections:
+            section_type = section.get("type")
+            if section_type in section_order_map:
+                section["order"] = section_order_map[section_type]
+
+        # Sort sections by order
+        sections.sort(key=lambda x: x.get("order", 999))
+        updated_parsed_data["section_config"]["sections"] = sections
+
+        cv.parsed_data = updated_parsed_data
+
+        # Explicitly mark the field as modified for SQLAlchemy
+        flag_modified(cv, "parsed_data")
+
+        # Update CV and delete draft in the same transaction
+        db.delete(draft)
+        db.commit()
+        db.refresh(cv)
+
+        response_data = {
+            "message": "Draft approved and committed successfully",
+            "cv": cv.to_response_dict(),
+        }
+        return response_data
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error approving draft: {str(e)}",
+        )
+
+
+@router.delete("/cvs/{cv_id}/why_good_fit/draft")
+async def delete_why_good_fit_draft(
+    cv_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Delete the why_good_fit draft for a CV"""
+    # Verify CV exists and belongs to user
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Find the draft
+    draft = (
+        db.query(AIDraft)
+        .filter(AIDraft.cv_id == cv_id, AIDraft.section_type == "why_good_fit")
+        .first()
+    )
+
+    if not draft:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No draft found for this CV"
+        )
+
+    try:
+        # Delete the draft
+        db.delete(draft)
+        db.commit()
+
+        return {"message": "Draft deleted successfully"}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting draft: {str(e)}",
+        )
+
+
+__all__ = ["router"]

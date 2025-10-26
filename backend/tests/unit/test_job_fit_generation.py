@@ -215,7 +215,7 @@ class TestAnalyzeJobFitSync:
 class TestGenerateJobFitSync:
     """Test generate_job_fit_sync background task function"""
 
-    @patch("src.api.ai.SessionLocal")
+    @patch("src.models.base.SessionLocal")
     @patch("src.services.ai_service.analyze_job_fit_sync")
     def test_generate_job_fit_sync_success_with_required_fields(
         self, mock_analyze, mock_session_local
@@ -263,7 +263,7 @@ class TestGenerateJobFitSync:
         assert mock_draft.ai_model == "gpt-5"
         mock_db.commit.assert_called()
 
-    @patch("src.api.ai.SessionLocal")
+    @patch("src.models.base.SessionLocal")
     @patch("src.services.ai_service.analyze_job_fit_sync")
     def test_generate_job_fit_sync_missing_confidence_score(
         self, mock_analyze, mock_session_local
@@ -300,7 +300,7 @@ class TestGenerateJobFitSync:
         assert "confidence_score" in mock_draft.generation_error
         mock_db.commit.assert_called()
 
-    @patch("src.api.ai.SessionLocal")
+    @patch("src.models.base.SessionLocal")
     @patch("src.services.ai_service.analyze_job_fit_sync")
     def test_generate_job_fit_sync_missing_generated_at(
         self, mock_analyze, mock_session_local
@@ -337,7 +337,7 @@ class TestGenerateJobFitSync:
         assert "generated_at" in mock_draft.generation_error
         mock_db.commit.assert_called()
 
-    @patch("src.api.ai.SessionLocal")
+    @patch("src.models.base.SessionLocal")
     @patch("src.services.ai_service.analyze_job_fit_sync")
     def test_generate_job_fit_sync_ai_error(self, mock_analyze, mock_session_local):
         """Test generate_job_fit_sync when AI service returns error"""
@@ -371,7 +371,7 @@ class TestGenerateJobFitSync:
         assert mock_draft.generation_error == "OpenAI API timeout"
         mock_db.commit.assert_called()
 
-    @patch("src.api.ai.SessionLocal")
+    @patch("src.models.base.SessionLocal")
     @patch("src.services.ai_service.analyze_job_fit_sync")
     def test_generate_job_fit_sync_exception_handling(
         self, mock_analyze, mock_session_local
