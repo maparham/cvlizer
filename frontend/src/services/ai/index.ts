@@ -112,3 +112,37 @@ class AIService {
 
 // Export singleton instance for backward compatibility
 export const aiService = new AIService();
+
+// Export individual functions for convenience
+export const {
+  clearCacheForCV,
+  clearAllCache,
+  analyzeJobFit,
+  getDraftStatus,
+  createJobFitDraft,
+  getCVDrafts,
+  approveWhyGoodFitDraft,
+  deleteWhyGoodFitDraft,
+  createJobDescription,
+  parseJobDescriptionUrl,
+  getJobDescriptionStatus,
+  getJobDescriptions,
+  updateJobDescription,
+  deleteJobDescription,
+  associateJobDescriptionWithCV,
+  disassociateJobDescriptionFromCV,
+  analyzeATSOptimization,
+  enhanceContent,
+  getContentEnhancementStatus,
+  deleteContentEnhancement,
+  generateAISection,
+  getAISections,
+  createAIEnhancement,
+  getAIEnhancementStatus,
+  getLatestAIEnhancement,
+  updateAIEnhancement,
+  deleteAIEnhancement,
+  checkAIFeatureStatus,
+  retryWithBackoff,
+  generateAllSuggestions,
+} = aiService;
