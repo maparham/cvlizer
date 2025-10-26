@@ -8,7 +8,7 @@
 import { StateCreator } from "zustand";
 import type { AIStore } from "./types";
 import { AIFeatureStatus } from "../../types/ai";
-import { aiService } from "../../services/aiService";
+import { aiService } from "../../services/ai";
 
 export interface FeatureStatusState {
   featureStatus: AIFeatureStatus;

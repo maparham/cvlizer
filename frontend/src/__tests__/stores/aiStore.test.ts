@@ -46,7 +46,7 @@ Object.defineProperty(window, "localStorage", {
 });
 
 // Mock the AI service
-jest.mock("../../services/aiService", () => ({
+jest.mock("../../services/ai", () => ({
   aiService: {
     checkAIFeatureStatus: jest.fn(),
     analyzeJobFit: jest.fn(),

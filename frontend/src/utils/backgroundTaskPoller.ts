@@ -12,7 +12,7 @@
  * - Provide callbacks for completion and errors
  */
 
-import { aiService } from "../services/aiService";
+import { aiService } from "../services/ai";
 import {
   JobDescription,
   ContentEnhancementResponse,

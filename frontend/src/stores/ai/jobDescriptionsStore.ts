@@ -9,7 +9,7 @@
 import { StateCreator } from "zustand";
 import type { AIStore } from "./types";
 import { JobDescription } from "../../types/ai";
-import { aiService } from "../../services/aiService";
+import { aiService } from "../../services/ai";
 import { Logger } from "../../utils/logger";
 import { ErrorHandler } from "../../utils/errorHandler";
 

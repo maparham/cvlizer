@@ -12,7 +12,7 @@ import type { JobDescriptionsSlice } from "./jobDescriptionsStore";
 import type { DraftsSlice } from "./draftsStore";
 import type { ContentEnhancementSlice } from "./contentEnhancementStore";
 import type { InlineDiffSlice } from "./inlineDiffStore";
-import type { aiService } from "../../services/aiService";
+import type { aiService } from "../../services/ai";
 
 // Utility actions that work across multiple slices
 export interface UtilityActions {

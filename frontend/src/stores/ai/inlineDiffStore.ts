@@ -9,7 +9,7 @@
 import { StateCreator } from "zustand";
 import type { AIStore } from "./types";
 import { InlineDiffState, TempCVState, AISuggestion } from "../../types/ai";
-import { aiService } from "../../services/aiService";
+import { aiService } from "../../services/ai";
 
 export interface InlineDiffSliceState {
   inlineDiff: InlineDiffState;

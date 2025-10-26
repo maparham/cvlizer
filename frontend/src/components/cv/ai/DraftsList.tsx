@@ -31,7 +31,7 @@ import {
 } from "@mui/icons-material";
 import { useAIStore, useCVDrafts } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
-import { aiService } from "../../../services/aiService";
+import { aiService } from "../../../services/ai";
 import DraftSection from "./DraftSection";
 
 interface DraftsListProps {

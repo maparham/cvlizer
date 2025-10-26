@@ -17,7 +17,7 @@ import { createJobDescriptionsSlice } from "./jobDescriptionsStore";
 import { createDraftsSlice } from "./draftsStore";
 import { createContentEnhancementSlice } from "./contentEnhancementStore";
 import { createInlineDiffSlice } from "./inlineDiffStore";
-import { aiService } from "../../services/aiService";
+import { aiService } from "../../services/ai";
 
 // Initial state for utility actions
 const initialState = {

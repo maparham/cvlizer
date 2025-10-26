@@ -18,7 +18,7 @@
  */
 
 import { create } from "zustand";
-import { aiService } from "../services/aiService";
+import { aiService } from "../services/ai";
 import { Logger } from "../utils/logger";
 import { ErrorHandler } from "../utils/errorHandler";
 import { AllSuggestionsResponse } from "../types/ai";
