@@ -336,9 +336,9 @@ async def delete_job_description(
 )
 @limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
 async def parse_job_description_url(
+    request: Request,
     cv_id: str,
-    request: JobDescriptionParseRequest,
-    request_obj: Request,
+    parse_request: JobDescriptionParseRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -350,7 +350,7 @@ async def parse_job_description_url(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
     # Validate URL before creating job description - check for search results pages
-    if _is_search_results_page(request.url):
+    if _is_search_results_page(parse_request.url):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab.",
@@ -360,7 +360,7 @@ async def parse_job_description_url(
     jd = JobDescription(
         user_id=str(current_user.id),
         cv_id=cv_id,  # Track original CV
-        source_url=request.url,
+        source_url=parse_request.url,
         is_parsing=True,
         content="",  # Will be populated by background task
         title=None,
@@ -385,7 +385,7 @@ async def parse_job_description_url(
 
     # Start background parsing task
     asyncio.create_task(
-        parse_job_url_background(str(jd.id), request.url, str(current_user.id))
+        parse_job_url_background(str(jd.id), parse_request.url, str(current_user.id))
     )
 
     return JobDescriptionParseResponse(
@@ -396,7 +396,7 @@ async def parse_job_description_url(
         title=None,
         company=None,
         location=None,
-        source_url=request.url,
+        source_url=parse_request.url,
         source=None,
         error=None,
     )
@@ -474,8 +474,8 @@ async def create_user_job_description(
 @router.post("/job-descriptions/parse-url", response_model=JobDescriptionParseResponse)
 @limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
 async def parse_user_job_description_url(
-    request: JobDescriptionParseRequest,
-    request_obj: Request,
+    request: Request,
+    parse_request: JobDescriptionParseRequest,
     cv_id: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
@@ -485,7 +485,7 @@ async def parse_user_job_description_url(
     Optionally associate it with a CV using the cv_id query parameter.
     """
     # Validate URL before creating job description - check for search results pages
-    if _is_search_results_page(request.url):
+    if _is_search_results_page(parse_request.url):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab.",
@@ -495,7 +495,7 @@ async def parse_user_job_description_url(
     jd = JobDescription(
         user_id=str(current_user.id),
         cv_id=cv_id,  # Track original CV if provided
-        source_url=request.url,
+        source_url=parse_request.url,
         is_parsing=True,
         content="",  # Will be populated by background task
         title=None,
@@ -529,7 +529,7 @@ async def parse_user_job_description_url(
 
     # Start background parsing task
     asyncio.create_task(
-        parse_job_url_background(str(jd.id), request.url, str(current_user.id))
+        parse_job_url_background(str(jd.id), parse_request.url, str(current_user.id))
     )
 
     return JobDescriptionParseResponse(
@@ -540,7 +540,7 @@ async def parse_user_job_description_url(
         title=None,
         company=None,
         location=None,
-        source_url=request.url,
+        source_url=parse_request.url,
         source=None,
         error=None,
     )
