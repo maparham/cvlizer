@@ -673,8 +673,8 @@ async def get_ai_sections(
 @limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def enhance_content_endpoint(
     cv_id: str,
-    request: ContentEnhancementRequest,
-    request_obj: Request,
+    request: Request,
+    body: ContentEnhancementRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -695,8 +695,8 @@ async def enhance_content_endpoint(
     enhancement = ContentEnhancement(
         user_id=str(current_user.id),
         cv_id=cv_id,
-        original_content=request.original_content,
-        content_type=request.content_type,
+        original_content=body.original_content,
+        content_type=body.content_type,
         is_generating=True,
         suggestions=None,
         overall_improvements=None,
@@ -713,8 +713,8 @@ async def enhance_content_endpoint(
     asyncio.create_task(
         enhance_content_background(
             str(enhancement.id),
-            request.original_content,
-            request.content_type,
+            body.original_content,
+            body.content_type,
             str(current_user.id),
             cv_id,
         )
@@ -808,8 +808,8 @@ async def delete_content_enhancement(
 @limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def optimize_ats_endpoint(
     cv_id: str,
-    request: ATSOptimizationRequest,
-    request_obj: Request,
+    request: Request,
+    body: ATSOptimizationRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -822,7 +822,7 @@ async def optimize_ats_endpoint(
 
     # Verify job description exists (global lookup)
     job_description = get_job_description_by_id(
-        db, request.job_description_id, str(current_user.id)
+        db, body.job_description_id, str(current_user.id)
     )
 
     if not job_description:
@@ -920,8 +920,8 @@ async def optimize_ats_endpoint(
 @limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def generate_all_suggestions_endpoint(
     cv_id: str,
-    request: GenerateSuggestionsRequest,
-    request_obj: Request,
+    request: Request,
+    body: GenerateSuggestionsRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -934,7 +934,7 @@ async def generate_all_suggestions_endpoint(
 
     # Verify job description exists (global lookup)
     job_description = get_job_description_by_id(
-        db, request.job_description_id, str(current_user.id)
+        db, body.job_description_id, str(current_user.id)
     )
 
     if not job_description:
@@ -1013,8 +1013,8 @@ async def generate_all_suggestions_endpoint(
 @limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
 async def create_job_fit_draft(
     cv_id: str,
-    request: DraftCreateRequest,
-    request_obj: Request,
+    request: Request,
+    body: DraftCreateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
 ):
@@ -1027,7 +1027,7 @@ async def create_job_fit_draft(
 
     # Verify job description exists (global lookup)
     job_description = get_job_description_by_id(
-        db, request.job_description_id, str(current_user.id)
+        db, body.job_description_id, str(current_user.id)
     )
 
     if not job_description:
@@ -1054,7 +1054,7 @@ async def create_job_fit_draft(
     # Create new draft with generation status
     draft = AIDraft(
         cv_id=cv_id,
-        job_description_id=request.job_description_id,
+        job_description_id=body.job_description_id,
         section_type="why_good_fit",
         draft_data={},  # Will be populated by background task
         ai_model=AIConfig.OPENAI_MODEL,
@@ -1076,7 +1076,7 @@ async def create_job_fit_draft(
             job_description.content,
             str(current_user.id),
             cv_id,
-            request.job_description_id,
+            body.job_description_id,
         )
     )
 
