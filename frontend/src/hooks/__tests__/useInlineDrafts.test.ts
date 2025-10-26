@@ -10,7 +10,7 @@ import { useInlineDrafts } from "../useInlineDrafts";
 // import { DraftResponse } from '../../types/ai';
 
 // Mock the entire hook dependencies
-jest.mock("../../stores/aiStore", () => ({
+jest.mock("../../stores/ai", () => ({
   useAIStore: jest.fn(),
   useCVDrafts: jest.fn(),
 }));
@@ -61,7 +61,7 @@ describe("useInlineDrafts", () => {
     jest.clearAllMocks();
 
     // Mock the store hooks
-    const { useAIStore, useCVDrafts } = require("../../stores/aiStore");
+    const { useAIStore, useCVDrafts } = require("../../stores/ai");
     const { useNotifications } = require("../../stores/uiStore");
 
     useAIStore.mockReturnValue({

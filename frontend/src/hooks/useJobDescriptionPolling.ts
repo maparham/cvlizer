@@ -17,7 +17,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useAIStore } from "../stores/aiStore";
+import { useAIStore } from "../stores/ai";
 import { JobDescription } from "../types/ai";
 import { POLLING_CONFIG } from "../config/constants";
 

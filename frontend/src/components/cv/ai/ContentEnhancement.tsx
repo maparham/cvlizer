@@ -52,7 +52,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material";
-import { useAIStore, useSuggestions } from "../../../stores/aiStore";
+import { useAIStore, useSuggestions } from "../../../stores/ai";
 import { ContentSuggestion } from "../../../types/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";

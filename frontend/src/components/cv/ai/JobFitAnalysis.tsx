@@ -61,7 +61,7 @@ import {
   useAIStore,
   useJobFitAnalysis,
   useActiveJobDescription,
-} from "../../../stores/aiStore";
+} from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import { calculateCVCompleteness } from "../../../utils/cvCompleteness";

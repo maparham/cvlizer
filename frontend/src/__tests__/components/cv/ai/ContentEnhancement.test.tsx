@@ -5,7 +5,7 @@ import { EnhancementButton, EnhancementModal } from '../../../../components/cv/a
 import { ContentSuggestion } from '../../../../types/ai';
 
 // Mock stores
-jest.mock('../../../../stores/aiStore', () => ({
+jest.mock('../../../../stores/ai', () => ({
   useAIStore: jest.fn(() => ({
     enhanceContent: jest.fn().mockResolvedValue({
       enhancement_id: 'enh-123',
@@ -31,7 +31,7 @@ jest.mock('../../../../contexts/AITaskPollingContext', () => ({
 }));
 
 // Import mocked modules
-import { useAIStore, useSuggestions } from '../../../../stores/aiStore';
+import { useAIStore, useSuggestions } from '../../../../stores/ai';
 import { useNotifications } from '../../../../packages/notifications';
 import { useAITaskPollingContext } from '../../../../contexts/AITaskPollingContext';
 

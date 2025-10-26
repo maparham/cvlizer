@@ -64,7 +64,7 @@ import CVQuickActions from "../components/cv/CVQuickActions";
 import { JobDescriptionsModal, JobDescriptionCard } from "../components/cv/ai";
 import JobDescriptionStatusDialog from "../components/cv/ai/JobDescriptionStatusDialog";
 import { useCVStore } from "../stores/cvStore";
-import { useAIStore } from "../stores/aiStore";
+import { useAIStore } from "../stores/ai";
 import { useNotifications } from "../packages/notifications";
 import { useActivityLogger } from "../hooks/useActivityLogger";
 import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../packages/notifications";

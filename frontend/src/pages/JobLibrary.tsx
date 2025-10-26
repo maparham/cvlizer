@@ -49,7 +49,7 @@ import {
   FilterList as FilterListIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { useAIStore } from "../stores/aiStore";
+import { useAIStore } from "../stores/ai";
 import { JobDescription } from "../types/ai";
 import JobDescriptionCard from "../components/cv/ai/JobDescriptionCard";
 import JobDescriptionsModal from "../components/cv/ai/JobDescriptionsModal";

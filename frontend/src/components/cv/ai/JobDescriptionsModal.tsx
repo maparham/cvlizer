@@ -50,7 +50,7 @@ import {
 import {
   useAIStore,
   useActiveJobDescription,
-} from "../../../stores/aiStore";
+} from "../../../stores/ai";
 import { JobDescription } from "../../../types/ai";
 import { useNotifications } from "../../../packages/notifications";
 import {

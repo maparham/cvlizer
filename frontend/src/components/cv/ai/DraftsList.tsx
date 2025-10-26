@@ -29,7 +29,7 @@ import {
   Refresh as RefreshIcon,
   AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
-import { useAIStore, useCVDrafts } from "../../../stores/aiStore";
+import { useAIStore, useCVDrafts } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { aiService } from "../../../services/aiService";
 import DraftSection from "./DraftSection";

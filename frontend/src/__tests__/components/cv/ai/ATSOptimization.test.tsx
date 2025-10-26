@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import ATSOptimization from '../../../../components/cv/ai/ATSOptimization';
 
 // Mock stores
-jest.mock('../../../../stores/aiStore', () => ({
+jest.mock('../../../../stores/ai', () => ({
   useAIStore: jest.fn(() => ({
     analyzeATSOptimization: jest.fn().mockResolvedValue(undefined),
     clearATSOptimization: jest.fn(),
@@ -25,7 +25,7 @@ jest.mock('../../../../packages/notifications', () => ({
 }));
 
 // Import mocked modules
-import { useAIStore, useATSOptimization, useActiveJobDescription } from '../../../../stores/aiStore';
+import { useAIStore, useATSOptimization, useActiveJobDescription } from '../../../../stores/ai';
 import { useNotifications } from '../../../../packages/notifications';
 
 describe('ATSOptimization', () => {

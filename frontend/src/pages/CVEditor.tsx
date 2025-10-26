@@ -50,7 +50,7 @@ import { ErrorBoundary } from "../components/common";
 import { CVProvider } from "../contexts/CVContext";
 import { useCVStore } from "../stores/cvStore";
 import { useCVNotifications } from "../packages/notifications";
-import { useAIStore } from "../stores/aiStore";
+import { useAIStore } from "../stores/ai";
 import { CVData } from "../types";
 import { parseValidationErrors } from "../utils/validationUtils";
 

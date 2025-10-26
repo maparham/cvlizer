@@ -24,7 +24,7 @@ import {
   useInlineDiffSuggestions,
   useTempCV,
   useIsDiffMode,
-} from "../stores/aiStore";
+} from "../stores/ai";
 import { AISuggestion } from "../types/ai";
 
 interface InlineDiffContextValue {

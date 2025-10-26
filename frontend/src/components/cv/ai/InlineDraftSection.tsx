@@ -45,7 +45,7 @@ import {
   Psychology as PsychologyIcon,
   ContentCopy as ContentCopyIcon,
 } from "@mui/icons-material";
-import { useAIStore } from "../../../stores/aiStore";
+import { useAIStore } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useCVEditor } from "../../../contexts/CVEditorContext";
 import { useCVStore } from "../../../stores/cvStore";

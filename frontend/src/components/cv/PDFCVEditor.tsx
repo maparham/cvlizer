@@ -26,7 +26,7 @@ import {
   useCVEditor,
 } from "../../contexts/CVEditorContext";
 import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from "./index";
-import { useAIStore } from "../../stores/aiStore";
+import { useAIStore } from "../../stores/ai";
 import { useAISuggestionsStore } from "../../stores/aiSuggestionsStore";
 import { isTempCVId } from "../../stores/cvStore";
 import { CVData } from "../../types/cv";

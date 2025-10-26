@@ -59,7 +59,7 @@ import {
   useAIStore,
   useATSOptimization,
   useActiveJobDescription,
-} from "../../../stores/aiStore";
+} from "../../../stores/ai";
 import { MissingKeyword } from "../../../types/ai";
 import { useNotifications } from "../../../packages/notifications";
 

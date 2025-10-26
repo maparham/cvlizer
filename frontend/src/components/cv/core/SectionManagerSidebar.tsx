@@ -39,7 +39,7 @@ import { EditableTitle } from "../EditableTitle";
 import { JobDescriptionSummary } from "../ai";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
-import { useActiveJobDescription, useAIStore } from "../../../stores/aiStore";
+import { useActiveJobDescription, useAIStore } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 
 interface SectionManagerSidebarProps {

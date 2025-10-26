@@ -39,7 +39,7 @@ import {
   VisibilityOff,
 } from "@mui/icons-material";
 import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
-import { useActiveJobDescription } from "../../../stores/aiStore";
+import { useActiveJobDescription } from "../../../stores/ai";
 import { useCVEditor } from "../../../contexts/CVEditorContext";
 
 interface InlineDiffControlsProps {
@@ -103,7 +103,7 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
 
       // Apply suggestions to create temp state
       if (cvData) {
-        applyAllSuggestions(cvData);
+        applyAllSuggestions(cvData, cvId);
       } else {
         console.warn("No CV data available to apply suggestions");
       }

@@ -43,7 +43,7 @@ import {
   useVisibleJobDescriptions,
   useJobDescriptions,
   useActiveJobDescription,
-} from "../../../stores/aiStore";
+} from "../../../stores/ai";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { JobDescription } from "../../../types/ai";
 import { useNotifications } from "../../../packages/notifications";

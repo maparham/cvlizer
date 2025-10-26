@@ -23,7 +23,7 @@ import { Box, Fab, Tooltip, Alert, Snackbar } from "@mui/material";
 import { AutoFixHigh, Close } from "@mui/icons-material";
 import { InlineDiffProvider } from "../../contexts/InlineDiffContext";
 import { FloatingSuggestionsPanel } from "./ai/FloatingSuggestionsPanel";
-import { useAIStore, useActiveJobDescription } from "../../stores/aiStore";
+import { useAIStore, useActiveJobDescription } from "../../stores/ai";
 import { useCVEditor } from "../../contexts/CVEditorContext";
 import PDFCVEditor from "./PDFCVEditor";
 
@@ -67,7 +67,7 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
       await generateInlineSuggestions(cvId, activeJobDescription.id);
 
       // Apply all suggestions to create temp state
-      applyAllSuggestions(cvData);
+      applyAllSuggestions(cvData, cvId);
     } catch (err) {
       console.error("Error generating AI suggestions:", err);
       setError(

@@ -14,7 +14,7 @@ import {
   useAIStore,
   useVisibleJobDescriptions,
   useActiveJobDescription,
-} from "../../stores/aiStore";
+} from "../../stores/ai";
 import { JobDescription } from "../../types/ai";
 
 // Mock logger and errorHandler to avoid import.meta.env issues
