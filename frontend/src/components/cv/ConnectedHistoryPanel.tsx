@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import HistoryPanel from "./HistoryPanel";
 import VersionPreviewDialog from "./VersionPreviewDialog";
-import { useCVStore } from "../../stores/cvStore";
+import { useCVStore } from "../../stores/cv";
 import { useNotifications } from "../../packages/notifications";
 import {
   CVHistoryEntry,

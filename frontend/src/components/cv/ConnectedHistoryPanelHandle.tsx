@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import HistoryPanelHandle from "./HistoryPanelHandle";
-import { useCVStore } from "../../stores/cvStore";
+import { useCVStore } from "../../stores/cv";
 
 interface ConnectedHistoryPanelHandleProps {
   cvId: string;

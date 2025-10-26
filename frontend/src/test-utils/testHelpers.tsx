@@ -5,7 +5,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CVEditorProvider } from "../contexts/CVEditorContext";
-import { DEFAULT_CV_DATA } from "../stores/cvStore";
+import { DEFAULT_CV_DATA } from "../stores/cv";
 
 // Create a test theme
 const testTheme = createTheme({

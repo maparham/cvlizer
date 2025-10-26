@@ -25,7 +25,7 @@ import { AITaskPollingProvider } from "./contexts/AITaskPollingContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ImpersonationBanner } from "./components/common";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { useCVStore } from "./stores/cvStore";
+import { useCVStore } from "./stores/cv";
 import { useImpersonation } from "./hooks/useImpersonation";
 import { useActivityLogger } from "./hooks/useActivityLogger";
 

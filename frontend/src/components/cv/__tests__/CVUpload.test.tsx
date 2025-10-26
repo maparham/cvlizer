@@ -11,7 +11,7 @@ jest.mock("../../../services/api", () => ({
 }));
 
 // Mock the CV store
-jest.mock("../../../stores/cvStore", () => ({
+jest.mock("../../../stores/cv", () => ({
   useCVStore: jest.fn(() => ({
     uploadCV: mockUploadCV,
   })),

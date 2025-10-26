@@ -26,7 +26,7 @@ import {
   Upload as UploadIcon,
   CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material";
-import { useCVStore } from "../../stores/cvStore";
+import { useCVStore } from "../../stores/cv";
 import FilePreview from "./FilePreview";
 import { validateCVFile } from "../../utils/fileValidation";
 

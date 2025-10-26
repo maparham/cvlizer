@@ -48,7 +48,7 @@ import {
 import { useAIStore } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useCVEditor } from "../../../contexts/CVEditorContext";
-import { useCVStore } from "../../../stores/cvStore";
+import { useCVStore } from "../../../stores/cv";
 import { DraftResponse } from "../../../types/ai";
 
 interface InlineDraftSectionProps {

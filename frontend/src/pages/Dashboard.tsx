@@ -63,7 +63,7 @@ import CVTemplateSelector from "../components/cv/CVTemplateSelector";
 import CVQuickActions from "../components/cv/CVQuickActions";
 import { JobDescriptionsModal, JobDescriptionCard } from "../components/cv/ai";
 import JobDescriptionStatusDialog from "../components/cv/ai/JobDescriptionStatusDialog";
-import { useCVStore } from "../stores/cvStore";
+import { useCVStore } from "../stores/cv";
 import { useAIStore } from "../stores/ai";
 import { useNotifications } from "../packages/notifications";
 import { useActivityLogger } from "../hooks/useActivityLogger";

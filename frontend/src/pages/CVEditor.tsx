@@ -48,7 +48,7 @@ import { InitialValidation } from "../components/cv/InitialValidation";
 import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../packages/notifications";
 import { ErrorBoundary } from "../components/common";
 import { CVProvider } from "../contexts/CVContext";
-import { useCVStore } from "../stores/cvStore";
+import { useCVStore } from "../stores/cv";
 import { useCVNotifications } from "../packages/notifications";
 import { useAIStore } from "../stores/ai";
 import { CVData } from "../types";

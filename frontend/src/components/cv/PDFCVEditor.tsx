@@ -28,7 +28,7 @@ import {
 import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from "./index";
 import { useAIStore } from "../../stores/ai";
 import { useAISuggestionsStore } from "../../stores/aiSuggestionsStore";
-import { isTempCVId } from "../../stores/cvStore";
+import { isTempCVId } from "../../stores/cv";
 import { CVData } from "../../types/cv";
 
 interface PDFCVEditorProps {

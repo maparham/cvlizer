@@ -1,11 +1,11 @@
 // Export all stores
 export { useAuthStore } from "./authStore";
-export { useCVStore, cleanupCVStore } from "./cvStore";
+export { useCVStore, cleanupCVStore, DEFAULT_CV_DATA, isTempCVId } from "./cv";
 export { useUIStore, useNotifications } from "./uiStore";
 
 // Import the stores for internal use
 import { useAuthStore } from "./authStore";
-import { useCVStore, cleanupCVStore } from "./cvStore";
+import { useCVStore, cleanupCVStore } from "./cv";
 import { useUIStore } from "./uiStore";
 
 // Re-export types for convenience

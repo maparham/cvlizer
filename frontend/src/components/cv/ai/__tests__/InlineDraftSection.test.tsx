@@ -12,7 +12,7 @@ import { createTheme } from "@mui/material/styles";
 import InlineDraftSection from "../InlineDraftSection";
 import { useAIStore } from "../../../../stores/ai";
 import { useNotifications } from "../../../../packages/notifications";
-import { useCVStore } from "../../../../stores/cvStore";
+import { useCVStore } from "../../../../stores/cv";
 import { useCVEditor } from "../../../../contexts/CVEditorContext";
 import { DraftResponse } from "../../../../types/ai";
 
@@ -46,7 +46,7 @@ jest.mock("../../../../services/api", () => ({
 // Mock the stores and contexts
 jest.mock("../../../../stores/ai");
 jest.mock("../../../../packages/notifications");
-jest.mock("../../../../stores/cvStore");
+jest.mock("../../../../stores/cv");
 jest.mock("../../../../contexts/CVEditorContext");
 
 const mockUseAIStore = useAIStore as jest.MockedFunction<typeof useAIStore>;

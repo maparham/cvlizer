@@ -15,9 +15,11 @@ export const importMetaEnv = {
 };
 
 // Mock import.meta for tests
-if (typeof import !== 'undefined') {
+if (typeof global !== 'undefined') {
   // @ts-ignore
-  import.meta = {
+  global.import = global.import || {};
+  // @ts-ignore
+  global.import.meta = {
     env: importMetaEnv,
   };
 }
