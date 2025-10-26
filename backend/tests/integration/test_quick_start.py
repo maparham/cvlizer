@@ -116,10 +116,11 @@ def test_quick_start_preview_rate_limit(client):
 
     # Mock AI parsing to return quickly
     with patch(
-        "src.api.quick_start.parse_cv_with_openai", new_callable=AsyncMock
+        "src.api.quick_start.cv_parser.parse_cv_with_openai", new_callable=AsyncMock
     ) as mock_cv_parse:
         with patch(
-            "src.api.quick_start.extract_job_description_with_ai", new_callable=AsyncMock
+            "src.api.quick_start.job_parser.extract_job_description_with_ai",
+            new_callable=AsyncMock,
         ) as mock_job_parse:
             with patch(
                 "src.services.url_parsing_service.parse_job_url", new_callable=AsyncMock
@@ -198,7 +199,7 @@ def test_quick_start_claim_without_job_data(client, test_user, mock_cv_data):
     try:
         # Mock file saving
         with patch(
-            "src.api.quick_start.save_uploaded_file", new_callable=AsyncMock
+            "src.api.quick_start.claim.save_uploaded_file", new_callable=AsyncMock
         ) as mock_save_file:
             mock_save_file.return_value = (
                 "uploads/test.pdf",
@@ -252,7 +253,7 @@ def test_quick_start_claim_transaction_rollback(
     try:
         # Mock file saving and make JD creation fail
         with patch(
-            "src.api.quick_start.save_uploaded_file", new_callable=AsyncMock
+            "src.services.file_service.save_uploaded_file", new_callable=AsyncMock
         ) as mock_save_file:
             with patch(
                 "src.services.job_description_service.create_job_description_for_user_with_cvs"

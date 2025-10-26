@@ -194,16 +194,16 @@ const DiagnosticChatTab: React.FC = () => {
           <AccordionDetails>
             {config && (
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Status:{' '}
-                    {config.is_enabled ? (
-                      <Chip label="Enabled" color="success" size="small" />
-                    ) : (
-                      <Chip label="Disabled" color="error" size="small" />
-                    )}
-                  </Typography>
-                </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography component="div" variant="body2" color="text.secondary">
+                  Status:{' '}
+                  {config.is_enabled ? (
+                    <Chip label="Enabled" color="success" size="small" />
+                  ) : (
+                    <Chip label="Disabled" color="error" size="small" />
+                  )}
+                </Typography>
+              </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography variant="body2" color="text.secondary">
                     SDK Version: <strong>{config.sdk_version}</strong>
