@@ -275,6 +275,8 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+*.db-shm
+*.db-wal
 
 # Upload directories (keep structure but ignore files)
 uploads/*
