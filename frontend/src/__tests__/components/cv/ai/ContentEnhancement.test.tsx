@@ -15,7 +15,7 @@ jest.mock('../../../../stores/aiStore', () => ({
   useSuggestions: jest.fn(() => ({})),
 }));
 
-jest.mock('../../../../stores/uiStore', () => ({
+jest.mock('../../../../packages/notifications', () => ({
   useNotifications: jest.fn(() => ({
     showSuccess: jest.fn(),
     showError: jest.fn(),
@@ -32,7 +32,7 @@ jest.mock('../../../../contexts/AITaskPollingContext', () => ({
 
 // Import mocked modules
 import { useAIStore, useSuggestions } from '../../../../stores/aiStore';
-import { useNotifications } from '../../../../stores/uiStore';
+import { useNotifications } from '../../../../packages/notifications';
 import { useAITaskPollingContext } from '../../../../contexts/AITaskPollingContext';
 
 describe('EnhancementButton', () => {

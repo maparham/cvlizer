@@ -14,7 +14,6 @@ describe("uiStore", () => {
     expect(result.current.theme).toBe("auto");
     expect(result.current.sidebarOpen).toBe(true);
     expect(result.current.globalLoading).toBe(false);
-    expect(result.current.notifications).toEqual([]);
     expect(result.current.dialogs).toEqual({
       confirmDelete: false,
       unsavedChanges: false,
@@ -94,71 +93,7 @@ describe("uiStore", () => {
     });
   });
 
-  describe("notifications", () => {
-    it("should add notification", () => {
-      const { result } = renderHook(() => useUIStore());
-      const notification = {
-        type: "success" as const,
-        title: "Success",
-        message: "Operation successful",
-        duration: 5000,
-      };
-
-      act(() => {
-        const id = result.current.addNotification(notification);
-        expect(typeof id).toBe("string");
-      });
-
-      expect(result.current.notifications).toHaveLength(1);
-      expect(result.current.notifications[0]).toMatchObject(notification);
-    });
-
-    it("should remove notification", () => {
-      const { result } = renderHook(() => useUIStore());
-      let notificationId: string;
-
-      act(() => {
-        notificationId = result.current.addNotification({
-          type: "success",
-          title: "Success",
-          message: "Operation successful",
-        });
-      });
-
-      expect(result.current.notifications).toHaveLength(1);
-
-      act(() => {
-        result.current.removeNotification(notificationId!);
-      });
-
-      expect(result.current.notifications).toHaveLength(0);
-    });
-
-    it("should clear all notifications", () => {
-      const { result } = renderHook(() => useUIStore());
-
-      act(() => {
-        result.current.addNotification({
-          type: "success",
-          title: "Success 1",
-          message: "Operation 1 successful",
-        });
-        result.current.addNotification({
-          type: "error",
-          title: "Error 1",
-          message: "Operation 1 failed",
-        });
-      });
-
-      expect(result.current.notifications).toHaveLength(2);
-
-      act(() => {
-        result.current.clearNotifications();
-      });
-
-      expect(result.current.notifications).toHaveLength(0);
-    });
-  });
+  // Note: Notifications are handled by the notifications package, not uiStore
 
   describe("dialogs", () => {
     it("should open dialog", () => {
@@ -210,68 +145,7 @@ describe("uiStore", () => {
     });
   });
 
-  describe("utility functions", () => {
-    it("should show success notification", () => {
-      const { result } = renderHook(() => useUIStore());
-
-      act(() => {
-        result.current.showSuccess("Success!", "Operation completed");
-      });
-
-      expect(result.current.notifications).toHaveLength(1);
-      expect(result.current.notifications[0]).toMatchObject({
-        type: "success",
-        title: "Success!",
-        message: "Operation completed",
-      });
-    });
-
-    it("should show error notification", () => {
-      const { result } = renderHook(() => useUIStore());
-
-      act(() => {
-        result.current.showError("Error!", "Something went wrong");
-      });
-
-      expect(result.current.notifications).toHaveLength(1);
-      expect(result.current.notifications[0]).toMatchObject({
-        type: "error",
-        title: "Error!",
-        message: "Something went wrong",
-      });
-    });
-
-    it("should show warning notification", () => {
-      const { result } = renderHook(() => useUIStore());
-
-      act(() => {
-        result.current.showWarning("Warning!", "Please be careful");
-      });
-
-      expect(result.current.notifications).toHaveLength(1);
-      expect(result.current.notifications[0]).toMatchObject({
-        type: "warning",
-        title: "Warning!",
-        message: "Please be careful",
-      });
-    });
-
-    it("should show info notification", () => {
-      const { result } = renderHook(() => useUIStore());
-
-      act(() => {
-        result.current.showInfo("Info", "Here is some information");
-      });
-
-      expect(result.current.notifications).toHaveLength(1);
-      expect(result.current.notifications[0]).toMatchObject({
-        type: "info",
-        title: "Info",
-        message: "Here is some information",
-      });
-    });
-  });
-
+  // Note: Notifications utility functions are in the notifications package
   // Note: Persistence tests are skipped as they require more complex setup
   // The store uses Zustand's persist middleware which may not work properly in test environment
 });

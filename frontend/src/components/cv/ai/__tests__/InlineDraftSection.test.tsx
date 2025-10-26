@@ -11,7 +11,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { createTheme } from "@mui/material/styles";
 import InlineDraftSection from "../InlineDraftSection";
 import { useAIStore } from "../../../../stores/aiStore";
-import { useNotifications } from "../../../../stores/uiStore";
+import { useNotifications } from "../../../../packages/notifications";
 import { useCVStore } from "../../../../stores/cvStore";
 import { useCVEditor } from "../../../../contexts/CVEditorContext";
 import { DraftResponse } from "../../../../types/ai";
@@ -45,7 +45,7 @@ jest.mock("../../../../services/api", () => ({
 
 // Mock the stores and contexts
 jest.mock("../../../../stores/aiStore");
-jest.mock("../../../../stores/uiStore");
+jest.mock("../../../../packages/notifications");
 jest.mock("../../../../stores/cvStore");
 jest.mock("../../../../contexts/CVEditorContext");
 
