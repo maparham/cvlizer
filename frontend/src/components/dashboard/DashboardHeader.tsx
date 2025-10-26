@@ -1,0 +1,130 @@
+/**
+ * Dashboard Header Component
+ *
+ * This module provides the main application header with brand logo, user menu,
+ * and navigation controls for the Dashboard page.
+ *
+ * Key responsibilities:
+ * - Display application brand logo
+ * - Provide user account menu with profile, admin (conditional), and logout
+ * - Handle menu open/close state
+ * - Support navigation to profile and admin pages
+ *
+ * Usage:
+ * - Used in Dashboard component as the top-level AppBar
+ * - Provides consistent header across authenticated pages
+ * - Includes conditional admin menu item based on user role
+ */
+
+import React from "react";
+import { AppBar, Toolbar, IconButton, Menu, MenuItem, Link, Typography } from "@mui/material";
+import { AccountCircle as AccountCircleIcon } from "@mui/icons-material";
+import { Link as RouterLink } from "react-router-dom";
+
+interface DashboardHeaderProps {
+  anchorEl: null | HTMLElement;
+  onMenuOpen: (event: React.MouseEvent<HTMLElement>) => void;
+  onMenuClose: () => void;
+  onLogout: () => void;
+  isAdmin: boolean;
+  onNavigate: (path: string) => void;
+}
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  anchorEl,
+  onMenuOpen,
+  onMenuClose,
+  onLogout,
+  isAdmin,
+  onNavigate,
+}) => {
+  return (
+    <AppBar
+      position="static"
+      sx={{
+        backgroundColor: "background.paper",
+        color: "text.primary",
+        boxShadow: 1,
+        borderBottom: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      <Toolbar sx={{ minHeight: "64px !important", px: 3 }}>
+        <RouterLink to="/" style={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}>
+          <Typography
+            variant="h5"
+            component="div"
+            sx={{
+              color: "text.primary",
+              cursor: "pointer",
+              fontWeight: 700,
+              letterSpacing: "-0.025em",
+            }}
+          >
+            CV Optimizer
+          </Typography>
+        </RouterLink>
+        <IconButton
+          size="large"
+          edge="end"
+          aria-label="account of current user"
+          aria-controls="menu-appbar"
+          aria-haspopup="true"
+          onClick={onMenuOpen}
+          sx={{
+            color: "text.secondary",
+            "&:hover": {
+              backgroundColor: "action.hover",
+              color: "text.primary",
+            },
+          }}
+          data-testid="user-menu-button"
+        >
+          <AccountCircleIcon />
+        </IconButton>
+        <Menu
+          id="menu-appbar"
+          anchorEl={anchorEl}
+          anchorOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+          keepMounted
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+          open={Boolean(anchorEl)}
+          onClose={onMenuClose}
+          data-testid="user-menu"
+        >
+          <MenuItem
+            onClick={() => {
+              onNavigate("/profile");
+              onMenuClose();
+            }}
+            data-testid="profile-menu-item"
+          >
+            Profile
+          </MenuItem>
+          {isAdmin && (
+            <MenuItem
+              onClick={() => {
+                onNavigate("/admin");
+                onMenuClose();
+              }}
+              data-testid="admin-menu-item"
+            >
+              Admin
+            </MenuItem>
+          )}
+          <MenuItem onClick={onLogout} data-testid="logout-menu-item">
+            Logout
+          </MenuItem>
+        </Menu>
+      </Toolbar>
+    </AppBar>
+  );
+};
+
+export default DashboardHeader;
