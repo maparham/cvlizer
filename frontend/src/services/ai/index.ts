@@ -15,50 +15,13 @@
  */
 
 // Import all services
-import { cacheManager, CacheManager } from "./cache";
-import {
-  jobFitService,
-  analyzeJobFit,
-  getDraftStatus,
-  createJobFitDraft,
-  getCVDrafts,
-  approveWhyGoodFitDraft,
-  deleteWhyGoodFitDraft,
-} from "./jobFitService";
-import {
-  jobDescriptionService,
-  createJobDescription,
-  parseJobDescriptionUrl,
-  getJobDescriptionStatus,
-  getJobDescriptions,
-  updateJobDescription,
-  deleteJobDescription,
-  associateJobDescriptionWithCV,
-  disassociateJobDescriptionFromCV,
-} from "./jobDescriptionService";
-import { atsService, analyzeATSOptimization } from "./atsService";
-import {
-  contentEnhancementService,
-  enhanceContent,
-  getContentEnhancementStatus,
-  deleteContentEnhancement,
-} from "./contentEnhancementService";
-import {
-  aiSectionsService,
-  generateAISection,
-  getAISections,
-  createAIEnhancement,
-  getAIEnhancementStatus,
-  getLatestAIEnhancement,
-  updateAIEnhancement,
-  deleteAIEnhancement,
-} from "./aiSectionsService";
-import {
-  utilityService,
-  checkAIFeatureStatus,
-  retryWithBackoff,
-  generateAllSuggestions,
-} from "./utilityService";
+import { cacheManager } from "./cache";
+import { jobFitService } from "./jobFitService";
+import { jobDescriptionService } from "./jobDescriptionService";
+import { atsService } from "./atsService";
+import { contentEnhancementService } from "./contentEnhancementService";
+import { aiSectionsService } from "./aiSectionsService";
+import { utilityService } from "./utilityService";
 
 /**
  * Unified AI Service aggregating all AI service modules
@@ -70,44 +33,44 @@ class AIService {
   clearAllCache = cacheManager.clearAllCache.bind(cacheManager);
 
   // Job fit analysis
-  analyzeJobFit = analyzeJobFit;
-  getDraftStatus = getDraftStatus;
-  createJobFitDraft = createJobFitDraft;
-  getCVDrafts = getCVDrafts;
-  approveWhyGoodFitDraft = approveWhyGoodFitDraft;
-  deleteWhyGoodFitDraft = deleteWhyGoodFitDraft;
+  analyzeJobFit = jobFitService.analyzeJobFit.bind(jobFitService);
+  getDraftStatus = jobFitService.getDraftStatus.bind(jobFitService);
+  createJobFitDraft = jobFitService.createJobFitDraft.bind(jobFitService);
+  getCVDrafts = jobFitService.getCVDrafts.bind(jobFitService);
+  approveWhyGoodFitDraft = jobFitService.approveWhyGoodFitDraft.bind(jobFitService);
+  deleteWhyGoodFitDraft = jobFitService.deleteWhyGoodFitDraft.bind(jobFitService);
 
   // Job descriptions
-  createJobDescription = createJobDescription;
-  parseJobDescriptionUrl = parseJobDescriptionUrl;
-  getJobDescriptionStatus = getJobDescriptionStatus;
-  getJobDescriptions = getJobDescriptions;
-  updateJobDescription = updateJobDescription;
-  deleteJobDescription = deleteJobDescription;
-  associateJobDescriptionWithCV = associateJobDescriptionWithCV;
-  disassociateJobDescriptionFromCV = disassociateJobDescriptionFromCV;
+  createJobDescription = jobDescriptionService.createJobDescription.bind(jobDescriptionService);
+  parseJobDescriptionUrl = jobDescriptionService.parseJobDescriptionUrl.bind(jobDescriptionService);
+  getJobDescriptionStatus = jobDescriptionService.getJobDescriptionStatus.bind(jobDescriptionService);
+  getJobDescriptions = jobDescriptionService.getJobDescriptions.bind(jobDescriptionService);
+  updateJobDescription = jobDescriptionService.updateJobDescription.bind(jobDescriptionService);
+  deleteJobDescription = jobDescriptionService.deleteJobDescription.bind(jobDescriptionService);
+  associateJobDescriptionWithCV = jobDescriptionService.associateJobDescriptionWithCV.bind(jobDescriptionService);
+  disassociateJobDescriptionFromCV = jobDescriptionService.disassociateJobDescriptionFromCV.bind(jobDescriptionService);
 
   // ATS optimization
-  analyzeATSOptimization = analyzeATSOptimization;
+  analyzeATSOptimization = atsService.analyzeATSOptimization.bind(atsService);
 
   // Content enhancement
-  enhanceContent = enhanceContent;
-  getContentEnhancementStatus = getContentEnhancementStatus;
-  deleteContentEnhancement = deleteContentEnhancement;
+  enhanceContent = contentEnhancementService.enhanceContent.bind(contentEnhancementService);
+  getContentEnhancementStatus = contentEnhancementService.getContentEnhancementStatus.bind(contentEnhancementService);
+  deleteContentEnhancement = contentEnhancementService.deleteContentEnhancement.bind(contentEnhancementService);
 
   // AI sections
-  generateAISection = generateAISection;
-  getAISections = getAISections;
-  createAIEnhancement = createAIEnhancement;
-  getAIEnhancementStatus = getAIEnhancementStatus;
-  getLatestAIEnhancement = getLatestAIEnhancement;
-  updateAIEnhancement = updateAIEnhancement;
-  deleteAIEnhancement = deleteAIEnhancement;
+  generateAISection = aiSectionsService.generateAISection.bind(aiSectionsService);
+  getAISections = aiSectionsService.getAISections.bind(aiSectionsService);
+  createAIEnhancement = aiSectionsService.createAIEnhancement.bind(aiSectionsService);
+  getAIEnhancementStatus = aiSectionsService.getAIEnhancementStatus.bind(aiSectionsService);
+  getLatestAIEnhancement = aiSectionsService.getLatestAIEnhancement.bind(aiSectionsService);
+  updateAIEnhancement = aiSectionsService.updateAIEnhancement.bind(aiSectionsService);
+  deleteAIEnhancement = aiSectionsService.deleteAIEnhancement.bind(aiSectionsService);
 
   // Utility functions
-  checkAIFeatureStatus = checkAIFeatureStatus;
-  retryWithBackoff = retryWithBackoff;
-  generateAllSuggestions = generateAllSuggestions;
+  checkAIFeatureStatus = utilityService.checkAIFeatureStatus.bind(utilityService);
+  retryWithBackoff = utilityService.retryWithBackoff.bind(utilityService);
+  generateAllSuggestions = utilityService.generateAllSuggestions.bind(utilityService);
 }
 
 // Export singleton instance for backward compatibility
