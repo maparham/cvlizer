@@ -64,7 +64,7 @@ async def parse_cv_for_preview(
         except asyncio.TimeoutError:
             logger.error(f"CV parsing timeout in quick start for {cv_file.filename}")
             cv_preview = {
-                "error": "Parsing took too long. Please try a simpler CV or contact support.",
+                "error": "Parsing took too long. Please try again.",
                 "filename": cv_file.filename,
             }
             parsed_cv = {"error": "timeout"}

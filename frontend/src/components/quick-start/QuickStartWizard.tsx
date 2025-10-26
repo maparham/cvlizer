@@ -162,13 +162,30 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
 
       setPreviewResponse(response);
 
-      // Call onComplete with all the data
-      onComplete({
-        cvFile: cvFile || undefined,
-        jobUrl: jobInputType === "url" ? jobUrl : undefined,
-        jobText: jobInputType === "text" ? jobText : undefined,
-        previewResponse: response,
-      });
+      // Only call onComplete if parsing was successful (no errors and has data)
+      const hasCvError = Boolean(response.cv_preview?.error);
+      const hasJobError = Boolean(response.job_preview?.error);
+
+      // Check if we actually got valid data (not just error responses)
+      const hasCvData = response.cv_preview && !hasCvError;
+      const hasJobData = response.job_preview && !hasJobError && Object.keys(response.job_preview).length > 0;
+
+      // Only proceed if we have at least one valid result
+      if (hasCvData || hasJobData) {
+        // Call onComplete with all the data
+        onComplete({
+          cvFile: cvFile || undefined,
+          jobUrl: jobInputType === "url" ? jobUrl : undefined,
+          jobText: jobInputType === "text" ? jobText : undefined,
+          previewResponse: response,
+        });
+      } else {
+        // All parsing failed - show error to user
+        const errors = [];
+        if (hasCvError) errors.push(response.cv_preview?.error || "CV parsing failed");
+        if (hasJobError) errors.push(response.job_preview?.error || "Job parsing failed");
+        setError(errors.join("; ") || "Parsing failed. Please try again.");
+      }
     } catch (err: any) {
       setError(err.message || "Failed to process. Please try again.");
     } finally {
