@@ -54,14 +54,14 @@ export const JobLibrarySearch: React.FC<JobLibrarySearchProps> = ({
           transition: "box-shadow 0.2s ease-in-out",
         }}
       >
-        <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
+        <Stack direction="row" spacing={3} alignItems="flex-start" flexWrap="wrap">
           <TextField
-            fullWidth
             placeholder="Search by title, company, or location..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             sx={{
               minWidth: 300,
+              flex: 1,
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
                 "&:hover .MuiOutlinedInput-notchedOutline": {
