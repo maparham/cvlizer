@@ -49,7 +49,7 @@ import { JobDescription } from "../../../types/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useJobDescriptionPolling } from "../../../hooks/useJobDescriptionPolling";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
-import JobDescriptionsModal from "./JobDescriptionsModal";
+import JobDescriptionsModal from "./job-descriptions-modal";
 import JobDescriptionCard from "./JobDescriptionCard";
 import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
 import CVCompletenessIndicator from "../../CVCompleteness/CVCompletenessIndicator";

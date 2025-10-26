@@ -52,7 +52,7 @@ import { useNavigate } from "react-router-dom";
 import { useAIStore } from "../stores/ai";
 import { JobDescription } from "../types/ai";
 import JobDescriptionCard from "../components/cv/ai/JobDescriptionCard";
-import JobDescriptionsModal from "../components/cv/ai/JobDescriptionsModal";
+import JobDescriptionsModal from "../components/cv/ai/job-descriptions-modal";
 import JobDescriptionStatusDialog from "../components/cv/ai/JobDescriptionStatusDialog";
 import { useNotifications } from "../packages/notifications";
 
