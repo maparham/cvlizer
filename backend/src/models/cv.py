@@ -116,6 +116,15 @@ class CV(Base):
 
         # Only include parsed_data if explicitly requested (for list views, exclude it)
         if include_parsed_data:
-            data["parsed_data"] = self.parsed_data
+            # Clean parsed_data by removing AI-only fields that shouldn't be editable
+            parsed_data = self.parsed_data
+            if parsed_data and isinstance(parsed_data, dict):
+                # Create a copy without AI validation fields that shouldn't be part of editable CV data
+                parsed_data = {
+                    k: v
+                    for k, v in parsed_data.items()
+                    if k not in ["is_valid_cv", "validation_error"]
+                }
+            data["parsed_data"] = parsed_data
 
         return data

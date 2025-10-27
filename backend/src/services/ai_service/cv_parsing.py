@@ -176,6 +176,11 @@ Return JSON (omit empty sections):
 
         # Add section_config to the parsed content
         parsed_content = _add_section_config(parsed_content)
+
+        # Strip AI-only fields that shouldn't be part of editable CV data
+        parsed_content.pop("is_valid_cv", None)
+        parsed_content.pop("validation_error", None)
+
         return parsed_content
 
     except Exception as e:
@@ -192,6 +197,11 @@ Return JSON (omit empty sections):
         fallback["parse_error"] = f"OpenAI API error: {str(e)}"
         # Add section_config to fallback
         fallback = _add_section_config(fallback)
+
+        # Strip AI-only fields (in case fallback somehow has them)
+        fallback.pop("is_valid_cv", None)
+        fallback.pop("validation_error", None)
+
         return fallback
 
 

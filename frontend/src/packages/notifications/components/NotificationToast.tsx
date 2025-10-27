@@ -23,7 +23,7 @@
  * - Uses useNotifications hook for state management
  * - Works alongside NotificationDrawer component
  */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -49,6 +49,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
   const [isVisible, setIsVisible] = useState(false);
   const [toastOnlyQueue, setToastOnlyQueue] = useState<any[]>([]);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currentToastRef = useRef<any>(null);
 
   // Filter notifications if cvId provided
   const notifications = cvId
@@ -67,6 +68,30 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
 
     return unsubscribe;
   }, [cvId]);
+
+  // Define handleClose before it's used in useEffect
+  const handleClose = useCallback(() => {
+    // Use ref to get current value without stale closure
+    const toastToRemove = currentToastRef.current;
+
+    setIsVisible(false);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // Remove toast-only notification from queue immediately (fix stale closure issue)
+    const toastIdToRemove = toastToRemove?.id;
+    if (toastIdToRemove && toastToRemove && !toastToRemove.shown) {
+      setToastOnlyQueue(prev => prev.filter(n => n.id !== toastIdToRemove));
+    }
+
+    // Clear current toast after animation completes
+    setTimeout(() => {
+      setCurrentToast(null);
+      currentToastRef.current = null;
+    }, 300); // Match the slide animation duration
+  }, []);
 
   // Find the newest unshown notification (from both persistent and toast-only)
   const getNewestUnshownNotification = () => {
@@ -91,6 +116,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
 
     if (newestUnshown && !currentToast) {
       setCurrentToast(newestUnshown);
+      currentToastRef.current = newestUnshown;
       setIsVisible(true);
 
       // Mark as shown immediately (only for persistent notifications)
@@ -103,29 +129,13 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
         handleClose();
       }, 5000);
     }
-  }, [notifications, toastOnlyQueue, currentToast, markNotificationAsShown]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications, toastOnlyQueue, currentToast]);
 
-  const handleClose = () => {
-    setIsVisible(false);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    // Clear current toast after animation completes
-    setTimeout(() => {
-      // If it's a toast-only notification, remove it from queue
-      if (currentToast && !currentToast.shown) {
-        setToastOnlyQueue(prev => prev.filter(n => n.id !== currentToast.id));
-      }
-      setCurrentToast(null);
-    }, 300); // Match the slide animation duration
-  };
-
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     onOpenDrawer();
     handleClose();
-  };
+  }, [onOpenDrawer, handleClose]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
