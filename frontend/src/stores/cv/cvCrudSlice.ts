@@ -291,8 +291,23 @@ export const createCVCrudSlice: StateCreator<
       get().updateCVInList(updatedCV);
       return updatedCV;
     } catch (error: any) {
-      const errorMessage =
-        normalizeApiError(error) || "Failed to update CV";
+      // Parse 422 validation errors for better user feedback
+      const apiError = error?.response?.data;
+      let errorMessage = "Failed to update CV";
+
+      if (error?.response?.status === 422 && apiError?.detail?.errors) {
+        // Format validation errors from FastAPI/Pydantic
+        const validationErrors = apiError.detail.errors
+          .map((e: any) => `${e.loc?.join('.') || 'field'}: ${e.msg}`)
+          .join('\n• ');
+        errorMessage = `CV validation failed:\n• ${validationErrors}`;
+      } else if (error?.response?.status === 422 && apiError?.detail?.message) {
+        // Handle business rule validation errors
+        errorMessage = apiError.detail.message;
+      } else {
+        errorMessage = normalizeApiError(error) || errorMessage;
+      }
+
       set({ error: errorMessage, saving: false });
       throw new Error(errorMessage);
     }

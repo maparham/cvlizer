@@ -112,7 +112,8 @@ const CVEditor: React.FC = () => {
     if (error && !error.includes("CV validation failed:")) {
       showError("Error", error);
     }
-  }, [error, showError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]); // Only watch error, not showError to prevent infinite loop
 
   // Handle location state for auto-opening AI Tools
   useEffect(() => {
