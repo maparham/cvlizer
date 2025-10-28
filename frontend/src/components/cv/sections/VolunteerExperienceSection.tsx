@@ -4,6 +4,7 @@ import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
+import MarkdownRenderer from '../../common/MarkdownRenderer'
 
 interface VolunteerExperience {
   id: string
@@ -96,9 +97,9 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         {volunteer.organization} • {volunteer.start_date}
         {volunteer.end_date ? ` - ${volunteer.end_date}` : ' - Present'}
       </Typography>
-      <Typography variant="body1">
-        {volunteer.description}
-      </Typography>
+      <Box>
+        <MarkdownRenderer content={volunteer.description} variant="body1" />
+      </Box>
     </>
   )
 

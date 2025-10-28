@@ -4,6 +4,7 @@ import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
+import MarkdownRenderer from '../../common/MarkdownRenderer'
 
 interface Project {
   id: string
@@ -85,9 +86,9 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
         {project.name}
       </Typography>
-      <Typography variant="body1" sx={{ mb: 1 }}>
-        {project.description}
-      </Typography>
+      <Box sx={{ mb: 1 }}>
+        <MarkdownRenderer content={project.description} variant="body1" />
+      </Box>
       {project.technologies.length > 0 && (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
           {project.technologies.map((tech, techIndex) => (

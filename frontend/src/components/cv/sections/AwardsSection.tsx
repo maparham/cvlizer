@@ -4,6 +4,7 @@ import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
+import MarkdownRenderer from '../../common/MarkdownRenderer'
 
 interface Award {
   id: string
@@ -80,9 +81,9 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         {award.issuer} • {award.date}
       </Typography>
       {award.description && (
-        <Typography variant="body1">
-          {award.description}
-        </Typography>
+        <Box>
+          <MarkdownRenderer content={award.description} variant="body1" />
+        </Box>
       )}
     </>
   )

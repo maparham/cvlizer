@@ -16,6 +16,7 @@ import { FormField, DateFieldComponent } from "../core/formUtils";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import JobPositionAutocomplete from "../ui/JobPositionAutocomplete";
 import { generateSectionId } from "../../../utils/idGenerator";
+import MarkdownRenderer from "../../common/MarkdownRenderer";
 
 interface WorkExperience {
   id: string;
@@ -144,9 +145,15 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
       <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
         {exp.start_date} - {exp.current ? "PRESENT" : exp.end_date || "PRESENT"}
       </Typography>
-      <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-        {exp.description || "Job description..."}
-      </Typography>
+      {exp.description ? (
+        <Box sx={{ mb: 1 }}>
+          <MarkdownRenderer content={exp.description} variant="body1" />
+        </Box>
+      ) : (
+        <Typography variant="body1" sx={{ lineHeight: 1.6, color: "text.secondary" }}>
+          Job description...
+        </Typography>
+      )}
     </>
   );
 

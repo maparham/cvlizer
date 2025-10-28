@@ -7,6 +7,7 @@ import { FormField, DateFieldComponent } from "../core/formUtils";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import DegreeAutocomplete from "../ui/DegreeAutocomplete";
 import { generateSectionId } from "../../../utils/idGenerator";
+import MarkdownRenderer from "../../common/MarkdownRenderer";
 
 interface Education {
   id: string;
@@ -314,9 +315,9 @@ const EducationSection: React.FC<SectionProps> = ({
           </Typography>
         )}
         {edu.description && (
-          <Typography variant="body1" sx={{ lineHeight: 1.6, mb: 1 }}>
-            {edu.description}
-          </Typography>
+          <Box sx={{ mb: 1 }}>
+            <MarkdownRenderer content={edu.description} variant="body1" />
+          </Box>
         )}
         {edu.achievements && edu.achievements.length > 0 && (
           <Box sx={{ mb: 1 }}>

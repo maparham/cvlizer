@@ -4,6 +4,7 @@ import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
+import MarkdownRenderer from '../../common/MarkdownRenderer'
 
 interface Certification {
   id: string
@@ -96,9 +97,9 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         {cert.expiry_date && ` • Expires: ${cert.expiry_date}`}
       </Typography>
       {cert.description && (
-        <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-          {cert.description}
-        </Typography>
+        <Box>
+          <MarkdownRenderer content={cert.description} variant="body1" />
+        </Box>
       )}
     </>
   )
