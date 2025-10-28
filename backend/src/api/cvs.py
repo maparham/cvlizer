@@ -76,6 +76,9 @@ from src.services.latex_export_service import (
     generate_cv_latex,
     is_latex_available,
 )
+from src.services.user_activity_service import log_user_activity, log_api_call
+from src.services.template_loader import get_template_metadata, is_template_available
+from src.services.preview_service import generate_blurred_preview, is_preview_available
 from src.utils.feature_flags import is_cv_history_enabled
 from src.utils.validation import CVDataValidator
 
@@ -88,6 +91,10 @@ executor = ThreadPoolExecutor(max_workers=max(1, _workers))
 
 # Logger for background task monitoring
 logger = logging.getLogger(__name__)
+
+# In-memory job storage for preview generation (simple dict for MVP)
+# TODO: Replace with Redis or proper queue for production
+_preview_jobs: dict[str, dict] = {}
 
 
 def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: str):
@@ -294,6 +301,17 @@ async def list_cvs(
     return CVListResponse(
         cvs=cv_responses, total=total, page=page, limit=limit, pages=pages
     )
+
+
+@router.get("/templates")
+async def get_templates(
+    request: Request = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+):
+    """Get list of available CV templates with metadata."""
+    templates = get_template_metadata()
+    return {"templates": templates}
 
 
 @router.get("/{cv_id}", response_model=CVResponse)
@@ -552,7 +570,8 @@ async def delete_cv_data(
 @router.get("/{cv_id}/export/pdf")
 async def export_cv_pdf(
     cv_id: str,
-    request: Request,
+    template: Optional[str] = Query(None, description="Optional template name"),
+    request: Request = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
 ):
@@ -560,27 +579,119 @@ async def export_cv_pdf(
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Log PDF export
+    template_name = (
+        template if (template and is_template_available(template)) else "default"
+    )
+    logger.info(
+        f"User {current_user.email} exporting CV {cv_id} ({cv.original_filename}) as PDF with template '{template_name}'"
+    )
+
+    # Log user activity
+    try:
+        log_user_activity(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="export_cv_pdf",
+            description=f"Exported CV '{cv.original_filename}' as PDF with template '{template_name}'",
+            details={
+                "cv_id": cv_id,
+                "cv_filename": cv.original_filename,
+                "template_name": template_name,
+                "export_type": "pdf",
+            },
+        )
+    except Exception as e:
+        logger.warning(f"Failed to log user activity for PDF export: {str(e)}")
     if not is_latex_available():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LaTeX toolchain (pdflatex) not available on server",
         )
     try:
+        # Use specified template or default (None = inline generation)
+        template_name = (
+            template if (template and is_template_available(template)) else None
+        )
         tex_source = generate_cv_latex(
-            cv.parsed_data or {}, cv.original_filename or "My CV"
+            cv.parsed_data or {},
+            cv.original_filename or "My CV",
+            template_name=template_name,
         )
         pdf_bytes = compile_pdf_from_latex(tex_source)
         # Build filename: [ownerName]_YYYYMMDD.pdf using parsed full name, fallback to original filename stem
-        raw_name = (
-            ((cv.parsed_data or {}).get("personal_info") or {}).get("full_name")
-            or Path(cv.original_filename or "cv").stem
-            or "CV"
-        )
+        # Try multiple sources for the name
+        personal_info = (cv.parsed_data or {}).get("personal_info") or {}
+        full_name = personal_info.get("full_name", "").strip()
+
+        # Check if personal_info exists but full_name is empty
+        if personal_info and not full_name:
+            # Try alternative field names
+            for field in ["name", "fullName", "fullname", "first_name", "last_name"]:
+                if field in personal_info and personal_info[field]:
+                    full_name = str(personal_info[field]).strip()
+                    break
+
+        # If full_name is empty, try to get a meaningful name from other sources
+        if not full_name:
+            # Try to get name from original filename if it's meaningful
+            original_stem = (
+                Path(cv.original_filename or "").stem if cv.original_filename else ""
+            )
+            if original_stem and original_stem.lower() not in [
+                "cv",
+                "resume",
+                "document",
+                "new cv",
+            ]:
+                full_name = original_stem
+            else:
+                # Try to extract name from CV title if it contains a name
+                cv_title = getattr(cv, "title", "") or cv.original_filename or ""
+                if cv_title and cv_title.lower() not in [
+                    "cv",
+                    "resume",
+                    "document",
+                    "new cv",
+                ]:
+                    # Try to extract first word as potential name
+                    first_word = cv_title.split()[0] if cv_title.split() else ""
+                    if first_word and len(first_word) > 2:
+                        full_name = first_word
+                    else:
+                        full_name = "CV"
+                else:
+                    # Last resort - use a generic name
+                    full_name = "CV"
+
+        raw_name = full_name
         safe_name = re.sub(r"[^A-Za-z0-9\-\s]+", " ", raw_name).strip()
         safe_name = re.sub(r"[\s\-]+", "_", safe_name).strip("_") or "CV"
         date_str = datetime.utcnow().strftime("%Y%m%d")
         filename = f"{safe_name}_{date_str}.pdf"
-        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+
+        headers = {
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Type": "application/pdf",
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
+
+        # Log successful API call
+        try:
+            log_api_call(
+                db=db,
+                user=current_user,
+                endpoint=f"/api/cvs/{cv_id}/export/pdf",
+                method="GET",
+                status_code=200,
+                request_data={"template": template},
+                response_data={"filename": filename, "file_size": len(pdf_bytes)},
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log API call for PDF export: {str(e)}")
+
         return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
     except Exception as e:
         raise HTTPException(
@@ -624,6 +735,30 @@ async def export_cv_pdf_public(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
+    # Log PDF export
+    logger.info(
+        f"User {local_user.email} exporting CV {cv_id} ({cv.original_filename}) as PDF via public endpoint"
+    )
+
+    # Log user activity
+    try:
+        log_user_activity(
+            db=db,
+            user=local_user,
+            activity_type="user_action",
+            action="export_cv_pdf_public",
+            description=f"Exported CV '{cv.original_filename}' as PDF via public endpoint",
+            details={
+                "cv_id": cv_id,
+                "cv_filename": cv.original_filename,
+                "template_name": "default",
+                "export_type": "pdf",
+                "endpoint_type": "public",
+            },
+        )
+    except Exception as e:
+        logger.warning(f"Failed to log user activity for public PDF export: {str(e)}")
+
     if not is_latex_available():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -631,26 +766,280 @@ async def export_cv_pdf_public(
         )
 
     try:
+        # Use default template for quick export
+        from src.services.template_loader import get_default_template
+
+        default_template = get_default_template()
+
         tex_source = generate_cv_latex(
-            cv.parsed_data or {}, cv.original_filename or "My CV"
+            cv.parsed_data or {},
+            cv.original_filename or "My CV",
+            template_name=default_template,
         )
         pdf_bytes = compile_pdf_from_latex(tex_source)
 
         # Build filename: [ownerName]_YYYYMMDD.pdf using parsed full name, fallback to original filename stem
-        raw_name = (
-            ((cv.parsed_data or {}).get("personal_info") or {}).get("full_name")
-            or Path(cv.original_filename or "cv").stem
-            or "CV"
-        )
+        # Try multiple sources for the name
+        personal_info = (cv.parsed_data or {}).get("personal_info") or {}
+        full_name = personal_info.get("full_name", "").strip()
+
+        # Check if personal_info exists but full_name is empty
+        if personal_info and not full_name:
+            # Try alternative field names
+            for field in ["name", "fullName", "fullname", "first_name", "last_name"]:
+                if field in personal_info and personal_info[field]:
+                    full_name = str(personal_info[field]).strip()
+                    break
+
+        # If full_name is empty, try to get a meaningful name from other sources
+        if not full_name:
+            # Try to get name from original filename if it's meaningful
+            original_stem = (
+                Path(cv.original_filename or "").stem if cv.original_filename else ""
+            )
+            if original_stem and original_stem.lower() not in [
+                "cv",
+                "resume",
+                "document",
+                "new cv",
+            ]:
+                full_name = original_stem
+            else:
+                # Try to extract name from CV title if it contains a name
+                cv_title = getattr(cv, "title", "") or cv.original_filename or ""
+                if cv_title and cv_title.lower() not in [
+                    "cv",
+                    "resume",
+                    "document",
+                    "new cv",
+                ]:
+                    # Try to extract first word as potential name
+                    first_word = cv_title.split()[0] if cv_title.split() else ""
+                    if first_word and len(first_word) > 2:
+                        full_name = first_word
+                    else:
+                        full_name = "CV"
+                else:
+                    # Last resort - use a generic name
+                    full_name = "CV"
+
+        raw_name = full_name
         safe_name = re.sub(r"[^A-Za-z0-9\-\s]+", " ", raw_name).strip()
         safe_name = re.sub(r"[\s\-]+", "_", safe_name).strip("_") or "CV"
         date_str = datetime.utcnow().strftime("%Y%m%d")
         filename = f"{safe_name}_{date_str}.pdf"
 
-        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        headers = {
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Type": "application/pdf",
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
+
+        # Log successful API call
+        try:
+            log_api_call(
+                db=db,
+                user=local_user,
+                endpoint=f"/api/cvs/{cv_id}/export/pdf/public",
+                method="GET",
+                status_code=200,
+                request_data={"token": "***"},
+                response_data={"filename": filename, "file_size": len(pdf_bytes)},
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log API call for public PDF export: {str(e)}")
+
         return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate PDF: {str(e)}",
+        )
+
+
+def generate_preview_sync(cv_id: str, template_name: str, user_id: str):
+    """Synchronous preview generation function to run in thread pool."""
+    db = SessionLocal()
+    try:
+        cv = get_cv_by_id(db, cv_id, user_id)
+        if not cv:
+            logger.error(f"CV {cv_id} not found for user {user_id}")
+            _preview_jobs[cv_id + "_" + template_name]["status"] = "failed"
+            _preview_jobs[cv_id + "_" + template_name]["error"] = "CV not found"
+            return
+
+        # Generate LaTeX with selected template
+        tex_source = generate_cv_latex(
+            cv.parsed_data or {},
+            cv.original_filename or "My CV",
+            template_name=template_name,
+        )
+
+        # Compile LaTeX to PDF
+        pdf_bytes = compile_pdf_from_latex(tex_source)
+
+        # Generate blurred preview
+        if is_preview_available():
+            preview_pages = generate_blurred_preview(pdf_bytes, blur_radius=0)
+            if preview_pages:
+                _preview_jobs[cv_id + "_" + template_name]["status"] = "completed"
+                _preview_jobs[cv_id + "_" + template_name][
+                    "preview_images"
+                ] = preview_pages  # Store list of images
+                _preview_jobs[cv_id + "_" + template_name]["page_count"] = len(
+                    preview_pages
+                )
+            else:
+                logger.error("Failed to generate blurred preview - returned None")
+                _preview_jobs[cv_id + "_" + template_name]["status"] = "failed"
+                _preview_jobs[cv_id + "_" + template_name][
+                    "error"
+                ] = "Failed to generate preview"
+        else:
+            logger.warning("Preview service not available, falling back to PDF")
+            # Fallback: return PDF if preview service not available
+            _preview_jobs[cv_id + "_" + template_name]["status"] = "completed"
+            _preview_jobs[cv_id + "_" + template_name]["preview_pdf"] = pdf_bytes
+    except Exception as e:
+        logger.error(
+            f"Preview generation failed for CV {cv_id} template {template_name}: {str(e)}",
+            exc_info=True,
+        )
+        _preview_jobs[cv_id + "_" + template_name]["status"] = "failed"
+        _preview_jobs[cv_id + "_" + template_name]["error"] = str(e)
+    finally:
+        db.close()
+
+
+@router.post("/{cv_id}/export/preview/start")
+async def start_preview_generation(
+    cv_id: str,
+    template: str = Query(..., description="Template name"),
+    request: Request = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+):
+    """Start async preview generation for a template."""
+
+    # Verify CV ownership
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not cv:
+        logger.error(f"CV {cv_id} not found for user {current_user.id}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Verify template exists
+    if not is_template_available(template):
+        logger.error(f"Template {template} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Template not found"
+        )
+
+    # Create job ID
+    job_id = f"{cv_id}_{template}"
+
+    # Check if LaTeX is available
+    if not is_latex_available():
+        logger.error("LaTeX toolchain not available")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LaTeX toolchain not available",
+        )
+
+    # Initialize job status
+    _preview_jobs[job_id] = {"status": "pending"}
+
+    # Submit to thread pool
+    executor.submit(generate_preview_sync, cv_id, template, str(current_user.id))
+
+    return {"job_id": job_id, "status": "pending"}
+
+
+@router.get("/{cv_id}/export/preview/status")
+async def get_preview_status(
+    cv_id: str,
+    job_id: str = Query(..., description="Job ID from start endpoint"),
+    request: Request = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+):
+    """Get status of preview generation job."""
+
+    # Verify CV ownership
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not cv:
+        logger.error(f"CV {cv_id} not found for user {current_user.id}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Check job status
+    if job_id not in _preview_jobs:
+        logger.error(f"Job {job_id} not found in _preview_jobs")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+    job = _preview_jobs[job_id]
+
+    if job["status"] == "completed":
+        has_preview = "preview_images" in job or "preview_pdf" in job
+        page_count = job.get("page_count", 1)
+        return {
+            "status": "completed",
+            "has_preview": has_preview,
+            "page_count": page_count,
+        }
+    elif job["status"] == "failed":
+        error = job.get("error", "Unknown error")
+        logger.error(f"Job {job_id} failed: {error}")
+        return {"status": "failed", "error": error}
+    else:
+        return {"status": "pending"}
+
+
+@router.get("/{cv_id}/export/preview/image")
+async def get_preview_image(
+    cv_id: str,
+    job_id: str = Query(..., description="Job ID from start endpoint"),
+    page: int = Query(1, description="Page number (1-indexed)"),
+    request: Request = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+):
+    """Get the blurred preview image for a completed job (specific page)."""
+
+    # Verify CV ownership
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not cv:
+        logger.error(f"CV {cv_id} not found for user {current_user.id}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Check job status
+    if job_id not in _preview_jobs:
+        logger.error(f"Job {job_id} not found in _preview_jobs")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+    job = _preview_jobs[job_id]
+
+    if job["status"] != "completed":
+        logger.error(f"Job {job_id} not completed, status: {job['status']}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Job not completed"
+        )
+
+    # Return preview image if available
+    if "preview_images" in job:
+        page_count = len(job["preview_images"])
+        if page < 1 or page > page_count:
+            logger.error(f"Invalid page number {page}, valid range: 1-{page_count}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid page number, must be 1-{page_count}",
+            )
+
+        return Response(content=job["preview_images"][page - 1], media_type="image/png")
+    elif "preview_pdf" in job:
+        # Fallback to PDF if preview image not available
+        return Response(content=job["preview_pdf"], media_type="application/pdf")
+    else:
+        logger.error(f"No preview available for job {job_id}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No preview available",
         )

@@ -1,0 +1,63 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{needspace}
+
+% Modern color scheme - professional blue accent
+\definecolor{accentcolor}{RGB}{0,102,204}
+\definecolor{lightgray}{RGB}{240,240,240}
+
+% Modern font settings - contemporary sans-serif (Helvetica-style)
+\renewcommand{\rmdefault}{lmr}
+\renewcommand{\sfdefault}{lmss}
+\renewcommand{\ttdefault}{lmtt}
+
+% Set sans-serif as default font family for modern look
+\renewcommand{\familydefault}{\sfdefault}
+
+% Microtype for better typography
+\microtypesetup{protrusion=true, expansion=true}
+
+% Modern section styling - bold with thick colored rule
+\newcommand{\modernsection}[1]{%
+  \needspace{4\baselineskip}%
+  \noindent{\Large\textbf{\color{accentcolor}#1}}\\[-1ex]%
+  \color{accentcolor}\rule{\textwidth}{2pt}\\[0.6ex]%
+}
+
+% Better spacing for itemize
+\setlist[itemize]{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}
+\pagenumbering{gobble}
+
+% Modern paragraph spacing - generous contemporary spacing
+\setlength{\parskip}{0.8\baselineskip}
+\setlength{\parindent}{0pt}
+
+% Prevent orphaned/widowed lines and page breaks in sections
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\brokenpenalty=10000
+
+% High quality PDF output
+\pdfcompresslevel=0
+\pdfobjcompresslevel=0
+
+\begin{document}
+\pagestyle{empty}
+
+{PERSONAL_INFO_HEADER}
+
+{CONTACT_INFO_SECTION}
+
+{CONTENT_SECTIONS}
+
+\end{document}

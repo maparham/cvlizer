@@ -1,0 +1,56 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{needspace}
+
+% Classic font settings - traditional serif fonts (Times-like)
+\renewcommand{\rmdefault}{cmr}
+\renewcommand{\sfdefault}{lmss}
+\renewcommand{\ttdefault}{lmtt}
+
+% Microtype for better typography
+\microtypesetup{protrusion=true, expansion=true}
+
+% Classic section styling - traditional with thin rules
+\newcommand{\classicsection}[1]{%
+  \needspace{4\baselineskip}%
+  \noindent{\Large\textbf{#1}}\\[-1ex]%
+  \rule{\textwidth}{0.3pt}\\[0.4ex]%
+}
+
+% Better spacing for itemize - dense layout
+\setlist[itemize]{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}
+\pagenumbering{gobble}
+
+% Classic paragraph spacing - dense traditional layout
+\setlength{\parskip}{0.3\baselineskip}
+\setlength{\parindent}{0pt}
+
+% Prevent orphaned/widowed lines and page breaks in sections
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\brokenpenalty=10000
+
+% High quality PDF output
+\pdfcompresslevel=0
+\pdfobjcompresslevel=0
+
+\begin{document}
+\pagestyle{empty}
+
+{PERSONAL_INFO_HEADER}
+
+{CONTACT_INFO_SECTION}
+
+{CONTENT_SECTIONS}
+
+\end{document}

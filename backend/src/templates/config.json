@@ -1,0 +1,20 @@
+{
+  "defaultTemplate": "modern",
+  "templates": [
+    {
+      "name": "modern",
+      "displayName": "Modern",
+      "description": "Contemporary design with clean lines and professional typography"
+    },
+    {
+      "name": "classic",
+      "displayName": "Classic",
+      "description": "Traditional single-column layout with timeless typography"
+    },
+    {
+      "name": "academic",
+      "displayName": "Academic",
+      "description": "Research-focused layout with prominent publications section"
+    }
+  ]
+}

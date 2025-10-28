@@ -294,7 +294,7 @@ export const cvApi = {
   },
 
   // Export CV as PDF (LaTeX compiled) in a new tab using server filename
-  exportCVAsPDF: async (cvId: string) => {
+  exportCVAsPDF: async (cvId: string, template?: string) => {
     // Get Clerk token to authorize the public export endpoint
     if (typeof window === "undefined" || !isClerkAvailable(window)) {
       throw new Error("Authentication service not available");
@@ -303,11 +303,93 @@ export const cvApi = {
     const token = await clerk.session?.getToken();
     if (!token) throw new Error("No authentication token available");
 
-    // Build fully-resolved URL using axios' baseURL to avoid double /api issues
+    // If template is specified, use template-based export endpoint
+    if (template) {
+      const path = `/api/cvs/${cvId}/export/pdf?template=${encodeURIComponent(template)}`;
+      // For template-based export, we need to get the PDF via blob download
+      try {
+        const response = await api.get(path, {
+          responseType: "blob",
+          headers: {
+            'Accept': 'application/pdf',
+          }
+        });
+        const blob = new Blob([response.data], { type: "application/pdf" });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+
+        // Extract filename from response headers - use same logic as backend generates
+        const contentDisposition = response.headers["content-disposition"] || response.headers["Content-Disposition"];
+        let filename = `CV_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.pdf`; // fallback
+
+        if (contentDisposition) {
+          // Try multiple regex patterns to match different header formats
+          let filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+          if (!filenameMatch) {
+            filenameMatch = contentDisposition.match(/filename=([^;]+)/);
+          }
+          if (!filenameMatch) {
+            filenameMatch = contentDisposition.match(/filename[^=]*=\s*"?([^";\s]+)"?/);
+          }
+
+          if (filenameMatch) {
+            filename = filenameMatch[1].trim();
+          }
+        }
+
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Failed to export CV with template:", error);
+        throw error;
+      }
+    } else {
+      // Use public endpoint for default (quick) export
     const path = `/api/cvs/${cvId}/export/pdf/public`;
     const base = api.getUri({ url: path });
     const url = `${base}?token=${encodeURIComponent(token)}`;
     window.open(url, "_blank");
+    }
+  },
+
+  // Get available templates
+  getAvailableTemplates: async () => {
+    const response = await api.get("/api/cvs/templates");
+    return response.data.templates;
+  },
+
+  // Start preview generation
+  startPreviewGeneration: async (cvId: string, templateName: string) => {
+    const response = await api.post(`/api/cvs/${cvId}/export/preview/start?template=${encodeURIComponent(templateName)}`);
+    return response.data;
+  },
+
+  // Check preview status
+  checkPreviewStatus: async (cvId: string, jobId: string) => {
+    const response = await api.get(`/api/cvs/${cvId}/export/preview/status?job_id=${encodeURIComponent(jobId)}`);
+    return response.data;
+  },
+
+    // Fetch preview image (specific page)
+    fetchPreviewImage: async (cvId: string, jobId: string, page: number = 1) => {
+      const response = await api.get(`/api/cvs/${cvId}/export/preview/image?job_id=${encodeURIComponent(jobId)}&page=${page}`, {
+        responseType: "blob",
+      });
+      return window.URL.createObjectURL(new Blob([response.data]));
+    },
+
+    // Fetch all preview images (all pages)
+    fetchAllPreviewImages: async (cvId: string, jobId: string, pageCount: number) => {
+      const urls: string[] = [];
+      for (let page = 1; page <= pageCount; page++) {
+        const url = await cvApi.fetchPreviewImage(cvId, jobId, page);
+        urls.push(url);
+      }
+      return urls;
   },
 };
 

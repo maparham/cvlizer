@@ -124,11 +124,11 @@ export const useDashboardActions = () => {
 
   const handleDownloadCV = async (cv: CV) => {
     try {
-      await cvApi.downloadCV(cv.id, cv.original_filename);
-      showSuccess("Success", "CV downloaded successfully");
-      logUserAction("cv_downloaded", { cv_id: cv.id });
+      await cvApi.exportCVAsPDF(cv.id);
+      showSuccess("Success", "CV exported successfully");
+      logUserAction("cv_exported", { cv_id: cv.id });
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.detail || error?.message || "Failed to download CV";
+      const errorMessage = error?.response?.data?.detail || error?.message || "Failed to export CV";
       showError("Error", errorMessage);
     }
   };

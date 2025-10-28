@@ -35,7 +35,9 @@ import os
 import shutil
 import subprocess
 import tempfile
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+from src.services.template_loader import load_template, is_template_available
 
 LATEX_REQUIRED_BIN = os.getenv("PDFLATEX_BIN", "pdflatex")
 
@@ -431,191 +433,191 @@ def _format_skills(skills: Dict[str, Any]) -> str:
     return "\\\\[0.3ex]\n".join(blocks)
 
 
-def generate_cv_latex(parsed: Dict[str, Any], title: str) -> str:
-    """Generate LaTeX source code for CV document.
+def _format_personal_info_header(pi: Dict[str, Any]) -> str:
+    """Format personal info header (name and academic title)."""
+    full_name = pi.get("full_name", "")
+    academic_title = pi.get("academic_title", "")
 
-    Respects section_config for custom ordering and visibility filtering.
+    if not full_name:
+        return ""
+
+    if academic_title:
+        return (
+            f"\\begin{{center}}\n"
+            f"\\LARGE\\textbf{{{_tex_escape(full_name)}}}\\\\\n"
+            f"\\normalsize{{\\textnormal{{{_tex_escape(academic_title)}}}}}\n"
+            f"\\end{{center}}\n"
+        )
+    else:
+        return (
+            f"\\begin{{center}}\n"
+            f"\\LARGE\\textbf{{{_tex_escape(full_name)}}}\n"
+            f"\\end{{center}}\n"
+        )
+
+
+def _generate_from_template(
+    parsed: Dict[str, Any], title: str, template_name: str
+) -> str:
+    """Generate LaTeX from a template by injecting formatted sections.
+
+    Args:
+        parsed: Parsed CV data dictionary
+        title: Document title (filename)
+        template_name: Name of the template to use
+
+    Returns:
+        Complete LaTeX document with sections injected
     """
+    # Load template
+    template = load_template(template_name)
+
     # Get all section data
     pi = parsed.get("personal_info", {}) if parsed else {}
     summary = parsed.get("professional_summary", {}) if parsed else {}
     why_fit = parsed.get("why_good_fit", {}) if parsed else {}
     wx = parsed.get("work_experience", []) if parsed else []
-    ed = parsed.get("education", []) if parsed else []
+    ed = parsed.get("education", []) if parsed else {}
     skills = parsed.get("skills", {}) if parsed else {}
     certs = parsed.get("certifications", []) if parsed else []
     projects = parsed.get("projects", []) if parsed else []
-    awards = parsed.get("awards", []) if parsed else []
+    awards = parsed.get("awards", []) if parsed else {}
     pubs = parsed.get("publications", []) if parsed else []
-    volunteer = parsed.get("volunteer_experience", []) if parsed else []
+    volunteer = parsed.get("volunteer_experience", []) if parsed else {}
+
+    # Format personal info header
+    personal_info_header = _format_personal_info_header(pi)
+
+    # Format contact info section
+    contact_info = _format_contact_info(pi)
+    contact_info_section = (
+        _section("Contact Information", contact_info) if contact_info else ""
+    )
 
     # Get section_config for custom ordering
     section_config = parsed.get("section_config", {}) if parsed else {}
     sections = section_config.get("sections", [])
 
-    body = []
+    # Generate content sections
+    content_parts = []
 
-    # Add header - use full_name as title, not the filename
-    full_name = pi.get("full_name", "")
-    academic_title = pi.get("academic_title", "")
-
-    # Combine academic title with full name for display
-    if full_name:
-        if academic_title:
-            # Name bold and large, academic title below in normal font size
-            body.append(f"\\begin{{center}}\n")
-            body.append(f"\\LARGE\\textbf{{{_tex_escape(full_name)}}}\\\\\n")
-            body.append(
-                f"\\normalsize{{\\textnormal{{{_tex_escape(academic_title)}}}}}\n"
-            )
-            body.append(f"\\end{{center}}\n")
-        else:
-            # Just the name, bold and large
-            body.append(
-                f"\\begin{{center}}\n\\LARGE\\textbf{{{_tex_escape(full_name)}}}\n\\end{{center}}\n"
-            )
-
-    # Add contact information section if available
-    contact_info = _format_contact_info(pi)
-    if contact_info:
-        body.append(_section("Contact Information", contact_info))
-
-    # Render sections in user's custom order
     if sections:
         # Sort by order field
         sorted_sections = sorted(sections, key=lambda s: s.get("order", 999))
         for section in sorted_sections:
             if not section.get("visible", True):
-                continue  # Skip hidden sections
+                continue
 
             section_type = section.get("type") or section.get("id")
             section_title = section.get("title", "")
 
-            # Format section based on type
             if section_type == "professional_summary":
                 content = _format_professional_summary(summary)
                 if content:
-                    body.append(
+                    content_parts.append(
                         _section(section_title or "Professional Summary", content)
                     )
             elif section_type == "why_good_fit":
                 content = _format_why_good_fit(why_fit)
                 if content:
-                    body.append(_section(section_title or "Why I'm a Good Fit", content))
+                    content_parts.append(
+                        _section(section_title or "Why I'm a Good Fit", content)
+                    )
             elif section_type == "work_experience":
                 content = _format_work_experience(wx)
                 if content:
-                    body.append(_section(section_title or "Work Experience", content))
+                    content_parts.append(
+                        _section(section_title or "Work Experience", content)
+                    )
             elif section_type == "education":
                 content = _format_education(ed)
                 if content:
-                    body.append(_section(section_title or "Education", content))
+                    content_parts.append(_section(section_title or "Education", content))
             elif section_type == "skills":
                 content = _format_skills(skills)
                 if content:
-                    body.append(_section(section_title or "Skills", content))
+                    content_parts.append(_section(section_title or "Skills", content))
             elif section_type == "certifications":
                 content = _format_certifications(certs)
                 if content:
-                    body.append(_section(section_title or "Certifications", content))
+                    content_parts.append(
+                        _section(section_title or "Certifications", content)
+                    )
             elif section_type == "projects":
                 content = _format_projects(projects)
                 if content:
-                    body.append(_section(section_title or "Projects", content))
+                    content_parts.append(_section(section_title or "Projects", content))
             elif section_type == "awards":
                 content = _format_awards(awards)
                 if content:
-                    body.append(_section(section_title or "Awards", content))
+                    content_parts.append(_section(section_title or "Awards", content))
             elif section_type == "publications":
                 content = _format_publications(pubs)
                 if content:
-                    body.append(_section(section_title or "Publications", content))
+                    content_parts.append(
+                        _section(section_title or "Publications", content)
+                    )
             elif section_type == "volunteer_experience":
                 content = _format_volunteer_experience(volunteer)
                 if content:
-                    body.append(
+                    content_parts.append(
                         _section(section_title or "Volunteer Experience", content)
                     )
     else:
-        # Fallback to default order if no section_config
-        summary_content = _format_professional_summary(summary)
-        if summary_content:
-            body.append(_section("Professional Summary", summary_content))
-        why_fit_content = _format_why_good_fit(why_fit)
-        if why_fit_content:
-            body.append(_section("Why I'm a Good Fit", why_fit_content))
-        wx_content = _format_work_experience(wx)
-        if wx_content:
-            body.append(_section("Work Experience", wx_content))
-        ed_content = _format_education(ed)
-        if ed_content:
-            body.append(_section("Education", ed_content))
-        skills_content = _format_skills(skills)
-        if skills_content:
-            body.append(_section("Skills", skills_content))
-        certs_content = _format_certifications(certs)
-        if certs_content:
-            body.append(_section("Certifications", certs_content))
-        projects_content = _format_projects(projects)
-        if projects_content:
-            body.append(_section("Projects", projects_content))
-        awards_content = _format_awards(awards)
-        if awards_content:
-            body.append(_section("Awards", awards_content))
-        pubs_content = _format_publications(pubs)
-        if pubs_content:
-            body.append(_section("Publications", pubs_content))
-        volunteer_content = _format_volunteer_experience(volunteer)
-        if volunteer_content:
-            body.append(_section("Volunteer Experience", volunteer_content))
+        # Fallback to default order
+        if summary_content := _format_professional_summary(summary):
+            content_parts.append(_section("Professional Summary", summary_content))
+        if why_fit_content := _format_why_good_fit(why_fit):
+            content_parts.append(_section("Why I'm a Good Fit", why_fit_content))
+        if wx_content := _format_work_experience(wx):
+            content_parts.append(_section("Work Experience", wx_content))
+        if ed_content := _format_education(ed):
+            content_parts.append(_section("Education", ed_content))
+        if skills_content := _format_skills(skills):
+            content_parts.append(_section("Skills", skills_content))
+        if certs_content := _format_certifications(certs):
+            content_parts.append(_section("Certifications", certs_content))
+        if projects_content := _format_projects(projects):
+            content_parts.append(_section("Projects", projects_content))
+        if awards_content := _format_awards(awards):
+            content_parts.append(_section("Awards", awards_content))
+        if pubs_content := _format_publications(pubs):
+            content_parts.append(_section("Publications", pubs_content))
+        if volunteer_content := _format_volunteer_experience(volunteer):
+            content_parts.append(_section("Volunteer Experience", volunteer_content))
 
-    content = "\n\n".join(body)
+    content_sections = "\n\n".join(content_parts)
 
-    return f"""
-\\documentclass[11pt]{{article}}
-\\usepackage[margin=0.75in]{{geometry}}
-\\usepackage[T1]{{fontenc}}
-\\usepackage[utf8]{{inputenc}}
-\\usepackage{{lmodern}}
-\\usepackage{{microtype}}
-\\usepackage{{hyperref}}
-\\usepackage{{enumitem}}
-\\usepackage{{xcolor}}
-\\usepackage{{fancyhdr}}
-\\usepackage{{parskip}}
-\\usepackage{{needspace}}
+    # Replace placeholders in template
+    result = template.replace("{PERSONAL_INFO_HEADER}", personal_info_header)
+    result = result.replace("{CONTACT_INFO_SECTION}", contact_info_section)
+    result = result.replace("{CONTENT_SECTIONS}", content_sections)
 
-% High quality font settings
-\\renewcommand{{\\rmdefault}}{{lmr}}
-\\renewcommand{{\\sfdefault}}{{lmss}}
-\\renewcommand{{\\ttdefault}}{{lmtt}}
+    return result
 
-% Microtype for better typography
-\\microtypesetup{{protrusion=true, expansion=true}}
 
-% Better spacing for itemize
-\\setlist[itemize]{{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}}
-\\pagenumbering{{gobble}}
+def generate_cv_latex(parsed: Dict[str, Any], title: str, template_name: str) -> str:
+    """Generate LaTeX source code for CV document.
 
-% Paragraph spacing
-\\setlength{{\\parskip}}{{0.5\\baselineskip}}
-\\setlength{{\\parindent}}{{0pt}}
+    Respects section_config for custom ordering and visibility filtering.
 
-% Prevent orphaned/widowed lines and page breaks in sections
-\\clubpenalty=10000
-\\widowpenalty=10000
-\\displaywidowpenalty=10000
-\\brokenpenalty=10000
+    Args:
+        parsed: Parsed CV data dictionary
+        title: Document title (filename)
+        template_name: Template name to use for generation. Must be available.
 
-% High quality PDF output
-\\pdfcompresslevel=0
-\\pdfobjcompresslevel=0
+    Raises:
+        ValueError: If template_name is not available
+    """
+    # Validate template is available
+    if not template_name:
+        raise ValueError("template_name is required")
 
-\\begin{{document}}
-\\pagestyle{{empty}}
-{content}
-\\end{{document}}
-"""
+    if not is_template_available(template_name):
+        raise ValueError(f"Template '{template_name}' is not available")
+
+    # Load template and inject content
+    return _generate_from_template(parsed, title, template_name)
 
 
 def compile_pdf_from_latex(tex_source: str) -> bytes:
@@ -640,28 +642,46 @@ def compile_pdf_from_latex(tex_source: str) -> bytes:
             "-output-format=pdf",
             "-output-directory=.",
             "-synctex=1",
-            "cv.tex",
+            tex_path,
         ]
-        for _ in range(2):
-            try:
-                proc = subprocess.run(
-                    cmd,
-                    cwd=tmpdir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    timeout=20,
-                )
-                if proc.returncode != 0:
-                    raise RuntimeError(f"pdflatex failed: {proc.stdout[-1000:]!r}")
-            except subprocess.TimeoutExpired as e:
-                captured_output = e.stdout[-1000:] if e.stdout else "No output captured"
+
+        try:
+            # First pass
+            result = subprocess.run(
+                cmd,
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
+            if result.returncode != 0:
                 raise RuntimeError(
-                    f"pdflatex timed out after 20 seconds. Output: {captured_output!r}"
+                    f"LaTeX compilation failed (first pass): {result.stderr}"
                 )
 
-        if not os.path.exists(pdf_path):
-            raise RuntimeError("PDF not generated")
+            # Second pass to settle references
+            result = subprocess.run(
+                cmd,
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
 
-        with open(pdf_path, "rb") as pf:
-            return pf.read()
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"LaTeX compilation failed (second pass): {result.stderr}"
+                )
+
+            # Read the generated PDF
+            if not os.path.exists(pdf_path):
+                raise RuntimeError("PDF file was not generated")
+
+            with open(pdf_path, "rb") as f:
+                return f.read()
+
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("LaTeX compilation timed out")
+        except Exception as e:
+            raise RuntimeError(f"LaTeX compilation failed: {str(e)}")

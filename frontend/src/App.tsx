@@ -34,6 +34,7 @@ const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const CVEditor = lazy(() => import("./pages/CVEditor"));
+const ExportPage = lazy(() => import("./pages/ExportPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Profile = lazy(() => import("./pages/Profile"));
 const JobLibrary = lazy(() => import("./pages/JobLibrary"));
@@ -127,6 +128,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <CVEditor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cv/:cvId/export"
+            element={
+              <ProtectedRoute>
+                <ExportPage />
               </ProtectedRoute>
             }
           />

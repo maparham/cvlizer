@@ -28,6 +28,8 @@ import {
   AccountCircle as AccountCircleIcon,
   PictureAsPdf as PictureAsPdfIcon,
   Delete as DeleteIcon,
+  ExpandMore as ExpandMoreIcon,
+  FileDownload as FileDownloadIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useCVEditor } from "../../contexts/CVEditorContext";
@@ -47,6 +49,7 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
   const { editingSection, editingIndividualItem, hasUnsavedChanges } =
     useCVEditor();
   const [showBackDialog, setShowBackDialog] = useState(false);
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
 
   const handleBackClick = () => {
     // Check if any section is in edit mode or has unsaved changes
@@ -64,6 +67,28 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
   const handleBackDialogConfirm = () => {
     setShowBackDialog(false);
     navigate("/dashboard");
+  };
+
+  const handleExportMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setExportMenuAnchor(event.currentTarget);
+  };
+
+  const handleExportMenuClose = () => {
+    setExportMenuAnchor(null);
+  };
+
+  const handleQuickExport = () => {
+    handleExportMenuClose();
+    onExport();
+  };
+
+  const handleAdvancedExport = () => {
+    handleExportMenuClose();
+    // Navigate to export page with current cvId from location
+    const cvId = window.location.pathname.split("/cv/")[1];
+    if (cvId) {
+      navigate(`/cv/${cvId}/export`);
+    }
   };
 
   return (
@@ -135,7 +160,8 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
             variant="outlined"
             size="small"
             startIcon={<PictureAsPdfIcon />}
-            onClick={onExport}
+            endIcon={<ExpandMoreIcon />}
+            onClick={handleExportMenuOpen}
             sx={{
               mr: 2,
               textTransform: "none",
@@ -151,6 +177,28 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
           >
             Export
           </Button>
+          <Menu
+            anchorEl={exportMenuAnchor}
+            open={Boolean(exportMenuAnchor)}
+            onClose={handleExportMenuClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "left",
+            }}
+          >
+            <MenuItem onClick={handleQuickExport}>
+              <FileDownloadIcon sx={{ mr: 1, fontSize: "1.2rem" }} />
+              Quick Export
+            </MenuItem>
+            <MenuItem onClick={handleAdvancedExport}>
+              <PictureAsPdfIcon sx={{ mr: 1, fontSize: "1.2rem" }} />
+              Advanced Export
+            </MenuItem>
+          </Menu>
           <IconButton
             size="medium"
             edge="end"
