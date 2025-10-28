@@ -167,16 +167,9 @@ class AISectionsService {
     enhancementData: any,
   ): Promise<void> {
     try {
-      Logger.debug("Updating AI enhancement", {
-        enhancementId,
-        enhancementData,
-      });
-
       await api.put(`/api/ai-enhancements/${enhancementId}`, {
         enhancement_data: enhancementData,
       });
-
-      Logger.debug("AI enhancement update successful", { enhancementId });
     } catch (error: any) {
       Logger.error("AI enhancement update failed", {
         enhancementId,

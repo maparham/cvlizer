@@ -18,6 +18,7 @@ class PersonalInfoResponseSchema(BaseModel):
     """Schema for personal information in CV parsing response."""
 
     full_name: str = Field(default="")
+    academic_title: Optional[str] = Field(default="")
     email: str = Field(default="")
     phone: str = Field(default="")
     location: str = Field(default="")

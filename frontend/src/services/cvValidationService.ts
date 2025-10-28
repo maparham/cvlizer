@@ -336,6 +336,7 @@ class CVDataCleaner {
         data.personal_info = {
           ...data.personal_info,
           full_name: cleanedFullName,
+          academic_title: this.cleanString(data.personal_info.academic_title) || "",
           email: cleanedEmail,
           location: cleanedLocation,
           phone: this.cleanString(data.personal_info.phone) || "",

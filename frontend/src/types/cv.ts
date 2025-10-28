@@ -51,6 +51,7 @@ export interface CVData {
 // Personal Information
 export interface PersonalInfo {
   full_name: string;
+  academic_title?: string;
   email: string;
   phone: string;
   location: string;

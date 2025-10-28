@@ -457,12 +457,23 @@ def generate_cv_latex(parsed: Dict[str, Any], title: str) -> str:
 
     # Add header - use full_name as title, not the filename
     full_name = pi.get("full_name", "")
-    display_title = full_name if full_name else title
+    academic_title = pi.get("academic_title", "")
 
+    # Combine academic title with full name for display
     if full_name:
-        body.append(
-            f"\\begin{{center}}\n\\LARGE\\textbf{{{_tex_escape(display_title)}}}\n\\end{{center}}\n"
-        )
+        if academic_title:
+            # Name bold and large, academic title below in normal font size
+            body.append(f"\\begin{{center}}\n")
+            body.append(f"\\LARGE\\textbf{{{_tex_escape(full_name)}}}\\\\\n")
+            body.append(
+                f"\\normalsize{{\\textnormal{{{_tex_escape(academic_title)}}}}}\n"
+            )
+            body.append(f"\\end{{center}}\n")
+        else:
+            # Just the name, bold and large
+            body.append(
+                f"\\begin{{center}}\n\\LARGE\\textbf{{{_tex_escape(full_name)}}}\n\\end{{center}}\n"
+            )
 
     # Add contact information section if available
     contact_info = _format_contact_info(pi)

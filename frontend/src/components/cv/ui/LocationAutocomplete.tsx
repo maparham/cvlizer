@@ -357,7 +357,6 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
       renderInput={(params) => (
         <TextField
           {...params}
-          label={label}
           placeholder={placeholder}
           fullWidth={fullWidth}
           disabled={disabled}

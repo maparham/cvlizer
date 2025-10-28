@@ -8,7 +8,7 @@
  * - Form validation and editing states
  */
 import React from "react";
-import { Box, TextField, InputAdornment, Typography } from "@mui/material";
+import { Box, TextField, InputAdornment, Typography, Autocomplete } from "@mui/material";
 import {
   GitHub as GitHubIcon,
   LinkedIn as LinkedInIcon,
@@ -17,6 +17,33 @@ import {
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
+
+const ACADEMIC_TITLES = [
+  // English
+  "Dr.",
+  "Prof.",
+  "Prof. Dr.",
+  "Ph.D.",
+  "M.D.",
+  "MBA",
+  "MSc",
+  "MA",
+  "B.A.",
+  "B.Sc.",
+  // German
+  "Dr. med.",
+  "Dr. phil.",
+  "Dr. rer. nat.",
+  "Dipl.-Ing.",
+  "Mag.",
+  // Austrian
+  "Dr.techn.",
+  "Dr.phil.",
+  "Dr.rer.nat.",
+  "Dr.iur.",
+  "Dr.med.univ.",
+  "Mag.rer.nat.",
+];
 
 const PersonalInfoSection: React.FC<SectionProps> = ({
   data,
@@ -36,35 +63,71 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
     onCancel: () => void,
   ) => (
     <Box>
-      <TextField
-        fullWidth
-        variant="standard"
-        value={editData.full_name || ""}
-        onChange={(e) => updateData("full_name", e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            if (editData.full_name?.trim()) {
-              onSave();
+      <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "baseline" }}>
+        <TextField
+          fullWidth
+          variant="standard"
+          value={editData.full_name || ""}
+          onChange={(e) => updateData("full_name", e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (editData.full_name?.trim()) {
+                onSave();
+              }
+            } else if (e.key === "Escape") {
+              // Let global escape handler manage this
+              onCancel();
             }
-          } else if (e.key === "Escape") {
-            // Let global escape handler manage this
-            onCancel();
-          }
-        }}
-        error={!editData.full_name?.trim()}
-        helperText={!editData.full_name?.trim() ? "Full name is required" : ""}
-        data-testid="personal-info-full-name-input"
-        sx={{
-          "& .MuiInputBase-input": {
-            fontSize: "2rem",
-            fontWeight: "bold",
-            color: "#1976d2",
-          },
-        }}
-        placeholder="Your Name *"
-      />
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2, mt: 2 }}>
+          }}
+          error={!editData.full_name?.trim()}
+          helperText={!editData.full_name?.trim() ? "Full name is required" : ""}
+          data-testid="personal-info-full-name-input"
+          sx={{
+            "& .MuiInputBase-input": {
+              fontSize: "2rem",
+              fontWeight: "bold",
+              color: "#1976d2",
+            },
+          }}
+          placeholder="Your Name *"
+        />
+        <Autocomplete
+          freeSolo
+          options={ACADEMIC_TITLES}
+          value={editData.academic_title || ""}
+          onChange={(_, newValue) => updateData("academic_title", newValue || "")}
+          onInputChange={(_, newInputValue) => updateData("academic_title", newInputValue)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              variant="standard"
+              placeholder="Academic Title"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onSave();
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  onCancel();
+                }
+              }}
+              data-testid="personal-info-academic-title-input"
+              sx={{
+                minWidth: 200,
+              }}
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <InputAdornment position="start">🎓</InputAdornment>
+                ),
+              }}
+            />
+          )}
+          sx={{ minWidth: 200 }}
+        />
+      </Box>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
         <TextField
           variant="standard"
           value={editData.email || ""}
@@ -222,7 +285,7 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
         variant="h4"
         sx={{ fontWeight: "bold", mb: 2, color: "#1976d2" }}
       >
-        {data.full_name || "Your Name"}
+        {data.academic_title ? `${data.academic_title} ${data.full_name || "Your Name"}` : (data.full_name || "Your Name")}
       </Typography>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
         {data.email && (

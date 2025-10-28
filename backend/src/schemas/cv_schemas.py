@@ -14,6 +14,9 @@ class PersonalInfoSchema(BaseModel):
     """Schema for personal information section."""
 
     full_name: str = Field(..., min_length=1, description="Full name is required")
+    academic_title: Optional[str] = Field(
+        None, description="Academic title (e.g., Dr., Prof., Dr.techn.)"
+    )
     email: EmailStr = Field(..., description="Valid email address is required")
     phone: Optional[str] = Field(None, description="Phone number")
     location: str = Field(..., min_length=1, description="Location is required")
