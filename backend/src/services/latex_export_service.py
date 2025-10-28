@@ -283,19 +283,19 @@ def _markdown_to_latex(text: str) -> str:
     # Convert *text* to \textit{text} (if not followed by *)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", text)
 
-    # Replace double line breaks with LaTeX paragraph breaks
-    text = re.sub(r"\n\n+", r"\n\n", text)
+    # Split by double newlines to get paragraphs
+    paragraphs = text.split("\n\n")
 
-    # Replace single line breaks with space or line break depending on context
-    lines = text.split("\n")
     result = []
-    for i, line in enumerate(lines):
-        result.append(line.strip())
-        # Add paragraph break between paragraphs
-        if i < len(lines) - 1 and line.strip():
-            result.append("\\\\")
+    for paragraph in paragraphs:
+        if paragraph.strip():
+            # Within a paragraph, replace single newlines with spaces
+            # to join lines that are part of the same paragraph
+            paragraph = paragraph.replace("\n", " ").strip()
+            result.append(paragraph)
 
-    return "\n".join(result)
+    # Join paragraphs with double newline (LaTeX paragraph break)
+    return "\n\n".join(result)
 
 
 def _format_why_good_fit(why_fit: Dict[str, Any]) -> str:
@@ -332,7 +332,7 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
 
         # Use minipage to create two-column layout: title left, dates right
         title_line = (
-            f"\\textbf{{{position}}}, {company_line}\\hfill\\textit{{{dates_str}}}"
+            f"\\textbf{{{position}}}, {company_line} \\hfill\\textit{{{dates_str}}}"
         )
 
         # Description and achievements
