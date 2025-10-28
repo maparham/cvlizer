@@ -31,12 +31,24 @@ Dependencies:
 import asyncio
 import logging
 import os
+import re
+from datetime import datetime
+from pathlib import Path
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Request
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+    status,
+    Request,
+    Query,
+)
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
@@ -45,6 +57,7 @@ from src.constants import DEFAULT_PARSED_CV
 from src.config import APIConfig
 from src.utils.rate_limit import create_combined_limiter
 from src.middleware.clerk_auth import get_effective_user, get_effective_user_lightweight
+from src.middleware.clerk_auth import verify_clerk_token
 from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
 from src.models.user import User
@@ -557,8 +570,84 @@ async def export_cv_pdf(
             cv.parsed_data or {}, cv.original_filename or "My CV"
         )
         pdf_bytes = compile_pdf_from_latex(tex_source)
-        filename = (cv.original_filename or "cv").rsplit(".", 1)[0] + ".pdf"
-        headers = {"Content-Disposition": f'inline; filename="{filename}"'}
+        # Build filename: [ownerName]_YYYYMMDD.pdf using parsed full name, fallback to original filename stem
+        raw_name = (
+            ((cv.parsed_data or {}).get("personal_info") or {}).get("full_name")
+            or Path(cv.original_filename or "cv").stem
+            or "CV"
+        )
+        safe_name = re.sub(r"[^A-Za-z0-9\-\s]+", " ", raw_name).strip()
+        safe_name = re.sub(r"[\s\-]+", "_", safe_name).strip("_") or "CV"
+        date_str = datetime.utcnow().strftime("%Y%m%d")
+        filename = f"{safe_name}_{date_str}.pdf"
+        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate PDF: {str(e)}",
+        )
+
+
+@router.get("/{cv_id}/export/pdf/public")
+async def export_cv_pdf_public(
+    cv_id: str,
+    request: Request,
+    token: str = Query(
+        ..., description="Clerk JWT token for auth when opening in new tab"
+    ),
+    db: Session = Depends(get_db),
+):
+    """Export CV as PDF via LaTeX (pdflatex) for direct new-tab viewing.
+
+    This endpoint allows opening the PDF directly in a new tab (so the browser
+    honors Content-Disposition filename) by accepting a Clerk JWT token via
+    query string. The token is verified server-side to authenticate the user.
+    """
+    # Verify token and resolve user id
+    payload = verify_clerk_token(token)
+    if not payload or not payload.get("sub"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized"
+        )
+
+    clerk_user_id = str(payload.get("sub"))
+
+    # Sync Clerk user to local database to get local user ID
+    from src.services.clerk_sync_service import sync_clerk_user_to_local_db
+
+    local_user = sync_clerk_user_to_local_db(clerk_user_id, payload.get("email", ""), db)
+    user_id = str(local_user.id)
+
+    # Fetch CV and verify ownership
+    cv = get_cv_by_id(db, cv_id, user_id)
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    if not is_latex_available():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LaTeX toolchain (pdflatex) not available on server",
+        )
+
+    try:
+        tex_source = generate_cv_latex(
+            cv.parsed_data or {}, cv.original_filename or "My CV"
+        )
+        pdf_bytes = compile_pdf_from_latex(tex_source)
+
+        # Build filename: [ownerName]_YYYYMMDD.pdf using parsed full name, fallback to original filename stem
+        raw_name = (
+            ((cv.parsed_data or {}).get("personal_info") or {}).get("full_name")
+            or Path(cv.original_filename or "cv").stem
+            or "CV"
+        )
+        safe_name = re.sub(r"[^A-Za-z0-9\-\s]+", " ", raw_name).strip()
+        safe_name = re.sub(r"[\s\-]+", "_", safe_name).strip("_") or "CV"
+        date_str = datetime.utcnow().strftime("%Y%m%d")
+        filename = f"{safe_name}_{date_str}.pdf"
+
+        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
         return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
     except Exception as e:
         raise HTTPException(

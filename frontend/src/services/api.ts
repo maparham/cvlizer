@@ -293,15 +293,21 @@ export const cvApi = {
     return response.data;
   },
 
-  // Export CV as PDF (LaTeX compiled) and open in a new tab
+  // Export CV as PDF (LaTeX compiled) in a new tab using server filename
   exportCVAsPDF: async (cvId: string) => {
-    const response = await api.get(`/api/cvs/${cvId}/export/pdf`, {
-      responseType: "blob",
-    });
-    const blob = new Blob([response.data], { type: "application/pdf" });
-    const url = window.URL.createObjectURL(blob);
+    // Get Clerk token to authorize the public export endpoint
+    if (typeof window === "undefined" || !isClerkAvailable(window)) {
+      throw new Error("Authentication service not available");
+    }
+    const clerk = (window as ClerkWindow).Clerk;
+    const token = await clerk.session?.getToken();
+    if (!token) throw new Error("No authentication token available");
+
+    // Build fully-resolved URL using axios' baseURL to avoid double /api issues
+    const path = `/api/cvs/${cvId}/export/pdf/public`;
+    const base = api.getUri({ url: path });
+    const url = `${base}?token=${encodeURIComponent(token)}`;
     window.open(url, "_blank");
-    setTimeout(() => window.URL.revokeObjectURL(url), 30000);
   },
 };
 
