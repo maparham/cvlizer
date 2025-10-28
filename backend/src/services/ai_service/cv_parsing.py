@@ -112,20 +112,27 @@ async def parse_cv_text_with_openai(
 
 IMPORTANT: First validate if this document is actually a CV/resume. If the content is NOT a CV (e.g., research paper, article, book, manual, academic paper, or any other non-CV document), set is_valid_cv to false and validation_error to: "This document does not appear to be a CV. Please upload a resume or curriculum vitae with your professional information."
 
+DESCRIPTION FORMATTING RULES:
+- All description fields MUST be formatted in markdown
+- For descriptions longer than 50 characters, format as bullet lists using markdown syntax (e.g., "- Item 1\\n- Item 2")
+- Use proper markdown formatting: **bold** for emphasis, *italic* for emphasis, \\n\\n for paragraph breaks
+- Short descriptions (<50 characters) can remain as plain text
+- professional_summary.content should also follow markdown formatting with bullet points for key achievements
+
 CV: {text_content}
 
 Return JSON (omit empty sections):
 {{
   "personal_info": {{"full_name": "str", "email": "str", "phone": "str", "location": "str", "linkedin_url": "str", "website_url": "str", "github_url": "str"}},
-  "professional_summary": {{"content": "str", "keywords": []}},
-  "work_experience": [{{"company": "str", "position": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str", "achievements": [], "technologies": []}}],
-  "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str", "achievements": [], "honors": []}}],
+  "professional_summary": {{"content": "str (markdown formatted)", "keywords": []}},
+  "work_experience": [{{"company": "str", "position": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str (markdown formatted)", "achievements": [], "technologies": []}}],
+  "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str (markdown formatted)", "achievements": [], "honors": []}}],
   "skills": {{"technical": [], "soft": [], "languages": [{{"language": "str", "proficiency": "str"}}]}},
-  "certifications": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD|null", "description": "str"}}],
-  "projects": [{{"name": "str", "description": "str", "technologies": [], "url": "str|null"}}],
-  "awards": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "description": "str"}}],
+  "certifications": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD|null", "description": "str (markdown formatted)"}}],
+  "projects": [{{"name": "str", "description": "str (markdown formatted)", "technologies": [], "url": "str|null"}}],
+  "awards": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "description": "str (markdown formatted)"}}],
   "publications": [{{"title": "str", "authors": "str", "journal": "str", "date": "YYYY-MM-DD", "url": "str|null"}}],
-  "volunteer_experience": [{{"organization": "str", "role": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "str"}}],
+  "volunteer_experience": [{{"organization": "str", "role": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "str (markdown formatted)"}}],
   "is_valid_cv": true,
   "validation_error": null
 }}"""
@@ -136,7 +143,7 @@ Return JSON (omit empty sections):
 
         # Use unified OpenAI call builder
         parsed_content, metadata = await call_openai_with_schema(
-            system_prompt="You are an expert CV parser. First validate if the document is actually a CV/resume (not a research paper, article, book, manual, or other non-CV document). If it's not a CV, set is_valid_cv to false and use the standard validation_error message provided in the prompt. If it is a CV, extract structured information and return valid JSON.",
+            system_prompt="You are an expert CV parser. First validate if the document is actually a CV/resume (not a research paper, article, book, manual, or other non-CV document). If it's not a CV, set is_valid_cv to false and use the standard validation_error message provided in the prompt. If it is a CV, extract structured information and return valid JSON. CRITICAL: All description fields must be formatted in markdown. For descriptions longer than 50 characters, use bullet lists with markdown syntax (- for bullets, \\n for line breaks).",
             user_prompt=prompt,
             response_schema=CVParsingResponseSchema,
             model=AIConfig.OPENAI_PARSING_MODEL,
