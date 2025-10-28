@@ -132,18 +132,20 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
 
   const renderExperienceDisplay = (exp: WorkExperience, _index: number) => (
     <>
-      <Typography
-        variant="subtitle1"
-        sx={{ fontWeight: 600, color: "#333", mb: 0.5 }}
-      >
-        {exp.position || "Position Title"}
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5, pr: 10 }}>
+        <Typography
+          variant="subtitle1"
+          sx={{ fontWeight: 600, color: "#333" }}
+        >
+          {exp.position || "Position Title"}
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#666", flexShrink: 0, ml: 2 }}>
+          {exp.start_date} - {exp.current ? "PRESENT" : exp.end_date || "PRESENT"}
+        </Typography>
+      </Box>
       <Typography variant="subtitle1" sx={{ color: "#1976d2", mb: 1 }}>
         {exp.company || "Company Name"}
         {exp.location && ` • ${exp.location}`}
-      </Typography>
-      <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-        {exp.start_date} - {exp.current ? "PRESENT" : exp.end_date || "PRESENT"}
       </Typography>
       {exp.description ? (
         <Box sx={{ mb: 1 }}>

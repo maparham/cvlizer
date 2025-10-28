@@ -20,7 +20,7 @@
 
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import { Typography, Link, Box, List, ListItem } from "@mui/material";
+import { Typography, Link, Box } from "@mui/material";
 import { SxProps, Theme } from "@mui/material/styles";
 
 interface MarkdownRendererProps {
@@ -120,21 +120,23 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
           // Lists
           ul: ({ children }) => (
-            <List dense sx={{ py: 0, pl: 2 }}>
+            <Box component="ul" sx={{ py: 0, pl: 2, mb: 1 }}>
               {children}
-            </List>
+            </Box>
           ),
           ol: ({ children }) => (
-            <List dense component="ol" sx={{ py: 0, pl: 2 }}>
+            <Box component="ol" sx={{ py: 0, pl: 2, mb: 1 }}>
               {children}
-            </List>
+            </Box>
           ),
           li: ({ children }) => (
-            <ListItem sx={{ display: "list-item", py: 0.25, px: 0 }}>
-              <Typography variant={variant} sx={{ color, lineHeight: 1.6 }}>
-                {children}
-              </Typography>
-            </ListItem>
+            <Typography
+              component="li"
+              variant={variant}
+              sx={{ color, lineHeight: 1.6, mb: 0.25 }}
+            >
+              {children}
+            </Typography>
           ),
 
           // Links

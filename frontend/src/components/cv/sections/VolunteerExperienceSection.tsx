@@ -90,12 +90,17 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
 
   const renderVolunteerDisplay = (volunteer: VolunteerExperience, _index: number) => (
     <>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
-        🤝 {volunteer.role}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+          🤝 {volunteer.role}
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
+          {volunteer.start_date}
+          {volunteer.end_date ? ` - ${volunteer.end_date}` : ' - Present'}
+        </Typography>
+      </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {volunteer.organization} • {volunteer.start_date}
-        {volunteer.end_date ? ` - ${volunteer.end_date}` : ' - Present'}
+        {volunteer.organization}
       </Typography>
       <Box>
         <MarkdownRenderer content={volunteer.description} variant="body1" />

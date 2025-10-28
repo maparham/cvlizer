@@ -85,11 +85,16 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
 
   const renderPublicationDisplay = (publication: Publication, _index: number) => (
     <>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
-        📄 {publication.title}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+          📄 {publication.title}
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
+          {publication.date}
+        </Typography>
+      </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {publication.authors} • {publication.journal} • {publication.date}
+        {publication.authors} • {publication.journal}
       </Typography>
       {publication.url && (
         <Typography variant="body2" color="primary">

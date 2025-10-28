@@ -83,9 +83,11 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
 
   const renderProjectDisplay = (project: Project, _index: number) => (
     <>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
-        {project.name}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+          {project.name}
+        </Typography>
+      </Box>
       <Box sx={{ mb: 1 }}>
         <MarkdownRenderer content={project.description} variant="body1" />
       </Box>

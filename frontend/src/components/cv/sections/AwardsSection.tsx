@@ -74,11 +74,16 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
 
   const renderAwardDisplay = (award: Award, _index: number) => (
     <>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
-        🏆 {award.name}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+          🏆 {award.name}
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
+          {award.date}
+        </Typography>
+      </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {award.issuer} • {award.date}
+        {award.issuer}
       </Typography>
       {award.description && (
         <Box>

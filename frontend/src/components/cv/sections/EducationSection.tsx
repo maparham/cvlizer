@@ -290,12 +290,18 @@ const EducationSection: React.FC<SectionProps> = ({
   const renderEducationDisplay = (edu: Education, _index: number) => {
     return (
       <>
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 600, color: "#333", mb: 0.5 }}
-        >
-          {edu.degree || "Degree"}
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5, pr: 10 }}>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, color: "#333" }}
+          >
+            {edu.degree || "Degree"}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#666", flexShrink: 0, ml: 2 }}>
+            {edu.start_date || "Start date required"} -{" "}
+            {edu.end_date || "PRESENT"}
+          </Typography>
+        </Box>
         <Typography variant="subtitle1" sx={{ color: "#1976d2", mb: 1 }}>
           {edu.institution || "Institution"}
           {edu.location && ` • ${edu.location}`}
@@ -305,10 +311,6 @@ const EducationSection: React.FC<SectionProps> = ({
             {edu.field_of_study}
           </Typography>
         )}
-        <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-          {edu.start_date || "Start date required"} -{" "}
-          {edu.end_date || "PRESENT"}
-        </Typography>
         {edu.gpa && (
           <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
             GPA: {edu.gpa}

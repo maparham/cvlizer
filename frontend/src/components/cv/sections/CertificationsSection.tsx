@@ -89,12 +89,17 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
 
   const renderCertificationDisplay = (cert: Certification, _index: number) => (
     <>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
-        {cert.name}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
+          {cert.name}
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
+          {cert.date}
+          {cert.expiry_date && ` - ${cert.expiry_date}`}
+        </Typography>
+      </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {cert.issuer} • {cert.date}
-        {cert.expiry_date && ` • Expires: ${cert.expiry_date}`}
+        {cert.issuer}
       </Typography>
       {cert.description && (
         <Box>

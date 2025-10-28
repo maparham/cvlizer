@@ -28,49 +28,18 @@ function ItemControls<T>({
 
   return (
     <Box>
-      {/* Action buttons - always in top right */}
+      {/* Action buttons - stacked vertically in top right */}
       <Box
         sx={{
           position: "absolute",
           top: 0,
           right: 0,
           display: "flex",
+          flexDirection: "column",
           gap: 0.5,
           zIndex: 1,
         }}
       >
-        <Tooltip title={`Delete this ${getSingularTitle(title).toLowerCase()}`}>
-          <IconButton
-            onClick={() => onDelete(index)}
-            className="item-action-button"
-            data-testid={`delete-${title.toLowerCase().replace(/ /g, "-")}-item-${index}`}
-            sx={{
-              color: "text.secondary",
-              bgcolor: "transparent",
-              opacity: 0.3,
-              transition: "all 0.2s ease",
-              "&:hover": {
-                color: "error.main",
-                bgcolor: "rgba(255, 235, 238, 0.5)",
-                opacity: 1,
-              },
-            }}
-            size="small"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        {cvId && enhancementContentField && onEnhancementAccept && contentString && (
-          <EnhancementButton
-            content={contentString}
-            contentType="paragraph"
-            cvId={cvId}
-            onContentUpdate={(newContent) => onEnhancementAccept(index, newContent)}
-            size="small"
-            disabled={isAnotherItemBeingEdited}
-            className="item-action-button"
-          />
-        )}
         <Tooltip
           title={
             isAnotherItemBeingEdited
@@ -100,6 +69,38 @@ function ItemControls<T>({
               <EditIcon fontSize="small" />
             </IconButton>
           </span>
+        </Tooltip>
+        {cvId && enhancementContentField && onEnhancementAccept && contentString && (
+          <EnhancementButton
+            content={contentString}
+            contentType="paragraph"
+            cvId={cvId}
+            onContentUpdate={(newContent) => onEnhancementAccept(index, newContent)}
+            size="small"
+            disabled={isAnotherItemBeingEdited}
+            className="item-action-button"
+          />
+        )}
+        <Tooltip title={`Delete this ${getSingularTitle(title).toLowerCase()}`}>
+          <IconButton
+            onClick={() => onDelete(index)}
+            className="item-action-button"
+            data-testid={`delete-${title.toLowerCase().replace(/ /g, "-")}-item-${index}`}
+            sx={{
+              color: "text.secondary",
+              bgcolor: "transparent",
+              opacity: 0.3,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: "error.main",
+                bgcolor: "rgba(255, 235, 238, 0.5)",
+                opacity: 1,
+              },
+            }}
+            size="small"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
       </Box>
 
