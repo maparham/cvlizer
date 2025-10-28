@@ -386,12 +386,14 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
 
         # Build title line with degree and field of study
         # Two-column layout: left column for title, right column for dates
-        title_line_str = degree
+        # Degree is bold, field of study is normal with comma separator
         if field_of_study:
-            title_line_str += f" in {field_of_study}"
+            title_line_str = f"\\textbf{{{degree}}}, {field_of_study}"
+        else:
+            title_line_str = f"\\textbf{{{degree}}}"
 
         title_line = (
-            f"\\parbox[t]{{0.7\\textwidth}}{{\\textbf{{{title_line_str}}}, {institution_line}}}"
+            f"\\parbox[t]{{0.7\\textwidth}}{{{title_line_str}, {institution_line}}}"
             f"\\hfill"
             f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
         )
