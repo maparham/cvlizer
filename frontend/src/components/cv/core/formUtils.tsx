@@ -213,11 +213,6 @@ export const DateFieldComponent: React.FC<{
         return required ? `${label} is required` : "";
       }
 
-      // Check date format
-      if (!dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return `${label} must be in YYYY-MM-DD format`;
-      }
-
       // Check if date is valid
       const parsedDate = dayjs(dateValue);
       if (!parsedDate.isValid()) {
