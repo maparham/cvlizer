@@ -62,6 +62,7 @@ async def generate_ai_section(
             user_id=current_user.id,
             cv_id=cv_id,
             db_session=db,
+            company_name=job_description.company,
         )
 
         # Check if AI generation failed

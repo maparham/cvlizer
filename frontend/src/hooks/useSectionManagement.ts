@@ -122,7 +122,7 @@ export const useSectionManagement = ({
         sections.push({
           id: "why_good_fit",
           type: "why_good_fit" as CVSectionType,
-          title: "Why I'm a Good Fit",
+          title: (cvData.why_good_fit as any)?.title || "Why I'm a Good Fit",
           visible: true,
           order: order++,
         });
@@ -146,15 +146,25 @@ export const useSectionManagement = ({
     if (cvData) {
       if (cvData.section_config?.sections) {
         // Use the section configuration from the CV data, but filter out deleted sections
-        const filteredSections = cvData.section_config.sections.filter(
-          (section) => {
+        const filteredSections = cvData.section_config.sections
+          .filter((section) => {
             // Keep the section if it's not why_good_fit or if why_good_fit has data
             if (section.id === "why_good_fit") {
               return !isSectionEmpty("why_good_fit", cvData);
             }
             return true;
-          },
-        );
+          })
+          .map((section) => {
+            // For why_good_fit, prefer the title already in section_config (set during approval)
+            // Only override if section.title is the default and we have a dynamic title
+            if (section.id === "why_good_fit" && section.title === "Why I'm a Good Fit") {
+              const dynamicTitle = (cvData.why_good_fit as any)?.title;
+              if (dynamicTitle) {
+                return { ...section, title: dynamicTitle };
+              }
+            }
+            return section;
+          });
         setSections(filteredSections);
       } else {
         // Create sections from CV data (only sections with data)
@@ -241,7 +251,8 @@ export const useSectionManagement = ({
       if (!sectionDef) {
         // Special handling for AI-generated sections
         if (sectionId === "why_good_fit") {
-          sectionName = "Why I'm a Good Fit";
+          // Use dynamic title from CV data if available
+          sectionName = (cvData?.why_good_fit as any)?.title || "Why I'm a Good Fit";
         } else {
           // For unknown sections, use a generic name
           sectionName = sectionId

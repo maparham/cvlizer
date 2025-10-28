@@ -192,6 +192,9 @@ class CVSectionGenerationResponseSchema(BaseModel):
 class JobFitAnalysisResponseSchema(BaseModel):
     """Schema for job fit analysis AI response."""
 
+    title: Optional[str] = Field(
+        None, description="Dynamic title (e.g., 'Hello Company Name!')"
+    )
     confidence_score: int = Field(ge=1, le=100)
     fit_analysis: str = Field(min_length=50)
     key_matches: List[str] = Field(default_factory=list)

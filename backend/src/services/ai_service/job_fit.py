@@ -111,9 +111,11 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
 
     return (
         f"Write as the candidate about your fit for this position.\n\n"
-        f"LANGUAGE REQUIREMENT: Write ALL content (fit_analysis and all arrays) in the SAME LANGUAGE as the job description below.\n"
+        f"LANGUAGE REQUIREMENT: Write ALL content (title, fit_analysis and all arrays) in the SAME LANGUAGE as the job description below.\n"
+        f'IMPORTANT: Extract the company name from the job description and create a title in the format: "Hello [Company Name]!" or "Hello!" if no company name is available.\n'
         f"OUTPUT JSON:\n"
         f"{{\n"
+        f'  "title": "Hello [Company Name from job description]!" or "Hello!" if no company name,\n'
         f'  "confidence_score": integer 1-100,\n'
         f'  "fit_analysis": "markdown-formatted",\n'
         f'  "key_matches": list of strings (0-5), ONLY skills/technologies FROM YOUR CV that GENUINELY match JD requirements. Empty array [] if no real matches,\n'
@@ -125,9 +127,8 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"RULES:\n"
         f"1. confidence_score: Integer 0-100 showing match quality.\n"
         f"2. fit_analysis (markdown string, first person):\n"
-        f"   • Header \\*\\*Why I'm a Good Fit\\*\\*\\n\\n[1 paragraph, 40-50 words: top 2-3 skills + enthusiasm].\n"
-        f"   • Then: \\*\\*Your Requirements\\*\\*\\n\\n.\n"
-        f"   • List specific technical and role requirements from the job description (skip vague soft skills).\n"
+        f"   • Start directly with [1 paragraph, 40-50 words: top 2-3 skills + enthusiasm].\n"
+        f"   • Then list specific technical and role requirements from the job description (skip vague soft skills).\n"
         f"   • Below each requirement, write a short cover paragraph about your experience in the context of the requirement item.\n"
         f'   • Format each requirement as: \\*\\*"[requirement text]"\\*\\*\\n\\n[cover paragraph]\\n\\n\n'
         f"   • CRITICAL: Each requirement MUST be wrapped in \\*\\* (asterisks) for bold formatting.\n"
@@ -209,6 +210,7 @@ async def _execute_job_fit_analysis(
 
         # Build result dictionary
         result = {
+            "title": analysis.get("title", "Hello!"),
             "confidence_score": confidence_score,
             "fit_analysis": analysis.get("fit_analysis", ""),
             "generated_at": datetime.now(timezone.utc).isoformat(),

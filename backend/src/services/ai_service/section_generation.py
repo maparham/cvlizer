@@ -47,6 +47,7 @@ async def generate_cv_section(
     user_id: Optional[str] = None,
     cv_id: Optional[str] = None,
     db_session: Optional[Session] = None,
+    company_name: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Generate AI-enhanced CV section based on job description.
@@ -58,6 +59,7 @@ async def generate_cv_section(
         user_id: User identifier for logging
         cv_id: CV identifier for logging
         db_session: Database session for logging
+        company_name: Company name for personalized greeting
 
     Returns:
         Dictionary containing:
@@ -86,18 +88,26 @@ async def generate_cv_section(
 ⚠️ LANGUAGE REQUIREMENT: Write ALL content (title, content, key_points) in the SAME LANGUAGE as the job description.
 If the job description is in German, write everything in German. If in English, write in English.
 
+IMPORTANT: Extract the job title from the job description and use it as the section title.
+The title should be: "Hello [Company Name]!" or "Hello!" if no company name is available.
+
 CV: {filtered_cv_data}
 
 Job: {job_description}
 
 Structure:
-1. 2-3 paragraphs on relevant experience/skills
-2. Job Requirements Analysis with bullet points
+1. Start with 1-2 paragraphs on why you're applying and relevant experience
+2. Then provide Job Requirements Analysis covering specific requirements from the job
+3. Use the job title from the job description as the section title
+
+IMPORTANT:
+- Write the content as flowing paragraphs without section headers
+- Use bullet points naturally within the content where appropriate
 
 Return JSON:
 {{
-  "title": "Hello <company name>!",
-  "content": "**Why am I applying?**\\n\\n[1-2 paragraphs]\\n\\n**Job Requirements Analysis**\\n\\n[Requirements list]",
+  "title": "Hello [Company Name from job description]!" or "Hello!" if no company name,
+  "content": "[1-2 paragraphs about your application and relevant experience, flowing directly into analysis of job requirements with specific examples from your experience]",
   "key_points": ["Point 1", "Point 2", "Point 3"]
 }}
 

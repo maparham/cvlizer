@@ -78,6 +78,7 @@ export interface WhyGoodFit {
   weaknesses?: string[];
   generated_at?: string;
   job_description_id?: string;
+  title?: string; // Dynamic title from AI generation (e.g., "Hello Company Name!")
 }
 
 // Work Experience

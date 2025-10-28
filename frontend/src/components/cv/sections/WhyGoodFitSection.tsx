@@ -70,9 +70,11 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
   onEdit,
   onClose,
   onUnsavedChanges,
-  title = "Why I'm a Good Fit",
+  title,
   onTitleSave,
 }) => {
+  // Use prop title from section_config (set during approval), fallback to data title, fallback to default
+  const sectionTitle = title || data?.title || "Why I'm a Good Fit";
   const { showSuccess } = useNotifications();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editContent, setEditContent] = useState(
@@ -157,7 +159,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
       >
         {onTitleSave ? (
           <EditableTitle
-            title={title}
+            title={sectionTitle}
             onSave={onTitleSave}
             variant="h5"
             sx={{
@@ -173,7 +175,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
             component="h2"
             sx={{ fontWeight: 600, color: "primary.main" }}
           >
-            {title}
+            {sectionTitle}
           </Typography>
         )}
         <Box>

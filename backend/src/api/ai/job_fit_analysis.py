@@ -264,6 +264,12 @@ async def approve_why_good_fit_draft(
                 f"approve_why_good_fit_draft: confidence_score is missing in draft {request.draft_id}"
             )
 
+        # Get title from draft data
+        draft_title = raw.get("title", "Hello!")
+        logger.info(
+            f"approve_why_good_fit_draft: Draft title from raw data: {draft_title}"
+        )
+
         normalized = {
             "content": content_value,
             # confidence_score must be present; do not default here
@@ -283,13 +289,14 @@ async def approve_why_good_fit_draft(
                 if draft.job_description_id
                 else raw.get("job_description_id")
             ),
+            "title": draft_title,
         }
         # Validate and strip extras strictly via Pydantic
         try:
             validated = WhyGoodFitSchema(**normalized)
             compliant_data = validated.dict()
             logger.info(
-                f"approve_why_good_fit_draft: Validation succeeded for draft {request.draft_id}"
+                f"approve_why_good_fit_draft: Validation succeeded for draft {request.draft_id}, title={compliant_data.get('title')}"
             )
         except Exception as e:
             logger.error(
@@ -317,10 +324,16 @@ async def approve_why_good_fit_draft(
         ]
 
         # Add why_good_fit section with order 2 (after personal_info)
+        # Get title from draft data, fallback to default
+        section_title = raw.get("title", "Why I'm a Good Fit")
+        logger.info(
+            f"approve_why_good_fit_draft: Using section_title={section_title} from draft"
+        )
+
         why_good_fit_section = {
             "id": "why_good_fit",
             "type": "why_good_fit",
-            "title": "Why I'm a Good Fit",
+            "title": section_title,
             "visible": True,
             "order": 2,
         }

@@ -225,6 +225,7 @@ export const cvApi = {
       if (raw.generation_time !== undefined)
         normalized.generation_time = raw.generation_time;
       if (raw.model_used) normalized.model_used = raw.model_used;
+      if (raw.title) normalized.title = raw.title;
 
       // Validate required fields
       if (

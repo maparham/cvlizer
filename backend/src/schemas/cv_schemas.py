@@ -67,6 +67,9 @@ class WhyGoodFitSchema(BaseModel):
     job_description_id: Optional[str] = Field(
         None, description="Associated job description ID"
     )
+    title: Optional[str] = Field(
+        None, description="Dynamic title from AI generation (e.g., 'Hello Company Name!')"
+    )
 
 
 class WorkExperienceSchema(BaseModel):
