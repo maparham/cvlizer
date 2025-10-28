@@ -330,9 +330,15 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
         if end_date:
             dates_str = f"{start_date} -- {end_date}"
 
-        # Use minipage to create two-column layout: title left, dates right
+        # Use mbox to prevent date from breaking across lines
+        dates_str = f"\\mbox{{{dates_str}}}"
+
+        # Two-column layout: left column for title, right column for dates
+        # Left: 70% width for flexible wrapping, Right: 25% width for dates
         title_line = (
-            f"\\textbf{{{position}}}, {company_line} \\hfill\\textit{{{dates_str}}}"
+            f"\\parbox[t]{{0.7\\textwidth}}{{\\textbf{{{position}}}, {company_line}}}"
+            f"\\hfill"
+            f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
         )
 
         # Description and achievements
@@ -375,12 +381,19 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
         if end_date:
             dates_str = f"{start_date} -- {end_date}"
 
+        # Use mbox to prevent date from breaking across lines
+        dates_str = f"\\mbox{{{dates_str}}}"
+
         # Build title line with degree and field of study
-        title_line = degree
+        # Two-column layout: left column for title, right column for dates
+        title_line_str = degree
         if field_of_study:
-            title_line += f" in {field_of_study}"
+            title_line_str += f" in {field_of_study}"
+
         title_line = (
-            f"\\textbf{{{title_line}}}, {institution_line}\\hfill\\textit{{{dates_str}}}"
+            f"\\parbox[t]{{0.7\\textwidth}}{{\\textbf{{{title_line_str}}}, {institution_line}}}"
+            f"\\hfill"
+            f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
         )
 
         # Add GPA if present
@@ -477,13 +490,13 @@ def _generate_from_template(
     summary = parsed.get("professional_summary", {}) if parsed else {}
     why_fit = parsed.get("why_good_fit", {}) if parsed else {}
     wx = parsed.get("work_experience", []) if parsed else []
-    ed = parsed.get("education", []) if parsed else {}
+    ed = parsed.get("education", []) if parsed else []
     skills = parsed.get("skills", {}) if parsed else {}
     certs = parsed.get("certifications", []) if parsed else []
     projects = parsed.get("projects", []) if parsed else []
-    awards = parsed.get("awards", []) if parsed else {}
+    awards = parsed.get("awards", []) if parsed else []
     pubs = parsed.get("publications", []) if parsed else []
-    volunteer = parsed.get("volunteer_experience", []) if parsed else {}
+    volunteer = parsed.get("volunteer_experience", []) if parsed else []
 
     # Format personal info header
     personal_info_header = _format_personal_info_header(pi)
