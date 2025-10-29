@@ -260,24 +260,28 @@ def _format_contact_info(pi: Dict[str, Any]) -> str:
         return url
 
     if email:
-        contact_lines.append(f"Email: \\href{{mailto:{email}}}{{{_tex_escape(email)}}}")
+        contact_lines.append(
+            f"\\faEnvelope\\, \\href{{mailto:{email}}}{{{_tex_escape(email)}}}"
+        )
     if phone:
-        contact_lines.append(f"Phone: {phone}")
+        contact_lines.append(f"\\faPhone\\, {phone}")
     if location:
-        contact_lines.append(f"Location: {location}")
+        contact_lines.append(f"\\faMapMarker*\\, {location}")
     if linkedin:
         linkedin_url = ensure_protocol(linkedin)
         contact_lines.append(
-            f"LinkedIn: \\href{{{linkedin_url}}}{{{_tex_escape(linkedin)}}}"
+            f"\\faLinkedin\\, \\href{{{linkedin_url}}}{{{_tex_escape(linkedin)}}}"
         )
     if website:
         website_url = ensure_protocol(website)
         contact_lines.append(
-            f"Website: \\href{{{website_url}}}{{{_tex_escape(website)}}}"
+            f"\\faGlobe\\, \\href{{{website_url}}}{{{_tex_escape(website)}}}"
         )
     if github:
         github_url = ensure_protocol(github)
-        contact_lines.append(f"GitHub: \\href{{{github_url}}}{{{_tex_escape(github)}}}")
+        contact_lines.append(
+            f"\\faGithub\\, \\href{{{github_url}}}{{{_tex_escape(github)}}}"
+        )
 
     if not contact_lines:
         return ""
@@ -507,26 +511,104 @@ def _format_skills(skills: Dict[str, Any]) -> str:
 
 
 def _format_personal_info_header(pi: Dict[str, Any]) -> str:
-    """Format personal info header (name and academic title)."""
+    """Format personal info header with name/title and a 2-row contact grid.
+
+    Contact items are arranged into two rows and as many left-aligned columns
+    as needed, using icons instead of text labels.
+    """
     full_name = pi.get("full_name", "")
     academic_title = pi.get("academic_title", "")
 
     if not full_name:
         return ""
 
+    # Build contact items (icon + text), hyperlinks where relevant
+    def ensure_protocol(url: str) -> str:
+        if url and not url.startswith(("http://", "https://")):
+            return f"https://{url}"
+        return url
+
+    email = pi.get("email", "")
+    phone = _tex_escape(pi.get("phone", ""))
+    location = _tex_escape(pi.get("location", ""))
+    linkedin = pi.get("linkedin_url", "")
+    website = pi.get("website_url", "")
+    github = pi.get("github_url", "")
+
+    contact_items: list[str] = []
+    # Use fixed-width boxes for icons to ensure perfect vertical alignment
+    # All icons are placed in a 1.2em wide box, left-aligned
+    # Order: location first (row1, col1), then email (row2, col1), then others
+    if location:
+        contact_items.append(f"\\makebox[1.2em][l]{{\\faMapMarker*}}\\, {location}")
+    if phone:
+        contact_items.append(f"\\makebox[1.2em][l]{{\\faPhone}}\\, {phone}")
+    if linkedin:
+        lurl = ensure_protocol(linkedin)
+        contact_items.append(
+            f"\\makebox[1.2em][l]{{\\faLinkedin}}\\, \\href{{{lurl}}}{{{_tex_escape(linkedin)}}}"
+        )
+    if email:
+        contact_items.append(
+            f"\\makebox[1.2em][l]{{\\faEnvelope}}\\, \\href{{mailto:{email}}}{{{_tex_escape(email)}}}"
+        )
+    if website:
+        wurl = ensure_protocol(website)
+        contact_items.append(
+            f"\\makebox[1.2em][l]{{\\faGlobe}}\\, \\href{{{wurl}}}{{{_tex_escape(website)}}}"
+        )
+    if github:
+        gurl = ensure_protocol(github)
+        contact_items.append(
+            f"\\makebox[1.2em][l]{{\\faGithub}}\\, \\href{{{gurl}}}{{{_tex_escape(github)}}}"
+        )
+
+    # Arrange into two rows and as many columns as needed
+    contact_block = ""
+    if contact_items:
+        import math
+
+        num_items = len(contact_items)
+        num_cols = max(1, math.ceil(num_items / 2))
+
+        row1 = contact_items[:num_cols]
+        row2 = contact_items[num_cols:]
+        while len(row2) < num_cols:
+            row2.append("")
+
+        # Use tabular for proper column alignment
+        col_spec = "@{}" + "@{\\hspace{2em}}".join(["l"] * num_cols) + "@{}"
+        row1_line = " & ".join(row1) + r" \\"
+        row2_line = " & ".join(row2)
+
+        contact_block = (
+            f"\\vspace{{0.4\\baselineskip}}\n"
+            f"\\small\n"
+            f"\\begin{{center}}\n"
+            f"\\begin{{tabular}}{{{col_spec}}}\n"
+            f"{row1_line}\n"
+            f"{row2_line}\n"
+            f"\\end{{tabular}}\n"
+            f"\\end{{center}}\n"
+            f"\\normalsize\n"
+        )
+
+    # Header: centered name and optional academic title
     if academic_title:
-        return (
+        header = (
             f"\\begin{{center}}\n"
             f"\\LARGE\\textbf{{{_tex_escape(full_name)}}}\\\\\n"
             f"\\normalsize{{\\textnormal{{{_tex_escape(academic_title)}}}}}\n"
             f"\\end{{center}}\n"
         )
     else:
-        return (
+        header = (
             f"\\begin{{center}}\n"
             f"\\LARGE\\textbf{{{_tex_escape(full_name)}}}\n"
             f"\\end{{center}}\n"
         )
+
+    return header + contact_block
 
 
 def _generate_from_template(
@@ -561,13 +643,8 @@ def _generate_from_template(
     # Format personal info header
     personal_info_header = _format_personal_info_header(pi)
 
-    # Format contact info section
-    contact_info = _format_contact_info(pi)
-    contact_info_section = (
-        _section("Contact Information", contact_info, template_name)
-        if contact_info
-        else ""
-    )
+    # Dedicated contact section removed in favor of inline header details
+    contact_info_section = ""
 
     # Get section_config for custom ordering
     section_config = parsed.get("section_config", {}) if parsed else {}
@@ -759,9 +836,8 @@ def compile_pdf_from_latex(tex_source: str) -> bytes:
             )
 
             if result.returncode != 0:
-                raise RuntimeError(
-                    f"LaTeX compilation failed (first pass): {result.stderr}"
-                )
+                error_msg = result.stderr or result.stdout or "Unknown error"
+                raise RuntimeError(f"LaTeX compilation failed (first pass): {error_msg}")
 
             # Second pass to settle references
             result = subprocess.run(
@@ -773,9 +849,8 @@ def compile_pdf_from_latex(tex_source: str) -> bytes:
             )
 
             if result.returncode != 0:
-                raise RuntimeError(
-                    f"LaTeX compilation failed (second pass): {result.stderr}"
-                )
+                error_msg = result.stderr or result.stdout or "Unknown error"
+                raise RuntimeError(f"LaTeX compilation failed (second pass): {error_msg}")
 
             # Read the generated PDF
             if not os.path.exists(pdf_path):
