@@ -16,12 +16,12 @@ interface Education {
   institution: string;
   degree: string;
   field_of_study: string;
-  academic_degree: string;
+  academic_degree?: string;
   location: string;
   start_date: string;
   end_date: string;
-  gpa: string;
-  description: string;
+  gpa?: string;
+  description?: string;
   achievements: string[];
   honors: string[];
 }
@@ -305,6 +305,7 @@ const EducationSection: React.FC<SectionProps> = ({
           >
             {edu.degree || "Degree"}
             {edu.field_of_study && ` in ${edu.field_of_study}`}
+            {edu.academic_degree && ` (${edu.academic_degree})`}
           </Typography>
           <Typography variant="body2" sx={{ color: "#666", flexShrink: 0, ml: 2 }}>
             {edu.start_date || "Start date required"} -{" "}
@@ -315,11 +316,6 @@ const EducationSection: React.FC<SectionProps> = ({
           {edu.institution || "Institution"}
           {edu.location && ` • ${edu.location}`}
         </Typography>
-        {edu.academic_degree && (
-          <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-            {edu.academic_degree}
-          </Typography>
-        )}
         {edu.gpa && (
           <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
             GPA: {edu.gpa}

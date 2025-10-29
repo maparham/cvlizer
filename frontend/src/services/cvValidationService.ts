@@ -525,6 +525,7 @@ class CVDataCleaner {
         "institution",
         "degree",
         "field_of_study",
+        "academic_degree",
         "location",
         "start_date",
         "end_date",
