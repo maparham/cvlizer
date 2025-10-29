@@ -1,5 +1,5 @@
-\documentclass[11pt]{article}
-\usepackage[margin=0.75in]{geometry}
+\documentclass[10pt]{article}
+\usepackage[margin=0.5in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
@@ -11,27 +11,27 @@
 \usepackage{parskip}
 \usepackage{needspace}
 
-% Classic font settings - traditional serif fonts (Times-like)
-\renewcommand{\rmdefault}{cmr}
+% Compact font settings - neutral sans-serif for ATS clarity
+\renewcommand{\rmdefault}{lmr}
 \renewcommand{\sfdefault}{lmss}
 \renewcommand{\ttdefault}{lmtt}
+\renewcommand{\familydefault}{\sfdefault}
 
 % Microtype for better typography
 \microtypesetup{protrusion=true, expansion=true}
 
-% Classic section styling - traditional with thin rules
-\newcommand{\classicsection}[1]{%
-  \needspace{4\baselineskip}%
-  \noindent{\Large\textbf{#1}}\\[-1ex]%
-  \rule{\textwidth}{0.3pt}\\[0.4ex]%
+% Compact section styling - bold title, no rule
+\newcommand{\compactsection}[1]{%
+  \needspace{3\baselineskip}%
+  \noindent\textbf{#1}\\[-0.2ex]%
 }
 
-% Better spacing for itemize - dense layout
+% Dense itemize spacing
 \setlist[itemize]{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}
 \pagenumbering{gobble}
 
-% Classic paragraph spacing - dense traditional layout
-\setlength{\parskip}{0.3\baselineskip}
+% Compact paragraph spacing
+\setlength{\parskip}{0.2\baselineskip}
 \setlength{\parindent}{0pt}
 
 % Prevent orphaned/widowed lines and page breaks in sections

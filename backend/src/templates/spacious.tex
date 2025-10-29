@@ -1,0 +1,61 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{needspace}
+
+% Spacious font settings - serif fonts with wide margins
+\renewcommand{\rmdefault}{cmr}
+\renewcommand{\sfdefault}{lmss}
+\renewcommand{\ttdefault}{lmtt}
+
+% Microtype for better typography
+\microtypesetup{protrusion=true, expansion=true}
+
+% Spacious section styling - serif with thin rules
+\newcommand{\spacioussection}[1]{%
+  \needspace{4\baselineskip}%
+  \noindent{\Large\textbf{#1}}\\[-1ex]%
+  \rule{\textwidth}{0.3pt}\\[0.5ex]%
+}
+
+\newcommand{\spacioussubsection}[1]{%
+  \needspace{3\baselineskip}%
+  \noindent{\large\textbf{#1}}\\[0.3ex]%
+}
+
+% Better spacing for itemize
+\setlist[itemize]{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}
+\pagenumbering{gobble}
+
+% Spacious paragraph spacing - moderate spacing for readability
+\setlength{\parskip}{0.6\baselineskip}
+\setlength{\parindent}{0pt}
+
+% Prevent orphaned/widowed lines and page breaks in sections
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\brokenpenalty=10000
+
+% High quality PDF output
+\pdfcompresslevel=0
+\pdfobjcompresslevel=0
+
+\begin{document}
+\pagestyle{empty}
+
+{PERSONAL_INFO_HEADER}
+
+{CONTACT_INFO_SECTION}
+
+{CONTENT_SECTIONS}
+
+\end{document}

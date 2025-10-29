@@ -1,5 +1,5 @@
 \documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
+\usepackage[margin=0.75in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
@@ -11,7 +11,7 @@
 \usepackage{parskip}
 \usepackage{needspace}
 
-% Academic font settings - elegant serif fonts (Computer Modern)
+% Traditional font settings - serif fonts
 \renewcommand{\rmdefault}{cmr}
 \renewcommand{\sfdefault}{lmss}
 \renewcommand{\ttdefault}{lmtt}
@@ -19,24 +19,19 @@
 % Microtype for better typography
 \microtypesetup{protrusion=true, expansion=true}
 
-% Academic section hierarchy - elegant scholarly styling
-\newcommand{\academicsection}[1]{%
+% Traditional section styling - serif with thin rules
+\newcommand{\traditionalsection}[1]{%
   \needspace{4\baselineskip}%
   \noindent{\Large\textbf{#1}}\\[-1ex]%
-  \rule{\textwidth}{0.4pt}\\[0.5ex]%
+  \rule{\textwidth}{0.3pt}\\[0.4ex]%
 }
 
-\newcommand{\academicsubsection}[1]{%
-  \needspace{3\baselineskip}%
-  \noindent{\large\textbf{#1}}\\[0.3ex]%
-}
-
-% Better spacing for itemize - academic style
+% Better spacing for itemize
 \setlist[itemize]{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}
 \pagenumbering{gobble}
 
-% Academic paragraph spacing - moderate spacing for readability
-\setlength{\parskip}{0.6\baselineskip}
+% Traditional paragraph spacing - moderate spacing
+\setlength{\parskip}{0.4\baselineskip}
 \setlength{\parindent}{0pt}
 
 % Prevent orphaned/widowed lines and page breaks in sections

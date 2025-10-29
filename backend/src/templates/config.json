@@ -1,20 +1,25 @@
 {
-  "defaultTemplate": "modern",
+  "defaultTemplate": "standard",
   "templates": [
     {
-      "name": "modern",
-      "displayName": "Modern",
-      "description": "Contemporary design with clean lines and professional typography"
+      "name": "standard",
+      "displayName": "Standard",
+      "description": "Sans-serif with generous spacing and thin rules"
     },
     {
-      "name": "classic",
-      "displayName": "Classic",
-      "description": "Traditional single-column layout with timeless typography"
+      "name": "compact",
+      "displayName": "Compact",
+      "description": "Tight spacing with minimal decoration for maximum content density"
     },
     {
-      "name": "academic",
-      "displayName": "Academic",
-      "description": "Research-focused layout with prominent publications section"
+      "name": "traditional",
+      "displayName": "Traditional",
+      "description": "Serif font with moderate spacing and thin rules"
+    },
+    {
+      "name": "spacious",
+      "displayName": "Spacious",
+      "description": "Wide margins with moderate spacing for formal documents"
     }
   ]
 }

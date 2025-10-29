@@ -69,12 +69,30 @@ def _tex_escape(text: str | None) -> str:
     return "".join(out)
 
 
-def _section(title: str, body: str) -> str:
-    """Create a section with underlined heading and prevent page breaks."""
-    # Use \needspace to request space before section title
-    # This ensures the section title doesn't get orphaned at the bottom of a page
+# Template-to-macro mapping for LaTeX section commands.
+# Only maps supported templates; deprecated templates and their aliases have been removed.
+# Each template name must have a corresponding .tex file with matching macro definition.
+SECTION_CMD_BY_TEMPLATE: Dict[str, str] = {
+    "standard": "standardsection",
+    "compact": "compactsection",
+    "traditional": "traditionalsection",
+    "spacious": "spacioussection",
+}
+
+
+def _section(title: str, body: str, template_name: str) -> str:
+    """Create a section using the template-specific macro, with fallback."""
     escaped_title = _tex_escape(title)
-    return f"\\needspace{{4\\baselineskip}}\\noindent{{\\Large\\textbf{{{escaped_title}}}}}\\\\[-1ex]\n\\rule{{\\textwidth}}{{0.4pt}}\\\\[0.5ex]\n{body}\\vspace{{0.5\\baselineskip}}\n"
+    section_cmd = SECTION_CMD_BY_TEMPLATE.get(template_name)
+    if section_cmd:
+        return (
+            f"\\{section_cmd}{{{escaped_title}}}\n{body}\\vspace{{0.5\\baselineskip}}\n"
+        )
+    # Fallback legacy styling
+    return (
+        f"\\needspace{{4\\baselineskip}}\\noindent{{\\Large\\textbf{{{escaped_title}}}}}\\\\[-1ex]\n"
+        f"\\rule{{\\textwidth}}{{0.4pt}}\\\\[0.5ex]\n{body}\\vspace{{0.5\\baselineskip}}\n"
+    )
 
 
 def _itemize(items: List[str]) -> str:
@@ -274,28 +292,54 @@ def _markdown_to_latex(text: str) -> str:
     """Convert simple markdown to LaTeX formatting."""
     import re
 
-    # First escape LaTeX special characters
-    text = _tex_escape(text)
-
-    # Convert **text** to \textbf{text}
-    text = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", text)
-
-    # Convert *text* to \textit{text} (if not followed by *)
-    text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", text)
-
-    # Split by double newlines to get paragraphs
-    paragraphs = text.split("\n\n")
+    # Split into lines to process list items
+    lines = text.split("\n")
 
     result = []
-    for paragraph in paragraphs:
-        if paragraph.strip():
-            # Within a paragraph, replace single newlines with spaces
-            # to join lines that are part of the same paragraph
-            paragraph = paragraph.replace("\n", " ").strip()
-            result.append(paragraph)
+    in_list = False
 
-    # Join paragraphs with double newline (LaTeX paragraph break)
-    return "\n\n".join(result)
+    for line in lines:
+        stripped = line.strip()
+
+        # Check if line is a list item (starts with - or *)
+        if re.match(r"^[-*]\s+", stripped):
+            if not in_list:
+                result.append("\\begin{itemize}")
+                in_list = True
+
+            # Extract list item text (remove leading - or *)
+            item_text = re.sub(r"^[-*]\s+", "", stripped)
+            # Escape and process the item text
+            item_text = _tex_escape(item_text)
+            # Convert **text** to \textbf{text}
+            item_text = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", item_text)
+            # Convert *text* to \textit{text} (if not followed by *)
+            item_text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", item_text)
+
+            result.append(f"  \\item {item_text}")
+        else:
+            # Not a list item
+            if in_list:
+                result.append("\\end{itemize}")
+                in_list = False
+
+            if stripped:
+                # Process paragraph text
+                processed = _tex_escape(stripped)
+                # Convert **text** to \textbf{text}
+                processed = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", processed)
+                # Convert *text* to \textit{text} (if not followed by *)
+                processed = re.sub(
+                    r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", processed
+                )
+                result.append(processed)
+
+    # Close any open list
+    if in_list:
+        result.append("\\end{itemize}")
+
+    # Join with newlines
+    return "\n".join(result)
 
 
 def _format_why_good_fit(why_fit: Dict[str, Any]) -> str:
@@ -363,6 +407,7 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
     for edu in ed:
         degree = _tex_escape(edu.get("degree", ""))
         field_of_study = _tex_escape(edu.get("field_of_study", ""))
+        academic_degree = _tex_escape(edu.get("academic_degree", ""))
         institution = _tex_escape(edu.get("institution", ""))
         location = _tex_escape(edu.get("location", ""))
         gpa = _tex_escape(edu.get("gpa", ""))
@@ -386,11 +431,16 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
 
         # Build title line with degree and field of study
         # Two-column layout: left column for title, right column for dates
-        # Degree is bold, field of study is normal with comma separator
+        # Entire title is bold, academic degree shown in parentheses after field of study
+        degree_part = degree
         if field_of_study:
-            title_line_str = f"\\textbf{{{degree}}}, {field_of_study}"
+            degree_part += f" in {field_of_study}"
+
+        # Add academic degree in parentheses at the end if present
+        if academic_degree:
+            title_line_str = f"\\textbf{{{degree_part} ({academic_degree})}}"
         else:
-            title_line_str = f"\\textbf{{{degree}}}"
+            title_line_str = f"\\textbf{{{degree_part}}}"
 
         title_line = (
             f"\\parbox[t]{{0.7\\textwidth}}{{{title_line_str}, {institution_line}}}"
@@ -403,9 +453,10 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
         if gpa:
             block += f"\\\\\n\\textit{{GPA: {gpa}}}"
 
-        # Add description, achievements, and honors
+        # Add description (convert markdown to LaTeX), achievements, and honors
         if desc:
-            block += f"\\\\\n{desc}"
+            desc_latex = _markdown_to_latex(desc)
+            block += f"\\\n{desc_latex}"
         if achievements.strip():
             block += f"\n{achievements}"
         if honors.strip():
@@ -506,7 +557,9 @@ def _generate_from_template(
     # Format contact info section
     contact_info = _format_contact_info(pi)
     contact_info_section = (
-        _section("Contact Information", contact_info) if contact_info else ""
+        _section("Contact Information", contact_info, template_name)
+        if contact_info
+        else ""
     )
 
     # Get section_config for custom ordering
@@ -530,76 +583,104 @@ def _generate_from_template(
                 content = _format_professional_summary(summary)
                 if content:
                     content_parts.append(
-                        _section(section_title or "Professional Summary", content)
+                        _section(
+                            section_title or "Professional Summary",
+                            content,
+                            template_name,
+                        )
                     )
             elif section_type == "why_good_fit":
                 content = _format_why_good_fit(why_fit)
                 if content:
                     content_parts.append(
-                        _section(section_title or "Why I'm a Good Fit", content)
+                        _section(
+                            section_title or "Why I'm a Good Fit", content, template_name
+                        )
                     )
             elif section_type == "work_experience":
                 content = _format_work_experience(wx)
                 if content:
                     content_parts.append(
-                        _section(section_title or "Work Experience", content)
+                        _section(
+                            section_title or "Work Experience", content, template_name
+                        )
                     )
             elif section_type == "education":
                 content = _format_education(ed)
                 if content:
-                    content_parts.append(_section(section_title or "Education", content))
+                    content_parts.append(
+                        _section(section_title or "Education", content, template_name)
+                    )
             elif section_type == "skills":
                 content = _format_skills(skills)
                 if content:
-                    content_parts.append(_section(section_title or "Skills", content))
+                    content_parts.append(
+                        _section(section_title or "Skills", content, template_name)
+                    )
             elif section_type == "certifications":
                 content = _format_certifications(certs)
                 if content:
                     content_parts.append(
-                        _section(section_title or "Certifications", content)
+                        _section(
+                            section_title or "Certifications", content, template_name
+                        )
                     )
             elif section_type == "projects":
                 content = _format_projects(projects)
                 if content:
-                    content_parts.append(_section(section_title or "Projects", content))
+                    content_parts.append(
+                        _section(section_title or "Projects", content, template_name)
+                    )
             elif section_type == "awards":
                 content = _format_awards(awards)
                 if content:
-                    content_parts.append(_section(section_title or "Awards", content))
+                    content_parts.append(
+                        _section(section_title or "Awards", content, template_name)
+                    )
             elif section_type == "publications":
                 content = _format_publications(pubs)
                 if content:
                     content_parts.append(
-                        _section(section_title or "Publications", content)
+                        _section(section_title or "Publications", content, template_name)
                     )
             elif section_type == "volunteer_experience":
                 content = _format_volunteer_experience(volunteer)
                 if content:
                     content_parts.append(
-                        _section(section_title or "Volunteer Experience", content)
+                        _section(
+                            section_title or "Volunteer Experience",
+                            content,
+                            template_name,
+                        )
                     )
     else:
         # Fallback to default order
         if summary_content := _format_professional_summary(summary):
-            content_parts.append(_section("Professional Summary", summary_content))
+            content_parts.append(
+                _section("Professional Summary", summary_content, template_name)
+            )
         if why_fit_content := _format_why_good_fit(why_fit):
-            content_parts.append(_section("Why I'm a Good Fit", why_fit_content))
+            content_parts.append(
+                _section("Why I'm a Good Fit", why_fit_content, template_name)
+            )
         if wx_content := _format_work_experience(wx):
-            content_parts.append(_section("Work Experience", wx_content))
+            content_parts.append(_section("Work Experience", wx_content, template_name))
         if ed_content := _format_education(ed):
-            content_parts.append(_section("Education", ed_content))
+            content_parts.append(_section("Education", ed_content, template_name))
         if skills_content := _format_skills(skills):
-            content_parts.append(_section("Skills", skills_content))
+            content_parts.append(_section("Skills", skills_content, template_name))
         if certs_content := _format_certifications(certs):
-            content_parts.append(_section("Certifications", certs_content))
+            content_parts.append(_section("Certifications", certs_content, template_name))
         if projects_content := _format_projects(projects):
-            content_parts.append(_section("Projects", projects_content))
+            content_parts.append(_section("Projects", projects_content, template_name))
         if awards_content := _format_awards(awards):
-            content_parts.append(_section("Awards", awards_content))
+            content_parts.append(_section("Awards", awards_content, template_name))
         if pubs_content := _format_publications(pubs):
-            content_parts.append(_section("Publications", pubs_content))
+            content_parts.append(_section("Publications", pubs_content, template_name))
         if volunteer_content := _format_volunteer_experience(volunteer):
-            content_parts.append(_section("Volunteer Experience", volunteer_content))
+            content_parts.append(
+                _section("Volunteer Experience", volunteer_content, template_name)
+            )
 
     content_sections = "\n\n".join(content_parts)
 

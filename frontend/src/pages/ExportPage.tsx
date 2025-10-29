@@ -256,7 +256,7 @@ export const ExportPage: React.FC = () => {
         <Grid container spacing={3}>
           {templates.map((template) => {
             const preview = previews[template.name];
-            const isDefault = template.name === "modern";
+            const isDefault = template.name === "standard";
 
 
             return (
@@ -367,7 +367,7 @@ export const ExportPage: React.FC = () => {
                     <Typography variant="h6" component="h2" gutterBottom>
                       {template.displayName}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body1" color="text.primary" sx={{ lineHeight: 1.6 }}>
                       {template.description}
                     </Typography>
                     {preview?.error && (
