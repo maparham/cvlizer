@@ -390,8 +390,54 @@ export const cvApi = {
         urls.push(url);
       }
       return urls;
-  },
-};
+    },
+
+    // Download LaTeX code for CV
+    downloadLatexCode: async (cvId: string, template?: string) => {
+      const path = `/api/cvs/${cvId}/export/latex${template ? `?template=${encodeURIComponent(template)}` : ''}`;
+
+      try {
+        const response = await api.get(path, {
+          responseType: "blob",
+          headers: {
+            'Accept': 'text/plain',
+          }
+        });
+
+        const blob = new Blob([response.data], { type: "text/plain" });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+
+        // Extract filename from response headers
+        const contentDisposition = response.headers["content-disposition"] || response.headers["Content-Disposition"];
+        let filename = `CV_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.tex`; // fallback
+
+        if (contentDisposition) {
+          let filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+          if (!filenameMatch) {
+            filenameMatch = contentDisposition.match(/filename=([^;]+)/);
+          }
+          if (!filenameMatch) {
+            filenameMatch = contentDisposition.match(/filename[^=]*=\s*"?([^";\s]+)"?/);
+          }
+
+          if (filenameMatch) {
+            filename = filenameMatch[1].trim();
+          }
+        }
+
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Failed to download LaTeX code:", error);
+        throw error;
+      }
+    },
+  };
 
 // ============================================================================
 // OpenAI Diagnostic Types and API

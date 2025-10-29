@@ -31,11 +31,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tooltip,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
   PictureAsPdf as PictureAsPdfIcon,
   Close as CloseIcon,
+  Code as CodeIcon,
 } from "@mui/icons-material";
 import { cvApi } from "../services/api";
 
@@ -198,6 +200,17 @@ export const ExportPage: React.FC = () => {
     }
   };
 
+  const handleDownloadLatex = async (templateName: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    if (!cvId) return;
+
+    try {
+      await cvApi.downloadLatexCode(cvId, templateName);
+    } catch (error) {
+      console.error("Failed to download LaTeX code:", error);
+    }
+  };
+
   const handleBack = () => {
     navigate(`/cv/${cvId}`);
   };
@@ -297,23 +310,55 @@ export const ExportPage: React.FC = () => {
                       </Typography>
                     )}
 
-                    {isDefault && (
+                    {/* LaTeX Download Icon */}
+                    <Tooltip title="Download Latex Source Code">
                       <Box
+                        component="img"
+                        src="/icons/latex-logo.svg"
+                        alt="Download LaTeX code"
+                        onClick={(e) => handleDownloadLatex(template.name, e)}
                         sx={{
                           position: "absolute",
                           top: 8,
-                          right: 8,
-                          backgroundColor: "primary.main",
-                          color: "primary.contrastText",
-                          px: 1,
-                          py: 0.5,
+                          left: 8,
+                          width: 55,
+                          height: 25,
+                          cursor: "pointer",
+                          bgcolor: "background.paper",
                           borderRadius: 1,
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
+                          border: "1px solid",
+                          borderColor: "divider",
+                          p: 0.5,
+                          "&:hover": {
+                            bgcolor: "action.hover",
+                            transform: "scale(1.05)",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                          opacity: preview?.status === "loading" ? 0.5 : 1,
+                          pointerEvents: preview?.status === "loading" ? "none" : "auto",
                         }}
-                      >
-                        DEFAULT
-                      </Box>
+                      />
+                    </Tooltip>
+
+                    {isDefault && (
+                      <Tooltip title="Used for Quick Export">
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "primary.main",
+                            color: "primary.contrastText",
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          DEFAULT
+                        </Box>
+                      </Tooltip>
                     )}
                   </Box>
 
@@ -335,13 +380,13 @@ export const ExportPage: React.FC = () => {
                   {/* Card Actions */}
                   <CardActions>
                     <Button
-                      variant={isDefault ? "contained" : "outlined"}
+                      variant="outlined"
                       fullWidth
                       startIcon={<PictureAsPdfIcon />}
                       onClick={() => handleExport(template.name)}
                       disabled={preview?.status === "loading"}
                     >
-                      {preview?.status === "loading" ? "Generating..." : "Export"}
+                      {preview?.status === "loading" ? "Generating..." : "Download PDF"}
                     </Button>
                   </CardActions>
                 </Card>
@@ -404,14 +449,14 @@ export const ExportPage: React.FC = () => {
           <DialogActions>
             <Button onClick={handleClosePreview}>Close</Button>
             <Button
-              variant="contained"
+              variant="outlined"
               startIcon={<PictureAsPdfIcon />}
               onClick={() => {
                 handleExport(selectedPreview.template.name);
                 handleClosePreview();
               }}
             >
-              Export with this template
+              Download PDF with this template
             </Button>
           </DialogActions>
         </Dialog>

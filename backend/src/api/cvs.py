@@ -700,6 +700,114 @@ async def export_cv_pdf(
         )
 
 
+@router.get("/{cv_id}/export/latex")
+async def export_cv_latex(
+    cv_id: str,
+    template: Optional[str] = Query(None, description="Optional template name"),
+    request: Request = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+):
+    """Export CV as raw LaTeX source code for the selected template."""
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Resolve template name; default to an available default template
+    try:
+        from src.services.template_loader import (
+            get_default_template,
+            is_template_available,
+        )
+
+        # Always resolve to a concrete template name string
+        template_name: str
+        if template and is_template_available(template):
+            template_name = template
+        else:
+            template_name = get_default_template()
+
+        tex_source = generate_cv_latex(
+            cv.parsed_data or {},
+            cv.original_filename or "My CV",
+            template_name=template_name,  # ensure a valid template is always passed
+        )
+
+        # Build filename similar to PDF export
+        personal_info = (cv.parsed_data or {}).get("personal_info") or {}
+        full_name = (personal_info.get("full_name") or "").strip()
+
+        if personal_info and not full_name:
+            for field in ["name", "fullName", "fullname", "first_name", "last_name"]:
+                if field in personal_info and personal_info[field]:
+                    full_name = str(personal_info[field]).strip()
+                    break
+
+        if not full_name:
+            original_stem = (
+                Path(cv.original_filename or "").stem if cv.original_filename else ""
+            )
+            if original_stem and original_stem.lower() not in [
+                "cv",
+                "resume",
+                "document",
+                "new cv",
+            ]:
+                full_name = original_stem
+            else:
+                cv_title = getattr(cv, "title", "") or cv.original_filename or ""
+                if cv_title and cv_title.lower() not in [
+                    "cv",
+                    "resume",
+                    "document",
+                    "new cv",
+                ]:
+                    first_word = cv_title.split()[0] if cv_title.split() else ""
+                    full_name = first_word if first_word and len(first_word) > 2 else "CV"
+                else:
+                    full_name = "CV"
+
+        raw_name = full_name
+        safe_name = re.sub(r"[^A-Za-z0-9\-\s]+", " ", raw_name).strip()
+        safe_name = re.sub(r"[\s\-]+", "_", safe_name).strip("_") or "CV"
+        date_str = datetime.utcnow().strftime("%Y%m%d")
+        filename = f"{safe_name}_{date_str}.tex"
+
+        headers = {
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Type": "text/plain; charset=utf-8",
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
+
+        # Log API call (best-effort)
+        try:
+            log_api_call(
+                db=db,
+                user=current_user,
+                endpoint=f"/api/cvs/{cv_id}/export/latex",
+                method="GET",
+                status_code=200,
+                request_data={"template": template},
+                response_data={
+                    "filename": filename,
+                    "size": len(tex_source.encode("utf-8")),
+                },
+            )
+        except Exception:
+            pass
+
+        return Response(
+            content=tex_source, media_type="text/plain; charset=utf-8", headers=headers
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate LaTeX: {str(e)}",
+        )
+
+
 @router.get("/{cv_id}/export/pdf/public")
 async def export_cv_pdf_public(
     cv_id: str,
