@@ -11,6 +11,11 @@
 \usepackage{parskip}
 \usepackage{needspace}
 
+% Grayscale accent colors for visual hierarchy
+\definecolor{sectiongray}{gray}{0.40}     % 40% black for section titles
+\definecolor{companygray}{gray}{0.30}     % 30% black for companies/institutions
+\definecolor{boldgray}{gray}{0.25}        % 25% black for bold titles (job titles, etc.)
+
 % Compact font settings - neutral sans-serif for ATS clarity
 \renewcommand{\rmdefault}{lmr}
 \renewcommand{\sfdefault}{lmss}
@@ -23,7 +28,9 @@
 % Compact section styling - bold title, no rule
 \newcommand{\compactsection}[1]{%
   \needspace{3\baselineskip}%
-  \noindent\textbf{#1}\\[-0.2ex]%
+  \vspace*{1\baselineskip}%
+  \noindent\textbf{\textcolor{sectiongray}{#1}}%
+  \par\vspace{0.8\baselineskip}\noindent%
 }
 
 % Dense itemize spacing

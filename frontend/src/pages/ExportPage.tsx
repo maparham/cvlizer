@@ -37,9 +37,10 @@ import {
   ArrowBack as ArrowBackIcon,
   PictureAsPdf as PictureAsPdfIcon,
   Close as CloseIcon,
-  Code as CodeIcon,
+  ContentCopy as ContentCopyIcon,
 } from "@mui/icons-material";
 import { cvApi } from "../services/api";
+import { useNotifications, NotificationToast } from "../packages/notifications";
 
 interface Template {
   name: string;
@@ -59,6 +60,7 @@ interface TemplatePreview {
 export const ExportPage: React.FC = () => {
   const { cvId } = useParams<{ cvId: string }>();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotifications();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [previews, setPreviews] = useState<Record<string, TemplatePreview>>({});
   const [loading, setLoading] = useState(true);
@@ -205,9 +207,12 @@ export const ExportPage: React.FC = () => {
     if (!cvId) return;
 
     try {
-      await cvApi.downloadLatexCode(cvId, templateName);
+      const tex = await cvApi.getLatexSource(cvId, templateName);
+      await navigator.clipboard.writeText(tex);
+      showSuccess("Copied", "LaTeX source copied to clipboard", true);
     } catch (error) {
-      console.error("Failed to download LaTeX code:", error);
+      console.error("Failed to copy LaTeX code to clipboard:", error);
+      showError("Error", "Failed to copy LaTeX source to clipboard", true);
     }
   };
 
@@ -310,20 +315,15 @@ export const ExportPage: React.FC = () => {
                       </Typography>
                     )}
 
-                    {/* LaTeX Download Icon */}
-                    <Tooltip title="Download Latex Source Code">
-                      <Box
-                        component="img"
-                        src="/icons/latex-logo.svg"
-                        alt="Download LaTeX code"
+                    {/* Copy LaTeX Icon */}
+                    <Tooltip title="Copy LaTeX Source Code">
+                      <IconButton
                         onClick={(e) => handleDownloadLatex(template.name, e)}
+                        size="small"
                         sx={{
                           position: "absolute",
                           top: 8,
                           left: 8,
-                          width: 55,
-                          height: 25,
-                          cursor: "pointer",
                           bgcolor: "background.paper",
                           borderRadius: 1,
                           border: "1px solid",
@@ -331,13 +331,14 @@ export const ExportPage: React.FC = () => {
                           p: 0.5,
                           "&:hover": {
                             bgcolor: "action.hover",
-                            transform: "scale(1.05)",
                           },
-                          transition: "all 0.2s ease-in-out",
                           opacity: preview?.status === "loading" ? 0.5 : 1,
                           pointerEvents: preview?.status === "loading" ? "none" : "auto",
                         }}
-                      />
+                        aria-label="Copy LaTeX source"
+                     >
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
                     </Tooltip>
 
                     {isDefault && (
@@ -461,6 +462,9 @@ export const ExportPage: React.FC = () => {
           </DialogActions>
         </Dialog>
       )}
+
+      {/* Notification Toast for copy feedback */}
+      <NotificationToast onOpenDrawer={() => {}} />
     </Box>
   );
 };

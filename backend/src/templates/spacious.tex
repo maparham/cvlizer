@@ -11,6 +11,11 @@
 \usepackage{parskip}
 \usepackage{needspace}
 
+% Grayscale accent colors for visual hierarchy
+\definecolor{sectiongray}{gray}{0.40}     % 40% black for section titles
+\definecolor{companygray}{gray}{0.30}     % 30% black for companies/institutions
+\definecolor{boldgray}{gray}{0.25}        % 25% black for bold titles (job titles, etc.)
+
 % Spacious font settings - serif fonts with wide margins
 \renewcommand{\rmdefault}{cmr}
 \renewcommand{\sfdefault}{lmss}
@@ -22,7 +27,7 @@
 % Spacious section styling - serif with thin rules
 \newcommand{\spacioussection}[1]{%
   \needspace{4\baselineskip}%
-  \noindent{\Large\textbf{#1}}\\[-1ex]%
+  \noindent{\Large\textbf{\textcolor{sectiongray}{#1}}}\\[-1ex]%
   \rule{\textwidth}{0.3pt}\\[0.5ex]%
 }
 

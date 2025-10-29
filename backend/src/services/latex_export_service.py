@@ -118,9 +118,9 @@ def _format_certifications(certs: List[Dict[str, Any]]) -> str:
         issuer = _tex_escape(cert.get("issuer", ""))
         date = _tex_escape(cert.get("date", ""))
         expiry_date = _tex_escape(cert.get("expiry_date", ""))
-        desc = _tex_escape(cert.get("description", ""))
+        desc = cert.get("description", "")
 
-        line1 = f"\\textbf{{{name}}}, {issuer}"
+        line1 = f"\\textcolor{{boldgray}}{{\\textbf{{{name}}}}}, \\textcolor{{companygray}}{{{issuer}}}"
         dates = date
         if expiry_date:
             dates = f"{date} -- {expiry_date}"
@@ -129,7 +129,8 @@ def _format_certifications(certs: List[Dict[str, Any]]) -> str:
 
         block = f"{line1}\\\\\n\\textit{{{dates}}}"
         if desc:
-            block += f"\\\\\n{desc}"
+            desc_latex = _markdown_to_latex(desc)
+            block += f"\\\\\n{desc_latex}"
         blocks.append(block)
     return "\n\n".join(blocks)
 
@@ -141,22 +142,24 @@ def _format_projects(projects: List[Dict[str, Any]]) -> str:
     blocks: List[str] = []
     for proj in projects:
         name = _tex_escape(proj.get("name", ""))
-        desc = _tex_escape(proj.get("description", ""))
+        desc = proj.get("description", "")
         url = _tex_escape(proj.get("url", ""))
         tech = proj.get("technologies", []) or []
 
-        line1 = f"\\textbf{{{name}}}"
+        line1 = f"\\textcolor{{boldgray}}{{\\textbf{{{name}}}}}"
         if url:
             line1 += f" (\\href{{{url}}}{{{url}}})"
 
         block_lines = [line1]
         if desc:
-            block_lines.append(desc)
+            desc_latex = _markdown_to_latex(desc)
+            block_lines.append(desc_latex)
         if tech:
             tech_str = ", ".join(_tex_escape(t) for t in tech)
             block_lines.append(f"\\textit{{Technologies: {tech_str}}}")
 
-        blocks.append("\\\\\n".join(block_lines))
+        # Use paragraph spacing between lines to avoid invalid \\\n+        # after environments like itemize
+        blocks.append("\n\n".join(block_lines))
     return "\n\n".join(blocks)
 
 
@@ -169,13 +172,14 @@ def _format_awards(awards: List[Dict[str, Any]]) -> str:
         name = _tex_escape(award.get("name", ""))
         issuer = _tex_escape(award.get("issuer", ""))
         date = _tex_escape(award.get("date", ""))
-        desc = _tex_escape(award.get("description", ""))
+        desc = award.get("description", "")
 
-        line1 = f"\\textbf{{{name}}}, {issuer}"
+        line1 = f"\\textcolor{{boldgray}}{{\\textbf{{{name}}}}}, \\textcolor{{companygray}}{{{issuer}}}"
         dates = f"Date: {date}" if date else ""
         block = f"{line1}\\\\\n\\textit{{{dates}}}"
         if desc:
-            block += f"\\\\\n{desc}"
+            desc_latex = _markdown_to_latex(desc)
+            block += f"\\\\\n{desc_latex}"
         blocks.append(block)
     return "\n\n".join(blocks)
 
@@ -216,7 +220,7 @@ def _format_volunteer_experience(volunteer: List[Dict[str, Any]]) -> str:
         location = _tex_escape(vol.get("location", ""))
         start_date = _tex_escape(vol.get("start_date", ""))
         end_date = _tex_escape(vol.get("end_date", ""))
-        desc = _tex_escape(vol.get("description", ""))
+        desc = vol.get("description", "")
 
         # Format title line with organization and location
         org_line = org
@@ -228,11 +232,12 @@ def _format_volunteer_experience(volunteer: List[Dict[str, Any]]) -> str:
             dates = f"{start_date} -- {end_date}"
 
         # Use right-aligned dates like work experience
-        title_line = f"\\textbf{{{role}}} at {org_line}\\hfill\\textit{{{dates}}}"
+        title_line = f"\\textcolor{{boldgray}}{{\\textbf{{{role}}}}} at \\textcolor{{companygray}}{{{org_line}}}\\hfill\\textit{{{dates}}}"
 
         block = title_line
         if desc:
-            block += f"\\\\\n{desc}"
+            desc_latex = _markdown_to_latex(desc)
+            block += f"\\\\\n{desc_latex}"
         blocks.append(block)
     return "\n\n\\vspace{0.5\\baselineskip}\n".join(blocks)
 
@@ -285,7 +290,7 @@ def _format_professional_summary(summary: Dict[str, Any]) -> str:
     content = summary.get("content", "")
     if not content:
         return ""
-    return _tex_escape(content)
+    return _markdown_to_latex(content)
 
 
 def _markdown_to_latex(text: str) -> str:
@@ -377,23 +382,24 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
         # Use mbox to prevent date from breaking across lines
         dates_str = f"\\mbox{{{dates_str}}}"
 
-        # Two-column layout: left column for title, right column for dates
-        # Left: 70% width for flexible wrapping, Right: 25% width for dates
-        title_line = (
-            f"\\parbox[t]{{0.7\\textwidth}}{{\\textbf{{{position}}}, {company_line}}}"
+        # Description and achievements - process description as markdown
+        desc = job.get("description", "")
+        achievements = _itemize(job.get("achievements", []) or [])
+
+        # Build left parbox content (70% width) containing all content
+        left_content = f"\\textcolor{{boldgray}}{{\\textbf{{{position}}}}}, \\textcolor{{companygray}}{{{company_line}}}"
+        if desc:
+            desc_latex = _markdown_to_latex(desc)
+            left_content += f"\\\\\n{desc_latex}"
+        if achievements.strip():
+            left_content += f"\n{achievements}"
+
+        # Two-column layout: left column for all content, right column for dates
+        block = (
+            f"\\parbox[t]{{0.7\\textwidth}}{{{left_content}}}"
             f"\\hfill"
             f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
         )
-
-        # Description and achievements
-        desc = _tex_escape(job.get("description", ""))
-        achievements = _itemize(job.get("achievements", []) or [])
-
-        block = title_line
-        if desc:
-            block += f"\\\\\n{desc}"
-        if achievements.strip():
-            block += f"\n{achievements}"
 
         blocks.append(block)
     return "\n\n\\vspace{0.5\\baselineskip}\n".join(blocks)
@@ -438,29 +444,30 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
 
         # Add academic degree in parentheses at the end if present
         if academic_degree:
-            title_line_str = f"\\textbf{{{degree_part} ({academic_degree})}}"
+            title_line_str = f"\\textcolor{{boldgray}}{{\\textbf{{{degree_part} ({academic_degree})}}}}"
         else:
-            title_line_str = f"\\textbf{{{degree_part}}}"
+            title_line_str = f"\\textcolor{{boldgray}}{{\\textbf{{{degree_part}}}}}"
 
-        title_line = (
-            f"\\parbox[t]{{0.7\\textwidth}}{{{title_line_str}, {institution_line}}}"
+        # Build left parbox content (70% width) containing all content
+        left_content = (
+            f"{title_line_str}, \\textcolor{{companygray}}{{{institution_line}}}"
+        )
+        if gpa:
+            left_content += f"\\\\\n\\textit{{GPA: {gpa}}}"
+        if desc:
+            desc_latex = _markdown_to_latex(desc)
+            left_content += f"\\\\\n{desc_latex}"
+        if achievements.strip():
+            left_content += f"\n{achievements}"
+        if honors.strip():
+            left_content += f"\n{honors}"
+
+        # Two-column layout: left column for all content, right column for dates
+        block = (
+            f"\\parbox[t]{{0.7\\textwidth}}{{{left_content}}}"
             f"\\hfill"
             f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
         )
-
-        # Add GPA if present
-        block = title_line
-        if gpa:
-            block += f"\\\\\n\\textit{{GPA: {gpa}}}"
-
-        # Add description (convert markdown to LaTeX), achievements, and honors
-        if desc:
-            desc_latex = _markdown_to_latex(desc)
-            block += f"\\\n{desc_latex}"
-        if achievements.strip():
-            block += f"\n{achievements}"
-        if honors.strip():
-            block += f"\n{honors}"
 
         blocks.append(block)
     return "\n\n\\vspace{0.5\\baselineskip}\n".join(blocks)

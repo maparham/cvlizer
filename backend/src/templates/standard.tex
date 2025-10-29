@@ -11,6 +11,11 @@
 \usepackage{parskip}
 \usepackage{needspace}
 
+% Grayscale accent colors for visual hierarchy
+\definecolor{sectiongray}{gray}{0.40}     % 40% black for section titles
+\definecolor{companygray}{gray}{0.30}     % 30% black for companies/institutions
+\definecolor{boldgray}{gray}{0.25}        % 25% black for bold titles (job titles, etc.)
+
 % Standard font settings - contemporary sans-serif
 \renewcommand{\rmdefault}{lmr}
 \renewcommand{\sfdefault}{lmss}
@@ -23,7 +28,7 @@
 % Standard section styling - bold with thin black rule
 \newcommand{\standardsection}[1]{%
   \needspace{4\baselineskip}%
-  \noindent{\Large\textbf{#1}}\\[-1ex]%
+  \noindent{\Large\textbf{\textcolor{sectiongray}{#1}}}\\[-1ex]%
   \rule{\textwidth}{0.3pt}\\[0.6ex]%
 }
 
