@@ -135,7 +135,7 @@ test.describe("CV Editor - Item CRUD Operations", () => {
     await page.getByRole("combobox", { name: "Degree" }).fill("PhD");
     await page.keyboard.press("Tab");
     await page
-      .getByRole("textbox", { name: "Field of Study" })
+      .getByRole("combobox", { name: "Field of Study" })
       .fill("Computer Science");
 
     const startDateGroup = page.getByRole("group", { name: "Start Date *" });
@@ -173,7 +173,7 @@ test.describe("CV Editor - Item CRUD Operations", () => {
     await page.getByRole("combobox", { name: "Degree" }).fill("Masters");
     await page.keyboard.press("Tab");
     await page
-      .getByRole("textbox", { name: "Field of Study" })
+      .getByRole("combobox", { name: "Field of Study" })
       .fill("Data Science");
 
     const startDateGroup = page.getByRole("group", { name: "Start Date *" });
@@ -197,7 +197,7 @@ test.describe("CV Editor - Item CRUD Operations", () => {
     await expect(page.getByRole("combobox", { name: "Degree" })).toBeVisible();
 
     // Modify Field of Study
-    const fieldInput = page.getByRole("textbox", { name: "Field of Study" });
+    const fieldInput = page.getByRole("combobox", { name: "Field of Study" });
     await fieldInput.clear();
     await fieldInput.fill("Artificial Intelligence");
 
@@ -210,7 +210,7 @@ test.describe("CV Editor - Item CRUD Operations", () => {
     // Verify change was saved (edit again to check)
     await page.getByTestId("edit-education-item-0").click();
     await expect(
-      page.getByRole("textbox", { name: "Field of Study" }),
+      page.getByRole("combobox", { name: "Field of Study" }),
     ).toHaveValue("Artificial Intelligence");
 
     // Close form
@@ -246,7 +246,7 @@ test.describe("CV Editor - Item CRUD Operations", () => {
         await page.getByRole("combobox", { name: "Degree" }).fill("PhD");
         await page.keyboard.press("Tab");
         await page
-          .getByRole("textbox", { name: "Field of Study" })
+          .getByRole("combobox", { name: "Field of Study" })
           .fill("Computer Science");
 
         const startDateGroup = page.getByRole("group", {
@@ -269,7 +269,7 @@ test.describe("CV Editor - Item CRUD Operations", () => {
         await page.getByRole("combobox", { name: "Degree" }).fill("Masters");
         await page.keyboard.press("Tab");
         await page
-          .getByRole("textbox", { name: "Field of Study" })
+          .getByRole("combobox", { name: "Field of Study" })
           .fill("Data Science");
 
         const startDateGroup = page.getByRole("group", {
@@ -473,7 +473,7 @@ test.describe("CV Editor - Item CRUD Operations", () => {
 
     // Only fill non-required field
     await page
-      .getByRole("textbox", { name: "Field of Study" })
+      .getByRole("combobox", { name: "Field of Study" })
       .fill("Computer Science");
 
     // Try to save - should be disabled or show validation error

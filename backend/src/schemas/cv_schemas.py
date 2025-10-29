@@ -106,6 +106,9 @@ class EducationSchema(BaseModel):
     )
     degree: str = Field(..., min_length=1, description="Degree name is required")
     field_of_study: Optional[str] = Field(None, description="Field of study")
+    academic_degree: Optional[str] = Field(
+        None, description="Academic degree/title (e.g., Dr., Prof.)"
+    )
     location: Optional[str] = Field(None, description="Institution location")
     start_date: str = Field(..., description="Start date in YYYY-MM-DD format")
     end_date: Optional[str] = Field(None, description="End date in YYYY-MM-DD format")

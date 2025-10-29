@@ -6,6 +6,8 @@ import IndividualItemSection from "../core/IndividualItemSection";
 import { FormField, DateFieldComponent } from "../core/formUtils";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import DegreeAutocomplete from "../ui/DegreeAutocomplete";
+import FieldOfStudyAutocomplete from "../ui/FieldOfStudyAutocomplete";
+import AcademicDegreeAutocomplete from "../ui/AcademicDegreeAutocomplete";
 import { generateSectionId } from "../../../utils/idGenerator";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
 
@@ -14,6 +16,7 @@ interface Education {
   institution: string;
   degree: string;
   field_of_study: string;
+  academic_degree: string;
   location: string;
   start_date: string;
   end_date: string;
@@ -43,6 +46,7 @@ const EducationSection: React.FC<SectionProps> = ({
     institution: "",
     degree: "",
     field_of_study: "",
+    academic_degree: "",
     location: "",
     start_date: "",
     end_date: "",
@@ -121,15 +125,19 @@ const EducationSection: React.FC<SectionProps> = ({
           onChange={(value) => updateEducation("institution", value)}
           onSave={onSave}
         />
-        <FormField
-          config={{
-            name: "field_of_study",
-            label: "Field of Study",
-            placeholder: "e.g., Computer Science",
-          }}
-          value={edu.field_of_study}
+        <FieldOfStudyAutocomplete
+          value={edu.field_of_study || ""}
           onChange={(value) => updateEducation("field_of_study", value)}
           onSave={onSave}
+          placeholder="e.g., Computer Science"
+          label="Field of Study"
+        />
+        <AcademicDegreeAutocomplete
+          value={edu.academic_degree || ""}
+          onChange={(value) => updateEducation("academic_degree", value)}
+          onSave={onSave}
+          placeholder="e.g., Dr., Prof."
+          label="Academic Degree"
         />
         <LocationAutocomplete
           value={edu.location || ""}
@@ -296,6 +304,7 @@ const EducationSection: React.FC<SectionProps> = ({
             sx={{ fontWeight: 600, color: "#333" }}
           >
             {edu.degree || "Degree"}
+            {edu.field_of_study && ` in ${edu.field_of_study}`}
           </Typography>
           <Typography variant="body2" sx={{ color: "#666", flexShrink: 0, ml: 2 }}>
             {edu.start_date || "Start date required"} -{" "}
@@ -306,9 +315,9 @@ const EducationSection: React.FC<SectionProps> = ({
           {edu.institution || "Institution"}
           {edu.location && ` • ${edu.location}`}
         </Typography>
-        {edu.field_of_study && (
+        {edu.academic_degree && (
           <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-            {edu.field_of_study}
+            {edu.academic_degree}
           </Typography>
         )}
         {edu.gpa && (

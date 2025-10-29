@@ -323,7 +323,7 @@ export class CVEditorPage {
 
     if (data.fieldOfStudy) {
       await this.page
-        .getByRole("textbox", { name: "Field of Study" })
+        .getByRole("combobox", { name: "Field of Study" })
         .fill(data.fieldOfStudy);
     }
 

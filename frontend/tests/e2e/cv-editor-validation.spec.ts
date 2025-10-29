@@ -205,7 +205,7 @@ test.describe("CV Editor - Form Validation", () => {
     await degreeField.fill("PhD");
     await page.keyboard.press("Tab");
     await page
-      .getByRole("textbox", { name: "Field of Study" })
+      .getByRole("combobox", { name: "Field of Study" })
       .fill("Computer Science");
 
     const startDateGroup = page.getByRole("group", { name: "Start Date *" });

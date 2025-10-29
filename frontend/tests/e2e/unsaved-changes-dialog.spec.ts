@@ -99,10 +99,10 @@ async function setupTest(page: Page): Promise<string> {
     await page.getByRole("combobox", { name: "Degree" }).fill("PhD");
     await page.keyboard.press("Tab");
 
-    // Fill Field of Study
-    await page.getByRole("textbox", { name: "Field of Study" }).click();
+    // Fill Field of Study (autocomplete)
+    await page.getByRole("combobox", { name: "Field of Study" }).click();
     await page
-      .getByRole("textbox", { name: "Field of Study" })
+      .getByRole("combobox", { name: "Field of Study" })
       .fill("Computer Science");
 
     // Fill Start Date (required)
@@ -226,7 +226,7 @@ async function addSecondEducationItem(page: Page): Promise<void> {
     await page.keyboard.press("Tab");
 
     await page
-      .getByRole("textbox", { name: "Field of Study" })
+      .getByRole("combobox", { name: "Field of Study" })
       .fill("Data Science");
 
     const startDateGroup = page.getByRole("group", { name: "Start Date *" });
