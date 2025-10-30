@@ -192,23 +192,14 @@ const CVEditor: React.FC = () => {
       const dataToSave = updatedData || cvData;
       if (!dataToSave) return;
 
-      // Show immediate feedback that save is starting (toast-only)
-      const savingNotificationId = showInfo(
-        "Saving...",
-        "Your changes are being saved.",
-        true // toastOnly = true
-      );
-
       try {
         if (isNewCV) {
           // Save temporary CV to the backend for the first time
           const savedCV = await saveTemporaryCV({ parsed_data: dataToSave });
-          // Remove the saving notification and show success
-          removeNotification(savingNotificationId);
-          showSuccess(
-            "Success",
-            message || "CV created and saved successfully"
-          );
+          // Only show success toast for explicit user actions
+          if (message) {
+            showSuccess("Success", message);
+          }
           // Navigate to the saved CV's URL
           navigate(`/cv/${savedCV.id}`, { replace: true });
         } else {
@@ -243,9 +234,10 @@ const CVEditor: React.FC = () => {
             }
           }
 
-          // Remove the saving notification and show success
-          removeNotification(savingNotificationId);
-          showSuccess("Success", message || "CV saved successfully");
+          // Only show success toast for explicit user actions
+          if (message) {
+            showSuccess("Success", message);
+          }
 
           // Clear unsaved changes after successful save
           // We'll dispatch a custom event that the context can listen to
@@ -262,9 +254,6 @@ const CVEditor: React.FC = () => {
           }
         }
       } catch (error: any) {
-        // Remove the saving notification
-        removeNotification(savingNotificationId);
-
         const errorMessage =
           error?.message ||
           error?.response?.data?.message ||

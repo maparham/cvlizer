@@ -333,6 +333,50 @@ def _markdown_to_latex(text: str) -> str:
     for line in lines:
         stripped = line.strip()
 
+        # Preserve paragraph breaks: empty markdown lines -> blank line in LaTeX
+        if stripped == "":
+            if in_list:
+                result.append("\\end{itemize}")
+                in_list = False
+            # Emit a blank line to create a new paragraph in LaTeX
+            result.append("")
+            continue
+
+        # Headings: #, ##, ###, ####, #####, ######
+        # Close any open list before headings
+        heading_match = re.match(r"^(#{1,6})\s+(.*)$", stripped)
+        if heading_match:
+            if in_list:
+                result.append("\\end{itemize}")
+                in_list = False
+
+            hashes, heading_text = heading_match.groups()
+            level = len(hashes)
+
+            # Escape heading content and apply inline formatting after escaping
+            processed = _tex_escape(heading_text)
+            # Links: [text](url) -> \href{url}{text}
+            processed = re.sub(
+                r"\\\[([^\]]+)\\\]\\\(([^\)]+)\\\)", r"\\href{\2}{\1}", processed
+            )
+            # Bold
+            processed = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", processed)
+            # Italic (single asterisks not part of bold)
+            processed = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", processed)
+
+            if level == 1:
+                result.append(f"\\section*{{{processed}}}")
+            elif level == 2:
+                result.append(f"\\subsection*{{{processed}}}")
+            elif level == 3:
+                result.append(f"\\subsubsection*{{{processed}}}")
+            elif level == 4:
+                result.append(f"\\paragraph*{{{processed}}}")
+            else:
+                # Levels 5 and 6: render as bold paragraph text
+                result.append(f"\\textbf{{{processed}}}")
+            continue
+
         # Check if line is a list item (starts with - or *)
         if re.match(r"^[-*]\s+", stripped):
             if not in_list:
@@ -347,8 +391,18 @@ def _markdown_to_latex(text: str) -> str:
             item_text = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", item_text)
             # Convert *text* to \textit{text} (if not followed by *)
             item_text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", item_text)
+            # Links inside list items
+            item_text = re.sub(
+                r"\\\[([^\]]+)\\\]\\\(([^\)]+)\\\)", r"\\href{\2}{\1}", item_text
+            )
 
-            result.append(f"  \\item {item_text}")
+            # Hard line breaks: two trailing spaces in markdown line -> LaTeX newline
+            has_hardbreak = bool(re.search(r"\s{2}$", line))
+
+            if has_hardbreak:
+                result.append("  \\item " + item_text + " \\\\")
+            else:
+                result.append("  \\item " + item_text)
         else:
             # Not a list item
             if in_list:
@@ -358,12 +412,20 @@ def _markdown_to_latex(text: str) -> str:
             if stripped:
                 # Process paragraph text
                 processed = _tex_escape(stripped)
-                # Convert **text** to \textbf{text}
+                # Convert **text** to \\textbf{text}
                 processed = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", processed)
-                # Convert *text* to \textit{text} (if not followed by *)
+                # Convert *text* to \\textit{text} (if not followed by *)
                 processed = re.sub(
                     r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", processed
                 )
+                # Links: [text](url) -> \\href{url}{text}
+                processed = re.sub(
+                    r"\\\[([^\]]+)\\\]\\\(([^\)]+)\\\)", r"\\href{\2}{\1}", processed
+                )
+                # Hard line breaks: two trailing spaces in markdown line -> LaTeX newline
+                has_hardbreak = bool(re.search(r"\s{2}$", line))
+                if has_hardbreak:
+                    processed = processed + " \\\\"
                 result.append(processed)
 
     # Close any open list

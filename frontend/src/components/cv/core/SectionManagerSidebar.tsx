@@ -8,7 +8,7 @@
  * - Reset to default order option
  * - Visual indicators for section states and order changes
  */
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Paper,
   Typography,
@@ -21,6 +21,7 @@ import {
   Tabs,
   Tab,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -41,6 +42,8 @@ import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import { useActiveJobDescription, useAIStore } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
+import { useCVStore } from "../../../stores/cv";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 
 interface SectionManagerSidebarProps {
   sections: CVSection[];
@@ -225,6 +228,37 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     allSuggestions,
     showInfo,
   ]);
+  // Subscribe to saving state and lastSavedAt reactively
+  const { saving, lastSavedAt } = useCVStore((s) => ({
+    saving: s.saving,
+    lastSavedAt: s.lastSavedAt,
+  }));
+
+  // Compute relative time string such as "10s ago", "2m ago", "1h ago"
+  const formatRelativeTime = useCallback((isoString?: string | null) => {
+    if (!isoString) return "";
+    const savedTime = new Date(isoString).getTime();
+    const now = Date.now();
+    const diffMs = Math.max(0, now - savedTime);
+    const seconds = Math.floor(diffMs / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }, []);
+
+  // Ticker to refresh relative time periodically
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => (t + 1) % 1000), 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const relativeSavedText = useMemo(() => formatRelativeTime(lastSavedAt), [lastSavedAt, tick, formatRelativeTime]);
+
   return (
     <Paper
       sx={{
@@ -562,6 +596,37 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
               />
             </Stack>
           </>
+        )}
+      </Box>
+
+      {/* Inline Save Status Footer */}
+      <Box
+        sx={{
+          borderTop: "1px solid #e0e0e0",
+          p: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          gap: 1,
+          bgcolor: "#fafafa",
+        }}
+      >
+        {saving ? (
+          <>
+            <CircularProgress size={14} sx={{ color: "#616161" }} />
+            <Typography variant="caption" sx={{ color: "#616161" }}>
+              Saving...
+            </Typography>
+          </>
+        ) : lastSavedAt ? (
+          <>
+            <CheckCircleOutlineIcon fontSize="small" sx={{ color: "#2e7d32" }} />
+            <Typography variant="caption" sx={{ color: "#2e7d32" }}>
+              Saved {relativeSavedText}
+            </Typography>
+          </>
+        ) : (
+          <></>
         )}
       </Box>
     </Paper>
