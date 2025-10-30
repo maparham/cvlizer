@@ -2,7 +2,6 @@
 \usepackage[margin=1in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{lmodern}
 \usepackage{microtype}
 \usepackage{hyperref}
 \usepackage{fontawesome5}
@@ -11,38 +10,31 @@
 \usepackage{fancyhdr}
 \usepackage{parskip}
 \usepackage{needspace}
+\usepackage{ebgaramond}
 
 % Grayscale accent colors for visual hierarchy
 \definecolor{sectiongray}{gray}{0.40}     % 40% black for section titles
 \definecolor{companygray}{gray}{0.30}     % 30% black for companies/institutions
 \definecolor{boldgray}{gray}{0.25}        % 25% black for bold titles (job titles, etc.)
 
-% Spacious font settings - serif fonts with wide margins
-\renewcommand{\rmdefault}{cmr}
-\renewcommand{\sfdefault}{lmss}
-\renewcommand{\ttdefault}{lmtt}
+% Spacious font settings - elegant Garamond-style serif
 
 % Microtype for better typography
 \microtypesetup{protrusion=true, expansion=true}
 
-% Spacious section styling - serif with thin rules
+% Spacious section styling - bold with thin black rule
 \newcommand{\spacioussection}[1]{%
   \needspace{4\baselineskip}%
   \noindent{\Large\textbf{\textcolor{sectiongray}{#1}}}\\[-1ex]%
-  \rule{\textwidth}{0.3pt}\\[0.5ex]%
-}
-
-\newcommand{\spacioussubsection}[1]{%
-  \needspace{3\baselineskip}%
-  \noindent{\large\textbf{#1}}\\[0.3ex]%
+  \rule{\textwidth}{0.3pt}\\[0.6ex]%
 }
 
 % Better spacing for itemize
 \setlist[itemize]{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}
 \pagenumbering{gobble}
 
-% Spacious paragraph spacing - moderate spacing for readability
-\setlength{\parskip}{0.6\baselineskip}
+% Spacious paragraph spacing - generous contemporary spacing
+\setlength{\parskip}{0.7\baselineskip}
 \setlength{\parindent}{0pt}
 
 % Prevent orphaned/widowed lines and page breaks in sections

@@ -74,7 +74,6 @@ def _tex_escape(text: str | None) -> str:
 # Each template name must have a corresponding .tex file with matching macro definition.
 SECTION_CMD_BY_TEMPLATE: Dict[str, str] = {
     "standard": "standardsection",
-    "compact": "compactsection",
     "traditional": "traditionalsection",
     "spacious": "spacioussection",
 }
@@ -130,7 +129,11 @@ def _format_certifications(certs: List[Dict[str, Any]]) -> str:
         block = f"{line1}\\\\\n\\textit{{{dates}}}"
         if desc:
             desc_latex = _markdown_to_latex(desc)
-            block += f"\\\\\n{desc_latex}"
+            # Don't use \\ before itemize environments, just newline
+            if desc_latex.strip().startswith("\\begin{itemize}"):
+                block += f"\n{desc_latex}"
+            else:
+                block += f"\\\\\n{desc_latex}"
         blocks.append(block)
     return "\n\n".join(blocks)
 
@@ -179,7 +182,11 @@ def _format_awards(awards: List[Dict[str, Any]]) -> str:
         block = f"{line1}\\\\\n\\textit{{{dates}}}"
         if desc:
             desc_latex = _markdown_to_latex(desc)
-            block += f"\\\\\n{desc_latex}"
+            # Don't use \\ before itemize environments, just newline
+            if desc_latex.strip().startswith("\\begin{itemize}"):
+                block += f"\n{desc_latex}"
+            else:
+                block += f"\\\\\n{desc_latex}"
         blocks.append(block)
     return "\n\n".join(blocks)
 
@@ -231,13 +238,29 @@ def _format_volunteer_experience(volunteer: List[Dict[str, Any]]) -> str:
         if end_date:
             dates = f"{start_date} -- {end_date}"
 
-        # Use right-aligned dates like work experience
-        title_line = f"\\textcolor{{boldgray}}{{\\textbf{{{role}}}}} at \\textcolor{{companygray}}{{{org_line}}}\\hfill\\textit{{{dates}}}"
+        # Use mbox to prevent date from breaking across lines
+        dates_str = f"\\mbox{{{dates}}}"
 
-        block = title_line
+        # Build content line with role and organization
+        content_line = f"\\textcolor{{boldgray}}{{\\textbf{{{role}}}}} at \\textcolor{{companygray}}{{{org_line}}}"
+
+        # Build left parbox content containing all content
+        left_content = content_line
         if desc:
             desc_latex = _markdown_to_latex(desc)
-            block += f"\\\\\n{desc_latex}"
+            # Don't use \\ before itemize environments, just newline
+            if desc_latex.strip().startswith("\\begin{itemize}"):
+                left_content += f"\n{desc_latex}"
+            else:
+                left_content += f"\\\\\n{desc_latex}"
+
+        # Two-column layout: left column for all content, right column for dates
+        block = (
+            f"\\parbox[t]{{0.7\\textwidth}}{{{left_content}}}"
+            f"\\hfill"
+            f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
+        )
+
         blocks.append(block)
     return "\n\n\\vspace{0.5\\baselineskip}\n".join(blocks)
 
@@ -394,7 +417,11 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
         left_content = f"\\textcolor{{boldgray}}{{\\textbf{{{position}}}}}, \\textcolor{{companygray}}{{{company_line}}}"
         if desc:
             desc_latex = _markdown_to_latex(desc)
-            left_content += f"\\\\\n{desc_latex}"
+            # Don't use \\ before itemize environments, just newline
+            if desc_latex.strip().startswith("\\begin{itemize}"):
+                left_content += f"\n{desc_latex}"
+            else:
+                left_content += f"\\\\\n{desc_latex}"
         if achievements.strip():
             left_content += f"\n{achievements}"
 
@@ -460,7 +487,11 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
             left_content += f"\\\\\n\\textit{{GPA: {gpa}}}"
         if desc:
             desc_latex = _markdown_to_latex(desc)
-            left_content += f"\\\\\n{desc_latex}"
+            # Don't use \\ before itemize environments, just newline
+            if desc_latex.strip().startswith("\\begin{itemize}"):
+                left_content += f"\n{desc_latex}"
+            else:
+                left_content += f"\\\\\n{desc_latex}"
         if achievements.strip():
             left_content += f"\n{achievements}"
         if honors.strip():

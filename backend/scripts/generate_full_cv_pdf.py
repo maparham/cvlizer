@@ -275,7 +275,7 @@ def main() -> None:
         "--template",
         type=str,
         default="standard",
-        help="Template to use (must exist: standard, compact, traditional, spacious)",
+        help="Template to use (must exist: standard, traditional, spacious)",
     )
     args = parser.parse_args()
 

@@ -4,22 +4,17 @@
     {
       "name": "standard",
       "displayName": "Standard",
-      "description": "Sans-serif with generous spacing and thin rules"
-    },
-    {
-      "name": "compact",
-      "displayName": "Compact",
-      "description": "Tight spacing with minimal decoration for maximum content density"
+      "description": "Sans-serif font with generous spacing for a clean, contemporary look"
     },
     {
       "name": "traditional",
       "displayName": "Traditional",
-      "description": "Serif font with moderate spacing and thin rules"
+      "description": "Serif font with moderate spacing for a classic academic appearance"
     },
     {
       "name": "spacious",
       "displayName": "Spacious",
-      "description": "Wide margins with moderate spacing for formal documents"
+      "description": "Elegant Garamond font for formal, professional documents"
     }
   ]
 }

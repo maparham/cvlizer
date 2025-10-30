@@ -26,7 +26,6 @@ MINIMAL_PARSED = {
     "template_name,expected_macro",
     [
         ("standard", "\\standardsection"),
-        ("compact", "\\compactsection"),
         ("traditional", "\\traditionalsection"),
         ("spacious", "\\spacioussection"),
     ],

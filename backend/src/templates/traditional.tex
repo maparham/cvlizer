@@ -1,8 +1,7 @@
 \documentclass[11pt]{article}
-\usepackage[margin=0.75in]{geometry}
+\usepackage[margin=1in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{lmodern}
 \usepackage{microtype}
 \usepackage{hyperref}
 \usepackage{fontawesome5}
@@ -25,19 +24,19 @@
 % Microtype for better typography
 \microtypesetup{protrusion=true, expansion=true}
 
-% Traditional section styling - serif with thin rules
+% Traditional section styling - bold with thin black rule
 \newcommand{\traditionalsection}[1]{%
   \needspace{4\baselineskip}%
   \noindent{\Large\textbf{\textcolor{sectiongray}{#1}}}\\[-1ex]%
-  \rule{\textwidth}{0.3pt}\\[0.4ex]%
+  \rule{\textwidth}{0.3pt}\\[0.6ex]%
 }
 
 % Better spacing for itemize
 \setlist[itemize]{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}
 \pagenumbering{gobble}
 
-% Traditional paragraph spacing - moderate spacing
-\setlength{\parskip}{0.4\baselineskip}
+% Traditional paragraph spacing - generous contemporary spacing
+\setlength{\parskip}{0.7\baselineskip}
 \setlength{\parindent}{0pt}
 
 % Prevent orphaned/widowed lines and page breaks in sections
