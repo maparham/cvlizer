@@ -70,7 +70,9 @@ export const FormField: React.FC<{
   onChange: (value: string) => void;
   onSave?: () => void;
   sx?: any;
-}> = ({ config, value, onChange, onSave, sx }) => {
+  error?: boolean;
+  helperText?: string;
+}> = ({ config, value, onChange, onSave, sx, error: errorOverride, helperText: helperTextOverride }) => {
   const {
     name,
     label,
@@ -98,10 +100,23 @@ export const FormField: React.FC<{
   const hasValue = value?.trim();
   const meetsMinLength =
     !minLength || (hasValue && hasValue.length >= minLength);
-  const isError = Boolean(
-    (required && !hasValue) || (hasValue && !meetsMinLength),
-  );
-  const isSuccess = Boolean(required && hasValue && meetsMinLength);
+
+  // Use override error/helperText if provided, otherwise compute from validation rules
+  const isError = errorOverride !== undefined
+    ? errorOverride
+    : Boolean((required && !hasValue) || (hasValue && !meetsMinLength));
+
+  const helperText = helperTextOverride !== undefined
+    ? helperTextOverride
+    : (isError
+        ? !hasValue
+          ? `${label} is required`
+          : !meetsMinLength
+            ? `${label} must be at least ${minLength} characters long`
+            : ""
+        : "");
+
+  const isSuccess = Boolean(required && hasValue && meetsMinLength && !errorOverride);
 
   return (
     <TextField
@@ -113,13 +128,7 @@ export const FormField: React.FC<{
         onChange: (e) => onChange(e.target.value),
         onKeyDown: handleKeyDown,
         error: isError,
-        helperText: isError
-          ? !hasValue
-            ? `${label} is required`
-            : !meetsMinLength
-              ? `${label} must be at least ${minLength} characters long`
-              : ""
-          : "",
+        helperText: helperText,
         variant: "standard",
         fullWidth: true,
         multiline,
@@ -199,7 +208,9 @@ export const DateFieldComponent: React.FC<{
   onChange: (value: string) => void;
   onSave?: () => void;
   sx?: any;
-}> = ({ config, value, onChange, onSave, sx }) => {
+  error?: boolean;
+  helperText?: string;
+}> = ({ config, value, onChange, onSave, sx, error: errorOverride, helperText: helperTextOverride }) => {
   const { label, required, minDate, maxDate } = config;
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [validationError, setValidationError] = React.useState<string>("");
@@ -239,11 +250,15 @@ export const DateFieldComponent: React.FC<{
     [label, required, minDate, maxDate],
   );
 
-  // Validate on value change
+  // Validate on value change (only if no override provided)
   React.useEffect(() => {
-    const error = validateDateValue(value);
-    setValidationError(error);
-  }, [value, validateDateValue]);
+    if (helperTextOverride === undefined) {
+      const error = validateDateValue(value);
+      setValidationError(error);
+    } else {
+      setValidationError(helperTextOverride || "");
+    }
+  }, [value, validateDateValue, helperTextOverride]);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
@@ -312,6 +327,11 @@ export const DateFieldComponent: React.FC<{
     setPickerOpen(false);
   };
 
+  // Use override error if provided, otherwise use computed validation error
+  const hasError = errorOverride !== undefined
+    ? errorOverride
+    : !!validationError;
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ position: "relative", minHeight: "48px" }}>
@@ -324,8 +344,8 @@ export const DateFieldComponent: React.FC<{
             textField: {
               fullWidth: true,
               variant: "standard",
-              error: !!validationError,
-              helperText: validationError || " ", // Always reserve space for helper text
+              error: hasError,
+              helperText: (helperTextOverride !== undefined ? helperTextOverride : validationError) || " ", // Always reserve space for helper text
               onKeyDown: handleKeyDown,
               sx: {
                 ...sx,

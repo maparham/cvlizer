@@ -3,7 +3,7 @@
  */
 import React, { useEffect } from "react";
 import { useCVEditor } from "../../contexts/CVEditorContext";
-import { parseValidationErrors } from "../../utils/validationUtils";
+import { parseValidationErrors, parsePydanticValidationErrors } from "../../utils/validationUtils";
 
 interface SaveWithValidationErrorsProps {
   children: React.ReactNode;
@@ -19,9 +19,29 @@ export const SaveWithValidationErrors: React.FC<
   useEffect(() => {
     const handleSaveError = (event: CustomEvent) => {
       const error = event.detail;
-      const errorMessage =
-        error?.message || error?.response?.data?.message || "Failed to save CV";
-      const validationErrors = parseValidationErrors(errorMessage);
+      let validationErrors: ReturnType<typeof parseValidationErrors> = [];
+
+      // Check if this is a 422 validation error with array format
+      if (error?.response?.status === 422) {
+        const responseData = error.response.data;
+
+        // Try to parse Pydantic validation errors directly from response
+        if (Array.isArray(responseData) ||
+            (typeof responseData === "object" && responseData !== null &&
+             (Array.isArray(responseData.detail) || Array.isArray(responseData.errors)))) {
+          validationErrors = parsePydanticValidationErrors(responseData);
+        } else {
+          // Fall back to parsing error message string
+          const errorMessage =
+            error?.message || error?.response?.data?.message || "Failed to save CV";
+          validationErrors = parseValidationErrors(errorMessage);
+        }
+      } else {
+        // For non-422 errors, try parsing the error message
+        const errorMessage =
+          error?.message || error?.response?.data?.message || "Failed to save CV";
+        validationErrors = parseValidationErrors(errorMessage);
+      }
 
       if (validationErrors.length > 0) {
         setValidationErrors(validationErrors);

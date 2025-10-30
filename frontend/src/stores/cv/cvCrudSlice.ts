@@ -295,15 +295,84 @@ export const createCVCrudSlice: StateCreator<
       const apiError = error?.response?.data;
       let errorMessage = "Failed to update CV";
 
-      if (error?.response?.status === 422 && apiError?.detail?.errors) {
-        // Format validation errors from FastAPI/Pydantic
-        const validationErrors = apiError.detail.errors
-          .map((e: any) => `${e.loc?.join('.') || 'field'}: ${e.msg}`)
-          .join('\n• ');
-        errorMessage = `CV validation failed:\n• ${validationErrors}`;
-      } else if (error?.response?.status === 422 && apiError?.detail?.message) {
-        // Handle business rule validation errors
-        errorMessage = apiError.detail.message;
+      if (error?.response?.status === 422) {
+        // Handle array-shaped Pydantic validation errors
+        let errorArray: any[] = [];
+
+        if (Array.isArray(apiError)) {
+          // Direct array of errors: [{ loc: [...], msg: "...", ... }, ...]
+          errorArray = apiError;
+        } else if (Array.isArray(apiError?.detail)) {
+          // FastAPI format: { detail: [{ loc: [...], msg: "...", ... }, ...] }
+          errorArray = apiError.detail;
+        } else if (apiError?.detail?.errors && Array.isArray(apiError.detail.errors)) {
+          // Nested errors format: { detail: { errors: [...] } }
+          errorArray = apiError.detail.errors;
+        }
+
+        if (errorArray.length > 0) {
+          // Map Pydantic loc paths to our format: "Section #N: Field message"
+          const formattedErrors = errorArray.map((e: any) => {
+            const loc = e.loc || [];
+            const msg = e.msg || "Validation failed";
+
+            // Skip leading ["body", "parsed_data"] if present
+            const path = loc.slice();
+            if (path[0] === "body") path.shift();
+            if (path[0] === "parsed_data") path.shift();
+
+            // Path should now be: [section, index?, field?]
+            if (path.length === 0) return `Field: ${msg}`;
+
+            const section = path[0];
+            // Capitalize section name (e.g., "publications" -> "Publications")
+            const sectionName = section.charAt(0).toUpperCase() + section.slice(1).replace(/_/g, " ");
+
+            if (path.length === 1) {
+              return `${sectionName}: ${msg}`;
+            }
+
+            // Check if second element is a number (index)
+            const secondPart = path[1];
+            const index = typeof secondPart === "number" ? secondPart : parseInt(secondPart);
+
+            if (!isNaN(index) && index >= 0) {
+              // Array item with index: "Publications #1: Journal is required"
+              const itemNumber = index + 1; // Display as 1-based
+              const field = path.length > 2 ? path[2] : "";
+
+              // Extract field name from message if not provided
+              let fieldName = field;
+              if (!fieldName && msg.toLowerCase().includes("required")) {
+                // Try to extract field name from message
+                const fieldMatch = msg.match(/^(\w+(?:\s+\w+)*)\s+(?:is|are)\s+/i);
+                if (fieldMatch) {
+                  fieldName = fieldMatch[1];
+                }
+              }
+
+              const fieldDisplay = fieldName
+                ? fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/_/g, " ")
+                : "";
+
+              return `${sectionName} #${itemNumber}: ${fieldDisplay ? fieldDisplay + " " : ""}${msg}`;
+            } else {
+              // Non-indexed field: "Section: Field message"
+              const field = secondPart;
+              const fieldDisplay = field
+                ? field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, " ")
+                : "";
+              return `${sectionName}: ${fieldDisplay ? fieldDisplay + " " : ""}${msg}`;
+            }
+          });
+
+          errorMessage = `CV validation failed:\n• ${formattedErrors.join("\n• ")}`;
+        } else if (apiError?.detail?.message) {
+          // Handle business rule validation errors
+          errorMessage = apiError.detail.message;
+        } else {
+          errorMessage = normalizeApiError(error) || errorMessage;
+        }
       } else {
         errorMessage = normalizeApiError(error) || errorMessage;
       }

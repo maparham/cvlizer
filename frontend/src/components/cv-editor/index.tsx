@@ -254,26 +254,51 @@ const CVEditor: React.FC = () => {
           }
         }
       } catch (error: any) {
-        const errorMessage =
-          error?.message ||
-          error?.response?.data?.message ||
-          "Failed to save CV";
-
         // Dispatch error event for validation error handler
         window.dispatchEvent(
           new CustomEvent("cv-save-error", { detail: error }),
         );
 
-        // Check if this is a validation error
-        const validationErrors = parseValidationErrors(errorMessage);
+        // Check if this is a validation error (422 status)
+        let validationErrors: ReturnType<typeof parseValidationErrors> = [];
+
+        if (error?.response?.status === 422) {
+          const responseData = error.response.data;
+
+          // Try to parse Pydantic validation errors directly from response
+          if (Array.isArray(responseData) ||
+              (typeof responseData === "object" && responseData !== null &&
+               (Array.isArray(responseData.detail) || Array.isArray(responseData.errors)))) {
+            validationErrors = parseValidationErrors(responseData);
+          } else {
+            // Fall back to parsing error message string
+            const errorMessage =
+              error?.message ||
+              error?.response?.data?.message ||
+              "Failed to save CV";
+            validationErrors = parseValidationErrors(errorMessage);
+          }
+        } else {
+          // For non-422 errors, try parsing the error message
+          const errorMessage =
+            error?.message ||
+            error?.response?.data?.message ||
+            "Failed to save CV";
+          validationErrors = parseValidationErrors(errorMessage);
+        }
+
         if (validationErrors.length > 0) {
           // For validation errors, show a persistent notification
           showValidationError(
             "Validation Error",
-            "Please fix the highlighted fields and try saving again.",
+            "Some required fields are missing. Please fix the highlighted fields and try saving again.",
           );
         } else {
           // For other errors, show normal error notification
+          const errorMessage =
+            error?.message ||
+            error?.response?.data?.message ||
+            "Failed to save CV";
           showError("Error", errorMessage);
         }
       }

@@ -150,6 +150,19 @@ export const normalizeApiError = (error: unknown): string => {
 
   const data = response.data;
   if (!data) return `HTTP ${response.status}`;
+
+  // Handle 422 validation errors with array-shaped Pydantic errors
+  if (response.status === 422) {
+    if (Array.isArray(data)) {
+      // Direct array of Pydantic validation errors
+      return "Validation failed. Please fix the highlighted fields.";
+    }
+    if (typeof data === "object" && Array.isArray(data.detail)) {
+      // FastAPI format: { detail: [...] }
+      return "Validation failed. Please fix the highlighted fields.";
+    }
+  }
+
   if (typeof data === "string") return data;
   if (typeof data === "object") {
     if (data.message) return data.message;

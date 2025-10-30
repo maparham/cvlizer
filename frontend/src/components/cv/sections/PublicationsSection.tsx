@@ -4,6 +4,7 @@ import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
+import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface Publication {
   id: string
@@ -14,17 +15,20 @@ interface Publication {
   url?: string
 }
 
-const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Publications', onTitleSave, cvId }) => {
-  const createNewPublication = (): Publication => ({
-    id: generateSectionId('publications'),
-    title: '',
-    authors: '',
-    journal: '',
-    date: '',
-    url: ''
-  })
+// Separate component for publication form to allow using hooks
+const PublicationForm: React.FC<{
+  publication: Publication
+  index: number
+  updatePublication: (field: keyof Publication, value: any) => void
+  onSave?: () => void
+}> = ({ publication, index, updatePublication, onSave }) => {
+  // Get validation errors for this publication item
+  const titleValidation = useFieldValidation('publications', index, 'title')
+  const authorsValidation = useFieldValidation('publications', index, 'authors')
+  const journalValidation = useFieldValidation('publications', index, 'journal')
+  const dateValidation = useFieldValidation('publications', index, 'date')
 
-  const renderPublicationForm = (publication: Publication, _index: number, updatePublication: (field: keyof Publication, value: any) => void, onSave?: () => void) => (
+  return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -36,6 +40,8 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         value={publication.title}
         onChange={(value) => updatePublication('title', value)}
         onSave={onSave}
+        error={titleValidation.hasError}
+        helperText={titleValidation.errorMessage}
       />
       <FormField
         config={{
@@ -47,6 +53,8 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         value={publication.authors}
         onChange={(value) => updatePublication('authors', value)}
         onSave={onSave}
+        error={authorsValidation.hasError}
+        helperText={authorsValidation.errorMessage}
       />
       <FormField
         config={{
@@ -58,6 +66,8 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         value={publication.journal}
         onChange={(value) => updatePublication('journal', value)}
         onSave={onSave}
+        error={journalValidation.hasError}
+        helperText={journalValidation.errorMessage}
       />
       <DateFieldComponent
         config={{
@@ -68,6 +78,8 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
         value={publication.date}
         onChange={(value) => updatePublication('date', value)}
         onSave={onSave}
+        error={dateValidation.hasError}
+        helperText={dateValidation.errorMessage}
       />
       <FormField
         config={{
@@ -82,6 +94,28 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
       />
     </Box>
   )
+}
+
+const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Publications', onTitleSave, cvId }) => {
+  const createNewPublication = (): Publication => ({
+    id: generateSectionId('publications'),
+    title: '',
+    authors: '',
+    journal: '',
+    date: '',
+    url: ''
+  })
+
+  const renderPublicationForm = (publication: Publication, index: number, updatePublication: (field: keyof Publication, value: any) => void, onSave?: () => void) => {
+    return (
+      <PublicationForm
+        publication={publication}
+        index={index}
+        updatePublication={updatePublication}
+        onSave={onSave}
+      />
+    )
+  }
 
   const renderPublicationDisplay = (publication: Publication, _index: number) => (
     <>
