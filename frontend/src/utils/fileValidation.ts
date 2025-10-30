@@ -54,14 +54,14 @@ export const validateCVFile = (file: File): FileValidationResult => {
   if (!ALLOWED_TYPES.includes(file.type as any)) {
     return {
       isValid: false,
-      error: "Invalid file type. Only PDF, DOC, and DOCX files are allowed.",
+      error: "Please upload a PDF, DOC, or DOCX file",
     };
   }
 
   if (file.size > MAX_FILE_SIZE) {
     return {
       isValid: false,
-      error: "File size must be less than 10MB.",
+      error: "File size cannot exceed 10MB",
     };
   }
 

@@ -33,7 +33,7 @@ import {
   MoreVert as MoreVertIcon,
   ContentCopy as DuplicateIcon,
   Edit as RenameIcon,
-  GetApp as DownloadIcon,
+  Download as DownloadIcon,
   Create as CreateSimilarIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
@@ -126,12 +126,14 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
     setNewName(cv.original_filename);
   };
 
+  const isError = Boolean(cv.parse_error);
+
   const menuItems: MenuItemData[] = [
     {
       label: "Duplicate",
       icon: <DuplicateIcon />,
       onClick: handleDuplicate,
-      disabled: duplicating || !cv.is_parsed,
+      disabled: isError || duplicating || !cv.is_parsed,
       loading: duplicating,
       testId: `duplicate-cv-button-${cv.id}`,
     },
@@ -139,14 +141,14 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
       label: "Rename",
       icon: <RenameIcon />,
       onClick: handleRename,
-      disabled: false,
+      disabled: isError,
       testId: `rename-cv-button-${cv.id}`,
     },
     {
       label: "Download",
       icon: <DownloadIcon />,
       onClick: handleDownload,
-      disabled: downloading,
+      disabled: isError || downloading,
       loading: downloading,
       testId: `download-cv-button-${cv.id}`,
     },
@@ -154,7 +156,7 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
       label: "Create Similar",
       icon: <CreateSimilarIcon />,
       onClick: handleCreateSimilar,
-      disabled: creatingSimilar || !cv.is_parsed,
+      disabled: true, // TODO: Enable when create-similar is implemented in store/service
       loading: creatingSimilar,
       testId: `create-similar-cv-button-${cv.id}`,
     },
@@ -168,6 +170,7 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
         onClick={handleMenuClick}
         onContextMenu={handleContextMenu}
         sx={commonStyles.iconButton.subtle}
+        disabled={isError}
       >
         <MoreVertIcon fontSize="small" />
       </IconButton>
@@ -229,7 +232,7 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            onKeyPress={(e) => {
+            onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleRenameConfirm();
               }

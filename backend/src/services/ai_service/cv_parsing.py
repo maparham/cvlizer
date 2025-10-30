@@ -124,15 +124,15 @@ CV: {text_content}
 Return JSON (omit empty sections):
 {{
   "personal_info": {{"full_name": "str", "email": "str", "phone": "str", "location": "str", "linkedin_url": "str", "website_url": "str", "github_url": "str"}},
-  "professional_summary": {{"content": "str (markdown formatted)", "keywords": []}},
-  "work_experience": [{{"company": "str", "position": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str (markdown formatted)", "achievements": [], "technologies": []}}],
-  "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str (markdown formatted)", "achievements": [], "honors": []}}],
+  "professional_summary": {{"content": "str (markdown bullets/paragraphs, NO headers)", "keywords": []}},
+  "work_experience": [{{"company": "str", "position": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "technologies": []}}],
+  "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "honors": []}}],
   "skills": {{"technical": [], "soft": [], "languages": [{{"language": "str", "proficiency": "str"}}]}},
-  "certifications": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD|null", "description": "str (markdown formatted)"}}],
-  "projects": [{{"name": "str", "description": "str (markdown formatted)", "technologies": [], "url": "str|null"}}],
-  "awards": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "description": "str (markdown formatted)"}}],
+  "certifications": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD|null", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
+  "projects": [{{"name": "str", "description": "str (markdown bullets/paragraphs, NO headers)", "technologies": [], "url": "str|null"}}],
+  "awards": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
   "publications": [{{"title": "str", "authors": "str", "journal": "str", "date": "YYYY-MM-DD", "url": "str|null"}}],
-  "volunteer_experience": [{{"organization": "str", "role": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "str (markdown formatted)"}}],
+  "volunteer_experience": [{{"organization": "str", "role": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
   "is_valid_cv": true,
   "validation_error": null
 }}"""

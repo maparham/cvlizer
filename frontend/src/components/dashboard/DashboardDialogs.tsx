@@ -39,7 +39,7 @@ interface DashboardDialogsProps {
   // Upload dialog
   uploadOpen: boolean;
   onUploadClose: () => void;
-  onUploadSuccess: () => void;
+  onUploadSuccess: (cvId: string) => void;
 
   // Template selector
   templateSelectorOpen: boolean;

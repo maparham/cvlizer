@@ -33,7 +33,7 @@ import { validateCVFile } from "../../utils/fileValidation";
 interface CVUploadProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (cvId: string) => void;
 }
 
 const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
@@ -98,12 +98,16 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
     setUploading(true);
     setUploadProgress(0);
 
+    let progressInterval: NodeJS.Timeout | null = null;
+
     try {
       // Simulate upload progress
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
-            clearInterval(progressInterval);
+            if (progressInterval) {
+              clearInterval(progressInterval);
+            }
             return 90;
           }
           return prev + 10;
@@ -111,15 +115,17 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
       }, 200);
 
       // Use the store's upload function which handles state updates
-      await uploadCVToStore(selectedFile);
+      const created = await uploadCVToStore(selectedFile);
 
-      clearInterval(progressInterval);
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
       setUploadProgress(100);
       setSuccess(true);
 
-      // Close immediately after upload, parsing happens in background
+      // Close shortly after upload; parsing happens in background
       setTimeout(() => {
-        onSuccess(); // This will refresh the CV list
+        onSuccess(created.id);
         setUploading(false);
         setUploadProgress(0);
         setSuccess(false);
@@ -127,6 +133,10 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         onClose(); // Close the dialog after success callback
       }, 1000); // Give a moment to show success message
     } catch (err: unknown) {
+      // Clear interval on error to prevent timer leak
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
       const errorMessage =
         (err as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail || "Upload failed. Please try again.";

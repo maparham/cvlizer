@@ -25,6 +25,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useCVStore } from "../stores/cv";
 import { useAIStore } from "../stores/ai";
 import { useNotifications } from "../packages/notifications";
+import { cvApi } from "../services/api";
 import { useActivityLogger } from "../hooks/useActivityLogger";
 import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../packages/notifications";
 import { CV } from "../types";
@@ -58,7 +59,7 @@ const Dashboard: React.FC = () => {
     loading: authLoading,
   } = useAuth();
   const navigate = useNavigate();
-  const { showSuccess } = useNotifications();
+  const { showSuccess, showError } = useNotifications();
   const { logUserAction } = useActivityLogger();
 
   // Use CV store instead of local state
@@ -73,6 +74,26 @@ const Dashboard: React.FC = () => {
 
   // Get job descriptions for the applications card
   const { jobDescriptions, loadJobDescriptions } = useAIStore();
+
+  // Track CV to open editor after parsing completes
+  const [pendingEditorCvId, setPendingEditorCvId] = useState<string | null>(null);
+
+  // Navigate to editor after parsing completes successfully
+  useEffect(() => {
+    if (!pendingEditorCvId) return;
+    const cv = cvs.find((c) => c.id === pendingEditorCvId);
+    if (!cv) return;
+    if (cv.parse_error) {
+      showError("Parsing failed", cv.parse_error, true);
+      setPendingEditorCvId(null);
+      return;
+    }
+    if (cv.is_parsed) {
+      navigate(`/cv/${pendingEditorCvId}`);
+      showSuccess("CV ready", "Your CV is ready for editing", true);
+      setPendingEditorCvId(null);
+    }
+  }, [cvs, pendingEditorCvId]);
 
   // Get CV status counts for filter badges (memoized to avoid repeated filtering)
   const cvStatusCounts = React.useMemo(
@@ -223,8 +244,12 @@ const Dashboard: React.FC = () => {
     navigate(`/cv/${cvId}`);
   };
 
-  const handleDownload = (cv: CV) => {
-    // Download handled in CVCard component
+  const handleDownload = async (cv: CV) => {
+    try {
+      await cvApi.downloadCV(cv.id, cv.original_filename);
+    } catch (e) {
+      showError("Download failed", "Unable to download CV file");
+    }
   };
 
   const handleDelete = (cv: CV) => {
@@ -307,9 +332,11 @@ const Dashboard: React.FC = () => {
         <DashboardDialogs
           uploadOpen={uploadOpen}
           onUploadClose={() => setUploadOpen(false)}
-          onUploadSuccess={() => {
+          onUploadSuccess={(cvId: string) => {
             setUploadOpen(false);
             showSuccess("Success", "CV uploaded successfully and is being parsed");
+            // Wait for parsing to complete before opening the editor
+            setPendingEditorCvId(cvId);
           }}
           templateSelectorOpen={templateSelectorOpen}
           onTemplateSelectorClose={() => setTemplateSelectorOpen(false)}

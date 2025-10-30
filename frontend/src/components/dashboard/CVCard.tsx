@@ -144,10 +144,12 @@ const CVCard: React.FC<CVCardProps> = ({
                   color="primary"
                   variant="outlined"
                   icon={<DownloadIcon />}
-                  clickable
+                  clickable={!cv.parse_error}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDownload(cv);
+                    if (!cv.parse_error) {
+                      onDownload(cv);
+                    }
                   }}
                   sx={{ borderRadius: 1.5 }}
                 />
@@ -263,7 +265,7 @@ const CVCard: React.FC<CVCardProps> = ({
               variant="contained"
               startIcon={<EditIcon />}
               onClick={() => onEdit(cv.id)}
-              disabled={!cv.is_parsed && !cv.parse_error}
+              disabled={!cv.is_parsed || !!cv.parse_error}
               data-testid={`edit-cv-button-${cv.id}`}
               sx={{
                 textTransform: "none",
@@ -286,6 +288,7 @@ const CVCard: React.FC<CVCardProps> = ({
               <IconButton
                 size="small"
                 onClick={() => onDuplicate(cv)}
+                disabled={!cv.is_parsed || !!cv.parse_error}
                 sx={{
                   color: "primary.main",
                   "&:hover": {
@@ -317,7 +320,7 @@ const CVCard: React.FC<CVCardProps> = ({
               cv={cv}
               onDuplicate={onDuplicate}
               onRename={(cv, newTitle) => onTitleSave(cv, newTitle)}
-              onDownload={() => {}}
+              onDownload={onDownload}
               onCreateSimilar={() => {}}
             />
           </Stack>
