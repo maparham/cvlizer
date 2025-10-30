@@ -1,25 +1,22 @@
 /**
  * Job Fit Analysis Component
  *
- * This component provides comprehensive job fit analysis functionality including
- * confidence scoring, key matches identification, and detailed fit analysis.
- * It integrates with the AI store to analyze how well a CV matches a job description.
+ * This component displays job fit analysis results including confidence scoring,
+ * key matches identification, and detailed fit analysis.
  *
  * Key responsibilities:
- * - Display "Generate Job Fit" button with loading states
  * - Show generated "Why I'm a Good Fit" section with confidence score
  * - Display key match points as bullet list
  * - Show missing skills and suggested improvements
- * - Allow regeneration with different job descriptions
- * - Integrate with CV sections for adding content
+ * - Note: Generation is now triggered by the unified "AI Suggestions" button
  *
  * Usage:
- * - Used in CV editor sidebar or as a dedicated analysis panel
+ * - Used in CV editor sidebar to display job fit results
  * - Requires cvId and jobDescriptionId props
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   Box,
@@ -58,12 +55,10 @@ import {
   Help as HelpIcon,
 } from "@mui/icons-material";
 import {
-  useAIStore,
   useJobFitAnalysis,
   useActiveJobDescription,
 } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
-import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
 import CVCompletenessIndicator from "../../CVCompleteness/CVCompletenessIndicator";
 
@@ -82,13 +77,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
   className,
   existingWhyGoodFit,
 }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
-  const [pendingAnalysisResult, setPendingAnalysisResult] =
-    useState<unknown>(null);
-
   const { showSuccess, showError } = useNotifications();
-  const { analyzeJobFit, clearJobFitAnalysis } = useAIStore();
 
   // Calculate CV completeness
   const completeness = useMemo(() => {
@@ -108,194 +97,8 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
     return calculateCVCompleteness(cvData);
   }, [cvData]);
 
-  // Use global AI task polling for job fit analysis
-  const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
-
   const jobFitAnalysis = useJobFitAnalysis();
   const activeJobDescription = useActiveJobDescription();
-
-  // Monitor active tasks for job fit analysis completion
-  useEffect(() => {
-    for (const [taskId, task] of activeTasks) {
-      if (task.type === "draft" && task.cvId === cvId && !task.isGenerating) {
-        if (task.generationError) {
-          showError(
-            "Error",
-            `Job fit analysis failed: ${task.generationError}`,
-          );
-          setIsGenerating(false);
-        } else {
-          // Task completed successfully - handle based on whether section exists
-          if (
-            existingWhyGoodFit &&
-            (existingWhyGoodFit as { content?: string }).content
-          ) {
-            // Section exists, show overwrite dialog
-            setPendingAnalysisResult(task.data);
-            setShowOverwriteDialog(true);
-            setIsGenerating(false);
-          } else if (task.data && onAddToCV && "draft_data" in task.data) {
-            // No existing section, add directly
-            const draftData = task.data.draft_data || {};
-            const whyGoodFitData = {
-              content: draftData.fit_analysis || "",
-              confidence_score: draftData.confidence_score || 0,
-              key_matches: draftData.key_matches || [],
-              generated_at: new Date().toISOString(),
-              job_description_id: activeJobDescription?.id,
-            };
-
-            onAddToCV(JSON.stringify(whyGoodFitData), "why_good_fit");
-            showSuccess("Job fit section generated and added to CV");
-            setIsGenerating(false);
-          } else {
-            showSuccess("Job fit analysis completed successfully");
-            setIsGenerating(false);
-          }
-        }
-        removeTask(taskId);
-      }
-    }
-  }, [
-    activeTasks,
-    cvId,
-    showSuccess,
-    showError,
-    removeTask,
-    onAddToCV,
-    activeJobDescription,
-    existingWhyGoodFit,
-  ]);
-
-  const handleAnalyze = useCallback(async () => {
-    if (!activeJobDescription) {
-      showError("Error", "Please select a job description first");
-      return;
-    }
-
-    // Check CV completeness before attempting to generate
-    if (!completeness.isComplete) {
-      showError(
-        "CV Incomplete",
-        `Your CV needs more content before generating job fit analysis. Please add: ${completeness.missing.join(", ")}`
-      );
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const analysisResult = await analyzeJobFit(cvId, activeJobDescription.id);
-
-      // Add the task to polling if it's still generating
-      if (analysisResult.is_generating) {
-        addTask({
-          id: analysisResult.id,
-          type: "draft",
-          cvId: cvId,
-          isGenerating: true,
-          data: analysisResult,
-        });
-      } else {
-        // Task completed immediately
-        setIsGenerating(false);
-      }
-
-      // If task completed immediately (not generating), handle it now
-      if (!analysisResult.is_generating) {
-        // Check if section already exists
-        if (
-          existingWhyGoodFit &&
-          (existingWhyGoodFit as { content?: string }).content
-        ) {
-          // Store the analysis result and show confirmation dialog
-          setPendingAnalysisResult(analysisResult);
-          setShowOverwriteDialog(true);
-          setIsGenerating(false);
-          return;
-        }
-
-        // No existing content, add directly
-        if (onAddToCV && analysisResult && "draft_data" in analysisResult) {
-          const draftData = analysisResult.draft_data || {};
-          const whyGoodFitData = {
-            content: draftData.fit_analysis || "",
-            confidence_score: draftData.confidence_score || 0,
-            key_matches: draftData.key_matches || [],
-            generated_at: new Date().toISOString(),
-            job_description_id: activeJobDescription.id,
-          };
-
-          onAddToCV(JSON.stringify(whyGoodFitData), "why_good_fit");
-          showSuccess("Job fit section generated and added to CV");
-        } else {
-          showSuccess("Job fit section generated successfully");
-        }
-        setIsGenerating(false);
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to analyze job fit";
-      showError("Error", errorMessage);
-      setIsGenerating(false);
-    }
-  }, [
-    cvId,
-    activeJobDescription,
-    analyzeJobFit,
-    onAddToCV,
-    existingWhyGoodFit,
-    showSuccess,
-    showError,
-    addTask,
-    completeness.isComplete,
-    completeness.missing,
-  ]);
-
-  const handleRegenerate = useCallback(() => {
-    clearJobFitAnalysis();
-    handleAnalyze();
-  }, [clearJobFitAnalysis, handleAnalyze]);
-
-  const copyToClipboard = useCallback(
-    (text: string) => {
-      navigator.clipboard.writeText(text);
-      showSuccess("Copied to clipboard");
-    },
-    [showSuccess],
-  );
-
-  const handleConfirmOverwrite = useCallback(() => {
-    if (
-      onAddToCV &&
-      pendingAnalysisResult &&
-      typeof pendingAnalysisResult === "object" &&
-      pendingAnalysisResult !== null &&
-      "fit_analysis" in pendingAnalysisResult
-    ) {
-      const analysis = pendingAnalysisResult as {
-        fit_analysis: string;
-        confidence_score: number;
-        key_matches: string[];
-      };
-      const whyGoodFitData = {
-        content: analysis.fit_analysis,
-        confidence_score: analysis.confidence_score,
-        key_matches: analysis.key_matches,
-        generated_at: new Date().toISOString(),
-        job_description_id: activeJobDescription?.id,
-      };
-
-      onAddToCV(JSON.stringify(whyGoodFitData), "why_good_fit");
-      showSuccess("Job fit section updated in CV");
-    }
-    setShowOverwriteDialog(false);
-    setPendingAnalysisResult(null);
-  }, [onAddToCV, pendingAnalysisResult, activeJobDescription, showSuccess]);
-
-  const handleCancelOverwrite = useCallback(() => {
-    setShowOverwriteDialog(false);
-    setPendingAnalysisResult(null);
-  }, []);
 
   const getConfidenceColor = (score: number) => {
     if (score >= 80) return "success";
@@ -366,15 +169,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
             </IconButton>
           </Tooltip>
         </Box>
-        {jobFitAnalysis.lastAnalysis && (
-          <Tooltip title="Regenerate Analysis">
-            <span>
-              <IconButton onClick={handleRegenerate} disabled={isGenerating}>
-                <RefreshIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        )}
+        {/* Regeneration now handled by unified "AI Suggestions" button */}
       </Box>
 
       {jobFitAnalysis.error && (
@@ -394,22 +189,8 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
                 Generate Job Fit Section
               </Typography>
               <Typography color="text.secondary" paragraph>
-                Create an AI-powered "Why I'm a Good Fit" section that
-                highlights your strengths and matches for this role.
+                Use the "AI Suggestions for this Job" button above to generate an AI-powered "Why I'm a Good Fit" section that highlights your strengths and matches for this role.
               </Typography>
-
-              {/* Show CV completeness indicator if not complete */}
-              {!completeness.isComplete && (
-                <Box sx={{ mb: 2, textAlign: "left" }}>
-                  <CVCompletenessIndicator
-                    completeness={completeness}
-                    variant="detailed"
-                  />
-                </Box>
-              )}
-
-              {/* Generation now triggered by the unified "AI Suggestions for this Job" button */}
-              <></>
             </Box>
           </CardContent>
         </Card>
@@ -494,9 +275,10 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
                   size="small"
                   variant="outlined"
                   startIcon={<CopyIcon />}
-                  onClick={() =>
-                    copyToClipboard(jobFitAnalysis.lastAnalysis!.fit_analysis)
-                  }
+                  onClick={() => {
+                    navigator.clipboard.writeText(jobFitAnalysis.lastAnalysis!.fit_analysis);
+                    showSuccess("Copied to clipboard");
+                  }}
                 >
                   Copy Content
                 </Button>
@@ -637,127 +419,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
         </Stack>
       )}
 
-      {/* Overwrite Confirmation Dialog */}
-      <Dialog
-        open={showOverwriteDialog}
-        onClose={handleCancelOverwrite}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <WarningIcon color="warning" />
-            Replace Existing "Why I'm a Good Fit" Section?
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            A "Why I'm a Good Fit" section already exists in your CV. The new
-            analysis will replace the existing content.
-          </Typography>
-
-          {existingWhyGoodFit &&
-          (existingWhyGoodFit as { content?: string }).content ? (
-            <Box mb={3}>
-              <Typography variant="subtitle2" gutterBottom>
-                Current Content:
-              </Typography>
-              <Box
-                sx={{
-                  p: 2,
-                  bgcolor: "grey.50",
-                  borderRadius: 1,
-                  border: "1px solid",
-                  borderColor: "grey.300",
-                  maxHeight: "200px",
-                  overflow: "auto",
-                  "& h1, & h2, & h3, & h4, & h5, & h6": {
-                    marginTop: 1,
-                    marginBottom: 0.5,
-                    fontWeight: 600,
-                  },
-                  "& p": {
-                    marginBottom: 1,
-                  },
-                  "& ul, & ol": {
-                    marginBottom: 1,
-                    paddingLeft: 2,
-                  },
-                  "& li": {
-                    marginBottom: 0.25,
-                  },
-                  "& strong": {
-                    fontWeight: 600,
-                  },
-                  "& em": {
-                    fontStyle: "italic",
-                  },
-                }}
-              >
-                <ReactMarkdown>
-                  {(existingWhyGoodFit as { content?: string }).content || ""}
-                </ReactMarkdown>
-              </Box>
-            </Box>
-          ) : null}
-
-          {pendingAnalysisResult &&
-          (pendingAnalysisResult as { content?: string }).content ? (
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                New Content:
-              </Typography>
-              <Box
-                sx={{
-                  p: 2,
-                  bgcolor: "primary.50",
-                  borderRadius: 1,
-                  border: "1px solid",
-                  borderColor: "primary.300",
-                  maxHeight: "200px",
-                  overflow: "auto",
-                  "& h1, & h2, & h3, & h4, & h5, & h6": {
-                    marginTop: 1,
-                    marginBottom: 0.5,
-                    fontWeight: 600,
-                  },
-                  "& p": {
-                    marginBottom: 1,
-                  },
-                  "& ul, & ol": {
-                    marginBottom: 1,
-                    paddingLeft: 2,
-                  },
-                  "& li": {
-                    marginBottom: 0.25,
-                  },
-                  "& strong": {
-                    fontWeight: 600,
-                  },
-                  "& em": {
-                    fontStyle: "italic",
-                  },
-                }}
-              >
-                <ReactMarkdown>
-                  {(pendingAnalysisResult as { fit_analysis?: string })
-                    .fit_analysis || ""}
-                </ReactMarkdown>
-              </Box>
-            </Box>
-          ) : null}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelOverwrite}>Cancel</Button>
-          <Button
-            onClick={handleConfirmOverwrite}
-            variant="contained"
-            color="primary"
-          >
-            Replace Content
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Dialog removed - overwrite handling now managed by unified AI Suggestions flow */}
     </Box>
   );
 };

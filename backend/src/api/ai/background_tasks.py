@@ -459,4 +459,6 @@ __all__ = [
     "generate_job_fit_background",
     "ai_enhancement_sync",
     "ai_enhancement_background",
+    "ai_combined_sync",
+    "ai_combined_background",
 ]

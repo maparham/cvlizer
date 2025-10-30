@@ -16,7 +16,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -46,7 +46,6 @@ import {
 import { JobDescription } from "../../../types/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useJobDescriptionPolling } from "../../../hooks/useJobDescriptionPolling";
-import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import JobDescriptionsModal from "./job-descriptions-modal";
 import JobDescriptionCard from "./JobDescriptionCard";
 import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
@@ -80,12 +79,10 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     content: "",
   });
   const [isEditLoading, setIsEditLoading] = useState(false);
-  const [isGeneratingJobFit, setIsGeneratingJobFit] = useState(false);
 
   const {
     hideJobDescriptionFromSidebar,
     updateJobDescription,
-    createJobFitDraft,
   } = useAIStore();
 
   // Calculate CV completeness
@@ -106,39 +103,10 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     return calculateCVCompleteness(cvData);
   }, [cvData]);
   const { showSuccess, showError } = useNotifications();
-  const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
-
-  // Use refs to store notification functions to prevent infinite loops
-  const showSuccessRef = useRef(showSuccess);
-  const showErrorRef = useRef(showError);
-  const removeTaskRef = useRef(removeTask);
-  const processedTasksRef = useRef<Set<string>>(new Set());
-
-  // Update refs when functions change
-  useEffect(() => {
-    showSuccessRef.current = showSuccess;
-    showErrorRef.current = showError;
-    removeTaskRef.current = removeTask;
-  }, [showSuccess, showError, removeTask]);
 
   const jobDescriptions = useVisibleJobDescriptions();
   const allJobDescriptions = useJobDescriptions();
   const activeJobDescription = useActiveJobDescription();
-
-  // Debug log when component mounts and restore button state from global polling
-  useEffect(() => {
-    // Check if there's an active generating task for this CV and restore button state
-    const hasGeneratingTask = Array.from(activeTasks.values()).some(
-      (task) =>
-        task.type === "draft" && task.cvId === cvId && task.isGenerating,
-    );
-    if (hasGeneratingTask && !isGeneratingJobFit) {
-      setIsGeneratingJobFit(true);
-    }
-
-    // Clear processed tasks when cvId changes
-    processedTasksRef.current.clear();
-  }, [cvId, activeJobDescription, addTask, activeTasks, isGeneratingJobFit]);
 
   // Use the centralized polling hook for job descriptions
   useJobDescriptionPolling(allJobDescriptions, {
@@ -149,39 +117,6 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
       // Error is displayed in the sidebar card - no need for temporary alert
     },
   });
-
-  // Monitor active tasks for job fit analysis completion
-  useEffect(() => {
-    for (const [taskId, task] of activeTasks) {
-      if (task.type === "draft" && task.cvId === cvId && !task.isGenerating) {
-        // Check if we've already processed this task to prevent duplicate notifications
-        if (processedTasksRef.current.has(taskId)) {
-          continue;
-        }
-
-        // Mark task as processed
-        processedTasksRef.current.add(taskId);
-
-        if (task.generationError) {
-          showErrorRef.current(
-            "Error",
-            `Job fit analysis failed: ${task.generationError}`,
-          );
-          setIsGeneratingJobFit(false);
-        } else {
-          // Task completed successfully
-          showSuccessRef.current(
-            "Job fit analysis completed! Please review and approve the draft in the CV editor.",
-          );
-          setIsGeneratingJobFit(false);
-
-          // Note: No need to reload drafts here - the polling mechanism already updated the draft in the store
-          // Calling getCVDrafts here would remove the just-updated draft and replace with potentially stale API data
-        }
-        removeTaskRef.current(taskId);
-      }
-    }
-  }, [activeTasks, cvId]); // Remove notification functions from dependencies to prevent infinite loops
 
   const handleJobDescriptionHide = useCallback(
     (jobDescriptionId: string) => {
@@ -238,79 +173,6 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     updateJobDescription,
     showSuccess,
     showError,
-  ]);
-
-  const handleGenerateJobFit = useCallback(async () => {
-    if (!activeJobDescription) {
-      showError("Error", "Please select a job description first");
-      return;
-    }
-
-    // Check CV completeness before attempting to generate
-    if (!completeness.isComplete) {
-      showError(
-        "CV Incomplete",
-        `Your CV needs more content before generating job fit analysis. Please add: ${completeness.missing.join(", ")}`
-      );
-      return;
-    }
-
-    setIsGeneratingJobFit(true);
-    try {
-      // Backend automatically deletes existing why_good_fit draft and store mirrors this
-      const response = await createJobFitDraft(cvId, activeJobDescription.id);
-
-      // Add the task to global polling if it's still generating
-      if (response.is_generating) {
-        const taskToAdd = {
-          id: response.id,
-          type: "draft" as const,
-          cvId: cvId,
-          isGenerating: true,
-          data: response,
-        };
-        addTask(taskToAdd);
-        showSuccess("Job fit analysis started, generating in background...");
-      } else {
-        // Task completed immediately
-        setIsGeneratingJobFit(false);
-        showSuccess("Job fit analysis completed successfully");
-      }
-    } catch (err) {
-      // Check for rate limit errors first
-      const isRateLimitError =
-        (err as any)?.code === '429' ||
-        (err as any)?.code === 429 ||
-        (err as any)?.response?.status === 429 ||
-        (err as Error)?.message?.includes('429');
-
-      // Only log errors that aren't rate limits
-      if (!isRateLimitError) {
-        console.error("Error in handleGenerateJobFit:", err);
-      }
-
-      let errorMessage: string;
-      if (isRateLimitError) {
-        errorMessage = "Too many requests. Please wait a moment and try again.";
-      } else {
-        errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Failed to generate job fit analysis";
-      }
-
-      showError("Error", errorMessage);
-      setIsGeneratingJobFit(false);
-    }
-  }, [
-    activeJobDescription,
-    cvId,
-    createJobFitDraft,
-    showSuccess,
-    showError,
-    addTask,
-    completeness.isComplete,
-    completeness.missing,
   ]);
 
   return (
