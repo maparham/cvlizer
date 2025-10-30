@@ -115,6 +115,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const getCVDraftsRef = useRef(getCVDrafts);
   const removeTaskRef = useRef(removeTask);
   const setSuggestionsLoadingRef = useRef(setSuggestionsLoading);
+  // Track tasks we've already shown completion toast for
+  const completedTasksRef = useRef<Set<string>>(new Set());
 
   // Sync refs with latest values
   useEffect(() => {
@@ -158,6 +160,9 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             cvId: cvId,
             isGenerating: true,
           });
+
+          // Show "started" toast
+          showInfo("AI enhancement started", "Generating personalized suggestions...", true);
         }
       } catch (error) {
         // ErrorHandler.handle() is called in aiSuggestionsStore which handles the notification
@@ -171,6 +176,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     generateAllSuggestions,
     addTask,
     setSuggestionsLoading,
+    showInfo,
   ]);
 
   // Clear suggestions when job description changes (only when switching between different JDs)
@@ -214,19 +220,28 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           // Clear loading state on error
           setSuggestionsLoadingRef.current(false);
         } else {
-          // Check if suggestions are empty and notify user
-          const suggestions = allSuggestionsRef.current;
+          // Task completed successfully
+          // Use task.data directly since allSuggestionsRef might not be updated yet
+          const enhancementData = task?.data?.enhancement_data;
+          const suggestions = enhancementData || allSuggestionsRef.current;
           const hasAnySuggestions =
             suggestions &&
-            ((suggestions.skills.technical.length > 0) ||
-             (suggestions.skills.soft.length > 0) ||
-             (suggestions.professional_summary.suggested_text?.trim().length > 0));
+            ((suggestions.skills?.technical?.length > 0) ||
+             (suggestions.skills?.soft?.length > 0) ||
+             (suggestions.professional_summary?.suggested_text?.trim().length > 0));
 
-          if (!hasAnySuggestions && suggestionsLoadingRef.current) {
-            // Suggestions completed but are empty - inform the user
-            showInfoRef.current(
-              "No suggestions available. Please add more content to your CV (work experience, skills, professional summary) to get AI-powered enhancement suggestions."
-            );
+          // Show completion toast if we haven't shown it for this task yet
+          if (!completedTasksRef.current.has(taskId)) {
+            if (!hasAnySuggestions) {
+              // Suggestions completed but are empty - inform the user
+              showInfoRef.current(
+                "No suggestions available. Please add more content to your CV (work experience, skills, professional summary) to get AI-powered enhancement suggestions."
+              );
+            } else {
+              // Show "completed" toast for successful generation
+              showInfoRef.current("AI enhancement completed", "Suggestions are ready to review");
+            }
+            completedTasksRef.current.add(taskId);
           }
 
           // Ensure loading state is cleared when task completes
@@ -247,7 +262,11 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     if (tasksToRemove.length > 0) {
       // Defer removals to next macrotask to prevent immediate re-entry of this effect
       setTimeout(() => {
-        tasksToRemove.forEach((id) => removeTaskRef.current(id));
+        tasksToRemove.forEach((id) => {
+          removeTaskRef.current(id);
+          // Clean up completed tasks tracking
+          completedTasksRef.current.delete(id);
+        });
       }, 0);
     }
   }, [activeTasks, cvId]);
