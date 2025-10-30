@@ -428,7 +428,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
                   },
                 }}
               >
-                Reject All
+                Discard
               </Button>
             </Box>
           </Box>
@@ -687,7 +687,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
                       },
                     }}
                   >
-                    Reject All
+                    Discard
                   </Button>
                 </Box>
               </Box>

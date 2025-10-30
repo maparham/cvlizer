@@ -408,38 +408,8 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
                 </Box>
               )}
 
-              <Tooltip
-                title={
-                  !completeness.isComplete
-                    ? `CV needs more content: ${completeness.missing.join(", ")}`
-                    : ""
-                }
-                arrow
-              >
-                <span>
-                  <Button
-                    variant="contained"
-                    onClick={handleAnalyze}
-                    disabled={
-                      !completeness.isComplete ||
-                      isGenerating ||
-                      jobFitAnalysis.isAnalyzing
-                    }
-                    startIcon={
-                      isGenerating || jobFitAnalysis.isAnalyzing ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <AutoAwesomeIcon />
-                      )
-                    }
-                    size="large"
-                  >
-                    {isGenerating || jobFitAnalysis.isAnalyzing
-                      ? "Generating..."
-                      : "Generate Job Fit Section"}
-                  </Button>
-                </span>
-              </Tooltip>
+              {/* Generation now triggered by the unified "AI Suggestions for this Job" button */}
+              <></>
             </Box>
           </CardContent>
         </Card>

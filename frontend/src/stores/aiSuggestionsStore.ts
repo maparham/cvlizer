@@ -63,8 +63,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
     set({ suggestionsLoading: true, suggestionsError: null });
 
     try {
-      // Create AI enhancement task using background task API
-      const result = await aiService.createAIEnhancement(cvId, jobDescId);
+      // Create combined AI suggestions task (includes Why Good Fit draft)
+      const result = await aiService.createCombinedAISuggestions(cvId, jobDescId);
 
       // Return the enhancement ID for global polling integration
       return result.enhancement_id;
@@ -182,6 +182,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
 
   // Dismiss a single skill suggestion from the UI
   dismissSkillSuggestion: async (skill: string, type: "technical" | "soft") => {
+    const cvId = get().currentCvId;
     Logger.debug("Dismissing skill suggestion", { skill, type, cvId });
     const currentSuggestions = get().allSuggestions;
     const enhancementId = get().currentEnhancementId;

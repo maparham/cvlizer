@@ -62,6 +62,7 @@ class AIService {
   generateAISection = aiSectionsService.generateAISection.bind(aiSectionsService);
   getAISections = aiSectionsService.getAISections.bind(aiSectionsService);
   createAIEnhancement = aiSectionsService.createAIEnhancement.bind(aiSectionsService);
+  createCombinedAISuggestions = aiSectionsService.createCombinedAISuggestions.bind(aiSectionsService);
   getAIEnhancementStatus = aiSectionsService.getAIEnhancementStatus.bind(aiSectionsService);
   getLatestAIEnhancement = aiSectionsService.getLatestAIEnhancement.bind(aiSectionsService);
   updateAIEnhancement = aiSectionsService.updateAIEnhancement.bind(aiSectionsService);
@@ -101,6 +102,7 @@ export const {
   generateAISection,
   getAISections,
   createAIEnhancement,
+  createCombinedAISuggestions,
   getAIEnhancementStatus,
   getLatestAIEnhancement,
   updateAIEnhancement,

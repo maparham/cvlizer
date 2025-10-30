@@ -23,7 +23,7 @@ from src.services.job_description_service import (
 )
 from src.utils.rate_limit import create_combined_limiter
 
-from .background_tasks import ai_enhancement_background
+from .background_tasks import ai_enhancement_background, ai_combined_background
 from .models import (
     AISuggestionAcceptRequest,
     AISuggestionCreate,
@@ -118,8 +118,14 @@ async def accept_ai_suggestion(
                 status_code=status.HTTP_404_NOT_FOUND, detail="CV not found"
             )
 
-        # Update suggestion status
-        suggestion.is_accepted = "accepted" if request.is_accepted else "rejected"
+        # Update suggestion status, matching model column type
+        from sqlalchemy.sql.sqltypes import Boolean as SABoolean
+
+        col = AISuggestion.__table__.columns.get("is_accepted")
+        if col and isinstance(col.type, SABoolean):
+            suggestion.is_accepted = bool(request.is_accepted)
+        else:
+            suggestion.is_accepted = "accepted" if request.is_accepted else "rejected"
         db.commit()
 
         return {
@@ -190,12 +196,74 @@ async def create_ai_enhancement(
         return AIEnhancementCreateResponse(
             enhancement_id=enhancement_id, is_generating=True
         )
-
     except Exception as e:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating AI enhancement: {str(e)}",
+        )
+
+
+@router.post("/cvs/{cv_id}/ai-suggestions", response_model=AIEnhancementCreateResponse)
+@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
+async def create_combined_ai_suggestions(
+    request: Request,
+    cv_id: str,
+    enhancement_request: AIEnhancementRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """
+    Create a single background task that generates both inline AI suggestions
+    and a Why Good Fit draft. Reuses AIEnhancement record for polling and
+    embeds the created draft_id under enhancement_data.meta.draft_id.
+    """
+    # Verify CV exists and belongs to user
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Verify job description exists
+    job_description = get_job_description_by_id(
+        db, enhancement_request.job_description_id, str(current_user.id)
+    )
+    if not job_description:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
+        )
+
+    try:
+        enhancement_id = str(uuid.uuid4())
+        enhancement = AIEnhancement(
+            id=enhancement_id,
+            user_id=str(current_user.id),
+            cv_id=cv_id,
+            job_description_id=enhancement_request.job_description_id,
+            is_generating=True,
+            generation_error=None,
+        )
+        db.add(enhancement)
+        db.commit()
+
+        asyncio.create_task(
+            ai_combined_background(
+                enhancement_id,
+                cv.parsed_data or {},
+                job_description.content,
+                str(current_user.id),
+                cv_id,
+                enhancement_request.job_description_id,
+            )
+        )
+
+        return AIEnhancementCreateResponse(
+            enhancement_id=enhancement_id, is_generating=True
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating combined AI suggestions: {str(e)}",
         )
 
 

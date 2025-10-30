@@ -316,6 +316,142 @@ async def ai_enhancement_background(
     )
 
 
+def ai_combined_sync(
+    enhancement_id: str,
+    cv_data: dict,
+    job_description: str,
+    user_id: str,
+    cv_id: str,
+    job_description_id: str,
+):
+    """
+    Synchronous combined generation:
+    - Generate AI enhancement suggestions
+    - Create a Why Good Fit draft
+
+    Stores suggestions on the `AIEnhancement` and embeds the created
+    draft_id under enhancement_data.meta.draft_id for the polling client.
+    """
+    # Lazy imports to avoid circular deps
+    from src.services.ai_service import (
+        create_optimization_suggestions,
+        analyze_job_fit_sync,
+    )
+
+    # Use a local event loop to run async parts if needed
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    db = SessionLocal()
+    try:
+        # 1) Generate suggestions
+        suggestions = loop.run_until_complete(
+            create_optimization_suggestions(
+                cv_data=cv_data,
+                job_description=job_description,
+                user_id=user_id,
+                cv_id=cv_id,
+            )
+        )
+
+        # 2) Create Why Good Fit draft and populate content synchronously
+        #    First create the draft row in generating state
+        draft = AIDraft(
+            cv_id=cv_id,
+            job_description_id=job_description_id,
+            section_type="why_good_fit",
+            draft_data={},
+            ai_model=AIConfig.OPENAI_MODEL,
+            tokens_used=0,
+            generation_time=0,
+            is_generating=True,
+        )
+        db.add(draft)
+        db.commit()
+        db.refresh(draft)
+
+        # Run job-fit analysis (sync function)
+        fit_result = analyze_job_fit_sync(
+            cv_data=cv_data,
+            job_description=job_description,
+            user_id=user_id,
+            cv_id=cv_id,
+            db_session=db,
+        )
+
+        # Save draft result (success or error)
+        if fit_result.get("error"):
+            draft.is_generating = False
+            draft.generation_error = fit_result["error"]
+        else:
+            draft.draft_data = fit_result
+            draft.tokens_used = fit_result.get("tokens_used", 0)
+            draft.generation_time = fit_result.get("generation_time", 0)
+            draft.ai_model = fit_result.get("model_used", AIConfig.OPENAI_MODEL)
+            draft.is_generating = False
+            draft.generation_error = None
+        db.commit()
+        db.refresh(draft)
+
+        # 3) Update enhancement with suggestions and reference to draft_id
+        enhancement = (
+            db.query(AIEnhancement).filter(AIEnhancement.id == enhancement_id).first()
+        )
+        if enhancement:
+            # Ensure meta with draft id
+            enhancement_data = suggestions or {}
+            meta = dict(enhancement_data.get("meta") or {})
+            meta.update({"draft_id": str(draft.id)})
+            enhancement_data["meta"] = meta
+
+            enhancement.enhancement_data = enhancement_data
+            enhancement.is_generating = False
+            enhancement.generation_error = None
+            db.commit()
+
+    except Exception as e:
+        # Persist error on enhancement
+        try:
+            enhancement = (
+                db.query(AIEnhancement).filter(AIEnhancement.id == enhancement_id).first()
+            )
+            if enhancement:
+                enhancement.is_generating = False
+                enhancement.generation_error = str(e)
+                db.commit()
+        except Exception:
+            pass
+        finally:
+            logger.exception(f"ai_combined_sync failed: {str(e)}")
+    finally:
+        try:
+            loop.close()
+        except Exception:
+            pass
+        db.close()
+
+
+async def ai_combined_background(
+    enhancement_id: str,
+    cv_data: dict,
+    job_description: str,
+    user_id: str,
+    cv_id: str,
+    job_description_id: str,
+):
+    """Background task wrapper for combined generation."""
+    await run_task_in_background(
+        enhancement_id,
+        "ai_combined",
+        ai_combined_sync,
+        cv_data,
+        job_description,
+        user_id,
+        cv_id,
+        job_description_id,
+    )
+
+
 __all__ = [
     "enhance_content_sync",
     "enhance_content_background",

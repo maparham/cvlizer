@@ -482,88 +482,27 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                                 transform: "translateY(-1px)",
                                 boxShadow: 2,
                               },
-                              "&:disabled": {
-                                opacity: 0.7,
+                              "&.Mui-disabled": {
+                                backgroundColor: "transparent",
+                                color: "#1976d2",
+                                borderColor: "#1976d2",
+                                opacity: 1,
                                 transform: "none",
+                                cursor: "not-allowed",
                               },
                               transition: "all 0.2s ease-in-out",
                             }}
                           >
                             {suggestionsLoading
                               ? "Enhancing..."
-                              : "Enhance CV for this Job"}
+                              : "AI Suggestions for this Job"}
                           </Button>
                         </span>
                       </Tooltip>
                     </>
                   )}
 
-                  {onAddToCV && (
-                    <Tooltip
-                      title={
-                        !completeness.isComplete
-                          ? `CV needs more content: ${completeness.missing.join(", ")}`
-                          : ""
-                      }
-                      arrow
-                    >
-                      <span style={{ width: "100%" }}>
-                        <Button
-                          variant="outlined"
-                          startIcon={
-                            isGeneratingJobFit ? (
-                              <CircularProgress size={16} />
-                            ) : (
-                              <AutoAwesomeIcon
-                                sx={{
-                                  animation: isGeneratingJobFit
-                                    ? "pulse 1.5s ease-in-out infinite"
-                                    : "none",
-                                  "@keyframes pulse": {
-                                    "0%": { transform: "scale(1)" },
-                                    "50%": { transform: "scale(1.1)" },
-                                    "100%": { transform: "scale(1)" },
-                                  },
-                                }}
-                              />
-                            )
-                          }
-                          onClick={handleGenerateJobFit}
-                          disabled={
-                            !completeness.isComplete ||
-                            isGeneratingJobFit ||
-                            activeJobDescription?.is_parsing
-                          }
-                          fullWidth
-                          sx={{
-                            textTransform: "none",
-                            backgroundColor: "transparent",
-                            color: "#1976d2",
-                            border: "1px solid #1976d2",
-                            fontWeight: 600,
-                            py: 1.5,
-                            px: 2,
-                            height: 48,
-                            "&:hover": {
-                              backgroundColor: "rgba(25, 118, 210, 0.08)",
-                              borderColor: "#1565c0",
-                              transform: "translateY(-1px)",
-                              boxShadow: 2,
-                            },
-                            "&:disabled": {
-                              opacity: 0.7,
-                              transform: "none",
-                            },
-                            transition: "all 0.2s ease-in-out",
-                          }}
-                        >
-                          {isGeneratingJobFit
-                            ? "Generating..."
-                            : "Generate Job Fit Section"}
-                        </Button>
-                      </span>
-                    </Tooltip>
-                  )}
+                  {/* Removed secondary icon-only job fit trigger to avoid duplicate button */}
 
                   {/* Show CV completeness indicator below buttons if not complete */}
                   {!completeness.isComplete && (

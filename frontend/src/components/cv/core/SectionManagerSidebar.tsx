@@ -96,7 +96,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const { addTask, removeTask, activeTasks } = useAITaskPollingContext();
 
   // AI store for job description management
-  const { setActiveJobDescription } = useAIStore();
+  const setActiveJobDescription = useAIStore((state) => state.setActiveJobDescription);
+  const getCVDrafts = useAIStore((state) => state.getCVDrafts);
 
   // Notifications for error and success handling
   const { showInfo } = useNotifications();
@@ -106,6 +107,24 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const prevJobDescriptionId = useRef<string | undefined>(
     activeJobDescription?.id,
   );
+
+  // Use refs to prevent effect dependency loops
+  const suggestionsLoadingRef = useRef(suggestionsLoading);
+  const allSuggestionsRef = useRef(allSuggestions);
+  const showInfoRef = useRef(showInfo);
+  const getCVDraftsRef = useRef(getCVDrafts);
+  const removeTaskRef = useRef(removeTask);
+  const setSuggestionsLoadingRef = useRef(setSuggestionsLoading);
+
+  // Sync refs with latest values
+  useEffect(() => {
+    suggestionsLoadingRef.current = suggestionsLoading;
+    allSuggestionsRef.current = allSuggestions;
+    showInfoRef.current = showInfo;
+    getCVDraftsRef.current = getCVDrafts;
+    removeTaskRef.current = removeTask;
+    setSuggestionsLoadingRef.current = setSuggestionsLoading;
+  }, [suggestionsLoading, allSuggestions, showInfo, getCVDrafts, removeTask, setSuggestionsLoading]);
 
   // Handle job description selection
   const handleJobDescriptionSelect = useCallback(
@@ -179,11 +198,12 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         task.isGenerating,
     );
 
-    if (hasGeneratingTask && !suggestionsLoading) {
-      setSuggestionsLoading(true);
+    if (hasGeneratingTask && !suggestionsLoadingRef.current) {
+      setSuggestionsLoadingRef.current(true);
     }
 
     // Check for completed AI enhancement tasks
+    const tasksToRemove: string[] = [];
     for (const [taskId, task] of activeTasks) {
       if (
         task.type === "ai_enhancement" &&
@@ -192,42 +212,45 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       ) {
         if (task.generationError) {
           // Clear loading state on error
-          setSuggestionsLoading(false);
+          setSuggestionsLoadingRef.current(false);
         } else {
           // Check if suggestions are empty and notify user
-          const suggestions = allSuggestions;
+          const suggestions = allSuggestionsRef.current;
           const hasAnySuggestions =
             suggestions &&
             ((suggestions.skills.technical.length > 0) ||
              (suggestions.skills.soft.length > 0) ||
              (suggestions.professional_summary.suggested_text?.trim().length > 0));
 
-          if (!hasAnySuggestions && suggestionsLoading) {
+          if (!hasAnySuggestions && suggestionsLoadingRef.current) {
             // Suggestions completed but are empty - inform the user
-            showInfo(
+            showInfoRef.current(
               "No suggestions available. Please add more content to your CV (work experience, skills, professional summary) to get AI-powered enhancement suggestions."
             );
           }
 
           // Ensure loading state is cleared when task completes
-          if (suggestionsLoading) {
-            setSuggestionsLoading(false);
+          if (suggestionsLoadingRef.current) {
+            setSuggestionsLoadingRef.current(false);
+          }
+          // If backend provided a draft_id via enhancement meta, refresh drafts
+          const draftId = task?.data?.enhancement_data?.meta?.draft_id;
+          if (cvId && draftId) {
+            getCVDraftsRef.current(cvId);
           }
         }
 
-        // Remove the completed task from global polling
-        removeTask(taskId);
+        // Mark for removal after effect to avoid nested update loops
+        tasksToRemove.push(taskId);
       }
     }
-  }, [
-    activeTasks,
-    cvId,
-    suggestionsLoading,
-    setSuggestionsLoading,
-    removeTask,
-    allSuggestions,
-    showInfo,
-  ]);
+    if (tasksToRemove.length > 0) {
+      // Defer removals to next macrotask to prevent immediate re-entry of this effect
+      setTimeout(() => {
+        tasksToRemove.forEach((id) => removeTaskRef.current(id));
+      }, 0);
+    }
+  }, [activeTasks, cvId]);
   // Subscribe to saving state and lastSavedAt reactively
   const { saving, lastSavedAt } = useCVStore((s) => ({
     saving: s.saving,
@@ -258,6 +281,15 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   }, []);
 
   const relativeSavedText = useMemo(() => formatRelativeTime(lastSavedAt), [lastSavedAt, tick, formatRelativeTime]);
+
+  // Memoize tab change handler to prevent Tabs re-render loop
+  const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: number) => {
+    if (onTabChange) {
+      onTabChange(newValue);
+    } else {
+      setInternalActiveTab(newValue);
+    }
+  }, [onTabChange]);
 
   return (
     <Paper
@@ -295,13 +327,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       <Box sx={{ borderBottom: "1px solid #e0e0e0" }}>
         <Tabs
           value={activeTab}
-          onChange={(_, newValue) => {
-            if (onTabChange) {
-              onTabChange(newValue);
-            } else {
-              setInternalActiveTab(newValue);
-            }
-          }}
+          onChange={handleTabChange}
           variant="fullWidth"
         >
           <Tab

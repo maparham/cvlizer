@@ -116,6 +116,30 @@ class AISectionsService {
   }
 
   /**
+   * Create a combined AI suggestions task that also generates a Why Good Fit draft.
+   * Uses the new backend endpoint and returns the enhancement_id for polling.
+   */
+  async createCombinedAISuggestions(
+    cvId: string,
+    jobDescriptionId: string,
+  ): Promise<AIEnhancementCreateResponse> {
+    try {
+      const response = await api.post<AIEnhancementCreateResponse>(
+        `/api/cvs/${cvId}/ai-suggestions`,
+        { job_description_id: jobDescriptionId },
+      );
+      return response.data;
+    } catch (error: any) {
+      Logger.error("Error creating combined AI suggestions", {
+        cvId,
+        jobDescriptionId,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Get AI enhancement status
    */
   async getAIEnhancementStatus(

@@ -151,6 +151,7 @@ def _format_projects(projects: List[Dict[str, Any]]) -> str:
 
         line1 = f"\\textcolor{{boldgray}}{{\\textbf{{{name}}}}}"
         if url:
+            # Escape URL in href target to avoid TeX compilation errors
             line1 += f" (\\href{{{url}}}{{{url}}})"
 
         block_lines = [line1]
@@ -234,9 +235,10 @@ def _format_volunteer_experience(volunteer: List[Dict[str, Any]]) -> str:
         if location:
             org_line += f", {location}"
 
-        dates = start_date
         if end_date:
             dates = f"{start_date} -- {end_date}"
+        else:
+            dates = f"{start_date} -- PRESENT"
 
         # Use mbox to prevent date from breaking across lines
         dates_str = f"\\mbox{{{dates}}}"
@@ -284,24 +286,24 @@ def _format_contact_info(pi: Dict[str, Any]) -> str:
 
     if email:
         contact_lines.append(
-            f"\\faEnvelope\\, \\href{{mailto:{email}}}{{{_tex_escape(email)}}}"
+            f"\\faEnvelope\\, \\href{{mailto:{_tex_escape(email)}}}{{{_tex_escape(email)}}}"
         )
     if phone:
         contact_lines.append(f"\\faPhone\\, {phone}")
     if location:
         contact_lines.append(f"\\faMapMarker*\\, {location}")
     if linkedin:
-        linkedin_url = ensure_protocol(linkedin)
+        linkedin_url = _tex_escape(ensure_protocol(linkedin))
         contact_lines.append(
             f"\\faLinkedin\\, \\href{{{linkedin_url}}}{{{_tex_escape(linkedin)}}}"
         )
     if website:
-        website_url = ensure_protocol(website)
+        website_url = _tex_escape(ensure_protocol(website))
         contact_lines.append(
             f"\\faGlobe\\, \\href{{{website_url}}}{{{_tex_escape(website)}}}"
         )
     if github:
-        github_url = ensure_protocol(github)
+        github_url = _tex_escape(ensure_protocol(github))
         contact_lines.append(
             f"\\faGithub\\, \\href{{{github_url}}}{{{_tex_escape(github)}}}"
         )
@@ -355,10 +357,14 @@ def _markdown_to_latex(text: str) -> str:
 
             # Escape heading content and apply inline formatting after escaping
             processed = _tex_escape(heading_text)
+
             # Links: [text](url) -> \href{url}{text}
-            processed = re.sub(
-                r"\\\[([^\]]+)\\\]\\\(([^\)]+)\\\)", r"\\href{\2}{\1}", processed
-            )
+            def _link_repl_heading(m: "re.Match[str]") -> str:
+                label = _tex_escape(m.group(1))
+                url_escaped = _tex_escape(m.group(2))  # escape URL target too
+                return f"\\href{{{url_escaped}}}{{{label}}}"
+
+            processed = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", _link_repl_heading, processed)
             # Bold
             processed = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", processed)
             # Italic (single asterisks not part of bold)
@@ -391,10 +397,14 @@ def _markdown_to_latex(text: str) -> str:
             item_text = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", item_text)
             # Convert *text* to \textit{text} (if not followed by *)
             item_text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", item_text)
+
             # Links inside list items
-            item_text = re.sub(
-                r"\\\[([^\]]+)\\\]\\\(([^\)]+)\\\)", r"\\href{\2}{\1}", item_text
-            )
+            def _link_repl_list(m: "re.Match[str]") -> str:
+                label = _tex_escape(m.group(1))
+                url_escaped = _tex_escape(m.group(2))
+                return f"\\href{{{url_escaped}}}{{{label}}}"
+
+            item_text = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", _link_repl_list, item_text)
 
             # Hard line breaks: two trailing spaces in markdown line -> LaTeX newline
             has_hardbreak = bool(re.search(r"\s{2}$", line))
@@ -418,9 +428,15 @@ def _markdown_to_latex(text: str) -> str:
                 processed = re.sub(
                     r"(?<!\*)\*([^*]+)\*(?!\*)", r"\\textit{\1}", processed
                 )
-                # Links: [text](url) -> \\href{url}{text}
+
+                # Links: [text](url) -> \href{url}{text}
+                def _link_repl_para(m: "re.Match[str]") -> str:
+                    label = _tex_escape(m.group(1))
+                    url_escaped = _tex_escape(m.group(2))
+                    return f"\\href{{{url_escaped}}}{{{label}}}"
+
                 processed = re.sub(
-                    r"\\\[([^\]]+)\\\]\\\(([^\)]+)\\\)", r"\\href{\2}{\1}", processed
+                    r"\[([^\]]+)\]\(([^\)]+)\)", _link_repl_para, processed
                 )
                 # Hard line breaks: two trailing spaces in markdown line -> LaTeX newline
                 has_hardbreak = bool(re.search(r"\s{2}$", line))
@@ -464,9 +480,10 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
         if location:
             company_line += f", {location}"
 
-        dates_str = start_date
         if end_date:
             dates_str = f"{start_date} -- {end_date}"
+        else:
+            dates_str = f"{start_date} -- PRESENT"
 
         # Use mbox to prevent date from breaking across lines
         dates_str = f"\\mbox{{{dates_str}}}"
@@ -521,9 +538,10 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
         if location:
             institution_line += f", {location}"
 
-        dates_str = start_date
         if end_date:
             dates_str = f"{start_date} -- {end_date}"
+        else:
+            dates_str = f"{start_date} -- PRESENT"
 
         # Use mbox to prevent date from breaking across lines
         dates_str = f"\\mbox{{{dates_str}}}"

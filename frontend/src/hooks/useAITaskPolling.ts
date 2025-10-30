@@ -209,6 +209,10 @@ export const useAITaskPolling = (
 
   const removeTask = useCallback((taskId: string) => {
     setActiveTasks((prev) => {
+      // Avoid unnecessary state updates that can cause render loops
+      if (!prev.has(taskId)) {
+        return prev;
+      }
       const newMap = new Map(prev);
       newMap.delete(taskId);
       return newMap;
