@@ -119,6 +119,8 @@ DESCRIPTION FORMATTING RULES:
 - Short descriptions (<50 characters) can remain as plain text
 - professional_summary.content should also follow markdown formatting with bullet points for key achievements
 
+EMPTY SECTIONS: If a section has no data (e.g., no projects found), return an empty array [] for that section. DO NOT create placeholder entries with "N/A" or similar text.
+
 CV: {text_content}
 
 Return JSON (omit empty sections):
@@ -143,7 +145,7 @@ Return JSON (omit empty sections):
 
         # Use unified OpenAI call builder
         parsed_content, metadata = await call_openai_with_schema(
-            system_prompt="You are an expert CV parser. First validate if the document is actually a CV/resume (not a research paper, article, book, manual, or other non-CV document). If it's not a CV, set is_valid_cv to false and use the standard validation_error message provided in the prompt. If it is a CV, extract structured information and return valid JSON. CRITICAL: All description fields must be formatted in markdown. For descriptions longer than 50 characters, use bullet lists with markdown syntax (- for bullets, \\n for line breaks).",
+            system_prompt="You are an expert CV parser. First validate if the document is actually a CV/resume (not a research paper, article, book, manual, or other non-CV document). If it's not a CV, set is_valid_cv to false and use the standard validation_error message provided in the prompt. If it is a CV, extract structured information and return valid JSON. CRITICAL: All description fields must be formatted in markdown. For descriptions longer than 50 characters, use bullet lists with markdown syntax (- for bullets, \\n for line breaks). Return empty arrays [] for sections with no data - do NOT create placeholder entries.",
             user_prompt=prompt,
             response_schema=CVParsingResponseSchema,
             model=AIConfig.OPENAI_PARSING_MODEL,

@@ -457,7 +457,7 @@ export const ExportPage: React.FC = () => {
                 handleClosePreview();
               }}
             >
-              Download PDF with this template
+              Download PDF
             </Button>
           </DialogActions>
         </Dialog>
