@@ -15,7 +15,7 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { CVData, CVSection, EditingIndividualItem } from "../types";
 import { usePDFCVEditor } from "../hooks/usePDFCVEditor";
-import { ValidationError } from "../utils/validationUtils";
+import { ValidationError } from "../utils/validation";
 
 // Context type definition
 interface CVEditorContextType {

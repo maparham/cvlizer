@@ -3,7 +3,7 @@
  * Provides error states for form fields based on validation errors
  */
 import { useCVEditor } from "../contexts/CVEditorContext";
-import { hasFieldError, getFieldError } from "../utils/validationUtils";
+import { hasFieldError, getFieldError } from "../utils/validation";
 
 export const useFieldValidation = (
   section: string,

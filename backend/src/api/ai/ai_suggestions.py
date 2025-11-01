@@ -23,7 +23,7 @@ from src.services.job_description_service import (
 )
 from src.utils.rate_limit import create_combined_limiter
 
-from .background_tasks import ai_enhancement_background, ai_combined_background
+from .background_tasks import ai_enhancement_background, ai_suggestions_background
 from .models import (
     AISuggestionAcceptRequest,
     AISuggestionCreate,
@@ -206,7 +206,7 @@ async def create_ai_enhancement(
 
 @router.post("/cvs/{cv_id}/ai-suggestions", response_model=AIEnhancementCreateResponse)
 @limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
-async def create_combined_ai_suggestions(
+async def create_ai_suggestions(
     request: Request,
     cv_id: str,
     enhancement_request: AIEnhancementRequest,
@@ -214,9 +214,9 @@ async def create_combined_ai_suggestions(
     current_user: User = Depends(get_effective_user),
 ):
     """
-    Create a single background task that generates both inline AI suggestions
-    and a Why Good Fit draft. Reuses AIEnhancement record for polling and
-    embeds the created draft_id under enhancement_data.meta.draft_id.
+    Create a background task that generates AI suggestions including job fit
+    analysis and optimization recommendations. Reuses AIEnhancement record for
+    polling and embeds the created draft_id under enhancement_data.meta.draft_id.
     """
     # Verify CV exists and belongs to user
     cv = get_cv_owned_by(db, cv_id, str(current_user.id))
@@ -246,7 +246,7 @@ async def create_combined_ai_suggestions(
         db.commit()
 
         asyncio.create_task(
-            ai_combined_background(
+            ai_suggestions_background(
                 enhancement_id,
                 cv.parsed_data or {},
                 job_description.content,
@@ -263,7 +263,7 @@ async def create_combined_ai_suggestions(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating combined AI suggestions: {str(e)}",
+            detail=f"Error creating AI suggestions: {str(e)}",
         )
 
 

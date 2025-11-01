@@ -46,7 +46,7 @@ import { useNotifications } from "../../../../packages/notifications";
 import {
   validateJobPostingUrl,
   FieldValidationResult,
-} from "../../../../utils/validationUtils";
+} from "../../../../utils/validation";
 import { useJobDescriptionPolling } from "../../../../hooks/useJobDescriptionPolling";
 import URLTab from "./URLTab";
 import ManualTab from "./ManualTab";

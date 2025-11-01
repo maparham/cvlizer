@@ -7,7 +7,7 @@ import {
   getValidationSummary,
   createValidationRules,
   createCrossFieldValidations,
-} from "../validationUtils";
+} from "../validation";
 
 describe("validationUtils", () => {
   describe("validateField", () => {

@@ -4,7 +4,7 @@ import { useSectionManagement } from "./useSectionManagement";
 import { useEditingState } from "./useEditingState";
 import { useDragAndDrop } from "./useDragAndDrop";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
-import { ValidationError } from "../utils/validationUtils";
+import { ValidationError } from "../utils/validation";
 
 interface PDFCVEditorHook {
   // Section management

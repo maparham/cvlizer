@@ -30,7 +30,7 @@ import { useCVStore } from "../../stores/cv";
 import { useCVNotifications } from "../../packages/notifications";
 import { useAIStore } from "../../stores/ai";
 import { CVData } from "../../types";
-import { parseValidationErrors } from "../../utils/validationUtils";
+import { parseValidationErrors } from "../../utils/validation";
 import { CVEditorContent } from "./CVEditorContent";
 import { CVEditorDialogs } from "./CVEditorDialogs";
 import { useCVEditorActions } from "./useCVEditorActions";

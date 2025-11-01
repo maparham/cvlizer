@@ -14,6 +14,9 @@ consistent error handling, retry logic, token tracking, and usage logging.
 # Re-export ATS optimization functions
 from .ats_optimization import analyze_ats_optimization, create_optimization_suggestions
 
+# Re-export AI suggestions functions
+from .ai_suggestions_service import generate_ai_suggestions
+
 # Re-export common utilities and types
 from .common import (
     ATSOptimizationResult,
@@ -49,6 +52,8 @@ __all__ = [
     "call_openai_with_schema",
     "JobFitResult",
     "ATSOptimizationResult",
+    # AI suggestions (job fit + optimization in one call)
+    "generate_ai_suggestions",
     # Job fit analysis
     "analyze_job_fit_sync",
     # CV parsing

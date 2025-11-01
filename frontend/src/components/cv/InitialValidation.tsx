@@ -3,7 +3,7 @@
  */
 import React, { useEffect } from "react";
 import { useCVEditor } from "../../contexts/CVEditorContext";
-import { validateCVData } from "../../utils/validationUtils";
+import { validateCVData } from "../../utils/validation";
 
 interface InitialValidationProps {
   children: React.ReactNode;

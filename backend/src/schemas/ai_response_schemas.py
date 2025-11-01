@@ -300,6 +300,28 @@ class OptimizationSuggestionsResponseSchema(BaseModel):
     )
 
 
+class AISuggestionsResponseSchema(BaseModel):
+    """Schema for AI suggestions response (job fit analysis and optimization)."""
+
+    # Job Fit fields
+    title: Optional[str] = Field(None, description="Dynamic title")
+    confidence_score: int = Field(ge=1, le=100)
+    fit_analysis: str = Field(min_length=50)
+    key_matches: List[str] = Field(default_factory=list)
+    missing_skills: List[str] = Field(default_factory=list)
+    suggested_improvements: List[str] = Field(default_factory=list)
+    strengths: List[str] = Field(default_factory=list)
+    weaknesses: List[str] = Field(default_factory=list)
+
+    # Optimization fields
+    skills: SkillsSuggestionsSchema = Field(default_factory=SkillsSuggestionsSchema)
+    professional_summary: ProfessionalSummarySuggestionSchema = Field(
+        default_factory=ProfessionalSummarySuggestionSchema
+    )
+    work_experience: List[ItemDescriptionSuggestionSchema] = Field(default_factory=list)
+    education: List[ItemDescriptionSuggestionSchema] = Field(default_factory=list)
+
+
 # ============================================================================
 # Job Extraction Schemas
 # ============================================================================

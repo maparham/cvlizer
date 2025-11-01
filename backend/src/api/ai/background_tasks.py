@@ -316,7 +316,7 @@ async def ai_enhancement_background(
     )
 
 
-def ai_combined_sync(
+def ai_suggestions_sync(
     enhancement_id: str,
     cv_data: dict,
     job_description: str,
@@ -325,18 +325,16 @@ def ai_combined_sync(
     job_description_id: str,
 ):
     """
-    Synchronous combined generation:
-    - Generate AI enhancement suggestions
-    - Create a Why Good Fit draft
+    Synchronous AI suggestions generation using single optimized AI call.
+
+    This function uses a single optimized AI call that generates job fit
+    analysis and optimization suggestions.
 
     Stores suggestions on the `AIEnhancement` and embeds the created
     draft_id under enhancement_data.meta.draft_id for the polling client.
     """
     # Lazy imports to avoid circular deps
-    from src.services.ai_service import (
-        create_optimization_suggestions,
-        analyze_job_fit_sync,
-    )
+    from src.services.ai_service import generate_ai_suggestions
 
     # Use a local event loop to run async parts if needed
     loop = asyncio.new_event_loop()
@@ -344,67 +342,49 @@ def ai_combined_sync(
 
     db = SessionLocal()
     try:
-        # 1) Generate suggestions
-        suggestions = loop.run_until_complete(
-            create_optimization_suggestions(
+        # Single AI call for both job fit and optimization
+        job_fit_data, optimization_data, metadata = loop.run_until_complete(
+            generate_ai_suggestions(
                 cv_data=cv_data,
                 job_description=job_description,
                 user_id=user_id,
                 cv_id=cv_id,
+                db_session=db,
             )
         )
 
-        # 2) Create Why Good Fit draft and populate content synchronously
-        #    First create the draft row in generating state
+        # Create Why Good Fit draft with job fit data
         draft = AIDraft(
             cv_id=cv_id,
             job_description_id=job_description_id,
             section_type="why_good_fit",
-            draft_data={},
-            ai_model=AIConfig.OPENAI_MODEL,
-            tokens_used=0,
-            generation_time=0,
-            is_generating=True,
+            draft_data=job_fit_data,
+            ai_model=metadata.get("model_used", AIConfig.OPENAI_MODEL),
+            tokens_used=metadata.get("tokens_used", 0),
+            generation_time=metadata.get("generation_time", 0),
+            is_generating=False,
+            generation_error=None,
         )
         db.add(draft)
         db.commit()
         db.refresh(draft)
 
-        # Run job-fit analysis (sync function)
-        fit_result = analyze_job_fit_sync(
-            cv_data=cv_data,
-            job_description=job_description,
-            user_id=user_id,
-            cv_id=cv_id,
-            db_session=db,
-        )
-
-        # Save draft result (success or error)
-        if fit_result.get("error"):
-            draft.is_generating = False
-            draft.generation_error = fit_result["error"]
-        else:
-            draft.draft_data = fit_result
-            draft.tokens_used = fit_result.get("tokens_used", 0)
-            draft.generation_time = fit_result.get("generation_time", 0)
-            draft.ai_model = fit_result.get("model_used", AIConfig.OPENAI_MODEL)
-            draft.is_generating = False
-            draft.generation_error = None
-        db.commit()
-        db.refresh(draft)
-
-        # 3) Update enhancement with suggestions and reference to draft_id
+        # Update enhancement with optimization data and metadata
         enhancement = (
             db.query(AIEnhancement).filter(AIEnhancement.id == enhancement_id).first()
         )
         if enhancement:
-            # Ensure meta with draft id
-            enhancement_data = suggestions or {}
+            # Add draft_id to meta
+            enhancement_data = optimization_data or {}
             meta = dict(enhancement_data.get("meta") or {})
             meta.update({"draft_id": str(draft.id)})
             enhancement_data["meta"] = meta
 
+            # Store enhancement data and metadata
             enhancement.enhancement_data = enhancement_data
+            enhancement.tokens_used = metadata.get("tokens_used", 0)
+            enhancement.generation_time = metadata.get("generation_time", 0)
+            enhancement.model_used = metadata.get("model_used", AIConfig.OPENAI_MODEL)
             enhancement.is_generating = False
             enhancement.generation_error = None
             db.commit()
@@ -422,7 +402,7 @@ def ai_combined_sync(
         except Exception:
             pass
         finally:
-            logger.exception(f"ai_combined_sync failed: {str(e)}")
+            logger.exception(f"ai_suggestions_sync failed: {str(e)}")
     finally:
         try:
             loop.close()
@@ -431,7 +411,7 @@ def ai_combined_sync(
         db.close()
 
 
-async def ai_combined_background(
+async def ai_suggestions_background(
     enhancement_id: str,
     cv_data: dict,
     job_description: str,
@@ -439,11 +419,11 @@ async def ai_combined_background(
     cv_id: str,
     job_description_id: str,
 ):
-    """Background task wrapper for combined generation."""
+    """Background task wrapper for AI suggestions generation."""
     await run_task_in_background(
         enhancement_id,
-        "ai_combined",
-        ai_combined_sync,
+        "ai_suggestions",
+        ai_suggestions_sync,
         cv_data,
         job_description,
         user_id,
@@ -459,6 +439,6 @@ __all__ = [
     "generate_job_fit_background",
     "ai_enhancement_sync",
     "ai_enhancement_background",
-    "ai_combined_sync",
-    "ai_combined_background",
+    "ai_suggestions_sync",
+    "ai_suggestions_background",
 ]

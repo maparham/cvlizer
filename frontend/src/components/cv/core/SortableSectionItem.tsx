@@ -21,7 +21,7 @@ import { useCVEditor } from "../../../contexts/CVEditorContext";
 import {
   hasSectionErrors,
   getSectionErrorCount,
-} from "../../../utils/validationUtils";
+} from "../../../utils/validation";
 
 const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
   id,

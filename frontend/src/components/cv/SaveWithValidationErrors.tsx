@@ -3,7 +3,7 @@
  */
 import React, { useEffect } from "react";
 import { useCVEditor } from "../../contexts/CVEditorContext";
-import { parseValidationErrors, parsePydanticValidationErrors } from "../../utils/validationUtils";
+import { parseValidationErrors, parsePydanticValidationErrors } from "../../utils/validation";
 
 interface SaveWithValidationErrorsProps {
   children: React.ReactNode;

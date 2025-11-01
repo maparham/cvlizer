@@ -3,7 +3,7 @@
  */
 
 import { JobDescription } from "../../../../types/ai";
-import { FieldValidationResult } from "../../../../utils/validationUtils";
+import { FieldValidationResult } from "../../../../utils/validation";
 
 /**
  * Main modal external props interface
