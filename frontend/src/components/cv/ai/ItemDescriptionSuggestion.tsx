@@ -53,7 +53,7 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
         >
           AI Suggestion
         </Typography>
-        <Tooltip title="AI-generated improvement based on job description">
+        <Tooltip title="This content needs more relevance to the job description. See suggestions below.">
           <InfoIcon sx={{ ml: 1, fontSize: 16, color: "#1976d2" }} />
         </Tooltip>
         {suggestion.importance === 'highly_recommended' && (

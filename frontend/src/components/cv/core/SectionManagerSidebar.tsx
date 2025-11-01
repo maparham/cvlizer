@@ -51,6 +51,8 @@ import { useActiveJobDescription, useAIStore } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useCVStore } from "../../../stores/cv";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import { setFaviconBadge, clearFaviconBadge, isPageHidden as isFaviconPageHidden } from "../../../utils/faviconBadge";
+import { setTitleNotification, clearTitleNotification } from "../../../utils/titleNotification";
 
 interface SectionManagerSidebarProps {
   sections: CVSection[];
@@ -111,7 +113,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const deleteWhyGoodFitDraft = useAIStore((state) => state.deleteWhyGoodFitDraft);
 
   // Notifications for error and success handling
-  const { showInfo } = useNotifications();
+  const { showInfo, showError } = useNotifications();
 
   // Active job description from existing AI store
   const activeJobDescription = useActiveJobDescription();
@@ -264,6 +266,15 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
               // Show "completed" toast for successful generation
               showInfoRef.current("AI enhancement completed", "Suggestions are ready to review");
             }
+
+            // If page is hidden, show favicon badge and title notification
+            if (hasAnySuggestions && isFaviconPageHidden()) {
+              setFaviconBadge(1).catch(err =>
+                console.error("Failed to set favicon badge:", err)
+              );
+              setTitleNotification("AI suggestions ready");
+            }
+
             completedTasksRef.current.add(taskId);
           }
 
@@ -293,6 +304,23 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       }, 0);
     }
   }, [activeTasks, cvId]);
+
+  // Clear favicon badge and title notification when user returns to tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // User returned to tab, clear badge and title
+        clearFaviconBadge();
+        clearTitleNotification();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
   // Subscribe to saving state and lastSavedAt reactively
   const { saving, lastSavedAt } = useCVStore((s) => ({
     saving: s.saving,
@@ -351,10 +379,12 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       await dismissAllSuggestions();
       setDiscardAllDialogOpen(false);
       showInfo("All suggestions have been discarded");
-    } catch (error) {
-      console.error("Failed to discard all suggestions:", error);
+    } catch (error: any) {
+      showError(
+        error?.message || "Failed to discard suggestions. Please try again."
+      );
     }
-  }, [dismissAllSuggestions, showInfo]);
+  }, [dismissAllSuggestions, showInfo, showError]);
 
   return (
     <Paper

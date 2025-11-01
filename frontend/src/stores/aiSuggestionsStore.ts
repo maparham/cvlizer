@@ -152,12 +152,24 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
   loadLatestAIEnhancement: async (cvId: string) => {
     // Skip loading for temporary CVs (not yet saved to backend)
     if (cvId.startsWith("temp-")) {
-      Logger.debug("Skipping AI enhancement load for temporary CV", { cvId });
+      Logger.debug("[loadLatestAIEnhancement] Skipping temporary CV", { cvId });
       return;
     }
 
+    Logger.debug("[loadLatestAIEnhancement] Starting", {
+      cvId,
+      currentEnhancementId: get().currentEnhancementId,
+    });
+
     try {
       const enhancement = await aiService.getLatestAIEnhancement(cvId);
+      Logger.debug("[loadLatestAIEnhancement] Backend response", {
+        cvId,
+        hasEnhancement: !!enhancement,
+        enhancementId: enhancement?.id,
+        isGenerating: enhancement?.is_generating,
+        hasData: !!(enhancement?.enhancement_data),
+      });
 
       // Backend returns null when no enhancement exists (expected case - not an error)
       if (
@@ -180,6 +192,23 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
             education: rawData.education || [],
           };
 
+          const hasAnySuggestions =
+            allSuggestions.skills.technical.length > 0 ||
+            allSuggestions.skills.soft.length > 0 ||
+            (allSuggestions.professional_summary?.suggested_text?.trim().length ?? 0) > 0 ||
+            (allSuggestions.work_experience?.length ?? 0) > 0 ||
+            (allSuggestions.education?.length ?? 0) > 0;
+
+          Logger.debug("[loadLatestAIEnhancement] Setting suggestions", {
+            cvId,
+            enhancementId: enhancement.id,
+            hasAnySuggestions,
+            skillsCount: (allSuggestions.skills?.technical?.length || 0) + (allSuggestions.skills?.soft?.length || 0),
+            workExpCount: allSuggestions.work_experience?.length || 0,
+            educationCount: allSuggestions.education?.length || 0,
+            hasSummary: !!(allSuggestions.professional_summary?.suggested_text?.trim()),
+          });
+
           set({
             allSuggestions,
             currentCvId: cvId,
@@ -187,13 +216,26 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
             suggestionsLoading: false,
             suggestionsError: enhancement.generation_error || null,
           });
+        } else {
+          Logger.warn("[loadLatestAIEnhancement] Enhancement CV ID mismatch", {
+            requestedCvId: cvId,
+            enhancementCvId: enhancement.cv_id,
+            enhancementId: enhancement.id,
+          });
         }
+      } else {
+        Logger.debug("[loadLatestAIEnhancement] No enhancement to load", {
+          cvId,
+          reason: !enhancement ? "null response" : !enhancement.enhancement_data ? "no data" : "still generating",
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       // Only log actual errors (network issues, auth failures, etc.)
-      Logger.error("Error loading AI enhancement", {
+      Logger.error("[loadLatestAIEnhancement] Error loading enhancement", {
         cvId,
-        error: error.message,
+        error: error?.message || String(error),
+        errorCode: error?.code,
+        errorStatus: error?.response?.status,
       });
       // Don't throw - just fail silently since this is optional restoration
     }
@@ -534,27 +576,61 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
   // Dismiss all suggestions across all sections
   dismissAllSuggestions: async () => {
     const currentSuggestions = get().allSuggestions;
+    const cvId = get().currentCvId;
+
+    Logger.debug("[dismissAllSuggestions] Starting", {
+      hasSuggestions: !!currentSuggestions,
+      cvId,
+    });
 
     if (!currentSuggestions) {
+      Logger.debug("[dismissAllSuggestions] No suggestions to dismiss");
       return;
     }
 
-    Logger.debug("Dismissing all suggestions", {
-      cvId: get().currentCvId,
-      enhancementId: get().currentEnhancementId,
-    });
+    if (!cvId) {
+      Logger.warn("[dismissAllSuggestions] No cvId found, clearing state only");
+      // Clear state even if no cvId
+      set({
+        allSuggestions: null,
+        suggestionsLoading: false,
+        suggestionsError: null,
+        currentEnhancementId: null,
+      });
+      return;
+    }
 
-    // Clear all suggestions in state immediately
+    // Delete ALL enhancements for this CV from backend FIRST before clearing state
+    Logger.debug("[dismissAllSuggestions] Calling deleteAllAIEnhancementsForCV", {
+      cvId,
+    });
+    try {
+      const result = await aiService.deleteAllAIEnhancementsForCV(cvId);
+      Logger.debug("[dismissAllSuggestions] Successfully deleted all enhancements from backend", {
+        cvId,
+        deletedCount: result.deleted_count,
+      });
+    } catch (error: any) {
+      Logger.error("[dismissAllSuggestions] Failed to delete from backend", {
+        cvId,
+        error: error?.message || String(error),
+        errorCode: error?.code,
+        errorStatus: error?.response?.status,
+      });
+      // Re-throw to allow error handling in UI
+      throw error;
+    }
+
+    // Only clear state AFTER successful deletion
+    Logger.debug("[dismissAllSuggestions] Clearing state after successful deletion");
     set({
       allSuggestions: null,
-      currentCvId: null,
       currentEnhancementId: null,
       suggestionsLoading: false,
       suggestionsError: null,
+      // NOTE: We keep currentCvId so the CV context is preserved
     });
-
-    // Delete the enhancement from backend
-    await get().deleteCurrentEnhancement();
+    Logger.debug("[dismissAllSuggestions] Completed successfully");
   },
 
   // Delete the current enhancement from the backend

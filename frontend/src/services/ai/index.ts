@@ -55,6 +55,7 @@ class AIService {
   getLatestAIEnhancement = aiSectionsService.getLatestAIEnhancement.bind(aiSectionsService);
   updateAIEnhancement = aiSectionsService.updateAIEnhancement.bind(aiSectionsService);
   deleteAIEnhancement = aiSectionsService.deleteAIEnhancement.bind(aiSectionsService);
+  deleteAllAIEnhancementsForCV = aiSectionsService.deleteAllAIEnhancementsForCV.bind(aiSectionsService);
 
   // Utility functions
   checkAIFeatureStatus = utilityService.checkAIFeatureStatus.bind(utilityService);
@@ -90,6 +91,7 @@ export const {
   getLatestAIEnhancement,
   updateAIEnhancement,
   deleteAIEnhancement,
+  deleteAllAIEnhancementsForCV,
   checkAIFeatureStatus,
   retryWithBackoff,
   generateAllSuggestions,

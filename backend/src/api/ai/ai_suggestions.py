@@ -6,10 +6,13 @@ This module provides endpoints for generating AI suggestions and managing AI enh
 
 from datetime import datetime
 import asyncio
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from src.config import APIConfig, AIConfig
 from src.middleware.clerk_auth import get_effective_user
@@ -351,6 +354,50 @@ async def delete_ai_enhancement(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting AI enhancement: {str(e)}",
+        )
+
+
+@router.delete("/cvs/{cv_id}/ai-enhancements/all")
+async def delete_all_ai_enhancements_for_cv(
+    cv_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user),
+):
+    """Delete all AI enhancement records for a CV"""
+    # Verify CV belongs to user
+    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    try:
+        # Get all enhancements for this CV that belong to the user
+        enhancements = (
+            db.query(AIEnhancement)
+            .filter(
+                AIEnhancement.cv_id == cv_id,
+                AIEnhancement.user_id == str(current_user.id),
+            )
+            .all()
+        )
+
+        deleted_count = len(enhancements)
+
+        if deleted_count > 0:
+            for enhancement in enhancements:
+                db.delete(enhancement)
+            db.commit()
+            logger.info(f"Deleted {deleted_count} AI enhancement(s) for CV {cv_id}")
+
+        return {
+            "message": f"Deleted {deleted_count} AI enhancement(s) successfully",
+            "deleted_count": deleted_count,
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting AI enhancements for CV {cv_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting AI enhancements: {str(e)}",
         )
 
 

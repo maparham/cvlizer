@@ -191,6 +191,21 @@ class AISectionsService {
       throw aiError;
     }
   }
+
+  async deleteAllAIEnhancementsForCV(cvId: string): Promise<{ deleted_count: number }> {
+    try {
+      const response = await api.delete(`/api/cvs/${cvId}/ai-enhancements/all`);
+      return response.data;
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error:
+          error.response?.data?.detail || "Failed to delete AI enhancements",
+        details: error.message,
+        code: error.response?.status?.toString(),
+      };
+      throw aiError;
+    }
+  }
 }
 
 // Export singleton instance
