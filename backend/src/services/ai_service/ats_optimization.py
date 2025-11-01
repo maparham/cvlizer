@@ -201,7 +201,8 @@ def _build_optimization_prompt(
     current_technical_skills: List[str],
     current_soft_skills: List[str],
     current_summary: str,
-    work_overview_text: str,
+    work_experience_items: List[Dict[str, Any]],
+    education_items: List[Dict[str, Any]],
     job_description: str,
 ) -> str:
     """
@@ -211,21 +212,53 @@ def _build_optimization_prompt(
         current_technical_skills: List of current technical skills
         current_soft_skills: List of current soft skills
         current_summary: Current professional summary text
-        work_overview_text: Brief overview of work experience
+        work_experience_items: List of work experience items with id and description
+        education_items: List of education items with id and description
         job_description: Job description text
 
     Returns:
         Formatted prompt string
     """
+    # Format work experience items for prompt
+    work_items_text = json.dumps(
+        [
+            {
+                "id": item.get("id", ""),
+                "position": item.get("position", ""),
+                "company": item.get("company", ""),
+                "description": item.get("description", ""),
+            }
+            for item in work_experience_items
+        ],
+        indent=2,
+    )
+
+    # Format education items for prompt
+    education_items_text = json.dumps(
+        [
+            {
+                "id": item.get("id", ""),
+                "degree": item.get("degree", ""),
+                "institution": item.get("institution", ""),
+                "description": item.get("description", ""),
+            }
+            for item in education_items
+        ],
+        indent=2,
+    )
+
     return f"""Suggest CV improvements vs job description.
 
 CV:
-Technical: {json.dumps(current_technical_skills)}
-Soft: {json.dumps(current_soft_skills)}
-Summary: {current_summary}
-Experience: {work_overview_text}
+Technical Skills: {json.dumps(current_technical_skills)}
+Soft Skills: {json.dumps(current_soft_skills)}
+Professional Summary: {current_summary}
+Work Experience: {work_items_text}
+Education: {education_items_text}
 
 Job: {job_description}
+
+⚠️ LANGUAGE REQUIREMENT: Write ALL text content (suggestions, descriptions) in the SAME LANGUAGE as the job description.
 
 TASKS:
 1. Missing skills (technical: max 10, soft: max 5) from job description
@@ -233,6 +266,14 @@ TASKS:
    - One-sentence reasoning each
 2. Improved professional summary (2-4 sentences)
    - Focus on relevant experience, natural prose
+3. For EACH work experience item, suggest an improved description
+   - Better align with job requirements
+   - Highlight relevant achievements and responsibilities
+   - Keep original structure and key points, enhance relevance
+4. For EACH education item, suggest an improved description
+   - Highlight relevant coursework, projects, or research
+   - Emphasize skills/achievements relevant to job
+   - Keep original information, enhance relevance
 
 JSON:
 {{
@@ -244,7 +285,23 @@ JSON:
     "suggested_text": "Improved...",
     "original_text": "{current_summary}",
     "key_changes": ["change1", "change2"]
-  }}
+  }},
+  "work_experience": [
+    {{
+      "id": "work_item_id",
+      "original": "Original description...",
+      "suggested": "Improved description...",
+      "reasoning": "Why this improves alignment with job requirements"
+    }}
+  ],
+  "education": [
+    {{
+      "id": "edu_item_id",
+      "original": "Original description...",
+      "suggested": "Improved description...",
+      "reasoning": "Why this better highlights relevant coursework/projects"
+    }}
+  ]
 }}"""
 
 
@@ -309,7 +366,13 @@ async def create_optimization_suggestions(
                 "suggested_text": "...",
                 "original_text": "...",
                 "key_changes": ["..."]
-            }
+            },
+            "work_experience": [
+                {"id": "...", "original": "...", "suggested": "...", "reasoning": "..."}
+            ],
+            "education": [
+                {"id": "...", "original": "...", "suggested": "...", "reasoning": "..."}
+            ]
         }
         Returns empty structures if AI is disabled or on error (graceful degradation).
     """
@@ -321,6 +384,8 @@ async def create_optimization_suggestions(
                 "original_text": "",
                 "key_changes": [],
             },
+            "work_experience": [],
+            "education": [],
         }
 
     # Handle None or empty cv_data
@@ -332,6 +397,8 @@ async def create_optimization_suggestions(
                 "original_text": "",
                 "key_changes": [],
             },
+            "work_experience": [],
+            "education": [],
         }
 
     # Extract current CV data with defensive null checks
@@ -343,25 +410,37 @@ async def create_optimization_suggestions(
     summary_data = cv_data.get("professional_summary") or {}
     current_summary = summary_data.get("content") or ""
 
-    # Create brief work experience overview
+    # Extract work experience items with IDs
     work_experience = cv_data.get("work_experience", [])
-    work_overview = []
-    for job in work_experience[:3]:  # Limit to 3 most recent
-        title = job.get("position", "")
-        company = job.get("company", "")
-        if title and company:
-            work_overview.append(f"{title} at {company}")
+    work_experience_items = [
+        {
+            "id": item.get("id", ""),
+            "position": item.get("position", ""),
+            "company": item.get("company", ""),
+            "description": item.get("description", ""),
+        }
+        for item in work_experience
+    ]
 
-    work_overview_text = (
-        "; ".join(work_overview) if work_overview else "No work experience listed"
-    )
+    # Extract education items with IDs
+    education = cv_data.get("education", [])
+    education_items = [
+        {
+            "id": item.get("id", ""),
+            "degree": item.get("degree", ""),
+            "institution": item.get("institution", ""),
+            "description": item.get("description", ""),
+        }
+        for item in education
+    ]
 
     # Build prompt
     prompt = _build_optimization_prompt(
         current_technical_skills,
         current_soft_skills,
         current_summary,
-        work_overview_text,
+        work_experience_items,
+        education_items,
         job_description,
     )
 
@@ -410,6 +489,51 @@ async def create_optimization_suggestions(
             suggested_text = ""
             key_changes = []
 
+        # Process work experience suggestions
+        raw_work_suggestions = parsed_suggestions.get("work_experience", [])
+        work_suggestions = []
+        for suggestion in raw_work_suggestions:
+            item_id = suggestion.get("id", "").strip()
+            suggested_desc = suggestion.get("suggested", "").strip()
+            original_desc = suggestion.get("original", "").strip()
+            reasoning = suggestion.get("reasoning", "").strip()
+
+            # Validate suggestion has required fields
+            if item_id and suggested_desc and reasoning:
+                work_suggestions.append(
+                    {
+                        "id": item_id,
+                        "original": original_desc,
+                        "suggested": suggested_desc,
+                        "reasoning": reasoning,
+                    }
+                )
+
+        # Process education suggestions
+        raw_education_suggestions = parsed_suggestions.get("education", [])
+        education_suggestions = []
+        for suggestion in raw_education_suggestions:
+            item_id = suggestion.get("id", "").strip()
+            suggested_desc = suggestion.get("suggested", "").strip()
+            original_desc = suggestion.get("original", "").strip()
+            reasoning = suggestion.get("reasoning", "").strip()
+
+            # Validate suggestion has required fields
+            if item_id and suggested_desc and reasoning:
+                education_suggestions.append(
+                    {
+                        "id": item_id,
+                        "original": original_desc,
+                        "suggested": suggested_desc,
+                        "reasoning": reasoning,
+                    }
+                )
+
+        logger.info(
+            f"Processed AI suggestions - Technical: {len(technical_suggestions)}, Soft: {len(soft_suggestions)}, "
+            f"Work Experience: {len(work_suggestions)}, Education: {len(education_suggestions)}"
+        )
+
         return {
             "skills": {"technical": technical_suggestions, "soft": soft_suggestions},
             "professional_summary": {
@@ -417,6 +541,8 @@ async def create_optimization_suggestions(
                 "original_text": current_summary,
                 "key_changes": key_changes,
             },
+            "work_experience": work_suggestions,
+            "education": education_suggestions,
         }
 
     except Exception as e:
@@ -429,4 +555,6 @@ async def create_optimization_suggestions(
                 "original_text": current_summary,
                 "key_changes": [],
             },
+            "work_experience": [],
+            "education": [],
         }

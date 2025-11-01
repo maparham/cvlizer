@@ -9,7 +9,6 @@
  * - Job fit analysis and drafts
  * - Job descriptions and associations
  * - ATS optimization
- * - Content enhancement
  * - AI section generation
  * - Utility functions
  */
@@ -19,7 +18,6 @@ import { cacheManager } from "./cache";
 import { jobFitService } from "./jobFitService";
 import { jobDescriptionService } from "./jobDescriptionService";
 import { atsService } from "./atsService";
-import { contentEnhancementService } from "./contentEnhancementService";
 import { aiSectionsService } from "./aiSectionsService";
 import { utilityService } from "./utilityService";
 
@@ -52,11 +50,6 @@ class AIService {
 
   // ATS optimization
   analyzeATSOptimization = atsService.analyzeATSOptimization.bind(atsService);
-
-  // Content enhancement
-  enhanceContent = contentEnhancementService.enhanceContent.bind(contentEnhancementService);
-  getContentEnhancementStatus = contentEnhancementService.getContentEnhancementStatus.bind(contentEnhancementService);
-  deleteContentEnhancement = contentEnhancementService.deleteContentEnhancement.bind(contentEnhancementService);
 
   // AI sections
   generateAISection = aiSectionsService.generateAISection.bind(aiSectionsService);
@@ -96,9 +89,6 @@ export const {
   associateJobDescriptionWithCV,
   disassociateJobDescriptionFromCV,
   analyzeATSOptimization,
-  enhanceContent,
-  getContentEnhancementStatus,
-  deleteContentEnhancement,
   generateAISection,
   getAISections,
   createAIEnhancement,

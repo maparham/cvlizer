@@ -133,7 +133,6 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         { field: 'end_date', label: 'End Date' }
       ]}
       cvId={cvId}
-      enhancementContentField="description"
     />
   )
 }

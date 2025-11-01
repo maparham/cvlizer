@@ -19,7 +19,6 @@ interface SimpleFormSectionProps extends SectionProps {
   autoSaveMessage: string;
   autoSaveMode?: boolean; // If true, don't show Save/Cancel buttons
   onTitleSave?: (newTitle: string) => Promise<void>;
-  enhancementButton?: React.ReactNode;
 }
 
 /**
@@ -41,7 +40,6 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   autoSaveMessage,
   autoSaveMode = false,
   onTitleSave,
-  enhancementButton,
 }) => {
   // Memoize default data to prevent unnecessary re-renders
   const defaultData = useMemo(() => {
@@ -157,7 +155,6 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       editButton={null}
       onTitleSave={onTitleSave}
       sectionId={sectionId}
-      enhancementButton={enhancementButton}
     >
       {isEditing ? (
         <Box>{renderForm(editData, updateData, handleSave, handleCancel)}</Box>

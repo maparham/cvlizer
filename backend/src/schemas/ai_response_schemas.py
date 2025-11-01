@@ -276,12 +276,27 @@ class ProfessionalSummarySuggestionSchema(BaseModel):
     key_changes: List[str] = Field(default_factory=list)
 
 
+class ItemDescriptionSuggestionSchema(BaseModel):
+    """Schema for individual item description suggestion (work experience or education)."""
+
+    id: str = Field(min_length=1, description="Item ID from CV data")
+    original: str = Field(default="", description="Original description text")
+    suggested: str = Field(min_length=1, description="Suggested improved description")
+    reasoning: str = Field(min_length=1, description="Reasoning for the improvement")
+
+
 class OptimizationSuggestionsResponseSchema(BaseModel):
     """Schema for optimization suggestions AI response."""
 
     skills: SkillsSuggestionsSchema = Field(default_factory=SkillsSuggestionsSchema)
     professional_summary: ProfessionalSummarySuggestionSchema = Field(
         default_factory=ProfessionalSummarySuggestionSchema
+    )
+    work_experience: List[ItemDescriptionSuggestionSchema] = Field(
+        default_factory=list, description="Work experience description improvements"
+    )
+    education: List[ItemDescriptionSuggestionSchema] = Field(
+        default_factory=list, description="Education description improvements"
     )
 
 

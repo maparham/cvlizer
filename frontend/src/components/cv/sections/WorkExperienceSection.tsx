@@ -7,9 +7,10 @@
  * - Date range management with current job handling
  * - Achievements and technologies tracking
  * - Add, edit, delete, and reorder functionality
+ * - AI-generated description improvement suggestions
  */
-import React from "react";
-import { Box, Typography } from "@mui/material";
+import React, { useCallback, useMemo } from "react";
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from "@mui/material";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
 import { FormField, DateFieldComponent } from "../core/formUtils";
@@ -17,6 +18,9 @@ import LocationAutocomplete from "../ui/LocationAutocomplete";
 import JobPositionAutocomplete from "../ui/JobPositionAutocomplete";
 import { generateSectionId } from "../../../utils/idGenerator";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
+import ItemDescriptionSuggestion from "../ai/ItemDescriptionSuggestion";
+import { useAISuggestionsStore, useValidatedSuggestions } from "../../../stores/aiSuggestionsStore";
+import { useNotifications } from "../../../packages/notifications";
 
 interface WorkExperience {
   id: string;
@@ -46,6 +50,31 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
   onTitleSave,
   cvId,
 }) => {
+  // Get AI suggestions from store
+  const allSuggestions = useValidatedSuggestions(cvId || "");
+  const {
+    dismissWorkExperienceSuggestion,
+    dismissAllWorkExperienceSuggestions,
+  } = useAISuggestionsStore();
+  const { showSuccess } = useNotifications();
+  const [discardAllDialogOpen, setDiscardAllDialogOpen] = React.useState(false);
+
+  // Get work experience suggestions
+  const workExperienceSuggestions = useMemo(() => {
+    return allSuggestions?.work_experience || [];
+  }, [allSuggestions]);
+
+  // Map suggestions by item ID for quick lookup
+  const suggestionsByItemId = useMemo(() => {
+    const map = new Map();
+    workExperienceSuggestions.forEach((suggestion) => {
+      map.set(suggestion.id, suggestion);
+    });
+    return map;
+  }, [workExperienceSuggestions]);
+
+  const hasSuggestions = workExperienceSuggestions.length > 0;
+
   const createNewExperience = (): WorkExperience => ({
     id: generateSectionId("work_experience"),
     company: "",
@@ -130,62 +159,165 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
     </Box>
   );
 
-  const renderExperienceDisplay = (exp: WorkExperience, _index: number) => (
-    <>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5, pr: 10 }}>
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 600, color: "#333" }}
-        >
-          {exp.position || "Position Title"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: "#666", flexShrink: 0, ml: 2 }}>
-          {exp.start_date} - {exp.current ? "PRESENT" : exp.end_date || "PRESENT"}
-        </Typography>
-      </Box>
-      <Typography variant="subtitle1" sx={{ color: "#1976d2", mb: 1 }}>
-        {exp.company || "Company Name"}
-        {exp.location && ` • ${exp.location}`}
-      </Typography>
-      {exp.description ? (
-        <Box sx={{ mb: 1 }}>
-          <MarkdownRenderer content={exp.description} variant="body1" />
-        </Box>
-      ) : (
-        <Typography variant="body1" sx={{ lineHeight: 1.6, color: "text.secondary" }}>
-          Job description...
-        </Typography>
-      )}
-    </>
+  // Handle applying a suggestion
+  const handleApplySuggestion = useCallback(
+    (itemId: string, suggestedDescription: string) => {
+      const items = (data as WorkExperience[]) || [];
+      const itemIndex = items.findIndex((item) => item.id === itemId);
+
+      if (itemIndex === -1) {
+        console.error("Item not found for suggestion application:", itemId);
+        return;
+      }
+
+      const updatedItems = [...items];
+      updatedItems[itemIndex] = {
+        ...updatedItems[itemIndex],
+        description: suggestedDescription,
+      };
+
+      onUpdate(updatedItems);
+      onSave?.(updatedItems, "Work experience description updated");
+
+      // Dismiss the suggestion
+      dismissWorkExperienceSuggestion(itemId);
+      showSuccess("Suggestion applied successfully");
+    },
+    [data, onUpdate, onSave, dismissWorkExperienceSuggestion, showSuccess]
+  );
+
+  // Handle discarding a suggestion
+  const handleDiscardSuggestion = useCallback(
+    (itemId: string) => {
+      dismissWorkExperienceSuggestion(itemId);
+      showSuccess("Suggestion discarded");
+    },
+    [dismissWorkExperienceSuggestion, showSuccess]
+  );
+
+  // Handle discarding all suggestions
+  const handleDiscardAll = useCallback(async () => {
+    await dismissAllWorkExperienceSuggestions();
+    setDiscardAllDialogOpen(false);
+    showSuccess("All suggestions discarded");
+  }, [dismissAllWorkExperienceSuggestions, showSuccess]);
+
+  const renderExperienceDisplay = useCallback(
+    (exp: WorkExperience, _index: number) => {
+      const suggestion = suggestionsByItemId.get(exp.id);
+
+      return (
+        <>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5, pr: 10 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 600, color: "#333" }}
+            >
+              {exp.position || "Position Title"}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#666", flexShrink: 0, ml: 2 }}>
+              {exp.start_date} - {exp.current ? "PRESENT" : exp.end_date || "PRESENT"}
+            </Typography>
+          </Box>
+          <Typography variant="subtitle1" sx={{ color: "#1976d2", mb: 1 }}>
+            {exp.company || "Company Name"}
+            {exp.location && ` • ${exp.location}`}
+          </Typography>
+          {exp.description ? (
+            <Box sx={{ mb: 1 }}>
+              <MarkdownRenderer content={exp.description} variant="body1" />
+            </Box>
+          ) : (
+            <Typography variant="body1" sx={{ lineHeight: 1.6, color: "text.secondary" }}>
+              Job description...
+            </Typography>
+          )}
+          {/* AI Suggestion */}
+          {suggestion && (
+            <ItemDescriptionSuggestion
+              suggestion={suggestion}
+              onApply={() => handleApplySuggestion(exp.id, suggestion.suggested)}
+              onDiscard={() => handleDiscardSuggestion(exp.id)}
+            />
+          )}
+        </>
+      );
+    },
+    [suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion]
   );
 
   return (
-    <IndividualItemSection
-      data={data as WorkExperience[]}
-      onUpdate={onUpdate}
-      onSave={onSave}
-      isEditing={isEditing}
-      onEdit={onEdit}
-      onClose={onClose}
-      onUnsavedChanges={onUnsavedChanges}
-      registerIndividualItemEditing={registerIndividualItemEditing as any}
-      unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
-      requestIndividualItemCancel={requestIndividualItemCancel as any}
-      title={title}
-      onTitleSave={onTitleSave}
-      emptyMessage="Click the + button to add your first work experience"
-      createNewItem={createNewExperience}
-      requiredFields={["position", "company", "start_date"]}
-      renderItemForm={renderExperienceForm}
-      renderItemDisplay={renderExperienceDisplay}
-      autoSaveMessage="Work experience"
+    <>
+      <IndividualItemSection
+        data={data as WorkExperience[]}
+        onUpdate={onUpdate}
+        onSave={onSave}
+        isEditing={isEditing}
+        onEdit={onEdit}
+        onClose={onClose}
+        onUnsavedChanges={onUnsavedChanges}
+        registerIndividualItemEditing={registerIndividualItemEditing as any}
+        unregisterIndividualItemEditing={unregisterIndividualItemEditing as any}
+        requestIndividualItemCancel={requestIndividualItemCancel as any}
+        title={title}
+        onTitleSave={onTitleSave}
+        emptyMessage="Click the + button to add your first work experience"
+        createNewItem={createNewExperience}
+        requiredFields={["position", "company", "start_date"]}
+        renderItemForm={renderExperienceForm}
+        renderItemDisplay={renderExperienceDisplay}
+        autoSaveMessage="Work experience"
       sortOptions={[
         { field: "start_date", label: "Start Date" },
         { field: "end_date", label: "End Date" },
       ]}
       cvId={cvId}
-      enhancementContentField="description"
     />
+
+      {/* Discard All Suggestions Button - shown at bottom of section */}
+      {hasSuggestions && !isEditing && (
+        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setDiscardAllDialogOpen(true)}
+            sx={{
+              textTransform: "none",
+              borderColor: "#f44336",
+              color: "#f44336",
+              "&:hover": {
+                borderColor: "#d32f2f",
+                backgroundColor: "#ffebee",
+              },
+            }}
+          >
+            Discard All Suggestions ({workExperienceSuggestions.length})
+          </Button>
+        </Box>
+      )}
+
+      {/* Discard All Confirmation Dialog */}
+      <Dialog
+        open={discardAllDialogOpen}
+        onClose={() => setDiscardAllDialogOpen(false)}
+      >
+        <DialogTitle>Discard All Suggestions?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to discard all {workExperienceSuggestions.length} AI suggestions for this section?
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDiscardAllDialogOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleDiscardAll} color="error" variant="contained">
+            Discard All
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

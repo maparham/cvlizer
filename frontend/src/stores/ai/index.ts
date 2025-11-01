@@ -15,7 +15,6 @@ import { createJobFitSlice } from "./jobFitStore";
 import { createATSOptimizationSlice } from "./atsOptimizationStore";
 import { createJobDescriptionsSlice } from "./jobDescriptionsStore";
 import { createDraftsSlice } from "./draftsStore";
-import { createContentEnhancementSlice } from "./contentEnhancementStore";
 import { createInlineDiffSlice } from "./inlineDiffStore";
 import { aiService } from "../../services/ai";
 
@@ -69,7 +68,6 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       ...createATSOptimizationSlice(set, get, undefined),
       ...createJobDescriptionsSlice(set, get, undefined),
       ...createDraftsSlice(set, get, undefined),
-      ...createContentEnhancementSlice(set, get, undefined),
       ...createInlineDiffSlice(set, get, undefined),
 
       // Utility actions

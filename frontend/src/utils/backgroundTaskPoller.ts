@@ -15,7 +15,6 @@
 import { aiService } from "../services/ai";
 import {
   JobDescription,
-  ContentEnhancementResponse,
   DraftResponse,
 } from "../types/ai";
 import { POLLING_CONFIG } from "../config/constants";
@@ -68,60 +67,6 @@ export async function pollJobDescriptionStatus(
         if (!status.is_parsing) {
           if (status.parse_error) {
             const error = new Error(status.parse_error);
-            opts.onError(error);
-            reject(error);
-          } else {
-            opts.onComplete(status);
-            resolve(status);
-          }
-          return;
-        }
-
-        // Continue polling
-        setTimeout(poll, opts.interval);
-      } catch (error) {
-        opts.onError(error);
-        reject(error);
-      }
-    };
-
-    // Start polling
-    poll();
-  });
-}
-
-/**
- * Poll content enhancement status
- */
-export async function pollContentEnhancementStatus(
-  enhancementId: string,
-  options: PollingOptions = {},
-): Promise<ContentEnhancementResponse> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
-  const startTime = Date.now();
-
-  return new Promise((resolve, reject) => {
-    const poll = async () => {
-      try {
-        // Check if we've exceeded the timeout
-        if (Date.now() - startTime > opts.timeout) {
-          const error = new Error("Content enhancement timed out");
-          opts.onError(error);
-          reject(error);
-          return;
-        }
-
-        // Get current status
-        const status =
-          await aiService.getContentEnhancementStatus(enhancementId);
-
-        // Call progress callback
-        opts.onProgress(status);
-
-        // Check if generation is complete
-        if (!status.is_generating) {
-          if (status.generation_error) {
-            const error = new Error(status.generation_error);
             opts.onError(error);
             reject(error);
           } else {

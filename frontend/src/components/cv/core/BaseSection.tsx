@@ -20,7 +20,6 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   isValid = true,
   onTitleSave,
   sectionId,
-  enhancementButton,
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -105,7 +104,6 @@ const BaseSection: React.FC<BaseSectionProps> = ({
             gap: 0.5,
           }}
         >
-          {enhancementButton}
           <Tooltip title="Edit this section">
             <IconButton
               className="edit-button"

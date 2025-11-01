@@ -217,6 +217,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               }
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
+              cvId={cvId}
             />
           );
         case "education":
@@ -247,6 +248,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               }
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
+              cvId={cvId}
             />
           );
         case "skills":

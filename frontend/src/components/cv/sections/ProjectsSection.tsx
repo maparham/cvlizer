@@ -147,7 +147,6 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
         { field: 'name', label: 'Name' }
       ]}
       cvId={cvId}
-      enhancementContentField="description"
     />
   )
 }

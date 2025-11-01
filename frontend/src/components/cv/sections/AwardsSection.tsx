@@ -117,7 +117,6 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         { field: 'date', label: 'Date Received' }
       ]}
       cvId={cvId}
-      enhancementContentField="description"
     />
   )
 }

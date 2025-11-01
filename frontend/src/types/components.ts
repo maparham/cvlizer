@@ -43,7 +43,6 @@ export interface BaseSectionProps {
   isValid?: boolean;
   onTitleSave?: (newTitle: string) => Promise<void>;
   sectionId?: string;
-  enhancementButton?: React.ReactNode;
 }
 
 /**

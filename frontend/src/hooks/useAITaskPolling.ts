@@ -26,7 +26,7 @@ import { Logger } from "../utils/logger";
 
 export interface AITask {
   id: string;
-  type: "draft" | "content_enhancement" | "ai_enhancement";
+  type: "draft" | "ai_enhancement";
   cvId: string;
   isGenerating: boolean;
   generationError?: string;
@@ -80,7 +80,7 @@ export const useAITaskPolling = (
   const [isPolling, setIsPolling] = useState(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { updateDraftStatus, updateContentEnhancementStatus } = useAIStore();
+  const { updateDraftStatus } = useAIStore();
   const { updateAIEnhancementStatus } = useAISuggestionsStore();
   const { showError } = useNotifications();
 
@@ -118,8 +118,6 @@ export const useAITaskPolling = (
         let updatedTaskData: any;
         if (task.type === "draft") {
           updatedTaskData = await updateDraftStatus(task.id);
-        } else if (task.type === "content_enhancement") {
-          updatedTaskData = await updateContentEnhancementStatus(task.id);
         } else if (task.type === "ai_enhancement") {
           updatedTaskData = await updateAIEnhancementStatus(task.id);
         } else {
@@ -176,7 +174,6 @@ export const useAITaskPolling = (
   }, [
     activeTasks,
     updateDraftStatus,
-    updateContentEnhancementStatus,
     updateAIEnhancementStatus,
   ]);
 

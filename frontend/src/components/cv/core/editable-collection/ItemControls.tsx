@@ -7,7 +7,6 @@ import { Box, IconButton, Tooltip } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { getSingularTitle } from "./utils";
 import type { ItemControlsProps } from "./types";
-import { EnhancementButton } from "../../ai/ContentEnhancement";
 
 function ItemControls<T>({
   item,
@@ -18,14 +17,7 @@ function ItemControls<T>({
   onEdit,
   onDelete,
   renderItemDisplay,
-  cvId,
-  enhancementContentField,
-  onEnhancementAccept,
 }: ItemControlsProps<T>) {
-  // Get content for enhancement if field is specified
-  const content = enhancementContentField && item[enhancementContentField];
-  const contentString = typeof content === 'string' ? content : '';
-
   return (
     <Box>
       {/* Action buttons - stacked vertically in top right */}
@@ -70,17 +62,6 @@ function ItemControls<T>({
             </IconButton>
           </span>
         </Tooltip>
-        {cvId && enhancementContentField && onEnhancementAccept && contentString && (
-          <EnhancementButton
-            content={contentString}
-            contentType="paragraph"
-            cvId={cvId}
-            onContentUpdate={(newContent) => onEnhancementAccept(index, newContent)}
-            size="small"
-            disabled={isAnotherItemBeingEdited}
-            className="item-action-button"
-          />
-        )}
         <Tooltip title={`Delete this ${getSingularTitle(title).toLowerCase()}`}>
           <IconButton
             onClick={() => onDelete(index)}

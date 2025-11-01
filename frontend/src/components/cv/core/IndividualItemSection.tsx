@@ -82,7 +82,6 @@ function IndividualItemSection<T>({
   sortOptions = [],
   onTitleSave,
   cvId,
-  enhancementContentField,
 }: IndividualItemSectionProps<T>) {
   // Custom hooks for state management
   const {
@@ -251,16 +250,6 @@ function IndividualItemSection<T>({
     onSave,
     autoSaveMessage,
   ]);
-
-  const handleEnhancementAccept = useCallback((index: number, enhancedContent: string) => {
-    if (enhancementContentField) {
-      const newData = [...itemsData];
-      newData[index] = { ...newData[index], [enhancementContentField]: enhancedContent };
-      setItemsData(newData);
-      onUpdate(newData);
-      onSave(newData, `${autoSaveMessage} enhanced with AI`);
-    }
-  }, [itemsData, enhancementContentField, setItemsData, onUpdate, onSave, autoSaveMessage]);
 
   const handleAddItem = useCallback(() => {
     const newItem = createNewItem();
@@ -650,9 +639,6 @@ function IndividualItemSection<T>({
                                   onEdit={handleEditItem}
                                   onDelete={handleDeleteItemClick}
                                   renderItemDisplay={renderItemDisplay}
-                                  cvId={cvId}
-                                  enhancementContentField={enhancementContentField}
-                                  onEnhancementAccept={handleEnhancementAccept}
                                 />
                               </Box>
                             )}

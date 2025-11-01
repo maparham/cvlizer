@@ -295,9 +295,18 @@ export interface ProfessionalSummarySuggestion {
   key_changes: string[];
 }
 
+export interface ItemDescriptionSuggestion {
+  id: string; // item ID from CV
+  original: string;
+  suggested: string;
+  reasoning: string;
+}
+
 export interface AllSuggestionsResponse {
   skills: SkillsSuggestions;
   professional_summary: ProfessionalSummarySuggestion;
+  work_experience: ItemDescriptionSuggestion[];
+  education: ItemDescriptionSuggestion[];
 }
 
 // Draft Management Types

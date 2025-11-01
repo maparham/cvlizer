@@ -21,7 +21,6 @@ import {
   useValidatedSuggestions,
 } from "../../../stores/aiSuggestionsStore";
 import { useNotifications } from "../../../packages/notifications";
-import { EnhancementButton } from "../ai/ContentEnhancement";
 
 interface ProfessionalSummarySectionProps extends SectionProps {
   cvId?: string;
@@ -421,24 +420,6 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
     </Box>
   );
 
-  // Create enhancement button for professional summary
-  const enhancementButton = cvId && data?.content ? (
-    <EnhancementButton
-      content={typeof data === "string" ? data : data.content}
-      contentType="paragraph"
-      cvId={cvId}
-      onContentUpdate={(newContent) => {
-        const updatedData = {
-          content: newContent,
-          keywords: (typeof data === "string" ? [] : data.keywords) || [],
-        };
-        onUpdate(updatedData);
-        onSave?.(updatedData);
-      }}
-      size="small"
-    />
-  ) : null;
-
   return (
     <SimpleFormSection
       data={data}
@@ -455,7 +436,6 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
       renderForm={renderForm}
       renderDisplay={renderDisplay}
       autoSaveMessage="Professional summary auto-saved"
-      enhancementButton={enhancementButton}
     />
   );
 };

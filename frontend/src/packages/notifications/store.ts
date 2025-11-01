@@ -187,19 +187,31 @@ export const useNotificationStore = create<NotificationStore>()(
       {
         name: "cv-optimizer-notifications", // localStorage key
         version: 1,
-        // Custom serialization to handle Date objects
-        serialize: (state) => JSON.stringify(state),
-        deserialize: (str) => {
-          const parsed = JSON.parse(str);
-          // Convert timestamp strings back to Date objects
-          if (parsed.state?.notifications) {
-            parsed.state.notifications = parsed.state.notifications.map((n: any) => ({
-              ...n,
-              timestamp: new Date(n.timestamp),
-              groupedTimestamps: n.groupedTimestamps?.map((t: string) => new Date(t)) || [],
-            }));
-          }
-          return parsed;
+        storage: {
+          getItem: (name) => {
+            const str = localStorage.getItem(name);
+            if (!str) return null;
+            try {
+              const parsed = JSON.parse(str);
+              // Convert timestamp strings back to Date objects
+              if (parsed.state?.notifications) {
+                parsed.state.notifications = parsed.state.notifications.map((n: any) => ({
+                  ...n,
+                  timestamp: new Date(n.timestamp),
+                  groupedTimestamps: n.groupedTimestamps?.map((t: string) => new Date(t)) || [],
+                }));
+              }
+              return parsed;
+            } catch {
+              return null;
+            }
+          },
+          setItem: (name, value) => {
+            localStorage.setItem(name, JSON.stringify(value));
+          },
+          removeItem: (name) => {
+            localStorage.removeItem(name);
+          },
         },
         // Run cleanup after rehydration
         onRehydrateStorage: () => (state) => {

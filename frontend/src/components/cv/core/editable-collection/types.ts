@@ -31,7 +31,6 @@ export interface IndividualItemSectionProps<T> {
   sortOptions?: SortOption<T>[]
   onTitleSave?: (newTitle: string) => Promise<void>
   cvId?: string
-  enhancementContentField?: keyof T
 }
 
 export interface ItemControlsProps<T> {
@@ -43,9 +42,6 @@ export interface ItemControlsProps<T> {
   onEdit: (index: number) => void
   onDelete: (index: number) => void
   renderItemDisplay: (item: T, index: number) => React.ReactNode
-  cvId?: string
-  enhancementContentField?: keyof T
-  onEnhancementAccept?: (index: number, enhancedContent: string) => void
 }
 
 export interface SortMenuProps<T> {

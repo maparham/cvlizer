@@ -134,7 +134,6 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         { field: 'expiry_date', label: 'Expiry Date' }
       ]}
       cvId={cvId}
-      enhancementContentField="description"
     />
   )
 }
