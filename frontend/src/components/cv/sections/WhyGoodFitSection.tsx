@@ -127,6 +127,11 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
   const handleDelete = () => {
     if (!data) return;
 
+    // Close edit mode if open
+    if (isEditing) {
+      onClose();
+    }
+
     // Set section to null to properly delete it
     onSave(null, "Why I'm a Good Fit section deleted");
     setShowDeleteDialog(false);
@@ -178,12 +183,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
             {sectionTitle}
           </Typography>
         )}
-        <Box>
-          <Tooltip title="Edit Section">
-            <IconButton onClick={handleEdit} size="small">
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
+        <Box display="flex" gap={0.5}>
           <Tooltip title="Copy Content">
             <IconButton onClick={copyToClipboard} size="small">
               <ContentCopyIcon />
@@ -196,6 +196,11 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
               color="error"
             >
               <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit Section">
+            <IconButton onClick={handleEdit} size="small">
+              <EditIcon />
             </IconButton>
           </Tooltip>
         </Box>
@@ -401,12 +406,10 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
         <DialogTitle>Delete Section</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Are you sure you want to delete the "Why I'm a Good Fit" section?
-            This action cannot be undone.
+            <strong>Are you sure you want to delete this section?</strong>
           </Alert>
           <Typography variant="body2" color="text.secondary">
-            The section will be removed from your CV and you'll need to
-            regenerate it if you want to add it back.
+            You can always regenerate the section later.
           </Typography>
         </DialogContent>
         <DialogActions>
