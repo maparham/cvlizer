@@ -268,7 +268,7 @@ describe("InlineDraftSection", () => {
     renderComponent();
 
     const approveButton = screen.getByText("Approve & Add to CV");
-    const rejectButton = screen.getByText("Reject");
+    const rejectButton = screen.getByText("Discard");
 
     fireEvent.click(rejectButton);
 

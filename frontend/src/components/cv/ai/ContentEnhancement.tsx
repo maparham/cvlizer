@@ -264,13 +264,6 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
     return "error";
   };
 
-  const getConfidenceLabel = (score: number) => {
-    if (score >= 85) return "Excellent Match";
-    if (score >= 70) return "Good Match";
-    if (score >= 55) return "Fair Match";
-    return "Poor Match";
-  };
-
   return (
     <Dialog
       open={open}
@@ -409,16 +402,6 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
                               color={getConfidenceColor(
                                 suggestion.confidence_score,
                               )}
-                              size="small"
-                            />
-                            <Chip
-                              label={getConfidenceLabel(
-                                suggestion.confidence_score,
-                              )}
-                              color={getConfidenceColor(
-                                suggestion.confidence_score,
-                              )}
-                              variant="outlined"
                               size="small"
                             />
                           </Box>

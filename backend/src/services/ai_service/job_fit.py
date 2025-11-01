@@ -127,7 +127,7 @@ def _build_job_fit_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
         f"RULES:\n"
         f"1. confidence_score: Integer 0-100 showing match quality.\n"
         f"2. fit_analysis (markdown string, first person):\n"
-        f"   • Start directly with [1 paragraph, 40-50 words: top 2-3 skills + enthusiasm].\n"
+        f"   • Start directly with a concise intro paragraph highlighting your top 2-3 relevant skills and enthusiasm.\n"
         f"   • Then list specific technical and role requirements from the job description (skip vague soft skills).\n"
         f"   • Below each requirement, write a short cover paragraph about your experience in the context of the requirement item.\n"
         f'   • Format each requirement as: \\*\\*"[requirement text]"\\*\\*\\n\\n[cover paragraph]\\n\\n\n'

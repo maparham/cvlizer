@@ -179,7 +179,7 @@ TASKS:
 1. Job Fit Analysis (write as candidate, first person):
    - Extract company name → title: "Hello [Company]!" or "Hello!"
    - confidence_score: 1-100 match quality
-   - fit_analysis: markdown, 1 para intro (40-50 words), then specific requirements with cover paragraphs
+   - fit_analysis: markdown, start with a concise intro paragraph, then specific requirements with cover paragraphs
    - Format: **"[requirement]"**\\n\\n[experience paragraph]\\n\\n
    - Be honest about gaps: "I don't have X but eager to learn"
    - key_matches: ONLY genuine CV-JD skill overlaps (can be empty)

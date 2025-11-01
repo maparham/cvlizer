@@ -143,13 +143,6 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
     return "error";
   };
 
-  const getConfidenceLabel = (score: number) => {
-    if (score >= 80) return "Excellent Match";
-    if (score >= 60) return "Good Match";
-    if (score >= 40) return "Fair Match";
-    return "Poor Match";
-  };
-
   if (!data || (!data.content && !data.fit_analysis)) {
     return null;
   }
@@ -306,9 +299,6 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
                 variant="filled"
                 size="small"
               />
-              <Typography variant="body2" color="text.secondary">
-                {getConfidenceLabel(data.confidence_score)}
-              </Typography>
             </Box>
 
             {/* Main Content */}

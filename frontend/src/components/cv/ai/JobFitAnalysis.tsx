@@ -106,13 +106,6 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
     return "error";
   };
 
-  const getConfidenceLabel = (score: number) => {
-    if (score >= 80) return "Excellent Match";
-    if (score >= 60) return "Good Match";
-    if (score >= 40) return "Fair Match";
-    return "Poor Match";
-  };
-
   if (!activeJobDescription) {
     return (
       <Box className={className}>
@@ -244,11 +237,6 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
                   variant="filled"
                 />
               </Box>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                {getConfidenceLabel(
-                  jobFitAnalysis.lastAnalysis.confidence_score,
-                )}
-              </Typography>
               <LinearProgress
                 variant="determinate"
                 value={jobFitAnalysis.lastAnalysis.confidence_score}
