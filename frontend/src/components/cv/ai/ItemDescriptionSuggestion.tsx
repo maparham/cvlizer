@@ -12,11 +12,13 @@ import {
   Button,
   IconButton,
   Tooltip,
+  Chip,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Close as CloseIcon,
   Info as InfoIcon,
+  Star as StarIcon,
 } from "@mui/icons-material";
 import { ItemDescriptionSuggestion as ItemDescriptionSuggestionType } from "../../../types/ai";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
@@ -54,6 +56,23 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
         <Tooltip title="AI-generated improvement based on job description">
           <InfoIcon sx={{ ml: 1, fontSize: 16, color: "#1976d2" }} />
         </Tooltip>
+        {suggestion.importance === 'highly_recommended' && (
+          <Chip
+            icon={<StarIcon sx={{ fontSize: 16 }} />}
+            label="Highly Recommended"
+            size="small"
+            sx={{
+              ml: 1,
+              backgroundColor: "#FFF3E0",
+              color: "#E65100",
+              border: "1px solid #FFB74D",
+              fontWeight: "bold",
+              "& .MuiChip-icon": {
+                color: "#E65100",
+              },
+            }}
+          />
+        )}
         <IconButton
           size="small"
           onClick={onDiscard}

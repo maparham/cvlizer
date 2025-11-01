@@ -300,6 +300,7 @@ export interface ItemDescriptionSuggestion {
   original: string;
   suggested: string;
   reasoning: string;
+  importance: 'highly_recommended' | 'standard';
 }
 
 export interface AllSuggestionsResponse {

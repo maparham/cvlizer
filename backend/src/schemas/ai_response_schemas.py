@@ -281,8 +281,18 @@ class ItemDescriptionSuggestionSchema(BaseModel):
 
     id: str = Field(min_length=1, description="Item ID from CV data")
     original: str = Field(default="", description="Original description text")
-    suggested: str = Field(min_length=1, description="Suggested improved description")
-    reasoning: str = Field(min_length=1, description="Reasoning for the improvement")
+    suggested: str = Field(
+        min_length=1,
+        description="Suggested improved description (MUST match original format: bullets→bullets, paragraph→paragraph)",
+    )
+    reasoning: str = Field(
+        min_length=1,
+        description="Reasoning for the improvement and its relevance to target job",
+    )
+    importance: str = Field(
+        pattern="^(highly_recommended|standard)$",
+        description="Importance level: 'highly_recommended' for high-impact changes, 'standard' for moderate improvements",
+    )
 
 
 class OptimizationSuggestionsResponseSchema(BaseModel):

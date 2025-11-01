@@ -260,6 +260,22 @@ Job: {job_description}
 
 ⚠️ LANGUAGE REQUIREMENT: Write ALL text content (suggestions, descriptions) in the SAME LANGUAGE as the job description.
 
+⚠️ FORMAT PRESERVATION: For work_experience and education descriptions:
+   - If original uses bullet points (lines starting with •, -, *, or numbers), suggested MUST use bullet points
+   - If original is paragraph form, suggested MUST be paragraph form
+   - Maintain the same structural organization (number of points, grouping)
+   - Preserve line breaks and list formatting exactly
+
+⚠️ IMPORTANCE EVALUATION: For each work_experience and education suggestion:
+   - Evaluate how significantly it improves content for target job
+   - Mark as "highly_recommended" ONLY if it adds substantial value:
+     * Adds critical job-relevant keywords that were missing
+     * Adds quantifiable metrics where none existed
+     * Significantly clarifies major achievements/impact
+     * Addresses key job requirements that were unclear
+   - Otherwise, mark as "standard" for moderate improvements
+   - Be conservative: "highly_recommended" should be ~20-30% of suggestions
+
 TASKS:
 1. Missing skills (technical: max 10, soft: max 5) from job description
    - Actual skills/tools only, case-insensitive, no duplicates
@@ -269,11 +285,24 @@ TASKS:
 3. For EACH work experience item, suggest an improved description
    - Better align with job requirements
    - Highlight relevant achievements and responsibilities
-   - Keep original structure and key points, enhance relevance
+   - PRESERVE original format (bullets→bullets, paragraph→paragraph)
+   - Evaluate importance level
 4. For EACH education item, suggest an improved description
    - Highlight relevant coursework, projects, or research
    - Emphasize skills/achievements relevant to job
-   - Keep original information, enhance relevance
+   - PRESERVE original format (bullets→bullets, paragraph→paragraph)
+   - Evaluate importance level
+
+EXAMPLES:
+Example 1 (Bullet points preserved):
+Original: "• Led team projects\\n• Developed software\\n• Managed timelines"
+Suggested: "• Led cross-functional team of 5 engineers in agile development\\n• Developed Python-based automation tools reducing processing time by 40%\\n• Managed project timelines using Jira, delivering 95% on schedule"
+Importance: "highly_recommended" (adds metrics, keywords, and impact quantification)
+
+Example 2 (Paragraph preserved):
+Original: "Responsible for customer service and support activities."
+Suggested: "Managed customer service operations for enterprise clients, resolving technical issues and maintaining 98% satisfaction rating through effective communication."
+Importance: "standard" (improves clarity but doesn't add critical missing elements)
 
 JSON:
 {{
@@ -290,16 +319,18 @@ JSON:
     {{
       "id": "work_item_id",
       "original": "Original description...",
-      "suggested": "Improved description...",
-      "reasoning": "Why this improves alignment with job requirements"
+      "suggested": "Improved description (MUST match original format)...",
+      "reasoning": "Why this improves alignment with job requirements",
+      "importance": "highly_recommended"
     }}
   ],
   "education": [
     {{
       "id": "edu_item_id",
       "original": "Original description...",
-      "suggested": "Improved description...",
-      "reasoning": "Why this better highlights relevant coursework/projects"
+      "suggested": "Improved description (MUST match original format)...",
+      "reasoning": "Why this better highlights relevant coursework/projects",
+      "importance": "standard"
     }}
   ]
 }}"""
@@ -497,6 +528,11 @@ async def create_optimization_suggestions(
             suggested_desc = suggestion.get("suggested", "").strip()
             original_desc = suggestion.get("original", "").strip()
             reasoning = suggestion.get("reasoning", "").strip()
+            importance = suggestion.get("importance", "standard").strip()
+
+            # Validate importance value
+            if importance not in ["highly_recommended", "standard"]:
+                importance = "standard"
 
             # Validate suggestion has required fields
             if item_id and suggested_desc and reasoning:
@@ -506,6 +542,7 @@ async def create_optimization_suggestions(
                         "original": original_desc,
                         "suggested": suggested_desc,
                         "reasoning": reasoning,
+                        "importance": importance,
                     }
                 )
 
@@ -517,6 +554,11 @@ async def create_optimization_suggestions(
             suggested_desc = suggestion.get("suggested", "").strip()
             original_desc = suggestion.get("original", "").strip()
             reasoning = suggestion.get("reasoning", "").strip()
+            importance = suggestion.get("importance", "standard").strip()
+
+            # Validate importance value
+            if importance not in ["highly_recommended", "standard"]:
+                importance = "standard"
 
             # Validate suggestion has required fields
             if item_id and suggested_desc and reasoning:
@@ -526,6 +568,7 @@ async def create_optimization_suggestions(
                         "original": original_desc,
                         "suggested": suggested_desc,
                         "reasoning": reasoning,
+                        "importance": importance,
                     }
                 )
 
