@@ -22,11 +22,18 @@ import {
   Tab,
   Stack,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Alert,
 } from "@mui/material";
 import {
   Add as AddIcon,
   AutoAwesome as AutoAwesomeIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
 import {
@@ -82,6 +89,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const [internalActiveTab, setInternalActiveTab] = useState(0);
   const activeTab =
     externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
+  const [discardAllDialogOpen, setDiscardAllDialogOpen] = useState(false);
 
   // AI Suggestions store
   const {
@@ -90,6 +98,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     generateAllSuggestions,
     clearAllSuggestions,
     setSuggestionsLoading,
+    hasAnySuggestions,
+    dismissAllSuggestions,
   } = useAISuggestionsStore();
 
   // Global polling context
@@ -322,6 +332,29 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       setInternalActiveTab(newValue);
     }
   }, [onTabChange]);
+
+  // Calculate total suggestions count
+  const totalSuggestionsCount = useMemo(() => {
+    if (!allSuggestions) return 0;
+    return (
+      (allSuggestions.skills?.technical?.length || 0) +
+      (allSuggestions.skills?.soft?.length || 0) +
+      (allSuggestions.professional_summary?.suggested_text?.trim() ? 1 : 0) +
+      (allSuggestions.work_experience?.length || 0) +
+      (allSuggestions.education?.length || 0)
+    );
+  }, [allSuggestions]);
+
+  // Handler for dismissing all suggestions
+  const handleDiscardAllSuggestions = useCallback(async () => {
+    try {
+      await dismissAllSuggestions();
+      setDiscardAllDialogOpen(false);
+      showInfo("All suggestions have been discarded");
+    } catch (error) {
+      console.error("Failed to discard all suggestions:", error);
+    }
+  }, [dismissAllSuggestions, showInfo]);
 
   return (
     <Paper
@@ -652,10 +685,70 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                 suggestionsLoading={suggestionsLoading}
                 onAddToCV={onContentUpdate}
               />
+
+              {/* Discard All Suggestions Button */}
+              {hasAnySuggestions() && (
+                <Alert
+                  severity="warning"
+                  sx={{
+                    "& .MuiAlert-icon": {
+                      alignItems: "flex-start",
+                      pt: 0.5,
+                    },
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1.5 }}>
+                      You have {totalSuggestionsCount} AI suggestion{totalSuggestionsCount !== 1 ? "s" : ""} available.
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => setDiscardAllDialogOpen(true)}
+                      fullWidth
+                      sx={{
+                        textTransform: "none",
+                        borderColor: "#f44336",
+                        color: "#f44336",
+                        "&:hover": {
+                          borderColor: "#d32f2f",
+                          backgroundColor: "#ffebee",
+                        },
+                      }}
+                    >
+                      Discard All Suggestions
+                    </Button>
+                  </Box>
+                </Alert>
+              )}
             </Stack>
           </>
         )}
       </Box>
+
+      {/* Discard All Suggestions Confirmation Dialog */}
+      <Dialog
+        open={discardAllDialogOpen}
+        onClose={() => setDiscardAllDialogOpen(false)}
+      >
+        <DialogTitle>Discard All Suggestions?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to discard all {totalSuggestionsCount} AI suggestion{totalSuggestionsCount !== 1 ? "s" : ""}?
+            This action cannot be undone and will remove suggestions from all sections (skills, professional summary, work experience, and education).
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDiscardAllDialogOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleDiscardAllSuggestions} color="error" variant="contained">
+            Discard All
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Inline Save Status Footer */}
       <Box
