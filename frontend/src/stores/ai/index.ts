@@ -12,10 +12,8 @@ import { shallow } from "zustand/shallow";
 import type { AIStore } from "./types";
 import { createFeatureStatusSlice } from "./featureStatusStore";
 import { createJobFitSlice } from "./jobFitStore";
-import { createATSOptimizationSlice } from "./atsOptimizationStore";
 import { createJobDescriptionsSlice } from "./jobDescriptionsStore";
 import { createDraftsSlice } from "./draftsStore";
-import { createInlineDiffSlice } from "./inlineDiffStore";
 import { aiService } from "../../services/ai";
 
 // Initial state for utility actions
@@ -28,10 +26,6 @@ const initialState = {
     isAnalyzing: false,
     isGenerating: false,
   },
-  atsOptimization: {
-    isAnalyzing: false,
-    isOptimizing: false,
-  },
   suggestions: {},
   jobDescriptions: [],
   activeJobDescriptionId: undefined,
@@ -43,13 +37,6 @@ const initialState = {
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("hiddenJobDescriptionIds") || "[]")
       : [],
-  inlineDiff: {
-    tempCV: null,
-    suggestions: [],
-    isApplyingAll: false,
-    isPanelOpen: false,
-    highlightMode: "all" as const,
-  },
   drafts: {
     drafts: [],
     isLoading: false,
@@ -65,10 +52,8 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
       // Combine all slices
       ...createFeatureStatusSlice(set, get, undefined),
       ...createJobFitSlice(set, get, undefined),
-      ...createATSOptimizationSlice(set, get, undefined),
       ...createJobDescriptionsSlice(set, get, undefined),
       ...createDraftsSlice(set, get, undefined),
-      ...createInlineDiffSlice(set, get, undefined),
 
       // Utility actions
       clearAllData: () => {
@@ -82,10 +67,6 @@ export const useAIStore = createWithEqualityFn<AIStore>()(
         aiService.clearCacheForCV(cvId);
         set((state) => ({
           jobFitAnalysis: { ...state.jobFitAnalysis, lastAnalysis: undefined },
-          atsOptimization: {
-            ...state.atsOptimization,
-            lastAnalysis: undefined,
-          },
           jobDescriptions: state.jobDescriptions.filter(
             (jd) => jd.cv_id !== cvId,
           ),
@@ -106,9 +87,6 @@ export const useAIFeatureStatus = () =>
 
 export const useJobFitAnalysis = () =>
   useAIStore((state) => state.jobFitAnalysis);
-
-export const useATSOptimization = () =>
-  useAIStore((state) => state.atsOptimization);
 
 export const useJobDescriptions = () =>
   useAIStore((state) => state.jobDescriptions);
@@ -153,20 +131,6 @@ export const useActiveJobDescription = () =>
   });
 
 export const useSuggestions = () => useAIStore((state) => state.suggestions);
-
-// Inline diff selectors
-export const useInlineDiff = () => useAIStore((state) => state.inlineDiff);
-
-export const useInlineDiffSuggestions = () =>
-  useAIStore((state) => state.inlineDiff.suggestions);
-
-export const useTempCV = () => useAIStore((state) => state.inlineDiff.tempCV);
-
-export const useIsDiffMode = () =>
-  useAIStore((state) => !!state.inlineDiff.tempCV?.isDiffMode);
-
-export const useSuggestionPanel = () =>
-  useAIStore((state) => state.inlineDiff.isPanelOpen);
 
 // Draft selectors
 export const useDrafts = () => useAIStore((state) => state.drafts);

@@ -98,6 +98,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   // AI store for job description management
   const setActiveJobDescription = useAIStore((state) => state.setActiveJobDescription);
   const getCVDrafts = useAIStore((state) => state.getCVDrafts);
+  const deleteWhyGoodFitDraft = useAIStore((state) => state.deleteWhyGoodFitDraft);
 
   // Notifications for error and success handling
   const { showInfo } = useNotifications();
@@ -146,6 +147,17 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const handleGenerateSuggestions = useCallback(async () => {
     if (activeJobDescription && cvId) {
       try {
+        // Delete any existing why_good_fit draft before generating new suggestions
+        // This ensures users don't see stale drafts when regenerating
+        try {
+          await deleteWhyGoodFitDraft(cvId);
+        } catch (deleteError: any) {
+          // Ignore 404 errors (no draft exists) - this is expected
+          if (deleteError?.code !== "404" && deleteError?.response?.status !== 404) {
+            throw deleteError;
+          }
+        }
+
         // Create AI enhancement task using background task API
         const enhancementId = await generateAllSuggestions(
           cvId,
@@ -173,6 +185,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   }, [
     activeJobDescription,
     cvId,
+    deleteWhyGoodFitDraft,
     generateAllSuggestions,
     addTask,
     setSuggestionsLoading,

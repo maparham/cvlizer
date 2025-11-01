@@ -17,7 +17,6 @@
 import { cacheManager } from "./cache";
 import { jobFitService } from "./jobFitService";
 import { jobDescriptionService } from "./jobDescriptionService";
-import { atsService } from "./atsService";
 import { aiSectionsService } from "./aiSectionsService";
 import { utilityService } from "./utilityService";
 
@@ -48,13 +47,9 @@ class AIService {
   associateJobDescriptionWithCV = jobDescriptionService.associateJobDescriptionWithCV.bind(jobDescriptionService);
   disassociateJobDescriptionFromCV = jobDescriptionService.disassociateJobDescriptionFromCV.bind(jobDescriptionService);
 
-  // ATS optimization
-  analyzeATSOptimization = atsService.analyzeATSOptimization.bind(atsService);
-
   // AI sections
   generateAISection = aiSectionsService.generateAISection.bind(aiSectionsService);
   getAISections = aiSectionsService.getAISections.bind(aiSectionsService);
-  createAIEnhancement = aiSectionsService.createAIEnhancement.bind(aiSectionsService);
   createCombinedAISuggestions = aiSectionsService.createCombinedAISuggestions.bind(aiSectionsService);
   getAIEnhancementStatus = aiSectionsService.getAIEnhancementStatus.bind(aiSectionsService);
   getLatestAIEnhancement = aiSectionsService.getLatestAIEnhancement.bind(aiSectionsService);
@@ -88,10 +83,8 @@ export const {
   deleteJobDescription,
   associateJobDescriptionWithCV,
   disassociateJobDescriptionFromCV,
-  analyzeATSOptimization,
   generateAISection,
   getAISections,
-  createAIEnhancement,
   createCombinedAISuggestions,
   getAIEnhancementStatus,
   getLatestAIEnhancement,

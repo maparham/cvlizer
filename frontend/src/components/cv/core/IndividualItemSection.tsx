@@ -82,6 +82,7 @@ function IndividualItemSection<T>({
   sortOptions = [],
   onTitleSave,
   cvId,
+  additionalHeaderActions,
 }: IndividualItemSectionProps<T>) {
   // Custom hooks for state management
   const {
@@ -431,8 +432,10 @@ function IndividualItemSection<T>({
         onCancel={undefined}
         isValid={true}
         onTitleSave={onTitleSave}
+        headerActionsLeft={additionalHeaderActions}
         headerActions={
           <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+            {/* Right-side actions: Sort and Add */}
             {/* Sort controls */}
             <SortMenu
               sortOptions={sortOptions}

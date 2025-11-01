@@ -85,9 +85,6 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
 
       {/* Suggested Description */}
       <Box sx={{ mb: 2 }}>
-        <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
-          Suggested Description:
-        </Typography>
         <Box
           sx={{
             p: 1.5,
@@ -140,6 +137,7 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
           size="small"
           onClick={onDiscard}
           disabled={isLoading}
+          startIcon={<CloseIcon />}
           sx={{
             textTransform: "none",
             borderColor: "#f44336",

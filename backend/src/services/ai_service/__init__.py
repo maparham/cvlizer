@@ -11,15 +11,11 @@ All OpenAI interactions are unified through call_openai_with_schema for
 consistent error handling, retry logic, token tracking, and usage logging.
 """
 
-# Re-export ATS optimization functions
-from .ats_optimization import analyze_ats_optimization, create_optimization_suggestions
-
 # Re-export AI suggestions functions
 from .ai_suggestions_service import generate_ai_suggestions
 
 # Re-export common utilities and types
 from .common import (
-    ATSOptimizationResult,
     JobFitResult,
     call_openai_with_schema,
     extract_cached_tokens,
@@ -51,7 +47,6 @@ __all__ = [
     "extract_cached_tokens",
     "call_openai_with_schema",
     "JobFitResult",
-    "ATSOptimizationResult",
     # AI suggestions (job fit + optimization in one call)
     "generate_ai_suggestions",
     # Job fit analysis
@@ -62,9 +57,6 @@ __all__ = [
     "generate_cv_section",
     # Content enhancement
     "enhance_content",
-    # ATS optimization
-    "analyze_ats_optimization",
-    "create_optimization_suggestions",
     # Job extraction
     "extract_job_description_with_ai",
     # CV status

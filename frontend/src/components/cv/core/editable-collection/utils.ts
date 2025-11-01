@@ -28,6 +28,7 @@ export const getSingularTitle = (pluralTitle: string): string => {
     Education: "Education",
     Projects: "Project",
     Awards: "Award",
+    "Awards & Recognition": "Award",
     Certifications: "Certification",
     Publications: "Publication",
     "Volunteer Experience": "Volunteer Experience",

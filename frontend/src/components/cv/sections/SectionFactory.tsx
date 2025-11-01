@@ -2,27 +2,22 @@
  * Section Factory Component
  *
  * This factory component dynamically renders the appropriate section component
- * based on whether inline diff mode is active. It provides a seamless way to
- * switch between regular sections and their diff-enabled counterparts.
+ * based on section type. It provides a centralized way to manage section rendering.
  *
  * Key responsibilities:
- * - Detect if inline diff mode is active
- * - Render diff-enabled sections when in diff mode
- * - Fall back to regular sections when not in diff mode
+ * - Map section types to their corresponding components
  * - Maintain consistent props interface across section types
- * - Handle section-specific diff integrations
+ * - Simplify section rendering logic
  *
  * Usage:
  * - Replace direct section imports with SectionFactory
- * - Automatically handles switching between regular and diff modes
- * - Maintains backward compatibility with existing section props
+ * - Pass section type to dynamically render appropriate component
  */
 
 import React from "react";
 import { SectionProps } from "../../../types";
-import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
 
-// Import regular sections
+// Import sections
 import PersonalInfoSection from "./PersonalInfoSection";
 import ProfessionalSummarySection from "./ProfessionalSummarySection";
 import WorkExperienceSection from "./WorkExperienceSection";
@@ -34,10 +29,6 @@ import AwardsSection from "./AwardsSection";
 import PublicationsSection from "./PublicationsSection";
 import VolunteerExperienceSection from "./VolunteerExperienceSection";
 import WhyGoodFitSection from "./WhyGoodFitSection";
-
-// Import diff-enabled sections
-import SkillsSectionWithDiff from "./SkillsSectionWithDiff";
-import ProfessionalSummarySectionWithDiff from "./ProfessionalSummarySectionWithDiff";
 
 // Section type mapping
 type SectionType =
@@ -60,8 +51,8 @@ interface SectionFactoryProps extends SectionProps {
   onSectionTitleSave?: (newTitle: string) => Promise<void>;
 }
 
-// Map of regular sections
-const REGULAR_SECTIONS = {
+// Map of sections
+const SECTIONS = {
   personal_info: PersonalInfoSection,
   professional_summary: ProfessionalSummarySection,
   work_experience: WorkExperienceSection,
@@ -75,37 +66,13 @@ const REGULAR_SECTIONS = {
   why_good_fit: WhyGoodFitSection,
 };
 
-// Map of diff-enabled sections (only create where needed)
-const DIFF_SECTIONS = {
-  skills: SkillsSectionWithDiff,
-  professional_summary: ProfessionalSummarySectionWithDiff,
-  // Add more diff-enabled sections as they're created
-  // work_experience: WorkExperienceSectionWithDiff,
-};
-
 const SectionFactory: React.FC<SectionFactoryProps> = ({
   sectionType,
   sectionTitle,
   onSectionTitleSave,
   ...props
 }) => {
-  const { isInDiffMode } = useInlineDiffContext();
-
-  // Determine which component to render
-  const getSectionComponent = () => {
-    // If in diff mode and a diff-enabled version exists, use it
-    if (
-      isInDiffMode &&
-      DIFF_SECTIONS[sectionType as keyof typeof DIFF_SECTIONS]
-    ) {
-      return DIFF_SECTIONS[sectionType as keyof typeof DIFF_SECTIONS];
-    }
-
-    // Otherwise, use the regular section
-    return REGULAR_SECTIONS[sectionType];
-  };
-
-  const SectionComponent = getSectionComponent();
+  const SectionComponent = SECTIONS[sectionType];
 
   if (!SectionComponent) {
     console.warn(`Unknown section type: ${sectionType}`);
@@ -138,8 +105,6 @@ export {
   PublicationsSection,
   VolunteerExperienceSection,
   WhyGoodFitSection,
-  SkillsSectionWithDiff,
-  ProfessionalSummarySectionWithDiff,
 };
 
 // Export types

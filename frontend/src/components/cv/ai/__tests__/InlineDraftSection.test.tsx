@@ -151,7 +151,7 @@ describe("InlineDraftSection", () => {
       screen.getByText(mockDraft.draft_data!.fit_analysis!),
     ).toBeInTheDocument();
     expect(screen.getByText("Approve & Add to CV")).toBeInTheDocument();
-    expect(screen.getByText("Reject")).toBeInTheDocument();
+    expect(screen.getByText("Discard")).toBeInTheDocument();
   });
 
   it("shows draft metadata in accordion", async () => {
@@ -197,15 +197,15 @@ describe("InlineDraftSection", () => {
   it("handles draft rejection successfully", async () => {
     renderComponent();
 
-    const rejectButton = screen.getByText("Reject");
+    const rejectButton = screen.getByText("Discard");
     fireEvent.click(rejectButton);
 
-    expect(screen.getByText("Rejecting...")).toBeInTheDocument();
+    expect(screen.getByText("Discarding...")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(mockDeleteDraft).toHaveBeenCalledWith("test-cv-1");
       expect(mockShowSuccess).toHaveBeenCalledWith(
-        "Draft rejected successfully",
+        "Draft discarded successfully",
       );
       expect(mockOnRejected).toHaveBeenCalled();
     });
@@ -227,12 +227,12 @@ describe("InlineDraftSection", () => {
   });
 
   it("handles rejection errors gracefully", async () => {
-    const errorMessage = "Failed to reject draft";
+    const errorMessage = "Failed to discard draft";
     mockDeleteDraft.mockRejectedValue(new Error(errorMessage));
 
     renderComponent();
 
-    const rejectButton = screen.getByText("Reject");
+    const rejectButton = screen.getByText("Discard");
     fireEvent.click(rejectButton);
 
     await waitFor(() => {
@@ -250,7 +250,7 @@ describe("InlineDraftSection", () => {
     renderComponent();
 
     const approveButton = screen.getByText("Approve & Add to CV");
-    const rejectButton = screen.getByText("Reject");
+    const rejectButton = screen.getByText("Discard");
 
     fireEvent.click(approveButton);
 

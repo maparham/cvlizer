@@ -19,7 +19,6 @@ import {
   CVContentArea,
   PDFCVEditorDialogs,
 } from "./core";
-import { InlineDiffProvider } from "../../contexts/InlineDiffContext";
 import {
   useCVEditorControls,
   useCVEditorState,
@@ -107,8 +106,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <InlineDiffProvider>
-        <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+      <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
           {/* Section Manager Sidebar */}
           <SectionManagerSidebar
             sections={sections.items}
@@ -374,7 +372,6 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
             <ConnectedHistoryPanelHandle cvId={cvId} />
           )}
         </Box>
-      </InlineDiffProvider>
     </LocalizationProvider>
   );
 };

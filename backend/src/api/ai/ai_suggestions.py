@@ -16,14 +16,13 @@ from src.middleware.clerk_auth import get_effective_user
 from src.models.ai_enhancement import AIEnhancement
 from src.models.base import get_db
 from src.models.user import User
-from src.services.ai_service import create_optimization_suggestions, is_ai_enabled
 from src.services.job_description_service import (
     get_cv_owned_by,
     get_job_description_by_id,
 )
 from src.utils.rate_limit import create_combined_limiter
 
-from .background_tasks import ai_enhancement_background, ai_suggestions_background
+from .background_tasks import ai_suggestions_background
 from .models import (
     AISuggestionAcceptRequest,
     AISuggestionCreate,
@@ -137,70 +136,6 @@ async def accept_ai_suggestion(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating AI suggestion: {str(e)}",
-        )
-
-
-@router.post("/cvs/{cv_id}/ai-enhancements", response_model=AIEnhancementCreateResponse)
-@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
-async def create_ai_enhancement(
-    request: Request,
-    cv_id: str,
-    enhancement_request: AIEnhancementRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
-):
-    """Create a new AI enhancement task for CV suggestions"""
-    # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
-
-    if not cv:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
-
-    # Verify job description exists
-    job_description = get_job_description_by_id(
-        db, enhancement_request.job_description_id, str(current_user.id)
-    )
-
-    if not job_description:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
-        )
-
-    try:
-        # Create AI enhancement record
-        enhancement_id = str(uuid.uuid4())
-        enhancement = AIEnhancement(
-            id=enhancement_id,
-            user_id=str(current_user.id),
-            cv_id=cv_id,
-            job_description_id=enhancement_request.job_description_id,
-            is_generating=True,
-            generation_error=None,
-        )
-
-        db.add(enhancement)
-        db.commit()
-
-        # Start background task
-        asyncio.create_task(
-            ai_enhancement_background(
-                enhancement_id,
-                cv.parsed_data or {},
-                job_description.content,
-                str(current_user.id),
-                cv_id,
-                enhancement_request.job_description_id,
-            )
-        )
-
-        return AIEnhancementCreateResponse(
-            enhancement_id=enhancement_id, is_generating=True
-        )
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating AI enhancement: {str(e)}",
         )
 
 

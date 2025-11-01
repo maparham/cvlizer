@@ -111,52 +111,6 @@ class AIEnhancementCreateResponse(BaseModel):
     is_generating: bool = True
 
 
-# ATS Optimization Models
-class ATSOptimizationRequest(BaseModel):
-    job_description_id: str
-
-
-class MissingKeyword(BaseModel):
-    """Represents a keyword identified in the job description but missing from the CV."""
-
-    keyword: str
-    importance: str
-    frequency_in_jd: int
-    suggested_placement: str
-
-
-class KeywordDensity(BaseModel):
-    """Tracks keyword density metrics for ATS optimization analysis."""
-
-    current: float
-    recommended: float
-    status: str
-
-
-class OptimizedSection(BaseModel):
-    """Provides section-specific optimization suggestions for ATS compatibility."""
-
-    section: str
-    current_keywords: List[str]
-    missing_keywords: List[str]
-    suggestion: str
-
-
-class ATSOptimizationResponse(BaseModel):
-    model_config = {"protected_namespaces": ()}
-
-    ats_score: int
-    missing_keywords: List[MissingKeyword]
-    keyword_density: Dict[str, KeywordDensity]
-    suggestions: List[str]
-    optimized_sections: List[OptimizedSection]
-    strengths: List[str]
-    weaknesses: List[str]
-    tokens_used: int
-    generation_time: int
-    model_used: str
-
-
 # Unified AI Suggestions Models
 class GenerateSuggestionsRequest(BaseModel):
     job_description_id: str

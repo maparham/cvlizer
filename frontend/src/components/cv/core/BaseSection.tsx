@@ -16,6 +16,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   children,
   editButton,
   headerActions,
+  headerActionsLeft,
   isEditing,
   isValid = true,
   onTitleSave,
@@ -137,26 +138,29 @@ const BaseSection: React.FC<BaseSectionProps> = ({
           mb: 2,
         }}
       >
-        {onTitleSave ? (
-          <EditableTitle
-            title={title || ""}
-            onSave={onTitleSave}
-            variant="h5"
-            sx={{
-              "& .MuiTypography-root": {
-                fontWeight: "bold",
-                color: "#1976d2",
-              },
-            }}
-          />
-        ) : (
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: "bold", color: "#1976d2" }}
-          >
-            {title}
-          </Typography>
-        )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {onTitleSave ? (
+            <EditableTitle
+              title={title || ""}
+              onSave={onTitleSave}
+              variant="h5"
+              sx={{
+                "& .MuiTypography-root": {
+                  fontWeight: "bold",
+                  color: "#1976d2",
+                },
+              }}
+            />
+          ) : (
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: "bold", color: "#1976d2" }}
+            >
+              {title}
+            </Typography>
+          )}
+          {headerActionsLeft}
+        </Box>
         {headerActions}
       </Box>
 

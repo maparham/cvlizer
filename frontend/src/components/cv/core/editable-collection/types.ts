@@ -31,6 +31,7 @@ export interface IndividualItemSectionProps<T> {
   sortOptions?: SortOption<T>[]
   onTitleSave?: (newTitle: string) => Promise<void>
   cvId?: string
+  additionalHeaderActions?: React.ReactNode
 }
 
 export interface ItemControlsProps<T> {

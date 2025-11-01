@@ -347,9 +347,9 @@ describe('EnhancementModal', () => {
     test('displays confidence labels', () => {
       render(<EnhancementModal {...defaultProps} />);
 
-      expect(screen.getByText('Excellent')).toBeInTheDocument();
-      expect(screen.getByText('Good')).toBeInTheDocument();
-      expect(screen.getByText('Fair')).toBeInTheDocument();
+      expect(screen.getByText('Excellent Match')).toBeInTheDocument();
+      expect(screen.getByText('Good Match')).toBeInTheDocument();
+      expect(screen.getByText('Fair Match')).toBeInTheDocument();
     });
 
     test('displays improvements list', () => {
@@ -602,7 +602,7 @@ describe('EnhancementModal', () => {
   });
 
   describe('Confidence Score Display', () => {
-    test('shows "Poor" label for score below 55', () => {
+    test('shows "Poor Match" label for score below 55', () => {
       const lowScoreSuggestions: ContentSuggestion[] = [{
         content: 'Low quality suggestion',
         confidence_score: 40,
@@ -611,18 +611,18 @@ describe('EnhancementModal', () => {
 
       render(<EnhancementModal {...defaultProps} suggestions={lowScoreSuggestions} />);
 
-      expect(screen.getByText('Poor')).toBeInTheDocument();
+      expect(screen.getByText('Poor Match')).toBeInTheDocument();
     });
 
     test('shows different confidence levels correctly', () => {
       render(<EnhancementModal {...defaultProps} />);
 
-      // 90% -> Excellent
-      // 75% -> Good
-      // 60% -> Fair
-      expect(screen.getByText('Excellent')).toBeInTheDocument();
-      expect(screen.getByText('Good')).toBeInTheDocument();
-      expect(screen.getByText('Fair')).toBeInTheDocument();
+      // 90% -> Excellent Match
+      // 75% -> Good Match
+      // 60% -> Fair Match
+      expect(screen.getByText('Excellent Match')).toBeInTheDocument();
+      expect(screen.getByText('Good Match')).toBeInTheDocument();
+      expect(screen.getByText('Fair Match')).toBeInTheDocument();
     });
   });
 

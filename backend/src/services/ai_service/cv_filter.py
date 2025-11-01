@@ -41,12 +41,16 @@ def filter_hidden_sections(cv_data: Dict[str, Any]) -> Dict[str, Any]:
         return filtered_data
 
     # Build a set of visible section types
+    # Only sections explicitly listed in section_config with visible=True are visible
     visible_section_types: Set[str] = set()
     for section in sections:
         if section.get("visible", True):  # Default to visible if not specified
             section_type = section.get("type") or section.get("id")
             if section_type:
                 visible_section_types.add(section_type)
+
+    # personal_info is always visible (never filtered)
+    visible_section_types.add("personal_info")
 
     # Define all possible section types that can be filtered
     filterable_sections = [
@@ -63,6 +67,9 @@ def filter_hidden_sections(cv_data: Dict[str, Any]) -> Dict[str, Any]:
     ]
 
     # Remove hidden sections from the data
+    # A section is hidden if:
+    # 1. It's not in visible_section_types (either not in section_config.sections at all, or has visible=false)
+    # 2. It's in filterable_sections (can be filtered)
     for section_type in filterable_sections:
         if section_type in filtered_data:
             # If this section type is not in the visible set, remove it

@@ -117,13 +117,13 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
     try {
       await deleteWhyGoodFitDraft(cvId);
 
-      showSuccess("Draft rejected successfully");
+      showSuccess("Draft discarded successfully");
 
       // Notify parent component after successful rejection
       onRejected?.();
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to reject draft";
+        err instanceof Error ? err.message : "Failed to discard draft";
       showError("Error", errorMessage);
     } finally {
       setIsRejecting(false);
@@ -205,7 +205,7 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
                   variant="h6"
                   sx={{ fontWeight: 600, color: "warning.dark" }}
                 >
-                  Why I'm a Good Fit
+                  {draft.draft_data?.title || "Why I'm a Good Fit"}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -305,7 +305,7 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
                 disabled={isApproving || isRejecting}
                 sx={{ textTransform: "none" }}
               >
-                {isRejecting ? "Rejecting..." : "Reject"}
+                {isRejecting ? "Discarding..." : "Discard"}
               </Button>
             </Box>
 

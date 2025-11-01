@@ -67,22 +67,6 @@ class JobFitResult(TypedDict, total=False):
     low_fit_warning: Dict[str, Any]
 
 
-class ATSOptimizationResult(TypedDict, total=False):
-    """Type definition for ATS optimization results."""
-
-    ats_score: int
-    missing_keywords: List[Dict[str, Any]]
-    keyword_analysis: Dict[str, Any]
-    suggestions: List[str]
-    content_optimization: List[Dict[str, Any]]
-    strengths: List[str]
-    weaknesses: List[str]
-    tokens_used: int
-    generation_time: int
-    model_used: str
-    error: str
-
-
 # ============================================================================
 # Utility Functions
 # ============================================================================

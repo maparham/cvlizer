@@ -206,50 +206,6 @@ class JobFitAnalysisResponseSchema(BaseModel):
 
 
 # ============================================================================
-# ATS Optimization Schemas
-# ============================================================================
-
-
-class MissingKeywordSchema(BaseModel):
-    """Schema for missing keyword entry."""
-
-    keyword: str = Field(min_length=1)
-    importance: str = Field(pattern="^(high|medium|low)$")
-    frequency_in_jd: int = Field(ge=0)
-    present_in_cv: bool = Field(default=False)
-    found_in_sections: List[str] = Field(default_factory=list)
-    suggested_placement: str = Field(min_length=1)
-
-
-class KeywordAnalysisEntrySchema(BaseModel):
-    """Schema for individual keyword analysis."""
-
-    present: bool
-    found_in_sections: List[str] = Field(default_factory=list)
-    suggested_sections: List[str] = Field(default_factory=list)
-
-
-class ContentOptimizationSchema(BaseModel):
-    """Schema for content optimization suggestion."""
-
-    section: str = Field(min_length=1)
-    missing_keywords: List[str] = Field(default_factory=list)
-    suggestion: str = Field(min_length=1)
-
-
-class ATSOptimizationResponseSchema(BaseModel):
-    """Schema for ATS optimization AI response."""
-
-    ats_score: int = Field(ge=0, le=100)
-    missing_keywords: List[MissingKeywordSchema] = Field(default_factory=list)
-    keyword_analysis: Dict[str, KeywordAnalysisEntrySchema] = Field(default_factory=dict)
-    suggestions: List[str] = Field(default_factory=list)
-    content_optimization: List[ContentOptimizationSchema] = Field(default_factory=list)
-    strengths: List[str] = Field(default_factory=list)
-    weaknesses: List[str] = Field(default_factory=list)
-
-
-# ============================================================================
 # Optimization Suggestions Schemas
 # ============================================================================
 
@@ -293,6 +249,12 @@ class ItemDescriptionSuggestionSchema(BaseModel):
         pattern="^(highly_recommended|standard)$",
         description="Importance level: 'highly_recommended' for high-impact changes, 'standard' for moderate improvements",
     )
+    current_content_score: int = Field(
+        ge=0,
+        le=100,
+        default=50,
+        description="Evaluation score for current content quality (0-100) w.r.t. the job description",
+    )
 
 
 class OptimizationSuggestionsResponseSchema(BaseModel):
@@ -325,8 +287,9 @@ class AISuggestionsResponseSchema(BaseModel):
 
     # Optimization fields
     skills: SkillsSuggestionsSchema = Field(default_factory=SkillsSuggestionsSchema)
-    professional_summary: ProfessionalSummarySuggestionSchema = Field(
-        default_factory=ProfessionalSummarySuggestionSchema
+    professional_summary: Optional[ProfessionalSummarySuggestionSchema] = Field(
+        default=None,
+        description="Professional summary suggestions (only include if section is visible in CV)",
     )
     work_experience: List[ItemDescriptionSuggestionSchema] = Field(default_factory=list)
     education: List[ItemDescriptionSuggestionSchema] = Field(default_factory=list)

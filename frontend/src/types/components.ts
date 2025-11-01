@@ -40,6 +40,7 @@ export interface BaseSectionProps {
   onCancel?: () => void;
   editButton?: React.ReactNode;
   headerActions?: React.ReactNode;
+  headerActionsLeft?: React.ReactNode;
   isValid?: boolean;
   onTitleSave?: (newTitle: string) => Promise<void>;
   sectionId?: string;

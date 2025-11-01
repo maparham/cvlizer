@@ -157,7 +157,7 @@ const DraftSection: React.FC<DraftSectionProps> = ({
               sx={{ fontWeight: 600 }}
             />
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              Why I'm a Good Fit
+              {draft.draft_data?.title || "Why I'm a Good Fit"}
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>

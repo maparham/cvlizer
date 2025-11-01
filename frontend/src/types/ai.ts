@@ -99,44 +99,6 @@ export interface AIEnhancementCreateResponse {
   is_generating: boolean;
 }
 
-// ATS Optimization Types
-export interface ATSOptimizationRequest {
-  job_description_id: string;
-}
-
-export interface MissingKeyword {
-  keyword: string;
-  importance: string;
-  frequency_in_jd: number;
-  suggested_placement: string;
-}
-
-export interface KeywordAnalysis {
-  present: boolean;
-  frequency?: number;
-  suggested_sections?: string[];
-  sections?: string[];
-}
-
-export interface ContentOptimization {
-  section: string;
-  missing_keywords: string[];
-  suggestion: string;
-}
-
-export interface ATSOptimizationResponse {
-  ats_score: number;
-  missing_keywords: MissingKeyword[];
-  keyword_analysis: Record<string, KeywordAnalysis>;
-  suggestions: string[];
-  content_optimization: ContentOptimization[];
-  strengths: string[];
-  weaknesses: string[];
-  tokens_used: number;
-  generation_time: number;
-  model_used: string;
-}
-
 // AI Section Types (existing functionality)
 export interface AISectionResponse {
   id: string;
@@ -211,14 +173,6 @@ export interface AISuggestionState {
   error?: string;
 }
 
-// ATS Optimization State
-export interface ATSOptimizationState {
-  isAnalyzing: boolean;
-  lastAnalysis?: ATSOptimizationResponse;
-  error?: string;
-  isOptimizing: boolean;
-}
-
 // Job Fit Analysis State
 export interface JobFitAnalysisState {
   isAnalyzing: boolean;
@@ -227,54 +181,15 @@ export interface JobFitAnalysisState {
   isGenerating: boolean;
 }
 
-// Inline Diff System Types
-export type SuggestionType =
-  | "add_keyword"
-  | "enhance_content"
-  | "add_section"
-  | "modify_content"
-  | "remove_content";
-
-export interface AISuggestion {
-  id: string;
-  section: string; // 'skills', 'professional_summary', etc.
-  type: SuggestionType;
-  description: string; // Human-readable description
-  originalValue: string;
-  suggestedValue: string;
-  status: "pending" | "approved" | "rejected";
-  changeType: "addition" | "modification" | "removal";
-  fieldPath?: string; // Optional dot-notation path for nested fields
-}
-
-export interface TempCVState {
-  originalCV: any; // Store original CV data
-  appliedSuggestions: AISuggestion[];
-  tempData: any; // CV data with all suggestions applied
-  isDiffMode: boolean;
-}
-
-export interface InlineDiffState {
-  tempCV: TempCVState | null;
-  suggestions: AISuggestion[];
-  isApplyingAll: boolean;
-  isPanelOpen: boolean;
-  highlightMode: "all" | "pending" | "approved";
-  error?: string;
-  cvId?: string; // Track which CV is being edited for cache clearing
-}
-
 // AI Store State
 export interface AIStoreState {
   featureStatus: AIFeatureStatus;
   jobFitAnalysis: JobFitAnalysisState;
-  atsOptimization: ATSOptimizationState;
   suggestions: Record<string, AISuggestionState>; // keyed by content hash
   jobDescriptions: JobDescription[];  // User-level job descriptions (shared across CVs)
   activeJobDescriptionId?: string;  // Deprecated: use activeJobDescriptionIdPerCV instead
   activeJobDescriptionIdPerCV: Record<string, string>; // Map of cvId -> activeJobDescriptionId
   hiddenJobDescriptionIds: string[]; // IDs of job descriptions hidden from sidebar
-  inlineDiff: InlineDiffState;
   drafts: DraftState;
 }
 
@@ -301,6 +216,7 @@ export interface ItemDescriptionSuggestion {
   suggested: string;
   reasoning: string;
   importance: 'highly_recommended' | 'standard';
+  current_content_score: number;
 }
 
 export interface AllSuggestionsResponse {

@@ -9,8 +9,8 @@ import json
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from src.services.ai_service.job_fit import _build_job_fit_prompt
-from src.services.ai_service.ats_optimization import _build_ats_prompt
 from src.services.ai_service.section_generation import generate_cv_section
+from src.services.ai_service.ai_suggestions_service import _build_ai_suggestions_prompt
 
 
 @pytest.fixture
@@ -122,44 +122,6 @@ class TestJobFitPromptFiltering:
         assert "skills" in prompt
 
 
-class TestATSPromptFiltering:
-    """Test that ATS optimization filters hidden sections from prompts."""
-
-    def test_ats_prompt_excludes_hidden_sections(self, cv_data_with_hidden_sections):
-        """Test that hidden sections are not in ATS optimization prompt."""
-        job_description = "Python developer needed"
-
-        prompt = _build_ats_prompt(cv_data_with_hidden_sections, job_description)
-
-        # Hidden section data should not appear (the word may appear in instructions)
-        assert "Secret Company" not in prompt
-        assert "Secret Certification" not in prompt
-        assert "Confidential work" not in prompt
-
-        # Visible sections should appear
-        assert "MIT" in prompt
-        assert "Python" in prompt
-
-    def test_ats_prompt_filters_match_section_config(self, cv_data_with_hidden_sections):
-        """Test that ATS prompt filtering respects section_config."""
-        job_description = "Senior engineer position"
-
-        prompt = _build_ats_prompt(cv_data_with_hidden_sections, job_description)
-
-        # Verify the CV data in the prompt doesn't have hidden sections
-        # Extract the JSON portion from the prompt
-        cv_start = prompt.find("CV: {")
-        cv_end = prompt.find("\n\nJob:", cv_start)
-        cv_json_str = prompt[cv_start + 4 : cv_end]
-
-        cv_in_prompt = json.loads(cv_json_str)
-
-        assert "work_experience" not in cv_in_prompt
-        assert "certifications" not in cv_in_prompt
-        assert "education" in cv_in_prompt
-        assert "skills" in cv_in_prompt
-
-
 class TestSectionGenerationFiltering:
     """Test that section generation filters hidden sections from prompts."""
 
@@ -224,19 +186,6 @@ class TestFilteringWithNoSectionConfig:
         assert "Tech Corp" in prompt
         assert "Python" in prompt
 
-    def test_ats_works_without_section_config(self):
-        """Test ATS prompt works when CV has no section_config."""
-        cv_data = {
-            "personal_info": {"full_name": "Jane Smith"},
-            "skills": {"technical": ["JavaScript"]},
-        }
-        job_description = "Frontend developer"
-
-        prompt = _build_ats_prompt(cv_data, job_description)
-
-        assert "Jane Smith" in prompt
-        assert "JavaScript" in prompt
-
 
 class TestPersonalInfoNeverFiltered:
     """Test that personal_info is never filtered from AI prompts."""
@@ -298,4 +247,120 @@ class TestProfessionalSummaryFiltering:
 
         # Other sections should be present
         assert "John Doe" in prompt or "personal_info" in prompt
+        assert "Python" in prompt
+
+
+class TestAISuggestionsFiltering:
+    """Test that AI suggestions service filters hidden sections from prompts."""
+
+    def test_ai_suggestions_excludes_hidden_work_experience(
+        self, cv_data_with_hidden_sections
+    ):
+        """Test that hidden work_experience is not in AI suggestions prompt."""
+        job_description = "Looking for a Python developer"
+
+        prompt = _build_ai_suggestions_prompt(
+            cv_data_with_hidden_sections, job_description
+        )
+
+        # Hidden work_experience should not appear in prompt
+        assert "Secret Company" not in prompt
+        assert "Secret Position" not in prompt
+        assert "Confidential work" not in prompt
+
+        # Visible sections should appear
+        assert "Python" in prompt
+        assert "MIT" in prompt or "education" in prompt
+
+    def test_ai_suggestions_excludes_hidden_professional_summary(self):
+        """Test that hidden professional_summary is not in AI suggestions prompt."""
+        cv_data = {
+            "personal_info": {"full_name": "John Doe"},
+            "professional_summary": {"content": "Secret summary that should be hidden"},
+            "work_experience": [
+                {"id": "1", "company": "Tech Corp", "position": "Engineer"}
+            ],
+            "skills": {"technical": ["Python"]},
+            "section_config": {
+                "sections": [
+                    {"id": "personal_info", "type": "personal_info", "visible": True},
+                    {
+                        "id": "professional_summary",
+                        "type": "professional_summary",
+                        "visible": False,
+                    },
+                    {"id": "work_experience", "type": "work_experience", "visible": True},
+                    {"id": "skills", "type": "skills", "visible": True},
+                ]
+            },
+        }
+        job_description = "Python developer"
+
+        prompt = _build_ai_suggestions_prompt(cv_data, job_description)
+
+        # Hidden professional_summary should not appear
+        assert "Secret summary" not in prompt
+        assert "should be hidden" not in prompt
+        assert "Current Summary:" in prompt  # The label should still be there
+        # But the summary content should be empty or not present
+
+        # Other sections should be present
+        assert "Tech Corp" in prompt or "work_experience" in prompt
+        assert "Python" in prompt
+
+    def test_ai_suggestions_excludes_hidden_skills(self):
+        """Test that hidden skills are not in AI suggestions prompt."""
+        cv_data = {
+            "personal_info": {"full_name": "John Doe"},
+            "work_experience": [{"id": "1", "company": "Tech Corp"}],
+            "skills": {
+                "technical": ["Secret Tech", "Python"],
+                "soft": ["Secret Soft"],
+            },
+            "section_config": {
+                "sections": [
+                    {"id": "personal_info", "type": "personal_info", "visible": True},
+                    {"id": "work_experience", "type": "work_experience", "visible": True},
+                    {"id": "skills", "type": "skills", "visible": False},  # HIDDEN
+                ]
+            },
+        }
+        job_description = "Python developer"
+
+        prompt = _build_ai_suggestions_prompt(cv_data, job_description)
+
+        # Hidden skills should not appear in the separate skills lists
+        assert "Secret Tech" not in prompt
+        assert "Secret Soft" not in prompt
+        # Python might appear in the main CV JSON but should not be in the Technical Skills list
+        # when skills section is hidden, the Technical Skills: line should show empty array
+
+    def test_ai_suggestions_excludes_hidden_education(self):
+        """Test that hidden education is not in AI suggestions prompt."""
+        cv_data = {
+            "personal_info": {"full_name": "John Doe"},
+            "work_experience": [{"id": "1", "company": "Tech Corp"}],
+            "education": [
+                {"id": "1", "institution": "Secret University", "degree": "PhD"}
+            ],
+            "skills": {"technical": ["Python"]},
+            "section_config": {
+                "sections": [
+                    {"id": "personal_info", "type": "personal_info", "visible": True},
+                    {"id": "work_experience", "type": "work_experience", "visible": True},
+                    {"id": "education", "type": "education", "visible": False},  # HIDDEN
+                    {"id": "skills", "type": "skills", "visible": True},
+                ]
+            },
+        }
+        job_description = "Python developer"
+
+        prompt = _build_ai_suggestions_prompt(cv_data, job_description)
+
+        # Hidden education should not appear
+        assert "Secret University" not in prompt
+        assert "PhD" not in prompt
+
+        # Other sections should be present
+        assert "Tech Corp" in prompt or "work_experience" in prompt
         assert "Python" in prompt

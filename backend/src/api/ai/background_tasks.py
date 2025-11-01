@@ -228,94 +228,6 @@ async def generate_job_fit_background(
     )
 
 
-def ai_enhancement_sync(
-    task_id: str,
-    cv_data: dict,
-    job_description: str,
-    user_id: str,
-    cv_id: str,
-    job_description_id: str,
-):
-    """
-    Synchronous function to generate AI enhancement suggestions.
-    This runs in a background thread to avoid blocking the main event loop.
-    """
-    try:
-        # Import here to avoid circular imports
-        from src.services.ai_service import create_optimization_suggestions
-
-        # Run the AI enhancement generation
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            enhancement_result = loop.run_until_complete(
-                create_optimization_suggestions(
-                    cv_data=cv_data,
-                    job_description=job_description,
-                    user_id=user_id,
-                    cv_id=cv_id,
-                )
-            )
-
-            # Update the AI enhancement record with results
-            from src.models.base import SessionLocal
-
-            db = SessionLocal()
-            try:
-                enhancement = (
-                    db.query(AIEnhancement).filter(AIEnhancement.id == task_id).first()
-                )
-                if enhancement:
-                    enhancement.enhancement_data = enhancement_result
-                    enhancement.is_generating = False
-                    enhancement.generation_error = None
-                    db.commit()
-            finally:
-                db.close()
-
-        finally:
-            loop.close()
-
-    except Exception as e:
-        # Update the enhancement record with error
-        from src.models.base import SessionLocal
-
-        db = SessionLocal()
-        try:
-            enhancement = (
-                db.query(AIEnhancement).filter(AIEnhancement.id == task_id).first()
-            )
-            if enhancement:
-                enhancement.is_generating = False
-                enhancement.generation_error = str(e)
-                db.commit()
-        finally:
-            db.close()
-
-
-async def ai_enhancement_background(
-    enhancement_id: str,
-    cv_data: dict,
-    job_description: str,
-    user_id: str,
-    cv_id: str,
-    job_description_id: str,
-):
-    """
-    Background task to generate AI enhancement suggestions.
-    """
-    await run_task_in_background(
-        enhancement_id,
-        "ai_enhancement",
-        ai_enhancement_sync,
-        cv_data,
-        job_description,
-        user_id,
-        cv_id,
-        job_description_id,
-    )
-
-
 def ai_suggestions_sync(
     enhancement_id: str,
     cv_data: dict,
@@ -352,6 +264,17 @@ def ai_suggestions_sync(
                 db_session=db,
             )
         )
+
+        # Delete any existing draft for this CV and section type
+        existing_draft = (
+            db.query(AIDraft)
+            .filter(AIDraft.cv_id == cv_id, AIDraft.section_type == "why_good_fit")
+            .first()
+        )
+
+        if existing_draft:
+            db.delete(existing_draft)
+            db.flush()  # Ensure deletion is persisted before creating new draft
 
         # Create Why Good Fit draft with job fit data
         draft = AIDraft(
@@ -437,8 +360,6 @@ __all__ = [
     "enhance_content_background",
     "generate_job_fit_sync",
     "generate_job_fit_background",
-    "ai_enhancement_sync",
-    "ai_enhancement_background",
     "ai_suggestions_sync",
     "ai_suggestions_background",
 ]

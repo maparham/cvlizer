@@ -82,40 +82,6 @@ class AISectionsService {
   }
 
   /**
-   * Create AI enhancement task (background task version)
-   */
-  async createAIEnhancement(
-    cvId: string,
-    jobDescriptionId: string,
-  ): Promise<AIEnhancementCreateResponse> {
-    try {
-      const response = await api.post<AIEnhancementCreateResponse>(
-        `/api/cvs/${cvId}/ai-enhancements`,
-        { job_description_id: jobDescriptionId },
-      );
-
-      return response.data;
-    } catch (error: any) {
-      const is429 = error.response?.status === 429;
-
-      if (is429) {
-        Logger.warn("Rate limit reached for createAIEnhancement", {
-          cvId,
-          jobDescriptionId,
-        });
-      } else {
-        Logger.error("Error creating AI enhancement", {
-          cvId,
-          jobDescriptionId,
-          error: error.message,
-        });
-      }
-
-      throw error;
-    }
-  }
-
-  /**
    * Create a combined AI suggestions task that also generates a Why Good Fit draft.
    * Uses the new backend endpoint and returns the enhancement_id for polling.
    */
@@ -234,7 +200,6 @@ export const aiSectionsService = new AISectionsService();
 export const {
   generateAISection,
   getAISections,
-  createAIEnhancement,
   getAIEnhancementStatus,
   getLatestAIEnhancement,
   updateAIEnhancement,

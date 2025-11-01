@@ -49,6 +49,7 @@ import {
   AutoAwesome as AutoAwesomeIcon,
   Check as CheckIcon,
   ContentCopy as CopyIcon,
+  Help as HelpIcon,
   TrendingUp as TrendingUpIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material";
@@ -264,10 +265,10 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
   };
 
   const getConfidenceLabel = (score: number) => {
-    if (score >= 85) return "Excellent";
-    if (score >= 70) return "Good";
-    if (score >= 55) return "Fair";
-    return "Poor";
+    if (score >= 85) return "Excellent Match";
+    if (score >= 70) return "Good Match";
+    if (score >= 55) return "Fair Match";
+    return "Poor Match";
   };
 
   return (
@@ -333,9 +334,38 @@ const EnhancementModal: React.FC<EnhancementModalProps> = ({
 
             {/* Suggestions */}
             <Box>
-              <Typography variant="h6" gutterBottom>
-                AI Suggestions
-              </Typography>
+              <Box display="flex" alignItems="center" gap={0.5} mb={1}>
+                <Typography variant="h6">
+                  AI Suggestions
+                </Typography>
+                <Tooltip
+                  title={
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Content Match Score measures:
+                      </Typography>
+                      <ul style={{ margin: 0, paddingLeft: "16px" }}>
+                        <li>Alignment with job requirements</li>
+                        <li>Keyword relevance to job description</li>
+                        <li>Content quality and clarity</li>
+                        <li>Overall job fit for this role</li>
+                      </ul>
+                      <Typography
+                        variant="caption"
+                        sx={{ display: "block", mt: 1, fontStyle: "italic" }}
+                      >
+                        Note: Score reflects job description match, not general writing quality
+                      </Typography>
+                    </Box>
+                  }
+                  arrow
+                  placement="top"
+                >
+                  <IconButton size="small" color="primary" sx={{ ml: 0.5 }}>
+                    <HelpIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
               <Typography variant="body2" color="text.secondary" paragraph>
                 Choose the best enhancement for your content:
               </Typography>

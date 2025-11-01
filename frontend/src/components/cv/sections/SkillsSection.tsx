@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { Box, Typography, Chip, Tooltip, Button } from "@mui/material";
-import { Add as AddIcon, InfoOutlined as InfoIcon } from "@mui/icons-material";
+import { Add as AddIcon, InfoOutlined as InfoIcon, Close as CloseIcon } from "@mui/icons-material";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import SkillsAutocomplete from "../ui/SkillsAutocomplete";
@@ -414,6 +414,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
                 variant="outlined"
                 size="small"
                 onClick={handleRejectAllSuggestions}
+                startIcon={<CloseIcon />}
                 sx={{
                   borderColor: "#1976D2",
                   color: "#1976D2",
@@ -673,6 +674,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
                     variant="outlined"
                     size="small"
                     onClick={handleRejectAllSuggestionsDisplay}
+                    startIcon={<CloseIcon />}
                     sx={{
                       borderColor: "#1976D2",
                       color: "#1976D2",
