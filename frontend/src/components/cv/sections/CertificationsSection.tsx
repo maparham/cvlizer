@@ -2,9 +2,10 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateFieldComponent } from '../core/formUtils'
+import { FormField, DateFieldComponent, ValidatedFieldDisplay } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
+import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface Certification {
   id: string
@@ -15,17 +16,19 @@ interface Certification {
   description?: string
 }
 
-const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Certifications', onTitleSave, cvId }) => {
-  const createNewCertification = (): Certification => ({
-    id: generateSectionId('certifications'),
-    name: '',
-    issuer: '',
-    date: '',
-    expiry_date: '',
-    description: ''
-  })
+// Separate component for certification form to allow using hooks
+const CertificationForm: React.FC<{
+  cert: Certification;
+  index: number;
+  updateCertification: (field: keyof Certification, value: any) => void;
+  onSave?: () => void;
+}> = ({ cert, index, updateCertification, onSave }) => {
+  // Get validation errors for this certification item
+  const nameValidation = useFieldValidation('certifications', index, 'name');
+  const issuerValidation = useFieldValidation('certifications', index, 'issuer');
+  const dateValidation = useFieldValidation('certifications', index, 'date');
 
-  const renderCertificationForm = (cert: Certification, _index: number, updateCertification: (field: keyof Certification, value: any) => void, onSave?: () => void) => (
+  return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -37,6 +40,8 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         value={cert.name}
         onChange={(value) => updateCertification('name', value)}
         onSave={onSave}
+        error={nameValidation.hasError}
+        helperText={nameValidation.errorMessage}
       />
       <FormField
         config={{
@@ -48,6 +53,8 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         value={cert.issuer}
         onChange={(value) => updateCertification('issuer', value)}
         onSave={onSave}
+        error={issuerValidation.hasError}
+        helperText={issuerValidation.errorMessage}
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
         <DateFieldComponent
@@ -60,6 +67,8 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
           onChange={(value) => updateCertification('date', value)}
           onSave={onSave}
           sx={{ flex: 1 }}
+          error={dateValidation.hasError}
+          helperText={dateValidation.errorMessage}
         />
         <DateFieldComponent
           config={{
@@ -85,29 +94,93 @@ const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave,
         onSave={onSave}
       />
     </Box>
-  )
+  );
+};
 
-  const renderCertificationDisplay = (cert: Certification, _index: number) => (
+// Separate component for certification display to allow using hooks
+const CertificationDisplay: React.FC<{
+  cert: Certification;
+  index: number;
+}> = ({ cert, index }) => {
+  // Get validation errors for this certification item
+  const nameValidation = useFieldValidation('certifications', index, 'name');
+  const issuerValidation = useFieldValidation('certifications', index, 'issuer');
+  const dateValidation = useFieldValidation('certifications', index, 'date');
+
+  return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
-          {cert.name}
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
-          {cert.date}
-          {cert.expiry_date && ` - ${cert.expiry_date}`}
-        </Typography>
+        <Box sx={{ flex: 1 }}>
+          <ValidatedFieldDisplay
+            validation={nameValidation}
+            variant="subtitle1"
+            normalColor="#333"
+          >
+            {cert.name}
+          </ValidatedFieldDisplay>
+        </Box>
+        <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
+          <ValidatedFieldDisplay
+            validation={dateValidation}
+            variant="body2"
+            normalColor="#666"
+            iconSize="0.875rem"
+            align="flex-end"
+          >
+            {cert.date}
+            {cert.expiry_date && ` - ${cert.expiry_date}`}
+          </ValidatedFieldDisplay>
+        </Box>
       </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {cert.issuer}
-      </Typography>
+      <Box sx={{ mb: 1 }}>
+        <ValidatedFieldDisplay
+          validation={issuerValidation}
+          variant="body2"
+          normalColor="#666"
+          iconSize="0.875rem"
+          sx={{ mb: 0 }}
+        >
+          {cert.issuer}
+        </ValidatedFieldDisplay>
+      </Box>
       {cert.description && (
         <Box>
           <MarkdownRenderer content={cert.description} variant="body1" />
         </Box>
       )}
     </>
-  )
+  );
+};
+
+const CertificationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Certifications', onTitleSave, cvId }) => {
+  const createNewCertification = (): Certification => ({
+    id: generateSectionId('certifications'),
+    name: '',
+    issuer: '',
+    date: '',
+    expiry_date: '',
+    description: ''
+  })
+
+  const renderCertificationForm = (cert: Certification, index: number, updateCertification: (field: keyof Certification, value: any) => void, onSave?: () => void) => {
+    return (
+      <CertificationForm
+        cert={cert}
+        index={index}
+        updateCertification={updateCertification}
+        onSave={onSave}
+      />
+    );
+  }
+
+  const renderCertificationDisplay = (cert: Certification, index: number) => {
+    return (
+      <CertificationDisplay
+        cert={cert}
+        index={index}
+      />
+    );
+  }
 
   return (
     <IndividualItemSection

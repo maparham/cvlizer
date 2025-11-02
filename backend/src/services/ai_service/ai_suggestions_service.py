@@ -75,28 +75,29 @@ def _build_ai_suggestions_prompt(cv_data: Dict[str, Any], job_description: str) 
     optimization_tasks = []
     if has_skills_section:
         optimization_tasks.append(
-            "   - skills.technical: missing technical skills (max 10) with reasoning"
+            "   - skills.technical: Suggest technical skills ONLY if naturally connected to candidate's existing experience (max 10) with reasoning"
         )
         optimization_tasks.append(
-            "   - skills.soft: missing soft skills (max 5) with reasoning"
+            "   - skills.soft: Suggest soft skills that would help highlight their authentic strengths (max 5) with reasoning"
         )
     if has_professional_summary:
         optimization_tasks.append(
-            "   - professional_summary: improved 2-4 sentence summary"
+            "   - professional_summary: Suggest ways to present their story more confidently (2-4 sentences)"
         )
     if has_work_experience:
         optimization_tasks.append(
             "   - work_experience: For EACH item, first evaluate current_content_score (0-100) based on "
-            "content quality w.r.t. job description.\n"
+            "how well the story is told and confidence of presentation.\n"
             "Only include items with score < 50 in the array (with suggested, reasoning, "
-            "current_content_score, importance). Exclude items with score ≥50."
+            "current_content_score, importance). Respect the candidate's style—if they don't use metrics, don't push for them. "
+            "Focus on clarity, confidence, and authentic storytelling."
         )
     if has_education:
         optimization_tasks.append(
             "   - education: For EACH item, first evaluate current_content_score (0-100) based on "
-            "content quality w.r.t. job description.\n"
+            "clarity and confidence of presentation.\n"
             "     Only include items with score < 50 in the array (with suggested, reasoning, "
-            "current_content_score, importance). Exclude items with score ≥50."
+            "current_content_score, importance). Focus on helping them present their education authentically and confidently."
         )
     optimization_tasks_text = (
         "\n".join(optimization_tasks)
@@ -170,6 +171,13 @@ def _build_ai_suggestions_prompt(cv_data: Dict[str, Any], job_description: str) 
 
 ⚠️ LANGUAGE: Write ALL content in SAME LANGUAGE as job description.
 
+⚠️ CAREER COACHING APPROACH:
+- Focus on TRANSFERABLE SKILLS and authentic experience fit, not just keyword matching
+- Respect the candidate's existing writing STYLE: observe their CV—only suggest metrics if they already use them
+- Be ENCOURAGING and supportive: help them present their genuine experience confidently
+- Avoid keyword stuffing or prescriptive demands for "perfect" CVs
+- Emphasize storytelling, clarity, and honest self-representation
+
 ⚠️ FACT-BASED ONLY: For work_experience/education suggestions, only reference technologies/skills explicitly in each item's data. Never add technologies not listed in that item's 'technologies' array.
 
 CV: {cv_json}
@@ -178,15 +186,15 @@ Job: {job_description}
 TASKS:
 1. Job Fit Analysis (write as candidate, first person):
    - Extract company name → title: "Hello [Company]!" or "Hello!"
-   - confidence_score: 1-100 match quality
+   - confidence_score: 1-100 match quality based on transferable skills and authentic fit
    - fit_analysis: markdown, start with a concise intro paragraph, then specific requirements with cover paragraphs
    - Format: **"[requirement]"**\\n\\n[experience paragraph]\\n\\n
-   - Be honest about gaps: "I don't have X but eager to learn"
-   - key_matches: ONLY genuine CV-JD skill overlaps (can be empty)
-   - missing_skills: up to 4 skills in JD not in CV
-   - suggested_improvements: 1 to 5 specific CV tips
-   - strengths: up to 4 specific strengths for this role
-   - weaknesses: up to 4 gaps needing development
+   - Be honest about gaps: "I don't have X but eager to learn" or "I bring Y transferable skills"
+   - key_matches: Skills/experiences from CV that genuinely transfer to this role (focus on SUBSTANCE over keywords; can be empty)
+   - missing_skills: up to 4 skills worth highlighting from their existing experience that connect to the job
+   - suggested_improvements: 1 to 5 coaching tips for presenting their story more confidently (clarity, authenticity, storytelling)
+   - strengths: up to 4 specific strengths they bring to this role (transferable skills, authentic qualities)
+   - weaknesses: up to 4 honest gaps or areas for growth (frame as development opportunities)
 
 2. Optimization Suggestions:
 {optimization_tasks_text}
@@ -241,7 +249,7 @@ async def generate_ai_suggestions(
             f"Generating AI suggestions - user_id={user_id}, cv_id={cv_id}, operation=ai_suggestions"
         )
 
-        system_prompt = "You're a CV expert. Analyze candidate fit and suggest improvements. Write in job description language. Be honest, specific, professional."
+        system_prompt = "You're a supportive career coach helping candidates present their authentic experience confidently. Focus on transferable skills and genuine fit over keyword matching. Respect the candidate's existing writing style—only suggest metrics if their CV already uses them. Be encouraging, honest, and help them tell their story well."
 
         # Debug log: Print entire prompts
         logger.info("=" * 80)

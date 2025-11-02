@@ -2,9 +2,10 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateFieldComponent } from '../core/formUtils'
+import { FormField, DateFieldComponent, ValidatedFieldDisplay } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
+import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface Award {
   id: string
@@ -14,16 +15,19 @@ interface Award {
   description: string
 }
 
-const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Awards & Recognition', onTitleSave, cvId }) => {
-  const createNewAward = (): Award => ({
-    id: generateSectionId('awards'),
-    name: '',
-    issuer: '',
-    date: '',
-    description: ''
-  })
+// Separate component for award form to allow using hooks
+const AwardForm: React.FC<{
+  award: Award;
+  index: number;
+  updateAward: (field: keyof Award, value: any) => void;
+  onSave?: () => void;
+}> = ({ award, index, updateAward, onSave }) => {
+  // Get validation errors for this award item
+  const nameValidation = useFieldValidation('awards', index, 'name');
+  const issuerValidation = useFieldValidation('awards', index, 'issuer');
+  const dateValidation = useFieldValidation('awards', index, 'date');
 
-  const renderAwardForm = (award: Award, _index: number, updateAward: (field: keyof Award, value: any) => void, onSave?: () => void) => (
+  return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -35,6 +39,8 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         value={award.name}
         onChange={(value) => updateAward('name', value)}
         onSave={onSave}
+        error={nameValidation.hasError}
+        helperText={nameValidation.errorMessage}
       />
       <FormField
         config={{
@@ -46,6 +52,8 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         value={award.issuer}
         onChange={(value) => updateAward('issuer', value)}
         onSave={onSave}
+        error={issuerValidation.hasError}
+        helperText={issuerValidation.errorMessage}
       />
       <DateFieldComponent
         config={{
@@ -56,6 +64,8 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         value={award.date}
         onChange={(value) => updateAward('date', value)}
         onSave={onSave}
+        error={dateValidation.hasError}
+        helperText={dateValidation.errorMessage}
       />
       <FormField
         config={{
@@ -70,28 +80,91 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
         onSave={onSave}
       />
     </Box>
-  )
+  );
+};
 
-  const renderAwardDisplay = (award: Award, _index: number) => (
+// Separate component for award display to allow using hooks
+const AwardDisplay: React.FC<{
+  award: Award;
+  index: number;
+}> = ({ award, index }) => {
+  // Get validation errors for this award item
+  const nameValidation = useFieldValidation('awards', index, 'name');
+  const issuerValidation = useFieldValidation('awards', index, 'issuer');
+  const dateValidation = useFieldValidation('awards', index, 'date');
+
+  return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
-          🏆 {award.name}
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
-          {award.date}
-        </Typography>
+        <Box sx={{ flex: 1 }}>
+          <ValidatedFieldDisplay
+            validation={nameValidation}
+            variant="subtitle1"
+            normalColor="#333"
+          >
+            🏆 {award.name}
+          </ValidatedFieldDisplay>
+        </Box>
+        <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
+          <ValidatedFieldDisplay
+            validation={dateValidation}
+            variant="body2"
+            normalColor="#666"
+            iconSize="0.875rem"
+            align="flex-end"
+          >
+            {award.date}
+          </ValidatedFieldDisplay>
+        </Box>
       </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {award.issuer}
-      </Typography>
+      <Box sx={{ mb: 1 }}>
+        <ValidatedFieldDisplay
+          validation={issuerValidation}
+          variant="body2"
+          normalColor="#666"
+          iconSize="0.875rem"
+          sx={{ mb: 0 }}
+        >
+          {award.issuer}
+        </ValidatedFieldDisplay>
+      </Box>
       {award.description && (
         <Box>
           <MarkdownRenderer content={award.description} variant="body1" />
         </Box>
       )}
     </>
-  )
+  );
+};
+
+const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Awards & Recognition', onTitleSave, cvId }) => {
+  const createNewAward = (): Award => ({
+    id: generateSectionId('awards'),
+    name: '',
+    issuer: '',
+    date: '',
+    description: ''
+  })
+
+  const renderAwardForm = (award: Award, index: number, updateAward: (field: keyof Award, value: any) => void, onSave?: () => void) => {
+    return (
+      <AwardForm
+        award={award}
+        index={index}
+        updateAward={updateAward}
+        onSave={onSave}
+      />
+    );
+  }
+
+  const renderAwardDisplay = (award: Award, index: number) => {
+    return (
+      <AwardDisplay
+        award={award}
+        index={index}
+      />
+    );
+  }
 
   return (
     <IndividualItemSection

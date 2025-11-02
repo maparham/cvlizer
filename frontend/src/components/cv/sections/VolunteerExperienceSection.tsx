@@ -2,9 +2,10 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateFieldComponent } from '../core/formUtils'
+import { FormField, DateFieldComponent, ValidatedFieldDisplay } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
+import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface VolunteerExperience {
   id: string
@@ -15,17 +16,19 @@ interface VolunteerExperience {
   description: string
 }
 
-const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Volunteer Experience', onTitleSave, cvId }) => {
-  const createNewVolunteerExperience = (): VolunteerExperience => ({
-    id: generateSectionId('volunteer_experience'),
-    organization: '',
-    role: '',
-    start_date: '',
-    end_date: '',
-    description: ''
-  })
+// Separate component for volunteer experience form to allow using hooks
+const VolunteerExperienceForm: React.FC<{
+  volunteer: VolunteerExperience;
+  index: number;
+  updateVolunteer: (field: keyof VolunteerExperience, value: any) => void;
+  onSave?: () => void;
+}> = ({ volunteer, index, updateVolunteer, onSave }) => {
+  // Get validation errors for this volunteer experience item
+  const organizationValidation = useFieldValidation('volunteer_experience', index, 'organization');
+  const roleValidation = useFieldValidation('volunteer_experience', index, 'role');
+  const startDateValidation = useFieldValidation('volunteer_experience', index, 'start_date');
 
-  const renderVolunteerForm = (volunteer: VolunteerExperience, _index: number, updateVolunteer: (field: keyof VolunteerExperience, value: any) => void, onSave?: () => void) => (
+  return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <FormField
         config={{
@@ -37,6 +40,8 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         value={volunteer.organization}
         onChange={(value) => updateVolunteer('organization', value)}
         onSave={onSave}
+        error={organizationValidation.hasError}
+        helperText={organizationValidation.errorMessage}
       />
       <FormField
         config={{
@@ -48,6 +53,8 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         value={volunteer.role}
         onChange={(value) => updateVolunteer('role', value)}
         onSave={onSave}
+        error={roleValidation.hasError}
+        helperText={roleValidation.errorMessage}
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
         <DateFieldComponent
@@ -60,12 +67,14 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
           onChange={(value) => updateVolunteer('start_date', value)}
           onSave={onSave}
           sx={{ flex: 1 }}
+          error={startDateValidation.hasError}
+          helperText={startDateValidation.errorMessage}
         />
         <DateFieldComponent
           config={{
             name: 'end_date',
-            label: 'End Date (Optional)',
-            minDate: volunteer.start_date || undefined // End date must be after start date
+            label: 'End Date',
+            minDate: volunteer.start_date || undefined
           }}
           value={volunteer.end_date || ''}
           onChange={(value) => updateVolunteer('end_date', value)}
@@ -77,7 +86,7 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         config={{
           name: 'description',
           label: 'Description',
-          placeholder: 'Describe your volunteer work and achievements...',
+          placeholder: 'Describe your volunteer work...',
           multiline: true,
           rows: 3
         }}
@@ -86,27 +95,91 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
         onSave={onSave}
       />
     </Box>
-  )
+  );
+};
 
-  const renderVolunteerDisplay = (volunteer: VolunteerExperience, _index: number) => (
+// Separate component for volunteer experience display to allow using hooks
+const VolunteerExperienceDisplay: React.FC<{
+  volunteer: VolunteerExperience;
+  index: number;
+}> = ({ volunteer, index }) => {
+  // Get validation errors for this volunteer experience item
+  const organizationValidation = useFieldValidation('volunteer_experience', index, 'organization');
+  const roleValidation = useFieldValidation('volunteer_experience', index, 'role');
+  const startDateValidation = useFieldValidation('volunteer_experience', index, 'start_date');
+
+  return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
-          🤝 {volunteer.role}
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
-          {volunteer.start_date}
-          {volunteer.end_date ? ` - ${volunteer.end_date}` : ' - Present'}
-        </Typography>
+        <Box sx={{ flex: 1 }}>
+          <ValidatedFieldDisplay
+            validation={roleValidation}
+            variant="subtitle1"
+            normalColor="#333"
+          >
+            🤝 {volunteer.role}
+          </ValidatedFieldDisplay>
+        </Box>
+        <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
+          <ValidatedFieldDisplay
+            validation={startDateValidation}
+            variant="body2"
+            normalColor="#666"
+            iconSize="0.875rem"
+            align="flex-end"
+          >
+            {volunteer.start_date}
+            {volunteer.end_date ? ` - ${volunteer.end_date}` : ' - Present'}
+          </ValidatedFieldDisplay>
+        </Box>
       </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {volunteer.organization}
-      </Typography>
+      <Box sx={{ mb: 1 }}>
+        <ValidatedFieldDisplay
+          validation={organizationValidation}
+          variant="body2"
+          normalColor="#666"
+          iconSize="0.875rem"
+          sx={{ mb: 0 }}
+        >
+          {volunteer.organization}
+        </ValidatedFieldDisplay>
+      </Box>
       <Box>
         <MarkdownRenderer content={volunteer.description} variant="body1" />
       </Box>
     </>
-  )
+  );
+};
+
+const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Volunteer Experience', onTitleSave, cvId }) => {
+  const createNewVolunteerExperience = (): VolunteerExperience => ({
+    id: generateSectionId('volunteer_experience'),
+    organization: '',
+    role: '',
+    start_date: '',
+    end_date: '',
+    description: ''
+  })
+
+  const renderVolunteerForm = (volunteer: VolunteerExperience, index: number, updateVolunteer: (field: keyof VolunteerExperience, value: any) => void, onSave?: () => void) => {
+    return (
+      <VolunteerExperienceForm
+        volunteer={volunteer}
+        index={index}
+        updateVolunteer={updateVolunteer}
+        onSave={onSave}
+      />
+    );
+  }
+
+  const renderVolunteerDisplay = (volunteer: VolunteerExperience, index: number) => {
+    return (
+      <VolunteerExperienceDisplay
+        volunteer={volunteer}
+        index={index}
+      />
+    );
+  }
 
   return (
     <IndividualItemSection

@@ -46,15 +46,18 @@ export const parseValidationErrors = (
     const cleanLine = line.replace("• ", "").trim();
     if (!cleanLine) continue;
 
-    // Parse patterns like "Education #2: Start date is required"
-    const sectionMatch = cleanLine.match(/^(\w+)\s*#?(\d+)?:\s*(.+)$/);
+    // Parse patterns like "Education #2: Start date is required" or "Work experience #1: Position is required"
+    // Capture multi-word section names and normalize them to snake_case
+    const sectionMatch = cleanLine.match(/^([A-Za-z][A-Za-z\s]+?)(?:\s*#(\d+))?:\s*(.+)$/);
 
     if (sectionMatch) {
-      const [, section, itemIndex, message] = sectionMatch;
+      const [, sectionName, itemIndex, message] = sectionMatch;
+      // Normalize section name to snake_case (e.g., "Work experience" -> "work_experience")
+      const section = sectionName.trim().toLowerCase().replace(/\s+/g, '_');
       const field = extractFieldFromMessage(message);
 
       const error = {
-        section: section.toLowerCase(),
+        section,
         itemIndex: itemIndex ? parseInt(itemIndex) - 1 : undefined, // Convert to 0-based index
         field: field,
         message: message,

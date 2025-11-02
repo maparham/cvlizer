@@ -2,9 +2,10 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField } from '../core/formUtils'
+import { FormField, ValidatedFieldDisplay } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
+import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface Project {
   id: string
@@ -14,82 +15,114 @@ interface Project {
   url?: string
 }
 
-const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Projects', onTitleSave, cvId }) => {
-  const createNewProject = (): Project => ({
-    id: generateSectionId('projects'),
-    name: '',
-    description: '',
-    technologies: [],
-    url: ''
-  })
+// Separate component for project form to allow using hooks
+const ProjectForm: React.FC<{
+  project: Project;
+  index: number;
+  updateProject: (field: keyof Project, value: any) => void;
+  onSave?: () => void;
+}> = ({ project, index, updateProject, onSave }) => {
+  // Get validation errors for this project item
+  const nameValidation = useFieldValidation('projects', index, 'name');
+  const descriptionValidation = useFieldValidation('projects', index, 'description');
 
-  const renderProjectForm = (project: Project, _index: number, updateProject: (field: keyof Project, value: any) => void, onSave?: () => void) => {
-    const updateTechnologies = (techString: string) => {
-      const technologies = techString.split(',').map(tech => tech.trim()).filter(tech => tech)
-      updateProject('technologies', technologies)
-    }
-
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <FormField
-          config={{
-            name: 'name',
-            label: 'Project Name',
-            placeholder: 'e.g., E-commerce Website',
-            required: true
-          }}
-          value={project.name}
-          onChange={(value) => updateProject('name', value)}
-          onSave={onSave}
-        />
-        <FormField
-          config={{
-            name: 'description',
-            label: 'Description',
-            placeholder: 'Brief description of the project (minimum 10 characters)...',
-            multiline: true,
-            rows: 2,
-            required: true,
-            minLength: 10
-          }}
-          value={project.description}
-          onChange={(value) => updateProject('description', value)}
-          onSave={onSave}
-        />
-        <FormField
-          config={{
-            name: 'technologies',
-            label: 'Technologies (comma-separated)',
-            placeholder: 'e.g., React, Node.js, MongoDB'
-          }}
-          value={project.technologies.join(', ')}
-          onChange={updateTechnologies}
-          onSave={onSave}
-        />
-        <FormField
-          config={{
-            name: 'url',
-            label: 'Project URL (Optional)',
-            placeholder: 'https://github.com/username/project',
-            type: 'url'
-          }}
-          value={project.url || ''}
-          onChange={(value) => updateProject('url', value)}
-          onSave={onSave}
-        />
-      </Box>
-    )
+  const updateTechnologies = (techString: string) => {
+    const technologies = techString.split(',').map(tech => tech.trim()).filter(tech => tech)
+    updateProject('technologies', technologies)
   }
 
-  const renderProjectDisplay = (project: Project, _index: number) => (
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <FormField
+        config={{
+          name: 'name',
+          label: 'Project Name',
+          placeholder: 'e.g., E-commerce Website',
+          required: true
+        }}
+        value={project.name}
+        onChange={(value) => updateProject('name', value)}
+        onSave={onSave}
+        error={nameValidation.hasError}
+        helperText={nameValidation.errorMessage}
+      />
+      <FormField
+        config={{
+          name: 'description',
+          label: 'Description',
+          placeholder: 'Brief description of the project (minimum 10 characters)...',
+          multiline: true,
+          rows: 2,
+          required: true,
+          minLength: 10
+        }}
+        value={project.description}
+        onChange={(value) => updateProject('description', value)}
+        onSave={onSave}
+        error={descriptionValidation.hasError}
+        helperText={descriptionValidation.errorMessage}
+      />
+      <FormField
+        config={{
+          name: 'technologies',
+          label: 'Technologies (comma-separated)',
+          placeholder: 'e.g., React, Node.js, MongoDB'
+        }}
+        value={project.technologies.join(', ')}
+        onChange={updateTechnologies}
+        onSave={onSave}
+      />
+      <FormField
+        config={{
+          name: 'url',
+          label: 'Project URL (Optional)',
+          placeholder: 'https://github.com/username/project',
+          type: 'url'
+        }}
+        value={project.url || ''}
+        onChange={(value) => updateProject('url', value)}
+        onSave={onSave}
+      />
+    </Box>
+  );
+};
+
+// Separate component for project display to allow using hooks
+const ProjectDisplay: React.FC<{
+  project: Project;
+  index: number;
+}> = ({ project, index }) => {
+  // Get validation errors for this project item
+  const nameValidation = useFieldValidation('projects', index, 'name');
+  const descriptionValidation = useFieldValidation('projects', index, 'description');
+
+  return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
-          {project.name}
-        </Typography>
+        <Box sx={{ flex: 1 }}>
+          <ValidatedFieldDisplay
+            validation={nameValidation}
+            variant="subtitle1"
+            normalColor="#333"
+          >
+            {project.name}
+          </ValidatedFieldDisplay>
+        </Box>
       </Box>
       <Box sx={{ mb: 1 }}>
-        <MarkdownRenderer content={project.description} variant="body1" />
+        {descriptionValidation.hasError && (
+          <Box sx={{ mb: 0.5 }}>
+            <MarkdownRenderer content={project.description} variant="body1" />
+          </Box>
+        )}
+        {!descriptionValidation.hasError && (
+          <MarkdownRenderer content={project.description} variant="body1" />
+        )}
+        {descriptionValidation.hasError && (
+          <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+            {descriptionValidation.errorMessage}
+          </Typography>
+        )}
       </Box>
       {project.technologies.length > 0 && (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
@@ -118,7 +151,37 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
         </Typography>
       )}
     </>
-  )
+  );
+};
+
+const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Projects', onTitleSave, cvId }) => {
+  const createNewProject = (): Project => ({
+    id: generateSectionId('projects'),
+    name: '',
+    description: '',
+    technologies: [],
+    url: ''
+  })
+
+  const renderProjectForm = (project: Project, index: number, updateProject: (field: keyof Project, value: any) => void, onSave?: () => void) => {
+    return (
+      <ProjectForm
+        project={project}
+        index={index}
+        updateProject={updateProject}
+        onSave={onSave}
+      />
+    );
+  }
+
+  const renderProjectDisplay = (project: Project, index: number) => {
+    return (
+      <ProjectDisplay
+        project={project}
+        index={index}
+      />
+    );
+  }
 
   return (
     <IndividualItemSection
