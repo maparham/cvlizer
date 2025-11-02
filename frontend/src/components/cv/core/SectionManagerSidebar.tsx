@@ -110,7 +110,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   // AI store for job description management
   const setActiveJobDescription = useAIStore((state) => state.setActiveJobDescription);
   const getCVDrafts = useAIStore((state) => state.getCVDrafts);
-  const deleteWhyGoodFitDraft = useAIStore((state) => state.deleteWhyGoodFitDraft);
 
   // Notifications for error and success handling
   const { showInfo, showError } = useNotifications();
@@ -163,16 +162,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     if (!activeJobDescription || !cvId) return;
 
     try {
-      // Delete any existing why_good_fit draft before generating new suggestions
-      // This ensures users don't see stale drafts when regenerating
-      try {
-        await deleteWhyGoodFitDraft(cvId);
-      } catch (deleteError: any) {
-        // Ignore 404 errors (no draft exists) - this is expected
-        if (deleteError?.code !== "404" && deleteError?.response?.status !== 404) {
-          throw deleteError;
-        }
-      }
+      // Note: Draft deletion is handled in handleConfirmDiscardAndRegenerate
+      // No need to delete drafts here as they're already deleted before this is called
 
       // Create AI enhancement task using background task API
       const enhancementId = await generateAllSuggestions(
@@ -200,7 +191,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   }, [
     activeJobDescription,
     cvId,
-    deleteWhyGoodFitDraft,
     generateAllSuggestions,
     addTask,
     setSuggestionsLoading,
@@ -228,34 +218,29 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     proceedWithGeneration,
   ]);
 
+  // Handler for dismissing all suggestions
+  const handleDiscardAllSuggestions = useCallback(async () => {
+    try {
+      await dismissAllSuggestions();
+      setDiscardAllDialogOpen(false);
+      showInfo("All suggestions have been discarded");
+    } catch (error: any) {
+      showError(
+        error?.message || "Failed to discard suggestions. Please try again."
+      );
+    }
+  }, [dismissAllSuggestions, showInfo, showError]);
+
   // Handle draft confirmation - delete drafts and proceed with generation
   const handleConfirmDiscardAndRegenerate = useCallback(async () => {
     if (!cvId) return;
 
     try {
-      // Delete all existing drafts
-      // Check if there are any why_good_fit drafts and delete them
-      // (deleteWhyGoodFitDraft deletes all why_good_fit drafts for the CV, so we only need to call it once)
-      const hasWhyGoodFitDraft = existingDrafts.some(
-        (draft) => draft.section_type === "why_good_fit"
-      );
-
-      if (hasWhyGoodFitDraft) {
-        try {
-          await deleteWhyGoodFitDraft(cvId);
-        } catch (deleteError: any) {
-          // Ignore 404 errors (draft already deleted) - this is expected
-          if (deleteError?.code !== "404" && deleteError?.response?.status !== 404) {
-            throw deleteError;
-          }
-        }
-      }
-
-      // Future: Handle other draft types here if needed
-      // For now, we only have why_good_fit drafts
-
-      // Close dialog
+      // Close dialog first
       setDraftConfirmationDialogOpen(false);
+
+      // Use existing discard logic that properly handles UI updates
+      await handleDiscardAllSuggestions();
 
       // Proceed with generation
       await proceedWithGeneration();
@@ -264,7 +249,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         error?.message || "Failed to discard drafts. Please try again."
       );
     }
-  }, [cvId, existingDrafts, deleteWhyGoodFitDraft, proceedWithGeneration, showError]);
+  }, [cvId, handleDiscardAllSuggestions, proceedWithGeneration, showError]);
 
   // Clear suggestions when job description changes (only when switching between different JDs)
   useEffect(() => {
@@ -434,19 +419,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       (allSuggestions.education?.length || 0)
     );
   }, [allSuggestions]);
-
-  // Handler for dismissing all suggestions
-  const handleDiscardAllSuggestions = useCallback(async () => {
-    try {
-      await dismissAllSuggestions();
-      setDiscardAllDialogOpen(false);
-      showInfo("All suggestions have been discarded");
-    } catch (error: any) {
-      showError(
-        error?.message || "Failed to discard suggestions. Please try again."
-      );
-    }
-  }, [dismissAllSuggestions, showInfo, showError]);
 
   return (
     <Paper
