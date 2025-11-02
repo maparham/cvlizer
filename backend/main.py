@@ -46,6 +46,9 @@ from src.services.cleanup_service import start_cleanup_service, stop_cleanup_ser
 # Logging setup
 from src.utils.logging_setup import setup_logging
 
+# Configuration imports
+from src.config import AIConfig
+
 load_dotenv()
 
 # Setup logging to both console and file
@@ -133,6 +136,17 @@ async def health_check():
 @app.on_event("startup")
 async def startup_event():
     """Startup tasks: config validation, initial cleanup, schedule periodic jobs."""
+    # Log AI model and effort configuration
+    logger.info("=" * 60)
+    logger.info("AI Configuration:")
+    logger.info(f"  Model: {AIConfig.OPENAI_MODEL}")
+    logger.info(f"  Parsing Model: {AIConfig.OPENAI_PARSING_MODEL}")
+    logger.info(f"  Agent Model: {AIConfig.AGENT_MODEL}")
+    logger.info(f"  Reasoning Effort: {AIConfig.REASONING_EFFORT}")
+    logger.info(f"  Parsing Effort: {AIConfig.OPENAI_PARSING_EFFORT}")
+    logger.info(f"  Agent Processing Tier: {AIConfig.AGENT_PROCESSING_TIER}")
+    logger.info("=" * 60)
+
     # Fail fast on missing/placeholder secrets in non-dev
     if not DEV_MODE:
         jwt_secret = os.getenv("JWT_SECRET_KEY")

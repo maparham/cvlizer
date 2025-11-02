@@ -11,7 +11,7 @@ alwaysApply: false
 Before implementation, answer these:
 
 1. ❓ **Simplest approach?** [one sentence]
-2. ❓ **Can reuse existing UI/functions?** [yes/no - what?]
+2. ❓ **Can reuse existing UI/functions?** [yes/no - what?] (Must search and verify before answering)
 3. ❓ **Complexity level?** [simple/moderate/complex + why if complex]
 
 ## The Simplicity Hierarchy

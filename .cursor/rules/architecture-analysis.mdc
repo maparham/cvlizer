@@ -9,14 +9,29 @@ description: Architecture analysis rule - ALWAYS search for existing solutions f
 
 Always analyze existing architecture before implementing features.
 
-## Required Steps (DO NOT SKIP)
+## MANDATORY WORKFLOW (ALWAYS APPLY, BEFORE ANY FEATURE/FIX)
 
-Follow "DEBUG FIRST" from careful-fixes rule, plus:
-1. **SEARCH FOR EXISTING CODE FIRST** - Use `codebase_search` to find similar functionality
-2. **Look for user hints** - If user mentions "existing code" or "like the other one", SEARCH IMMEDIATELY
-3. Read related components to learn current patterns
-4. Identify existing state management and data flow
-5. Check existing UI patterns and component hierarchies
+1) **SEARCH FIRST (REQUIRED)**
+   - Use `codebase_search` to find similar functionality, existing handlers, or related functions
+   - If user mentions "button", "trigger", "existing", or "like the other one" — search immediately
+   - Look for existing functions that might already do what you need
+   - Check for existing UI components/handlers before creating new ones
+
+2) **READ EXISTING CODE (REQUIRED)**
+   - Read the actual implementation of related code
+   - Understand state/UI updates and data flow
+   - Quote relevant code sections to prove you've read them
+
+3) **SIMPLICITY CHECKPOINT (REQUIRED)**
+   - Ask: "What's the simplest thing that could work?"
+   - Ask: "Can I reuse existing UI/functions?" — search and verify before answering
+   - Determine complexity; if complex, reconsider if a simpler approach exists
+   - Simplicity hierarchy: Use existing UI → Call existing functions → Extend existing patterns → Create new
+
+4) **IMPLEMENT (ONLY AFTER 1–3)**
+   - Reuse existing functions/handlers whenever possible
+   - Call existing handlers rather than duplicating their logic
+   - Do not recreate functionality that already exists
 
 ## Checklist Before Implementation
 - [ ] No duplicate functionality
@@ -26,10 +41,13 @@ Follow "DEBUG FIRST" from careful-fixes rule, plus:
 - [ ] Existing APIs leveraged
 - [ ] **Actual behavior understood from source code**
 
-## Red Flags
-- Creating new functionality when user hints at existing implementation
-- Duplicating UI components similar to existing ones
-- Not searching when user says "similar to" or "like the existing"
-- Ignoring user references to loading states, skeletons, or animations
+## Red Flags (STOP AND RE-EVALUATE)
+- About to duplicate logic that exists elsewhere
+- About to manually manage state when existing code already handles it
+- About to create new patterns when existing ones work
+- User mentioned triggering/clicking a button but you're not using that button's handler
+- User said "like the existing" or "trigger the X button" but you didn't search for it
 
 **Goal: Enhance what exists; do not replace it.**
+
+**CRITICAL:** If the user mentions any existing functionality (button, handler, function), you MUST search for it and use it rather than recreating it.
