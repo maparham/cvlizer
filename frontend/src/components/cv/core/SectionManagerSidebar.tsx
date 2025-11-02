@@ -47,7 +47,7 @@ import { EditableTitle } from "../EditableTitle";
 import { JobDescriptionSummary } from "../ai";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
-import { useActiveJobDescription, useAIStore } from "../../../stores/ai";
+import { useActiveJobDescription, useAIStore, useCVDrafts } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useCVStore } from "../../../stores/cv";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -92,6 +92,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const activeTab =
     externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
   const [discardAllDialogOpen, setDiscardAllDialogOpen] = useState(false);
+  const [draftConfirmationDialogOpen, setDraftConfirmationDialogOpen] = useState(false);
 
   // AI Suggestions store
   const {
@@ -119,6 +120,9 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const prevJobDescriptionId = useRef<string | undefined>(
     activeJobDescription?.id,
   );
+
+  // Get existing drafts for the current CV
+  const existingDrafts = useCVDrafts(cvId || "");
 
   // Use refs to prevent effect dependency loops
   const suggestionsLoadingRef = useRef(suggestionsLoading);
@@ -154,44 +158,44 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     [setActiveJobDescription, cvId],
   );
 
-  // Handle generating AI suggestions
-  const handleGenerateSuggestions = useCallback(async () => {
-    if (activeJobDescription && cvId) {
+  // Proceed with AI generation after draft confirmation or if no drafts exist
+  const proceedWithGeneration = useCallback(async () => {
+    if (!activeJobDescription || !cvId) return;
+
+    try {
+      // Delete any existing why_good_fit draft before generating new suggestions
+      // This ensures users don't see stale drafts when regenerating
       try {
-        // Delete any existing why_good_fit draft before generating new suggestions
-        // This ensures users don't see stale drafts when regenerating
-        try {
-          await deleteWhyGoodFitDraft(cvId);
-        } catch (deleteError: any) {
-          // Ignore 404 errors (no draft exists) - this is expected
-          if (deleteError?.code !== "404" && deleteError?.response?.status !== 404) {
-            throw deleteError;
-          }
+        await deleteWhyGoodFitDraft(cvId);
+      } catch (deleteError: any) {
+        // Ignore 404 errors (no draft exists) - this is expected
+        if (deleteError?.code !== "404" && deleteError?.response?.status !== 404) {
+          throw deleteError;
         }
-
-        // Create AI enhancement task using background task API
-        const enhancementId = await generateAllSuggestions(
-          cvId,
-          activeJobDescription.id,
-        );
-
-        if (enhancementId) {
-          // Add the task to global polling system
-          addTask({
-            id: enhancementId,
-            type: "ai_enhancement",
-            cvId: cvId,
-            isGenerating: true,
-          });
-
-          // Show "started" toast
-          showInfo("AI enhancement started", "Generating personalized suggestions...", true);
-        }
-      } catch (error) {
-        // ErrorHandler.handle() is called in aiSuggestionsStore which handles the notification
-        // Just update local state, don't duplicate error notification
-        setSuggestionsLoading(false);
       }
+
+      // Create AI enhancement task using background task API
+      const enhancementId = await generateAllSuggestions(
+        cvId,
+        activeJobDescription.id,
+      );
+
+      if (enhancementId) {
+        // Add the task to global polling system
+        addTask({
+          id: enhancementId,
+          type: "ai_enhancement",
+          cvId: cvId,
+          isGenerating: true,
+        });
+
+        // Show "started" toast
+        showInfo("AI enhancement started", "Generating personalized suggestions...", true);
+      }
+    } catch (error) {
+      // ErrorHandler.handle() is called in aiSuggestionsStore which handles the notification
+      // Just update local state, don't duplicate error notification
+      setSuggestionsLoading(false);
     }
   }, [
     activeJobDescription,
@@ -202,6 +206,65 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     setSuggestionsLoading,
     showInfo,
   ]);
+
+  // Handle generating AI suggestions
+  const handleGenerateSuggestions = useCallback(async () => {
+    if (activeJobDescription && cvId) {
+      // Check if there are existing drafts using the hook result from component level
+      // existingDrafts is already computed at the component level
+      if (existingDrafts && existingDrafts.length > 0) {
+        // Show confirmation dialog
+        setDraftConfirmationDialogOpen(true);
+        return;
+      }
+
+      // No drafts exist, proceed with generation
+      await proceedWithGeneration();
+    }
+  }, [
+    activeJobDescription,
+    cvId,
+    existingDrafts,
+    proceedWithGeneration,
+  ]);
+
+  // Handle draft confirmation - delete drafts and proceed with generation
+  const handleConfirmDiscardAndRegenerate = useCallback(async () => {
+    if (!cvId) return;
+
+    try {
+      // Delete all existing drafts
+      // Check if there are any why_good_fit drafts and delete them
+      // (deleteWhyGoodFitDraft deletes all why_good_fit drafts for the CV, so we only need to call it once)
+      const hasWhyGoodFitDraft = existingDrafts.some(
+        (draft) => draft.section_type === "why_good_fit"
+      );
+
+      if (hasWhyGoodFitDraft) {
+        try {
+          await deleteWhyGoodFitDraft(cvId);
+        } catch (deleteError: any) {
+          // Ignore 404 errors (draft already deleted) - this is expected
+          if (deleteError?.code !== "404" && deleteError?.response?.status !== 404) {
+            throw deleteError;
+          }
+        }
+      }
+
+      // Future: Handle other draft types here if needed
+      // For now, we only have why_good_fit drafts
+
+      // Close dialog
+      setDraftConfirmationDialogOpen(false);
+
+      // Proceed with generation
+      await proceedWithGeneration();
+    } catch (error: any) {
+      showError(
+        error?.message || "Failed to discard drafts. Please try again."
+      );
+    }
+  }, [cvId, existingDrafts, deleteWhyGoodFitDraft, proceedWithGeneration, showError]);
 
   // Clear suggestions when job description changes (only when switching between different JDs)
   useEffect(() => {
@@ -775,6 +838,38 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           </Button>
           <Button onClick={handleDiscardAllSuggestions} color="error" variant="contained">
             Discard All
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Draft Confirmation Dialog - Ask to discard existing drafts before regenerating */}
+      <Dialog
+        open={draftConfirmationDialogOpen}
+        onClose={() => setDraftConfirmationDialogOpen(false)}
+        aria-labelledby="draft-confirmation-dialog-title"
+        aria-describedby="draft-confirmation-dialog-description"
+      >
+        <DialogTitle id="draft-confirmation-dialog-title">
+          Discard Existing Draft Suggestions?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="draft-confirmation-dialog-description">
+            Discard existing draft suggestions and generate new ones?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDraftConfirmationDialogOpen(false)}
+            color="inherit"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDiscardAndRegenerate}
+            color="primary"
+            variant="contained"
+          >
+            Discard & Regenerate
           </Button>
         </DialogActions>
       </Dialog>
