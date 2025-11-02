@@ -76,6 +76,10 @@ export const useItemValidation = (
 ): ItemValidationState => {
   const { validationErrors } = useCVEditor();
 
+  // Create stable string representation of fields array for dependency comparison
+  // This prevents recalculation when callers pass new array literals with same values
+  const fieldsKey = fields.join(',');
+
   return useMemo(() => {
     const validation: ItemValidationState = {};
 
@@ -90,5 +94,5 @@ export const useItemValidation = (
     });
 
     return validation;
-  }, [validationErrors, section, itemIndex, fields]);
+  }, [validationErrors, section, itemIndex, fieldsKey]);
 };
