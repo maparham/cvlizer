@@ -100,7 +100,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     generateAllSuggestions,
     clearAllSuggestions,
     setSuggestionsLoading,
-    hasAnySuggestions,
     dismissAllSuggestions,
   } = useAISuggestionsStore();
 
@@ -717,7 +716,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
               />
 
               {/* Discard All Suggestions Button */}
-              {hasAnySuggestions() && (
+              {totalSuggestionsCount > 0 && (
                 <Alert
                   severity="warning"
                   sx={{

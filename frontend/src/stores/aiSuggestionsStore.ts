@@ -49,7 +49,6 @@ interface AIStore {
   dismissAllWorkExperienceSuggestions: () => Promise<void>;
   dismissEducationSuggestion: (itemId: string) => Promise<void>;
   dismissAllEducationSuggestions: () => Promise<void>;
-  hasAnySuggestions: () => boolean;
   dismissAllSuggestions: () => Promise<void>;
   clearAllSuggestions: () => void;
   clearSuggestionsError: () => void;
@@ -554,23 +553,6 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
         );
       }
     }
-  },
-
-  // Check if there are any suggestions across all sections
-  hasAnySuggestions: () => {
-    const currentSuggestions = get().allSuggestions;
-
-    if (!currentSuggestions) {
-      return false;
-    }
-
-    return (
-      currentSuggestions.skills.technical.length > 0 ||
-      currentSuggestions.skills.soft.length > 0 ||
-      (currentSuggestions.professional_summary?.suggested_text?.trim().length ?? 0) > 0 ||
-      (currentSuggestions.work_experience?.length ?? 0) > 0 ||
-      (currentSuggestions.education?.length ?? 0) > 0
-    );
   },
 
   // Dismiss all suggestions across all sections
