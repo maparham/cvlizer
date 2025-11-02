@@ -80,9 +80,16 @@ const CVCard: React.FC<CVCardProps> = ({
           border: "1px solid",
           borderColor: "divider",
           boxShadow: 2,
-          transition: "all 0.2s ease-in-out",
+          boxSizing: "border-box",
+          // Force GPU acceleration to prevent sub-pixel rendering issues
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+          WebkitFontSmoothing: "subpixel-antialiased",
+          transition: "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease",
+          transform: "translateZ(0)",
           "&:hover": {
-            transform: "translateY(-2px)",
+            willChange: "transform, border-color, box-shadow",
+            transform: "translateY(-2px) translateZ(0)",
             boxShadow: 6,
             borderColor: "primary.light",
           },

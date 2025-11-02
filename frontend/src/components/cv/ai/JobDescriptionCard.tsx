@@ -291,10 +291,17 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
           borderColor: isActive ? "primary.main" : "divider",
           backgroundColor: "background.paper",
           boxShadow: isActive ? 3 : 1,
-          transition: "all 0.3s ease-in-out",
+          boxSizing: "border-box",
+          // Force GPU acceleration to prevent sub-pixel rendering issues
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+          WebkitFontSmoothing: "subpixel-antialiased",
+          transition: "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",
+          transform: "translateZ(0)",
           "&:hover": {
+            willChange: "transform, border-color, box-shadow",
             boxShadow: isActive ? 6 : 3,
-            transform: "translateY(-2px)",
+            transform: "translateY(-2px) translateZ(0)",
             borderColor: isActive ? "primary.dark" : "primary.light",
           },
         }}

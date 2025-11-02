@@ -553,16 +553,22 @@ function IndividualItemSection<T>({
                               position: "relative",
                               mb: 0.25,
                               p: 1,
-                              border: snapshot.isDragging
-                                ? "1px solid #1976d2"
-                                : "1px solid transparent",
+                              border: "1px solid",
+                              borderColor: snapshot.isDragging
+                                ? "#1976d2"
+                                : "transparent",
                               borderRadius: 1,
+                              boxSizing: "border-box",
+                              // Force GPU acceleration to prevent sub-pixel rendering issues
+                              backfaceVisibility: "hidden",
+                              WebkitBackfaceVisibility: "hidden",
+                              WebkitFontSmoothing: "subpixel-antialiased",
                               transition: isReordering
                                 ? "none"
-                                : "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                                : "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",
                               transform: snapshot.isDragging
-                                ? "scale(1.02) rotate(1deg)"
-                                : "scale(1) rotate(0deg)",
+                                ? "scale(1.02) rotate(1deg) translateZ(0)"
+                                : "translateZ(0)",
                               backgroundColor: snapshot.isDragging
                                 ? "#f5f5f5"
                                 : "transparent",
@@ -571,15 +577,16 @@ function IndividualItemSection<T>({
                                 : "0 1px 3px rgba(0,0,0,0.05)",
                               zIndex: snapshot.isDragging ? 1000 : "auto",
                               "&:hover": {
-                                border:
+                                willChange: "transform, border-color, box-shadow",
+                                borderColor:
                                   editingItemIndex === null
-                                    ? "1px solid #e0e0e0"
-                                    : "1px solid transparent",
+                                    ? "#e0e0e0"
+                                    : "transparent",
                                 transform:
                                   editingItemIndex === null &&
                                   !snapshot.isDragging
-                                    ? "translateY(-1px)"
-                                    : "scale(1) rotate(0deg)",
+                                    ? "translateY(-1px) translateZ(0)"
+                                    : "translateZ(0)",
                                 boxShadow:
                                   editingItemIndex === null &&
                                   !snapshot.isDragging
