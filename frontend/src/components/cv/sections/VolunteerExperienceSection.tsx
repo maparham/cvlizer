@@ -127,7 +127,7 @@ const VolunteerExperienceDisplay: React.FC<{
             align="flex-end"
           >
             {volunteer.start_date}
-            {volunteer.end_date ? ` - ${volunteer.end_date}` : ' - Present'}
+            {!volunteer.end_date ? ' - PRESENT' : ` - ${volunteer.end_date}`}
           </ValidatedDisplay>
         </Box>
       </Box>

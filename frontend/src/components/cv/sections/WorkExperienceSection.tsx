@@ -155,7 +155,7 @@ const WorkExperienceDisplay: React.FC<{
             iconSize="0.875rem"
             align="flex-end"
           >
-            {exp.start_date} - {exp.current ? "PRESENT" : exp.end_date || "PRESENT"}
+            {exp.start_date} - {exp.current || !exp.end_date ? "PRESENT" : exp.end_date}
           </ValidatedDisplay>
         </Box>
       </Box>

@@ -222,41 +222,23 @@ export const DateFieldComponent: React.FC<{
   // Real-time validation function
   const validateDateValue = React.useCallback(
     (dateValue: string): string => {
-      console.log(`[DateFieldComponent.validateDateValue] ${label}:`, {
-        dateValue,
-        required,
-        trimmedValue: dateValue?.trim(),
-        isEmpty: !dateValue,
-        isWhitespace: dateValue && !dateValue.trim(),
-      });
-
       // Check for empty or whitespace-only strings
       if (!dateValue || !dateValue.trim()) {
-        const result = required ? `${label} is required` : "";
-        console.log(`[DateFieldComponent.validateDateValue] ${label} empty check:`, { result });
-        return result;
+        return required ? `${label} is required` : "";
       }
 
-      // For optional fields, "Present" is a valid display value (case-insensitive)
-      // It's used for current jobs/education where end date doesn't exist yet
+      // Reject "Present" string - date fields should only contain valid ISO dates or be empty
       const trimmedValue = dateValue.trim();
-      if (!required && trimmedValue.toLowerCase() === 'present') {
-        console.log(`[DateFieldComponent.validateDateValue] ${label} "Present" value is valid for optional field`);
-        return "";
+      if (trimmedValue.toLowerCase() === 'present') {
+        return `${label} must be a valid date. Use empty value for current positions/ongoing activities.`;
       }
 
       // Check if date is valid
       const parsedDate = dayjs(dateValue);
       const isValid = parsedDate.isValid();
-      console.log(`[DateFieldComponent.validateDateValue] ${label} date parsing:`, {
-        parsedDate: parsedDate.format(),
-        isValid,
-      });
 
       if (!isValid) {
-        const result = `${label} is not a valid date`;
-        console.log(`[DateFieldComponent.validateDateValue] ${label} invalid date error:`, { result });
-        return result;
+        return `${label} is not a valid date`;
       }
 
       // Check min/max constraints

@@ -56,36 +56,73 @@ class CVDataValidator:
     def clean_empty_entries(cls, cv_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Remove completely empty entries from arrays to prevent validation issues.
+        Also normalizes date fields by cleaning "Present" strings and enforcing current flag logic.
         """
         cleaned_data = cv_data.copy()
 
         # Clean work experience entries - only keep entries that have all required fields
         if "work_experience" in cleaned_data:
-            cleaned_data["work_experience"] = [
-                exp
-                for exp in cleaned_data["work_experience"]
+            cleaned_work_exp = []
+            for exp in cleaned_data["work_experience"]:
+                # Only keep entries with required fields
                 if all(
                     [
                         cls.safe_get_str(exp, "position"),
                         cls.safe_get_str(exp, "company"),
                         cls.safe_get_str(exp, "start_date"),
                     ]
-                )
-            ]
+                ):
+                    # Normalize end_date: remove "Present" strings, enforce current flag logic
+                    if exp.get("current", False):
+                        # If current=true, end_date must be null/empty
+                        exp["end_date"] = None
+                    elif "end_date" in exp and exp["end_date"]:
+                        # Remove "Present" string if present
+                        end_date_str = str(exp["end_date"]).strip()
+                        if end_date_str.lower() == "present":
+                            exp["end_date"] = None
+                    cleaned_work_exp.append(exp)
+            cleaned_data["work_experience"] = cleaned_work_exp
 
         # Clean education entries - only keep entries that have all required fields
         if "education" in cleaned_data:
-            cleaned_data["education"] = [
-                edu
-                for edu in cleaned_data["education"]
+            cleaned_education = []
+            for edu in cleaned_data["education"]:
+                # Only keep entries with required fields
                 if all(
                     [
                         cls.safe_get_str(edu, "institution"),
                         cls.safe_get_str(edu, "degree"),
                         cls.safe_get_str(edu, "start_date"),
                     ]
-                )
-            ]
+                ):
+                    # Normalize end_date: remove "Present" strings
+                    if "end_date" in edu and edu["end_date"]:
+                        end_date_str = str(edu["end_date"]).strip()
+                        if end_date_str.lower() == "present":
+                            edu["end_date"] = None
+                    cleaned_education.append(edu)
+            cleaned_data["education"] = cleaned_education
+
+        # Clean volunteer experience entries
+        if "volunteer_experience" in cleaned_data:
+            cleaned_volunteer = []
+            for volunteer in cleaned_data["volunteer_experience"]:
+                # Only keep entries with required fields
+                if all(
+                    [
+                        cls.safe_get_str(volunteer, "organization"),
+                        cls.safe_get_str(volunteer, "role"),
+                        cls.safe_get_str(volunteer, "start_date"),
+                    ]
+                ):
+                    # Normalize end_date: remove "Present" strings
+                    if "end_date" in volunteer and volunteer["end_date"]:
+                        end_date_str = str(volunteer["end_date"]).strip()
+                        if end_date_str.lower() == "present":
+                            volunteer["end_date"] = None
+                    cleaned_volunteer.append(volunteer)
+            cleaned_data["volunteer_experience"] = cleaned_volunteer
 
         return cleaned_data
 
@@ -145,15 +182,33 @@ class CVDataValidator:
             if not cls.safe_get_str(exp, "start_date"):
                 errors.append(f"Work experience #{i+1}: Start date is required")
 
-            # Validate date order
-            date_error = cls.validate_date_order(
-                cls.safe_get_str(exp, "start_date"),
-                cls.safe_get_str(exp, "end_date"),
-                "Work experience",
-                i + 1,
-            )
-            if date_error:
-                errors.append(date_error)
+            # Reject "Present" string in end_date field
+            end_date = exp.get("end_date")
+            if end_date and isinstance(end_date, str):
+                end_date_str = end_date.strip()
+                if end_date_str.lower() == "present":
+                    errors.append(
+                        f"Work experience #{i+1}: End date cannot be 'Present'. Use null/empty for current positions."
+                    )
+
+            # Validate current flag logic: if current=true, end_date must be empty/null
+            is_current = exp.get("current", False)
+            has_end_date = end_date and cls.safe_get_str(exp, "end_date")
+            if is_current and has_end_date:
+                errors.append(
+                    f"Work experience #{i+1}: End date must be empty when current=true"
+                )
+
+            # Validate date order (only if end_date exists and is not empty)
+            if has_end_date:
+                date_error = cls.validate_date_order(
+                    cls.safe_get_str(exp, "start_date"),
+                    cls.safe_get_str(exp, "end_date"),
+                    "Work experience",
+                    i + 1,
+                )
+                if date_error:
+                    errors.append(date_error)
 
         # Validate Education - all entries should have required fields since empty ones are filtered out
         education = cv_data.get("education", [])
@@ -165,15 +220,26 @@ class CVDataValidator:
             if not cls.safe_get_str(edu, "start_date"):
                 errors.append(f"Education #{i+1}: Start date is required")
 
-            # Validate date order
-            date_error = cls.validate_date_order(
-                cls.safe_get_str(edu, "start_date"),
-                cls.safe_get_str(edu, "end_date"),
-                "Education",
-                i + 1,
-            )
-            if date_error:
-                errors.append(date_error)
+            # Reject "Present" string in end_date field
+            end_date = edu.get("end_date")
+            if end_date and isinstance(end_date, str):
+                end_date_str = end_date.strip()
+                if end_date_str.lower() == "present":
+                    errors.append(
+                        f"Education #{i+1}: End date cannot be 'Present'. Use null/empty for ongoing education."
+                    )
+
+            # Validate date order (only if end_date exists and is not empty)
+            has_end_date = end_date and cls.safe_get_str(edu, "end_date")
+            if has_end_date:
+                date_error = cls.validate_date_order(
+                    cls.safe_get_str(edu, "start_date"),
+                    cls.safe_get_str(edu, "end_date"),
+                    "Education",
+                    i + 1,
+                )
+                if date_error:
+                    errors.append(date_error)
 
         # Validate Projects
         projects = cv_data.get("projects", [])
@@ -234,5 +300,26 @@ class CVDataValidator:
                 errors.append(f"Volunteer experience #{i+1}: Role is required")
             if not cls.safe_get_str(volunteer, "start_date"):
                 errors.append(f"Volunteer experience #{i+1}: Start date is required")
+
+            # Reject "Present" string in end_date field
+            end_date = volunteer.get("end_date")
+            if end_date and isinstance(end_date, str):
+                end_date_str = end_date.strip()
+                if end_date_str.lower() == "present":
+                    errors.append(
+                        f"Volunteer experience #{i+1}: End date cannot be 'Present'. Use null/empty for ongoing volunteer work."
+                    )
+
+            # Validate date order (only if end_date exists and is not empty)
+            has_end_date = end_date and cls.safe_get_str(volunteer, "end_date")
+            if has_end_date:
+                date_error = cls.validate_date_order(
+                    cls.safe_get_str(volunteer, "start_date"),
+                    cls.safe_get_str(volunteer, "end_date"),
+                    "Volunteer experience",
+                    i + 1,
+                )
+                if date_error:
+                    errors.append(date_error)
 
         return errors

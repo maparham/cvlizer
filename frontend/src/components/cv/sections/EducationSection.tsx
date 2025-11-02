@@ -338,7 +338,7 @@ const EducationDisplay: React.FC<{
             align="flex-end"
           >
             {edu.start_date || "Start date required"} -{" "}
-            {edu.end_date || "PRESENT"}
+            {!edu.end_date ? "PRESENT" : edu.end_date}
           </ValidatedDisplay>
         </Box>
       </Box>
