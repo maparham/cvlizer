@@ -12,6 +12,7 @@
  * - 50 notification limit per CV
  */
 
+import { useCallback } from "react";
 import { useNotificationStore } from "./store";
 import { useCVContext } from "../../contexts/CVContext";
 
@@ -42,20 +43,35 @@ export const useNotifications = () => {
   const { cvId } = useCVContext();
 
   // Wrap convenience methods to automatically inject cvId from context
-  const showSuccess = (title: string, message?: string, toastOnly?: boolean) =>
-    originalShowSuccess(title, message, cvId, toastOnly);
+  const showSuccess = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalShowSuccess(title, message, cvId, toastOnly),
+    [originalShowSuccess, cvId],
+  );
 
-  const showError = (title: string, message?: string, toastOnly?: boolean) =>
-    originalShowError(title, message, cvId, toastOnly);
+  const showError = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalShowError(title, message, cvId, toastOnly),
+    [originalShowError, cvId],
+  );
 
-  const showWarning = (title: string, message?: string, toastOnly?: boolean) =>
-    originalShowWarning(title, message, cvId, toastOnly);
+  const showWarning = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalShowWarning(title, message, cvId, toastOnly),
+    [originalShowWarning, cvId],
+  );
 
-  const showInfo = (title: string, message?: string, toastOnly?: boolean) =>
-    originalShowInfo(title, message, cvId, toastOnly);
+  const showInfo = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalShowInfo(title, message, cvId, toastOnly),
+    [originalShowInfo, cvId],
+  );
 
-  const showValidationError = (title: string, message?: string, toastOnly?: boolean) =>
-    originalShowValidationError(title, message, cvId, toastOnly);
+  const showValidationError = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalShowValidationError(title, message, cvId, toastOnly),
+    [originalShowValidationError, cvId],
+  );
 
   return {
     notifications,
@@ -95,20 +111,35 @@ export const useCVNotifications = (cvId?: string) => {
   } = useNotificationStore();
 
   // Create convenience methods that use explicit cvId directly
-  const showSuccess = (title: string, message?: string, toastOnly?: boolean) =>
-    originalAddNotification({ type: "success", title, message, toastOnly }, cvId);
+  const showSuccess = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalAddNotification({ type: "success", title, message, toastOnly }, cvId),
+    [originalAddNotification, cvId],
+  );
 
-  const showError = (title: string, message?: string, toastOnly?: boolean) =>
-    originalAddNotification({ type: "error", title, message, toastOnly }, cvId);
+  const showError = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalAddNotification({ type: "error", title, message, toastOnly }, cvId),
+    [originalAddNotification, cvId],
+  );
 
-  const showWarning = (title: string, message?: string, toastOnly?: boolean) =>
-    originalAddNotification({ type: "warning", title, message, toastOnly }, cvId);
+  const showWarning = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalAddNotification({ type: "warning", title, message, toastOnly }, cvId),
+    [originalAddNotification, cvId],
+  );
 
-  const showInfo = (title: string, message?: string, toastOnly?: boolean) =>
-    originalAddNotification({ type: "info", title, message, toastOnly }, cvId);
+  const showInfo = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalAddNotification({ type: "info", title, message, toastOnly }, cvId),
+    [originalAddNotification, cvId],
+  );
 
-  const showValidationError = (title: string, message?: string, toastOnly?: boolean) =>
-    originalAddNotification({ type: "error", title, message, persistent: true, toastOnly }, cvId);
+  const showValidationError = useCallback(
+    (title: string, message?: string, toastOnly?: boolean) =>
+      originalAddNotification({ type: "error", title, message, persistent: true, toastOnly }, cvId),
+    [originalAddNotification, cvId],
+  );
 
   // Wrapper for addNotification that uses explicit cvId
   const addNotification = (notification: any, cvIdParam?: string) =>

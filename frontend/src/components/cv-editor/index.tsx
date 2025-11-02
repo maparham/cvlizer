@@ -31,6 +31,7 @@ import { useCVNotifications } from "../../packages/notifications";
 import { useAIStore } from "../../stores/ai";
 import { CVData } from "../../types";
 import { parseValidationErrors } from "../../utils/validation";
+import { classifyError, ErrorType } from "../../utils/errors/errorTypes";
 import { CVEditorContent } from "./CVEditorContent";
 import { CVEditorDialogs } from "./CVEditorDialogs";
 import { useCVEditorActions } from "./useCVEditorActions";
@@ -109,7 +110,7 @@ const CVEditor: React.FC = () => {
 
   // Show error notifications (but skip validation errors as they're handled separately)
   useEffect(() => {
-    if (error && !error.includes("CV validation failed:")) {
+    if (error && classifyError(error) !== ErrorType.Validation) {
       showError("Error", error);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -335,7 +336,6 @@ const CVEditor: React.FC = () => {
           parsed_data: data,
         };
         setCurrentCV(updatedCV);
-      } else {
       }
     },
     [isNewCV, temporaryCV, currentCV, setCurrentCV, setTemporaryCV],
@@ -378,7 +378,7 @@ const CVEditor: React.FC = () => {
               onSave={handleSave}
             >
               <SaveWithValidationErrors onSaveError={() => {}}>
-                <InitialValidation>
+                <InitialValidation cvId={cvId}>
                   <CVEditorContent
                     cvId={cvId}
                     activeCV={activeCV}

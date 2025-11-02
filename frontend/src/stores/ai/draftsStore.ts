@@ -43,7 +43,6 @@ export const createDraftsSlice: StateCreator<
   getCVDrafts: async (cvId: string) => {
     // Skip loading for temporary CVs (not yet saved to backend)
     if (cvId.startsWith("temp-")) {
-      Logger.debug("Skipping drafts load for temporary CV", { cvId });
       return [];
     }
 

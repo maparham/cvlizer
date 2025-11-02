@@ -81,9 +81,6 @@ export const createJobDescriptionsSlice: StateCreator<
     loadJobDescriptions: async (cvId?: string) => {
       // Skip loading for temporary CVs (not yet saved to backend)
       if (cvId && cvId.startsWith("temp-")) {
-        Logger.debug("Skipping job descriptions load for temporary CV", {
-          cvId,
-        });
         return;
       }
 
@@ -133,10 +130,6 @@ export const createJobDescriptionsSlice: StateCreator<
         set((state) => ({
           jobDescriptions: [...state.jobDescriptions, newJobDescription],
         }));
-        Logger.debug("Job description created", {
-          cvId,
-          jobDescriptionId: newJobDescription.id,
-        });
         return newJobDescription;
       } catch (error) {
         ErrorHandler.handle(error, {
@@ -160,7 +153,6 @@ export const createJobDescriptionsSlice: StateCreator<
             jd.id === jobDescriptionId ? updatedJobDescription : jd,
           ),
         }));
-        Logger.debug("Job description updated", { jobDescriptionId });
         return updatedJobDescription;
       } catch (error) {
         ErrorHandler.handle(error, {
@@ -204,7 +196,6 @@ export const createJobDescriptionsSlice: StateCreator<
             activeJobDescriptionIdPerCV: newMap,
           };
         });
-        Logger.debug("Job description deleted", { jobDescriptionId });
       } catch (error) {
         ErrorHandler.handle(error, {
           feature: "job-descriptions",
@@ -225,11 +216,6 @@ export const createJobDescriptionsSlice: StateCreator<
 
         // Reload job descriptions to get updated associations
         await get().loadJobDescriptions();
-
-        Logger.debug("Job description associated with CV", {
-          jobDescriptionId,
-          cvId,
-        });
       } catch (error) {
         ErrorHandler.handle(error, {
           feature: "job-descriptions",
@@ -253,11 +239,6 @@ export const createJobDescriptionsSlice: StateCreator<
 
         // Reload job descriptions to get updated associations
         await get().loadJobDescriptions();
-
-        Logger.debug("Job description disassociated from CV", {
-          jobDescriptionId,
-          cvId,
-        });
       } catch (error) {
         ErrorHandler.handle(error, {
           feature: "job-descriptions",

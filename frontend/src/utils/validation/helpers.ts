@@ -10,6 +10,16 @@ import { validateCrossFields } from "./crossFieldValidation";
 import { checkForDuplicates } from "./duplicateChecking";
 
 /**
+ * Check if a value is empty or an invalid string
+ *
+ * @param value - Value to check
+ * @returns true if value is empty, null, undefined, or invalid string
+ */
+export const isEmptyOrInvalidString = (value: any): boolean => {
+  return !value || typeof value !== 'string' || value.trim() === "";
+};
+
+/**
  * Create error key for form field identification
  */
 export const createErrorKey = (
@@ -95,19 +105,33 @@ export const validateCVData = (
   const fieldErrors: Record<string, string> = {};
   const crossFieldErrors: string[] = [];
 
+  // Validate personal info section
+  if (cvData.personal_info) {
+    const personalInfo = cvData.personal_info;
+    if (isEmptyOrInvalidString(personalInfo.full_name)) {
+      fieldErrors['personal_info.full_name'] = "Full name is required";
+    }
+    if (isEmptyOrInvalidString(personalInfo.email)) {
+      fieldErrors['personal_info.email'] = "Email is required";
+    }
+    if (isEmptyOrInvalidString(personalInfo.location)) {
+      fieldErrors['personal_info.location'] = "Location is required";
+    }
+  }
+
   // Validate education section
   if (cvData.education && Array.isArray(cvData.education)) {
     cvData.education.forEach((edu: any, index: number) => {
       // Check required fields
-      if (!edu.start_date || typeof edu.start_date !== 'string' || edu.start_date.trim() === "") {
+      if (isEmptyOrInvalidString(edu.start_date)) {
         fieldErrors[`education.${index}.start_date`] = "Start date is required";
       }
 
-      if (!edu.degree || typeof edu.degree !== 'string' || edu.degree.trim() === "") {
+      if (isEmptyOrInvalidString(edu.degree)) {
         fieldErrors[`education.${index}.degree`] = "Degree is required";
       }
 
-      if (!edu.institution || typeof edu.institution !== 'string' || edu.institution.trim() === "") {
+      if (isEmptyOrInvalidString(edu.institution)) {
         fieldErrors[`education.${index}.institution`] =
           "Institution is required";
       }
@@ -117,17 +141,17 @@ export const validateCVData = (
   // Validate work experience section
   if (cvData.work_experience && Array.isArray(cvData.work_experience)) {
     cvData.work_experience.forEach((work: any, index: number) => {
-      if (!work.start_date || typeof work.start_date !== 'string' || work.start_date.trim() === "") {
+      if (isEmptyOrInvalidString(work.start_date)) {
         fieldErrors[`work_experience.${index}.start_date`] =
           "Start date is required";
       }
 
-      if (!work.position || typeof work.position !== 'string' || work.position.trim() === "") {
+      if (isEmptyOrInvalidString(work.position)) {
         fieldErrors[`work_experience.${index}.position`] =
           "Position is required";
       }
 
-      if (!work.company || typeof work.company !== 'string' || work.company.trim() === "") {
+      if (isEmptyOrInvalidString(work.company)) {
         fieldErrors[`work_experience.${index}.company`] = "Company is required";
       }
     });

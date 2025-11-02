@@ -10,7 +10,6 @@
  *
  * Usage:
  * ```typescript
- * Logger.debug('CV data loaded', { cvId, sections });
  * Logger.info('User action completed', { action: 'save' });
  * Logger.warn('Deprecated feature used', { feature: 'old-api' });
  * Logger.error('API call failed', { endpoint, error });
@@ -117,14 +116,6 @@ class LoggerClass {
     return this.isDevelopment && level >= this.minLevel;
   }
 
-  /**
-   * Log debug message (development only)
-   */
-  debug(message: string, context?: LogContext): void {
-    if (this.shouldLog(LogLevel.Debug)) {
-      console.log(this.formatMessage(LogLevel.Debug, message, context));
-    }
-  }
 
   /**
    * Log info message (development only)

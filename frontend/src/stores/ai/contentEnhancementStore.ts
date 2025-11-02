@@ -78,11 +78,6 @@ export const createContentEnhancementSlice: StateCreator<
 
   enhanceContent: async (cvId: string, content: string, contentType: string) => {
     try {
-      Logger.debug("Enhancing content", {
-        cvId,
-        contentType,
-        contentLength: content.length,
-      });
       const response = await aiService.enhanceContent(cvId, {
         original_content: content,
         content_type: contentType,
