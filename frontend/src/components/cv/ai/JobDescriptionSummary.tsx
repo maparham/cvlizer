@@ -50,6 +50,7 @@ import JobDescriptionsModal from "./job-descriptions-modal";
 import JobDescriptionCard from "./JobDescriptionCard";
 import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
 import CVCompletenessIndicator from "../../CVCompleteness/CVCompletenessIndicator";
+import AIEnhancementLoadingState from "./AIEnhancementLoadingState";
 
 interface JobDescriptionSummaryProps {
   cvId: string;
@@ -293,26 +294,23 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                 >
                   {onGenerateSuggestions && (
                     <>
-                      <Tooltip
-                        title={
-                          !completeness.isComplete
-                            ? `CV needs more content: ${completeness.missing.join(", ")}`
-                            : ""
-                        }
-                        arrow
-                      >
-                        <span style={{ width: "100%" }}>
-                          <Button
-                            variant="contained"
-                            startIcon={
-                              suggestionsLoading ? (
-                                <CircularProgress size={16} color="inherit" />
-                              ) : (
+                      {suggestionsLoading ? (
+                        <AIEnhancementLoadingState />
+                      ) : (
+                        <Tooltip
+                          title={
+                            !completeness.isComplete
+                              ? `CV needs more content: ${completeness.missing.join(", ")}`
+                              : ""
+                          }
+                          arrow
+                        >
+                          <span style={{ width: "100%" }}>
+                            <Button
+                              variant="contained"
+                              startIcon={
                                 <AutoAwesomeIcon
                                   sx={{
-                                    animation: suggestionsLoading
-                                      ? "pulse 1.5s ease-in-out infinite"
-                                      : "none",
                                     "@keyframes pulse": {
                                       "0%": { transform: "scale(1)" },
                                       "50%": { transform: "scale(1.1)" },
@@ -320,47 +318,45 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                                     },
                                   }}
                                 />
-                              )
-                            }
-                            onClick={onGenerateSuggestions}
-                            disabled={
-                              !completeness.isComplete ||
-                              suggestionsLoading ||
-                              activeJobDescription?.is_parsing
-                            }
-                            fullWidth
-                            sx={{
-                              textTransform: "none",
-                              backgroundColor: "transparent",
-                              color: "#1976d2",
-                              border: "1px solid #1976d2",
-                              fontWeight: 600,
-                              py: 1.5,
-                              px: 2,
-                              height: 48,
-                              "&:hover": {
-                                backgroundColor: "rgba(25, 118, 210, 0.08)",
-                                borderColor: "#1565c0",
-                                transform: "translateY(-1px)",
-                                boxShadow: 2,
-                              },
-                              "&.Mui-disabled": {
+                              }
+                              onClick={onGenerateSuggestions}
+                              disabled={
+                                !completeness.isComplete ||
+                                suggestionsLoading ||
+                                activeJobDescription?.is_parsing
+                              }
+                              fullWidth
+                              sx={{
+                                textTransform: "none",
                                 backgroundColor: "transparent",
                                 color: "#1976d2",
-                                borderColor: "#1976d2",
-                                opacity: 1,
-                                transform: "none",
-                                cursor: "not-allowed",
-                              },
-                              transition: "all 0.2s ease-in-out",
-                            }}
-                          >
-                            {suggestionsLoading
-                              ? "Enhancing..."
-                              : "AI Suggestions for this Job"}
-                          </Button>
-                        </span>
-                      </Tooltip>
+                                border: "1px solid #1976d2",
+                                fontWeight: 600,
+                                py: 1.5,
+                                px: 2,
+                                height: 48,
+                                "&:hover": {
+                                  backgroundColor: "rgba(25, 118, 210, 0.08)",
+                                  borderColor: "#1565c0",
+                                  transform: "translateY(-1px)",
+                                  boxShadow: 2,
+                                },
+                                "&.Mui-disabled": {
+                                  backgroundColor: "transparent",
+                                  color: "#1976d2",
+                                  borderColor: "#1976d2",
+                                  opacity: 1,
+                                  transform: "none",
+                                  cursor: "not-allowed",
+                                },
+                                transition: "all 0.2s ease-in-out",
+                              }}
+                            >
+                              AI Suggestions for this Job
+                            </Button>
+                          </span>
+                        </Tooltip>
+                      )}
                     </>
                   )}
 
