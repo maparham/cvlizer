@@ -2,10 +2,10 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, ValidatedFieldDisplay } from '../core/formUtils'
+import { FormField } from '../core/formUtils'
+import { ValidatedFormField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
-import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface Project {
   id: string
@@ -22,10 +22,6 @@ const ProjectForm: React.FC<{
   updateProject: (field: keyof Project, value: any) => void;
   onSave?: () => void;
 }> = ({ project, index, updateProject, onSave }) => {
-  // Get validation errors for this project item
-  const nameValidation = useFieldValidation('projects', index, 'name');
-  const descriptionValidation = useFieldValidation('projects', index, 'description');
-
   const updateTechnologies = (techString: string) => {
     const technologies = techString.split(',').map(tech => tech.trim()).filter(tech => tech)
     updateProject('technologies', technologies)
@@ -33,7 +29,10 @@ const ProjectForm: React.FC<{
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <FormField
+      <ValidatedFormField
+        section="projects"
+        field="name"
+        index={index}
         config={{
           name: 'name',
           label: 'Project Name',
@@ -43,10 +42,11 @@ const ProjectForm: React.FC<{
         value={project.name}
         onChange={(value) => updateProject('name', value)}
         onSave={onSave}
-        error={nameValidation.hasError}
-        helperText={nameValidation.errorMessage}
       />
-      <FormField
+      <ValidatedFormField
+        section="projects"
+        field="description"
+        index={index}
         config={{
           name: 'description',
           label: 'Description',
@@ -59,8 +59,6 @@ const ProjectForm: React.FC<{
         value={project.description}
         onChange={(value) => updateProject('description', value)}
         onSave={onSave}
-        error={descriptionValidation.hasError}
-        helperText={descriptionValidation.errorMessage}
       />
       <FormField
         config={{
@@ -87,42 +85,36 @@ const ProjectForm: React.FC<{
   );
 };
 
-// Separate component for project display to allow using hooks
+// Separate component for project display (no hooks - validation passed as props)
 const ProjectDisplay: React.FC<{
   project: Project;
   index: number;
-}> = ({ project, index }) => {
-  // Get validation errors for this project item
-  const nameValidation = useFieldValidation('projects', index, 'name');
-  const descriptionValidation = useFieldValidation('projects', index, 'description');
-
+  validation: {
+    name: { hasError: boolean; errorMessage?: string };
+    description: { hasError: boolean; errorMessage?: string };
+  };
+}> = ({ project, index, validation }) => {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
         <Box sx={{ flex: 1 }}>
-          <ValidatedFieldDisplay
-            validation={nameValidation}
+          <ValidatedDisplay
+            validation={validation.name}
             variant="subtitle1"
             normalColor="#333"
           >
             {project.name}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
       </Box>
       <Box sx={{ mb: 1 }}>
-        {descriptionValidation.hasError && (
-          <Box sx={{ mb: 0.5 }}>
-            <MarkdownRenderer content={project.description} variant="body1" />
-          </Box>
-        )}
-        {!descriptionValidation.hasError && (
+        <ValidatedDisplay
+          validation={validation.description}
+          variant="body1"
+          normalColor="#333"
+        >
           <MarkdownRenderer content={project.description} variant="body1" />
-        )}
-        {descriptionValidation.hasError && (
-          <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-            {descriptionValidation.errorMessage}
-          </Typography>
-        )}
+        </ValidatedDisplay>
       </Box>
       {project.technologies.length > 0 && (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
@@ -175,12 +167,13 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEdi
   }
 
   const renderProjectDisplay = (project: Project, index: number) => {
-    return (
-      <ProjectDisplay
-        project={project}
-        index={index}
-      />
-    );
+    // Get all validation states at once using useItemValidation hook
+    const ProjectDisplayWrapper: React.FC<{ project: Project; index: number }> = ({ project, index }) => {
+      const validation = useItemValidation('projects', index, ['name', 'description']);
+      return <ProjectDisplay project={project} index={index} validation={validation} />;
+    };
+
+    return <ProjectDisplayWrapper project={project} index={index} />;
   }
 
   return (

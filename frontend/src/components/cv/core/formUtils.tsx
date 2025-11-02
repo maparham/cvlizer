@@ -7,8 +7,10 @@
  * Key responsibilities:
  * - Provide reusable form field components (FormField, DateFieldComponent)
  * - Handle date picker integration with proper formatting
- * - Provide validation display components
  * - Ensure consistent form styling across CV sections
+ *
+ * Note: Validation-aware components (ValidatedFormField, ValidatedDateField, ValidatedDisplay)
+ * are provided in the validatedFields module, not here.
  *
  * Usage:
  * - Import FormField for standard text inputs
@@ -516,72 +518,6 @@ export const EmptyState: React.FC<{
     {message}
   </Typography>
 );
-
-/**
- * Validated field display component for showing fields with validation errors in display mode
- * Displays field content with error styling (red text, warning icon, error message) when validation fails
- */
-export interface ValidatedFieldDisplayProps {
-  children: React.ReactNode;
-  validation: { hasError: boolean; errorMessage?: string };
-  variant?: 'subtitle1' | 'body2';
-  errorColor?: string;
-  normalColor?: string;
-  iconSize?: string;
-  align?: 'left' | 'right' | 'flex-end';
-  sx?: any;
-}
-
-export const ValidatedFieldDisplay: React.FC<ValidatedFieldDisplayProps> = ({
-  children,
-  validation,
-  variant = 'subtitle1',
-  errorColor = '#d32f2f',
-  normalColor,
-  iconSize = '1rem',
-  align = 'left',
-  sx,
-}) => {
-  const getDefaultColor = () => {
-    if (normalColor) return normalColor;
-    return variant === 'subtitle1' ? '#333' : '#666';
-  };
-
-  const justifyContent = align === 'flex-end' || align === 'right' ? 'flex-end' : 'flex-start';
-  const textAlign = align === 'flex-end' || align === 'right' ? 'right' : 'left';
-
-  return (
-    <>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', justifyContent, ...sx }}>
-        <Typography
-          variant={variant}
-          sx={{
-            color: validation.hasError ? errorColor : getDefaultColor(),
-            ...(variant === 'subtitle1' && !normalColor ? { fontWeight: 600 } : {}),
-          }}
-        >
-          {children}
-        </Typography>
-        {validation.hasError && (
-          <WarningIcon sx={{ color: errorColor, fontSize: iconSize }} />
-        )}
-      </Box>
-      {validation.hasError && (
-        <Typography
-          variant="caption"
-          color="error"
-          sx={{
-            mt: 0.5,
-            display: 'block',
-            textAlign,
-          }}
-        >
-          {validation.errorMessage}
-        </Typography>
-      )}
-    </>
-  );
-};
 
 /**
  * Common form validation utilities

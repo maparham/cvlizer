@@ -2,10 +2,10 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateFieldComponent, ValidatedFieldDisplay } from '../core/formUtils'
+import { FormField, DateFieldComponent } from '../core/formUtils'
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
-import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface VolunteerExperience {
   id: string
@@ -23,14 +23,12 @@ const VolunteerExperienceForm: React.FC<{
   updateVolunteer: (field: keyof VolunteerExperience, value: any) => void;
   onSave?: () => void;
 }> = ({ volunteer, index, updateVolunteer, onSave }) => {
-  // Get validation errors for this volunteer experience item
-  const organizationValidation = useFieldValidation('volunteer_experience', index, 'organization');
-  const roleValidation = useFieldValidation('volunteer_experience', index, 'role');
-  const startDateValidation = useFieldValidation('volunteer_experience', index, 'start_date');
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <FormField
+      <ValidatedFormField
+        section="volunteer_experience"
+        field="organization"
+        index={index}
         config={{
           name: 'organization',
           label: 'Organization',
@@ -40,10 +38,11 @@ const VolunteerExperienceForm: React.FC<{
         value={volunteer.organization}
         onChange={(value) => updateVolunteer('organization', value)}
         onSave={onSave}
-        error={organizationValidation.hasError}
-        helperText={organizationValidation.errorMessage}
       />
-      <FormField
+      <ValidatedFormField
+        section="volunteer_experience"
+        field="role"
+        index={index}
         config={{
           name: 'role',
           label: 'Role/Position',
@@ -53,11 +52,12 @@ const VolunteerExperienceForm: React.FC<{
         value={volunteer.role}
         onChange={(value) => updateVolunteer('role', value)}
         onSave={onSave}
-        error={roleValidation.hasError}
-        helperText={roleValidation.errorMessage}
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <DateFieldComponent
+        <ValidatedDateField
+          section="volunteer_experience"
+          field="start_date"
+          index={index}
           config={{
             name: 'start_date',
             label: 'Start Date',
@@ -67,8 +67,6 @@ const VolunteerExperienceForm: React.FC<{
           onChange={(value) => updateVolunteer('start_date', value)}
           onSave={onSave}
           sx={{ flex: 1 }}
-          error={startDateValidation.hasError}
-          helperText={startDateValidation.errorMessage}
         />
         <DateFieldComponent
           config={{
@@ -98,31 +96,31 @@ const VolunteerExperienceForm: React.FC<{
   );
 };
 
-// Separate component for volunteer experience display to allow using hooks
+// Separate component for volunteer experience display (no hooks - validation passed as props)
 const VolunteerExperienceDisplay: React.FC<{
   volunteer: VolunteerExperience;
   index: number;
-}> = ({ volunteer, index }) => {
-  // Get validation errors for this volunteer experience item
-  const organizationValidation = useFieldValidation('volunteer_experience', index, 'organization');
-  const roleValidation = useFieldValidation('volunteer_experience', index, 'role');
-  const startDateValidation = useFieldValidation('volunteer_experience', index, 'start_date');
-
+  validation: {
+    organization: { hasError: boolean; errorMessage?: string };
+    role: { hasError: boolean; errorMessage?: string };
+    start_date: { hasError: boolean; errorMessage?: string };
+  };
+}> = ({ volunteer, index, validation }) => {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
         <Box sx={{ flex: 1 }}>
-          <ValidatedFieldDisplay
-            validation={roleValidation}
+          <ValidatedDisplay
+            validation={validation.role}
             variant="subtitle1"
             normalColor="#333"
           >
             🤝 {volunteer.role}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
         <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
-          <ValidatedFieldDisplay
-            validation={startDateValidation}
+          <ValidatedDisplay
+            validation={validation.start_date}
             variant="body2"
             normalColor="#666"
             iconSize="0.875rem"
@@ -130,19 +128,19 @@ const VolunteerExperienceDisplay: React.FC<{
           >
             {volunteer.start_date}
             {volunteer.end_date ? ` - ${volunteer.end_date}` : ' - Present'}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
       </Box>
       <Box sx={{ mb: 1 }}>
-        <ValidatedFieldDisplay
-          validation={organizationValidation}
+        <ValidatedDisplay
+          validation={validation.organization}
           variant="body2"
           normalColor="#666"
           iconSize="0.875rem"
           sx={{ mb: 0 }}
         >
           {volunteer.organization}
-        </ValidatedFieldDisplay>
+        </ValidatedDisplay>
       </Box>
       <Box>
         <MarkdownRenderer content={volunteer.description} variant="body1" />
@@ -173,12 +171,13 @@ const VolunteerExperienceSection: React.FC<SectionProps> = ({ data, onUpdate, on
   }
 
   const renderVolunteerDisplay = (volunteer: VolunteerExperience, index: number) => {
-    return (
-      <VolunteerExperienceDisplay
-        volunteer={volunteer}
-        index={index}
-      />
-    );
+    // Get all validation states at once using useItemValidation hook
+    const VolunteerExperienceDisplayWrapper: React.FC<{ volunteer: VolunteerExperience; index: number }> = ({ volunteer, index }) => {
+      const validation = useItemValidation('volunteer_experience', index, ['organization', 'role', 'start_date']);
+      return <VolunteerExperienceDisplay volunteer={volunteer} index={index} validation={validation} />;
+    };
+
+    return <VolunteerExperienceDisplayWrapper volunteer={volunteer} index={index} />;
   }
 
   return (

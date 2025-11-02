@@ -13,7 +13,8 @@ import React, { useCallback, useMemo } from "react";
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from "@mui/material";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
-import { FormField, DateFieldComponent, ValidatedFieldDisplay } from "../core/formUtils";
+import { FormField, DateFieldComponent } from "../core/formUtils";
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from "../core/validatedFields";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import JobPositionAutocomplete from "../ui/JobPositionAutocomplete";
 import { generateSectionId } from "../../../utils/idGenerator";
@@ -43,10 +44,8 @@ const WorkExperienceForm: React.FC<{
   updateExperience: (field: keyof WorkExperience, value: any) => void;
   onSave?: () => void;
 }> = ({ exp, index, updateExperience, onSave }) => {
-  // Get validation errors for this work experience item
+  // Get validation errors for position (used by JobPositionAutocomplete)
   const positionValidation = useFieldValidation('work_experience', index, 'position');
-  const companyValidation = useFieldValidation('work_experience', index, 'company');
-  const startDateValidation = useFieldValidation('work_experience', index, 'start_date');
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -58,7 +57,10 @@ const WorkExperienceForm: React.FC<{
         helperText={positionValidation.errorMessage}
         placeholder="e.g., Software Engineer"
       />
-      <FormField
+      <ValidatedFormField
+        section="work_experience"
+        field="company"
+        index={index}
         config={{
           name: "company",
           label: "Company",
@@ -68,8 +70,6 @@ const WorkExperienceForm: React.FC<{
         value={exp.company}
         onChange={(value) => updateExperience("company", value)}
         onSave={onSave}
-        error={companyValidation.hasError}
-        helperText={companyValidation.errorMessage}
       />
       <LocationAutocomplete
         value={exp.location || ""}
@@ -78,7 +78,10 @@ const WorkExperienceForm: React.FC<{
         placeholder="e.g., San Francisco, CA"
       />
       <Box sx={{ display: "flex", gap: 2 }}>
-        <DateFieldComponent
+        <ValidatedDateField
+          section="work_experience"
+          field="start_date"
+          index={index}
           config={{
             name: "start_date",
             label: "Start Date",
@@ -88,8 +91,6 @@ const WorkExperienceForm: React.FC<{
           onChange={(value) => updateExperience("start_date", value)}
           onSave={onSave}
           sx={{ flex: 1 }}
-          error={startDateValidation.hasError}
-          helperText={startDateValidation.errorMessage}
         />
         <DateFieldComponent
           config={{
@@ -119,48 +120,48 @@ const WorkExperienceForm: React.FC<{
   );
 };
 
-// Separate component for work experience display to allow using hooks
+// Separate component for work experience display (no hooks - validation passed as props)
 const WorkExperienceDisplay: React.FC<{
   exp: WorkExperience;
   index: number;
+  validation: {
+    position: { hasError: boolean; errorMessage?: string };
+    company: { hasError: boolean; errorMessage?: string };
+    start_date: { hasError: boolean; errorMessage?: string };
+  };
   suggestionsByItemId: Map<string, any>;
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
   handleDiscardSuggestion: (itemId: string) => void;
-}> = ({ exp, index, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
+}> = ({ exp, index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
   const suggestion = suggestionsByItemId.get(exp.id);
-
-  // Get validation errors for this work experience item
-  const positionValidation = useFieldValidation('work_experience', index, 'position');
-  const companyValidation = useFieldValidation('work_experience', index, 'company');
-  const startDateValidation = useFieldValidation('work_experience', index, 'start_date');
 
   return (
     <>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5, pr: 10 }}>
         <Box sx={{ flex: 1 }}>
-          <ValidatedFieldDisplay
-            validation={positionValidation}
+          <ValidatedDisplay
+            validation={validation.position}
             variant="subtitle1"
             normalColor="#333"
           >
             {exp.position || "Position Title"}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
         <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
-          <ValidatedFieldDisplay
-            validation={startDateValidation}
+          <ValidatedDisplay
+            validation={validation.start_date}
             variant="body2"
             normalColor="#666"
             iconSize="0.875rem"
             align="flex-end"
           >
             {exp.start_date} - {exp.current ? "PRESENT" : exp.end_date || "PRESENT"}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
       </Box>
       <Box sx={{ mb: 1 }}>
-        <ValidatedFieldDisplay
-          validation={companyValidation}
+        <ValidatedDisplay
+          validation={validation.company}
           variant="subtitle1"
           normalColor="#1976d2"
           iconSize="0.875rem"
@@ -168,7 +169,7 @@ const WorkExperienceDisplay: React.FC<{
         >
           {exp.company || "Company Name"}
           {exp.location && ` • ${exp.location}`}
-        </ValidatedFieldDisplay>
+        </ValidatedDisplay>
       </Box>
       {exp.description ? (
         <Box sx={{ mb: 1 }}>
@@ -305,15 +306,22 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
 
   const renderExperienceDisplay = useCallback(
     (exp: WorkExperience, index: number) => {
-      return (
-        <WorkExperienceDisplay
-          exp={exp}
-          index={index}
-          suggestionsByItemId={suggestionsByItemId}
-          handleApplySuggestion={handleApplySuggestion}
-          handleDiscardSuggestion={handleDiscardSuggestion}
-        />
-      );
+      // Get all validation states at once using useItemValidation hook
+      const WorkExperienceDisplayWrapper: React.FC<{ exp: WorkExperience; index: number }> = ({ exp, index }) => {
+        const validation = useItemValidation('work_experience', index, ['position', 'company', 'start_date']);
+        return (
+          <WorkExperienceDisplay
+            exp={exp}
+            index={index}
+            validation={validation}
+            suggestionsByItemId={suggestionsByItemId}
+            handleApplySuggestion={handleApplySuggestion}
+            handleDiscardSuggestion={handleDiscardSuggestion}
+          />
+        );
+      };
+
+      return <WorkExperienceDisplayWrapper exp={exp} index={index} />;
     },
     [suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion]
   );

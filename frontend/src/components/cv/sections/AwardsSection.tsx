@@ -2,10 +2,10 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateFieldComponent, ValidatedFieldDisplay } from '../core/formUtils'
+import { FormField } from '../core/formUtils'
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
-import { useFieldValidation } from '../../../hooks/useFieldValidation'
 
 interface Award {
   id: string
@@ -22,14 +22,12 @@ const AwardForm: React.FC<{
   updateAward: (field: keyof Award, value: any) => void;
   onSave?: () => void;
 }> = ({ award, index, updateAward, onSave }) => {
-  // Get validation errors for this award item
-  const nameValidation = useFieldValidation('awards', index, 'name');
-  const issuerValidation = useFieldValidation('awards', index, 'issuer');
-  const dateValidation = useFieldValidation('awards', index, 'date');
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <FormField
+      <ValidatedFormField
+        section="awards"
+        field="name"
+        index={index}
         config={{
           name: 'name',
           label: 'Award Name',
@@ -39,10 +37,11 @@ const AwardForm: React.FC<{
         value={award.name}
         onChange={(value) => updateAward('name', value)}
         onSave={onSave}
-        error={nameValidation.hasError}
-        helperText={nameValidation.errorMessage}
       />
-      <FormField
+      <ValidatedFormField
+        section="awards"
+        field="issuer"
+        index={index}
         config={{
           name: 'issuer',
           label: 'Issuing Organization',
@@ -52,10 +51,11 @@ const AwardForm: React.FC<{
         value={award.issuer}
         onChange={(value) => updateAward('issuer', value)}
         onSave={onSave}
-        error={issuerValidation.hasError}
-        helperText={issuerValidation.errorMessage}
       />
-      <DateFieldComponent
+      <ValidatedDateField
+        section="awards"
+        field="date"
+        index={index}
         config={{
           name: 'date',
           label: 'Date Received',
@@ -64,8 +64,6 @@ const AwardForm: React.FC<{
         value={award.date}
         onChange={(value) => updateAward('date', value)}
         onSave={onSave}
-        error={dateValidation.hasError}
-        helperText={dateValidation.errorMessage}
       />
       <FormField
         config={{
@@ -83,50 +81,50 @@ const AwardForm: React.FC<{
   );
 };
 
-// Separate component for award display to allow using hooks
+// Separate component for award display (no hooks - validation passed as props)
 const AwardDisplay: React.FC<{
   award: Award;
   index: number;
-}> = ({ award, index }) => {
-  // Get validation errors for this award item
-  const nameValidation = useFieldValidation('awards', index, 'name');
-  const issuerValidation = useFieldValidation('awards', index, 'issuer');
-  const dateValidation = useFieldValidation('awards', index, 'date');
-
+  validation: {
+    name: { hasError: boolean; errorMessage?: string };
+    issuer: { hasError: boolean; errorMessage?: string };
+    date: { hasError: boolean; errorMessage?: string };
+  };
+}> = ({ award, index, validation }) => {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
         <Box sx={{ flex: 1 }}>
-          <ValidatedFieldDisplay
-            validation={nameValidation}
+          <ValidatedDisplay
+            validation={validation.name}
             variant="subtitle1"
             normalColor="#333"
           >
             🏆 {award.name}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
         <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
-          <ValidatedFieldDisplay
-            validation={dateValidation}
+          <ValidatedDisplay
+            validation={validation.date}
             variant="body2"
             normalColor="#666"
             iconSize="0.875rem"
             align="flex-end"
           >
             {award.date}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
       </Box>
       <Box sx={{ mb: 1 }}>
-        <ValidatedFieldDisplay
-          validation={issuerValidation}
+        <ValidatedDisplay
+          validation={validation.issuer}
           variant="body2"
           normalColor="#666"
           iconSize="0.875rem"
           sx={{ mb: 0 }}
         >
           {award.issuer}
-        </ValidatedFieldDisplay>
+        </ValidatedDisplay>
       </Box>
       {award.description && (
         <Box>
@@ -158,12 +156,13 @@ const AwardsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditi
   }
 
   const renderAwardDisplay = (award: Award, index: number) => {
-    return (
-      <AwardDisplay
-        award={award}
-        index={index}
-      />
-    );
+    // Get all validation states at once using useItemValidation hook
+    const AwardDisplayWrapper: React.FC<{ award: Award; index: number }> = ({ award, index }) => {
+      const validation = useItemValidation('awards', index, ['name', 'issuer', 'date']);
+      return <AwardDisplay award={award} index={index} validation={validation} />;
+    };
+
+    return <AwardDisplayWrapper award={award} index={index} />;
   }
 
   return (

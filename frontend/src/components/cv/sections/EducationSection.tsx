@@ -14,7 +14,8 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
-import { FormField, DateFieldComponent, ValidatedFieldDisplay } from "../core/formUtils";
+import { FormField, DateFieldComponent } from "../core/formUtils";
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from "../core/validatedFields";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import DegreeAutocomplete from "../ui/DegreeAutocomplete";
 import FieldOfStudyAutocomplete from "../ui/FieldOfStudyAutocomplete";
@@ -51,10 +52,8 @@ const EducationForm: React.FC<{
   updateEducation: (field: keyof Education, value: any) => void;
   onSave?: () => void;
 }> = ({ edu, index, updateEducation, onSave }) => {
-  // Get validation errors for this education item
-  const institutionValidation = useFieldValidation('education', index, 'institution');
+  // Get validation errors for degree (used by DegreeAutocomplete)
   const degreeValidation = useFieldValidation('education', index, 'degree');
-  const startDateValidation = useFieldValidation('education', index, 'start_date');
 
   const addHonor = () => {
     const currentHonors = edu.honors || [];
@@ -107,7 +106,10 @@ const EducationForm: React.FC<{
         error={degreeValidation.hasError}
         helperText={degreeValidation.errorMessage}
       />
-      <FormField
+      <ValidatedFormField
+        section="education"
+        field="institution"
+        index={index}
         config={{
           name: "institution",
           label: "Institution",
@@ -117,8 +119,6 @@ const EducationForm: React.FC<{
         value={edu.institution}
         onChange={(value) => updateEducation("institution", value)}
         onSave={onSave}
-        error={institutionValidation.hasError}
-        helperText={institutionValidation.errorMessage}
       />
       <FieldOfStudyAutocomplete
         value={edu.field_of_study || ""}
@@ -141,7 +141,10 @@ const EducationForm: React.FC<{
         placeholder="e.g., Boston, MA"
       />
       <Box sx={{ display: "flex", gap: 2 }}>
-        <DateFieldComponent
+        <ValidatedDateField
+          section="education"
+          field="start_date"
+          index={index}
           config={{
             name: "start_date",
             label: "Start Date",
@@ -151,8 +154,6 @@ const EducationForm: React.FC<{
           onChange={(value) => updateEducation("start_date", value)}
           onSave={onSave}
           sx={{ flex: 1 }}
-          error={startDateValidation.hasError}
-          helperText={startDateValidation.errorMessage}
         />
         <DateFieldComponent
           config={{
@@ -291,20 +292,20 @@ const EducationForm: React.FC<{
   );
 };
 
-// Separate component for education display to allow using hooks
+// Separate component for education display (no hooks - validation passed as props)
 const EducationDisplay: React.FC<{
   edu: Education;
   index: number;
+  validation: {
+    institution: { hasError: boolean; errorMessage?: string };
+    degree: { hasError: boolean; errorMessage?: string };
+    start_date: { hasError: boolean; errorMessage?: string };
+  };
   suggestionsByItemId: Map<string, any>;
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
   handleDiscardSuggestion: (itemId: string) => void;
-}> = ({ edu, index, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
+}> = ({ edu, index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
   const suggestion = suggestionsByItemId.get(edu.id);
-
-  // Get validation errors for this education item
-  const institutionValidation = useFieldValidation('education', index, 'institution');
-  const degreeValidation = useFieldValidation('education', index, 'degree');
-  const startDateValidation = useFieldValidation('education', index, 'start_date');
 
   return (
     <>
@@ -318,19 +319,19 @@ const EducationDisplay: React.FC<{
         }}
       >
         <Box sx={{ flex: 1 }}>
-          <ValidatedFieldDisplay
-            validation={degreeValidation}
+          <ValidatedDisplay
+            validation={validation.degree}
             variant="subtitle1"
             normalColor="#333"
           >
             {edu.degree || "Degree"}
             {edu.field_of_study && ` in ${edu.field_of_study}`}
             {edu.academic_degree && ` (${edu.academic_degree})`}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
         <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
-          <ValidatedFieldDisplay
-            validation={startDateValidation}
+          <ValidatedDisplay
+            validation={validation.start_date}
             variant="body2"
             normalColor="#666"
             iconSize="0.875rem"
@@ -338,12 +339,12 @@ const EducationDisplay: React.FC<{
           >
             {edu.start_date || "Start date required"} -{" "}
             {edu.end_date || "PRESENT"}
-          </ValidatedFieldDisplay>
+          </ValidatedDisplay>
         </Box>
       </Box>
       <Box sx={{ mb: 1 }}>
-        <ValidatedFieldDisplay
-          validation={institutionValidation}
+        <ValidatedDisplay
+          validation={validation.institution}
           variant="subtitle1"
           normalColor="#1976d2"
           iconSize="0.875rem"
@@ -351,7 +352,7 @@ const EducationDisplay: React.FC<{
         >
           {edu.institution || "Institution"}
           {edu.location && ` • ${edu.location}`}
-        </ValidatedFieldDisplay>
+        </ValidatedDisplay>
       </Box>
       {edu.gpa && (
         <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
@@ -517,15 +518,22 @@ const EducationSection: React.FC<SectionProps> = ({
 
   const renderEducationDisplay = useCallback(
     (edu: Education, index: number) => {
-      return (
-        <EducationDisplay
-          edu={edu}
-          index={index}
-          suggestionsByItemId={suggestionsByItemId}
-          handleApplySuggestion={handleApplySuggestion}
-          handleDiscardSuggestion={handleDiscardSuggestion}
-        />
-      );
+      // Get all validation states at once using useItemValidation hook
+      const EducationDisplayWrapper: React.FC<{ edu: Education; index: number }> = ({ edu, index }) => {
+        const validation = useItemValidation('education', index, ['degree', 'institution', 'start_date']);
+        return (
+          <EducationDisplay
+            edu={edu}
+            index={index}
+            validation={validation}
+            suggestionsByItemId={suggestionsByItemId}
+            handleApplySuggestion={handleApplySuggestion}
+            handleDiscardSuggestion={handleDiscardSuggestion}
+          />
+        );
+      };
+
+      return <EducationDisplayWrapper edu={edu} index={index} />;
     },
     [suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion]
   );
