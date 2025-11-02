@@ -285,9 +285,14 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
         variant="h4"
         sx={{ fontWeight: "bold", mb: 2, color: "#1976d2" }}
       >
-        {data.academic_title ? `${data.academic_title} ${data.full_name || "Your Name"}` : (data.full_name || "Your Name")}
+        {data.full_name || "Your Name"}
       </Typography>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
+        {data.academic_title && (
+          <Typography variant="body1" sx={{ color: "#666" }}>
+            🎓 {data.academic_title}
+          </Typography>
+        )}
         {data.email && (
           <Typography variant="body1" sx={{ color: "#666" }}>
             📧 {data.email}
