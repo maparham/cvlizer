@@ -23,23 +23,7 @@ export const InitialValidation: React.FC<InitialValidationProps> = ({
     // Only run initial validation if we don't already have validation errors
     // (to avoid overriding errors from save attempts)
     if (cvData && validationErrors.length === 0) {
-      console.log('[InitialValidation] Running validation', {
-        cvId,
-        hasCvData: !!cvData,
-        existingErrors: validationErrors.length,
-      });
-
       const validationResult = validateCVData(cvData);
-
-      console.log('[InitialValidation] Validation result', {
-        isValid: validationResult.isValid,
-        fieldErrorsCount: Object.keys(validationResult.errors).length,
-        crossFieldErrorsCount: validationResult.crossFieldErrors.length,
-        duplicateErrorsCount: validationResult.duplicates.duplicates.length,
-        fieldErrors: validationResult.errors,
-        crossFieldErrors: validationResult.crossFieldErrors,
-        duplicates: validationResult.duplicates,
-      });
 
       if (!validationResult.isValid) {
         // Map errors to their correct sections and items
@@ -74,30 +58,17 @@ export const InitialValidation: React.FC<InitialValidationProps> = ({
 
         const allErrors = [...mappedErrors, ...crossFieldMapped];
 
-        console.log('[InitialValidation] Setting validation errors', {
-          mappedErrorsCount: mappedErrors.length,
-          crossFieldMappedCount: crossFieldMapped.length,
-          totalErrors: allErrors.length,
-          allErrors,
-        });
-
         setValidationErrors(allErrors);
 
         // Show notification to user only once per CV
         if (hasShownNotification.current !== cvId) {
           const totalErrors = allErrors.length;
-          console.log('[InitialValidation] Showing validation notification', {
-            cvId,
-            totalErrors,
-          });
           showValidationError(
             "CV Validation Issues",
             `Please fix ${totalErrors} validation error${totalErrors > 1 ? 's' : ''} before saving.`,
           );
           hasShownNotification.current = cvId;
         }
-      } else {
-        console.log('[InitialValidation] CV data is valid, no errors');
       }
     }
   }, [cvData, setValidationErrors, validationErrors.length, cvId, showValidationError]);
