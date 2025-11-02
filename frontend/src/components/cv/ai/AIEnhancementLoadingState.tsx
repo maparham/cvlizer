@@ -11,7 +11,7 @@
  * - Helpful tips about the AI process
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Typography,
@@ -37,20 +37,34 @@ const MESSAGE_ROTATION_INTERVAL = 9000; // 9 seconds per message
 const useRotatingMessage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fadeIn, setFadeIn] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
       // Fade out
       setFadeIn(false);
 
+      // Clear any pending timeout before creating a new one
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
       // After fade out completes, change message and fade in
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setCurrentIndex((prev) => (prev + 1) % messages.length);
         setFadeIn(true);
+        timeoutRef.current = null;
       }, 300); // Half of fade transition duration
     }, MESSAGE_ROTATION_INTERVAL);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // Clear any pending timeout when component unmounts
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
   }, []);
 
   return {
