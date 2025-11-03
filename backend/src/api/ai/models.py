@@ -57,35 +57,6 @@ class JobFitAnalysisResponse(BaseModel):
     model_used: str
 
 
-# Content Enhancement Models
-class ContentEnhancementRequest(BaseModel):
-    original_content: str
-    content_type: str = "bullet_point"
-
-
-class ContentSuggestion(BaseModel):
-    content: str
-    improvements: List[str]
-    confidence_score: int
-
-
-class ContentEnhancementResponse(BaseModel):
-    model_config = {"protected_namespaces": ()}
-
-    suggestions: List[ContentSuggestion]
-    overall_improvements: List[str]
-    tokens_used: int
-    generation_time: int
-    model_used: str
-    is_generating: bool = False
-    generation_error: Optional[str] = None
-
-
-class ContentEnhancementCreateResponse(BaseModel):
-    enhancement_id: str
-    is_generating: bool = True
-
-
 # AI Enhancement Models (for Enhance CV functionality)
 class AIEnhancementRequest(BaseModel):
     job_description_id: str

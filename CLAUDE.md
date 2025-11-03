@@ -443,7 +443,6 @@ Key models and their relationships:
 - **AISection**: AI-generated content sections (belongs to CV)
 - **AIDraft**: AI draft suggestions for sections (belongs to User)
 - **AIEnhancement**: AI enhancement suggestions (belongs to CV)
-- **ContentEnhancement**: Enhanced content (belongs to CV)
 - **CVHistory**: Version tracking for CVs (belongs to CV)
 - **AIUsageLog**: AI operation usage and cost tracking (belongs to User)
 - **UserActivity**: User action tracking (belongs to User)

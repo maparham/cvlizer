@@ -32,6 +32,9 @@ async def parse_cv_with_openai(
         # Add UUIDs to all array items immediately after parsing (only if no error)
         parsed_data = _add_uuids_to_cv_data(parsed_data)
 
+        # Normalize "PRESENT" strings to None for end_date fields
+        parsed_data = _normalize_present_strings(parsed_data)
+
         # Date normalization removed - only YYYY-MM-DD format is supported
 
         return parsed_data
@@ -94,6 +97,33 @@ def _add_uuids_to_cv_data(cv_data: dict) -> dict:
             for lang in cv_data["skills"]["languages"]:
                 if isinstance(lang, dict) and "id" not in lang:
                     lang["id"] = f"item_{uuid.uuid4()}"
+
+    return cv_data
+
+
+def _normalize_present_strings(cv_data: dict) -> dict:
+    """
+    Normalize "PRESENT" strings to None for end_date fields.
+
+    Converts any "PRESENT" (case-insensitive) strings in end_date fields
+    to None for work_experience, education, and volunteer_experience sections.
+    This ensures the parser always returns null for ongoing positions instead
+    of the string "PRESENT".
+    """
+    # Sections that have end_date fields
+    sections_with_end_date = ["work_experience", "education", "volunteer_experience"]
+
+    for section in sections_with_end_date:
+        if section in cv_data and isinstance(cv_data[section], list):
+            for item in cv_data[section]:
+                if isinstance(item, dict) and "end_date" in item:
+                    end_date = item["end_date"]
+                    # Check if end_date is a string equal to "PRESENT" (case-insensitive)
+                    if (
+                        isinstance(end_date, str)
+                        and end_date.strip().lower() == "present"
+                    ):
+                        item["end_date"] = None
 
     return cv_data
 

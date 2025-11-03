@@ -44,9 +44,6 @@ class User(Base):
     job_descriptions = relationship(
         "JobDescription", back_populates="user", cascade="all, delete-orphan"
     )
-    content_enhancements = relationship(
-        "ContentEnhancement", back_populates="user", cascade="all, delete-orphan"
-    )
     ai_enhancements = relationship(
         "AIEnhancement", back_populates="user", cascade="all, delete-orphan"
     )

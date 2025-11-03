@@ -22,9 +22,6 @@ from .common import (
     is_ai_enabled,
 )
 
-# Re-export content enhancement functions
-from .content_enhancement import enhance_content
-
 # Re-export CV parsing functions
 from .cv_parsing import parse_cv_text_with_openai
 
@@ -55,8 +52,6 @@ __all__ = [
     "parse_cv_text_with_openai",
     # Section generation
     "generate_cv_section",
-    # Content enhancement
-    "enhance_content",
     # Job extraction
     "extract_job_description_with_ai",
     # CV status

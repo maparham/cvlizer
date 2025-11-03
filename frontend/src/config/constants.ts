@@ -25,9 +25,6 @@ export const POLLING_CONFIG = {
   /** Polling interval for AI task completion in milliseconds */
   AI_TASK_INTERVAL: 2000,
 
-  /** Polling interval for content enhancement in milliseconds */
-  CONTENT_ENHANCEMENT_INTERVAL: 2000,
-
   /** Maximum number of polling retries before giving up */
   MAX_RETRIES: 30,
 

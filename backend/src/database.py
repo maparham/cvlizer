@@ -22,7 +22,6 @@ from src.models.audit_log import AuditLog  # noqa: F401, E402
 
 # Reuse the shared engine/Base from models.base; import models to register metadata
 from src.models.base import Base, engine  # type: ignore  # noqa: E402
-from src.models.content_enhancement import ContentEnhancement  # noqa: F401, E402
 from src.models.cv import CV  # noqa: F401, E402
 from src.models.cv_history import CVHistory  # noqa: F401, E402
 from src.models.cv_job_description import CVJobDescription  # noqa: F401, E402

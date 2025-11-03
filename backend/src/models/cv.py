@@ -78,9 +78,6 @@ class CV(Base):
         cascade="all, delete-orphan",
         order_by="CVHistory.created_at.desc()",
     )
-    content_enhancements = relationship(
-        "ContentEnhancement", back_populates="cv", cascade="all, delete-orphan"
-    )
 
     def __str__(self):
         return f"<CV {self.original_filename}>"

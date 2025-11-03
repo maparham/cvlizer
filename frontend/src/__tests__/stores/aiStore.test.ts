@@ -54,7 +54,6 @@ jest.mock("../../services/ai", () => ({
     getCVDrafts: jest.fn(),
     approveWhyGoodFitDraft: jest.fn(),
     deleteWhyGoodFitDraft: jest.fn(),
-    enhanceContent: jest.fn(),
     getJobDescriptions: jest.fn(),
     createJobDescription: jest.fn(),
     deleteJobDescription: jest.fn(),

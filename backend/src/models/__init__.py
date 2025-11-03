@@ -11,7 +11,6 @@ from .ai_suggestion import AISuggestion
 from .ai_usage_log import AIUsageLog
 from .audit_log import AuditLog
 from .base import Base, engine, get_db
-from .content_enhancement import ContentEnhancement
 from .cv import CV
 from .cv_history import CVHistory
 from .cv_job_description import CVJobDescription
@@ -39,6 +38,5 @@ __all__ = [
     "UserSession",
     "ImpersonationSession",
     "AIUsageLog",
-    "ContentEnhancement",
     "AIEnhancement",
 ]

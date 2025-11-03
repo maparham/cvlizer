@@ -11,7 +11,6 @@ from fastapi import APIRouter
 from . import (
     ai_sections,
     ai_suggestions,
-    content_enhancement,
     job_fit_analysis,
 )
 
@@ -23,7 +22,6 @@ router = APIRouter(prefix="/api", tags=["ai"])
 
 # Include all sub-routers
 router.include_router(ai_sections.router)
-router.include_router(content_enhancement.router)
 router.include_router(ai_suggestions.router)
 router.include_router(job_fit_analysis.router)
 

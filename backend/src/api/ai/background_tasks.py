@@ -13,103 +13,9 @@ from src.config import AIConfig
 from src.models.ai_draft import AIDraft
 from src.models.ai_enhancement import AIEnhancement
 from src.models.base import SessionLocal
-from src.models.content_enhancement import ContentEnhancement
 from src.utils.background_tasks import run_task_in_background
 
 logger = logging.getLogger(__name__)
-
-
-def enhance_content_sync(
-    task_id: str, original_content: str, content_type: str, user_id: str, cv_id: str
-):
-    """Synchronous content enhancement function to run in thread pool"""
-    db = SessionLocal()
-    try:
-        # Enhance content (run async function in sync context)
-        import asyncio
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            from src.services.ai_service import enhance_content
-
-            enhancement_result = loop.run_until_complete(
-                enhance_content(
-                    original_content=original_content,
-                    content_type=content_type,
-                    user_id=user_id,
-                    cv_id=cv_id,
-                    db_session=db,
-                )
-            )
-        finally:
-            loop.close()
-
-        # Update ContentEnhancement record with results
-        enhancement = (
-            db.query(ContentEnhancement).filter(ContentEnhancement.id == task_id).first()
-        )
-        if enhancement:
-            if enhancement_result.get("error"):
-                enhancement.is_generating = False
-                enhancement.generation_error = enhancement_result["error"]
-            else:
-                enhancement.suggestions = enhancement_result.get("suggestions", [])
-                enhancement.overall_improvements = enhancement_result.get(
-                    "overall_improvements", []
-                )
-                enhancement.tokens_used = enhancement_result.get("tokens_used", 0)
-                enhancement.generation_time = enhancement_result.get("generation_time", 0)
-                enhancement.model_used = enhancement_result.get(
-                    "model_used", AIConfig.OPENAI_MODEL
-                )
-                enhancement.is_generating = False
-                enhancement.generation_error = None
-
-            db.commit()
-            db.refresh(enhancement)
-
-    except Exception as e:
-        # Update ContentEnhancement record with error
-        logger.exception(f"enhance_content_sync: Exception during enhancement: {str(e)}")
-        db_error = SessionLocal()
-        try:
-            enhancement = (
-                db_error.query(ContentEnhancement)
-                .filter(ContentEnhancement.id == task_id)
-                .first()
-            )
-            if enhancement:
-                enhancement.is_generating = False
-                enhancement.generation_error = f"Background enhancement failed: {str(e)}"
-                db_error.commit()
-        except Exception as update_error:
-            logger.exception(
-                f"enhance_content_sync: Failed to update enhancement with error: {str(update_error)}"
-            )
-        finally:
-            db_error.close()
-    finally:
-        db.close()
-
-
-async def enhance_content_background(
-    enhancement_id: str,
-    original_content: str,
-    content_type: str,
-    user_id: str,
-    cv_id: str,
-):
-    """Enhance content in background using thread pool executor"""
-    await run_task_in_background(
-        enhancement_id,
-        "content_enhancement",
-        enhance_content_sync,
-        original_content,
-        content_type,
-        user_id,
-        cv_id,
-    )
 
 
 def generate_job_fit_sync(
@@ -356,8 +262,6 @@ async def ai_suggestions_background(
 
 
 __all__ = [
-    "enhance_content_sync",
-    "enhance_content_background",
     "generate_job_fit_sync",
     "generate_job_fit_background",
     "ai_suggestions_sync",

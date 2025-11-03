@@ -153,26 +153,6 @@ class CVParsingResponseSchema(BaseModel):
 
 
 # ============================================================================
-# Content Enhancement Schemas
-# ============================================================================
-
-
-class ContentSuggestionSchema(BaseModel):
-    """Schema for individual content suggestion."""
-
-    content: str = Field(min_length=1)
-    improvements: List[str] = Field(min_length=1)
-    confidence_score: int = Field(ge=0, le=100)
-
-
-class ContentEnhancementResponseSchema(BaseModel):
-    """Schema for content enhancement AI response."""
-
-    suggestions: List[ContentSuggestionSchema] = Field(min_length=1, max_length=4)
-    overall_improvements: List[str] = Field(min_length=1)
-
-
-# ============================================================================
 # Section Generation Schemas
 # ============================================================================
 

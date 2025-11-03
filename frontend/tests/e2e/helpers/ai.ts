@@ -2,7 +2,7 @@
  * Helper functions for AI feature E2E tests
  *
  * This module provides reusable helper functions for testing AI features
- * including drafts, job descriptions, content enhancement, and job fit analysis.
+ * including drafts, job descriptions, and job fit analysis.
  */
 
 import { expect, Page } from "@playwright/test";
@@ -197,91 +197,6 @@ export async function discardDraft(page: Page): Promise<void> {
 
   // Wait for button to be processed
   await expect(discardButton).not.toBeVisible();
-}
-
-/**
- * Trigger content enhancement on a text field
- */
-export async function triggerContentEnhancement(
-  page: Page,
-  fieldLabel: string,
-): Promise<void> {
-  // Focus on the field
-  const field = page.getByLabel(new RegExp(fieldLabel, "i"));
-  await field.scrollIntoViewIfNeeded();
-  await field.click();
-
-  // Click enhance button (usually appears near focused field)
-  const enhanceButton = page.getByRole("button", {
-    name: /enhance|improve|ai/i,
-  });
-  await enhanceButton.click();
-
-  // Wait for enhancement modal
-  await expect(
-    page.getByRole("heading", { name: /enhance content/i }),
-  ).toBeVisible();
-}
-
-/**
- * Wait for enhancement suggestions to load
- */
-export async function waitForEnhancementSuggestions(
-  page: Page,
-  timeout: number = 30000,
-): Promise<void> {
-  // Wait for loading to finish
-  await expect(page.getByText(/generating.*suggestions/i)).not.toBeVisible({
-    timeout,
-  });
-
-  // Wait for suggestions to appear
-  await expect(page.getByRole("radio")).toBeVisible({ timeout });
-}
-
-/**
- * Select an enhancement suggestion by index
- */
-export async function selectEnhancementSuggestion(
-  page: Page,
-  index: number,
-): Promise<void> {
-  const radioButtons = page.getByRole("radio");
-  await radioButtons.nth(index).click();
-}
-
-/**
- * Accept the selected enhancement
- */
-export async function acceptEnhancement(page: Page): Promise<void> {
-  await page.getByRole("button", { name: /use this version/i }).click();
-
-  // Wait for modal to close
-  await expect(
-    page.getByRole("heading", { name: /enhance content/i }),
-  ).not.toBeVisible();
-}
-
-/**
- * Copy enhancement suggestion to clipboard
- */
-export async function copyEnhancementToClipboard(page: Page): Promise<void> {
-  await page.getByRole("button", { name: /copy/i }).click();
-
-  // Wait for success notification
-  await expect(page.getByText(/copied to clipboard/i)).toBeVisible();
-}
-
-/**
- * Regenerate enhancement suggestions
- */
-export async function regenerateEnhancement(page: Page): Promise<void> {
-  const regenerateButton = page.getByLabel(/regenerate suggestions/i);
-  await regenerateButton.click();
-
-  // Wait for regeneration
-  await expect(page.getByText(/generating.*suggestions/i)).toBeVisible();
-  await waitForEnhancementSuggestions(page);
 }
 
 /**

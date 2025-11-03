@@ -23,33 +23,6 @@ export interface JobFitAnalysisResponse {
   model_used: string;
 }
 
-// Content Enhancement Types
-export interface ContentEnhancementRequest {
-  original_content: string;
-  content_type: string;
-}
-
-export interface ContentSuggestion {
-  content: string;
-  improvements: string[];
-  confidence_score: number;
-}
-
-export interface ContentEnhancementResponse {
-  suggestions: ContentSuggestion[];
-  overall_improvements: string[];
-  tokens_used: number;
-  generation_time: number;
-  model_used: string;
-  is_generating: boolean;
-  generation_error?: string;
-}
-
-export interface ContentEnhancementCreateResponse {
-  enhancement_id: string;
-  is_generating: boolean;
-}
-
 // AI Enhancement Types (for Enhance CV functionality)
 export interface AIEnhancementRequest {
   job_description_id: string;
@@ -166,7 +139,7 @@ export interface AIFeatureStatus {
 export interface AISuggestionState {
   id: string;
   originalContent: string;
-  suggestions: ContentSuggestion[];
+  suggestions: any[];
   isAccepted?: boolean;
   selectedSuggestion?: number;
   isLoading: boolean;

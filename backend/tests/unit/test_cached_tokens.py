@@ -326,7 +326,7 @@ class TestAIUsageLogging:
         # Arrange
         usage_log = AIUsageLog(
             user_id="user-123",
-            operation_type="content_enhancement",
+            operation_type="parse_cv",
             model_used="gpt-4o-mini",
             prompt_tokens=800,
             completion_tokens=400,

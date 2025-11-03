@@ -32,7 +32,7 @@ class OptimizationHistory(Base):
     )
     optimization_type = Column(
         String(50), default="ats", nullable=False
-    )  # "ats", "job_fit", "content_enhancement"
+    )  # "ats", "job_fit"
     ats_score = Column(Integer, nullable=True)  # 1-100 ATS compatibility score
     confidence_score = Column(Integer, nullable=True)  # 1-100 confidence in analysis
     missing_keywords = Column(

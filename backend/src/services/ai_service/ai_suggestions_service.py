@@ -172,13 +172,13 @@ def _build_ai_suggestions_prompt(cv_data: Dict[str, Any], job_description: str) 
 ⚠️ LANGUAGE: Write ALL content in SAME LANGUAGE as job description.
 
 ⚠️ CAREER COACHING APPROACH:
-- Focus on TRANSFERABLE SKILLS and authentic experience fit, not just keyword matching
+- Provide DETAILED and CONCRETE reasoning for ALL suggestions—explain WHY each suggestion helps
+- For suggestions, be as brief and concise as possible, avoid unnecessary words and phrases. Avoid unnecessary explanations.
+- Avoid overusing job description keywords in suggestions. Each keyword should appear at most 2 times over all suggestions (i.e. don't be repetitive with the same keyword, dont obsess over the same keyword).
+- Focus on TRANSFERABLE SKILLS from the CV, not keywords from the job description, unless they are explicitly mentioned in the CV
+- Avoid corporate language and use simple language
 - Respect the candidate's existing writing STYLE: observe their CV—only suggest metrics if they already use them
-- Be ENCOURAGING and supportive: help them present their genuine experience confidently
-- Avoid keyword stuffing or prescriptive demands for "perfect" CVs
-- Emphasize storytelling, clarity, and honest self-representation
-
-⚠️ FACT-BASED ONLY: For work_experience/education suggestions, only reference technologies/skills explicitly in each item's data. Never add technologies not listed in that item's 'technologies' array.
+- FACT-BASED ONLY: For work_experience/education suggestions, only reference technologies/skills explicitly in each item's data. Never add technologies not listed in that item's 'technologies' array.
 
 CV: {cv_json}
 Job: {job_description}
@@ -204,10 +204,16 @@ OUTPUT JSON:
 {json_output_example}
 }}
 
-Use 'position' or 'job' not 'role'.
-Avoid corporate language and use simple language.
-suggested_improvements, strengths, weaknesses must have ≥1 value.
-key_matches can be empty."""
+- Use 'position' or 'job' not 'role'.
+- Avoid corporate language and use simple language.
+- suggested_improvements, strengths, weaknesses must have ≥1 value.
+- key_matches can be empty.
+
+About Your suggestions:
+- First focus on writing issues, e.g. grammar, punctuation, etc. Then focus on semantcs.
+- In your reasoning, provide accurate explanation of why the existing content is not good enough. Quote the specific parts of the CV that you are referring to.
+- Be as specific as possible. Be very brief, concise and to the point. Do not use more than 50 words.
+"""
 
 
 async def generate_ai_suggestions(
@@ -276,6 +282,13 @@ async def generate_ai_suggestions(
             operation_type="ai_suggestions",
             db_session=db_session,
         )
+
+        # Debug log: Print entire AI response
+        logger.info("=" * 80)
+        logger.info("AI SUGGESTION GENERATION RESPONSE")
+        logger.info("=" * 80)
+        logger.info(f"RESPONSE:\n{json.dumps(response, indent=2)}")
+        logger.info("=" * 80)
 
         logger.info(
             f"AI suggestions complete - tokens={metadata['tokens_used']}, time={metadata['generation_time']}ms"
