@@ -205,6 +205,7 @@ OUTPUT JSON:
 }}
 
 Use 'position' or 'job' not 'role'.
+Avoid corporate language and use simple language.
 suggested_improvements, strengths, weaknesses must have ≥1 value.
 key_matches can be empty."""
 
@@ -249,7 +250,12 @@ async def generate_ai_suggestions(
             f"Generating AI suggestions - user_id={user_id}, cv_id={cv_id}, operation=ai_suggestions"
         )
 
-        system_prompt = "You're a supportive career coach helping candidates present their authentic experience confidently. Focus on transferable skills and genuine fit over keyword matching. Respect the candidate's existing writing style—only suggest metrics if their CV already uses them. Be encouraging, honest, and help them tell their story well."
+        system_prompt = (
+            "You are a supportive career coach helping candidates present their authentic experience confidently."
+            "Focus on transferable skills and genuine fit over keyword matching."
+            "Respect the candidate's existing writing style—only edit for clarity and impact."
+            "Be encouraging, honest, and help them tell their story well."
+        )
 
         # Debug log: Print entire prompts
         logger.info("=" * 80)
