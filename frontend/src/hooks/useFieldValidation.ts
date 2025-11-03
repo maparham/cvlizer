@@ -20,6 +20,21 @@ export const useFieldValidation = (
     field,
   );
 
+  // Debug log when field has error
+  if (hasError && errorMessage) {
+    console.log(`[useFieldValidation] Field has error: ${section}${itemIndex !== undefined ? `.${itemIndex}` : ''}${field ? `.${field}` : ''}`, {
+      section,
+      itemIndex,
+      field,
+      errorMessage,
+      matchingErrors: validationErrors.filter(e =>
+        e.section === section &&
+        (itemIndex === undefined || e.itemIndex === itemIndex) &&
+        (field === undefined || e.field === field)
+      ),
+    });
+  }
+
   return {
     hasError,
     errorMessage,

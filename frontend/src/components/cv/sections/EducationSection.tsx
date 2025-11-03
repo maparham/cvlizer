@@ -14,7 +14,7 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
-import { FormField, DateFieldComponent } from "../core/formUtils";
+import { FormField } from "../core/formUtils";
 import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from "../core/validatedFields";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import DegreeAutocomplete from "../ui/DegreeAutocomplete";
@@ -155,7 +155,10 @@ const EducationForm: React.FC<{
           onSave={onSave}
           sx={{ flex: 1 }}
         />
-        <DateFieldComponent
+        <ValidatedDateField
+          section="education"
+          field="end_date"
+          index={index}
           config={{
             name: "end_date",
             label: "End Date",
@@ -300,6 +303,7 @@ const EducationDisplay: React.FC<{
     institution: { hasError: boolean; errorMessage?: string };
     degree: { hasError: boolean; errorMessage?: string };
     start_date: { hasError: boolean; errorMessage?: string };
+    end_date: { hasError: boolean; errorMessage?: string };
   };
   suggestionsByItemId: Map<string, any>;
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
@@ -331,7 +335,10 @@ const EducationDisplay: React.FC<{
         </Box>
         <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
           <ValidatedDisplay
-            validation={validation.start_date}
+            validation={{
+              hasError: validation.start_date.hasError || validation.end_date.hasError,
+              errorMessage: validation.end_date.errorMessage || validation.start_date.errorMessage,
+            }}
             variant="body2"
             normalColor="#666"
             iconSize="0.875rem"
@@ -520,7 +527,7 @@ const EducationSection: React.FC<SectionProps> = ({
     (edu: Education, index: number) => {
       // Get all validation states at once using useItemValidation hook
       const EducationDisplayWrapper: React.FC<{ edu: Education; index: number }> = ({ edu, index }) => {
-        const validation = useItemValidation('education', index, ['degree', 'institution', 'start_date']);
+        const validation = useItemValidation('education', index, ['degree', 'institution', 'start_date', 'end_date']);
         return (
           <EducationDisplay
             edu={edu}

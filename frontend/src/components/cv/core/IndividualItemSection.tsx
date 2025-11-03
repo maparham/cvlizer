@@ -432,6 +432,7 @@ function IndividualItemSection<T>({
         onCancel={undefined}
         isValid={true}
         onTitleSave={onTitleSave}
+        sectionId={sectionId}
         headerActionsLeft={additionalHeaderActions}
         headerActions={
           <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>

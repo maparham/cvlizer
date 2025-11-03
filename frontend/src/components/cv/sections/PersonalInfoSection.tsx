@@ -17,6 +17,7 @@ import {
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
+import { useFieldValidation } from "../../../hooks/useFieldValidation";
 
 const ACADEMIC_TITLES = [
   // English
@@ -56,42 +57,47 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
   title = "Personal Information",
   onTitleSave,
 }) => {
+  // Get validation errors for required fields (hooks must be called at component level)
+  const fullNameValidation = useFieldValidation("personal_info", undefined, "full_name");
+  const emailValidation = useFieldValidation("personal_info", undefined, "email");
+  const locationValidation = useFieldValidation("personal_info", undefined, "location");
+
   const renderForm = (
     editData: any,
     updateData: (field: string, value: any) => void,
     onSave: () => void,
     onCancel: () => void,
   ) => (
-    <Box>
-      <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "baseline" }}>
-        <TextField
-          fullWidth
-          variant="standard"
-          value={editData.full_name || ""}
-          onChange={(e) => updateData("full_name", e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              if (editData.full_name?.trim()) {
-                onSave();
+      <Box>
+        <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "baseline" }}>
+          <TextField
+            fullWidth
+            variant="standard"
+            value={editData.full_name || ""}
+            onChange={(e) => updateData("full_name", e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (editData.full_name?.trim()) {
+                  onSave();
+                }
+              } else if (e.key === "Escape") {
+                // Let global escape handler manage this
+                onCancel();
               }
-            } else if (e.key === "Escape") {
-              // Let global escape handler manage this
-              onCancel();
-            }
-          }}
-          error={!editData.full_name?.trim()}
-          helperText={!editData.full_name?.trim() ? "Full name is required" : ""}
-          data-testid="personal-info-full-name-input"
-          sx={{
-            "& .MuiInputBase-input": {
-              fontSize: "2rem",
-              fontWeight: "bold",
-              color: "#1976d2",
-            },
-          }}
-          placeholder="Your Name *"
-        />
+            }}
+            error={!editData.full_name?.trim() || fullNameValidation.hasError}
+            helperText={fullNameValidation.errorMessage || (!editData.full_name?.trim() ? "Full name is required" : "")}
+            data-testid="personal-info-full-name-input"
+            sx={{
+              "& .MuiInputBase-input": {
+                fontSize: "2rem",
+                fontWeight: "bold",
+                color: "#1976d2",
+              },
+            }}
+            placeholder="Your Name *"
+          />
         <Autocomplete
           freeSolo
           options={ACADEMIC_TITLES}
@@ -143,8 +149,8 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
               onCancel();
             }
           }}
-          error={!editData.email?.trim()}
-          helperText={!editData.email?.trim() ? "Email is required" : ""}
+          error={!editData.email?.trim() || emailValidation.hasError}
+          helperText={emailValidation.errorMessage || (!editData.email?.trim() ? "Email is required" : "")}
           placeholder="Email *"
           data-testid="personal-info-email-input"
           sx={{
@@ -189,8 +195,8 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
           onChange={(value) => updateData("location", value)}
           onSave={onSave}
           onCancel={onCancel}
-          error={!editData.location?.trim()}
-          helperText={!editData.location?.trim() ? "Location is required" : ""}
+          error={!editData.location?.trim() || locationValidation.hasError}
+          helperText={locationValidation.errorMessage || (!editData.location?.trim() ? "Location is required" : "")}
           placeholder="Location *"
           fullWidth={false}
           sx={{ minWidth: 200 }}

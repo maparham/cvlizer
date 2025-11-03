@@ -40,6 +40,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   return (
     <Box
       ref={sectionRef}
+      data-section={sectionId}
       sx={{
         position: "relative",
       }}
