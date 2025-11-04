@@ -23,16 +23,9 @@ export const InitialValidation: React.FC<InitialValidationProps> = ({
     // Only run initial validation if we don't already have validation errors
     // (to avoid overriding errors from save attempts)
     if (cvData && validationErrors.length === 0) {
-      console.log("[InitialValidation] Running validation check on CV data", { cvId });
       const validationResult = validateCVData(cvData);
 
       if (!validationResult.isValid) {
-        console.log("[InitialValidation] Validation failed", {
-          fieldErrors: Object.keys(validationResult.errors).length,
-          crossFieldErrors: validationResult.crossFieldErrors.length,
-          errors: validationResult.errors,
-        });
-
         // Map errors to their correct sections and items
         const mappedErrors = Object.entries(validationResult.errors).map(([key, message]) => {
           // Parse error key like "work_experience.0.position" or "education.1.start_date"
@@ -104,21 +97,11 @@ export const InitialValidation: React.FC<InitialValidationProps> = ({
 
         const allErrors = [...mappedErrors, ...crossFieldMapped];
 
-        console.log("[InitialValidation] Setting validation errors", {
-          totalErrors: allErrors.length,
-          errorsBySection: allErrors.reduce((acc, err) => {
-            acc[err.section] = (acc[err.section] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>),
-          allErrors,
-        });
-
         setValidationErrors(allErrors);
 
         // Scroll to first error field/item (accounting for header height)
         const firstError = allErrors.find(e => e.section !== "general");
         if (firstError) {
-          console.log("[InitialValidation] Scrolling to first error", { error: firstError });
           setTimeout(() => {
             const sectionElement = document.querySelector(`[data-section="${firstError.section}"]`);
             if (sectionElement) {
@@ -146,17 +129,6 @@ export const InitialValidation: React.FC<InitialValidationProps> = ({
                 top: offsetPosition,
                 behavior: "smooth",
               });
-
-              console.log("[InitialValidation] Successfully scrolled to element", {
-                section: firstError.section,
-                itemIndex: firstError.itemIndex,
-                field: firstError.field,
-              });
-            } else {
-              console.warn("[InitialValidation] Could not find section element", {
-                section: firstError.section,
-                selector: `[data-section="${firstError.section}"]`,
-              });
             }
           }, 500); // Delay to ensure DOM is updated
         }
@@ -170,8 +142,6 @@ export const InitialValidation: React.FC<InitialValidationProps> = ({
           );
           hasShownNotification.current = cvId;
         }
-      } else {
-        console.log("[InitialValidation] Validation passed");
       }
     }
   }, [cvData, setValidationErrors, validationErrors.length, cvId, showValidationError]);

@@ -254,7 +254,24 @@ export const createJobDescriptionsSlice: StateCreator<
       jobDescriptionId: string | undefined,
       cvId: string,
     ) => {
+      if (!cvId || cvId === "undefined") {
+        return;
+      }
+
       set((state) => {
+        // Prevent clearing if localStorage has a saved value for this CV and it hasn't been restored yet
+        // This prevents premature clearing during page load before restoration
+        if (!jobDescriptionId) {
+          const storedValue = typeof window !== "undefined"
+            ? JSON.parse(localStorage.getItem("activeJobDescriptionIdPerCV") || "{}")[cvId]
+            : undefined;
+
+          if (storedValue && !state.activeJobDescriptionId) {
+            // Don't clear - return unchanged state
+            return state;
+          }
+        }
+
         // Update both the current active and the per-CV map
         const newMap = { ...state.activeJobDescriptionIdPerCV };
         if (jobDescriptionId) {

@@ -32,6 +32,9 @@ interface UIState {
     cvUpload: boolean;
   };
 
+  // CV Editor tab state (per CV)
+  cvEditorTabs: Record<string, number>;
+
   // Actions
   setTheme: (theme: "light" | "dark" | "auto") => void;
   toggleSidebar: () => void;
@@ -44,6 +47,10 @@ interface UIState {
   openDialog: (dialog: keyof UIState["dialogs"]) => void;
   closeDialog: (dialog: keyof UIState["dialogs"]) => void;
   closeAllDialogs: () => void;
+
+  // CV Editor tab actions
+  setCVEditorTab: (cvId: string, tabIndex: number) => void;
+  getCVEditorTab: (cvId: string) => number;
 
   // Reset function for testing
   reset: () => void;
@@ -62,6 +69,7 @@ export const useUIStore = create<UIState>()(
           unsavedChanges: false,
           cvUpload: false,
         },
+        cvEditorTabs: {},
 
         // Theme actions
         setTheme: (theme) => {
@@ -112,6 +120,21 @@ export const useUIStore = create<UIState>()(
           });
         },
 
+        // CV Editor tab actions
+        setCVEditorTab: (cvId: string, tabIndex: number) => {
+          set((state) => ({
+            cvEditorTabs: {
+              ...state.cvEditorTabs,
+              [cvId]: tabIndex,
+            },
+          }));
+        },
+
+        getCVEditorTab: (cvId: string) => {
+          const state = get();
+          return state.cvEditorTabs[cvId] ?? 0;
+        },
+
         // Reset function for testing
         reset: () => {
           set({
@@ -123,6 +146,7 @@ export const useUIStore = create<UIState>()(
               unsavedChanges: false,
               cvUpload: false,
             },
+            cvEditorTabs: {},
           });
         },
       }),
@@ -132,6 +156,7 @@ export const useUIStore = create<UIState>()(
         partialize: (state) => ({
           theme: state.theme,
           sidebarOpen: state.sidebarOpen,
+          cvEditorTabs: state.cvEditorTabs,
         }),
       },
     ),

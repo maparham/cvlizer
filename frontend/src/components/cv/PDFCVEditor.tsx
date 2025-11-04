@@ -29,6 +29,7 @@ import { useAIStore } from "../../stores/ai";
 import { useAISuggestionsStore } from "../../stores/aiSuggestionsStore";
 import { isTempCVId } from "../../stores/cv";
 import { CVData } from "../../types/cv";
+import { useUIStore } from "../../stores/uiStore";
 
 interface PDFCVEditorProps {
   title?: string;
@@ -50,6 +51,9 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   const { loadLatestAIEnhancement, clearAllSuggestions } =
     useAISuggestionsStore();
 
+
+  const setCVEditorTab = useUIStore((state) => state.setCVEditorTab);
+
   // Debug wrapper for onUpdateCV
   const debugOnUpdateCV = useCallback(
     (newCvData: CVData) => {
@@ -66,8 +70,17 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     [onSave],
   );
 
-  // Tab state management
-  const [sidebarTab, setSidebarTab] = useState(0);
+  // Tab state management - use Zustand store to persist across navigation
+  const cvIdForTabs = cvId || "default";
+  const sidebarTab = useUIStore(
+    (state) => state.cvEditorTabs[cvIdForTabs] ?? 0,
+  );
+  const setSidebarTab = useCallback(
+    (newTab: number) => {
+      setCVEditorTab(cvIdForTabs, newTab);
+    },
+    [cvIdForTabs, setCVEditorTab],
+  );
 
   // Set up window.switchToAITools function for external access
   useEffect(() => {
@@ -79,21 +92,17 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     return () => {
       delete (window as any).switchToAITools;
     };
-  }, []);
+  }, [setSidebarTab]);
 
   // Load job descriptions, drafts, and AI enhancements when CV changes
+  // loadJobDescriptions automatically restores the active job description from localStorage
   useEffect(() => {
-    if (cvId) {
+    if (cvId && !isTempCVId(cvId)) {
       // Clear suggestions first to prevent showing wrong CV's suggestions
       clearAllSuggestions();
-
-      // Skip loading AI data for temporary CVs (not yet saved to backend)
-      if (!isTempCVId(cvId)) {
-        // Then load data for the new CV
-        loadJobDescriptions(cvId);
-        getCVDrafts(cvId);
-        loadLatestAIEnhancement(cvId);
-      }
+      loadJobDescriptions(cvId);
+      getCVDrafts(cvId);
+      loadLatestAIEnhancement(cvId);
     }
   }, [
     cvId,
