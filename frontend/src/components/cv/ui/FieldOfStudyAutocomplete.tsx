@@ -85,7 +85,6 @@ const COMMON_FIELDS_OF_STUDY = [
   "Media Studies",
   "Social Work",
   "Criminology",
-  "Law",
   "Criminal Justice",
 
   // Arts & Humanities
@@ -112,7 +111,6 @@ const COMMON_FIELDS_OF_STUDY = [
   "Animation",
   "Game Design",
   "Fashion Design",
-  "Architecture",
   "Interior Design",
   "Linguistics",
   "Modern Languages",
