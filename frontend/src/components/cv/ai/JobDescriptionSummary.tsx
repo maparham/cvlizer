@@ -310,7 +310,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                               width: "100%",
                               position: "relative",
                               padding: "2px",
-                              borderRadius: "4px",
+                              borderRadius: "28px",
                               "--linear-aura-gradient":
                                 "linear-gradient(to right in oklch,#f63b35 0%,#f63b35 3%,#1265f0 7%,#477dff 17%,#2caf4f 20%,#72bb44 25%,#ffe523 27%,#ffcc25 30%,#ea4335 33%,#ea4335 45%,#1265f0 49%,#477dff 68%,#34a853 72%,#2caf4f 79%,#ffe523 82%,#ffcc25 87%,#f63b35 90%,#f63b35 100%)",
                               "--emphasized-curve":
@@ -338,7 +338,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                                 left: "2px",
                                 right: "2px",
                                 bottom: "2px",
-                                borderRadius: "2px",
+                                borderRadius: "26px",
                                 backgroundColor: "background.paper",
                                 zIndex: 0,
                                 pointerEvents: "none",
@@ -376,6 +376,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                                 py: 1.5,
                                 px: 2,
                                 height: 48,
+                                borderRadius: "26px",
                                 "&:hover": {
                                   backgroundColor: "rgba(25, 118, 210, 0.08)",
                                   transform: "translateY(-1px)",
