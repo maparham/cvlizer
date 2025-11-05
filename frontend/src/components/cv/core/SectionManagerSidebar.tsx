@@ -110,6 +110,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   // AI store for job description management
   const setActiveJobDescription = useAIStore((state) => state.setActiveJobDescription);
   const getCVDrafts = useAIStore((state) => state.getCVDrafts);
+  const deleteWhyGoodFitDraft = useAIStore((state) => state.deleteWhyGoodFitDraft);
 
   // Notifications for error and success handling
   const { showInfo, showError } = useNotifications();
@@ -221,6 +222,16 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   // Handler for dismissing all suggestions
   const handleDiscardAllSuggestions = useCallback(async () => {
     try {
+      // Delete why_good_fit draft if it exists
+      if (cvId) {
+        try {
+          await deleteWhyGoodFitDraft(cvId);
+        } catch (draftError: any) {
+          // Log but don't fail the entire operation if draft deletion fails
+          console.warn("Failed to delete why_good_fit draft:", draftError);
+        }
+      }
+
       await dismissAllSuggestions();
       setDiscardAllDialogOpen(false);
       showInfo("All suggestions have been discarded");
@@ -229,7 +240,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         error?.message || "Failed to discard suggestions. Please try again."
       );
     }
-  }, [dismissAllSuggestions, showInfo, showError]);
+  }, [cvId, deleteWhyGoodFitDraft, dismissAllSuggestions, showInfo, showError]);
 
   // Handle draft confirmation - delete drafts and proceed with generation
   const handleConfirmDiscardAndRegenerate = useCallback(async () => {
