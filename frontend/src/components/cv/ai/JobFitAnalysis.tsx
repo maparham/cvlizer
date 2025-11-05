@@ -17,14 +17,12 @@
  */
 
 import React, { useMemo } from "react";
-import ReactMarkdown from "react-markdown";
 import {
   Box,
   Button,
   Typography,
   Card,
   CardContent,
-  CircularProgress,
   Alert,
   Chip,
   LinearProgress,
@@ -38,10 +36,6 @@ import {
   Stack,
   Tooltip,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
 import {
   AutoAwesome as AutoAwesomeIcon,
@@ -50,7 +44,6 @@ import {
   Warning as WarningIcon,
   Info as InfoIcon,
   ExpandMore as ExpandMoreIcon,
-  Refresh as RefreshIcon,
   ContentCopy as CopyIcon,
   Help as HelpIcon,
 } from "@mui/icons-material";
@@ -60,7 +53,6 @@ import {
 } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
-import CVCompletenessIndicator from "../../CVCompleteness/CVCompletenessIndicator";
 
 interface JobFitAnalysisProps {
   cvId: string;
@@ -71,16 +63,16 @@ interface JobFitAnalysisProps {
 }
 
 const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
-  cvId,
+  cvId: _cvId,
   cvData,
-  onAddToCV,
+  onAddToCV: _onAddToCV,
   className,
-  existingWhyGoodFit,
+  existingWhyGoodFit: _existingWhyGoodFit,
 }) => {
-  const { showSuccess, showError } = useNotifications();
+  const { showSuccess } = useNotifications();
 
   // Calculate CV completeness
-  const completeness = useMemo(() => {
+  const _completeness = useMemo(() => {
     if (!cvData) {
       return {
         score: 0,

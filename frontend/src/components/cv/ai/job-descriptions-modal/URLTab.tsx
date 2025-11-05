@@ -12,7 +12,6 @@ import {
   Button,
   CircularProgress,
   Typography,
-  Box,
 } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 import { URLTabProps } from "./types";

@@ -17,7 +17,7 @@
  * - Maintains proper loading states for async operations
  */
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCVStore } from "../../stores/cv";
@@ -56,7 +56,7 @@ export const useDashboardActions = () => {
   };
 
   // Delete handlers
-  const handleDeleteCancel = () => {
+  const _handleDeleteCancel = () => {
     // This will be managed by parent component
   };
 

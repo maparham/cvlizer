@@ -17,7 +17,7 @@
  */
 
 import React from "react";
-import { AppBar, Toolbar, IconButton, Menu, MenuItem, Link, Typography } from "@mui/material";
+import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography } from "@mui/material";
 import { AccountCircle as AccountCircleIcon } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 

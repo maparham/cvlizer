@@ -38,7 +38,6 @@ import {
 } from "@mui/material";
 import {
   CloudUpload as CloudUploadIcon,
-  CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   Description as DocumentIcon,
   Work as WorkIcon,

@@ -113,7 +113,7 @@ const CVEditor: React.FC = () => {
     if (error && classifyError(error) !== ErrorType.Validation) {
       showError("Error", error);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [error]); // Only watch error, not showError to prevent infinite loop
 
   // Handle location state for auto-opening AI Tools

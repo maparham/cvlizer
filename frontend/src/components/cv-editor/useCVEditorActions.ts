@@ -7,7 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useCVStore } from "../../stores/cv";
 import { useCVNotifications } from "../../packages/notifications";
 
-export const useCVEditorActions = (isAdmin: boolean, isNewCV: boolean, cvId: string | undefined, temporaryCV: any, _currentCV: any) => {
+export const useCVEditorActions = (_isAdmin: boolean, isNewCV: boolean, cvId: string | undefined, temporaryCV: any, _currentCV: any) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const {

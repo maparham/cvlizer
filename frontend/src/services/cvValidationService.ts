@@ -371,7 +371,7 @@ class CVDataCleaner {
   private cleanWhyGoodFit(data: any): void {
     if (data.why_good_fit) {
       // Store the original object to preserve all fields
-      const original = { ...data.why_good_fit };
+      const _original = { ...data.why_good_fit };
 
       const content = this.cleanString(data.why_good_fit.content);
       const fitAnalysis = this.cleanString(data.why_good_fit.fit_analysis);

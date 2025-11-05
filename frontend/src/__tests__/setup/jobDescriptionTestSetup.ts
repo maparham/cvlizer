@@ -10,6 +10,7 @@ import { JobDescription } from "../../types/ai";
 export const mockJobDescription1: JobDescription = {
   id: "jd-1",
   cv_id: "cv-1",
+  cv_ids: ["cv-1"],
   content: "First job description content",
   title: "Software Engineer",
   company: "Company A",
@@ -22,6 +23,7 @@ export const mockJobDescription1: JobDescription = {
 export const mockJobDescription2: JobDescription = {
   id: "jd-2",
   cv_id: "cv-1",
+  cv_ids: ["cv-1"],
   content: "Second job description content",
   title: "Product Manager",
   company: "Company B",
@@ -33,6 +35,7 @@ export const mockJobDescription2: JobDescription = {
 export const mockJobDescription3: JobDescription = {
   id: "jd-3",
   cv_id: "cv-1",
+  cv_ids: ["cv-1"],
   content: "Third job description content",
   title: "Designer",
   company: "Company C",

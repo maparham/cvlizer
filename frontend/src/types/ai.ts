@@ -268,3 +268,108 @@ export interface BackgroundTaskResponse {
   error?: string;
   result?: unknown;
 }
+
+// ============================================================================
+// ATS Optimization Types
+// ============================================================================
+
+/**
+ * Missing keyword information from ATS analysis
+ */
+export interface MissingKeyword {
+  keyword: string;
+  importance: "high" | "medium" | "low";
+  frequency_in_jd: number;
+  suggested_placement: string;
+}
+
+/**
+ * Keyword analysis data
+ */
+export interface KeywordAnalysis {
+  [keyword: string]: {
+    count: number;
+    density: number;
+    locations: string[];
+    present?: boolean;
+    frequency?: number;
+    suggested_sections?: string[];
+  };
+}
+
+/**
+ * Content optimization suggestion
+ */
+export interface ContentOptimization {
+  section: string;
+  suggestion: string;
+  missing_keywords?: string[];
+}
+
+/**
+ * ATS Optimization Request
+ */
+export interface ATSOptimizationRequest {
+  job_description_id: string;
+}
+
+/**
+ * ATS Optimization Response
+ */
+export interface ATSOptimizationResponse {
+  ats_score: number;
+  confidence_score?: number;
+  missing_keywords: MissingKeyword[];
+  keyword_analysis?: KeywordAnalysis;
+  keyword_density?: Record<string, number>;
+  suggestions?: string[];
+  content_optimization?: ContentOptimization[];
+  optimized_sections?: string[];
+  strengths?: string[];
+  weaknesses?: string[];
+  tokens_used?: number;
+  generation_time?: number;
+  model_used?: string;
+}
+
+// ============================================================================
+// Inline Diff Types
+// ============================================================================
+
+/**
+ * AI Suggestion for inline diff
+ */
+export interface AISuggestion {
+  id: string;
+  section: string;
+  type: "add_keyword" | "enhance_content";
+  description: string;
+  originalValue: string;
+  suggestedValue: string;
+  status: "pending" | "approved" | "rejected";
+  changeType: "addition" | "modification";
+  fieldPath?: string;
+}
+
+/**
+ * Temporary CV state for diff mode
+ */
+export interface TempCVState {
+  originalCV: any;
+  appliedSuggestions: AISuggestion[];
+  tempData: any;
+  isDiffMode: boolean;
+}
+
+/**
+ * Inline diff state
+ */
+export interface InlineDiffState {
+  tempCV: TempCVState | null;
+  suggestions: AISuggestion[];
+  isApplyingAll: boolean;
+  isPanelOpen: boolean;
+  highlightMode: "all" | "pending" | "approved";
+  error?: string;
+  cvId?: string;
+}

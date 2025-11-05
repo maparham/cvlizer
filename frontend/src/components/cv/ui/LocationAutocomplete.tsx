@@ -223,7 +223,7 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   onSave,
   onCancel,
   placeholder = "e.g., San Francisco, CA",
-  label = "Location",
+  label: _label = "Location",
   fullWidth = true,
   disabled = false,
   error = false,

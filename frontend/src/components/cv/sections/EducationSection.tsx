@@ -308,7 +308,7 @@ const EducationDisplay: React.FC<{
   suggestionsByItemId: Map<string, any>;
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
   handleDiscardSuggestion: (itemId: string) => void;
-}> = ({ edu, index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
+}> = ({ edu, index: _index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
   const suggestion = suggestionsByItemId.get(edu.id);
 
   return (

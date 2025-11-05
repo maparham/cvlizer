@@ -9,7 +9,6 @@ import { StateCreator } from "zustand";
 import type { AIStore } from "./types";
 import { DraftState } from "../../types/ai";
 import { aiService } from "../../services/ai";
-import { Logger } from "../../utils/logger";
 import { ErrorHandler } from "../../utils/errorHandler";
 
 export interface DraftsSliceState {
@@ -34,7 +33,7 @@ export const createDraftsSlice: StateCreator<
   [],
   [],
   DraftsSlice
-> = (set, get) => ({
+> = (set, _get) => ({
   drafts: {
     drafts: [],
     isLoading: false,

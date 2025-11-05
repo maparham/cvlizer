@@ -20,7 +20,7 @@ type TestUserInfo = {
 };
 
 export const test = base.extend<{ testUser: TestUserInfo }>({
-  testUser: async ({}, use, testInfo) => {
+  testUser: async (_, use, testInfo) => {
     // Determine user based on project name
     const projectName = testInfo.project.name;
     const isUser2 = projectName.includes("user2");

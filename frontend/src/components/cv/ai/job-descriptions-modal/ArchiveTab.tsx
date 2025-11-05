@@ -6,7 +6,6 @@
 
 import React from "react";
 import { Box, Typography, Paper, Grid } from "@mui/material";
-import { JobDescription } from "../../../../types/ai";
 import JobDescriptionCard from "../JobDescriptionCard";
 import { ArchiveTabProps } from "./types";
 

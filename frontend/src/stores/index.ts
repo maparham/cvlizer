@@ -1,7 +1,7 @@
 // Export all stores
 export { useAuthStore } from "./authStore";
 export { useCVStore, cleanupCVStore, DEFAULT_CV_DATA, isTempCVId } from "./cv";
-export { useUIStore, useNotifications } from "./uiStore";
+export { useUIStore } from "./uiStore";
 
 // Import the stores for internal use
 import { useAuthStore } from "./authStore";
@@ -26,7 +26,6 @@ export const cleanupStores = () => {
 
   // Clear any sensitive data if needed
   const uiStore = useUIStore.getState();
-  uiStore.clearNotifications();
   uiStore.closeAllDialogs();
 };
 
@@ -41,6 +40,5 @@ export const resetAllStores = () => {
     error: null,
     hasUnparsedCVs: false,
   });
-  useUIStore.getState().clearNotifications();
   useUIStore.getState().closeAllDialogs();
 };

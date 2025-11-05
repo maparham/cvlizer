@@ -5,7 +5,6 @@
  * works correctly across different components and scenarios.
  */
 
-import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
 import { useCVNotifications } from '../hooks';

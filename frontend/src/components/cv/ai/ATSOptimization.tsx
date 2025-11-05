@@ -515,7 +515,7 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
                                 <Typography variant="body2" fontWeight="medium">
                                   Missing keywords:
                                 </Typography>
-                                {section.missing_keywords.map(
+                                {section.missing_keywords?.map(
                                   (keyword, kwIndex) => (
                                     <Chip
                                       key={kwIndex}

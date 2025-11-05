@@ -129,7 +129,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
         handleClose();
       }, 5000);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [notifications, toastOnlyQueue, currentToast]);
 
   const handleClick = useCallback(() => {

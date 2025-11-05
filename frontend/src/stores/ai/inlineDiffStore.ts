@@ -44,6 +44,7 @@ export const createInlineDiffSlice: StateCreator<
 
   generateInlineSuggestions: async (cvId: string, jobDescriptionId: string) => {
     set((state) => ({
+      ...state,
       inlineDiff: {
         ...state.inlineDiff,
         isApplyingAll: true,
@@ -253,15 +254,18 @@ export const createInlineDiffSlice: StateCreator<
       }
 
       set((state) => ({
+        ...state,
         inlineDiff: {
           ...state.inlineDiff,
           suggestions,
           isApplyingAll: false,
           isPanelOpen: true,
+          cvId, // Store cvId for use by applyAllSuggestions
         },
       }));
     } catch (error) {
       set((state) => ({
+        ...state,
         inlineDiff: {
           ...state.inlineDiff,
           isApplyingAll: false,
@@ -321,6 +325,7 @@ export const createInlineDiffSlice: StateCreator<
     };
 
     set((state) => ({
+      ...state,
       inlineDiff: {
         ...state.inlineDiff,
         tempCV,
@@ -392,6 +397,7 @@ export const createInlineDiffSlice: StateCreator<
       }
 
       return {
+        ...state,
         inlineDiff: {
           ...state.inlineDiff,
           suggestions: updatedSuggestions,
@@ -417,6 +423,7 @@ export const createInlineDiffSlice: StateCreator<
       );
 
       return {
+        ...state,
         inlineDiff: {
           ...state.inlineDiff,
           suggestions: updatedSuggestions,
@@ -433,6 +440,7 @@ export const createInlineDiffSlice: StateCreator<
 
   toggleSuggestionPanel: (isOpen?: boolean) => {
     set((state) => ({
+      ...state,
       inlineDiff: {
         ...state.inlineDiff,
         isPanelOpen:
@@ -443,6 +451,7 @@ export const createInlineDiffSlice: StateCreator<
 
   setHighlightMode: (mode: "all" | "pending" | "approved") => {
     set((state) => ({
+      ...state,
       inlineDiff: {
         ...state.inlineDiff,
         highlightMode: mode,
@@ -458,7 +467,8 @@ export const createInlineDiffSlice: StateCreator<
       aiService.clearCacheForCV(cvId);
     }
 
-    set(() => ({
+    set((state) => ({
+      ...state,
       inlineDiff: {
         tempCV: null,
         suggestions: [],

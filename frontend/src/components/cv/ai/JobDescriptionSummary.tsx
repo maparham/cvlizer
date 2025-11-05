@@ -16,7 +16,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -67,7 +67,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   onJobDescriptionSelect,
   onGenerateSuggestions,
   suggestionsLoading = false,
-  onAddToCV,
+  onAddToCV: _onAddToCV,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);

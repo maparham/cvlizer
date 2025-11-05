@@ -54,7 +54,6 @@ import {
   adminApi,
   OpenAIConfig,
   DiagnosticRequest,
-  DiagnosticResponse,
   DiagnosticMessage,
 } from '../../../services/api';
 

@@ -19,6 +19,7 @@ import { jobFitService } from "./jobFitService";
 import { jobDescriptionService } from "./jobDescriptionService";
 import { aiSectionsService } from "./aiSectionsService";
 import { utilityService } from "./utilityService";
+import { atsService } from "./atsService";
 
 /**
  * Unified AI Service aggregating all AI service modules
@@ -57,6 +58,9 @@ class AIService {
   deleteAIEnhancement = aiSectionsService.deleteAIEnhancement.bind(aiSectionsService);
   deleteAllAIEnhancementsForCV = aiSectionsService.deleteAllAIEnhancementsForCV.bind(aiSectionsService);
 
+  // ATS optimization
+  analyzeATSOptimization = atsService.analyzeATSOptimization.bind(atsService);
+
   // Utility functions
   checkAIFeatureStatus = utilityService.checkAIFeatureStatus.bind(utilityService);
   retryWithBackoff = utilityService.retryWithBackoff.bind(utilityService);
@@ -92,6 +96,7 @@ export const {
   updateAIEnhancement,
   deleteAIEnhancement,
   deleteAllAIEnhancementsForCV,
+  analyzeATSOptimization,
   checkAIFeatureStatus,
   retryWithBackoff,
   generateAllSuggestions,

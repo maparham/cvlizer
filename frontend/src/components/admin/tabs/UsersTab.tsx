@@ -56,7 +56,6 @@ import UserErrorsDialog from "../UserErrorsDialog";
 import UserCVsDialog from "../UserCVsDialog";
 import ImpersonationDialog from "../ImpersonationDialog";
 import DeleteUserDialog from "../DeleteUserDialog";
-import { adminApi, normalizeApiError } from "../../../services/api";
 
 interface UsersTabProps {
   users: UserSummary[];

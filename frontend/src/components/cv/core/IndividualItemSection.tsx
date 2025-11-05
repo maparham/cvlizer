@@ -81,7 +81,7 @@ function IndividualItemSection<T>({
   isAnotherItemBeingEdited = false,
   sortOptions = [],
   onTitleSave,
-  cvId,
+  cvId: _cvId,
   additionalHeaderActions,
 }: IndividualItemSectionProps<T>) {
   // Custom hooks for state management

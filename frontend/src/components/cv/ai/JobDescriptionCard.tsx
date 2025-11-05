@@ -134,7 +134,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   onStatusUpdate,
   showSelectButton = false,
   variant = "default",
-  maxChipWidth,
+  maxChipWidth: _maxChipWidth,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const theme = useTheme();

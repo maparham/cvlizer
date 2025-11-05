@@ -102,8 +102,9 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
       await generateSuggestions(cvId, activeJobDescription.id);
 
       // Apply suggestions to create temp state
+      // Note: applyAllSuggestions from context only takes cvData, cvId is retrieved from state
       if (cvData) {
-        applyAllSuggestions(cvData, cvId);
+        applyAllSuggestions(cvData);
       } else {
         console.warn("No CV data available to apply suggestions");
       }

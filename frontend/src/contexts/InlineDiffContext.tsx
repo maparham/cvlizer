@@ -110,6 +110,16 @@ export const InlineDiffProvider: React.FC<InlineDiffProviderProps> = ({
       .length;
   };
 
+  // Wrap applyAllSuggestions to match context interface
+  const wrappedApplyAllSuggestions = (cvData: any) => {
+    const cvId = inlineDiff.cvId;
+    if (!cvId) {
+      console.warn("applyAllSuggestions called but cvId not available in inline diff state");
+      return;
+    }
+    applyAllSuggestions(cvData, cvId);
+  };
+
   const contextValue: InlineDiffContextValue = {
     // State
     isInDiffMode,
@@ -122,7 +132,7 @@ export const InlineDiffProvider: React.FC<InlineDiffProviderProps> = ({
 
     // Actions
     generateSuggestions: generateInlineSuggestions,
-    applyAllSuggestions,
+    applyAllSuggestions: wrappedApplyAllSuggestions,
     acceptSuggestion,
     rejectSuggestion,
     togglePanel: toggleSuggestionPanel,

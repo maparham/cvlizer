@@ -136,7 +136,7 @@ const WorkExperienceDisplay: React.FC<{
   suggestionsByItemId: Map<string, any>;
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
   handleDiscardSuggestion: (itemId: string) => void;
-}> = ({ exp, index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
+}> = ({ exp, index: _index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
   const suggestion = suggestionsByItemId.get(exp.id);
 
   return (

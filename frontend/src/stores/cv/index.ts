@@ -21,10 +21,10 @@ export { DEFAULT_CV_DATA, isTempCVId, DEFAULT_CV_FILENAME, TEMP_CV_ID_PREFIX, is
  */
 export const useCVStore = create<CVStore>()(
   devtools(
-    (set, get) => ({
-      ...createCVCrudSlice(set, get, undefined),
-      ...createCVHistorySlice(set, get, undefined),
-      ...createCVPollingSlice(set, get, undefined),
+    (set, get, api) => ({
+      ...createCVCrudSlice(set, get, api),
+      ...createCVHistorySlice(set, get, api),
+      ...createCVPollingSlice(set, get, api),
     }),
     {
       name: "cv-store",

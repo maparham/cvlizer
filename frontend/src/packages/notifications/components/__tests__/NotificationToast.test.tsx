@@ -5,7 +5,6 @@
  * notifications by cvId and displays toast notifications correctly.
  */
 
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import NotificationToast from '../NotificationToast';
 import { useNotificationStore } from '../../store';

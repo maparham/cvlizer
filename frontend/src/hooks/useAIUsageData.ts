@@ -174,7 +174,7 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [
     dateRange.start,
     dateRange.end,
@@ -461,7 +461,7 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
 
     // Load AI usage data when component mounts and user is authenticated
     loadAIUsageData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [
     isAuthenticated,
     navigate,

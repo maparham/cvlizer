@@ -541,7 +541,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
               <TabPanel value={tabValue} index={2}>
                 <ArchiveTab
                   jobDescriptions={jobDescriptions}
-                  activeJobDescription={activeJobDescription}
+                  activeJobDescription={activeJobDescription ?? null}
                   parsingJobDescriptions={parsingJobDescriptions}
                   onEdit={handleEditClick}
                   onDelete={handleDeleteClick}

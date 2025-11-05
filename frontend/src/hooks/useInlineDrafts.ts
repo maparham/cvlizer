@@ -189,7 +189,7 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
 
   // Handle draft approval - no need to update local state,
   // the effect will sync from Zustand store automatically
-  const handleDraftApproved = useCallback((draftId: string) => {
+  const handleDraftApproved = useCallback((_draftId: string) => {
     // The store has already been updated by InlineDraftSection
     // This is just a placeholder callback for parent components
     // The useEffect watching 'drafts' will handle the UI update
@@ -197,7 +197,7 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
 
   // Handle draft rejection - no need to update local state,
   // the effect will sync from Zustand store automatically
-  const handleDraftRejected = useCallback((draftId: string) => {
+  const handleDraftRejected = useCallback((_draftId: string) => {
     // The store has already been updated by InlineDraftSection
     // This is just a placeholder callback for parent components
     // The useEffect watching 'drafts' will handle the UI update

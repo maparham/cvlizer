@@ -9,7 +9,8 @@ import type { FeatureStatusSlice } from "./featureStatusStore";
 import type { JobFitSlice } from "./jobFitStore";
 import type { JobDescriptionsSlice } from "./jobDescriptionsStore";
 import type { DraftsSlice } from "./draftsStore";
-import type { aiService } from "../../services/ai";
+import type { ATSOptimizationSlice } from "./atsOptimizationStore";
+import type { InlineDiffSlice } from "./inlineDiffStore";
 
 // Utility actions that work across multiple slices
 export interface UtilityActions {
@@ -22,4 +23,6 @@ export type AIStore = FeatureStatusSlice &
   JobFitSlice &
   JobDescriptionsSlice &
   DraftsSlice &
+  ATSOptimizationSlice &
+  InlineDiffSlice &
   UtilityActions;

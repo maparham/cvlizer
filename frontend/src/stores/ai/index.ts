@@ -14,6 +14,8 @@ import { createFeatureStatusSlice } from "./featureStatusStore";
 import { createJobFitSlice } from "./jobFitStore";
 import { createJobDescriptionsSlice } from "./jobDescriptionsStore";
 import { createDraftsSlice } from "./draftsStore";
+import { createATSOptimizationSlice } from "./atsOptimizationStore";
+import { createInlineDiffSlice } from "./inlineDiffStore";
 import { aiService } from "../../services/ai";
 
 // Initial state for utility actions
@@ -41,6 +43,16 @@ const initialState = {
     drafts: [],
     isLoading: false,
   },
+  atsOptimization: {
+    isAnalyzing: false,
+  },
+  inlineDiff: {
+    tempCV: null,
+    suggestions: [],
+    isApplyingAll: false,
+    isPanelOpen: false,
+    highlightMode: "all" as const,
+  },
 };
 
 /**
@@ -48,12 +60,14 @@ const initialState = {
  */
 export const useAIStore = createWithEqualityFn<AIStore>()(
   devtools(
-    (set, get) => ({
+    (set, get, api) => ({
       // Combine all slices
-      ...createFeatureStatusSlice(set, get, undefined),
-      ...createJobFitSlice(set, get, undefined),
-      ...createJobDescriptionsSlice(set, get, undefined),
-      ...createDraftsSlice(set, get, undefined),
+      ...createFeatureStatusSlice(set, get, api),
+      ...createJobFitSlice(set, get, api),
+      ...createJobDescriptionsSlice(set, get, api),
+      ...createDraftsSlice(set, get, api),
+      ...createATSOptimizationSlice(set, get, api),
+      ...createInlineDiffSlice(set, get, api),
 
       // Utility actions
       clearAllData: () => {
@@ -130,7 +144,8 @@ export const useActiveJobDescription = () =>
     return jobDescription;
   });
 
-export const useSuggestions = () => useAIStore((state) => state.suggestions);
+// Note: suggestions is part of AIStoreState but not currently used in the store implementation
+// export const useSuggestions = () => useAIStore((state) => state.suggestions);
 
 // Draft selectors
 export const useDrafts = () => useAIStore((state) => state.drafts);
@@ -149,3 +164,20 @@ export const useWhyGoodFitDraft = (cvId: string) =>
       (draft) => draft.cv_id === cvId && draft.section_type === "why_good_fit",
     ),
   );
+
+// ATS Optimization selectors
+export const useATSOptimization = () =>
+  useAIStore((state) => state.atsOptimization);
+
+// Inline Diff selectors
+export const useInlineDiff = () =>
+  useAIStore((state) => state.inlineDiff);
+
+export const useInlineDiffSuggestions = () =>
+  useAIStore((state) => state.inlineDiff.suggestions);
+
+export const useTempCV = () =>
+  useAIStore((state) => state.inlineDiff.tempCV);
+
+export const useIsDiffMode = () =>
+  useAIStore((state) => state.inlineDiff.tempCV?.isDiffMode ?? false);

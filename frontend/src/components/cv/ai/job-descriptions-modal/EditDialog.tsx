@@ -16,7 +16,6 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Check as CheckIcon } from "@mui/icons-material";
-import { JobDescription } from "../../../../types/ai";
 import { EditDialogProps } from "./types";
 
 const EditDialog: React.FC<EditDialogProps> = ({

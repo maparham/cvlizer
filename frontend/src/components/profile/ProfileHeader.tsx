@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Avatar,
-  Divider,
   Chip,
   Stack,
   IconButton,

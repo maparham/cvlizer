@@ -19,7 +19,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Delete as DeleteIcon, Warning } from "@mui/icons-material";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useClerk } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { authApi, normalizeApiError } from "../../services/api";
 
@@ -45,7 +45,6 @@ export const DeleteAccountButton: React.FC<DeleteAccountButtonProps> = ({
   size = "medium",
   fullWidth = false,
 }) => {
-  const { user } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
 

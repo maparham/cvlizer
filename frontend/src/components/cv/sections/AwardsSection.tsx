@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Typography } from '@mui/material'
+import { Box } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField } from '../core/formUtils'
@@ -90,7 +90,7 @@ const AwardDisplay: React.FC<{
     issuer: { hasError: boolean; errorMessage?: string };
     date: { hasError: boolean; errorMessage?: string };
   };
-}> = ({ award, index, validation }) => {
+}> = ({ award, index: _index, validation }) => {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>

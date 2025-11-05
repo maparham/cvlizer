@@ -5,7 +5,6 @@
  * to display statistics with icons, values, and optional trends.
  */
 
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import StatCard from '../../../components/admin/StatCard'

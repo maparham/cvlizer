@@ -77,7 +77,7 @@ const ConnectedHistoryPanel: React.FC<ConnectedHistoryPanelProps> = ({
     if (historyPanelOpen && cvId) {
       loadHistoryData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [historyPanelOpen, cvId]);
 
   const handleClose = () => {

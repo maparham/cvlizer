@@ -93,7 +93,7 @@ const ProjectDisplay: React.FC<{
     name: { hasError: boolean; errorMessage?: string };
     description: { hasError: boolean; errorMessage?: string };
   };
-}> = ({ project, index, validation }) => {
+}> = ({ project, index: _index, validation }) => {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
