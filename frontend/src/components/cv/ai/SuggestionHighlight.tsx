@@ -30,6 +30,7 @@ import {
 } from "@mui/icons-material";
 import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
 import { AISuggestion } from "../../../types/ai";
+import { InlineDiff } from "./InlineDiff";
 
 interface SuggestionHighlightProps {
   children: ReactNode;
@@ -237,6 +238,28 @@ export const SuggestionHighlight: React.FC<SuggestionHighlightProps> = ({
     );
   };
 
+  // Determine content to render
+  const renderContent = () => {
+    // For modifications with text content, show inline diff
+    if (
+      suggestion.changeType === "modification" &&
+      suggestion.type === "enhance_content" &&
+      typeof suggestion.originalValue === "string" &&
+      typeof suggestion.suggestedValue === "string" &&
+      suggestion.originalValue.trim() &&
+      suggestion.suggestedValue.trim()
+    ) {
+      return (
+        <InlineDiff
+          original={suggestion.originalValue}
+          suggested={suggestion.suggestedValue}
+        />
+      );
+    }
+    // For other cases (additions, removals, or non-text modifications), use children
+    return <>{children}</>;
+  };
+
   return (
     <Tooltip title={getTooltipContent()} placement="top" arrow enterDelay={300}>
       <HighlightWrapper
@@ -260,7 +283,7 @@ export const SuggestionHighlight: React.FC<SuggestionHighlightProps> = ({
         <StatusIndicator>
           {getStatusIcon(suggestion.status, "small")}
         </StatusIndicator>
-        {children}
+        {renderContent()}
       </HighlightWrapper>
     </Tooltip>
   );

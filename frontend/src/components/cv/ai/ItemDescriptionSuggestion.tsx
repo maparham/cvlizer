@@ -20,6 +20,7 @@ import {
 } from "@mui/icons-material";
 import { ItemDescriptionSuggestion as ItemDescriptionSuggestionType } from "../../../types/ai";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
+import { InlineDiff } from "./InlineDiff";
 
 interface ItemDescriptionSuggestionProps {
   suggestion: ItemDescriptionSuggestionType;
@@ -75,9 +76,9 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
             lineHeight: 1.6,
           }}
         >
-          <MarkdownRenderer
-            content={suggestion.suggested}
-            variant="body2"
+          <InlineDiff
+            original={suggestion.original}
+            suggested={suggestion.suggested}
           />
         </Box>
       </Box>
