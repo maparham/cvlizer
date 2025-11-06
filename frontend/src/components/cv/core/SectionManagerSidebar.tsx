@@ -93,6 +93,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
   const [discardAllDialogOpen, setDiscardAllDialogOpen] = useState(false);
   const [draftConfirmationDialogOpen, setDraftConfirmationDialogOpen] = useState(false);
+  const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
 
   // AI Suggestions store
   const {
@@ -166,6 +167,9 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       // Note: Draft deletion is handled in handleConfirmDiscardAndRegenerate
       // No need to delete drafts here as they're already deleted before this is called
 
+      // Reset countdown when starting new generation
+      setCountdownSeconds(null);
+
       // Create AI enhancement task using background task API
       const enhancementId = await generateAllSuggestions(
         cvId,
@@ -234,6 +238,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
 
       await dismissAllSuggestions();
       setDiscardAllDialogOpen(false);
+      setCountdownSeconds(null); // Reset countdown when suggestions are discarded
       showInfo("All suggestions have been discarded");
     } catch (error: any) {
       showError(
@@ -430,6 +435,45 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       (allSuggestions.education?.length || 0)
     );
   }, [allSuggestions]);
+
+  // Track previous suggestions count to detect when suggestions are first generated
+  const prevSuggestionsCountRef = useRef<number>(0);
+
+  // Start countdown when suggestions are first generated
+  useEffect(() => {
+    const prevCount = prevSuggestionsCountRef.current;
+    const currentCount = totalSuggestionsCount;
+
+    // Detect transition from 0 to > 0 (suggestions just appeared)
+    if (prevCount === 0 && currentCount > 0) {
+      setCountdownSeconds(20);
+    }
+
+    // Reset countdown if suggestions are cleared
+    if (currentCount === 0) {
+      setCountdownSeconds(null);
+    }
+
+    prevSuggestionsCountRef.current = currentCount;
+  }, [totalSuggestionsCount]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (countdownSeconds === null || countdownSeconds <= 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCountdownSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [countdownSeconds]);
 
   return (
     <Paper
@@ -759,6 +803,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                 onGenerateSuggestions={handleGenerateSuggestions}
                 suggestionsLoading={suggestionsLoading}
                 onAddToCV={onContentUpdate}
+                countdownSeconds={countdownSeconds}
               />
 
               {/* Discard All Suggestions Button */}
@@ -774,7 +819,11 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                 >
                   <Box>
                     <Typography variant="body2" sx={{ mb: 1.5 }}>
-                      You have {totalSuggestionsCount} AI suggestion{totalSuggestionsCount !== 1 ? "s" : ""} available.
+                      {countdownSeconds !== null && countdownSeconds > 0 ? (
+                        <>Please review the suggestions. You can generate new suggestions again in {countdownSeconds}s</>
+                      ) : (
+                        <>You have {totalSuggestionsCount} AI suggestion{totalSuggestionsCount !== 1 ? "s" : ""} available.</>
+                      )}
                     </Typography>
                     <Button
                       variant="outlined"
