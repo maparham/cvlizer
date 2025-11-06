@@ -54,7 +54,8 @@ const ProjectForm: React.FC<{
           multiline: true,
           rows: 2,
           required: true,
-          minLength: 10
+          minLength: 10,
+          useMarkdownEditor: true
         }}
         value={project.description}
         onChange={(value) => updateProject('description', value)}

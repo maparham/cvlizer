@@ -26,6 +26,7 @@ import {
   IconButton,
   InputAdornment,
 } from "@mui/material";
+import MarkdownEditor from "./MarkdownEditor";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateField as MUIDateField } from "@mui/x-date-pickers/DateField";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -53,6 +54,7 @@ export interface FormFieldConfig {
   rows?: number;
   type?: "text" | "url" | "email";
   minLength?: number;
+  useMarkdownEditor?: boolean;
 }
 
 export interface DateFieldConfig {
@@ -74,7 +76,8 @@ export const FormField: React.FC<{
   sx?: any;
   error?: boolean;
   helperText?: string;
-}> = ({ config, value, onChange, onSave, sx, error: errorOverride, helperText: helperTextOverride }) => {
+  disabled?: boolean;
+}> = ({ config, value, onChange, onSave, sx, error: errorOverride, helperText: helperTextOverride, disabled }) => {
   const {
     name,
     label,
@@ -84,6 +87,7 @@ export const FormField: React.FC<{
     rows,
     type,
     minLength,
+    useMarkdownEditor,
   } = config;
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -119,6 +123,23 @@ export const FormField: React.FC<{
         : "");
 
   const isSuccess = Boolean(required && hasValue && meetsMinLength && !errorOverride);
+
+  // Use markdown editor if enabled and multiline is true
+  if (useMarkdownEditor && multiline) {
+    return (
+      <Box sx={sx}>
+        <MarkdownEditor
+          value={value || ""}
+          onChange={(newValue) => onChange(newValue || "")}
+          placeholder={placeholder || `e.g., ${label.toLowerCase()}`}
+          error={isError}
+          helperText={helperText}
+          rows={rows || 4}
+          disabled={disabled}
+        />
+      </Box>
+    );
+  }
 
   return (
     <TextField

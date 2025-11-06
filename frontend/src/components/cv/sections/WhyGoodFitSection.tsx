@@ -38,6 +38,7 @@ import {
   DialogActions,
   Alert,
 } from "@mui/material";
+import MarkdownEditor from "../core/MarkdownEditor";
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -80,7 +81,6 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
   const [editContent, setEditContent] = useState(
     data?.content || data?.fit_analysis || "",
   );
-  const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
 
   const copyToClipboard = () => {
     const content = data?.content || data?.fit_analysis || "";
@@ -203,79 +203,21 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
         <Card>
           <CardContent>
             <Box mb={2}>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                mb={2}
-              >
-                <Typography variant="h6">Edit Why I'm a Good Fit</Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => setShowMarkdownPreview(!showMarkdownPreview)}
-                >
-                  {showMarkdownPreview ? "Edit" : "Preview"}
-                </Button>
-              </Box>
-
-              {showMarkdownPreview ? (
-                <Box
-                  sx={{
-                    minHeight: "200px",
-                    padding: 2,
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
-                    bgcolor: "grey.50",
-                    lineHeight: 1.6,
-                    "& h1, & h2, & h3, & h4, & h5, & h6": {
-                      marginTop: 2,
-                      marginBottom: 1,
-                      fontWeight: 600,
-                    },
-                    "& p": {
-                      marginBottom: 2,
-                    },
-                    "& ul, & ol": {
-                      marginBottom: 2,
-                      paddingLeft: 3,
-                    },
-                    "& li": {
-                      marginBottom: 0.5,
-                    },
-                    "& strong": {
-                      fontWeight: 600,
-                    },
-                    "& em": {
-                      fontStyle: "italic",
-                    },
-                  }}
-                >
-                  <ReactMarkdown>{editContent}</ReactMarkdown>
-                </Box>
-              ) : (
-                <textarea
-                  value={editContent}
-                  onChange={(e) => {
-                    setEditContent(e.target.value);
-                    onUnsavedChanges(
-                      e.target.value !== (data?.content || data?.fit_analysis),
-                    );
-                  }}
-                  style={{
-                    width: "100%",
-                    minHeight: "200px",
-                    padding: "12px",
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
-                    fontFamily: "inherit",
-                    fontSize: "14px",
-                    lineHeight: "1.5",
-                    resize: "vertical",
-                  }}
-                  placeholder="Enter why you're a good fit for this role... (Markdown supported)"
-                />
-              )}
+              <Typography variant="h6" mb={2}>
+                Edit Why I'm a Good Fit
+              </Typography>
+              <MarkdownEditor
+                value={editContent}
+                onChange={(value) => {
+                  const newValue = value || "";
+                  setEditContent(newValue);
+                  onUnsavedChanges(
+                    newValue !== (data?.content || data?.fit_analysis),
+                  );
+                }}
+                placeholder="Enter why you're a good fit for this role... (Markdown supported)"
+                rows={8}
+              />
             </Box>
             <Box display="flex" gap={1} justifyContent="flex-end">
               <Button onClick={handleCancel} variant="outlined">

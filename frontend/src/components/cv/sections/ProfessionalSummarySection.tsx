@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import ReactMarkdown from "react-markdown";
 import {
-  TextField,
   Typography,
   Box,
   Button,
@@ -16,6 +15,7 @@ import {
 } from "@mui/icons-material";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
+import { FormField } from "../core/formUtils";
 import {
   useAISuggestionsStore,
   useValidatedSuggestions,
@@ -38,7 +38,6 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
   title = "Professional Summary",
   onTitleSave,
 }) => {
-  const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
 
   // Get unified AI suggestions store with CV validation
   const { dismissSummarySuggestion } = useAISuggestionsStore();
@@ -72,106 +71,40 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
       }
     };
 
+    const contentValue =
+      (typeof editData === "string" ? editData : editData.content) || "";
+    const hasError =
+      !contentValue?.trim() || contentValue?.trim().length < 10;
+    const helperText = !contentValue?.trim()
+      ? "Professional summary is required"
+      : contentValue?.trim().length < 10
+        ? "Professional summary must be at least 10 characters long"
+        : "Markdown formatting is supported";
+
     return (
       <Box>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={1}
-        >
-          <Typography variant="subtitle2" color="text.secondary">
-            Professional Summary
-          </Typography>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={() => setShowMarkdownPreview(!showMarkdownPreview)}
-          >
-            {showMarkdownPreview ? "Edit" : "Preview"}
-          </Button>
-        </Box>
-
-        {showMarkdownPreview ? (
-          <Box
-            sx={{
-              minHeight: "120px",
-              padding: 2,
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              bgcolor: "grey.50",
+        <FormField
+          config={{
+            name: "content",
+            label: "Professional Summary",
+            placeholder: "Your professional summary goes here... (Markdown supported)",
+            required: true,
+            multiline: true,
+            rows: 4,
+            minLength: 10,
+            useMarkdownEditor: true,
+          }}
+          value={contentValue}
+          onChange={(value) => updateData("content", value)}
+          error={hasError}
+          helperText={helperText}
+          sx={{
+            "& .MuiInputBase-input": {
               lineHeight: 1.6,
-              "& h1, & h2, & h3, & h4, & h5, & h6": {
-                marginTop: 1,
-                marginBottom: 0.5,
-                fontWeight: 600,
-              },
-              "& p": {
-                marginBottom: 1,
-              },
-              "& ul, & ol": {
-                marginBottom: 1,
-                paddingLeft: 2,
-              },
-              "& li": {
-                marginBottom: 0.25,
-              },
-              "& strong": {
-                fontWeight: 600,
-              },
-              "& em": {
-                fontStyle: "italic",
-              },
-            }}
-          >
-            <ReactMarkdown>
-              {(typeof editData === "string" ? editData : editData.content) ||
-                ""}
-            </ReactMarkdown>
-          </Box>
-        ) : (
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            variant="standard"
-            value={
-              (typeof editData === "string" ? editData : editData.content) || ""
-            }
-            onChange={(e) => updateData("content", e.target.value)}
-            error={
-              !(
-                typeof editData === "string" ? editData : editData.content
-              )?.trim() ||
-              (typeof editData === "string"
-                ? editData
-                : editData.content
-              )?.trim().length < 10
-            }
-            helperText={
-              !(
-                typeof editData === "string" ? editData : editData.content
-              )?.trim()
-                ? "Professional summary is required"
-                : (typeof editData === "string"
-                      ? editData
-                      : editData.content
-                    )?.trim().length < 10
-                  ? "Professional summary must be at least 10 characters long"
-                  : "Markdown formatting is supported"
-            }
-            placeholder="Your professional summary goes here... (Markdown supported) *"
-            inputProps={{
-              "data-testid": "professional-summary-textarea",
-            }}
-            sx={{
-              "& .MuiInputBase-input": {
-                lineHeight: 1.6,
-                textAlign: "justify",
-              },
-            }}
-          />
-        )}
+              textAlign: "justify",
+            },
+          }}
+        />
 
         {/* AI Summary Suggestion - Only show if suggestion exists */}
         {hasSummarySuggestion && (

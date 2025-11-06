@@ -188,6 +188,7 @@ const EducationForm: React.FC<{
             "Describe your education, coursework, thesis, or relevant projects...",
           multiline: true,
           rows: 3,
+          useMarkdownEditor: true,
         }}
         value={edu.description || ""}
         onChange={(value) => updateEducation("description", value)}

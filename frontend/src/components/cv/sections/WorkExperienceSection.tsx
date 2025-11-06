@@ -114,6 +114,7 @@ const WorkExperienceForm: React.FC<{
           placeholder: "Describe your role and achievements...",
           multiline: true,
           rows: 3,
+          useMarkdownEditor: true,
         }}
         value={exp.description}
         onChange={(value) => updateExperience("description", value)}
