@@ -20,7 +20,9 @@ from .cv_filter import filter_hidden_sections
 logger = logging.getLogger(__name__)
 
 
-def _build_ai_suggestions_prompt(cv_data: Dict[str, Any], job_description: str) -> str:
+def _build_ai_suggestions_prompt(
+    cv_data: Dict[str, Any], job_description: str, company_name: Optional[str] = None
+) -> str:
     # Filter out hidden sections before sending to AI
     filtered_cv_data = filter_hidden_sections(cv_data)
 
@@ -75,7 +77,7 @@ def _build_ai_suggestions_prompt(cv_data: Dict[str, Any], job_description: str) 
     optimization_tasks = []
     if has_skills_section:
         optimization_tasks.append(
-            "   - skills.technical: Suggest technical skills ONLY if naturally connected to candidate's existing experience (max 10) with reasoning"
+            "   - skills.technical: ONLY suggest skills candidate has actually used but may have undersold. NEVER suggest new skills they haven't used (max 10) with reasoning"
         )
         optimization_tasks.append(
             "   - skills.soft: Suggest soft skills that would help highlight their authentic strengths (max 5) with reasoning"
@@ -114,10 +116,11 @@ def _build_ai_suggestions_prompt(cv_data: Dict[str, Any], job_description: str) 
         or has_education
     )
 
+    # Determine title example based on whether company_name is provided
     json_output_parts = [
-        '  "title": "Hello [Company]!",',
+        '  "title": "Hello [Company Name]!",',
         '  "confidence_score": 85,',
-        '  "fit_analysis": "markdown",',
+        '  "fit_analysis": "markdown-formatted",',
         '  "key_matches": ["skill1"],',
         '  "missing_skills": ["skill1"],',
         '  "suggested_improvements": ["tip1"],',
@@ -171,24 +174,32 @@ def _build_ai_suggestions_prompt(cv_data: Dict[str, Any], job_description: str) 
 
 ⚠️ LANGUAGE: Write ALL content in SAME LANGUAGE as job description.
 
+⚠️ WRITING STYLE:
+- Be brief and concise—avoid unnecessary words and phrases.
+- Write like a human coach, not a corporate recruiter. Use simple language, avoid corporate jargon.
+- Use phrases like 'position' or 'job' instead of corporate jargons like 'role'.
+- Respect the candidate's existing writing STYLE: observe their CV—only suggest metrics if they already use them. If CV uses bullets, suggest bullets except when there is only one item. If CV has no metrics, don't add metrics.
+- Write naturally: avoid hyphenated compounds like "multi-year" and "data-pipeline"—use separate words or rephrase for a conversational, human tone.
+- Avoid overusing the pronoun "I"—vary sentence structure and use active voice to reduce repetition. Example: Instead of "I developed a system. I implemented features. I managed the team.", use "Developed a system, implementing key features while managing the team."
+
 ⚠️ CAREER COACHING APPROACH:
-- Provide DETAILED and CONCRETE reasoning for ALL suggestions—explain WHY each suggestion helps
-- For suggestions, be as brief and concise as possible, avoid unnecessary words and phrases. Avoid unnecessary explanations.
-- Avoid overusing job description keywords in suggestions. Each keyword should appear at most 2 times over all suggestions (i.e. don't be repetitive with the same keyword, dont obsess over the same keyword).
+- Provide DETAILED and CONCRETE reasoning for ALL suggestions—explain WHY each suggestion helps. Quote specific CV phrases when explaining issues. Reference actual job IDs, dates, or company names.
+- Count keyword usage across ALL suggestions. If 'Docker' appears twice, don't use it again. Each keyword should appear at most 2 times over all suggestions.
 - Focus on TRANSFERABLE SKILLS from the CV, not keywords from the job description, unless they are explicitly mentioned in the CV
-- Avoid corporate language and use simple language
-- Respect the candidate's existing writing STYLE: observe their CV—only suggest metrics if they already use them
-- FACT-BASED ONLY: For work_experience/education suggestions, only reference technologies/skills explicitly in each item's data. Never add technologies not listed in that item's 'technologies' array.
+- Try to connect skills mentioned in the job description with the skills mentioned in the CV. E.g. if the job description mentions "AWS", try to find a skill that is related to deployment, scaling, etc
+- FACT-BASED ONLY: For work_experience/education suggestions, only reference technologies/skills explicitly in each item's data. Never add technologies not listed in that item's 'technologies' array. NEVER suggest skills/technologies candidate hasn't used. Only highlight existing skills they may have undersold.
 
 CV: {cv_json}
 Job: {job_description}
 
 TASKS:
 1. Job Fit Analysis (write as candidate, first person):
-   - Extract company name → title: "Hello [Company]!" or "Hello!"
+   - Extract company name from "{company_name}" and use it in the title: "Hello [Company Name]!"
    - confidence_score: 1-100 match quality based on transferable skills and authentic fit
-   - fit_analysis: markdown, start with a concise intro paragraph, then specific requirements with cover paragraphs
-   - Format: **"[requirement]"**\\n\\n[experience paragraph]\\n\\n
+   - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs. Maximum 200 words total.
+   - Format the fit analysis into two sections: "## Introduction" and "## Your Requirements".
+   - In the "Your Requirements" section, for each requirement, quote the requirement text from the job description and write the cover paragraph below it.
+   - Example format for each requirement-cover paragraph pair: **"[requirement]"**\\n\\n[experience paragraph]\\n\\n.
    - Be honest about gaps: "I don't have X but eager to learn" or "I bring Y transferable skills"
    - key_matches: Skills/experiences from CV that genuinely transfer to this role (focus on SUBSTANCE over keywords; can be empty)
    - missing_skills: up to 4 skills worth highlighting from their existing experience that connect to the job
@@ -204,15 +215,11 @@ OUTPUT JSON:
 {json_output_example}
 }}
 
-- Use 'position' or 'job' not 'role'.
-- Avoid corporate language and use simple language.
 - suggested_improvements, strengths, weaknesses must have ≥1 value.
 - key_matches can be empty.
-
-About Your suggestions:
 - First focus on writing issues, e.g. grammar, punctuation, etc. Then focus on semantcs.
 - In your reasoning, provide accurate explanation of why the existing content is not good enough. Quote the specific parts of the CV that you are referring to.
-- Be as specific as possible. Be very brief, concise and to the point. Do not use more than 50 words.
+- Be as specific as possible. Be very brief, concise and to the point. Reasoning fields: maximum 30 words each.
 """
 
 
@@ -222,6 +229,7 @@ async def generate_ai_suggestions(
     user_id: Optional[str] = None,
     cv_id: Optional[str] = None,
     db_session: Optional[Session] = None,
+    company_name: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Generates job fit analysis and CV optimization suggestions via a single AI call.
@@ -232,6 +240,7 @@ async def generate_ai_suggestions(
         user_id (Optional[str], optional): The ID of the requesting user, if available.
         cv_id (Optional[str], optional): The ID of the CV being analyzed, if available.
         db_session (Optional[Session], optional): SQLAlchemy session for logging/tracking, if used.
+        company_name (Optional[str], optional): The company name to use in the title. If provided, will be injected directly into the prompt instead of asking AI to extract it.
 
     Returns:
         Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
@@ -249,7 +258,7 @@ async def generate_ai_suggestions(
         raise RuntimeError("AI features are not enabled")
 
     # Build token-optimized prompt
-    prompt = _build_ai_suggestions_prompt(cv_data, job_description)
+    prompt = _build_ai_suggestions_prompt(cv_data, job_description, company_name)
 
     try:
         logger.info(

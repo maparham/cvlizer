@@ -8,6 +8,7 @@ the main event loop.
 
 import asyncio
 import logging
+from typing import Optional
 
 from src.config import AIConfig
 from src.models.ai_draft import AIDraft
@@ -141,6 +142,7 @@ def ai_suggestions_sync(
     user_id: str,
     cv_id: str,
     job_description_id: str,
+    company_name: Optional[str] = None,
 ):
     """
     Synchronous AI suggestions generation using single optimized AI call.
@@ -168,6 +170,7 @@ def ai_suggestions_sync(
                 user_id=user_id,
                 cv_id=cv_id,
                 db_session=db,
+                company_name=company_name,
             )
         )
 
@@ -247,6 +250,7 @@ async def ai_suggestions_background(
     user_id: str,
     cv_id: str,
     job_description_id: str,
+    company_name: Optional[str] = None,
 ):
     """Background task wrapper for AI suggestions generation."""
     await run_task_in_background(
@@ -258,6 +262,7 @@ async def ai_suggestions_background(
         user_id,
         cv_id,
         job_description_id,
+        company_name,
     )
 
 

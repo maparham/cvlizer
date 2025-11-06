@@ -191,6 +191,7 @@ async def create_ai_suggestions(
                 str(current_user.id),
                 cv_id,
                 enhancement_request.job_description_id,
+                job_description.company,
             )
         )
 
