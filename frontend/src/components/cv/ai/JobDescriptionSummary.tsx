@@ -330,7 +330,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                                 suggestionsLoading ||
                                 activeJobDescription?.is_parsing
                                   ? "none"
-                                  : "gradientLoop 3s linear infinite",
+                                  : "gradientLoop 6s linear infinite",
                               "&::before": {
                                 content: '""',
                                 position: "absolute",
