@@ -170,6 +170,12 @@ def _build_ai_suggestions_prompt(
 
     json_output_example = "\n".join(json_output_parts)
 
+    # Build company name instruction based on whether it's provided
+    if company_name:
+        company_name_instruction = f'   - Extract the company name from "{company_name}" and use it in the title: "Hello [Company Name]!"'
+    else:
+        company_name_instruction = '   - Extract the company name from the job description and use it in the title: "Hello [Company Name]!"'
+
     return f"""Analyze CV fit for position and suggest improvements.
 
 ⚠️ LANGUAGE: Write ALL content in SAME LANGUAGE as job description.
@@ -194,7 +200,7 @@ Job: {job_description}
 
 TASKS:
 1. Job Fit Analysis (write as candidate, first person):
-   - Extract company name from "{company_name}" and use it in the title: "Hello [Company Name]!"
+{company_name_instruction}
    - confidence_score: 1-100 match quality based on transferable skills and authentic fit
    - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs. Maximum 200 words total.
    - Format the fit analysis into two sections: "## Introduction" and "## Your Requirements".
