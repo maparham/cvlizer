@@ -206,6 +206,7 @@ TASKS:
    - Format the fit analysis into two sections: "## Introduction" and "## Your Requirements".
    - In the "Your Requirements" section, for each requirement, quote the requirement text from the job description and write the cover paragraph below it.
    - Example format for each requirement-cover paragraph pair: **"[requirement]"**\\n\\n[experience paragraph]\\n\\n.
+   - CRITICAL: Write ENTIRELY in first person from the candidate's perspective. NEVER refer to "CV" directly, e.g. "My CV..." or "This CV...". Remember, you are the owner of the CV.
    - Be honest about gaps: "I don't have X but eager to learn" or "I bring Y transferable skills"
    - key_matches: Skills/experiences from CV that genuinely transfer to this role (focus on SUBSTANCE over keywords; can be empty)
    - missing_skills: up to 4 skills worth highlighting from their existing experience that connect to the job
