@@ -5,18 +5,22 @@
  * Shows original vs suggested description with reasoning, and provides apply/discard actions.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
   Button,
   IconButton,
   Tooltip,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Close as CloseIcon,
   Info as InfoIcon,
+  Code as CodeIcon,
+  CompareArrows as CompareArrowsIcon,
 } from "@mui/icons-material";
 import { ItemDescriptionSuggestion as ItemDescriptionSuggestionType } from "../../../types/ai";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
@@ -35,6 +39,17 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
   onDiscard,
   isLoading = false,
 }) => {
+  const [viewMode, setViewMode] = useState<"diff" | "raw">("diff");
+
+  const handleViewModeChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newViewMode: "diff" | "raw" | null,
+  ) => {
+    if (newViewMode !== null) {
+      setViewMode(newViewMode);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -55,6 +70,24 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
         <Tooltip title="This content needs more relevance to the job description. See suggestions below.">
           <InfoIcon sx={{ ml: 1, fontSize: 16, color: "#1976d2" }} />
         </Tooltip>
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={handleViewModeChange}
+          size="small"
+          sx={{ ml: 2 }}
+        >
+          <Tooltip title="Show diff view with highlighted changes">
+            <ToggleButton value="diff" aria-label="diff view">
+              <CompareArrowsIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Show raw suggested content">
+            <ToggleButton value="raw" aria-label="raw view">
+              <CodeIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+        </ToggleButtonGroup>
         <IconButton
           size="small"
           onClick={onDiscard}
@@ -76,10 +109,17 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
             lineHeight: 1.6,
           }}
         >
-          <InlineDiff
-            original={suggestion.original}
-            suggested={suggestion.suggested}
-          />
+          {viewMode === "diff" ? (
+            <InlineDiff
+              original={suggestion.original}
+              suggested={suggestion.suggested}
+            />
+          ) : (
+            <MarkdownRenderer
+              content={suggestion.suggested}
+              variant="body2"
+            />
+          )}
         </Box>
       </Box>
 
