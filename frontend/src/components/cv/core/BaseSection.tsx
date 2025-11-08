@@ -79,18 +79,20 @@ const BaseSection: React.FC<BaseSectionProps> = ({
             </Tooltip>
           )}
           <Tooltip title="Cancel editing">
-            <IconButton
-              onClick={onCancel}
-              sx={{
-                opacity: 1,
-                transition: "opacity 0.2s",
-                bgcolor: "white",
-                boxShadow: 1,
-              }}
-              size="small"
-            >
-              <CancelIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton
+                onClick={onCancel}
+                sx={{
+                  opacity: 1,
+                  transition: "opacity 0.2s",
+                  bgcolor: "white",
+                  boxShadow: 1,
+                }}
+                size="small"
+              >
+                <CancelIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
       ) : // Show edit button or custom editButton in view mode
@@ -107,26 +109,28 @@ const BaseSection: React.FC<BaseSectionProps> = ({
           }}
         >
           <Tooltip title="Edit this section">
-            <IconButton
-              className="edit-button"
-              onClick={onEdit}
-              data-testid={
-                sectionId ? `edit-section-${sectionId}-button` : undefined
-              }
-              sx={{
-                opacity: 1,
-                color: "text.secondary",
-                bgcolor: "transparent",
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  color: "primary.main",
-                  bgcolor: "rgba(227, 242, 253, 0.5)",
-                },
-              }}
-              size="small"
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton
+                className="edit-button"
+                onClick={onEdit}
+                data-testid={
+                  sectionId ? `edit-section-${sectionId}-button` : undefined
+                }
+                sx={{
+                  opacity: 1,
+                  color: "text.secondary",
+                  bgcolor: "transparent",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    color: "primary.main",
+                    bgcolor: "rgba(227, 242, 253, 0.5)",
+                  },
+                }}
+                size="small"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
       )}

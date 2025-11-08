@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, TextField, SxProps, Theme } from "@mui/material";
 
 // Academic titles/degrees
 const ACADEMIC_TITLES = [
@@ -40,7 +40,7 @@ interface AcademicDegreeAutocompleteProps {
   disabled?: boolean;
   error?: boolean;
   helperText?: string;
-  sx?: any;
+  sx?: SxProps<Theme>;
 }
 
 const AcademicDegreeAutocomplete: React.FC<AcademicDegreeAutocompleteProps> = ({
@@ -99,14 +99,14 @@ const AcademicDegreeAutocomplete: React.FC<AcademicDegreeAutocompleteProps> = ({
     return sorted.slice(0, 10); // Limit to 10 suggestions
   }, [inputValue]);
 
-  const handleChange = (_event: any, newValue: string | null) => {
+  const handleChange = (_event: React.SyntheticEvent<Element, Event>, newValue: string | null) => {
     const selectedValue = newValue || "";
     setInputValue(selectedValue);
     onChange(selectedValue);
     setIsOpen(false); // Hide dropdown when selection is made
   };
 
-  const handleInputChange = (_event: any, newInputValue: string) => {
+  const handleInputChange = (_event: React.SyntheticEvent<Element, Event>, newInputValue: string) => {
     setInputValue(newInputValue);
     onChange(newInputValue); // Update parent immediately for better UX
 

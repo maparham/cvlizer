@@ -28,6 +28,7 @@ import {
   DialogContentText,
   DialogActions,
   Alert,
+  useTheme,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -40,7 +41,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CVSection } from "../../../types";
+import { CVSection, CVData } from "../../../types";
 import SortableSectionItem from "./SortableSectionItem";
 import { AVAILABLE_SECTIONS } from "../constants";
 import { EditableTitle } from "../EditableTitle";
@@ -61,7 +62,7 @@ interface SectionManagerSidebarProps {
   availableSectionsToAdd: any[];
   title: string;
   cvId?: string;
-  cvData?: any;
+  cvData?: CVData;
   onTitleSave: (_newTitle: string) => Promise<void>;
   onToggleVisibility: (_sectionId: string) => void;
   onAddNewSection: (_sectionId: string) => void;
@@ -475,6 +476,12 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     return () => clearInterval(interval);
   }, [countdownSeconds]);
 
+  // Calculate AppBar height - matches CVEditorHeader's Toolbar minHeight (64px)
+  // Using theme.mixins.toolbar for maintainability, with fallback to match actual AppBar
+  const theme = useTheme();
+  const toolbarHeight =
+    (theme.mixins.toolbar as { minHeight?: number })?.minHeight ?? 64;
+
   return (
     <Paper
       sx={{
@@ -486,8 +493,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         borderRight: "1px solid #e0e0e0",
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
-        maxHeight: "100vh",
+        height: `calc(100vh - ${toolbarHeight}px)`,
+        maxHeight: `calc(100vh - ${toolbarHeight}px)`,
       }}
     >
       {/* CV Title - At the top */}
@@ -537,9 +544,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           flex: 1,
           overflow: "auto",
           p: 2,
-          pb: 4,
-          height: "calc(100vh - 140px)",
-          maxHeight: "calc(100vh - 140px)",
           scrollBehavior: "smooth",
           "&::-webkit-scrollbar": {
             width: "6px",
@@ -909,6 +913,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       {/* Inline Save Status Footer */}
       <Box
         sx={{
+          flexShrink: 0,
           borderTop: "1px solid #e0e0e0",
           p: 1.5,
           display: "flex",
