@@ -24,6 +24,26 @@ function extractFieldFromMessage(message: string): string {
 }
 
 /**
+ * Normalize section names from validation errors to match frontend section IDs
+ * Backend uses singular forms in validation messages, frontend uses plural section IDs
+ */
+const normalizeSectionName = (section: string): string => {
+  const sectionMap: Record<string, string> = {
+    'project': 'projects',
+    'certification': 'certifications',
+    'award': 'awards',
+    'publication': 'publications',
+    'volunteer_experience': 'volunteer_experience',
+    'work_experience': 'work_experience',
+    'education': 'education',
+    'personal_info': 'personal_info',
+    'professional_summary': 'professional_summary',
+    'skills': 'skills',
+  };
+  return sectionMap[section] || section;
+};
+
+/**
  * Parse validation error message into structured errors
  * Example: "CV validation failed:\n• Education #2: Start date is required"
  */
@@ -53,7 +73,7 @@ export const parseValidationErrors = (
     if (sectionMatch) {
       const [, sectionName, itemIndex, message] = sectionMatch;
       // Normalize section name to snake_case (e.g., "Work experience" -> "work_experience")
-      const section = sectionName.trim().toLowerCase().replace(/\s+/g, '_');
+      const section = normalizeSectionName(sectionName.trim().toLowerCase().replace(/\s+/g, '_'));
       const field = extractFieldFromMessage(message);
 
       const error = {
@@ -151,7 +171,7 @@ export const parsePydanticValidationErrors = (
     }
 
     errors.push({
-      section: sectionLower,
+      section: normalizeSectionName(sectionLower),
       itemIndex,
       field: field || "general",
       message: msg,

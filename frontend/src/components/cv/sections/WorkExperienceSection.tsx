@@ -200,7 +200,7 @@ const WorkExperienceDisplay: React.FC<{
   );
 };
 
-const WorkExperienceSection: React.FC<SectionProps> = ({
+const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> = ({
   data,
   onUpdate,
   onSave,
@@ -214,6 +214,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
   title = "Work Experience",
   onTitleSave,
   cvId,
+  sectionType,
 }) => {
   // Get AI suggestions from store
   const allSuggestions = useValidatedSuggestions(cvId || "");
@@ -337,6 +338,7 @@ const WorkExperienceSection: React.FC<SectionProps> = ({
   return (
     <>
       <IndividualItemSection
+        sectionType={sectionType || 'work_experience'}
         data={data as WorkExperience[]}
         onUpdate={onUpdate}
         onSave={onSave}

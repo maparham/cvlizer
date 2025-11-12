@@ -96,7 +96,7 @@ const PublicationForm: React.FC<{
   )
 }
 
-const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Publications', onTitleSave, cvId }) => {
+const PublicationsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Publications', onTitleSave, cvId, sectionType }) => {
   const createNewPublication = (): Publication => ({
     id: generateSectionId('publications'),
     title: '',
@@ -142,6 +142,7 @@ const PublicationsSection: React.FC<SectionProps> = ({ data, onUpdate, onSave, i
 
   return (
     <IndividualItemSection
+      sectionType={sectionType || 'publications'}
       data={data as Publication[]}
       onUpdate={onUpdate}
       onSave={onSave}

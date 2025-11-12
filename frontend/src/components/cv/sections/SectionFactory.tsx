@@ -86,6 +86,7 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
       onUnsavedChanges={props.onUnsavedChanges as any}
       title={sectionTitle}
       onTitleSave={onSectionTitleSave}
+      sectionType={sectionType}
     />
   );
 };

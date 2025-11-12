@@ -412,7 +412,7 @@ const EducationDisplay: React.FC<{
   );
 };
 
-const EducationSection: React.FC<SectionProps> = ({
+const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
   data,
   onUpdate,
   onSave,
@@ -426,6 +426,7 @@ const EducationSection: React.FC<SectionProps> = ({
   title = "Education",
   onTitleSave,
   cvId,
+  sectionType,
 }) => {
   // Get AI suggestions from store
   const allSuggestions = useValidatedSuggestions(cvId || "");
@@ -549,6 +550,7 @@ const EducationSection: React.FC<SectionProps> = ({
   return (
     <>
       <IndividualItemSection
+        sectionType={sectionType || 'education'}
         data={data as Education[]}
         onUpdate={onUpdate}
         onSave={onSave}

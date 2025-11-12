@@ -32,6 +32,7 @@ export interface IndividualItemSectionProps<T> {
   onTitleSave?: (newTitle: string) => Promise<void>
   cvId?: string
   additionalHeaderActions?: React.ReactNode
+  sectionType?: string
 }
 
 export interface ItemControlsProps<T> {

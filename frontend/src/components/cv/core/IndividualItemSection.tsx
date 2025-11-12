@@ -60,6 +60,7 @@ import {
  * Each item has its own edit button and form state
  */
 function IndividualItemSection<T>({
+  sectionType,
   data,
   onUpdate,
   onSave,
@@ -122,8 +123,9 @@ function IndividualItemSection<T>({
     index: number | null;
   }>({ open: false, index: null });
 
-  // Memoized section ID calculation
-  const sectionId = useMemo(() => getSectionId(title), [title]);
+  // Use sectionType prop directly instead of calculating from title
+  // This ensures data-section attribute matches validation errors even when title is customized
+  const sectionId = sectionType || useMemo(() => getSectionId(title), [title]);
 
   // Event handlers
   const handleEditItem = useCallback(

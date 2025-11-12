@@ -13,6 +13,7 @@ import {
 } from "../../types";
 import { cvApi, normalizeApiError } from "../../services/api";
 import { CVValidationService } from "../../services/cvValidationService";
+import { filterVisibleSections } from "../../utils/cvCompleteness";
 import { DEFAULT_CV_FILENAME, TEMP_CV_ID_PREFIX, DEFAULT_CV_DATA } from "./constants";
 import type { CVStore } from "./types";
 
@@ -221,10 +222,10 @@ export const createCVCrudSlice: StateCreator<
     set({ loading: true, error: null });
 
     try {
+      // Filter hidden sections before cleaning and validation
+      const visibleData = filterVisibleSections(cvData.parsed_data);
       // Clean the CV data to remove sections that would fail backend validation
-      const cleanedData = CVValidationService.cleanForBackend(
-        cvData.parsed_data,
-      );
+      const cleanedData = CVValidationService.cleanForBackend(visibleData);
       const cleanedRequest = { parsed_data: cleanedData };
 
       // Create blank CV with the cleaned data
@@ -268,9 +269,9 @@ export const createCVCrudSlice: StateCreator<
     // Debounced save UX: do not toggle heavy loading; mark saving
     set({ error: null, saving: true });
     try {
-      const cleanedData = CVValidationService.cleanForBackend(
-        data.parsed_data,
-      );
+      // Filter hidden sections before cleaning and validation
+      const visibleData = filterVisibleSections(data.parsed_data);
+      const cleanedData = CVValidationService.cleanForBackend(visibleData);
       const validationErrors =
         CVValidationService.validateCVData(cleanedData);
       if (validationErrors.length > 0) {
