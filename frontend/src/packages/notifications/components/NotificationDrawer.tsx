@@ -46,6 +46,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   OpenInNew as OpenInNewIcon,
+  ContentCopy as ContentCopyIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useNotificationStore } from "../store";
@@ -57,7 +58,7 @@ interface NotificationDrawerProps {
 }
 
 const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerProps>(({ cvId }, ref) => {
-  const { notifications: allNotifications, removeNotification, clearNotifications } = useNotificationStore();
+  const { notifications: allNotifications, removeNotification, clearNotifications, showSuccess } = useNotificationStore();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -108,6 +109,20 @@ const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerP
   const handleNavigateToCV = (cvIdToNavigate: string) => {
     navigate(`/cv/${cvIdToNavigate}`);
     setIsOpen(false); // Close drawer after navigation
+  };
+
+  const handleCopyError = async (notification: { message?: string; title: string; cvId?: string }) => {
+    try {
+      const errorMessage = notification.message || notification.title;
+      const cvIdText = notification.cvId || "N/A";
+      const copyText = `Error: ${errorMessage}\nCV ID: ${cvIdText}`;
+
+      await navigator.clipboard.writeText(copyText);
+      showSuccess("Error details copied to clipboard");
+    } catch (err) {
+      // Silently fail - clipboard API may not be available
+      console.error("Failed to copy to clipboard:", err);
+    }
   };
 
   return (
@@ -267,6 +282,18 @@ const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerP
                           severity={notification.type}
                           action={
                             <Box sx={{ display: "flex", gap: 0.5, alignSelf: "flex-start" }}>
+                              {notification.type === "error" && (
+                                <Tooltip title="Copy error details">
+                                  <IconButton
+                                    aria-label="copy error details"
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => handleCopyError(notification)}
+                                  >
+                                    <ContentCopyIcon fontSize="inherit" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
                               {notification.cvId && (
                                 <Tooltip title="Open CV">
                                   <IconButton
