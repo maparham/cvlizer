@@ -111,11 +111,12 @@ const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerP
     setIsOpen(false); // Close drawer after navigation
   };
 
-  const handleCopyError = async (notification: { message?: string; title: string; cvId?: string }) => {
+  const handleCopyError = async (notification: { message?: string; title: string; cvId?: string; persistent?: boolean }) => {
     try {
       const errorMessage = notification.message || notification.title;
       const cvIdText = notification.cvId || "N/A";
-      const copyText = `Error: ${errorMessage}\nCV ID: ${cvIdText}`;
+      const errorType = notification.persistent === true ? "Validation Error" : "Error";
+      const copyText = `Error Type: ${errorType}\nError: ${errorMessage}\nCV ID: ${cvIdText}`;
 
       await navigator.clipboard.writeText(copyText);
       showSuccess("Error details copied to clipboard");
