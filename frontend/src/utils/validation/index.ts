@@ -26,14 +26,6 @@ export {
   createValidationRules,
 } from "./fieldValidation";
 
-// Cross-field validation exports
-export {
-  validateCrossFields,
-  createCrossFieldValidations,
-} from "./crossFieldValidation";
-
-// Duplicate checking exports
-export { checkForDuplicates } from "./duplicateChecking";
 
 // Helper function exports
 export {
@@ -42,6 +34,4 @@ export {
   getFieldError,
   hasSectionErrors,
   getSectionErrorCount,
-  validateCVData,
-  getValidationSummary,
 } from "./helpers";

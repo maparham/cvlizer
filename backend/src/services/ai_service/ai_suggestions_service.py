@@ -8,7 +8,7 @@ in a single AI call with token-optimized prompts.
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -73,6 +73,18 @@ def _build_ai_suggestions_prompt(
     work_json = json.dumps(work_items)
     education_json = json.dumps(education_items)
 
+    # Shared markdown_diff instruction (applies to professional_summary, work_experience, education)
+    markdown_diff_instruction = (
+        "Provide markdown_diff string showing the complete diff in markdown format. Rules: "
+        "1. Use ~~strikethrough~~ (double tilde) to mark removed text from the original. "
+        "2. Use **bold** (double asterisk) to mark added text in the suggestion. "
+        "3. Leave unchanged text as plain text (no formatting). "
+        "4. Preserve the structure (bullets, paragraphs, line breaks) exactly as in the original. "
+        "5. The markdown_diff should be readable and show the complete transformation from original to suggested text. "
+        "6. Format should be clear: removed text should be strikethrough, added text should be bold, unchanged text should be plain. "
+        '7. CRITICAL: If suggested_text is identical to original_text (no changes), set markdown_diff to empty string "".'
+    )
+
     # Build conditional optimization instructions
     optimization_tasks = []
     if has_skills_section:
@@ -84,23 +96,37 @@ def _build_ai_suggestions_prompt(
         )
     if has_professional_summary:
         optimization_tasks.append(
-            "   - professional_summary: Suggest ways to present their story more confidently (2-4 sentences)"
+            f"   - professional_summary: Only suggest changes when there are clear issues: unclear messaging, weak impact, grammar errors, or factual problems. "
+            "Preserve original structure and key phrases. Avoid unnecessary rephrasing. "
+            "Stay close to original wording—only modify when the change addresses a concrete problem that significantly improves clarity or impact (2-4 sentences). "
+            "If no changes needed, omit professional_summary field entirely. "
+            f"{markdown_diff_instruction}"
         )
+
+    # Shared instructions for item-based sections (work_experience and education)
+    item_based_sections = []
     if has_work_experience:
-        optimization_tasks.append(
-            "   - work_experience: For EACH item, first evaluate current_content_score (0-100) based on "
-            "how well the story is told and confidence of presentation.\n"
-            "Only include items with score < 50 in the array (with suggested, reasoning, "
-            "current_content_score, importance). Respect the candidate's style—if they don't use metrics, don't push for them. "
-            "Focus on clarity, confidence, and authentic storytelling."
-        )
+        item_based_sections.append("work_experience")
     if has_education:
+        item_based_sections.append("education")
+
+    if item_based_sections:
+        sections_list = " and ".join(item_based_sections)
         optimization_tasks.append(
-            "   - education: For EACH item, first evaluate current_content_score (0-100) based on "
-            "clarity and confidence of presentation.\n"
-            "     Only include items with score < 50 in the array (with suggested, reasoning, "
-            "current_content_score, importance). Focus on helping them present their education authentically and confidently."
+            f"   - {sections_list}: For EACH item, first evaluate current_content_score (0-100) based on "
+            "how well the story is told and confidence of presentation. "
+            "CRITICAL: Include ALL items in the array with their current_content_score. "
+            "For items with score < 50 AND clear issues (grammar errors, unclear messaging, missing impact, factual problems), "
+            "include full suggestion details (suggested, reasoning, importance, markdown_diff). "
+            "For items with score >= 50, include only id and current_content_score (omit suggested, reasoning, importance, markdown_diff fields). "
+            "If suggested_text would equal original_text for a low-scoring item, do NOT include that item. "
+            "Do NOT suggest changes for cosmetic reasons or minor improvements. "
+            "Preserve original wording unless there's a concrete problem that significantly affects clarity, correctness, or impact. "
+            "Respect the candidate's style—if they don't use metrics, don't push for them. "
+            "Focus on clarity, confidence, and authentic storytelling. "
+            f"{markdown_diff_instruction}"
         )
+
     optimization_tasks_text = (
         "\n".join(optimization_tasks)
         if optimization_tasks
@@ -134,7 +160,6 @@ def _build_ai_suggestions_prompt(
         has_professional_summary or has_work_experience or has_education
     )
     has_any_after_summary = has_work_experience or has_education
-    has_any_after_work = has_education
 
     if has_skills_section:
         comma = "," if has_any_after_skills else ""
@@ -149,23 +174,39 @@ def _build_ai_suggestions_prompt(
     if has_professional_summary:
         comma = "," if has_any_after_summary else ""
         json_output_parts.append(
-            f'  "professional_summary": {{"suggested_text": "...", "original_text": "{current_summary}", "key_changes": ["..."]}}{comma}'
+            f'  "professional_summary": {{"suggested_text": "...", "original_text": "{current_summary}", "key_changes": ["..."], "markdown_diff": "Original text ~~removed~~ and **added** text here"}}{comma}'
         )
 
+    # Shared JSON example for item-based sections (work_experience and education)
+    # Show example with full suggestion (score < 50) and example with only score (score >= 50)
+    item_suggestion_example = (
+        '{"id": "...", "original": "...", "suggested": "...", "reasoning": "...", '
+        '"current_content_score": 65, "importance": "standard", '
+        '"markdown_diff": "Original text ~~removed~~ and **added** text here"}, '
+        '{"id": "...", "current_content_score": 85}'
+    )
+
+    # Add item-based sections dynamically
+    item_sections = []
     if has_work_experience:
-        comma = "," if has_any_after_work else ""
-        json_output_parts.append(
-            f'  "work_experience": [{{"id": "...", "original": "...", "suggested": "...", "reasoning": "...", "current_content_score": 65, "importance": "standard"}}]{comma}'
-        )
-    else:
-        comma = "," if has_any_after_work else ""
-        json_output_parts.append(f'  "work_experience": []{comma}')
-
+        item_sections.append("work_experience")
     if has_education:
+        item_sections.append("education")
+
+    for i, section_name in enumerate(item_sections):
+        is_last = i == len(item_sections) - 1
+        comma = "" if is_last else ","
         json_output_parts.append(
-            '  "education": [{"id": "...", "original": "...", "suggested": "...", "reasoning": "...", "current_content_score": 65, "importance": "standard"}]'
+            f'  "{section_name}": [{item_suggestion_example}]{comma}'
         )
-    else:
+
+    # Add empty arrays for missing item-based sections
+    if not has_work_experience:
+        # Only add comma if education exists (will be added after this)
+        comma = "," if has_education else ""
+        json_output_parts.append(f'  "work_experience": []{comma}')
+    if not has_education:
+        # No comma needed - this is the last field
         json_output_parts.append('  "education": []')
 
     json_output_example = "\n".join(json_output_parts)
@@ -187,6 +228,13 @@ def _build_ai_suggestions_prompt(
 - Respect the candidate's existing writing STYLE: observe their CV—only suggest metrics if they already use them. If CV uses bullets, suggest bullets except when there is only one item. If CV has no metrics, don't add metrics.
 - Write naturally: avoid hyphenated compounds like "multi-year" and "data-pipeline"—use separate words or rephrase for a conversational, human tone.
 - Avoid overusing the pronoun "I"—vary sentence structure and use active voice to reduce repetition. Example: Instead of "I developed a system. I implemented features. I managed the team.", use "Developed a system, implementing key features while managing the team."
+
+⚠️ MINIMAL CHANGES PRINCIPLE (CRITICAL):
+- Only suggest changes when there is a CLEAR, SUBSTANTIAL benefit: fixing grammar errors, clarifying unclear messaging, adding missing impact, or correcting factual issues.
+- AVOID cosmetic changes: synonym swapping (e.g., "developed" → "created"), minor rephrasing, style tweaks, or changes that don't address concrete problems.
+- Stay CLOSE to original wording—preserve the candidate's voice and authentic expression. Don't change words just to sound "better" or more polished.
+- When in doubt, keep the original text unchanged. Only modify when the change addresses a specific, concrete issue that significantly improves clarity, correctness, or impact.
+- Preserve original structure, key phrases, and the candidate's natural writing style unless there's a compelling reason to change them.
 
 ⚠️ CAREER COACHING APPROACH:
 - Provide DETAILED and CONCRETE reasoning for ALL suggestions—explain WHY each suggestion helps. Quote specific CV phrases when explaining issues. Reference actual job IDs, dates, or company names.
@@ -227,6 +275,9 @@ OUTPUT JSON:
 - First focus on writing issues, e.g. grammar, punctuation, etc. Then focus on semantcs.
 - In your reasoning, provide accurate explanation of why the existing content is not good enough. Quote the specific parts of the CV that you are referring to.
 - Be as specific as possible. Be very brief, concise and to the point. Reasoning fields: maximum 30 words each.
+- CRITICAL: Only suggest changes when there's a clear, substantial benefit. Avoid cosmetic modifications, synonym swapping, or unnecessary rephrasing.
+- For professional_summary: If no changes needed, omit the field entirely (set to null). If changes exist, include markdown_diff with the diff string.
+- CRITICAL for work_experience and education: Include ALL items in the arrays with their current_content_score. Items with score >= 50 should only have id and current_content_score fields (no suggested, reasoning, importance, or markdown_diff). Items with score < 50 should have all fields including suggestion details. When including items with suggestions, provide markdown_diff string (formatting details are in the optimization tasks above).
 """
 
 
@@ -275,7 +326,8 @@ async def generate_ai_suggestions(
         system_prompt = (
             "You are a supportive career coach helping candidates present their authentic experience confidently."
             "Focus on transferable skills and genuine fit over keyword matching."
-            "Respect the candidate's existing writing style—only edit for clarity and impact."
+            "CRITICAL: Only suggest changes when there is a clear, substantial benefit—avoid cosmetic changes, synonym swapping, or unnecessary rephrasing."
+            "Stay close to the original wording and preserve the candidate's voice. Only modify text when it addresses concrete issues like grammar errors, unclear messaging, or missing impact."
             "Be encouraging, honest, and help them tell their story well."
         )
 
@@ -332,17 +384,79 @@ async def generate_ai_suggestions(
             "suggested_text": "",
             "original_text": "",
             "key_changes": [],
+            "markdown_diff": "",
         }
         if has_professional_summary:
             professional_summary_response = response.get("professional_summary")
             if professional_summary_response:
-                professional_summary_value = professional_summary_response
+                professional_summary_value = {
+                    **professional_summary_response,
+                    "markdown_diff": professional_summary_response.get(
+                        "markdown_diff", ""
+                    ),
+                }
+
+        # Process work_experience suggestions
+        # Items may have only id and current_content_score (score >= 50) or full suggestion details (score < 50)
+        work_experience_suggestions = response.get("work_experience", [])
+        cleaned_work_suggestions = []
+        for suggestion in work_experience_suggestions:
+            # Ensure current_content_score is always present
+            if "current_content_score" not in suggestion:
+                suggestion["current_content_score"] = 50  # Default fallback
+
+            score = suggestion.get("current_content_score", 50)
+
+            # For items with score >= 50, only keep id and current_content_score
+            if score >= 50:
+                cleaned_work_suggestions.append(
+                    {
+                        "id": suggestion["id"],
+                        "current_content_score": score,
+                    }
+                )
+            else:
+                # For items with score < 50, keep all fields but ensure markdown_diff is set
+                if "suggested" in suggestion and suggestion.get("suggested"):
+                    if "markdown_diff" not in suggestion:
+                        suggestion["markdown_diff"] = ""
+                cleaned_work_suggestions.append(suggestion)
+
+        work_experience_suggestions = cleaned_work_suggestions
+
+        # Process education suggestions
+        # Items may have only id and current_content_score (score >= 50) or full suggestion details (score < 50)
+        education_suggestions = response.get("education", [])
+        cleaned_education_suggestions = []
+        for suggestion in education_suggestions:
+            # Ensure current_content_score is always present
+            if "current_content_score" not in suggestion:
+                suggestion["current_content_score"] = 50  # Default fallback
+
+            score = suggestion.get("current_content_score", 50)
+
+            # For items with score >= 50, only keep id and current_content_score
+            if score >= 50:
+                cleaned_education_suggestions.append(
+                    {
+                        "id": suggestion["id"],
+                        "current_content_score": score,
+                    }
+                )
+            else:
+                # For items with score < 50, keep all fields but ensure markdown_diff is set
+                if "suggested" in suggestion and suggestion.get("suggested"):
+                    if "markdown_diff" not in suggestion:
+                        suggestion["markdown_diff"] = ""
+                cleaned_education_suggestions.append(suggestion)
+
+        education_suggestions = cleaned_education_suggestions
 
         optimization_data = {
             "skills": response.get("skills", {"technical": [], "soft": []}),
             "professional_summary": professional_summary_value,
-            "work_experience": response.get("work_experience", []),
-            "education": response.get("education", []),
+            "work_experience": work_experience_suggestions,
+            "education": education_suggestions,
         }
 
         return job_fit_data, optimization_data, metadata

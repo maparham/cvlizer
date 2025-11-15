@@ -7,6 +7,7 @@ import {
   Chip,
   Tooltip,
   IconButton,
+  Divider,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -21,6 +22,7 @@ import {
   useValidatedSuggestions,
 } from "../../../stores/aiSuggestionsStore";
 import { useNotifications } from "../../../packages/notifications";
+import SemanticDiff from "../ai/SemanticDiff";
 
 interface ProfessionalSummarySectionProps extends SectionProps {
   cvId?: string;
@@ -136,9 +138,29 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
               </IconButton>
             </Box>
 
-            <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.6 }}>
-              {summarySuggestion.suggested_text}
-            </Typography>
+            <Box sx={{ mb: 2, lineHeight: 1.6 }}>
+              {summarySuggestion.markdown_diff &&
+              summarySuggestion.markdown_diff.trim() !== "" ? (
+                <SemanticDiff markdownDiff={summarySuggestion.markdown_diff} />
+              ) : (
+                // No diff available - show side-by-side comparison
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                    Original:
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    {summarySuggestion.original_text}
+                  </Typography>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                    Suggested:
+                  </Typography>
+                  <Typography variant="body2">
+                    {summarySuggestion.suggested_text}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
 
             {summarySuggestion.key_changes &&
               summarySuggestion.key_changes.length > 0 && (
@@ -272,9 +294,29 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
             </IconButton>
           </Box>
 
-          <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.6 }}>
-            {summarySuggestion.suggested_text}
-          </Typography>
+          <Box sx={{ mb: 2, lineHeight: 1.6 }}>
+            {summarySuggestion.markdown_diff &&
+            summarySuggestion.markdown_diff.trim() !== "" ? (
+              <SemanticDiff markdownDiff={summarySuggestion.markdown_diff} />
+            ) : (
+              // No diff available - show side-by-side comparison
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                  Original:
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {summarySuggestion.original_text}
+                </Typography>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                  Suggested:
+                </Typography>
+                <Typography variant="body2">
+                  {summarySuggestion.suggested_text}
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
           {summarySuggestion.key_changes &&
             summarySuggestion.key_changes.length > 0 && (

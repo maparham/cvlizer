@@ -32,6 +32,7 @@ import {
 } from "../../../contexts/CVEditorContext";
 import { useInlineDrafts } from "../../../hooks/useInlineDrafts";
 import InlineDraftSection from "../ai/InlineDraftSection";
+import { ValidationErrorBanner } from "../ValidationErrorBanner";
 
 interface CVContentAreaProps {
   cvId?: string;
@@ -39,7 +40,7 @@ interface CVContentAreaProps {
 
 const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   // Get data from context instead of props
-  const { cvData, onUpdateCV, onSave } = useCVEditor();
+  const { cvData, onUpdateCV, onSave, validationErrors } = useCVEditor();
   const { sections } = useCVEditorControls();
   const { editing, changes } = useCVEditorState();
 
@@ -469,7 +470,17 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   };
 
   return (
-    <Box sx={{ flex: 1, overflow: "auto", bgcolor: "#f5f5f5", p: 2 }}>
+    <Box
+      data-scrollable-container
+      sx={{ flex: 1, overflow: "auto", bgcolor: "#f5f5f5", p: 2 }}
+    >
+      {/* Validation Error Banner */}
+      {validationErrors.length > 0 && (
+        <Box sx={{ maxWidth: "210mm", margin: "0 auto", mb: 2 }}>
+          <ValidationErrorBanner validationErrors={validationErrors} />
+        </Box>
+      )}
+
       <Paper
         id="cv-print-page"
         sx={{

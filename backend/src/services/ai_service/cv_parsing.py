@@ -214,6 +214,55 @@ Return JSON (omit empty sections):
         return fallback
 
 
+def _has_meaningful_array_items(section_data: list, section_type: str) -> bool:
+    """Check if array section has at least one item with meaningful content."""
+    if not section_data or len(section_data) == 0:
+        return False
+
+    for item in section_data:
+        if not isinstance(item, dict):
+            continue
+
+        # Define required fields for each section type
+        if section_type == "projects":
+            name = item.get("name", "").strip()
+            description = item.get("description", "").strip()
+            if name or description:
+                return True
+        elif section_type == "publications":
+            title = item.get("title", "").strip()
+            authors = item.get("authors", "").strip()
+            if title or authors:
+                return True
+        elif section_type == "work_experience":
+            company = item.get("company", "").strip()
+            position = item.get("position", "").strip()
+            if company or position:
+                return True
+        elif section_type == "education":
+            institution = item.get("institution", "").strip()
+            degree = item.get("degree", "").strip()
+            if institution or degree:
+                return True
+        elif section_type == "certifications":
+            name = item.get("name", "").strip()
+            issuer = item.get("issuer", "").strip()
+            if name or issuer:
+                return True
+        elif section_type == "awards":
+            name = item.get("name", "").strip()
+            issuer = item.get("issuer", "").strip()
+            if name or issuer:
+                return True
+        elif section_type == "volunteer_experience":
+            organization = item.get("organization", "").strip()
+            role = item.get("role", "").strip()
+            if organization or role:
+                return True
+
+    return False
+
+
 def _add_section_config(parsed_content: dict) -> dict:
     """
     Add section_config to parsed CV content based on available sections.
@@ -324,7 +373,7 @@ def _add_section_config(parsed_content: dict) -> dict:
             "publications",
             "volunteer_experience",
         ]:
-            return bool(section_data and len(section_data) > 0)
+            return _has_meaningful_array_items(section_data, section_type)
 
         return False
 

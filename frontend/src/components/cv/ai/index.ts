@@ -17,3 +17,7 @@ export { default as JobDescriptionStatusDialog } from "./JobDescriptionStatusDia
 export { default as DraftSection } from "./DraftSection";
 export { default as DraftsList } from "./DraftsList";
 export { default as InlineDraftSection } from "./InlineDraftSection";
+
+// AI diff components
+export { default as SemanticDiff } from "./SemanticDiff";
+// Note: InlineDiff is kept for backward compatibility with other features (SuggestionHighlight)

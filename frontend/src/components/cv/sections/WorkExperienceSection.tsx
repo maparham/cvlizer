@@ -10,7 +10,7 @@
  * - AI-generated description improvement suggestions
  */
 import React, { useCallback, useMemo } from "react";
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from "@mui/material";
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Chip, Tooltip } from "@mui/material";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
 import { FormField } from "../core/formUtils";
@@ -140,10 +140,17 @@ const WorkExperienceDisplay: React.FC<{
 }> = ({ exp, index: _index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
   const suggestion = suggestionsByItemId.get(exp.id);
 
+  // Helper function to get score color
+  const getContentScoreColor = (score: number): "success" | "warning" | "error" => {
+    if (score >= 80) return "success";
+    if (score >= 60) return "warning";
+    return "error";
+  };
+
   return (
     <>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5, pr: 10 }}>
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1 }}>
           <ValidatedDisplay
             validation={validation.position}
             variant="subtitle1"
@@ -151,6 +158,19 @@ const WorkExperienceDisplay: React.FC<{
           >
             {exp.position || "Position Title"}
           </ValidatedDisplay>
+          {/* Display score for all items */}
+          {suggestion && (
+            <Tooltip
+              title="Quality score (0-100) based on how well the story is told and confidence of presentation"
+            >
+              <Chip
+                label={`${suggestion.current_content_score}/100`}
+                color={getContentScoreColor(suggestion.current_content_score)}
+                size="small"
+                variant="filled"
+              />
+            </Tooltip>
+          )}
         </Box>
         <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
           <ValidatedDisplay
@@ -188,11 +208,11 @@ const WorkExperienceDisplay: React.FC<{
           Job description...
         </Typography>
       )}
-      {/* AI Suggestion */}
-      {suggestion && (
+      {/* AI Suggestion - only show full suggestion UI if suggested text exists */}
+      {suggestion && suggestion.suggested && (
         <ItemDescriptionSuggestion
           suggestion={suggestion}
-          onApply={() => handleApplySuggestion(exp.id, suggestion.suggested)}
+          onApply={() => handleApplySuggestion(exp.id, suggestion.suggested!)}
           onDiscard={() => handleDiscardSuggestion(exp.id)}
         />
       )}
@@ -230,6 +250,11 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
     return allSuggestions?.work_experience || [];
   }, [allSuggestions]);
 
+  // Filter to only visible suggestions (those with suggested text)
+  const visibleSuggestions = useMemo(() => {
+    return workExperienceSuggestions.filter((s) => s.suggested);
+  }, [workExperienceSuggestions]);
+
   // Map suggestions by item ID for quick lookup
   const suggestionsByItemId = useMemo(() => {
     const map = new Map();
@@ -239,7 +264,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
     return map;
   }, [workExperienceSuggestions]);
 
-  const hasSuggestions = workExperienceSuggestions.length > 0;
+  const hasSuggestions = visibleSuggestions.length > 0;
 
   const createNewExperience = (): WorkExperience => ({
     id: generateSectionId("work_experience"),
@@ -381,7 +406,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
               },
             }}
           >
-            Discard All Suggestions ({workExperienceSuggestions.length})
+            Discard All Suggestions ({visibleSuggestions.length})
           </Button>
         </Box>
       )}
@@ -394,7 +419,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
         <DialogTitle>Discard All Suggestions?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to discard all {workExperienceSuggestions.length} AI suggestions for this section?
+            Are you sure you want to discard all {visibleSuggestions.length} AI suggestions for this section?
             This action cannot be undone.
           </DialogContentText>
         </DialogContent>

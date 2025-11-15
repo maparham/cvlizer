@@ -10,6 +10,8 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
+  Chip,
+  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { SectionProps } from "../../../types";
@@ -312,6 +314,13 @@ const EducationDisplay: React.FC<{
 }> = ({ edu, index: _index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
   const suggestion = suggestionsByItemId.get(edu.id);
 
+  // Helper function to get score color
+  const getContentScoreColor = (score: number): "success" | "warning" | "error" => {
+    if (score >= 80) return "success";
+    if (score >= 60) return "warning";
+    return "error";
+  };
+
   return (
     <>
       <Box
@@ -323,7 +332,7 @@ const EducationDisplay: React.FC<{
           pr: 10,
         }}
       >
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1 }}>
           <ValidatedDisplay
             validation={validation.degree}
             variant="subtitle1"
@@ -333,6 +342,19 @@ const EducationDisplay: React.FC<{
             {edu.field_of_study && ` in ${edu.field_of_study}`}
             {edu.academic_degree && ` (${edu.academic_degree})`}
           </ValidatedDisplay>
+          {/* Display score for all items */}
+          {suggestion && (
+            <Tooltip
+              title="Quality score (0-100) based on how well the story is told and confidence of presentation"
+            >
+              <Chip
+                label={`${suggestion.current_content_score}/100`}
+                color={getContentScoreColor(suggestion.current_content_score)}
+                size="small"
+                variant="filled"
+              />
+            </Tooltip>
+          )}
         </Box>
         <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
           <ValidatedDisplay
@@ -400,11 +422,11 @@ const EducationDisplay: React.FC<{
           </ul>
         </Box>
       )}
-      {/* AI Suggestion */}
-      {suggestion && (
+      {/* AI Suggestion - only show full suggestion UI if suggested text exists */}
+      {suggestion && suggestion.suggested && (
         <ItemDescriptionSuggestion
           suggestion={suggestion}
-          onApply={() => handleApplySuggestion(edu.id, suggestion.suggested)}
+          onApply={() => handleApplySuggestion(edu.id, suggestion.suggested!)}
           onDiscard={() => handleDiscardSuggestion(edu.id)}
         />
       )}
@@ -440,6 +462,11 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
     return allSuggestions?.education || [];
   }, [allSuggestions]);
 
+  // Filter to only visible suggestions (those with suggested text)
+  const visibleSuggestions = useMemo(() => {
+    return educationSuggestions.filter((s) => s.suggested);
+  }, [educationSuggestions]);
+
   // Map suggestions by item ID for quick lookup
   const suggestionsByItemId = useMemo(() => {
     const map = new Map();
@@ -449,7 +476,7 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
     return map;
   }, [educationSuggestions]);
 
-  const hasSuggestions = educationSuggestions.length > 0;
+  const hasSuggestions = visibleSuggestions.length > 0;
 
   const createNewEducation = (): Education => ({
     id: generateSectionId("education"),
@@ -593,7 +620,7 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
               },
             }}
           >
-            Discard All Suggestions ({educationSuggestions.length})
+            Discard All Suggestions ({visibleSuggestions.length})
           </Button>
         </Box>
       )}
@@ -606,7 +633,7 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
         <DialogTitle>Discard All Suggestions?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to discard all {educationSuggestions.length}{" "}
+            Are you sure you want to discard all {visibleSuggestions.length}{" "}
             AI suggestions for this section? This action cannot be undone.
           </DialogContentText>
         </DialogContent>

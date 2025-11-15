@@ -19,6 +19,7 @@ export const SaveWithValidationErrors: React.FC<
   useEffect(() => {
     const handleSaveError = (event: CustomEvent) => {
       const error = event.detail;
+
       let validationErrors: ReturnType<typeof parseValidationErrors> = [];
 
       // Check if this is a 422 validation error with array format
@@ -44,21 +45,11 @@ export const SaveWithValidationErrors: React.FC<
       }
 
       if (validationErrors.length > 0) {
-        console.log("[SaveWithValidationErrors] Setting validation errors from save error", {
-          errorStatus: error?.response?.status,
-          totalErrors: validationErrors.length,
-          errorsBySection: validationErrors.reduce((acc, err) => {
-            acc[err.section] = (acc[err.section] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>),
-          allErrors: validationErrors,
-        });
         setValidationErrors(validationErrors);
 
         // Scroll to first error field/item (accounting for header height)
         const firstError = validationErrors.find(e => e.section !== "general");
         if (firstError) {
-          console.log("[SaveWithValidationErrors] Scrolling to first error", { error: firstError });
           setTimeout(() => {
             const sectionElement = document.querySelector(`[data-section="${firstError.section}"]`);
             if (sectionElement) {
@@ -86,26 +77,9 @@ export const SaveWithValidationErrors: React.FC<
                 top: offsetPosition,
                 behavior: "smooth",
               });
-
-              console.log("[SaveWithValidationErrors] Successfully scrolled to element", {
-                section: firstError.section,
-                itemIndex: firstError.itemIndex,
-                field: firstError.field,
-              });
-            } else {
-              console.warn("[SaveWithValidationErrors] Could not find section element", {
-                section: firstError.section,
-                selector: `[data-section="${firstError.section}"]`,
-              });
             }
           }, 500); // Delay to ensure DOM is updated
         }
-      } else {
-        console.log("[SaveWithValidationErrors] No validation errors found in save error", {
-          errorStatus: error?.response?.status,
-          errorMessage: error?.message,
-          responseData: error?.response?.data,
-        });
       }
     };
 

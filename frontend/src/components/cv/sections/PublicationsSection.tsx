@@ -2,9 +2,9 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
-import { FormField, DateFieldComponent } from '../core/formUtils'
+import { FormField } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
-import { useFieldValidation } from '../../../hooks/useFieldValidation'
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
 
 interface Publication {
   id: string
@@ -22,15 +22,12 @@ const PublicationForm: React.FC<{
   updatePublication: (field: keyof Publication, value: any) => void
   onSave?: () => void
 }> = ({ publication, index, updatePublication, onSave }) => {
-  // Get validation errors for this publication item
-  const titleValidation = useFieldValidation('publications', index, 'title')
-  const authorsValidation = useFieldValidation('publications', index, 'authors')
-  const journalValidation = useFieldValidation('publications', index, 'journal')
-  const dateValidation = useFieldValidation('publications', index, 'date')
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <FormField
+      <ValidatedFormField
+        section="publications"
+        field="title"
+        index={index}
         config={{
           name: 'title',
           label: 'Publication Title',
@@ -40,10 +37,11 @@ const PublicationForm: React.FC<{
         value={publication.title}
         onChange={(value) => updatePublication('title', value)}
         onSave={onSave}
-        error={titleValidation.hasError}
-        helperText={titleValidation.errorMessage}
       />
-      <FormField
+      <ValidatedFormField
+        section="publications"
+        field="authors"
+        index={index}
         config={{
           name: 'authors',
           label: 'Authors',
@@ -53,10 +51,11 @@ const PublicationForm: React.FC<{
         value={publication.authors}
         onChange={(value) => updatePublication('authors', value)}
         onSave={onSave}
-        error={authorsValidation.hasError}
-        helperText={authorsValidation.errorMessage}
       />
-      <FormField
+      <ValidatedFormField
+        section="publications"
+        field="journal"
+        index={index}
         config={{
           name: 'journal',
           label: 'Journal/Conference',
@@ -66,10 +65,11 @@ const PublicationForm: React.FC<{
         value={publication.journal}
         onChange={(value) => updatePublication('journal', value)}
         onSave={onSave}
-        error={journalValidation.hasError}
-        helperText={journalValidation.errorMessage}
       />
-      <DateFieldComponent
+      <ValidatedDateField
+        section="publications"
+        field="date"
+        index={index}
         config={{
           name: 'date',
           label: 'Publication Date',
@@ -78,8 +78,6 @@ const PublicationForm: React.FC<{
         value={publication.date}
         onChange={(value) => updatePublication('date', value)}
         onSave={onSave}
-        error={dateValidation.hasError}
-        helperText={dateValidation.errorMessage}
       />
       <FormField
         config={{
@@ -95,6 +93,67 @@ const PublicationForm: React.FC<{
     </Box>
   )
 }
+
+// Pure display component (no hooks - validation passed as props)
+const PublicationDisplay: React.FC<{
+  publication: Publication;
+  index: number;
+  validation: {
+    title: { hasError: boolean; errorMessage?: string };
+    authors: { hasError: boolean; errorMessage?: string };
+    journal: { hasError: boolean; errorMessage?: string };
+    date: { hasError: boolean; errorMessage?: string };
+  };
+}> = ({ publication, index: _index, validation }) => {
+  return (
+    <>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
+        <Box sx={{ flex: 1 }}>
+          <ValidatedDisplay
+            validation={validation.title}
+            variant="subtitle1"
+            normalColor="#333"
+          >
+            📄 {publication.title}
+          </ValidatedDisplay>
+        </Box>
+        <Box sx={{ flexShrink: 0, ml: 2 }}>
+          <ValidatedDisplay
+            validation={validation.date}
+            variant="body2"
+            normalColor="#666"
+          >
+            {publication.date}
+          </ValidatedDisplay>
+        </Box>
+      </Box>
+      <Box sx={{ mb: 1 }}>
+        <ValidatedDisplay
+          validation={validation.authors}
+          variant="body2"
+          normalColor="#666"
+        >
+          {publication.authors}
+        </ValidatedDisplay>
+        {!validation.authors.hasError && !validation.journal.hasError && ' • '}
+        <ValidatedDisplay
+          validation={validation.journal}
+          variant="body2"
+          normalColor="#666"
+        >
+          {publication.journal}
+        </ValidatedDisplay>
+      </Box>
+      {publication.url && (
+        <Typography variant="body2" color="primary">
+          🔗 <a href={publication.url} target="_blank" rel="noopener noreferrer">
+            View Publication
+          </a>
+        </Typography>
+      )}
+    </>
+  );
+};
 
 const PublicationsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Publications', onTitleSave, cvId, sectionType }) => {
   const createNewPublication = (): Publication => ({
@@ -117,28 +176,15 @@ const PublicationsSection: React.FC<SectionProps & { sectionType?: string }> = (
     )
   }
 
-  const renderPublicationDisplay = (publication: Publication, _index: number) => (
-    <>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5, pr: 10 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#333' }}>
-          📄 {publication.title}
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
-          {publication.date}
-        </Typography>
-      </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {publication.authors} • {publication.journal}
-      </Typography>
-      {publication.url && (
-        <Typography variant="body2" color="primary">
-          🔗 <a href={publication.url} target="_blank" rel="noopener noreferrer">
-            View Publication
-          </a>
-        </Typography>
-      )}
-    </>
-  )
+  const renderPublicationDisplay = (publication: Publication, index: number) => {
+    // Wrapper component to use hooks
+    const PublicationDisplayWrapper: React.FC<{ publication: Publication; index: number }> = ({ publication, index }) => {
+      const validation = useItemValidation('publications', index, ['title', 'authors', 'journal', 'date']);
+      return <PublicationDisplay publication={publication} index={index} validation={validation} />;
+    };
+
+    return <PublicationDisplayWrapper publication={publication} index={index} />;
+  }
 
   return (
     <IndividualItemSection
@@ -169,10 +215,4 @@ const PublicationsSection: React.FC<SectionProps & { sectionType?: string }> = (
   )
 }
 
-// Memoize to prevent unnecessary re-renders of publication items
-export default React.memo(PublicationsSection, (prevProps, nextProps) => {
-  return (
-    prevProps.data === nextProps.data &&
-    prevProps.isEditing === nextProps.isEditing
-  );
-});
+export default PublicationsSection

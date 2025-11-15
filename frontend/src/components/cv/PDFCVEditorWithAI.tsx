@@ -41,7 +41,7 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const { cvData, onUpdateCV, onSave } = useCVEditor();
+  const { cvData, onUpdateCV, onSave, validationErrors } = useCVEditor();
   // const jobDescriptions = useJobDescriptions(); // Unused variable removed
   const activeJobDescription = useActiveJobDescription();
   const { generateInlineSuggestions, applyAllSuggestions } = useAIStore();
@@ -113,7 +113,8 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
   const canGenerateSuggestions = !!(
     cvId &&
     activeJobDescription &&
-    !isGenerating
+    !isGenerating &&
+    validationErrors.length === 0
   );
 
   return (
@@ -129,6 +130,8 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
               ? "Save CV first to enable AI suggestions"
               : !activeJobDescription
                 ? "Select a job description to generate targeted suggestions"
+              : validationErrors.length > 0
+                ? "Please fix validation errors before generating AI suggestions"
                 : "Generate AI suggestions"
           }
           placement="left"

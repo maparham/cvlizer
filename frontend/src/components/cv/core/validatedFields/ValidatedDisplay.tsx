@@ -93,6 +93,7 @@ export const ValidatedDisplay: React.FC<ValidatedDisplayProps> = ({
     <>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', justifyContent, ...sx }}>
         <Typography
+          component="div"
           variant={variant}
           sx={{
             color: validation.hasError ? errorColor : getDefaultColor(),

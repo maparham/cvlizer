@@ -210,30 +210,45 @@ class ProfessionalSummarySuggestionSchema(BaseModel):
     suggested_text: str = Field(default="")
     original_text: str = Field(default="")
     key_changes: List[str] = Field(default_factory=list)
+    markdown_diff: str = Field(
+        default="",
+        description="Markdown-formatted diff showing changes: ~~strikethrough~~ for removed text, **bold** for added text",
+    )
 
 
 class ItemDescriptionSuggestionSchema(BaseModel):
-    """Schema for individual item description suggestion (work experience or education)."""
+    """Schema for individual item description suggestion (work experience or education).
+
+    For items with score < 50: includes all fields with suggestion details.
+    For items with score >= 50: includes only id and current_content_score (suggestion fields are optional).
+    """
 
     id: str = Field(min_length=1, description="Item ID from CV data")
-    original: str = Field(default="", description="Original description text")
-    suggested: str = Field(
-        min_length=1,
-        description="Suggested improved description (MUST match original format: bullets→bullets, paragraph→paragraph)",
-    )
-    reasoning: str = Field(
-        min_length=1,
-        description="Reasoning for the improvement and its relevance to target job",
-    )
-    importance: str = Field(
-        pattern="^(highly_recommended|standard)$",
-        description="Importance level: 'highly_recommended' for high-impact changes, 'standard' for moderate improvements",
-    )
     current_content_score: int = Field(
         ge=0,
         le=100,
-        default=50,
         description="Evaluation score for current content quality (0-100) w.r.t. the job description",
+    )
+    original: Optional[str] = Field(
+        default="",
+        description="Original description text (required for items with suggestions)",
+    )
+    suggested: Optional[str] = Field(
+        default=None,
+        description="Suggested improved description (MUST match original format: bullets→bullets, paragraph→paragraph). Only present for items with score < 50.",
+    )
+    reasoning: Optional[str] = Field(
+        default=None,
+        description="Reasoning for the improvement and its relevance to target job. Only present for items with score < 50.",
+    )
+    importance: Optional[str] = Field(
+        default=None,
+        pattern="^(highly_recommended|standard)$",
+        description="Importance level: 'highly_recommended' for high-impact changes, 'standard' for moderate improvements. Only present for items with score < 50.",
+    )
+    markdown_diff: Optional[str] = Field(
+        default="",
+        description="Markdown-formatted diff showing changes: ~~strikethrough~~ for removed text, **bold** for added text. Only present for items with score < 50.",
     )
 
 

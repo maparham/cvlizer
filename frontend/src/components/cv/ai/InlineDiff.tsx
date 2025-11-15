@@ -12,6 +12,10 @@
  * Usage:
  * - Pass original and suggested text content
  * - Component automatically computes and renders the diff
+ *
+ * NOTE: This component is deprecated for AI suggestions. Use SemanticDiff instead.
+ * This component is kept for backward compatibility with SuggestionHighlight and other
+ * inline diff features that use algorithmic word-level diffs.
  */
 
 import React from "react";

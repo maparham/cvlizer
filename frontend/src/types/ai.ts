@@ -181,15 +181,17 @@ export interface ProfessionalSummarySuggestion {
   suggested_text: string;
   original_text: string;
   key_changes: string[];
+  markdown_diff?: string;
 }
 
 export interface ItemDescriptionSuggestion {
   id: string; // item ID from CV
-  original: string;
-  suggested: string;
-  reasoning: string;
-  importance: 'highly_recommended' | 'standard';
-  current_content_score: number;
+  current_content_score: number; // Always present
+  original?: string; // Only present for items with suggestions (score < 50)
+  suggested?: string; // Only present for items with suggestions (score < 50)
+  reasoning?: string; // Only present for items with suggestions (score < 50)
+  importance?: 'highly_recommended' | 'standard'; // Only present for items with suggestions (score < 50)
+  markdown_diff?: string; // Only present for items with suggestions (score < 50)
 }
 
 export interface AllSuggestionsResponse {

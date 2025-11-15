@@ -14,6 +14,7 @@ import {
   Tooltip,
   ToggleButton,
   ToggleButtonGroup,
+  Chip,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -24,7 +25,8 @@ import {
 } from "@mui/icons-material";
 import { ItemDescriptionSuggestion as ItemDescriptionSuggestionType } from "../../../types/ai";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
-import { InlineDiff } from "./InlineDiff";
+import SemanticDiff from "./SemanticDiff";
+import { Divider } from "@mui/material";
 
 interface ItemDescriptionSuggestionProps {
   suggestion: ItemDescriptionSuggestionType;
@@ -50,6 +52,12 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
     }
   };
 
+  const getContentScoreColor = (score: number): "success" | "warning" | "error" => {
+    if (score >= 80) return "success";
+    if (score >= 60) return "warning";
+    return "error";
+  };
+
   return (
     <Box
       sx={{
@@ -60,7 +68,7 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
         borderRadius: 1,
       }}
     >
-      <Box display="flex" alignItems="center" mb={1}>
+      <Box display="flex" alignItems="center" mb={1} flexWrap="wrap" gap={1}>
         <Typography
           variant="subtitle2"
           sx={{ fontWeight: "bold", color: "#1976d2" }}
@@ -70,12 +78,24 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
         <Tooltip title="This content needs more relevance to the job description. See suggestions below.">
           <InfoIcon sx={{ ml: 1, fontSize: 16, color: "#1976d2" }} />
         </Tooltip>
+        {/* Content Quality Score */}
+        <Tooltip
+          title="Quality score (0-100) based on how well the story is told and confidence of presentation"
+        >
+          <Chip
+            label={`Score: ${suggestion.current_content_score}/100`}
+            color={getContentScoreColor(suggestion.current_content_score)}
+            size="small"
+            variant="filled"
+            sx={{ ml: 1 }}
+          />
+        </Tooltip>
         <ToggleButtonGroup
           value={viewMode}
           exclusive
           onChange={handleViewModeChange}
           size="small"
-          sx={{ ml: 2 }}
+          sx={{ ml: "auto" }}
         >
           <Tooltip title="Show diff view with highlighted changes">
             <ToggleButton value="diff" aria-label="diff view">
@@ -91,7 +111,7 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
         <IconButton
           size="small"
           onClick={onDiscard}
-          sx={{ ml: "auto", color: "#666" }}
+          sx={{ color: "#666" }}
           disabled={isLoading}
         >
           <CloseIcon fontSize="small" />
@@ -110,15 +130,24 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
           }}
         >
           {viewMode === "diff" ? (
-            <InlineDiff
-              original={suggestion.original}
-              suggested={suggestion.suggested}
-            />
+            suggestion.markdown_diff && suggestion.markdown_diff.trim() !== "" ? (
+              <SemanticDiff markdownDiff={suggestion.markdown_diff} />
+            ) : (
+              // No diff available - show side-by-side comparison
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                  Original:
+                </Typography>
+                <MarkdownRenderer content={suggestion.original} variant="body2" />
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                  Suggested:
+                </Typography>
+                <MarkdownRenderer content={suggestion.suggested} variant="body2" />
+              </Box>
+            )
           ) : (
-            <MarkdownRenderer
-              content={suggestion.suggested}
-              variant="body2"
-            />
+            <MarkdownRenderer content={suggestion.suggested} variant="body2" />
           )}
         </Box>
       </Box>

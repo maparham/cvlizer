@@ -8,6 +8,29 @@
 import { ValidationError } from "./types";
 
 /**
+ * Normalize field names extracted from human-readable error messages
+ * Only used when field name comes from message text, not from Pydantic loc arrays
+ * Maps human-readable field names to actual frontend field names
+ */
+function normalizeFieldName(section: string, field: string): string {
+  // Handle Publications section field name mismatches from message text
+  if (section === "publications") {
+    // Message says "Journal/Conference" but field is "journal"
+    if (field === "journal/conference" || field === "journal_conference") {
+      return "journal";
+    }
+  }
+
+  // Handle other potential mismatches from message text
+  // "Start date" -> "start_date", "End date" -> "end_date", etc.
+  if (field.includes(" ")) {
+    return field.replace(/\s+/g, "_");
+  }
+
+  return field;
+}
+
+/**
  * Extract field name from validation message
  */
 function extractFieldFromMessage(message: string): string {
@@ -16,11 +39,13 @@ function extractFieldFromMessage(message: string): string {
     .toLowerCase()
     .match(/^(\w+(?:\s+\w+)*)\s+(?:is|are)\s+/);
   if (fieldMatch) {
-    return fieldMatch[1].replace(" ", "_"); // Convert "start date" to "start_date"
+    const extracted = fieldMatch[1].replace(/\s+/g, "_");
+    return extracted; // Convert "start date" to "start_date"
   }
 
-  // Fallback: return first word
-  return message.split(" ")[0].toLowerCase();
+  // Fallback: return first word (may contain special chars like /)
+  const fallback = message.split(" ")[0].toLowerCase();
+  return fallback;
 }
 
 /**
@@ -74,7 +99,9 @@ export const parseValidationErrors = (
       const [, sectionName, itemIndex, message] = sectionMatch;
       // Normalize section name to snake_case (e.g., "Work experience" -> "work_experience")
       const section = normalizeSectionName(sectionName.trim().toLowerCase().replace(/\s+/g, '_'));
-      const field = extractFieldFromMessage(message);
+      let field = extractFieldFromMessage(message);
+      // Normalize field name to match frontend field names
+      field = normalizeFieldName(section, field);
 
       const error = {
         section,
@@ -148,26 +175,20 @@ export const parsePydanticValidationErrors = (
       const index = typeof secondPart === "number" ? secondPart : parseInt(String(secondPart));
 
       if (!isNaN(index) && index >= 0) {
-        // Second element is an index
+        // Second element is an index (e.g., ["publications", 0, "journal"])
         itemIndex = index;
         field = path.length > 2 ? String(path[2]) : undefined;
       } else {
-        // Second element is a field name
+        // Second element is a field name (e.g., ["personal_info", "email"])
         field = String(secondPart);
       }
     }
 
-    // Extract field name from message if not provided
-    if (!field && msg.toLowerCase().includes("required")) {
-      const fieldMatch = msg.match(/^(\w+(?:\s+\w+)*)\s+(?:is|are)\s+/i);
-      if (fieldMatch) {
-        field = fieldMatch[1].replace(/\s+/g, "_").toLowerCase();
-      }
-    }
-
-    // Clean up field name (convert to snake_case)
+    // Pydantic always provides field paths in loc array
+    // Field names from loc match schema field names, so we trust them directly
     if (field) {
-      field = field.replace(/\s+/g, "_").toLowerCase();
+      // Normalize to lowercase (schema uses snake_case, frontend uses lowercase)
+      field = field.toLowerCase();
     }
 
     errors.push({

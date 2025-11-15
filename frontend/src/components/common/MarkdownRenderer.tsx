@@ -20,6 +20,7 @@
 
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Typography, Link, Box } from "@mui/material";
 import { SxProps, Theme } from "@mui/material/styles";
 
@@ -29,6 +30,7 @@ interface MarkdownRendererProps {
   color?: string;
   lineClamp?: number;
   sx?: SxProps<Theme>;
+  diffMode?: boolean; // Enable diff-specific styling for strikethrough and bold
 }
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
@@ -37,6 +39,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   color = "text.secondary",
   lineClamp,
   sx = {},
+  diffMode = false,
 }) => {
   if (!content) {
     return null;
@@ -57,6 +60,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   return (
     <Box sx={wrapperSx}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           // Headings
           h1: ({ children }) => (
@@ -153,7 +157,25 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
           // Strong/Bold
           strong: ({ children }) => (
-            <Typography component="span" sx={{ fontWeight: 700, color }}>
+            <Typography
+              component="span"
+              sx={
+                diffMode
+                  ? {
+                      // Diff mode: added text styling
+                      backgroundColor: "#e8f5e9",
+                      color: "#2e7d32",
+                      fontWeight: 500,
+                      padding: "2px 4px",
+                      borderRadius: "2px",
+                    }
+                  : {
+                      // Normal mode: standard bold
+                      fontWeight: 700,
+                      color,
+                    }
+              }
+            >
               {children}
             </Typography>
           ),
@@ -161,6 +183,31 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           // Emphasis/Italic
           em: ({ children }) => (
             <Typography component="span" sx={{ fontStyle: "italic", color }}>
+              {children}
+            </Typography>
+          ),
+
+          // Strikethrough/Deleted text (only styled in diff mode)
+          del: ({ children }) => (
+            <Typography
+              component="span"
+              sx={
+                diffMode
+                  ? {
+                      // Diff mode: removed text styling
+                      backgroundColor: "#ffebee",
+                      color: "#c62828",
+                      textDecoration: "line-through",
+                      padding: "2px 4px",
+                      borderRadius: "2px",
+                    }
+                  : {
+                      // Normal mode: standard strikethrough
+                      textDecoration: "line-through",
+                      color,
+                    }
+              }
+            >
               {children}
             </Typography>
           ),

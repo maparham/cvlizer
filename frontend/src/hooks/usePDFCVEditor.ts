@@ -80,21 +80,11 @@ export const usePDFCVEditor = ({
     [],
   );
 
-  // Wrapped setValidationErrors with debug logging
   const setValidationErrors = useCallback((errors: ValidationError[]) => {
-    console.log("[usePDFCVEditor] setValidationErrors called", {
-      errorCount: errors.length,
-      errorsBySection: errors.reduce((acc, err) => {
-        acc[err.section] = (acc[err.section] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      allErrors: errors,
-    });
     setValidationErrorsState(errors);
   }, []);
 
   const clearValidationErrors = useCallback(() => {
-    console.log("[usePDFCVEditor] clearValidationErrors called");
     setValidationErrorsState([]);
   }, []);
 
