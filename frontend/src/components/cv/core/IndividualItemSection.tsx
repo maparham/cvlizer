@@ -674,7 +674,7 @@ function IndividualItemSection<T>({
         onClose={() => setDeleteConfirmation({ open: false, index: null })}
         onConfirm={handleConfirmDelete}
         title={`Delete ${getSingularTitle(title)}?`}
-        message={`Are you sure you want to delete this ${getSingularTitle(title).toLowerCase()}?`}
+        message={`Delete this ${getSingularTitle(title).toLowerCase()}?`}
         confirmButtonText="Delete"
         confirmButtonColor="error"
         severity="error"

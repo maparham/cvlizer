@@ -136,7 +136,7 @@ export const DeleteAccountButton: React.FC<DeleteAccountButtonProps> = ({
                 <strong>This action cannot be undone!</strong>
               </Typography>
               <Typography variant="body2">
-                Deleting your account will permanently remove:
+                Deleting your account will remove:
               </Typography>
             </Alert>
 

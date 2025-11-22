@@ -121,7 +121,7 @@ const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
         </DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete "{cvToDelete?.original_filename}"? This action cannot be undone.
+            Delete "{cvToDelete?.original_filename}"?
           </Typography>
         </DialogContent>
         <DialogActions>

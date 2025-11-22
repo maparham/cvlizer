@@ -125,7 +125,8 @@ export const useAITaskPolling = (
         }
 
         if (!updatedTaskData.is_generating) {
-          // Task completed
+          // Task completed - check if it completed with an error
+          const hasError = !!updatedTaskData.generation_error;
           const completedTask = {
             ...task,
             isGenerating: false,
@@ -133,7 +134,17 @@ export const useAITaskPolling = (
             generationError: updatedTaskData.generation_error,
           };
           newActiveTasks.set(task.id, completedTask);
-          onTaskCompleteRef.current?.(completedTask);
+
+          if (hasError) {
+            // Task failed - trigger error handling
+            const errorMessage =
+              updatedTaskData.generation_error || "AI task failed";
+            onTaskErrorRef.current?.(completedTask, errorMessage);
+            showErrorRef.current("AI Task Failed", errorMessage);
+          } else {
+            // Task completed successfully
+            onTaskCompleteRef.current?.(completedTask);
+          }
         } else {
           // Task still generating
           newActiveTasks.set(task.id, {
@@ -149,18 +160,37 @@ export const useAITaskPolling = (
           taskType: task.type,
           error: error.message,
         });
-        const errorMessage = error.error || error.message || "Unknown error";
-        const failedTask = {
-          ...task,
-          isGenerating: false,
-          generationError: errorMessage,
-        };
-        newActiveTasks.set(task.id, failedTask);
-        onTaskErrorRef.current?.(failedTask, errorMessage);
-        showErrorRef.current(
-          "AI Task Failed",
-          `Task ${task.id} failed: ${errorMessage}`,
-        );
+
+        // Detect network/connection errors
+        const isNetworkError =
+          error.message === "Network Error" ||
+          error.code === "ERR_NETWORK" ||
+          error.code === "ECONNREFUSED" ||
+          error.message?.includes("ERR_CONNECTION_REFUSED") ||
+          error.message?.includes("Failed to fetch");
+
+        if (isNetworkError) {
+          // For network errors, keep task as generating so we can retry when backend comes back
+          // The backend will have cancelled the task on startup, so next successful poll will show the cancellation error
+          newActiveTasks.set(task.id, {
+            ...task,
+            // Keep isGenerating as true so polling continues
+            data: task.data,
+          });
+          anyTaskStillGenerating = true; // Keep polling active
+          // Don't show error notification yet - wait for backend to come back and show the actual cancellation error
+        } else {
+          // For non-network errors, mark task as failed
+          const errorMessage = error.error || error.message || "Unknown error";
+          const failedTask = {
+            ...task,
+            isGenerating: false,
+            generationError: errorMessage,
+          };
+          newActiveTasks.set(task.id, failedTask);
+          onTaskErrorRef.current?.(failedTask, errorMessage);
+          showErrorRef.current("AI Task Failed", errorMessage);
+        }
       }
     }
 

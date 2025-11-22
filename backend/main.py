@@ -41,7 +41,11 @@ from src.middleware.rate_limit_user import RateLimitUserMiddleware
 from src.utils.rate_limit import create_combined_limiter
 
 # Import services for startup cleanup
-from src.services.cleanup_service import start_cleanup_service, stop_cleanup_service
+from src.services.cleanup_service import (
+    cancel_running_ai_tasks_on_startup,
+    start_cleanup_service,
+    stop_cleanup_service,
+)
 
 # Logging setup
 from src.utils.logging_setup import setup_logging
@@ -183,6 +187,10 @@ async def startup_event():
             logger.info(f"Database connection pool status: {pool_status}")
         except Exception as pool_error:
             logger.warning(f"Could not retrieve pool status: {pool_error}")
+
+        # Cancel all running AI tasks on startup (connections lost during restart)
+        cancel_running_ai_tasks_on_startup()
+
     except Exception as e:
         logger.warning(f"Database initialization check failed: {e}")
 

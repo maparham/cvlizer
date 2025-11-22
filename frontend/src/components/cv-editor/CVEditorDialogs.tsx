@@ -41,8 +41,7 @@ export const CVEditorDialogs: React.FC<CVEditorDialogsProps> = ({
       </DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Are you sure you want to delete "{activeCV?.original_filename}"?
-          This action cannot be undone.
+          Delete "{activeCV?.original_filename}"?
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 1 }}>

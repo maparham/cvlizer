@@ -135,6 +135,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const setSuggestionsLoadingRef = useRef(setSuggestionsLoading);
   // Track tasks we've already shown completion toast for
   const completedTasksRef = useRef<Set<string>>(new Set());
+  // Track tasks we've already shown error notification for
+  const errorTasksRef = useRef<Set<string>>(new Set());
 
   // Sync refs with latest values
   useEffect(() => {
@@ -308,6 +310,11 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         if (task.generationError) {
           // Clear loading state on error
           setSuggestionsLoadingRef.current(false);
+          // Show error notification (only once per task)
+          if (!errorTasksRef.current.has(taskId)) {
+            showError("AI Task Failed", task.generationError);
+            errorTasksRef.current.add(taskId);
+          }
         } else {
           // Task completed successfully
           // Use task.data directly since allSuggestionsRef might not be updated yet
@@ -432,8 +439,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
       (allSuggestions.skills?.technical?.length || 0) +
       (allSuggestions.skills?.soft?.length || 0) +
       (allSuggestions.professional_summary?.suggested_text?.trim() ? 1 : 0) +
-      (allSuggestions.work_experience?.length || 0) +
-      (allSuggestions.education?.length || 0)
+      (allSuggestions.work_experience?.filter((s) => s.suggested).length || 0) +
+      (allSuggestions.education?.filter((s) => s.suggested).length || 0)
     );
   }, [allSuggestions]);
 
@@ -864,8 +871,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         <DialogTitle>Discard All Suggestions?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to discard all {totalSuggestionsCount} AI suggestion{totalSuggestionsCount !== 1 ? "s" : ""}?
-            This action cannot be undone and will remove suggestions from all sections (skills, professional summary, work experience, and education).
+            Discard all {totalSuggestionsCount} AI suggestion{totalSuggestionsCount !== 1 ? "s" : ""}? This cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -886,11 +892,11 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
         aria-describedby="draft-confirmation-dialog-description"
       >
         <DialogTitle id="draft-confirmation-dialog-title">
-          Discard Existing Draft Suggestions?
+          Discard Draft Suggestions?
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="draft-confirmation-dialog-description">
-            Discard existing draft suggestions and generate new ones?
+            Discard existing drafts and generate new ones?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

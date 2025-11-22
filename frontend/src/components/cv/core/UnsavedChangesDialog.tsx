@@ -82,7 +82,7 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
 
       <DialogContent>
         <Typography variant="body1" sx={{ mb: 2, color: "text.primary" }}>
-          You have unsaved changes in the following sections:
+          Unsaved changes in the following sections:
         </Typography>
 
         <Box sx={{ maxHeight: 200, overflow: "auto" }}>

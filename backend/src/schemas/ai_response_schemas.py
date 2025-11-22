@@ -5,7 +5,8 @@ This module defines strict schemas for all AI operations to guarantee
 response format, structure, and semantic correctness from OpenAI API calls.
 """
 
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -216,40 +217,71 @@ class ProfessionalSummarySuggestionSchema(BaseModel):
     )
 
 
-class ItemDescriptionSuggestionSchema(BaseModel):
-    """Schema for individual item description suggestion (work experience or education).
+class ItemType(str, Enum):
+    """Discriminator for item suggestion types."""
 
-    For items with score < 50: includes all fields with suggestion details.
-    For items with score >= 50: includes only id and current_content_score (suggestion fields are optional).
-    """
+    HIGH_SCORE = "high_score"
+    LOW_SCORE = "low_score"
 
+
+class HighScoreItemSchema(BaseModel):
+    """Schema for items with score >= 50 - no suggestions needed."""
+
+    item_type: ItemType = Field(
+        default=ItemType.HIGH_SCORE,
+        description="Item type discriminator",
+    )
+    id: str = Field(min_length=1, description="Item ID from CV data")
+    current_content_score: int = Field(
+        ge=50,
+        le=100,
+        description="Evaluation score for current content quality (50-100) w.r.t. the job description",
+    )
+
+    class Config:
+        extra = "forbid"
+
+
+class LowScoreItemSchema(BaseModel):
+    """Schema for items with score < 50 - includes all suggestion fields."""
+
+    item_type: ItemType = Field(
+        default=ItemType.LOW_SCORE,
+        description="Item type discriminator",
+    )
     id: str = Field(min_length=1, description="Item ID from CV data")
     current_content_score: int = Field(
         ge=0,
-        le=100,
-        description="Evaluation score for current content quality (0-100) w.r.t. the job description",
+        lt=50,
+        description="Evaluation score for current content quality (0-49) w.r.t. the job description",
     )
-    original: Optional[str] = Field(
-        default="",
-        description="Original description text (required for items with suggestions)",
+    original: str = Field(
+        min_length=1,
+        description="Original description text",
     )
-    suggested: Optional[str] = Field(
-        default=None,
-        description="Suggested improved description (MUST match original format: bullets→bullets, paragraph→paragraph). Only present for items with score < 50.",
+    suggested: str = Field(
+        min_length=1,
+        description="Actual improved description text written as the candidate's own content. MUST be ready-to-use rewritten text, NOT meta-instructions. Must match original format: bullets→bullets, paragraph→paragraph.",
     )
-    reasoning: Optional[str] = Field(
-        default=None,
-        description="Reasoning for the improvement and its relevance to target job. Only present for items with score < 50.",
+    reasoning: str = Field(
+        min_length=1,
+        description="Reasoning for the improvement and its relevance to target job",
     )
-    importance: Optional[str] = Field(
-        default=None,
+    importance: str = Field(
         pattern="^(highly_recommended|standard)$",
-        description="Importance level: 'highly_recommended' for high-impact changes, 'standard' for moderate improvements. Only present for items with score < 50.",
+        description="Importance level: 'highly_recommended' for high-impact changes, 'standard' for moderate improvements",
     )
-    markdown_diff: Optional[str] = Field(
+    markdown_diff: str = Field(
         default="",
-        description="Markdown-formatted diff showing changes: ~~strikethrough~~ for removed text, **bold** for added text. Only present for items with score < 50.",
+        description="Markdown-formatted diff showing changes: ~~strikethrough~~ for removed text, **bold** for added text",
     )
+
+    class Config:
+        extra = "forbid"
+
+
+# Union type for item suggestions
+ItemDescriptionSuggestionSchema = Union[HighScoreItemSchema, LowScoreItemSchema]
 
 
 class OptimizationSuggestionsResponseSchema(BaseModel):

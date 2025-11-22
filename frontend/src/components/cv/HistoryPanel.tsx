@@ -596,8 +596,8 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
             sx={{ mb: 2 }}
           >
             {state.selectedEntry?.isInitial
-              ? "This will reset your CV back to its original state when it was first uploaded. A backup of your current version will be created automatically."
-              : "This will replace your current CV with the selected version. A backup of your current version will be created automatically."}
+              ? "Reset your CV to its original state? A backup will be created automatically."
+              : "Replace your current CV with the selected version? A backup will be created automatically."}
           </Alert>
           {state.selectedEntry && (
             <Box>
@@ -640,8 +640,7 @@ const HistoryPanel: React.FC<ExtendedHistoryPanelProps> = ({
         <DialogTitle>Delete Version?</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            This action cannot be undone. The version will be permanently
-            deleted.
+            Delete this version permanently?
           </Alert>
           {state.selectedEntry && (
             <Box>

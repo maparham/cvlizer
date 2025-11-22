@@ -118,7 +118,7 @@ const JobLibrary: React.FC = () => {
     async (jd: JobDescription) => {
       if (
         window.confirm(
-          `Are you sure you want to delete "${jd.title || "this job description"}"?`
+          `Delete "${jd.title || "this job description"}"?`
         )
       ) {
         try {

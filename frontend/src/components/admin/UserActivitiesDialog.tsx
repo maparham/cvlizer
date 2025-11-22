@@ -329,9 +329,8 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
         <DialogContent>
           <Box sx={{ mb: 2 }}>
             <Alert severity="warning">
-              You are about to permanently delete all activity logs for user{" "}
-              <strong>{userEmail}</strong>. This action cannot be undone and
-              will remove all historical activity data for this user.
+              Delete all activity logs for user{" "}
+              <strong>{userEmail}</strong>? This will remove all historical activity data.
             </Alert>
           </Box>
 
@@ -358,7 +357,7 @@ const UserActivitiesDialog: React.FC<UserActivitiesDialogProps> = ({
             color="error.main"
             sx={{ mt: 2, fontWeight: "bold" }}
           >
-            This action is irreversible. Are you sure you want to proceed?
+            This action is irreversible. Proceed?
           </Typography>
         </DialogContent>
         <DialogActions>

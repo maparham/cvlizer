@@ -274,8 +274,7 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
         <DialogTitle id="back-dialog-title">Unsaved Changes</DialogTitle>
         <DialogContent>
           <DialogContentText id="back-dialog-description">
-            You have unsaved changes that will be lost if you go back. Are you
-            sure you want to continue?
+            Unsaved changes will be lost. Continue?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

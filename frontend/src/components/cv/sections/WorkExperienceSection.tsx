@@ -419,8 +419,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
         <DialogTitle>Discard All Suggestions?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to discard all {visibleSuggestions.length} AI suggestions for this section?
-            This action cannot be undone.
+            Discard all {visibleSuggestions.length} AI suggestions for this section?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

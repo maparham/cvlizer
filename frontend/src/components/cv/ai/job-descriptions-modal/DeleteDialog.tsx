@@ -29,9 +29,7 @@ const DeleteDialog: React.FC<DeleteDialogProps> = ({
       <DialogTitle>Delete Job Description</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Are you sure you want to delete "
-          {jobDescription?.title || "this job description"}"? This action
-          cannot be undone.
+          Delete "{jobDescription?.title || "this job description"}"?
         </DialogContentText>
       </DialogContent>
       <DialogActions>

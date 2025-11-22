@@ -75,14 +75,18 @@ def _build_ai_suggestions_prompt(
 
     # Shared markdown_diff instruction (applies to professional_summary, work_experience, education)
     markdown_diff_instruction = (
-        "Provide markdown_diff string showing the complete diff in markdown format. Rules: "
-        "1. Use ~~strikethrough~~ (double tilde) to mark removed text from the original. "
-        "2. Use **bold** (double asterisk) to mark added text in the suggestion. "
-        "3. Leave unchanged text as plain text (no formatting). "
-        "4. Preserve the structure (bullets, paragraphs, line breaks) exactly as in the original. "
-        "5. The markdown_diff should be readable and show the complete transformation from original to suggested text. "
-        "6. Format should be clear: removed text should be strikethrough, added text should be bold, unchanged text should be plain. "
-        '7. CRITICAL: If suggested_text is identical to original_text (no changes), set markdown_diff to empty string "".'
+        "Provide markdown_diff string showing the COMPLETE final (suggested) text with ALL changes marked inline. "
+        "CRITICAL RULES FOR INLINE CHANGES: "
+        "- Only mark CHANGED portions with strikethrough/bold - keep unchanged text as plain text "
+        "- Show the complete final text with inline markers, NOT full-line replacements "
+        "- For removed text: use ~~strikethrough~~ (double tilde) around ONLY the removed portion "
+        "- For added text: use **bold** (double asterisk) around ONLY the added portion "
+        "- Examples: "
+        "  * Original: '- Working on projects' → Suggested: '- Working on projects**, focusing on backend**' "
+        "  * Original: '- Old text' → Suggested: '- ~~Old~~**New** text' "
+        "  * Entire line removed: '~~- Removed bullet point~~\\n' "
+        "  * Entire line added: '**- New bullet point**\\n' "
+        'CRITICAL: Never duplicate unchanged text. If suggested_text is identical to original_text, set markdown_diff to empty string "".'
     )
 
     # Build conditional optimization instructions
@@ -113,18 +117,19 @@ def _build_ai_suggestions_prompt(
     if item_based_sections:
         sections_list = " and ".join(item_based_sections)
         optimization_tasks.append(
-            f"   - {sections_list}: For EACH item, first evaluate current_content_score (0-100) based on "
-            "how well the story is told and confidence of presentation. "
-            "CRITICAL: Include ALL items in the array with their current_content_score. "
-            "For items with score < 50 AND clear issues (grammar errors, unclear messaging, missing impact, factual problems), "
-            "include full suggestion details (suggested, reasoning, importance, markdown_diff). "
-            "For items with score >= 50, include only id and current_content_score (omit suggested, reasoning, importance, markdown_diff fields). "
-            "If suggested_text would equal original_text for a low-scoring item, do NOT include that item. "
-            "Do NOT suggest changes for cosmetic reasons or minor improvements. "
-            "Preserve original wording unless there's a concrete problem that significantly affects clarity, correctness, or impact. "
-            "Respect the candidate's style—if they don't use metrics, don't push for them. "
-            "Focus on clarity, confidence, and authentic storytelling. "
-            f"{markdown_diff_instruction}"
+            f"   - {sections_list}: Evaluate current_content_score (0-100) for EACH item.\n"
+            f"   \n"
+            f"   Output format based on score:\n"
+            f'   - Score >= 50: {{"item_type": "high_score", "id": "...", "current_content_score": XX}}\n'
+            f'   - Score < 50: {{"item_type": "low_score", "id": "...", "current_content_score": XX, "original": "...", "suggested": "...", "reasoning": "...", "importance": "standard", "markdown_diff": "..."}}\n'
+            f"   \n"
+            f"   Schema enforces this structure - you CANNOT include extra fields for high scores.\n"
+            f"   Only suggest changes for score < 50 when there are clear issues: grammar errors, unclear messaging, missing impact.\n"
+            f"   \n"
+            f"   CRITICAL: The 'suggested' field must contain the ACTUAL rewritten content written as the candidate's own text. "
+            f"Write the complete improved version directly. DO NOT include meta-instructions like 'Clarify X' or 'Add Y'. "
+            f"The 'suggested' field is ready-to-use content, not instructions.\n"
+            f"   {markdown_diff_instruction}"
         )
 
     optimization_tasks_text = (
@@ -174,16 +179,19 @@ def _build_ai_suggestions_prompt(
     if has_professional_summary:
         comma = "," if has_any_after_summary else ""
         json_output_parts.append(
-            f'  "professional_summary": {{"suggested_text": "...", "original_text": "{current_summary}", "key_changes": ["..."], "markdown_diff": "Original text ~~removed~~ and **added** text here"}}{comma}'
+            f'  "professional_summary": {{"suggested_text": "...", "original_text": "...", "key_changes": ["..."], "markdown_diff": "~~Original text~~**Improved text** with changes marked inline"}}{comma}'
         )
 
     # Shared JSON example for item-based sections (work_experience and education)
     # Show example with full suggestion (score < 50) and example with only score (score >= 50)
     item_suggestion_example = (
-        '{"id": "...", "original": "...", "suggested": "...", "reasoning": "...", '
-        '"current_content_score": 65, "importance": "standard", '
-        '"markdown_diff": "Original text ~~removed~~ and **added** text here"}, '
-        '{"id": "...", "current_content_score": 85}'
+        '{"item_type": "low_score", "id": "work_1", "current_content_score": 45, '
+        '"original": "- Old bullet point\\n- Another point", '
+        '"suggested": "- Improved bullet point**, with enhancements**\\n- Another point", '
+        '"reasoning": "...", '
+        '"importance": "standard", '
+        '"markdown_diff": "- ~~Old~~**Improved** bullet point**, with enhancements**\\n- Another point"}, '
+        '{"item_type": "high_score", "id": "work_2", "current_content_score": 85}'
     )
 
     # Add item-based sections dynamically
@@ -253,11 +261,11 @@ TASKS:
    - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs. Maximum 200 words total.
    - Format the fit analysis into two sections: "## Introduction" and "## Your Requirements".
    - In the "Your Requirements" section, for each requirement, quote the requirement text from the job description and write the cover paragraph below it.
-   - Example format for each requirement-cover paragraph pair: **"[requirement]"**\\n\\n[experience paragraph]\\n\\n.
+   - Example format for each requirement-cover paragraph pair: **"[requirement]"** followed by a blank line, then [experience paragraph], then another blank line.
    - CRITICAL: Write ENTIRELY in first person from the candidate's perspective. NEVER refer to "CV" directly, e.g. "My CV..." or "This CV...". Remember, you are the owner of the CV.
    - Be honest about gaps: "I don't have X but eager to learn" or "I bring Y transferable skills"
    - key_matches: Skills/experiences from CV that genuinely transfer to this role (focus on SUBSTANCE over keywords; can be empty)
-   - missing_skills: up to 4 skills worth highlighting from their existing experience that connect to the job
+   - missing_skills: up to 4 skills from the job requirements that the candidate doesn't have but should address or highlight transferable experience for
    - suggested_improvements: 1 to 5 coaching tips for presenting their story more confidently (clarity, authenticity, storytelling)
    - strengths: up to 4 specific strengths they bring to this role (transferable skills, authentic qualities)
    - weaknesses: up to 4 honest gaps or areas for growth (frame as development opportunities)
@@ -272,12 +280,14 @@ OUTPUT JSON:
 
 - suggested_improvements, strengths, weaknesses must have ≥1 value.
 - key_matches can be empty.
-- First focus on writing issues, e.g. grammar, punctuation, etc. Then focus on semantcs.
+- First focus on writing issues, e.g. grammar, punctuation, etc. Then focus on semantics.
 - In your reasoning, provide accurate explanation of why the existing content is not good enough. Quote the specific parts of the CV that you are referring to.
+- CRITICAL for 'suggested' field: Write the ACTUAL improved content as the candidate's own text. DO NOT write instructions like 'Clarify X' or 'Add Y'. The 'reasoning' field explains what to improve; the 'suggested' field is the actual rewritten text ready to use.
 - Be as specific as possible. Be very brief, concise and to the point. Reasoning fields: maximum 30 words each.
 - CRITICAL: Only suggest changes when there's a clear, substantial benefit. Avoid cosmetic modifications, synonym swapping, or unnecessary rephrasing.
-- For professional_summary: If no changes needed, omit the field entirely (set to null). If changes exist, include markdown_diff with the diff string.
-- CRITICAL for work_experience and education: Include ALL items in the arrays with their current_content_score. Items with score >= 50 should only have id and current_content_score fields (no suggested, reasoning, importance, or markdown_diff). Items with score < 50 should have all fields including suggestion details. When including items with suggestions, provide markdown_diff string (formatting details are in the optimization tasks above).
+- For professional_summary: If no changes needed, omit the field entirely from JSON. If changes exist, include markdown_diff with the diff string.
+- CRITICAL for work_experience and education: Include ALL items with their current_content_score. Use item_type="high_score" for score >= 50 (only id and score). Use item_type="low_score" for score < 50 with clear issues (all suggestion fields). The schema will reject responses that don't follow this format.
+- CRITICAL for markdown_diff: Must show the COMPLETE suggested text with INLINE change markers only. Every line from 'suggested' must appear in markdown_diff. Rules: (1) Use ~~strikethrough~~ for ONLY the removed portion, (2) Use **bold** for ONLY the added portion, (3) Keep unchanged text as plain text (never duplicate it), (4) Show complete final text with inline markers. Examples: If entire line removed: '~~- Old line~~\\n'. If entire line added: '**- New line**\\n'. If line modified: '- ~~Old~~**New** text' or '- Unchanged text**, with addition**'. If line unchanged: '- Unchanged text'. Never duplicate unchanged text—show only the final suggested version with inline change markers.
 """
 
 
@@ -396,61 +406,9 @@ async def generate_ai_suggestions(
                     ),
                 }
 
-        # Process work_experience suggestions
-        # Items may have only id and current_content_score (score >= 50) or full suggestion details (score < 50)
+        # Process suggestions - schema guarantees correct structure
         work_experience_suggestions = response.get("work_experience", [])
-        cleaned_work_suggestions = []
-        for suggestion in work_experience_suggestions:
-            # Ensure current_content_score is always present
-            if "current_content_score" not in suggestion:
-                suggestion["current_content_score"] = 50  # Default fallback
-
-            score = suggestion.get("current_content_score", 50)
-
-            # For items with score >= 50, only keep id and current_content_score
-            if score >= 50:
-                cleaned_work_suggestions.append(
-                    {
-                        "id": suggestion["id"],
-                        "current_content_score": score,
-                    }
-                )
-            else:
-                # For items with score < 50, keep all fields but ensure markdown_diff is set
-                if "suggested" in suggestion and suggestion.get("suggested"):
-                    if "markdown_diff" not in suggestion:
-                        suggestion["markdown_diff"] = ""
-                cleaned_work_suggestions.append(suggestion)
-
-        work_experience_suggestions = cleaned_work_suggestions
-
-        # Process education suggestions
-        # Items may have only id and current_content_score (score >= 50) or full suggestion details (score < 50)
         education_suggestions = response.get("education", [])
-        cleaned_education_suggestions = []
-        for suggestion in education_suggestions:
-            # Ensure current_content_score is always present
-            if "current_content_score" not in suggestion:
-                suggestion["current_content_score"] = 50  # Default fallback
-
-            score = suggestion.get("current_content_score", 50)
-
-            # For items with score >= 50, only keep id and current_content_score
-            if score >= 50:
-                cleaned_education_suggestions.append(
-                    {
-                        "id": suggestion["id"],
-                        "current_content_score": score,
-                    }
-                )
-            else:
-                # For items with score < 50, keep all fields but ensure markdown_diff is set
-                if "suggested" in suggestion and suggestion.get("suggested"):
-                    if "markdown_diff" not in suggestion:
-                        suggestion["markdown_diff"] = ""
-                cleaned_education_suggestions.append(suggestion)
-
-        education_suggestions = cleaned_education_suggestions
 
         optimization_data = {
             "skills": response.get("skills", {"technical": [], "soft": []}),

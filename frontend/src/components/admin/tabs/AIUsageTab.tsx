@@ -279,7 +279,7 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
           onConfirm={onDeleteAllLogs}
           loading={loading || isDeleting}
           title="Delete All AI Usage Data"
-          message="This will permanently delete ALL AI usage logs from the system. This action cannot be undone!"
+          message="Delete ALL AI usage logs from the system?"
           confirmText="DELETE ALL"
         />
       </Box>

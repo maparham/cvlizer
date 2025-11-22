@@ -95,7 +95,7 @@ export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
               <strong>This action cannot be undone!</strong>
             </Typography>
             <Typography variant="body2">
-              You are about to permanently delete this user's account:
+              Delete this user's account:
             </Typography>
           </Alert>
 

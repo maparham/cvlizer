@@ -272,7 +272,7 @@ export const FloatingSuggestionsPanel: React.FC<
 
     // Add confirmation dialog to prevent accidental commits
     const confirmed = window.confirm(
-      `Are you sure you want to apply ${approvedCount} approved suggestion${approvedCount > 1 ? "s" : ""} to your CV?`,
+      `Apply ${approvedCount} approved suggestion${approvedCount > 1 ? "s" : ""} to your CV?`,
     );
 
     if (!confirmed) {

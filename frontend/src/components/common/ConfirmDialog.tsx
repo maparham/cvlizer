@@ -65,9 +65,6 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <Alert severity={severity} sx={{ mb: 2 }}>
           {message}
         </Alert>
-        <Typography variant="body2" color="text.secondary">
-          This action cannot be undone.
-        </Typography>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>

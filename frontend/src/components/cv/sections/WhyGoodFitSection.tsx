@@ -338,7 +338,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
         <DialogTitle>Delete Section</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            <strong>Are you sure you want to delete this section?</strong>
+            <strong>Delete this section?</strong>
           </Alert>
           <Typography variant="body2" color="text.secondary">
             You can always regenerate the section later.

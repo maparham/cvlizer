@@ -128,8 +128,8 @@ export const usePDFCVEditor = ({
       if (hasUnsavedChanges) {
         event.preventDefault();
         event.returnValue =
-          "You have unsaved changes that will be lost if you leave this page.";
-        return "You have unsaved changes that will be lost if you leave this page.";
+          "Unsaved changes will be lost.";
+        return "Unsaved changes will be lost.";
       }
     };
 

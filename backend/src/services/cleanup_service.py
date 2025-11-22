@@ -21,8 +21,12 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from src.models.audit_log import AuditLog
-from src.models.base import get_db
+from src.models.base import SessionLocal
 from src.models.impersonation_session import ImpersonationSession
+from src.services.ai_enhancement_cleanup_service import (
+    cancel_all_running_ai_tasks,
+    cleanup_stuck_ai_enhancements,
+)
 from src.services.impersonation_service import cleanup_expired_sessions
 
 logger = logging.getLogger(__name__)
@@ -82,8 +86,8 @@ class CleanupService:
 
     async def run_cleanup(self):
         """Run all cleanup tasks."""
+        db = SessionLocal()
         try:
-            db = next(get_db())
             try:
                 # Clean up expired impersonation sessions
                 expired_sessions = cleanup_expired_sessions(db)
@@ -103,6 +107,13 @@ class CleanupService:
                 old_audit_logs = self._cleanup_old_audit_logs(db)
                 if old_audit_logs > 0:
                     logger.info(f"Cleaned up {old_audit_logs} old audit log records")
+
+                # Clean up stuck AI enhancements
+                stuck_enhancements = self._cleanup_stuck_ai_enhancements(db)
+                if stuck_enhancements > 0:
+                    logger.info(
+                        f"Cleaned up {stuck_enhancements} stuck AI enhancement(s)"
+                    )
 
             finally:
                 db.close()
@@ -156,6 +167,16 @@ class CleanupService:
             db.rollback()
             return 0
 
+    def _cleanup_stuck_ai_enhancements(self, db: Session) -> int:
+        """Clean up stuck AI enhancements."""
+        try:
+            found_count, fixed_count = cleanup_stuck_ai_enhancements(db)
+            return fixed_count
+        except Exception as e:
+            logger.error(f"Error cleaning up stuck AI enhancements: {str(e)}")
+            db.rollback()
+            return 0
+
 
 # Global cleanup service instance
 cleanup_service = CleanupService()
@@ -171,10 +192,36 @@ async def stop_cleanup_service():
     await cleanup_service.stop()
 
 
+def cancel_running_ai_tasks_on_startup():
+    """
+    Cancel all running AI tasks on backend startup.
+
+    This should be called once during application startup to cancel any
+    in-flight AI tasks since the AI API connections are lost during restart.
+
+    Returns:
+        Tuple of (enhancements_cancelled, drafts_cancelled)
+    """
+    db = SessionLocal()
+    try:
+        try:
+            enhancements_cancelled, drafts_cancelled = cancel_all_running_ai_tasks(db)
+            if enhancements_cancelled > 0 or drafts_cancelled > 0:
+                logger.info(
+                    f"Cancelled {enhancements_cancelled} AI enhancement(s) and {drafts_cancelled} AI draft(s) on startup"
+                )
+            return enhancements_cancelled, drafts_cancelled
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(f"Failed to cancel running AI tasks on startup: {e}")
+        return 0, 0
+
+
 def run_cleanup_once():
     """Run cleanup tasks once (for manual execution or testing)."""
+    db = SessionLocal()
     try:
-        db = next(get_db())
         try:
             # Clean up expired impersonation sessions
             expired_sessions = cleanup_expired_sessions(db)
@@ -184,9 +231,10 @@ def run_cleanup_once():
             service = CleanupService()
             old_sessions = service._cleanup_old_sessions(db)
             old_audit_logs = service._cleanup_old_audit_logs(db)
+            stuck_enhancements = service._cleanup_stuck_ai_enhancements(db)
 
             logger.info(
-                f"Manual cleanup completed: {old_sessions} old sessions, {old_audit_logs} old audit logs"
+                f"Manual cleanup completed: {old_sessions} old sessions, {old_audit_logs} old audit logs, {stuck_enhancements} stuck AI enhancements"
             )
 
         finally:
