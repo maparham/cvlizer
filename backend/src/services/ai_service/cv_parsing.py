@@ -197,21 +197,35 @@ Return JSON (omit empty sections):
         # Additional context logging only
         logger.error(f"Text content length: {len(text_content)} characters")
 
-        # Fallback response in case of API error
-        fallback = deepcopy(DEFAULT_PARSED_CV)
-        content_preview = (
-            text_content[:500] + "..." if len(text_content) > 500 else text_content
+        # Get user-friendly error message from the exception
+        error_message = (
+            str(e)
+            if str(e)
+            else "Our AI service is temporarily at capacity. Please try again in a few minutes."
         )
-        fallback["professional_summary"] = {"content": content_preview, "keywords": []}
-        fallback["parse_error"] = f"OpenAI API error: {str(e)}"
-        # Add section_config to fallback
-        fallback = _add_section_config(fallback)
 
-        # Strip AI-only fields (in case fallback somehow has them)
-        fallback.pop("is_valid_cv", None)
-        fallback.pop("validation_error", None)
-
-        return fallback
+        # Return error structure (not fallback with raw text)
+        return {
+            "error": error_message,
+            "personal_info": {
+                "full_name": "",
+                "email": "",
+                "phone": "",
+                "location": "",
+                "linkedin_url": "",
+                "website_url": "",
+                "github_url": "",
+            },
+            "professional_summary": {"content": "", "keywords": []},
+            "work_experience": [],
+            "education": [],
+            "skills": {"technical": [], "soft": [], "languages": []},
+            "certifications": [],
+            "projects": [],
+            "awards": [],
+            "publications": [],
+            "volunteer_experience": [],
+        }
 
 
 def _has_meaningful_array_items(section_data: list, section_type: str) -> bool:

@@ -292,20 +292,22 @@ const CVCard: React.FC<CVCardProps> = ({
               {!cv.is_parsed && !cv.parse_error ? "Processing..." : "Edit CV"}
             </Button>
             <Tooltip title="Duplicate this CV">
-              <IconButton
-                size="small"
-                onClick={() => onDuplicate(cv)}
-                disabled={!cv.is_parsed || !!cv.parse_error}
-                sx={{
-                  color: "primary.main",
-                  "&:hover": {
-                    backgroundColor: "primary.light",
-                    color: "primary.dark",
-                  },
-                }}
-              >
-                <DuplicateIcon fontSize="small" />
-              </IconButton>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => onDuplicate(cv)}
+                  disabled={!cv.is_parsed || !!cv.parse_error}
+                  sx={{
+                    color: "primary.main",
+                    "&:hover": {
+                      backgroundColor: "primary.light",
+                      color: "primary.dark",
+                    },
+                  }}
+                >
+                  <DuplicateIcon fontSize="small" />
+                </IconButton>
+              </span>
             </Tooltip>
             <Tooltip title="Delete this CV">
               <IconButton

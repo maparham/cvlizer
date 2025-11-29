@@ -52,9 +52,13 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
         cv = db.query(CV).filter(CV.id == cv_id).first()
         if cv:
             cv.parsed_data = parsed_data
-            cv.is_parsed = True
+            # Check for errors before setting is_parsed
             if parsed_data.get("error"):
+                cv.is_parsed = False
                 cv.parse_error = parsed_data["error"]
+            else:
+                cv.is_parsed = True
+                cv.parse_error = None
             db.commit()
             db.refresh(cv)
 
@@ -98,6 +102,7 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
         try:
             cv = db.query(CV).filter(CV.id == cv_id).first()
             if cv:
+                cv.is_parsed = False
                 cv.parse_error = f"Background parsing failed: {str(e)}"
                 db.commit()
         except Exception as update_error:

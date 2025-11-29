@@ -17,7 +17,7 @@
  * - Provides responsive editing interface with Material-UI
  */
 import React, { useEffect, useMemo, useCallback, useRef } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { CVEditorProvider } from "../../contexts/CVEditorContext";
@@ -357,6 +357,68 @@ const CVEditor: React.FC = () => {
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
         <Typography>CV not found</Typography>
       </Box>
+    );
+  }
+
+  // Check for parsing error and show error message instead of editor
+  if (activeCV.parse_error) {
+    return (
+      <CVProvider cvId={cvId}>
+        <ErrorBoundary>
+          <Box
+            sx={{
+              flexGrow: 1,
+              height: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              p: 4,
+            }}
+          >
+            <Box
+              sx={{
+                maxWidth: 600,
+                width: "100%",
+                p: 3,
+                backgroundColor: "error.light",
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "error.main",
+              }}
+            >
+              <Typography
+                variant="h6"
+                color="error.dark"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                }}
+              >
+                CV Processing Error
+              </Typography>
+              <Typography
+                variant="body1"
+                color="error.dark"
+                sx={{
+                  mb: 2,
+                }}
+              >
+                {activeCV.parse_error}
+              </Typography>
+              <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Back to Dashboard
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </ErrorBoundary>
+      </CVProvider>
     );
   }
 
