@@ -19,6 +19,7 @@ import {
   LinearProgress,
   Fade,
 } from "@mui/material";
+import RotatingTips from "./RotatingTips";
 
 const messages = [
   "Analyzing your CV...",
@@ -148,18 +149,8 @@ const AIEnhancementLoadingState: React.FC<AIEnhancementLoadingStateProps> = ({
         ⏱️ This typically takes 45-60 seconds
       </Typography>
 
-      {/* Helpful Tip */}
-      <Typography
-        variant="caption"
-        sx={{
-          color: "text.secondary",
-          maxWidth: 500,
-          lineHeight: 1.5,
-        }}
-      >
-        💡 Our AI is analyzing your CV against the job requirements and
-        generating personalized suggestions...
-      </Typography>
+      {/* Rotating Practical Tips */}
+      <RotatingTips variant="loading" />
     </Box>
   );
 };

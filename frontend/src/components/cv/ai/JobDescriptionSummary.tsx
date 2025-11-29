@@ -51,6 +51,8 @@ import JobDescriptionCard from "./JobDescriptionCard";
 import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
 import CVCompletenessIndicator from "../../CVCompleteness/CVCompletenessIndicator";
 import AIEnhancementLoadingState from "./AIEnhancementLoadingState";
+import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
+import RotatingTips from "./RotatingTips";
 
 interface JobDescriptionSummaryProps {
   cvId: string;
@@ -110,6 +112,21 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   const jobDescriptions = useVisibleJobDescriptions();
   const allJobDescriptions = useJobDescriptions();
   const activeJobDescription = useActiveJobDescription();
+
+  // Get AI suggestions to calculate total count
+  const { allSuggestions } = useAISuggestionsStore();
+
+  // Calculate total suggestions count (same logic as SectionManagerSidebar)
+  const totalSuggestionsCount = useMemo(() => {
+    if (!allSuggestions) return 0;
+    return (
+      (allSuggestions.skills?.technical?.length || 0) +
+      (allSuggestions.skills?.soft?.length || 0) +
+      (allSuggestions.professional_summary?.suggested_text?.trim() ? 1 : 0) +
+      (allSuggestions.work_experience?.filter((s) => s.suggested).length || 0) +
+      (allSuggestions.education?.filter((s) => s.suggested).length || 0)
+    );
+  }, [allSuggestions]);
 
   // Use the centralized polling hook for job descriptions
   useJobDescriptionPolling(allJobDescriptions, {
@@ -417,6 +434,11 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   )}
 
                   {/* Removed secondary icon-only job fit trigger to avoid duplicate button */}
+
+                  {/* Show rotating tips when suggestions exist and not loading */}
+                  {!suggestionsLoading && totalSuggestionsCount > 0 && (
+                    <RotatingTips variant="sidebar" />
+                  )}
 
                   {/* Show CV completeness indicator below buttons if not complete */}
                   {!completeness.isComplete && (
