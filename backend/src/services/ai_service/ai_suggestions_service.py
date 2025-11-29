@@ -7,6 +7,7 @@ in a single AI call with token-optimized prompts.
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -18,6 +19,45 @@ from .common import call_openai_with_schema, is_ai_enabled
 from .cv_filter import filter_hidden_sections
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_company_name_for_title(company_name: str) -> str:
+    """
+    Extract a shorter, more natural company name for use in titles.
+
+    Handles cases like:
+    - "Institute of Science and Technology Austria (ISTA)" -> "ISTA"
+    - "International Business Machines (IBM)" -> "IBM"
+    - "Microsoft Corporation" -> "Microsoft"
+    - "Google LLC" -> "Google"
+
+    Args:
+        company_name: Full company name
+
+    Returns:
+        Shorter company name suitable for title use
+    """
+    # Check for acronym in parentheses: "Full Name (ACRONYM)"
+    match = re.search(r"\(([A-Z]{2,})\)", company_name)
+    if match:
+        return match.group(1)
+
+    # Remove common suffixes
+    suffixes = ["Corporation", "Corp.", "Inc.", "LLC", "Ltd.", "Limited", "GmbH", "AG"]
+    name = company_name
+    for suffix in suffixes:
+        # Match suffix at end of string (case insensitive)
+        pattern = r"\s+" + re.escape(suffix) + r"$"
+        name = re.sub(pattern, "", name, flags=re.IGNORECASE)
+
+    # If still too long (>30 chars), try to extract first meaningful part
+    if len(name) > 30:
+        # Split by common separators and take first part
+        parts = re.split(r"[,\s]+(?:of|and|&)\s+", name, maxsplit=1)
+        if parts and len(parts[0]) < len(name):
+            name = parts[0]
+
+    return name.strip()
 
 
 def _build_ai_suggestions_prompt(
@@ -73,7 +113,11 @@ def _build_ai_suggestions_prompt(
     work_json = json.dumps(work_items)
     education_json = json.dumps(education_items)
 
-    # Shared markdown_diff instruction (applies to professional_summary, work_experience, education)
+    # ============================================================================
+    # MARKDOWN DIFF FORMATTING INSTRUCTIONS
+    # ============================================================================
+    # This instruction applies to professional_summary, work_experience, and education
+    # sections when they include markdown_diff fields.
     markdown_diff_instruction = (
         "Provide markdown_diff string showing the COMPLETE final (suggested) text with ALL changes marked inline. "
         "CRITICAL RULES FOR INLINE CHANGES: "
@@ -84,8 +128,13 @@ def _build_ai_suggestions_prompt(
         "- Examples: "
         "  * Original: '- Working on projects' → Suggested: '- Working on projects**, focusing on backend**' "
         "  * Original: '- Old text' → Suggested: '- ~~Old~~**New** text' "
+        "  * Small change within line: Original '- data processing tech-\\nniques' → Suggested '- data processing ~~tech-\\nniques~~**techniques**' "
+        "    (Only the changed portion is marked, rest of line stays plain text) "
         "  * Entire line removed: '~~- Removed bullet point~~\\n' "
         "  * Entire line added: '**- New bullet point**\\n' "
+        "  * Entire line replaced (rare - only when whole meaning changes): Original '- Working on personal projects' → Suggested '- ~~Working on personal projects~~**Building and launching prototypes**' "
+        "    CRITICAL: When replacing an entire line, show BOTH the old (strikethrough) AND new (bold) parts on the same line. "
+        "    However, if only PART of a line changes (e.g., fixing a typo, line break, or small word change), mark ONLY the changed portion, not the entire line."
         'CRITICAL: Never duplicate unchanged text. If suggested_text is identical to original_text, set markdown_diff to empty string "".'
     )
 
@@ -103,8 +152,8 @@ def _build_ai_suggestions_prompt(
             f"   - professional_summary: Only suggest changes when there are clear issues: unclear messaging, weak impact, grammar errors, or factual problems. "
             "Preserve original structure and key phrases. Avoid unnecessary rephrasing. "
             "Stay close to original wording—only modify when the change addresses a concrete problem that significantly improves clarity or impact (2-4 sentences). "
-            "If no changes needed, omit professional_summary field entirely. "
-            f"{markdown_diff_instruction}"
+            "If no changes needed, set professional_summary field to null. "
+            f"See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above for markdown_diff format requirements."
         )
 
     # Shared instructions for item-based sections (work_experience and education)
@@ -124,12 +173,13 @@ def _build_ai_suggestions_prompt(
             f'   - Score < 50: {{"item_type": "low_score", "id": "...", "current_content_score": XX, "original": "...", "suggested": "...", "reasoning": "...", "importance": "standard", "markdown_diff": "..."}}\n'
             f"   \n"
             f"   Schema enforces this structure - you CANNOT include extra fields for high scores.\n"
-            f"   Only suggest changes for score < 50 when there are clear issues: grammar errors, unclear messaging, missing impact.\n"
+            f"   Only suggest changes for score < 50 when there are clear issues: grammar errors, unclear messaging, missing impact, or factual errors. "
+            f"Avoid scoring items low just because they are 'generic'—only mark as low_score when there are concrete problems that need fixing.\n"
             f"   \n"
             f"   CRITICAL: The 'suggested' field must contain the ACTUAL rewritten content written as the candidate's own text. "
             f"Write the complete improved version directly. DO NOT include meta-instructions like 'Clarify X' or 'Add Y'. "
             f"The 'suggested' field is ready-to-use content, not instructions.\n"
-            f"   {markdown_diff_instruction}"
+            f"   See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above for markdown_diff format requirements."
         )
 
     optimization_tasks_text = (
@@ -221,7 +271,9 @@ def _build_ai_suggestions_prompt(
 
     # Build company name instruction based on whether it's provided
     if company_name:
-        company_name_instruction = f'   - Extract the company name from "{company_name}" and use it in the title: "Hello [Company Name]!"'
+        # Extract shorter name for title (e.g., "ISTA" from "Institute of Science and Technology Austria (ISTA)")
+        short_company_name = _extract_company_name_for_title(company_name)
+        company_name_instruction = f'   - Use the company name "{short_company_name}" in the title: "Hello {short_company_name}!"'
     else:
         company_name_instruction = '   - Extract the company name from the job description and use it in the title: "Hello [Company Name]!"'
 
@@ -254,13 +306,17 @@ def _build_ai_suggestions_prompt(
 CV: {cv_json}
 Job: {job_description}
 
+⚠️ MARKDOWN DIFF FORMATTING INSTRUCTIONS:
+{markdown_diff_instruction}
+
 TASKS:
 1. Job Fit Analysis (write as candidate, first person):
 {company_name_instruction}
    - confidence_score: 1-100 match quality based on transferable skills and authentic fit
-   - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs. Maximum 200 words total.
+   - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs. CRITICAL: Maximum 200 words total—count words and ensure you stay within this limit.
    - Format the fit analysis into two sections: "## Introduction" and "## Your Requirements".
    - In the "Your Requirements" section, for each requirement, quote the requirement text from the job description and write the cover paragraph below it.
+   - CRITICAL: Each requirement quote MUST be wrapped in **bold** markdown: **"[requirement text]"** (use double asterisks before and after the quoted requirement).
    - Example format for each requirement-cover paragraph pair: **"[requirement]"** followed by a blank line, then [experience paragraph], then another blank line.
    - CRITICAL: Write ENTIRELY in first person from the candidate's perspective. NEVER refer to "CV" directly, e.g. "My CV..." or "This CV...". Remember, you are the owner of the CV.
    - Be honest about gaps: "I don't have X but eager to learn" or "I bring Y transferable skills"
@@ -285,9 +341,9 @@ OUTPUT JSON:
 - CRITICAL for 'suggested' field: Write the ACTUAL improved content as the candidate's own text. DO NOT write instructions like 'Clarify X' or 'Add Y'. The 'reasoning' field explains what to improve; the 'suggested' field is the actual rewritten text ready to use.
 - Be as specific as possible. Be very brief, concise and to the point. Reasoning fields: maximum 30 words each.
 - CRITICAL: Only suggest changes when there's a clear, substantial benefit. Avoid cosmetic modifications, synonym swapping, or unnecessary rephrasing.
-- For professional_summary: If no changes needed, omit the field entirely from JSON. If changes exist, include markdown_diff with the diff string.
+- For professional_summary: If no changes needed, set the field to null. If changes exist, include markdown_diff with the diff string.
 - CRITICAL for work_experience and education: Include ALL items with their current_content_score. Use item_type="high_score" for score >= 50 (only id and score). Use item_type="low_score" for score < 50 with clear issues (all suggestion fields). The schema will reject responses that don't follow this format.
-- CRITICAL for markdown_diff: Must show the COMPLETE suggested text with INLINE change markers only. Every line from 'suggested' must appear in markdown_diff. Rules: (1) Use ~~strikethrough~~ for ONLY the removed portion, (2) Use **bold** for ONLY the added portion, (3) Keep unchanged text as plain text (never duplicate it), (4) Show complete final text with inline markers. Examples: If entire line removed: '~~- Old line~~\\n'. If entire line added: '**- New line**\\n'. If line modified: '- ~~Old~~**New** text' or '- Unchanged text**, with addition**'. If line unchanged: '- Unchanged text'. Never duplicate unchanged text—show only the final suggested version with inline change markers.
+- CRITICAL for markdown_diff: See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above. Must show the COMPLETE suggested text with INLINE change markers only. Every line from 'suggested' must appear in markdown_diff.
 """
 
 
