@@ -119,23 +119,19 @@ def _build_ai_suggestions_prompt(
     # This instruction applies to professional_summary, work_experience, and education
     # sections when they include markdown_diff fields.
     markdown_diff_instruction = (
-        "Provide markdown_diff string showing the COMPLETE final (suggested) text with ALL changes marked inline. "
-        "CRITICAL RULES FOR INLINE CHANGES: "
-        "- Only mark CHANGED portions with strikethrough/bold - keep unchanged text as plain text "
-        "- Show the complete final text with inline markers, NOT full-line replacements "
-        "- For removed text: use ~~strikethrough~~ (double tilde) around ONLY the removed portion "
-        "- For added text: use **bold** (double asterisk) around ONLY the added portion "
-        "- Examples: "
-        "  * Original: '- Working on projects' → Suggested: '- Working on projects**, focusing on backend**' "
-        "  * Original: '- Old text' → Suggested: '- ~~Old~~**New** text' "
-        "  * Small change within line: Original '- data processing tech-\\nniques' → Suggested '- data processing ~~tech-\\nniques~~**techniques**' "
-        "    (Only the changed portion is marked, rest of line stays plain text) "
-        "  * Entire line removed: '~~- Removed bullet point~~\\n' "
-        "  * Entire line added: '**- New bullet point**\\n' "
-        "  * Entire line replaced (rare - only when whole meaning changes): Original '- Working on personal projects' → Suggested '- ~~Working on personal projects~~**Building and launching prototypes**' "
-        "    CRITICAL: When replacing an entire line, show BOTH the old (strikethrough) AND new (bold) parts on the same line. "
-        "    However, if only PART of a line changes (e.g., fixing a typo, line break, or small word change), mark ONLY the changed portion, not the entire line."
-        'CRITICAL: Never duplicate unchanged text. If suggested_text is identical to original_text, set markdown_diff to empty string "".'
+        "Provide markdown_diff showing the COMPLETE suggested text with inline change markers. "
+        "GOAL: Enable users to quickly see changes—single out ONLY changed parts, keep all unchanged text plain. "
+        "CRITICAL: markdown_diff must contain EVERY word from 'suggested' field, but mark ONLY changed words/punctuation. "
+        "Rules: Use ~~strikethrough~~ for removed text, **bold** for added text. "
+        "Process: Compare word-by-word and punctuation-by-punctuation with 'original', mark only changed elements. "
+        "Examples: '- Item one**, with addition**' (adding), "
+        "'- Unchanged text and ~~old part~~**new part**' (partial change), "
+        "'- Text with ~~Old~~**old** word' (capitalization), "
+        "'Text ~~and~~**;** word unchanged' (punctuation change), "
+        "'Start unchanged ~~and~~**;** middle ~~unchanged~~**changed** end' (multiple changes), "
+        "'Start unchanged ~~and~~**, inserted text, and** end unchanged' (text insertion). "
+        "WRONG: '~~Start unchanged Old Word~~**Start unchanged new word** end unchanged' (marks unchanged text—DO NOT DO THIS). "
+        'Mark at word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
     )
 
     # Build conditional optimization instructions
@@ -295,6 +291,7 @@ def _build_ai_suggestions_prompt(
 - Stay CLOSE to original wording—preserve the candidate's voice and authentic expression. Don't change words just to sound "better" or more polished.
 - When in doubt, keep the original text unchanged. Only modify when the change addresses a specific, concrete issue that significantly improves clarity, correctness, or impact.
 - Preserve original structure, key phrases, and the candidate's natural writing style unless there's a compelling reason to change them.
+- CRITICAL: Preserve ALL Unicode characters exactly as they appear in the original CV text (e.g., apostrophes, quotes, dashes). Do not modify or corrupt Unicode characters.
 
 ⚠️ CAREER COACHING APPROACH:
 - Provide DETAILED and CONCRETE reasoning for ALL suggestions—explain WHY each suggestion helps. Quote specific CV phrases when explaining issues. Reference actual job IDs, dates, or company names.
@@ -316,7 +313,9 @@ TASKS:
    - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs. CRITICAL: Maximum 200 words total—count words and ensure you stay within this limit.
    - Format the fit analysis into two sections: "## Introduction" and "## Your Requirements".
    - In the "Your Requirements" section, for each requirement, quote the requirement text from the job description and write the cover paragraph below it.
-   - CRITICAL: Each requirement quote MUST be wrapped in **bold** markdown: **"[requirement text]"** (use double asterisks before and after the quoted requirement).
+   - CRITICAL: Each requirement quote MUST be wrapped in **bold** markdown WITH quotation marks: **"[requirement text]"**
+     The format is: double asterisk, double quote, requirement text, double quote, double asterisk.
+     Example: **"Refactor and modularize existing scientific software"** (NOT **Refactor and modularize existing scientific software**)
    - Example format for each requirement-cover paragraph pair: **"[requirement]"** followed by a blank line, then [experience paragraph], then another blank line.
    - CRITICAL: Write ENTIRELY in first person from the candidate's perspective. NEVER refer to "CV" directly, e.g. "My CV..." or "This CV...". Remember, you are the owner of the CV.
    - Be honest about gaps: "I don't have X but eager to learn" or "I bring Y transferable skills"
@@ -343,7 +342,7 @@ OUTPUT JSON:
 - CRITICAL: Only suggest changes when there's a clear, substantial benefit. Avoid cosmetic modifications, synonym swapping, or unnecessary rephrasing.
 - For professional_summary: If no changes needed, set the field to null. If changes exist, include markdown_diff with the diff string.
 - CRITICAL for work_experience and education: Include ALL items with their current_content_score. Use item_type="high_score" for score >= 50 (only id and score). Use item_type="low_score" for score < 50 with clear issues (all suggestion fields). The schema will reject responses that don't follow this format.
-- CRITICAL for markdown_diff: See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above. Must show the COMPLETE suggested text with INLINE change markers only. Every line from 'suggested' must appear in markdown_diff.
+- CRITICAL for markdown_diff: See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above. Must show the COMPLETE suggested text with INLINE change markers only. Mark ONLY changed portions, keep unchanged text plain. NEVER mark entire lines—only wrap changed words/phrases.
 """
 
 
