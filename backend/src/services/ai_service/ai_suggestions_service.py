@@ -129,7 +129,7 @@ def _build_ai_suggestions_prompt(
         "'- Text with ~~Old~~**old** word' (capitalization), "
         "'Text ~~and~~**;** word unchanged' (punctuation change), "
         "'Start unchanged ~~and~~**;** middle ~~unchanged~~**changed** end' (multiple changes), "
-        "'Start unchanged ~~and~~**, inserted text, and** end unchanged' (text insertion). "
+        "'Start unchanged**, inserted text,** end unchanged' (text insertion). "
         "WRONG: '~~Start unchanged Old Word~~**Start unchanged new word** end unchanged' (marks unchanged text—DO NOT DO THIS). "
         'Mark at word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
     )
