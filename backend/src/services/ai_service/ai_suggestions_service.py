@@ -135,12 +135,9 @@ def _build_ai_suggestions_prompt(
         and (current_technical_skills or current_soft_skills)
     )
 
-    # Check if professional_summary exists and has content (only if not filtered out)
-    has_professional_summary = False
-    if "professional_summary" in filtered_cv_data:
-        summary_data = filtered_cv_data.get("professional_summary") or {}
-        current_summary = summary_data.get("content") or ""
-        has_professional_summary = bool(current_summary)
+    # Check if professional_summary section is visible (exists in filtered data)
+    # If visible, include it in prompt even if empty (AI should generate it)
+    has_professional_summary = "professional_summary" in filtered_cv_data
 
     work_experience = filtered_cv_data.get("work_experience", [])
     work_items = [
@@ -190,6 +187,18 @@ def _build_ai_suggestions_prompt(
         "'Start unchanged ~~and~~**;** middle ~~unchanged~~**changed** end' (multiple changes), "
         "'Start unchanged **, inserted text,** end unchanged' (text insertion). "
         "WRONG: '~~Start unchanged Old Word~~**Start unchanged new word** end unchanged' (marks unchanged text—DO NOT DO THIS). "
+        "CRITICAL for line removals: When an entire line is removed, include the COMPLETE line including newline character in strikethrough. "
+        "Example: Original has '- Line A\\n- Line B\\n- Line C', Suggested has '- Line A\\n- Line C'. "
+        "Correct markdown_diff: '- Line A\\n- ~~Line B\\n-~~ Line C' (entire removed line including \\n is strikethrough). "
+        "WRONG: '- Line A\\n- ~~Line B~~**Line C**' (doesn't show line removal, incorrectly shows word replacement). "
+        "CRITICAL for line additions: When an entire line is added, show the complete new line in bold including newline. "
+        "Example: Original has '- Line A\\n- Line C', Suggested has '- Line A\\n- Line B\\n- Line C'. "
+        "Correct markdown_diff: '- Line A\\n- **Line B\\n-** Line C' (entire added line including \\n is bold). "
+        "CRITICAL for complete additions (empty original): When original_text is completely empty and all suggested_text is new, "
+        "the entire suggested_text should be in bold with NO strikethrough. "
+        "Example: Original is empty, Suggested is 'New complete text here'. "
+        "Correct markdown_diff: '**New complete text here**' (entire text in bold, no strikethrough). "
+        "WRONG: '~~~~**New complete text here**' (do not strikethrough empty original). "
         'Mark at word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
     )
 
@@ -215,9 +224,10 @@ def _build_ai_suggestions_prompt(
         )
     if has_professional_summary:
         optimization_tasks.append(
-            f"   - professional_summary: Only suggest changes when there are clear issues: unclear messaging, weak impact, grammar errors, or factual problems. "
+            f"   - professional_summary: If original_text is empty, generate a new professional summary (2-4 sentences) based on the CV and job description. "
+            "If original_text exists, only suggest changes when there are clear issues: unclear messaging, weak impact, grammar errors, or factual problems. "
             "Preserve original structure and key phrases. Avoid unnecessary rephrasing. "
-            "Stay close to original wording—only modify when the change addresses a concrete problem that significantly improves clarity or impact (2-4 sentences). "
+            "Stay close to original wording—only modify when the change addresses a concrete problem that significantly improves clarity or impact. "
             "If no changes needed, set professional_summary field to null. "
             f"See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above for markdown_diff format requirements."
         )
