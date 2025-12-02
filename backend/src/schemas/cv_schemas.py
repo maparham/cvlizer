@@ -5,7 +5,7 @@ Comprehensive Pydantic schemas for CV data validation with proper type safety.
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from src.config import AIConfig
 
@@ -106,7 +106,7 @@ class EducationSchema(BaseModel):
     )
     degree: str = Field(..., min_length=1, description="Degree name is required")
     field_of_study: Optional[str] = Field(None, description="Field of study")
-    academic_degree: Optional[str] = Field(
+    academic_title: Optional[str] = Field(
         None, description="Academic degree/title (e.g., Dr., Prof.)"
     )
     location: Optional[str] = Field(None, description="Institution location")
@@ -144,6 +144,24 @@ class SkillsSchema(BaseModel):
     languages: List[LanguageSchema] = Field(
         default_factory=list, description="Language proficiencies"
     )
+
+    @field_validator("technical", "soft", mode="before")
+    @classmethod
+    def validate_skill_length(cls, v: List[str]) -> List[str]:
+        """Validate that each skill is atomic (max 50 characters)."""
+        if not isinstance(v, list):
+            return v
+        validated_skills = []
+        for skill in v:
+            if not isinstance(skill, str):
+                continue
+            if len(skill) > 50:
+                raise ValueError(
+                    f"Skill '{skill[:30]}...' exceeds maximum length of 50 characters. "
+                    "Skills must be atomic (one skill per item)."
+                )
+            validated_skills.append(skill)
+        return validated_skills
 
     class Config:
         extra = "forbid"  # Reject any additional fields
@@ -255,7 +273,7 @@ class DraftSectionsSchema(BaseModel):
 class CVDataSchema(BaseModel):
     """Main schema for CV parsed data validation with proper type safety."""
 
-    personal_info: Optional[PersonalInfoSchema] = None
+    personal_info: PersonalInfoSchema
     professional_summary: Optional[ProfessionalSummarySchema] = None
     why_good_fit: Optional[WhyGoodFitSchema] = None
     work_experience: List[WorkExperienceSchema] = Field(default_factory=list)

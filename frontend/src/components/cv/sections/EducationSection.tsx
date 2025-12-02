@@ -37,7 +37,7 @@ interface Education {
   institution: string;
   degree: string;
   field_of_study: string;
-  academic_degree?: string;
+  academic_title?: string;
   location: string;
   start_date: string;
   end_date: string;
@@ -130,8 +130,8 @@ const EducationForm: React.FC<{
         label="Field of Study"
       />
       <AcademicDegreeAutocomplete
-        value={edu.academic_degree || ""}
-        onChange={(value) => updateEducation("academic_degree", value)}
+        value={edu.academic_title || ""}
+        onChange={(value) => updateEducation("academic_title", value)}
         onSave={onSave}
         placeholder="e.g., Dr., Prof."
         label="Academic Degree"
@@ -340,7 +340,7 @@ const EducationDisplay: React.FC<{
           >
             {edu.degree || "Degree"}
             {edu.field_of_study && ` in ${edu.field_of_study}`}
-            {edu.academic_degree && ` (${edu.academic_degree})`}
+            {edu.academic_title && ` (${edu.academic_title})`}
           </ValidatedDisplay>
           {/* Display score for all items */}
           {suggestion && (
@@ -483,7 +483,7 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
     institution: "",
     degree: "",
     field_of_study: "",
-    academic_degree: "",
+    academic_title: "",
     location: "",
     start_date: "",
     end_date: "",

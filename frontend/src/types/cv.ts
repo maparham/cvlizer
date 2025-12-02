@@ -103,7 +103,7 @@ export interface Education {
   institution: string;
   degree: string;
   field_of_study: string;
-  academic_degree?: string;
+  academic_title?: string;
   start_date: string;
   end_date: string;
   current: boolean;

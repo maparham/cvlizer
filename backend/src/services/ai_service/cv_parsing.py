@@ -65,10 +65,10 @@ async def parse_cv_text_with_openai(
         return {
             "error": "Unable to extract text from PDF. Please upload a PDF with selectable text.",
             "personal_info": {
-                "full_name": "",
-                "email": "",
+                "full_name": "Your Name",
+                "email": "your.email@example.com",
                 "phone": "",
-                "location": "",
+                "location": "Your Location",
                 "linkedin_url": "",
                 "website_url": "",
                 "github_url": "",
@@ -89,10 +89,10 @@ async def parse_cv_text_with_openai(
         return {
             "error": "Document is too long to be a CV. Please upload a CV document (typically 500-10,000 characters).",
             "personal_info": {
-                "full_name": "",
-                "email": "",
+                "full_name": "Your Name",
+                "email": "your.email@example.com",
                 "phone": "",
-                "location": "",
+                "location": "Your Location",
                 "linkedin_url": "",
                 "website_url": "",
                 "github_url": "",
@@ -121,6 +121,27 @@ DESCRIPTION FORMATTING RULES:
 
 EMPTY SECTIONS: If a section has no data (e.g., no projects found), return an empty array [] for that section. DO NOT create placeholder entries with "N/A" or similar text.
 
+TITLE INFERENCE RULES:
+- work_experience.position: If not explicitly given, infer from company, description, responsibilities, or context (e.g., "Software Developer", "Research Assistant")
+- education.degree: If not explicitly given, infer from institution level, field_of_study, or context (e.g., "Bachelor of Science", "Master of Science", "PhD")
+
+PUBLICATIONS RULES (CRITICAL):
+- ONLY include publications explicitly listed in a dedicated "Publications" section
+- DO NOT infer publications from thesis/dissertation titles in education sections
+- If no Publications section exists, return empty array []
+
+SKILLS FORMATTING RULES (CRITICAL):
+- technical: Each item must be ONE atomic skill/technology only (e.g., "Python", "FastAPI", "React", "Docker")
+  - DO NOT include category labels like "Programming Languages:" or "Web Technologies:"
+  - DO NOT combine multiple skills with commas or colons in one item (e.g., NOT "Python, JavaScript, TypeScript")
+  - Split grouped skills into separate atomic items: "Python", "JavaScript", "TypeScript"
+  - Example: ["Python", "FastAPI", "React", "Docker", "MongoDB"] NOT ["Programming Languages: Python, JavaScript"]
+- soft: Each item must be ONE atomic soft skill only (e.g., "Problem Solving", "Team Leadership", "Communication")
+  - DO NOT combine multiple skills in one item
+  - Example: ["Problem Solving", "Team Leadership", "Communication"] NOT ["Problem Solving, Team Leadership"]
+- languages: Each item must be an object with "language" and "proficiency" fields
+  - Example: [{{"language": "English", "proficiency": "Fluent"}}, {{"language": "German", "proficiency": "B1"}}]
+
 CV: {text_content}
 
 Return JSON (omit empty sections):
@@ -129,11 +150,11 @@ Return JSON (omit empty sections):
   "professional_summary": {{"content": "str (markdown bullets/paragraphs, NO headers)", "keywords": []}},
   "work_experience": [{{"company": "str", "position": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "technologies": []}}],
   "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "honors": []}}],
-  "skills": {{"technical": [], "soft": [], "languages": [{{"language": "str", "proficiency": "str"}}]}},
+  "skills": {{"technical": ["Python", "FastAPI", "React"], "soft": ["Problem Solving", "Communication"], "languages": [{{"language": "English", "proficiency": "Fluent"}}]}},
   "certifications": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD|null", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
   "projects": [{{"name": "str", "description": "str (markdown bullets/paragraphs, NO headers)", "technologies": [], "url": "str|null"}}],
   "awards": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
-  "publications": [{{"title": "str", "authors": "str", "journal": "str", "date": "YYYY-MM-DD", "url": "str|null"}}],
+  "publications": [{{"title": "str", "authors": "str", "journal": "str", "date": "YYYY-MM-DD", "url": "str|null"}}] (ONLY if explicitly in Publications section),
   "volunteer_experience": [{{"organization": "str", "role": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
   "is_valid_cv": true,
   "validation_error": null
@@ -145,7 +166,7 @@ Return JSON (omit empty sections):
 
         # Use unified OpenAI call builder
         parsed_content, metadata = await call_openai_with_schema(
-            system_prompt="You are an expert CV parser. First validate if the document is actually a CV/resume (not a research paper, article, book, manual, or other non-CV document). If it's not a CV, set is_valid_cv to false and use the standard validation_error message provided in the prompt. If it is a CV, extract structured information and return valid JSON. CRITICAL: All description fields must be formatted in markdown. For descriptions longer than 50 characters, use bullet lists with markdown syntax (- for bullets, \\n for line breaks). Return empty arrays [] for sections with no data - do NOT create placeholder entries.",
+            system_prompt="You are an expert CV parser. First validate if the document is actually a CV/resume (not a research paper, article, book, manual, or other non-CV document). If it's not a CV, set is_valid_cv to false and use the standard validation_error message provided in the prompt. If it is a CV, extract structured information and return valid JSON. CRITICAL: All description fields must be formatted in markdown. For descriptions longer than 50 characters, use bullet lists with markdown syntax (- for bullets, \\n for line breaks). Return empty arrays [] for sections with no data - do NOT create placeholder entries. CRITICAL FOR SKILLS: technical and soft skills must be atomic (one skill per array item). Do NOT include category labels or combine multiple skills in one string. Split grouped skills into separate atomic items.",
             user_prompt=prompt,
             response_schema=CVParsingResponseSchema,
             model=AIConfig.OPENAI_PARSING_MODEL,
@@ -164,10 +185,10 @@ Return JSON (omit empty sections):
             return {
                 "error": validation_error,
                 "personal_info": {
-                    "full_name": "",
-                    "email": "",
+                    "full_name": "Your Name",
+                    "email": "your.email@example.com",
                     "phone": "",
-                    "location": "",
+                    "location": "Your Location",
                     "linkedin_url": "",
                     "website_url": "",
                     "github_url": "",
@@ -208,10 +229,10 @@ Return JSON (omit empty sections):
         return {
             "error": error_message,
             "personal_info": {
-                "full_name": "",
-                "email": "",
+                "full_name": "Your Name",
+                "email": "your.email@example.com",
                 "phone": "",
-                "location": "",
+                "location": "Your Location",
                 "linkedin_url": "",
                 "website_url": "",
                 "github_url": "",

@@ -8,7 +8,7 @@ response format, structure, and semantic correctness from OpenAI API calls.
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # ============================================================================
 # CV Parsing Schemas
@@ -77,6 +77,24 @@ class SkillsResponseSchema(BaseModel):
     technical: List[str] = Field(default_factory=list)
     soft: List[str] = Field(default_factory=list)
     languages: List[LanguageItemSchema] = Field(default_factory=list)
+
+    @field_validator("technical", "soft", mode="before")
+    @classmethod
+    def validate_skill_length(cls, v: List[str]) -> List[str]:
+        """Validate that each skill is atomic (max 50 characters)."""
+        if not isinstance(v, list):
+            return v
+        validated_skills = []
+        for skill in v:
+            if not isinstance(skill, str):
+                continue
+            if len(skill) > 50:
+                raise ValueError(
+                    f"Skill '{skill[:30]}...' exceeds maximum length of 50 characters. "
+                    "Skills must be atomic (one skill per item)."
+                )
+            validated_skills.append(skill)
+        return validated_skills
 
 
 class CertificationItemSchema(BaseModel):

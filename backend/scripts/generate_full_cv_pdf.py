@@ -105,7 +105,7 @@ def _build_full_parsed_cv() -> dict:
             {
                 "degree": "B.S.",
                 "field_of_study": "Computer Science",
-                "academic_degree": "Summa Cum Laude",
+                "academic_title": "Summa Cum Laude",
                 "institution": "Tech University",
                 "location": "Boston, MA",
                 "gpa": "3.9/4.0",

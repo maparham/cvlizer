@@ -9,10 +9,10 @@ across API routers and services.
 # and as a fallback when parsing fails.
 DEFAULT_PARSED_CV = {
     "personal_info": {
-        "full_name": "",
-        "email": "",
+        "full_name": "Your Name",
+        "email": "your.email@example.com",
         "phone": "",
-        "location": "",
+        "location": "Your Location",
         "linkedin_url": "",
         "website_url": "",
     },

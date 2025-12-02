@@ -523,7 +523,7 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
     for edu in ed:
         degree = _tex_escape(edu.get("degree", ""))
         field_of_study = _tex_escape(edu.get("field_of_study", ""))
-        academic_degree = _tex_escape(edu.get("academic_degree", ""))
+        academic_title = _tex_escape(edu.get("academic_title", ""))
         institution = _tex_escape(edu.get("institution", ""))
         location = _tex_escape(edu.get("location", ""))
         gpa = _tex_escape(edu.get("gpa", ""))
@@ -554,8 +554,10 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
             degree_part += f" in {field_of_study}"
 
         # Add academic degree in parentheses at the end if present
-        if academic_degree:
-            title_line_str = f"\\textcolor{{boldgray}}{{\\textbf{{{degree_part} ({academic_degree})}}}}"
+        if academic_title:
+            title_line_str = (
+                f"\\textcolor{{boldgray}}{{\\textbf{{{degree_part} ({academic_title})}}}}"
+            )
         else:
             title_line_str = f"\\textcolor{{boldgray}}{{\\textbf{{{degree_part}}}}}"
 

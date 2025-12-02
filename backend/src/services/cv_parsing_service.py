@@ -48,10 +48,10 @@ async def parse_cv_with_openai(
         return {
             "error": error_message,
             "personal_info": {
-                "full_name": "",
-                "email": "",
+                "full_name": "Your Name",
+                "email": "your.email@example.com",
                 "phone": "",
-                "location": "",
+                "location": "Your Location",
                 "linkedin_url": "",
                 "website_url": "",
                 "github_url": "",
