@@ -60,6 +60,65 @@ def _extract_company_name_for_title(company_name: str) -> str:
     return name.strip()
 
 
+def _normalize_skill_name(skill: str) -> str:
+    """
+    Normalize a skill name for comparison (lowercase, trim whitespace).
+
+    Args:
+        skill: Skill name to normalize
+
+    Returns:
+        Normalized skill name
+    """
+    return skill.strip().lower()
+
+
+def _filter_existing_skills(
+    suggested_skills: List[Dict[str, Any]],
+    existing_skills: List[str],
+    skill_type: str,
+) -> List[Dict[str, Any]]:
+    """
+    Filter out suggested skills that already exist in the CV.
+
+    Args:
+        suggested_skills: List of skill suggestion dicts with 'skill' key
+        existing_skills: List of existing skill names from CV
+        skill_type: Type of skill ('technical' or 'soft') for logging
+
+    Returns:
+        Filtered list of skill suggestions without duplicates
+    """
+    if not suggested_skills:
+        return []
+
+    # Normalize existing skills for comparison
+    existing_normalized = {_normalize_skill_name(skill) for skill in existing_skills}
+
+    filtered = []
+    filtered_out = []
+
+    for suggestion in suggested_skills:
+        skill_name = suggestion.get("skill", "")
+        if not skill_name:
+            # Keep suggestions without skill name (shouldn't happen, but be safe)
+            filtered.append(suggestion)
+            continue
+
+        normalized_suggested = _normalize_skill_name(skill_name)
+        if normalized_suggested in existing_normalized:
+            filtered_out.append(skill_name)
+        else:
+            filtered.append(suggestion)
+
+    if filtered_out:
+        logger.info(
+            f"Filtered out {len(filtered_out)} duplicate {skill_type} skills: {filtered_out}"
+        )
+
+    return filtered
+
+
 def _build_ai_suggestions_prompt(
     cv_data: Dict[str, Any], job_description: str, company_name: Optional[str] = None
 ) -> str:
@@ -137,11 +196,22 @@ def _build_ai_suggestions_prompt(
     # Build conditional optimization instructions
     optimization_tasks = []
     if has_skills_section:
-        optimization_tasks.append(
-            "   - skills.technical: ONLY suggest skills candidate has actually used but may have undersold. NEVER suggest new skills they haven't used (max 10) with reasoning"
+        # Format current skills for prompt
+        current_technical_str = (
+            json.dumps(current_technical_skills) if current_technical_skills else "[]"
+        )
+        current_soft_str = (
+            json.dumps(current_soft_skills) if current_soft_skills else "[]"
         )
         optimization_tasks.append(
-            "   - skills.soft: Suggest soft skills that would help highlight their authentic strengths (max 5) with reasoning"
+            f"   - skills.technical: ONLY suggest NEW skills that are NOT already in the candidate's CV. "
+            f"CRITICAL: Do NOT suggest any skills from the current technical skills list: {current_technical_str}. "
+            f"Only suggest skills the candidate has actually used but may have undersold, and that are NOT in the current list (max 10) with reasoning"
+        )
+        optimization_tasks.append(
+            f"   - skills.soft: Suggest NEW soft skills that are NOT already in the candidate's CV. "
+            f"CRITICAL: Do NOT suggest any skills from the current soft skills list: {current_soft_str}. "
+            f"Only suggest soft skills that would help highlight their authentic strengths and that are NOT in the current list (max 5) with reasoning"
         )
     if has_professional_summary:
         optimization_tasks.append(
@@ -465,8 +535,30 @@ async def generate_ai_suggestions(
         work_experience_suggestions = response.get("work_experience", [])
         education_suggestions = response.get("education", [])
 
+        # Filter out existing skills from suggestions (safety measure)
+        raw_skills_response = response.get("skills", {"technical": [], "soft": []})
+        skills_data = filtered_cv_data.get("skills") or {}
+        current_technical_skills = skills_data.get("technical") or []
+        current_soft_skills = skills_data.get("soft") or []
+
+        filtered_technical = _filter_existing_skills(
+            raw_skills_response.get("technical", []),
+            current_technical_skills,
+            "technical",
+        )
+        filtered_soft = _filter_existing_skills(
+            raw_skills_response.get("soft", []),
+            current_soft_skills,
+            "soft",
+        )
+
+        filtered_skills_response = {
+            "technical": filtered_technical,
+            "soft": filtered_soft,
+        }
+
         optimization_data = {
-            "skills": response.get("skills", {"technical": [], "soft": []}),
+            "skills": filtered_skills_response,
             "professional_summary": professional_summary_value,
             "work_experience": work_experience_suggestions,
             "education": education_suggestions,
