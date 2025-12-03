@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Box, Typography, IconButton, Divider, Tooltip } from "@mui/material";
+import { Box, Typography, IconButton, Divider, Tooltip, Button } from "@mui/material";
 import {
   Edit as EditIcon,
   Save as SaveIcon,
@@ -170,6 +170,47 @@ const BaseSection: React.FC<BaseSectionProps> = ({
       </Box>
 
       {children}
+      {isEditing && (onSave || onCancel) && (
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            justifyContent: "flex-end",
+            mt: 2,
+            pt: 2,
+            borderTop: "1px solid #e0e0e0",
+          }}
+        >
+          {onCancel && (
+            <Button
+              variant="outlined"
+              onClick={onCancel}
+              data-testid={
+                sectionId
+                  ? `cancel-section-${sectionId}-button-bottom`
+                  : undefined
+              }
+            >
+              Cancel
+            </Button>
+          )}
+          {onSave && (
+            <Button
+              variant="contained"
+              onClick={onSave}
+              disabled={!isValid}
+              data-testid={
+                sectionId
+                  ? `save-section-${sectionId}-button-bottom`
+                  : undefined
+              }
+              startIcon={<SaveIcon />}
+            >
+              Save
+            </Button>
+          )}
+        </Box>
+      )}
       <Divider sx={{ my: 2 }} />
     </Box>
   );

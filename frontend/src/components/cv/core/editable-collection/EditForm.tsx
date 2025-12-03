@@ -3,7 +3,7 @@
  *
  * Renders the editing form for an item with save/cancel controls.
  */
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Tooltip, Button } from "@mui/material";
 import { Save as SaveIcon, Cancel as CancelIcon } from "@mui/icons-material";
 import type { EditFormProps } from "./types";
 
@@ -72,6 +72,33 @@ function EditForm<T>({
           </Tooltip>
         </Box>
         {renderItemForm(editData, editingItemIndex, updateItem, onSave)}
+      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          justifyContent: "flex-end",
+          mt: 2,
+          pt: 2,
+          borderTop: "1px solid #e0e0e0",
+        }}
+      >
+        <Button
+          variant="outlined"
+          onClick={onCancel}
+          data-testid={`cancel-${title.toLowerCase().replace(/ /g, "-")}-button-bottom`}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={onSave}
+          disabled={!isFormValid}
+          data-testid={`save-${title.toLowerCase().replace(/ /g, "-")}-button-bottom`}
+          startIcon={<SaveIcon />}
+        >
+          Save
+        </Button>
       </Box>
     </Box>
   );
