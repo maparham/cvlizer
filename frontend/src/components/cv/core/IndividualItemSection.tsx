@@ -84,6 +84,7 @@ function IndividualItemSection<T>({
   onTitleSave,
   cvId: _cvId,
   additionalHeaderActions,
+  getItemTitle,
 }: IndividualItemSectionProps<T>) {
   // Custom hooks for state management
   const {
@@ -423,6 +424,21 @@ function IndividualItemSection<T>({
     }
   }, [sectionId, requestIndividualItemCancel, handleCancelEdit]);
 
+  // Compute delete confirmation message with item title if available
+  const deleteConfirmationMessage = useMemo(() => {
+    const singularTitle = getSingularTitle(title).toLowerCase();
+    if (deleteConfirmation.index !== null && getItemTitle) {
+      const item = itemsData[deleteConfirmation.index];
+      if (item) {
+        const itemTitle = getItemTitle(item);
+        if (itemTitle) {
+          return `Delete "${itemTitle}"?`;
+        }
+      }
+    }
+    return `Delete ${singularTitle}?`;
+  }, [deleteConfirmation.index, getItemTitle, itemsData, title]);
+
   return (
     <ErrorBoundary fallback={CompactErrorFallback}>
       <BaseSection
@@ -674,7 +690,8 @@ function IndividualItemSection<T>({
         onClose={() => setDeleteConfirmation({ open: false, index: null })}
         onConfirm={handleConfirmDelete}
         title={`Delete ${getSingularTitle(title)}?`}
-        message={`Delete this ${getSingularTitle(title).toLowerCase()}?`}
+        message={deleteConfirmationMessage}
+        warning="This action cannot be undone."
         confirmButtonText="Delete"
         confirmButtonColor="error"
         severity="error"

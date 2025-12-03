@@ -190,6 +190,7 @@ const AwardsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data
         { field: 'date', label: 'Date Received' }
       ]}
       cvId={cvId}
+      getItemTitle={(item) => item.name || ""}
     />
   )
 }

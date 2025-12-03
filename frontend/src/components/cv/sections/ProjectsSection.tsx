@@ -205,6 +205,7 @@ const ProjectsSection: React.FC<SectionProps & { sectionType?: string }> = ({ da
         { field: 'name', label: 'Name' }
       ]}
       cvId={cvId}
+      getItemTitle={(item) => item.name || ""}
     />
   )
 }

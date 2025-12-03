@@ -206,6 +206,12 @@ const VolunteerExperienceSection: React.FC<SectionProps & { sectionType?: string
         { field: 'end_date', label: 'End Date' }
       ]}
       cvId={cvId}
+      getItemTitle={(item) => {
+        if (item.role && item.organization) {
+          return `${item.role} at ${item.organization}`;
+        }
+        return item.role || item.organization || "";
+      }}
     />
   )
 }

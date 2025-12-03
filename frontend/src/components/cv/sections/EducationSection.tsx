@@ -601,6 +601,12 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
         { field: "end_date", label: "End Date" },
       ]}
       cvId={cvId}
+      getItemTitle={(item) => {
+        if (item.institution && item.degree) {
+          return `${item.institution} - ${item.degree}`;
+        }
+        return item.institution || item.degree || "";
+      }}
     />
 
       {/* Discard All Suggestions Button - shown at bottom of section */}

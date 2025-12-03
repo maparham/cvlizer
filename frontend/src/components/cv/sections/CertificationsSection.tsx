@@ -207,6 +207,7 @@ const CertificationsSection: React.FC<SectionProps & { sectionType?: string }> =
         { field: 'expiry_date', label: 'Expiry Date' }
       ]}
       cvId={cvId}
+      getItemTitle={(item) => item.name || ""}
     />
   )
 }

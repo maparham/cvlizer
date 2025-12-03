@@ -211,6 +211,7 @@ const PublicationsSection: React.FC<SectionProps & { sectionType?: string }> = (
         { field: 'date', label: 'Publication Date' }
       ]}
       cvId={cvId}
+      getItemTitle={(item) => item.title || ""}
     />
   )
 }

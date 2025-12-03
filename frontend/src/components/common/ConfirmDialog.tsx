@@ -24,7 +24,9 @@ import {
   Button,
   Typography,
   Alert,
+  Box,
 } from "@mui/material";
+import { Warning } from "@mui/icons-material";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -41,6 +43,7 @@ interface ConfirmDialogProps {
     | "info"
     | "warning";
   severity?: "error" | "warning" | "info" | "success";
+  warning?: string;
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -52,6 +55,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   confirmButtonText = "Confirm",
   confirmButtonColor = "primary",
   severity = "warning",
+  warning,
 }) => {
   const handleConfirm = () => {
     onConfirm();
@@ -62,9 +66,25 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
-        <Alert severity={severity} sx={{ mb: 2 }}>
+        <Alert severity={severity} sx={{ mb: warning ? 1 : 2 }}>
           {message}
         </Alert>
+        {warning && (
+          <Box
+            sx={{
+              mt: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              color: "warning.main",
+            }}
+          >
+            <Warning sx={{ fontSize: 20 }} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {warning}
+            </Typography>
+          </Box>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>

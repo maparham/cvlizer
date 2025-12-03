@@ -33,6 +33,7 @@ export interface IndividualItemSectionProps<T> {
   cvId?: string
   additionalHeaderActions?: React.ReactNode
   sectionType?: string
+  getItemTitle?: (item: T) => string
 }
 
 export interface ItemControlsProps<T> {

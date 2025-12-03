@@ -387,6 +387,12 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
         { field: "end_date", label: "End Date" },
       ]}
       cvId={cvId}
+      getItemTitle={(item) => {
+        if (item.position && item.company) {
+          return `${item.position} at ${item.company}`;
+        }
+        return item.position || item.company || "";
+      }}
     />
 
       {/* Discard All Suggestions Button - shown at bottom of section */}
