@@ -174,7 +174,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
                 Generate Job Fit Section
               </Typography>
               <Typography color="text.secondary" paragraph>
-                Use the "AI Suggestions for this Job" button above to generate an AI-powered "Why I'm a Good Fit" section that highlights your strengths and matches for this role.
+                Use the "Enhance CV for this Job" button above to generate an AI-powered "Why I'm a Good Fit" section that highlights your strengths and matches for this role.
               </Typography>
             </Box>
           </CardContent>

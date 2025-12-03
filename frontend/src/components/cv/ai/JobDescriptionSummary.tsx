@@ -425,7 +425,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                                 transition: "all 0.2s ease-in-out",
                               }}
                             >
-                              AI Suggestions for this Job
+                              Enhance CV for this Job
                             </Button>
                           </Box>
                         </Tooltip>
