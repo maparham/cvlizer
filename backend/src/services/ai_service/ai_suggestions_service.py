@@ -7,7 +7,6 @@ in a single AI call with token-optimized prompts.
 
 import json
 import logging
-import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -19,45 +18,6 @@ from .common import call_openai_with_schema, is_ai_enabled
 from .cv_filter import filter_hidden_sections
 
 logger = logging.getLogger(__name__)
-
-
-def _extract_company_name_for_title(company_name: str) -> str:
-    """
-    Extract a shorter, more natural company name for use in titles.
-
-    Handles cases like:
-    - "Institute of Science and Technology Austria (ISTA)" -> "ISTA"
-    - "International Business Machines (IBM)" -> "IBM"
-    - "Microsoft Corporation" -> "Microsoft"
-    - "Google LLC" -> "Google"
-
-    Args:
-        company_name: Full company name
-
-    Returns:
-        Shorter company name suitable for title use
-    """
-    # Check for acronym in parentheses: "Full Name (ACRONYM)"
-    match = re.search(r"\(([A-Z]{2,})\)", company_name)
-    if match:
-        return match.group(1)
-
-    # Remove common suffixes
-    suffixes = ["Corporation", "Corp.", "Inc.", "LLC", "Ltd.", "Limited", "GmbH", "AG"]
-    name = company_name
-    for suffix in suffixes:
-        # Match suffix at end of string (case insensitive)
-        pattern = r"\s+" + re.escape(suffix) + r"$"
-        name = re.sub(pattern, "", name, flags=re.IGNORECASE)
-
-    # If still too long (>30 chars), try to extract first meaningful part
-    if len(name) > 30:
-        # Split by common separators and take first part
-        parts = re.split(r"[,\s]+(?:of|and|&)\s+", name, maxsplit=1)
-        if parts and len(parts[0]) < len(name):
-            name = parts[0]
-
-    return name.strip()
 
 
 def _normalize_skill_name(skill: str) -> str:
@@ -343,11 +303,11 @@ def _build_ai_suggestions_prompt(
 
     # Build company name instruction based on whether it's provided
     if company_name:
-        # Extract shorter name for title (e.g., "ISTA" from "Institute of Science and Technology Austria (ISTA)")
-        short_company_name = _extract_company_name_for_title(company_name)
-        company_name_instruction = f'   - Use the company name "{short_company_name}" in the title: "Hello {short_company_name}!"'
+        # Provide full company name to AI and let it determine appropriate format for title
+        # AI should intelligently format it (e.g., "ISTA" from "Institute of Science and Technology Austria (ISTA)", or "Microsoft" from "Microsoft Corporation")
+        company_name_instruction = f'   - Use the company name "{company_name}" or if available, the acronym/abbreviation of the company name in the title'
     else:
-        company_name_instruction = '   - Extract the company name from the job description and use it in the title: "Hello [Company Name]!"'
+        company_name_instruction = '   - Extract the company name or its acronym/abbreviation (if available) from the job description  and use it in an appropriate format for the title: "Hello [Company Name]!"'
 
     return f"""Analyze CV fit for position and suggest improvements.
 
