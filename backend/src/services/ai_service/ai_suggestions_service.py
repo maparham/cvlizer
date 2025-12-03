@@ -177,29 +177,25 @@ def _build_ai_suggestions_prompt(
     markdown_diff_instruction = (
         "Provide markdown_diff showing the COMPLETE suggested text with inline change markers. "
         "GOAL: Enable users to quickly see changes—single out ONLY changed parts, keep all unchanged text plain. "
-        "CRITICAL: markdown_diff must contain EVERY word from 'suggested' field, but mark ONLY changed words/punctuation. "
+        "CRITICAL: markdown_diff must contain EVERY word from 'suggested' field, but mark ONLY changed phrases/words/punctuation. "
         "Rules: Use ~~strikethrough~~ for removed text, **bold** for added text. "
         "Process: Compare word-by-word and punctuation-by-punctuation with 'original', mark only changed elements. "
-        "Examples: '- Item one**, with addition**' (adding), "
-        "'- Unchanged text and ~~old part~~**new part**' (partial change), "
+        "Examples: '- existing part**, new part**' (inserting or appending text), "
+        "'- Unchanged part and ~~old part~~**new part**' (partial change), "
         "'- Text with ~~Old~~**old** word' (capitalization), "
-        "'Text ~~and~~**;** word unchanged' (punctuation change), "
-        "'Start unchanged ~~and~~**;** middle ~~unchanged~~**changed** end' (multiple changes), "
-        "'Start unchanged **, inserted text,** end unchanged' (text insertion). "
-        "WRONG: '~~Start unchanged Old Word~~**Start unchanged new word** end unchanged' (marks unchanged text—DO NOT DO THIS). "
-        "CRITICAL for line removals: When an entire line is removed, include the COMPLETE line including newline character in strikethrough. "
-        "Example: Original has '- Line A\\n- Line B\\n- Line C', Suggested has '- Line A\\n- Line C'. "
-        "Correct markdown_diff: '- Line A\\n- ~~Line B\\n-~~ Line C' (entire removed line including \\n is strikethrough). "
-        "WRONG: '- Line A\\n- ~~Line B~~**Line C**' (doesn't show line removal, incorrectly shows word replacement). "
-        "CRITICAL for line additions: When an entire line is added, show the complete new line in bold including newline. "
-        "Example: Original has '- Line A\\n- Line C', Suggested has '- Line A\\n- Line B\\n- Line C'. "
-        "Correct markdown_diff: '- Line A\\n- **Line B\\n-** Line C' (entire added line including \\n is bold). "
-        "CRITICAL for complete additions (empty original): When original_text is completely empty and all suggested_text is new, "
+        "'First part ~~and~~**;** second part' (punctuation change), "
+        "CRITICAL: for line removals: When an entire line is removed, include the COMPLETE line including newline character in strikethrough. "
+        "Example: Original: '- Line1 A\\n- Line2 B\\n- Line3 C', Suggested: '- Line1 A\\n- Line3 C'. "
+        "markdown_diff: '- Line A\\n- ~~Line B\\n-~~ Line C' (entire removed line including \\n is strikethrough). "
+        "CRITICAL: for line additions: When an entire line is added, show the complete new line in bold including newline. "
+        "Example: Original: '- Line1 A\\n- Line3 C', Suggested: '- Line1 A\\n- Line2 B\\n- Line3 C'. "
+        "markdown_diff: '- Line A\\n- **Line B\\n-** Line C' (entire added line including \\n is bold). "
+        "CRITICAL: for complete additions when original_text is empty and all suggested_text is new: "
         "the entire suggested_text should be in bold with NO strikethrough. "
-        "Example: Original is empty, Suggested is 'New complete text here'. "
-        "Correct markdown_diff: '**New complete text here**' (entire text in bold, no strikethrough). "
-        "WRONG: '~~~~**New complete text here**' (do not strikethrough empty original). "
-        'Mark at word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
+        "Example: Original: empty, Suggested: 'New complete text here'. "
+        "markdown_diff: '**New complete text here**' (entire text in bold, no strikethrough). "
+        'CRITICAL for markdown_diff: Mark at phrase/word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
+        "CRITICAL: applying the markdown_diff to the original text must produce the suggested text. If not, you are doing it wrong."
     )
 
     # Build conditional optimization instructions
@@ -469,11 +465,21 @@ async def generate_ai_suggestions(
         )
 
         system_prompt = (
-            "You are a supportive career coach helping candidates present their authentic experience confidently."
-            "Focus on transferable skills and genuine fit over keyword matching."
-            "CRITICAL: Only suggest changes when there is a clear, substantial benefit—avoid cosmetic changes, synonym swapping, or unnecessary rephrasing."
-            "Stay close to the original wording and preserve the candidate's voice. Only modify text when it addresses concrete issues like grammar errors, unclear messaging, or missing impact."
-            "Be encouraging, honest, and help them tell their story well."
+            "You are a supportive career coach dedicated to helping candidates confidently present their authentic experiences. "
+            "Emphasize transferable skills and demonstrate genuine role fit, rather than focusing solely on keyword matching.\n\n"
+            "Begin with a concise checklist (3-7 bullets) of key areas you will assess or improve in the candidate's material; keep items conceptual.\n\n"
+            "CRITICAL: Only suggest changes when there is a clear and substantial benefit—such as correcting grammar errors, clarifying unclear messaging, or making missing impact explicit. "
+            "Avoid cosmetic edits, unnecessary synonym swaps, or rewording merely for style. Stay as close as possible to the candidate's original wording and preserve their unique voice.\n\n"
+            "After your review, provide a brief validation step: confirm whether your suggestions directly enhance clarity, accuracy, or impact. "
+            "If not, self-correct or note any outstanding issues that could not be addressed within the scope.\n\n"
+            "Be both encouraging and honest, helping candidates share their stories effectively while supporting them throughout the process. "
+            "Do not expand length unnecessarily for added politeness.\n\n"
+            "Output Verbosity: Limit your feedback to a maximum of 2 short paragraphs or up to 6 concise bullets (1 line each). "
+            "Prioritize complete, actionable answers within these boundaries.\n\n"
+            "Avoid using corporate jargon or overly formal language. Examples to avoid: 'synergize', 'leverage', 'utilize' (use 'use'), 'facilitate' (use 'help' or 'enable'), 'paradigm shift', 'circle back', 'touch base', 'deep dive', 'low-hanging fruit', 'move the needle', 'at the end of the day', 'think outside the box'. Instead, use clear, direct language that sounds natural and human.\n\n"
+            "Examples to avoid: 'synergize', 'leverage', 'utilize' (use 'use'), 'facilitate' (use 'help' or 'enable'), "
+            "'paradigm shift', 'circle back', 'touch base', 'deep dive', 'low-hanging fruit', 'move the needle', "
+            "'at the end of the day', 'think outside the box'. Instead, use clear, direct language that sounds natural and human."
         )
 
         # Debug log: Print entire prompts
