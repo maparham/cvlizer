@@ -45,8 +45,8 @@ const BaseSection: React.FC<BaseSectionProps> = ({
         position: "relative",
       }}
     >
-      {isEditing && onCancel ? (
-        // Show save and cancel icon buttons in edit mode (save button only if onSave is provided)
+      {isEditing && (onSave || onCancel) ? (
+        // Show save and cancel icon buttons in edit mode (each button only if corresponding handler is provided)
         <Box
           sx={{
             position: "absolute",
@@ -78,22 +78,24 @@ const BaseSection: React.FC<BaseSectionProps> = ({
               </span>
             </Tooltip>
           )}
-          <Tooltip title="Cancel editing">
-            <span>
-              <IconButton
-                onClick={onCancel}
-                sx={{
-                  opacity: 1,
-                  transition: "opacity 0.2s",
-                  bgcolor: "white",
-                  boxShadow: 1,
-                }}
-                size="small"
-              >
-                <CancelIcon fontSize="small" />
-              </IconButton>
-            </span>
-          </Tooltip>
+          {onCancel && (
+            <Tooltip title="Cancel editing">
+              <span>
+                <IconButton
+                  onClick={onCancel}
+                  sx={{
+                    opacity: 1,
+                    transition: "opacity 0.2s",
+                    bgcolor: "white",
+                    boxShadow: 1,
+                  }}
+                  size="small"
+                >
+                  <CancelIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
         </Box>
       ) : // Show edit button or custom editButton in view mode
       editButton !== null ? (
