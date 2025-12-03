@@ -10,14 +10,15 @@
  * - Integrate with Material-UI theme and validation system
  * - Support error states and helper text
  * - Match Material-UI TextField styling for consistency
+ * - Auto-resize to fit content within min/max height constraints
  *
  * Usage:
  * - Used in FormField component when useMarkdownEditor is enabled
  * - Supports all standard form field props (value, onChange, error, helperText)
- * - Height is configurable via rows prop (converted to min height)
+ * - Height auto-adjusts based on content with configurable min (rows) and max height
  */
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import MDEditor from "@uiw/react-md-editor";
 import { Box, FormHelperText, useTheme } from "@mui/material";
 import "@uiw/react-md-editor/markdown-editor.css";
@@ -42,14 +43,98 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   disabled = false,
 }) => {
   const theme = useTheme();
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [editorHeight, setEditorHeight] = useState<number>(0);
 
-  // Calculate height based on rows (similar to TextField)
-  // Approximate: each row is ~24px + padding
-  const minHeight = rows * 24 + 32;
+  // Calculate min and max heights
+  // Each row is approximately 24px (line-height) + base padding
+  const minHeight = rows * 24 + 80; // Base padding for toolbar and container
+  const maxHeight = Math.min(
+    typeof window !== "undefined" ? window.innerHeight * 0.7 : 600,
+    typeof window !== "undefined" ? window.innerHeight - 300 : 600
+  );
+
+  // Auto-resize effect that measures actual content
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    const calculateHeight = () => {
+      try {
+        // Find the textarea element within the MDEditor
+        const textarea = editorRef.current?.querySelector(
+          ".w-md-editor-text-input"
+        ) as HTMLTextAreaElement;
+
+        if (!textarea) {
+          // If we can't find textarea yet, use minHeight
+          setEditorHeight(minHeight);
+          return;
+        }
+
+        // Temporarily reset height to get accurate scrollHeight
+        const previousHeight = textarea.style.height;
+        textarea.style.height = "auto";
+
+        // Get the actual content height
+        const contentHeight = textarea.scrollHeight;
+
+        // Restore previous height
+        textarea.style.height = previousHeight;
+
+        // Find the toolbar element to measure its height
+        const toolbar = editorRef.current?.querySelector(
+          ".w-md-editor-toolbar"
+        ) as HTMLElement;
+        const toolbarHeight = toolbar ? toolbar.offsetHeight : 29; // Default toolbar height
+
+        // Calculate total required height
+        // Content height + toolbar + padding/borders + buffer for proper spacing
+        const totalHeight =
+          contentHeight + // Actual content
+          toolbarHeight + // Toolbar
+          24 + // Top/bottom padding of textarea container
+          2 + // Borders (1px top + 1px bottom)
+          16; // Additional buffer for internal spacing
+
+        // Clamp between min and max
+        const clampedHeight = Math.max(
+          minHeight,
+          Math.min(maxHeight, totalHeight)
+        );
+
+        setEditorHeight(clampedHeight);
+      } catch (error) {
+        // Fallback to minHeight if measurement fails
+        console.error("Error calculating editor height:", error);
+        setEditorHeight(minHeight);
+      }
+    };
+
+    // Initial calculation
+    calculateHeight();
+
+    // Recalculate on content change
+    const timeoutId = setTimeout(calculateHeight, 0);
+
+    // Recalculate on window resize
+    const handleResize = () => {
+      calculateHeight();
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [value, minHeight, maxHeight]);
+
+  // Use minHeight until first measurement completes
+  const height = editorHeight || minHeight;
 
   return (
     <Box>
       <Box
+        ref={editorRef}
         sx={{
           border: `1px solid ${
             error ? theme.palette.error.main : theme.palette.divider
@@ -115,7 +200,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           onChange={disabled ? undefined : onChange}
           preview="edit"
           visibleDragBar={false}
-          height={minHeight}
+          height={height}
           data-color-mode="light"
           textareaProps={{
             placeholder: placeholder || "Enter markdown content...",
