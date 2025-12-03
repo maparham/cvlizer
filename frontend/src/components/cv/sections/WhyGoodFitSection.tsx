@@ -341,7 +341,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
             <strong>Delete this section?</strong>
           </Alert>
           <Typography variant="body2" color="text.secondary">
-            You can always regenerate the section later.
+            You can always regenerate the section later. However, the new content may differ from the current one.
           </Typography>
         </DialogContent>
         <DialogActions>
