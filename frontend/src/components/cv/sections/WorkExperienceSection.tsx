@@ -14,7 +14,7 @@ import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActi
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
 import { FormField } from "../core/formUtils";
-import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from "../core/validatedFields";
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation, type ItemValidationState } from "../core/validatedFields";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import JobPositionAutocomplete from "../ui/JobPositionAutocomplete";
 import { generateSectionId } from "../../../utils/idGenerator";
@@ -128,12 +128,7 @@ const WorkExperienceForm: React.FC<{
 const WorkExperienceDisplay: React.FC<{
   exp: WorkExperience;
   index: number;
-  validation: {
-    position: { hasError: boolean; errorMessage?: string };
-    company: { hasError: boolean; errorMessage?: string };
-    start_date: { hasError: boolean; errorMessage?: string };
-    end_date: { hasError: boolean; errorMessage?: string };
-  };
+  validation: ItemValidationState;
   suggestionsByItemId: Map<string, any>;
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
   handleDiscardSuggestion: (itemId: string) => void;

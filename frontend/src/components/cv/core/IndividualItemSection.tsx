@@ -567,6 +567,7 @@ function IndividualItemSection<T>({
                           <Box
                             ref={provided.innerRef}
                             {...provided.draggableProps}
+                            data-item-id={(itemsData[index] as any).id}
                             className="individual-item-container"
                             sx={{
                               position: "relative",

@@ -46,6 +46,7 @@ import SortableSectionItem from "./SortableSectionItem";
 import { AVAILABLE_SECTIONS } from "../constants";
 import { EditableTitle } from "../EditableTitle";
 import { JobDescriptionSummary } from "../ai";
+import SuggestionsSidebar from "../ai/SuggestionsSidebar";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import { useActiveJobDescription, useAIStore, useCVDrafts } from "../../../stores/ai";
@@ -816,6 +817,11 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                 onAddToCV={onContentUpdate}
                 countdownSeconds={countdownSeconds}
               />
+
+              {/* Suggestions Sidebar */}
+              {totalSuggestionsCount > 0 && (
+                <SuggestionsSidebar cvData={cvData} />
+              )}
 
               {/* Discard All Suggestions Button */}
               {totalSuggestionsCount > 0 && (
