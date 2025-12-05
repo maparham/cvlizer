@@ -126,10 +126,15 @@ const SuggestionGroup: React.FC<SuggestionGroupProps> = ({
                       alignItems: "center",
                       gap: 1,
                       flex: 1,
+                      minWidth: 0, // Critical: allows flex children to shrink below content size
                     }}
                   >
                     <ListItemText
                       primary={item.title}
+                      sx={{
+                        flex: 1,
+                        minWidth: 0, // Critical: allows text to truncate
+                      }}
                       primaryTypographyProps={{
                         variant: "body2",
                         sx: {
@@ -144,7 +149,11 @@ const SuggestionGroup: React.FC<SuggestionGroupProps> = ({
                       label={chipLabel}
                       size="small"
                       variant="outlined"
-                      sx={{ fontSize: "0.7rem", height: 20 }}
+                      sx={{
+                        fontSize: "0.7rem",
+                        height: 20,
+                        flexShrink: 0, // Prevent chip from shrinking
+                      }}
                     />
                   </Box>
                 </ListItemButton>
@@ -377,10 +386,31 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
     });
     timeoutRefs.current = [];
 
-    // Scroll smoothly to the target
-    targetElement.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
+    // Find the CV content scrollable container
+    const scrollContainer = document.querySelector('[data-scrollable-container]') as HTMLElement;
+
+    if (!scrollContainer) {
+      console.warn('SuggestionsSidebar: Could not find scrollable container with data-scrollable-container attribute');
+      return;
+    }
+
+    // Calculate the target element's position relative to the scroll container
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const targetRect = targetElement.getBoundingClientRect();
+
+    // Calculate relative position
+    const relativeTop = targetRect.top - containerRect.top;
+    const currentScrollTop = scrollContainer.scrollTop;
+    const containerHeight = scrollContainer.clientHeight;
+    const targetHeight = targetElement.clientHeight;
+
+    // Calculate scroll position to center the target in the viewport
+    const targetScrollTop = currentScrollTop + relativeTop - (containerHeight / 2) + (targetHeight / 2);
+
+    // Smooth scroll the container to the target position
+    scrollContainer.scrollTo({
+      top: targetScrollTop,
+      behavior: 'smooth'
     });
 
     // Apply temporary highlight animation using inline styles
