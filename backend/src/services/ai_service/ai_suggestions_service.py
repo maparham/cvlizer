@@ -303,11 +303,14 @@ def _build_ai_suggestions_prompt(
 
     # Build company name instruction based on whether it's provided
     if company_name:
-        # Provide full company name to AI and let it determine appropriate format for title
-        # AI should intelligently format it (e.g., "ISTA" from "Institute of Science and Technology Austria (ISTA)", or "Microsoft" from "Microsoft Corporation")
-        company_name_instruction = f'   - Use the company name "{company_name}" or if available, the acronym/abbreviation of the company name in the title'
+        company_source = f'Company name: "{company_name}"'
     else:
-        company_name_instruction = '   - Extract the company name or its acronym/abbreviation (if available) from the job description  and use it in an appropriate format for the title: "Hello [Company Name]!"'
+        company_source = "Extract the company name from the job description"
+
+    company_name_instruction = f"""   - {company_source}
+   - If the company name contains an acronym (e.g., in parentheses like "Full Name (ACRONYM)"), extract and use ONLY the acronym in the title: "Hello [ACRONYM]!"
+   - If no acronym is present, use an appropriate short form of the company name in the title
+   - Throughout the fit_analysis, consistently refer to the company using the acronym or short name for brevity and natural flow"""
 
     return f"""Analyze CV fit for position and suggest improvements.
 
