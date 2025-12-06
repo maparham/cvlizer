@@ -32,6 +32,7 @@ import {
   Code as CodeIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { CVData, WorkExperience, Education } from "../../../types";
@@ -45,7 +46,7 @@ interface SuggestionItem {
   id: string;
   title: string;
   section: string;
-  type: "skill" | "summary" | "work_experience" | "education";
+  type: "why_good_fit" | "skill" | "summary" | "work_experience" | "education";
 }
 
 interface SuggestionsSidebarProps {
@@ -250,6 +251,7 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
   const groupedSuggestions = useMemo(() => {
     if (!allSuggestions) {
       return {
+        whyGoodFit: [],
         skills: [],
         professionalSummary: [],
         workExperience: [],
@@ -257,10 +259,22 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
       };
     }
 
+    const whyGoodFit: SuggestionItem[] = [];
     const skills: SuggestionItem[] = [];
     const professionalSummary: SuggestionItem[] = [];
     const workExperience: SuggestionItem[] = [];
     const education: SuggestionItem[] = [];
+
+    // Add why_good_fit suggestion (FIRST priority)
+    // Only show if both fit_analysis and title exist
+    if (allSuggestions.why_good_fit?.fit_analysis && allSuggestions.why_good_fit?.title) {
+      whyGoodFit.push({
+        id: "why_good_fit",
+        title: allSuggestions.why_good_fit.title,
+        section: "why_good_fit",
+        type: "why_good_fit",
+      });
+    }
 
     // Add skill suggestions (combine technical and soft)
     allSuggestions.skills?.technical?.forEach((skill) => {
@@ -319,6 +333,7 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
     });
 
     return {
+      whyGoodFit,
       skills,
       professionalSummary,
       workExperience,
@@ -333,6 +348,7 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
   const [educationExpanded, setEducationExpanded] = useState(true);
 
   const totalCount =
+    groupedSuggestions.whyGoodFit.length +
     groupedSuggestions.skills.length +
     groupedSuggestions.professionalSummary.length +
     groupedSuggestions.workExperience.length +
@@ -342,8 +358,21 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
   const handleItemClick = useCallback((item: SuggestionItem) => {
     let targetElement: HTMLElement | null = null;
 
+    // Why Good Fit draft - scroll to draft card in the same tab
+    if (item.type === 'why_good_fit') {
+      targetElement = document.querySelector(
+        '[data-section="why_good_fit_draft"]'
+      ) as HTMLElement;
+
+      if (!targetElement) {
+        console.warn(
+          'SuggestionsSidebar: Could not find why_good_fit draft. The draft may not be rendered yet.'
+        );
+        return;
+      }
+    }
     // For multi-item sections (work_experience, education), scroll to specific item
-    if (item.type === 'work_experience' || item.type === 'education') {
+    else if (item.type === 'work_experience' || item.type === 'education') {
       // Extract the actual item ID from the composite suggestion ID
       // Format: "work_experience-{itemId}" or "education-{itemId}"
       // Use robust prefix removal to handle edge cases where item ID contains the section name
@@ -460,6 +489,69 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
       </Box>
 
       <List disablePadding sx={{ maxHeight: 400, overflow: "auto" }}>
+        {/* Why Good Fit - Direct item (no expandable group) */}
+        {groupedSuggestions.whyGoodFit.length > 0 && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => handleItemClick(groupedSuggestions.whyGoodFit[0])}
+                sx={{
+                  borderRadius: 1,
+                  mb: 0.5,
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <CheckCircleIcon fontSize="small" color="primary" />
+                  <ListItemText
+                    primary={groupedSuggestions.whyGoodFit[0].title}
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                    primaryTypographyProps={{
+                      variant: "body2",
+                      sx: {
+                        fontWeight: 500,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      },
+                    }}
+                  />
+                  <Chip
+                    label="Why Good Fit"
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      fontSize: "0.7rem",
+                      height: 20,
+                      flexShrink: 0,
+                    }}
+                  />
+                </Box>
+              </ListItemButton>
+            </ListItem>
+            {/* Divider if there are other sections below */}
+            {(groupedSuggestions.skills.length > 0 ||
+              groupedSuggestions.professionalSummary.length > 0 ||
+              groupedSuggestions.workExperience.length > 0 ||
+              groupedSuggestions.education.length > 0) && (
+              <Divider sx={{ my: 1 }} />
+            )}
+          </>
+        )}
+
         <SuggestionGroup
           title="Skills"
           items={groupedSuggestions.skills}

@@ -194,11 +194,23 @@ export interface ItemDescriptionSuggestion {
   markdown_diff?: string; // Only present for items with suggestions (score < 50)
 }
 
+export interface WhyGoodFitSuggestion {
+  title: string;
+  confidence_score: number;
+  fit_analysis: string;
+  key_matches: string[];
+  missing_skills: string[];
+  suggested_improvements: string[];
+  strengths: string[];
+  weaknesses: string[];
+}
+
 export interface AllSuggestionsResponse {
   skills: SkillsSuggestions;
   professional_summary: ProfessionalSummarySuggestion;
   work_experience: ItemDescriptionSuggestion[];
   education: ItemDescriptionSuggestion[];
+  why_good_fit: WhyGoodFitSuggestion;
 }
 
 // Draft Management Types

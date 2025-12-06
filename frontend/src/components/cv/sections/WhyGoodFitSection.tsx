@@ -148,7 +148,7 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
   }
 
   return (
-    <Box>
+    <Box data-section="why_good_fit">
       <Box
         display="flex"
         justifyContent="space-between"

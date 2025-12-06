@@ -46,6 +46,7 @@ interface AIStore {
   ) => Promise<void>;
   dismissAllSkillSuggestions: () => Promise<void>;
   dismissSummarySuggestion: () => Promise<void>;
+  dismissWhyGoodFitSuggestion: () => Promise<void>;
   dismissWorkExperienceSuggestion: (itemId: string) => Promise<void>;
   dismissAllWorkExperienceSuggestions: () => Promise<void>;
   dismissEducationSuggestion: (itemId: string) => Promise<void>;
@@ -127,6 +128,16 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           },
           work_experience: Array.isArray(rawData.work_experience) ? rawData.work_experience : [],
           education: Array.isArray(rawData.education) ? rawData.education : [],
+          why_good_fit: rawData.why_good_fit || {
+            title: "",
+            confidence_score: 0,
+            fit_analysis: "",
+            key_matches: [],
+            missing_skills: [],
+            suggested_improvements: [],
+            strengths: [],
+            weaknesses: [],
+          },
         };
 
         set({
@@ -187,6 +198,16 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
             },
             work_experience: Array.isArray(rawData.work_experience) ? rawData.work_experience : [],
             education: Array.isArray(rawData.education) ? rawData.education : [],
+            why_good_fit: rawData.why_good_fit || {
+              title: "",
+              confidence_score: 0,
+              fit_analysis: "",
+              key_matches: [],
+              missing_skills: [],
+              suggested_improvements: [],
+              strengths: [],
+              weaknesses: [],
+            },
           };
 
           set({
@@ -257,7 +278,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text &&
       (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0;
+      (updatedSuggestions.education || []).length === 0 &&
+      !updatedSuggestions.why_good_fit?.fit_analysis;
 
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
@@ -301,7 +323,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text &&
       (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0;
+      (updatedSuggestions.education || []).length === 0 &&
+      !updatedSuggestions.why_good_fit?.fit_analysis;
 
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
@@ -346,7 +369,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text &&
       (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0;
+      (updatedSuggestions.education || []).length === 0 &&
+      !updatedSuggestions.why_good_fit?.fit_analysis;
 
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
@@ -359,6 +383,58 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       } catch (error) {
         console.error(
           "❌ [dismissSummarySuggestion] Failed to update backend:",
+          error,
+        );
+      }
+    }
+  },
+
+  // Dismiss why_good_fit suggestion
+  dismissWhyGoodFitSuggestion: async () => {
+    const currentSuggestions = get().allSuggestions;
+    const enhancementId = get().currentEnhancementId;
+
+    if (!currentSuggestions) {
+      return;
+    }
+
+    // Update UI immediately - clear why_good_fit only
+    const updatedSuggestions = {
+      ...currentSuggestions,
+      why_good_fit: {
+        title: "",
+        confidence_score: 0,
+        fit_analysis: "",
+        key_matches: [],
+        missing_skills: [],
+        suggested_improvements: [],
+        strengths: [],
+        weaknesses: [],
+      },
+    };
+
+    set({ allSuggestions: updatedSuggestions });
+
+    // Check if ALL suggestions across ALL sections are now dismissed
+    const hasNoSuggestions =
+      updatedSuggestions.skills.technical.length === 0 &&
+      updatedSuggestions.skills.soft.length === 0 &&
+      !updatedSuggestions.professional_summary.suggested_text &&
+      (updatedSuggestions.work_experience || []).length === 0 &&
+      (updatedSuggestions.education || []).length === 0 &&
+      !updatedSuggestions.why_good_fit?.fit_analysis;
+
+    if (hasNoSuggestions) {
+      // Delete the entire enhancement if EVERYTHING is dismissed
+      await get().deleteCurrentEnhancement();
+    } else if (enhancementId) {
+      // Update the backend with partial dismissal - save the updated suggestions
+      try {
+        // Update the enhancement_data in the backend with the new state
+        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
+      } catch (error) {
+        console.error(
+          "❌ [dismissWhyGoodFitSuggestion] Failed to update backend:",
           error,
         );
       }
@@ -390,7 +466,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text &&
       (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0;
+      (updatedSuggestions.education || []).length === 0 &&
+      !updatedSuggestions.why_good_fit?.fit_analysis;
 
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
@@ -431,7 +508,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text &&
       (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0;
+      (updatedSuggestions.education || []).length === 0 &&
+      !updatedSuggestions.why_good_fit?.fit_analysis;
 
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
@@ -474,7 +552,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text &&
       (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0;
+      (updatedSuggestions.education || []).length === 0 &&
+      !updatedSuggestions.why_good_fit?.fit_analysis;
 
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed
@@ -515,7 +594,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       updatedSuggestions.skills.soft.length === 0 &&
       !updatedSuggestions.professional_summary.suggested_text &&
       (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0;
+      (updatedSuggestions.education || []).length === 0 &&
+      !updatedSuggestions.why_good_fit?.fit_analysis;
 
     if (hasNoSuggestions) {
       // Delete the entire enhancement if EVERYTHING is dismissed

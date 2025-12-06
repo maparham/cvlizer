@@ -89,9 +89,37 @@ class ProfessionalSummarySuggestion(BaseModel):
     key_changes: List[str]
 
 
+class ItemDescriptionSuggestion(BaseModel):
+    """Represents a work experience or education item with optional suggestions."""
+
+    id: str
+    current_content_score: Optional[int] = None
+    original: Optional[str] = None
+    suggested: Optional[str] = None
+    reasoning: Optional[str] = None
+    importance: Optional[str] = None
+    markdown_diff: Optional[str] = None
+
+
+class WhyGoodFitSuggestion(BaseModel):
+    """Provides AI-generated why good fit analysis."""
+
+    title: str
+    confidence_score: int
+    fit_analysis: str
+    key_matches: List[str]
+    missing_skills: List[str]
+    suggested_improvements: List[str]
+    strengths: List[str]
+    weaknesses: List[str]
+
+
 class AllSuggestionsResponse(BaseModel):
     skills: SkillsSuggestions
     professional_summary: ProfessionalSummarySuggestion
+    work_experience: List[ItemDescriptionSuggestion]
+    education: List[ItemDescriptionSuggestion]
+    why_good_fit: WhyGoodFitSuggestion
 
 
 # Draft Management Models

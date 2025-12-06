@@ -46,6 +46,7 @@ import {
   ContentCopy as ContentCopyIcon,
 } from "@mui/icons-material";
 import { useAIStore } from "../../../stores/ai";
+import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useNotifications } from "../../../packages/notifications";
 import { useCVEditor } from "../../../contexts/CVEditorContext";
 import { useCVStore } from "../../../stores/cv";
@@ -68,6 +69,9 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
   const [isRejecting, setIsRejecting] = useState(false);
 
   const { approveWhyGoodFitDraft, deleteWhyGoodFitDraft } = useAIStore();
+  const dismissWhyGoodFitSuggestion = useAISuggestionsStore(
+    (state) => state.dismissWhyGoodFitSuggestion
+  );
   const { showSuccess, showError } = useNotifications();
   const { onUpdateCV } = useCVEditor();
   const { setCurrentCV } = useCVStore();
@@ -92,6 +96,9 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
 
       showSuccess("Draft approved and added to CV successfully");
 
+      // Dismiss the why_good_fit suggestion from the AI Tools sidebar
+      await dismissWhyGoodFitSuggestion();
+
       // Notify parent component (triggers UI re-render)
       onApproved?.();
     } catch (err) {
@@ -109,6 +116,7 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
     onUpdateCV,
     showSuccess,
     showError,
+    dismissWhyGoodFitSuggestion,
     onApproved,
   ]);
 
@@ -119,6 +127,9 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
 
       showSuccess("Draft discarded successfully");
 
+      // Dismiss the why_good_fit suggestion from the AI Tools sidebar
+      await dismissWhyGoodFitSuggestion();
+
       // Notify parent component after successful rejection
       onRejected?.();
     } catch (err) {
@@ -128,7 +139,7 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
     } finally {
       setIsRejecting(false);
     }
-  }, [cvId, deleteWhyGoodFitDraft, showSuccess, showError, onRejected]);
+  }, [cvId, deleteWhyGoodFitDraft, showSuccess, showError, dismissWhyGoodFitSuggestion, onRejected]);
 
   const copyToClipboard = useCallback(
     (text: string) => {
@@ -159,6 +170,7 @@ const InlineDraftSection: React.FC<InlineDraftSectionProps> = ({
     <Fade in={true} timeout={300}>
       <Box sx={{ mb: 3 }}>
         <Paper
+          data-section="why_good_fit_draft"
           elevation={2}
           sx={{
             border: "2px solid",

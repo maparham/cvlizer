@@ -97,6 +97,19 @@ def ai_suggestions_sync(
         if enhancement:
             # Add draft_id to meta
             enhancement_data = optimization_data or {}
+
+            # Add why_good_fit to enhancement_data for unified response
+            enhancement_data["why_good_fit"] = {
+                "title": job_fit_data.get("title", ""),
+                "confidence_score": job_fit_data.get("confidence_score", 0),
+                "fit_analysis": job_fit_data.get("fit_analysis", ""),
+                "key_matches": job_fit_data.get("key_matches", []),
+                "missing_skills": job_fit_data.get("missing_skills", []),
+                "suggested_improvements": job_fit_data.get("suggested_improvements", []),
+                "strengths": job_fit_data.get("strengths", []),
+                "weaknesses": job_fit_data.get("weaknesses", []),
+            }
+
             meta = dict(enhancement_data.get("meta") or {})
             meta.update({"draft_id": str(draft.id)})
             enhancement_data["meta"] = meta
