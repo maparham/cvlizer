@@ -123,7 +123,7 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
     try:
         # Use unified AI suggestions service (returns job_fit_data, optimization_data, metadata)
         job_fit_data, _, _ = await generate_ai_suggestions(
-            cv_data, job_description, user_id, cv_id, db_session
+            cv_data, job_description, user_id, cv_id, db_session, company_name
         )
         confidence_score = job_fit_data.get("confidence_score", 0)
 
