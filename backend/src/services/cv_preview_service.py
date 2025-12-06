@@ -138,6 +138,43 @@ def _convert_pdf_to_image_pdf2image(pdf_bytes: bytes, max_width: int = 300) -> s
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
 
+def convert_pdf_to_preview_image(pdf_bytes: bytes, max_width: int = 300) -> str:
+    """
+    Convert PDF first page to base64 PNG image.
+
+    Reusable function that can work with any PDF bytes.
+    Extracted for use by both Quick Start and Upload Preview.
+
+    Args:
+        pdf_bytes: Raw PDF file bytes
+        max_width: Target image width in pixels (default: 300)
+
+    Returns:
+        Base64-encoded PNG image string
+
+    Raises:
+        RuntimeError: If no PDF conversion library is available
+        ValueError: If PDF has no pages or is invalid
+    """
+    # Check if any image conversion library is available
+    if not (PYMUPDF_AVAILABLE or PDF2IMAGE_AVAILABLE):
+        raise RuntimeError(
+            "No PDF-to-image conversion library available (PyMuPDF or pdf2image)"
+        )
+
+    # Try PyMuPDF first (faster), then pdf2image
+    if PYMUPDF_AVAILABLE:
+        try:
+            return _convert_pdf_to_image_pymupdf(pdf_bytes, max_width)
+        except Exception as e:
+            logger.warning(f"PyMuPDF conversion failed: {e}, trying pdf2image")
+
+    if PDF2IMAGE_AVAILABLE:
+        return _convert_pdf_to_image_pdf2image(pdf_bytes, max_width)
+
+    raise RuntimeError("No working PDF-to-image conversion method available")
+
+
 async def generate_cv_preview_image(
     parsed_cv_data: Dict[str, Any], max_width: int = 1000, title: str = "CV Preview"
 ) -> str:
@@ -160,12 +197,6 @@ async def generate_cv_preview_image(
     if not is_latex_available():
         raise RuntimeError("LaTeX (pdflatex) is not available on the server")
 
-    # Check if any image conversion library is available
-    if not (PYMUPDF_AVAILABLE or PDF2IMAGE_AVAILABLE):
-        raise ImportError(
-            "No PDF-to-image conversion library available (PyMuPDF or pdf2image)"
-        )
-
     try:
         # Generate LaTeX from parsed data
         logger.info("Generating LaTeX from CV data for preview")
@@ -175,20 +206,9 @@ async def generate_cv_preview_image(
         logger.info("Compiling LaTeX to PDF for preview")
         pdf_bytes = compile_pdf_from_latex(latex_source)
 
-        # Convert PDF to image
+        # Convert PDF to image using extracted function
         logger.info("Converting PDF to preview image")
-
-        # Try PyMuPDF first (faster), then pdf2image
-        if PYMUPDF_AVAILABLE:
-            try:
-                return _convert_pdf_to_image_pymupdf(pdf_bytes, max_width)
-            except Exception as e:
-                logger.warning(f"PyMuPDF conversion failed: {e}, trying pdf2image")
-
-        if PDF2IMAGE_AVAILABLE:
-            return _convert_pdf_to_image_pdf2image(pdf_bytes, max_width)
-
-        raise RuntimeError("No working PDF-to-image conversion method available")
+        return convert_pdf_to_preview_image(pdf_bytes, max_width)
 
     except Exception as e:
         logger.error(f"Failed to generate CV preview image: {str(e)}")

@@ -1,10 +1,20 @@
 """
 CV Preview Generation API Endpoints
 
-This module handles async preview generation for CV templates.
+This module handles async preview generation for CV templates and
+PDF file upload preview generation.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -12,6 +22,7 @@ from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import SessionLocal, get_db
 from src.models.user import User
 from src.services.cv_service import get_cv_by_id
+from src.services.cv_preview_service import convert_pdf_to_preview_image
 from src.services.latex_export_service import compile_pdf_from_latex, is_latex_available
 from src.services.latex_export_service import generate_cv_latex
 from src.services.preview_service import generate_blurred_preview, is_preview_available
@@ -213,4 +224,61 @@ async def get_preview_image(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No preview available",
+        )
+
+
+@router.post("/preview/upload")
+async def generate_uploaded_pdf_preview(
+    file: UploadFile = File(...),
+) -> dict:
+    """
+    Generate preview image from uploaded PDF file (unauthenticated).
+
+    This endpoint allows users to preview their PDF files before uploading
+    to the system. It converts the first page of the PDF to a base64-encoded
+    PNG image for display in the upload dialog.
+
+    Args:
+        file: PDF file to preview
+
+    Returns:
+        dict: {"preview_image_base64": "iVBORw0KG..."}
+
+    Raises:
+        HTTPException: 400 if file is not a PDF
+        HTTPException: 500 if preview generation fails
+    """
+    # Validate file type
+    if file.content_type != "application/pdf":
+        logger.warning(f"Invalid file type for preview: {file.content_type}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF files are supported for preview",
+        )
+
+    # Read file content
+    try:
+        file_content = await file.read()
+        logger.info(
+            f"Generating preview for uploaded PDF: {file.filename} ({len(file_content)} bytes)"
+        )
+    except Exception as e:
+        logger.error(f"Failed to read uploaded file: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to read file: {str(e)}",
+        )
+
+    # Generate preview using existing PyMuPDF conversion
+    try:
+        preview_base64 = convert_pdf_to_preview_image(file_content, max_width=600)
+        logger.info(f"Successfully generated preview for {file.filename}")
+        return {"preview_image_base64": preview_base64}
+    except Exception as e:
+        logger.error(
+            f"Preview generation failed for {file.filename}: {str(e)}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Preview generation failed: {str(e)}",
         )

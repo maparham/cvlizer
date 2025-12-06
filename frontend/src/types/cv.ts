@@ -274,3 +274,19 @@ export interface CVOperationResult<T = CV> {
   error?: string;
   message?: string;
 }
+
+/**
+ * PDF Preview Response from backend
+ */
+export interface PDFPreviewResponse {
+  preview_image_base64: string;
+}
+
+/**
+ * File Preview State for tracking preview generation status
+ */
+export interface FilePreviewState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  imageUrl: string | null;
+  error?: string;
+}

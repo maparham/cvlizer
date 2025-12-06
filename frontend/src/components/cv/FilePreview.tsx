@@ -21,13 +21,12 @@ import React from "react";
 import {
   Card,
   CardContent,
-  CardActions,
   Typography,
   Box,
-  Button,
   Chip,
   Stack,
   IconButton,
+  Grid,
 } from "@mui/material";
 import {
   Description as DocumentIcon,
@@ -42,6 +41,7 @@ import {
   getFileTypeInfo,
   formatFileSize,
 } from "../../utils/fileValidation";
+import PDFPreviewImage from "./PDFPreviewImage";
 
 export interface FilePreviewProps {
   file: File;
@@ -78,7 +78,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({
   return (
     <Card
       sx={{
-        maxWidth: 400,
+        width: "100%",
         mx: "auto",
         border: error
           ? "1px solid #d32f2f"
@@ -89,120 +89,217 @@ const FilePreview: React.FC<FilePreviewProps> = ({
       }}
     >
       <CardContent sx={{ pb: 1 }}>
-        <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
-          <Box sx={{ mr: 2, mt: 0.5 }}>{getFileTypeIcon(file.type)}</Box>
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography
-              variant="subtitle1"
-              sx={{
-                fontWeight: 600,
-                mb: 0.5,
-                wordBreak: "break-word",
-              }}
-            >
-              {file.name}
-            </Typography>
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              flexWrap="wrap"
-            >
-              <Chip
-                label={fileTypeInfo.name}
+        {file.type === "application/pdf" ? (
+          // PDF files: Two-column layout with preview
+          <Grid container spacing={2}>
+            {/* Left: PDF Preview */}
+            <Grid item xs={12} md={7}>
+              <PDFPreviewImage file={file} maxWidth={600} />
+            </Grid>
+
+            {/* Right: Metadata */}
+            <Grid item xs={12} md={5}>
+              <Box>
+                {/* File icon, name, type */}
+                <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
+                  <Box sx={{ mr: 2, mt: 0.5 }}>{getFileTypeIcon(file.type)}</Box>
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 600,
+                        mb: 0.5,
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {file.name}
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      flexWrap="wrap"
+                    >
+                      <Chip
+                        label={fileTypeInfo.name}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: "0.75rem" }}
+                      />
+                      <Typography variant="body2" color="text.secondary">
+                        {fileSize}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={onRemove}
+                    disabled={uploading}
+                    sx={{ ml: 1 }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+
+                {/* Validation Status */}
+                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                  {error ? (
+                    <>
+                      <ErrorIcon sx={{ color: "#d32f2f", mr: 1, fontSize: "1.2rem" }} />
+                      <Typography variant="body2" color="error">
+                        {error}
+                      </Typography>
+                    </>
+                  ) : valid ? (
+                    <>
+                      <CheckIcon sx={{ color: "#2e7d32", mr: 1, fontSize: "1.2rem" }} />
+                      <Typography variant="body2" color="success.main">
+                        File is valid and ready to upload
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <ErrorIcon sx={{ color: "#d32f2f", mr: 1, fontSize: "1.2rem" }} />
+                      <Typography variant="body2" color="error">
+                        {validation.error || "Invalid file type or size"}
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+
+                {/* File Details */}
+                <Box sx={{ backgroundColor: "#f5f5f5", p: 2, borderRadius: 1 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    File Details:
+                  </Typography>
+                  <Stack spacing={0.5}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Type:
+                      </Typography>
+                      <Typography variant="body2">{fileTypeInfo.name}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Size:
+                      </Typography>
+                      <Typography variant="body2">{fileSize}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Last Modified:
+                      </Typography>
+                      <Typography variant="body2">
+                        {new Date(file.lastModified).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+        ) : (
+          // Non-PDF files: Original single-column layout
+          <Box>
+            {/* File icon, name, type */}
+            <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
+              <Box sx={{ mr: 2, mt: 0.5 }}>{getFileTypeIcon(file.type)}</Box>
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
+                    mb: 0.5,
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {file.name}
+                </Typography>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  flexWrap="wrap"
+                >
+                  <Chip
+                    label={fileTypeInfo.name}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: "0.75rem" }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {fileSize}
+                  </Typography>
+                </Stack>
+              </Box>
+              <IconButton
                 size="small"
-                variant="outlined"
-                sx={{ fontSize: "0.75rem" }}
-              />
-              <Typography variant="body2" color="text.secondary">
-                {fileSize}
+                onClick={onRemove}
+                disabled={uploading}
+                sx={{ ml: 1 }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+
+            {/* Validation Status */}
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              {error ? (
+                <>
+                  <ErrorIcon sx={{ color: "#d32f2f", mr: 1, fontSize: "1.2rem" }} />
+                  <Typography variant="body2" color="error">
+                    {error}
+                  </Typography>
+                </>
+              ) : valid ? (
+                <>
+                  <CheckIcon sx={{ color: "#2e7d32", mr: 1, fontSize: "1.2rem" }} />
+                  <Typography variant="body2" color="success.main">
+                    File is valid and ready to upload
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <ErrorIcon sx={{ color: "#d32f2f", mr: 1, fontSize: "1.2rem" }} />
+                  <Typography variant="body2" color="error">
+                    {validation.error || "Invalid file type or size"}
+                  </Typography>
+                </>
+              )}
+            </Box>
+
+            {/* File Details */}
+            <Box sx={{ backgroundColor: "#f5f5f5", p: 2, borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                File Details:
               </Typography>
-            </Stack>
+              <Stack spacing={0.5}>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Type:
+                  </Typography>
+                  <Typography variant="body2">{fileTypeInfo.name}</Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Size:
+                  </Typography>
+                  <Typography variant="body2">{fileSize}</Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Last Modified:
+                  </Typography>
+                  <Typography variant="body2">
+                    {new Date(file.lastModified).toLocaleDateString()}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
           </Box>
-          <IconButton
-            size="small"
-            onClick={onRemove}
-            disabled={uploading}
-            sx={{ ml: 1 }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        </Box>
-
-        {/* Validation Status */}
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          {error ? (
-            <>
-              <ErrorIcon sx={{ color: "#d32f2f", mr: 1, fontSize: "1.2rem" }} />
-              <Typography variant="body2" color="error">
-                {error}
-              </Typography>
-            </>
-          ) : valid ? (
-            <>
-              <CheckIcon sx={{ color: "#2e7d32", mr: 1, fontSize: "1.2rem" }} />
-              <Typography variant="body2" color="success.main">
-                File is valid and ready to upload
-              </Typography>
-            </>
-          ) : (
-            <>
-              <ErrorIcon sx={{ color: "#d32f2f", mr: 1, fontSize: "1.2rem" }} />
-              <Typography variant="body2" color="error">
-                {validation.error || "Invalid file type or size"}
-              </Typography>
-            </>
-          )}
-        </Box>
-
-        {/* File Details */}
-        <Box sx={{ backgroundColor: "#f5f5f5", p: 2, borderRadius: 1 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            File Details:
-          </Typography>
-          <Stack spacing={0.5}>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" color="text.secondary">
-                Type:
-              </Typography>
-              <Typography variant="body2">{fileTypeInfo.name}</Typography>
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" color="text.secondary">
-                Size:
-              </Typography>
-              <Typography variant="body2">{fileSize}</Typography>
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" color="text.secondary">
-                Last Modified:
-              </Typography>
-              <Typography variant="body2">
-                {new Date(file.lastModified).toLocaleDateString()}
-              </Typography>
-            </Box>
-          </Stack>
-        </Box>
+        )}
       </CardContent>
 
-      <CardActions sx={{ p: 2, pt: 0 }}>
-        <Button
-          variant="outlined"
-          onClick={onRemove}
-          disabled={uploading}
-          sx={{ mr: 1 }}
-        >
-          Remove
-        </Button>
-        <Button
-          variant="contained"
-          onClick={onUpload}
-          disabled={!valid || uploading}
-          sx={{ flexGrow: 1 }}
-        >
-          {uploading ? "Uploading..." : "Upload CV"}
-        </Button>
-      </CardActions>
     </Card>
   );
 };

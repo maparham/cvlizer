@@ -166,7 +166,7 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="sm"
+      maxWidth="lg"
       fullWidth
       data-testid="cv-upload-dialog"
     >
@@ -254,6 +254,16 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
         >
           {success ? "Close" : "Cancel"}
         </Button>
+        {selectedFile && (
+          <Button
+            variant="contained"
+            onClick={handleUpload}
+            disabled={!selectedFile || uploading || !!error || !validateCVFile(selectedFile).isValid}
+            data-testid="cv-upload-submit-button"
+          >
+            {uploading ? "Uploading..." : "Upload CV"}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
