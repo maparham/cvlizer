@@ -37,26 +37,6 @@ class AISectionListResponse(BaseModel):
     ai_sections: List[AISectionResponse]
 
 
-# Job Fit Analysis Models
-class JobFitAnalysisRequest(BaseModel):
-    job_description_id: str
-
-
-class JobFitAnalysisResponse(BaseModel):
-    model_config = {"protected_namespaces": ()}
-
-    confidence_score: int
-    fit_analysis: str
-    key_matches: List[str]
-    missing_skills: List[str]
-    suggested_improvements: List[str]
-    strengths: List[str]
-    weaknesses: List[str]
-    tokens_used: int
-    generation_time: int
-    model_used: str
-
-
 # AI Enhancement Models (for Enhance CV functionality)
 class AIEnhancementRequest(BaseModel):
     job_description_id: str
