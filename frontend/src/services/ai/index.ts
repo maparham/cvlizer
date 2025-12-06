@@ -31,9 +31,7 @@ class AIService {
   clearAllCache = cacheManager.clearAllCache.bind(cacheManager);
 
   // Job fit analysis
-  analyzeJobFit = jobFitService.analyzeJobFit.bind(jobFitService);
   getDraftStatus = jobFitService.getDraftStatus.bind(jobFitService);
-  createJobFitDraft = jobFitService.createJobFitDraft.bind(jobFitService);
   getCVDrafts = jobFitService.getCVDrafts.bind(jobFitService);
   approveWhyGoodFitDraft = jobFitService.approveWhyGoodFitDraft.bind(jobFitService);
   deleteWhyGoodFitDraft = jobFitService.deleteWhyGoodFitDraft.bind(jobFitService);
@@ -74,9 +72,7 @@ export const aiService = new AIService();
 export const {
   clearCacheForCV,
   clearAllCache,
-  analyzeJobFit,
   getDraftStatus,
-  createJobFitDraft,
   getCVDrafts,
   approveWhyGoodFitDraft,
   deleteWhyGoodFitDraft,

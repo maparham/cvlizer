@@ -8,7 +8,6 @@ sending CV data to OpenAI.
 import json
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from src.services.ai_service.job_fit import _build_job_fit_prompt
 from src.services.ai_service.section_generation import generate_cv_section
 from src.services.ai_service.ai_suggestions_service import _build_ai_suggestions_prompt
 
@@ -74,54 +73,6 @@ def cv_data_with_hidden_sections():
     }
 
 
-class TestJobFitPromptFiltering:
-    """Test that job fit analysis filters hidden sections from prompts."""
-
-    def test_job_fit_prompt_excludes_hidden_work_experience(
-        self, cv_data_with_hidden_sections
-    ):
-        """Test that hidden work_experience is not in job fit prompt."""
-        job_description = "Looking for a Python developer"
-
-        prompt = _build_job_fit_prompt(cv_data_with_hidden_sections, job_description)
-
-        # Hidden sections should not appear in prompt
-        assert "Secret Company" not in prompt
-        assert "Secret Position" not in prompt
-        assert "Confidential work" not in prompt
-        assert "work_experience" not in prompt
-
-        # Visible sections should appear
-        assert "John Doe" in prompt
-        assert "Python" in prompt
-        assert "MIT" in prompt
-
-    def test_job_fit_prompt_excludes_hidden_certifications(
-        self, cv_data_with_hidden_sections
-    ):
-        """Test that hidden certifications are not in job fit prompt."""
-        job_description = "Looking for certified professionals"
-
-        prompt = _build_job_fit_prompt(cv_data_with_hidden_sections, job_description)
-
-        assert "Secret Certification" not in prompt
-        assert "certifications" not in prompt
-
-    def test_job_fit_prompt_includes_all_visible_sections(
-        self, cv_data_with_hidden_sections
-    ):
-        """Test that all visible sections are included in prompt."""
-        job_description = "Looking for a Python developer"
-
-        prompt = _build_job_fit_prompt(cv_data_with_hidden_sections, job_description)
-
-        # Parse the JSON from the prompt to verify structure
-        assert "personal_info" in prompt
-        assert "professional_summary" in prompt
-        assert "education" in prompt
-        assert "skills" in prompt
-
-
 class TestSectionGenerationFiltering:
     """Test that section generation filters hidden sections from prompts."""
 
@@ -167,26 +118,6 @@ class TestSectionGenerationFiltering:
             assert "MIT" in user_prompt or "education" in user_prompt
 
 
-class TestFilteringWithNoSectionConfig:
-    """Test that AI services work correctly when section_config is missing."""
-
-    def test_job_fit_works_without_section_config(self):
-        """Test job fit prompt works when CV has no section_config."""
-        cv_data = {
-            "personal_info": {"full_name": "John Doe"},
-            "work_experience": [{"company": "Tech Corp"}],
-            "skills": {"technical": ["Python"]},
-        }
-        job_description = "Python developer"
-
-        prompt = _build_job_fit_prompt(cv_data, job_description)
-
-        # All sections should be included (backward compatibility)
-        assert "John Doe" in prompt
-        assert "Tech Corp" in prompt
-        assert "Python" in prompt
-
-
 class TestPersonalInfoNeverFiltered:
     """Test that personal_info is never filtered from AI prompts."""
 
@@ -208,7 +139,7 @@ class TestPersonalInfoNeverFiltered:
         }
         job_description = "Python developer"
 
-        prompt = _build_job_fit_prompt(cv_data, job_description)
+        prompt = _build_ai_suggestions_prompt(cv_data, job_description)
 
         # personal_info should still be in prompt because it's not in filterable_sections
         assert "John Doe" in prompt or "personal_info" in prompt
@@ -239,7 +170,7 @@ class TestProfessionalSummaryFiltering:
         }
         job_description = "Python developer"
 
-        prompt = _build_job_fit_prompt(cv_data, job_description)
+        prompt = _build_ai_suggestions_prompt(cv_data, job_description)
 
         # professional_summary should be filtered out
         assert "secret summary" not in prompt

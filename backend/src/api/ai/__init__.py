@@ -11,11 +11,8 @@ from fastapi import APIRouter
 from . import (
     ai_sections,
     ai_suggestions,
-    job_fit_analysis,
+    drafts,
 )
-
-# Import background tasks for backward compatibility
-from .background_tasks import generate_job_fit_sync
 
 # Create main router
 router = APIRouter(prefix="/api", tags=["ai"])
@@ -23,7 +20,7 @@ router = APIRouter(prefix="/api", tags=["ai"])
 # Include all sub-routers
 router.include_router(ai_sections.router)
 router.include_router(ai_suggestions.router)
-router.include_router(job_fit_analysis.router)
+router.include_router(drafts.router)
 
 # Re-export for backward compatibility
-__all__ = ["router", "generate_job_fit_sync"]
+__all__ = ["router"]

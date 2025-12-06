@@ -1,130 +1,32 @@
 """
-Job fit analysis and draft management endpoints.
+AI draft management endpoints.
 
-This module provides endpoints for generating job fit analysis drafts and
-managing their lifecycle including approval and deletion.
+This module provides endpoints for managing AI-generated draft lifecycle including
+status checking, listing, approval, and deletion.
 """
 
-import asyncio
 import logging
-from datetime import timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
-from src.config import APIConfig, AIConfig
+from src.config import AIConfig
 from src.middleware.clerk_auth import get_effective_user
 from src.models.ai_draft import AIDraft
 from src.models.base import get_db
 from src.models.user import User
 from src.schemas.cv_schemas import WhyGoodFitSchema
-from src.services.ai_service import is_ai_enabled
-from src.services.job_description_service import (
-    get_cv_owned_by,
-    get_job_description_by_id,
-)
-from src.utils.rate_limit import create_combined_limiter
+from src.services.job_description_service import get_cv_owned_by
 
-from .background_tasks import generate_job_fit_background
 from .models import (
     DraftApproveRequest,
-    DraftCreateRequest,
     DraftListResponse,
     DraftResponse,
 )
 
 router = APIRouter(tags=["ai"])
-limiter = create_combined_limiter()
 logger = logging.getLogger(__name__)
-
-
-@router.post("/cvs/{cv_id}/analyze-job-fit", response_model=DraftResponse)
-@limiter.limit(APIConfig.AI_REASONING_RATE_LIMIT)
-async def create_job_fit_draft(
-    cv_id: str,
-    body: DraftCreateRequest,
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_effective_user),
-):
-    """Create a draft job fit analysis for a CV based on job description using background processing"""
-    # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
-
-    if not cv:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
-
-    # Verify job description exists (global lookup)
-    job_description = get_job_description_by_id(
-        db, body.job_description_id, str(current_user.id)
-    )
-
-    if not job_description:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
-        )
-
-    if not is_ai_enabled():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI features are disabled",
-        )
-
-    # Delete any existing draft for this CV and section type
-    existing_draft = (
-        db.query(AIDraft)
-        .filter(AIDraft.cv_id == cv_id, AIDraft.section_type == "why_good_fit")
-        .first()
-    )
-
-    if existing_draft:
-        db.delete(existing_draft)
-
-    # Create new draft with generation status
-    draft = AIDraft(
-        cv_id=cv_id,
-        job_description_id=body.job_description_id,
-        section_type="why_good_fit",
-        draft_data={},  # Will be populated by background task
-        ai_model=AIConfig.OPENAI_MODEL,
-        tokens_used=0,
-        generation_time=0,
-        is_generating=True,
-    )
-
-    db.add(draft)
-    db.commit()
-    db.refresh(draft)
-
-    # Start background generation task
-    asyncio.create_task(
-        generate_job_fit_background(
-            str(draft.id),
-            {k: v for k, v in (cv.parsed_data or {}).items() if k != "why_good_fit"},
-            job_description.content,
-            str(current_user.id),
-            cv_id,
-            body.job_description_id,
-        )
-    )
-
-    # Add small delay to ensure DB commit
-    await asyncio.sleep(0.1)
-
-    return DraftResponse(
-        id=str(draft.id),
-        cv_id=str(draft.cv_id),
-        job_description_id=str(draft.job_description_id),
-        section_type=draft.section_type,
-        draft_data=draft.draft_data,
-        ai_model=draft.ai_model,
-        tokens_used=draft.tokens_used or 0,
-        generation_time=draft.generation_time or 0,
-        created_at=draft.created_at.isoformat(),
-        is_generating=True,
-        generation_error=None,
-    )
 
 
 @router.get("/drafts/{draft_id}/status", response_model=DraftResponse)
@@ -259,9 +161,25 @@ async def approve_why_good_fit_draft(
         logger.info(
             f"approve_why_good_fit_draft: confidence_score={confidence_score}, generated_at={generated_at}"
         )
+
+        # Validate confidence_score is present
         if confidence_score is None:
-            logger.warning(
+            logger.error(
                 f"approve_why_good_fit_draft: confidence_score is missing in draft {request.draft_id}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Draft is missing required field: confidence_score. Please regenerate the draft.",
+            )
+
+        # Validate confidence_score is in valid range
+        if not isinstance(confidence_score, int) or not (0 <= confidence_score <= 100):
+            logger.error(
+                f"approve_why_good_fit_draft: Invalid confidence_score={confidence_score} in draft {request.draft_id}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Draft has invalid confidence_score: {confidence_score}. Must be an integer between 0 and 100.",
             )
 
         # Get title from draft data

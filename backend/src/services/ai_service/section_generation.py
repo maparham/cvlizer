@@ -29,8 +29,8 @@ from .common import (
     validate_with_schema,
     with_retries,
 )
+from .ai_suggestions_service import generate_ai_suggestions
 from .cv_filter import filter_hidden_sections
-from .job_fit import analyze_job_fit_sync
 
 logger = logging.getLogger(__name__)
 
@@ -121,10 +121,11 @@ Note: Accept non-English job descriptions. Only flag if truly incomplete (empty/
     # Analyze job fit to determine if warning is needed
     low_fit_warning = None
     try:
-        job_fit_result = analyze_job_fit_sync(
+        # Use unified AI suggestions service (returns job_fit_data, optimization_data, metadata)
+        job_fit_data, _, _ = await generate_ai_suggestions(
             cv_data, job_description, user_id, cv_id, db_session
         )
-        confidence_score = job_fit_result.get("confidence_score", 0)
+        confidence_score = job_fit_data.get("confidence_score", 0)
 
         # Set warning if confidence score is below 30%
         if confidence_score < 30:

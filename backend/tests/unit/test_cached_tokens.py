@@ -354,61 +354,6 @@ class TestAIServiceIntegration:
     """Test suite for AI service integration with cached tokens."""
 
     @pytest.mark.asyncio
-    @patch("src.services.ai_service.job_fit.get_openai_client")
-    @patch("src.services.ai_service.job_fit.log_ai_usage_safe")
-    async def test_job_fit_analysis_logs_cached_tokens(
-        self, mock_log_ai_usage, mock_get_client
-    ):
-        """Test that job fit analysis extracts and logs cached tokens."""
-        # Arrange
-        from src.services.ai_service.job_fit import _execute_job_fit_analysis_sync
-
-        mock_client = MagicMock()
-        mock_get_client.return_value = mock_client
-
-        # Mock OpenAI response with cached tokens
-        # Create a simple mock object for usage to avoid MagicMock nested attribute issues
-        class MockUsageDetails:
-            cached_tokens = 600
-
-        class MockUsage:
-            input_tokens = 1000
-            output_tokens = 500
-            input_tokens_details = MockUsageDetails()
-            prompt_tokens_details = None  # Not used in this test
-
-        mock_response = MagicMock()
-        mock_response.output_parsed = MagicMock()
-        mock_response.output_parsed.model_dump.return_value = {
-            "confidence_score": 85,
-            "fit_analysis": "Great fit!",
-            "key_matches": ["Python", "FastAPI"],
-            "missing_skills": ["AWS"],
-            "suggested_improvements": ["Add metrics"],
-            "strengths": ["Backend dev"],
-            "weaknesses": ["Cloud experience"],
-        }
-        mock_response.usage = MockUsage()
-
-        mock_client.responses.parse.return_value = mock_response
-
-        cv_data = {"personal_info": {"name": "John Doe"}}
-        job_description = "Backend developer needed"
-        user_id = "user-123"
-        cv_id = "cv-456"
-
-        # Act
-        result = _execute_job_fit_analysis_sync(cv_data, job_description, user_id, cv_id)
-
-        # Assert
-        assert result is not None
-        mock_log_ai_usage.assert_called_once()
-        call_kwargs = mock_log_ai_usage.call_args[1]
-        assert call_kwargs["cached_tokens"] == 600
-        assert call_kwargs["prompt_tokens"] == 1000
-        assert call_kwargs["completion_tokens"] == 500
-
-    @pytest.mark.asyncio
     @patch("src.services.ai_service.cv_parsing.get_openai_client")
     @patch("src.services.ai_service.cv_parsing.log_ai_usage_safe")
     async def test_cv_parsing_logs_cached_tokens(

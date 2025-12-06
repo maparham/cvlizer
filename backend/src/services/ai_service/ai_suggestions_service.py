@@ -349,13 +349,38 @@ TASKS:
 1. Job Fit Analysis (write as candidate, first person):
 {company_name_instruction}
    - confidence_score: 1-100 match quality based on transferable skills and authentic fit
-   - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs. CRITICAL: Maximum 200 words total—count words and ensure you stay within this limit.
+   - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs.
+
+   ⚠️ MANDATORY FORMATTING (NON-NEGOTIABLE):
    - Format the fit analysis into two sections: "## Introduction" and "## Your Requirements".
-   - In the "Your Requirements" section, for each requirement, quote the requirement text from the job description and write the cover paragraph below it.
-   - CRITICAL: Each requirement quote MUST be wrapped in **bold** markdown WITH quotation marks: **"[requirement text]"**
-     The format is: double asterisk, double quote, requirement text, double quote, double asterisk.
-     Example: **"Refactor and modularize existing scientific software"** (NOT **Refactor and modularize existing scientific software**)
-   - Example format for each requirement-cover paragraph pair: **"[requirement]"** followed by a blank line, then [experience paragraph], then another blank line.
+   - In the "Your Requirements" section, for each requirement, you MUST follow this EXACT format:
+
+     **"[requirement text from job description]"**
+
+     [Your cover paragraph explaining how you meet this requirement]
+
+     **"[next requirement]"**
+
+     [Next cover paragraph]
+
+   - CRITICAL: There MUST be a blank line after each requirement quote and a blank line after each cover paragraph
+   - Each requirement MUST be wrapped in **bold** WITH quotation marks: **"[requirement text]"**
+   - Blank lines are REQUIRED for readability and do NOT count toward word limit
+   - Example showing EXACT required spacing:
+
+   ## Introduction
+   I am a PhD computer scientist focused on backend and scientific pipelines.
+
+   ## Your Requirements
+   **"Experience with Python"**
+
+   I have 5 years using Python for data analysis and web development, building scalable APIs with FastAPI.
+
+   **"Strong communication skills"**
+
+   I regularly present technical findings to non-technical stakeholders and lead team discussions.
+
+   - Word count: Maximum 200 words total (blank lines don't count)—count ONLY text words and ensure you stay within this limit.
    - CRITICAL: Write ENTIRELY in first person from the candidate's perspective. NEVER refer to "CV" directly, e.g. "My CV..." or "This CV...". Remember, you are the owner of the CV.
    - Be honest about gaps: "I don't have X but eager to learn" or "I bring Y transferable skills"
    - key_matches: Skills/experiences from CV that genuinely transfer to this role (focus on SUBSTANCE over keywords; can be empty)

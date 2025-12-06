@@ -49,8 +49,6 @@ Object.defineProperty(window, "localStorage", {
 jest.mock("../../services/ai", () => ({
   aiService: {
     checkAIFeatureStatus: jest.fn(),
-    analyzeJobFit: jest.fn(),
-    createJobFitDraft: jest.fn(),
     getCVDrafts: jest.fn(),
     approveWhyGoodFitDraft: jest.fn(),
     deleteWhyGoodFitDraft: jest.fn(),
@@ -59,6 +57,7 @@ jest.mock("../../services/ai", () => ({
     deleteJobDescription: jest.fn(),
     clearAllCache: jest.fn(),
     clearCacheForCV: jest.fn(),
+    createCombinedAISuggestions: jest.fn(),
   },
 }));
 

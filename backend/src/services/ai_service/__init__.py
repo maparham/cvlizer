@@ -31,9 +31,6 @@ from .cv_status import check_cv_ai_enhancement_status, mark_cv_as_ai_enhanced
 # Re-export job extraction functions
 from .job_extraction import extract_job_description_with_ai
 
-# Re-export job fit analysis functions
-from .job_fit import analyze_job_fit_sync
-
 # Re-export section generation functions
 from .section_generation import generate_cv_section
 
@@ -46,8 +43,6 @@ __all__ = [
     "JobFitResult",
     # AI suggestions (job fit + optimization in one call)
     "generate_ai_suggestions",
-    # Job fit analysis
-    "analyze_job_fit_sync",
     # CV parsing
     "parse_cv_text_with_openai",
     # Section generation

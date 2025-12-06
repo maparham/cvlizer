@@ -22,6 +22,7 @@ import { aiService } from "../services/ai";
 import { Logger } from "../utils/logger";
 import { ErrorHandler } from "../utils/errorHandler";
 import { AllSuggestionsResponse } from "../types/ai";
+import { useAIStore } from "./ai";
 
 interface AIStore {
   // Unified state
@@ -135,6 +136,16 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           suggestionsLoading: false,
           suggestionsError: enhancement.generation_error || null,
         });
+
+        // Extract draft_id from meta and update job fit analysis
+        const draftId = (rawData.meta as any)?.draft_id;
+        if (draftId) {
+          // Update job fit analysis lastAnalysis from the draft
+          const updateLastAnalysis = useAIStore.getState().updateLastAnalysisFromDraft;
+          if (updateLastAnalysis) {
+            await updateLastAnalysis(draftId);
+          }
+        }
       }
 
       return enhancement;
@@ -185,6 +196,16 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
             suggestionsLoading: false,
             suggestionsError: enhancement.generation_error || null,
           });
+
+          // Extract draft_id from meta and update job fit analysis
+          const draftId = (rawData.meta as any)?.draft_id;
+          if (draftId) {
+            // Update job fit analysis lastAnalysis from the draft
+            const updateLastAnalysis = useAIStore.getState().updateLastAnalysisFromDraft;
+            if (updateLastAnalysis) {
+              await updateLastAnalysis(draftId);
+            }
+          }
         } else {
           // Enhancement CV ID mismatch - skip loading
         }

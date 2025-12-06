@@ -13,7 +13,6 @@
 
 import { apiClient as api } from "../api";
 import {
-  JobFitAnalysisRequest,
   DraftResponse,
   AIServiceError,
 } from "../../types/ai";
@@ -21,30 +20,6 @@ import { Logger } from "../../utils/logger";
 import { cacheManager } from "./cache";
 
 class JobFitService {
-  /**
-   * Analyze job fit between CV and job description (now returns immediately with background processing)
-   */
-  async analyzeJobFit(
-    cvId: string,
-    request: JobFitAnalysisRequest,
-  ): Promise<DraftResponse> {
-    try {
-      const response = await api.post<DraftResponse>(
-        `/api/cvs/${cvId}/analyze-job-fit`,
-        request,
-      );
-
-      return response.data;
-    } catch (error: any) {
-      const aiError: AIServiceError = {
-        error: error.response?.data?.detail || "Failed to analyze job fit",
-        details: error.message,
-        code: error.response?.status?.toString(),
-      };
-      throw aiError;
-    }
-  }
-
   /**
    * Check draft generation status
    */
@@ -71,47 +46,6 @@ class JobFitService {
 
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || "Failed to get draft status",
-        details: error.message,
-        code: error.response?.status?.toString(),
-      };
-      throw aiError;
-    }
-  }
-
-  /**
-   * Create a job fit analysis draft
-   */
-  async createJobFitDraft(
-    cvId: string,
-    jobDescriptionId: string,
-  ): Promise<any> {
-    try {
-      const response = await api.post(`/api/cvs/${cvId}/analyze-job-fit`, {
-        job_description_id: jobDescriptionId,
-      });
-
-      // Clear cache for this CV since we've created new content
-      cacheManager.clearCacheForCV(cvId);
-
-      return response.data;
-    } catch (error: any) {
-      const is429 = error.response?.status === 429;
-
-      if (is429) {
-        Logger.warn("Rate limit reached for createJobFitDraft", {
-          cvId,
-          jobDescriptionId,
-        });
-      } else {
-        Logger.error("createJobFitDraft API error", {
-          cvId,
-          jobDescriptionId,
-          error: error.message,
-        });
-      }
-
-      const aiError: AIServiceError = {
-        error: error.response?.data?.detail || "Failed to create job fit draft",
         details: error.message,
         code: error.response?.status?.toString(),
       };
@@ -185,9 +119,7 @@ export const jobFitService = new JobFitService();
 
 // Export individual functions for convenience
 export const {
-  analyzeJobFit,
   getDraftStatus,
-  createJobFitDraft,
   getCVDrafts,
   approveWhyGoodFitDraft,
   deleteWhyGoodFitDraft,

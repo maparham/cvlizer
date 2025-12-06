@@ -22,7 +22,7 @@ export interface DraftsSliceActions {
   clearDrafts: () => void;
   clearDraftsForCV: (cvId: string) => void;
   clearAllDrafts: () => void;
-  createJobFitDraft: (cvId: string, jobDescriptionId: string) => Promise<any>;
+  createJobFitDraft: (cvId: string, jobDescriptionId: string) => Promise<string>;
   updateDraftStatus: (draftId: string) => Promise<any>;
 }
 
@@ -170,36 +170,12 @@ export const createDraftsSlice: StateCreator<
 
   createJobFitDraft: async (cvId: string, jobDescriptionId: string) => {
     try {
-      const response = await aiService.createJobFitDraft(
-        cvId,
-        jobDescriptionId,
-      );
+      // Use new combined AI suggestions endpoint
+      const response = await aiService.createCombinedAISuggestions(cvId, jobDescriptionId);
 
-      // Backend deletes any existing why_good_fit draft before creating a new one
-      // So we need to remove any existing why_good_fit drafts from the store
-      set((state) => {
-        // Remove any existing why_good_fit drafts for this CV
-        const filteredDrafts = state.drafts.drafts.filter(
-          (draft) =>
-            !(
-              draft.cv_id === cvId && draft.section_type === "why_good_fit"
-            ),
-        );
-
-        // If generation is complete immediately, add the new draft
-        const newDrafts = response.is_generating
-          ? filteredDrafts
-          : [...filteredDrafts, response];
-
-        return {
-          drafts: {
-            ...state.drafts,
-            drafts: newDrafts,
-          },
-        };
-      });
-
-      return response;
+      // Return enhancement_id for polling
+      // The draft will be available after background processing completes
+      return response.enhancement_id;
     } catch (error) {
       ErrorHandler.handle(error, {
         feature: "job-fit-draft",
