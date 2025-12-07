@@ -134,6 +134,15 @@ DESCRIPTION FORMATTING RULES:
 
 EMPTY SECTIONS: If a section has no data (e.g., no projects found), return an empty array [] for that section. DO NOT create placeholder entries with "N/A" or similar text.
 
+PROFESSIONAL SUMMARY RULES:
+- FIRST: Look for any dedicated summary/profile/objective/about section in the CV (under headings like "Summary", "Profile", "Objective", "About Me", "Professional Summary", or similar)
+- If a dedicated summary section exists, extract ALL its content preserving the original wording
+- If NO dedicated summary section exists, synthesize a brief professional summary (2-4 sentences) based on the person's work experience, education, key skills, and career progression shown throughout the CV
+- The synthesized summary should highlight: years of experience, key domains/technologies, notable positions/companies, educational background, and core expertise
+- If the CV lacks sufficient information to create a meaningful summary (very sparse CV), return empty content: {{"content": "", "keywords": []}}
+- DO NOT just repeat the academic title from the header (e.g., "PhD in Computer Science" alone is too minimal)
+- Examples of content too minimal: "PhD in Computer Science", "Software Engineer", "John Doe"
+
 TITLE INFERENCE RULES (REQUIRED):
 - work_experience.position: If the position field is completely missing or empty, MUST infer from company, description, responsibilities, and context. DO NOT leave empty. If ANY position text exists (even informal/unconventional), preserve it EXACTLY including parenthetical content.
 - education.degree: If the degree field is completely missing or empty, MUST infer from institution level, field_of_study, and context. DO NOT leave empty. If ANY degree text exists (even informal/unconventional like "BS (bullshit)"), preserve it EXACTLY including all parenthetical content, slang, or humor.
