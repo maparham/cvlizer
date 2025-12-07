@@ -7,6 +7,7 @@ and utility functions for API interaction and response processing.
 """
 
 import asyncio
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Type, TypedDict
@@ -433,6 +434,14 @@ async def call_openai_with_schema(
     client = get_openai_client()
     start_time = time.time()
 
+    # Log AI prompt
+    logger.debug(
+        f"[{operation_type}] System prompt (user_id={user_id}, cv_id={cv_id}):\n{system_prompt}"
+    )
+    logger.debug(
+        f"[{operation_type}] User prompt (user_id={user_id}, cv_id={cv_id}, length={len(user_prompt)}):\n{user_prompt}"
+    )
+
     try:
 
         async def _call():
@@ -457,6 +466,17 @@ async def call_openai_with_schema(
         completion_tokens = response.usage.output_tokens
         tokens_used = prompt_tokens + completion_tokens
         cached_tokens = extract_cached_tokens(response)
+
+        # Log AI response
+        try:
+            response_json = json.dumps(parsed_data, indent=2, ensure_ascii=False)
+            logger.debug(
+                f"[{operation_type}] AI response (user_id={user_id}, cv_id={cv_id}, tokens={tokens_used}):\n{response_json}"
+            )
+        except Exception as e:
+            logger.debug(
+                f"[{operation_type}] AI response (user_id={user_id}, cv_id={cv_id}, tokens={tokens_used}): [Failed to serialize response: {str(e)}]"
+            )
 
         # Build metadata dictionary
         metadata = {

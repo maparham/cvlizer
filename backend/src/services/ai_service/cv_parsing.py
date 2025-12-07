@@ -112,12 +112,21 @@ async def parse_cv_text_with_openai(
 
 IMPORTANT: First validate if this document is actually a CV/resume. If the content is NOT a CV (e.g., research paper, article, book, manual, academic paper, or any other non-CV document), set is_valid_cv to false and validation_error to: "This document does not appear to be a CV. Please upload a resume or curriculum vitae with your professional information."
 
+Extraction and Preservation RULES:
+- Extract ALL text content
+- Preserve original wording, spelling, grammar, punctuation, and phrasing
+- DO NOT correct spelling errors, grammar mistakes, or improve wording
+- DO NOT change the meaning or content of the text
+- DO NOT add, infer, or extract keywords, tags, or any content not explicitly present in the original CV
+- Keep original capitalization and formatting style
+
 DESCRIPTION FORMATTING RULES:
 - All description fields MUST be formatted in markdown
-- For descriptions longer than 50 characters, format as bullet lists using markdown syntax (e.g., "- Item 1\\n- Item 2")
+- For descriptions with MULTIPLE items (2 or more), format as bullet lists using markdown syntax (e.g., "- Item 1\\n- Item 2")
+- CRITICAL RULE, avoid using bullets for SINGLE ITEMS: If a description has only ONE item, you MUST use plain text WITHOUT any bullet formatting
 - Use proper markdown formatting: **bold** for emphasis, *italic* for emphasis, \\n\\n for paragraph breaks
 - Short descriptions (<50 characters) can remain as plain text
-- professional_summary.content should also follow markdown formatting with bullet points for key achievements
+- professional_summary.content should follow markdown formatting with bullet points ONLY if there are multiple items (2+), otherwise use plain text
 
 EMPTY SECTIONS: If a section has no data (e.g., no projects found), return an empty array [] for that section. DO NOT create placeholder entries with "N/A" or similar text.
 
@@ -136,6 +145,7 @@ SKILLS FORMATTING RULES (CRITICAL):
   - DO NOT combine multiple skills with commas or colons in one item (e.g., NOT "Python, JavaScript, TypeScript")
   - Split grouped skills into separate atomic items: "Python", "JavaScript", "TypeScript"
   - Example: ["Python", "FastAPI", "React", "Docker", "MongoDB"] NOT ["Programming Languages: Python, JavaScript"]
+  - IMPORTANT: Preserve the original wording of each skill exactly as written
 - soft: Each item must be ONE atomic soft skill only (e.g., "Problem Solving", "Team Leadership", "Communication")
   - DO NOT combine multiple skills in one item
   - Example: ["Problem Solving", "Team Leadership", "Communication"] NOT ["Problem Solving, Team Leadership"]
@@ -147,7 +157,7 @@ CV: {text_content}
 Return JSON (omit empty sections):
 {{
   "personal_info": {{"full_name": "str", "email": "str", "phone": "str", "location": "str", "linkedin_url": "str", "website_url": "str", "github_url": "str"}},
-  "professional_summary": {{"content": "str (markdown bullets/paragraphs, NO headers)", "keywords": []}},
+  "professional_summary": {{"content": "str (markdown bullets/paragraphs, NO headers, plain text if single item)", "keywords": []}},
   "work_experience": [{{"company": "str", "position": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "technologies": []}}],
   "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "honors": []}}],
   "skills": {{"technical": ["Python", "FastAPI", "React"], "soft": ["Problem Solving", "Communication"], "languages": [{{"language": "English", "proficiency": "Fluent"}}]}},
@@ -166,7 +176,7 @@ Return JSON (omit empty sections):
 
         # Use unified OpenAI call builder
         parsed_content, metadata = await call_openai_with_schema(
-            system_prompt="You are an expert CV parser. First validate if the document is actually a CV/resume (not a research paper, article, book, manual, or other non-CV document). If it's not a CV, set is_valid_cv to false and use the standard validation_error message provided in the prompt. If it is a CV, extract structured information and return valid JSON. CRITICAL: All description fields must be formatted in markdown. For descriptions longer than 50 characters, use bullet lists with markdown syntax (- for bullets, \\n for line breaks). Return empty arrays [] for sections with no data - do NOT create placeholder entries. CRITICAL FOR SKILLS: technical and soft skills must be atomic (one skill per array item). Do NOT include category labels or combine multiple skills in one string. Split grouped skills into separate atomic items.",
+            system_prompt="You are an expert CV parser. Extract structured information from CVs and return valid JSON.",
             user_prompt=prompt,
             response_schema=CVParsingResponseSchema,
             model=AIConfig.OPENAI_PARSING_MODEL,

@@ -22,6 +22,45 @@ ALLOWED_FILE_TYPES = {
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
+def _clean_extracted_text(text: str) -> str:
+    """
+    Clean extracted text by removing problematic characters while preserving
+    all legitimate text from any language.
+
+    Removes:
+    - Unicode replacement character (U+FFFD -)
+    - Control characters (except common whitespace like \n, \t, \r)
+    - Zero-width characters
+
+    Preserves:
+    - All printable Unicode characters (including non-Latin scripts)
+    - Common whitespace characters (\n, \t, \r, space)
+    - Accented characters, emoji, and symbols used in text
+    """
+    import unicodedata
+
+    # Remove Unicode replacement character (U+FFFD)
+    text = text.replace("\ufffd", "")
+
+    # Remove zero-width characters
+    text = text.replace("\u200b", "")  # Zero-width space
+    text = text.replace("\u200c", "")  # Zero-width non-joiner
+    text = text.replace("\u200d", "")  # Zero-width joiner
+    text = text.replace("\ufeff", "")  # Zero-width no-break space (BOM)
+
+    # Remove control characters but keep common whitespace (\n, \t, \r, space)
+    cleaned_chars = []
+    for char in text:
+        # Keep printable characters and common whitespace
+        if char.isprintable() or char in "\n\t\r ":
+            cleaned_chars.append(char)
+        # Remove other control characters
+        elif unicodedata.category(char).startswith("C"):
+            continue
+
+    return "".join(cleaned_chars)
+
+
 async def validate_file(file: UploadFile) -> Tuple[bool, str]:
     """Validate uploaded file"""
     # Check file type
@@ -101,14 +140,16 @@ def extract_text_from_pdf(file_content: bytes) -> str:
         text = ""
 
         for page in doc:
-            page_text = page.get_text()
+            page_text = page.get_text(flags=fitz.TEXT_DEHYPHENATE)
             if page_text:
                 text += page_text + "\n"
 
         doc.close()
 
         if text.strip():
-            return text.strip()
+            # Clean extracted text to remove problematic characters
+            cleaned_text = _clean_extracted_text(text)
+            return cleaned_text.strip()
         else:
             raise HTTPException(
                 status_code=400,
@@ -136,7 +177,9 @@ def extract_text_from_docx(file_content: bytes) -> str:
         text = ""
         for paragraph in doc.paragraphs:
             text += paragraph.text + "\n"
-        return text.strip()
+        # Clean extracted text to remove problematic characters
+        cleaned_text = _clean_extracted_text(text)
+        return cleaned_text.strip()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reading DOCX file: {str(e)}")
 

@@ -147,19 +147,15 @@ class SkillsSchema(BaseModel):
 
     @field_validator("technical", "soft", mode="before")
     @classmethod
-    def validate_skill_length(cls, v: List[str]) -> List[str]:
-        """Validate that each skill is atomic (max 50 characters)."""
+    def validate_skill_format(cls, v: List[str]) -> List[str]:
+        """Validate that skills are strings. Preserve original formatting including category labels and comma-separated lists."""
         if not isinstance(v, list):
             return v
         validated_skills = []
         for skill in v:
             if not isinstance(skill, str):
                 continue
-            if len(skill) > 50:
-                raise ValueError(
-                    f"Skill '{skill[:30]}...' exceeds maximum length of 50 characters. "
-                    "Skills must be atomic (one skill per item)."
-                )
+            # Preserve original formatting - no length limit to allow category labels and comma-separated lists
             validated_skills.append(skill)
         return validated_skills
 
