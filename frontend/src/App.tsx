@@ -165,15 +165,15 @@ const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#616161",
+      main: "#9e9e9e",
     },
     secondary: {
       main: "#dc004e",
     },
     info: {
-      main: "#616161",
-      light: "#9e9e9e",
-      dark: "#424242",
+      main: "#9e9e9e",
+      light: "#bdbdbd",
+      dark: "#757575",
       contrastText: "#ffffff",
     },
   },
