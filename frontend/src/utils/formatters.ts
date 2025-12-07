@@ -269,16 +269,16 @@ export const formatModelName = (model: string): string => {
  */
 export const getOperationTypeColor = (operationType: string): string => {
   const colorMap: Record<string, string> = {
-    parse_cv: "#9e9e9e", // primary.main (neutral grey)
+    parse_cv: "#81c784", // primary.main (light green)
     generate_section: "#2e7d32", // success.main
     job_fit_analysis: "#ed6c02", // warning.main
     enhance_content: "#d32f2f", // error.main
     ats_optimization: "#7b1fa2", // purple
-    generate_suggestions: "#9e9e9e", // info.main (neutral grey)
+    generate_suggestions: "#81c784", // info.main (light green)
     extract_job_description: "#5d4037", // brown
   };
 
-  return colorMap[operationType] || "#9e9e9e";
+  return colorMap[operationType] || "#81c784";
 };
 
 /**

@@ -327,7 +327,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                 sx={{
                   fontWeight: isActive ? 700 : 600,
                   flex: 1,
-                  color: isActive ? "primary.main" : "primary.main",
+                  color: "grey.700",
                   display: "-webkit-box",
                   WebkitLineClamp: 1,
                   WebkitBoxOrient: "vertical",
@@ -349,7 +349,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                 sx={{
                   fontWeight: isActive ? 700 : 600,
                   flex: 1,
-                  color: isActive ? "primary.main" : "text.primary",
+                  color: "grey.700",
                   display: "-webkit-box",
                   WebkitLineClamp: 1,
                   WebkitBoxOrient: "vertical",
@@ -434,7 +434,6 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                   size="small"
                   variant="outlined"
                   sx={{
-                    backgroundColor: "rgba(25, 118, 210, 0.08)",
                     borderColor: "primary.light",
                     "& .MuiChip-icon": {
                       fontSize: "16px",
@@ -456,7 +455,6 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                   size="small"
                   variant="outlined"
                   sx={{
-                    backgroundColor: "rgba(76, 175, 80, 0.08)",
                     borderColor: "success.light",
                     "& .MuiChip-icon": {
                       fontSize: "16px",
@@ -674,7 +672,6 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                     size="small"
                     variant="outlined"
                     sx={{
-                      backgroundColor: "rgba(25, 118, 210, 0.08)",
                       borderColor: "primary.light",
                       "& .MuiChip-icon": {
                         fontSize: "16px",
@@ -696,7 +693,6 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                     size="small"
                     variant="outlined"
                     sx={{
-                      backgroundColor: "rgba(76, 175, 80, 0.08)",
                       borderColor: "success.light",
                       "& .MuiChip-icon": {
                         fontSize: "16px",
