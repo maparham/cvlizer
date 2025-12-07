@@ -91,7 +91,7 @@ const CVCard: React.FC<CVCardProps> = ({
             willChange: "transform, border-color, box-shadow",
             transform: "translateY(-2px) translateZ(0)",
             boxShadow: 6,
-            borderColor: "primary.light",
+            borderColor: "grey.400",
           },
         }}
       >
@@ -217,7 +217,15 @@ const CVCard: React.FC<CVCardProps> = ({
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Processing your CV...
               </Typography>
-              <LinearProgress sx={{ borderRadius: 1 }} />
+              <LinearProgress
+                sx={{
+                  borderRadius: 1,
+                  backgroundColor: "grey.200",
+                  "& .MuiLinearProgress-bar": {
+                    backgroundColor: "grey.500",
+                  },
+                }}
+              />
             </Box>
           )}
 
@@ -298,10 +306,10 @@ const CVCard: React.FC<CVCardProps> = ({
                   onClick={() => onDuplicate(cv)}
                   disabled={!cv.is_parsed || !!cv.parse_error}
                   sx={{
-                    color: "primary.main",
+                    color: "text.secondary",
                     "&:hover": {
-                      backgroundColor: "primary.light",
-                      color: "primary.dark",
+                      backgroundColor: "action.hover",
+                      color: "text.primary",
                     },
                   }}
                 >

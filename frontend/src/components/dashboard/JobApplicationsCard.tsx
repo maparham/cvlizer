@@ -85,12 +85,12 @@ const JobApplicationsCard: React.FC<JobApplicationsCardProps> = ({
               label={`${statusCounts.applied} Applied`}
               size="small"
               sx={{
-                backgroundColor: "info.light",
-                color: "info.dark",
+                backgroundColor: "grey.300",
+                color: "grey.700",
                 fontWeight: 600,
                 "&:hover": {
-                  backgroundColor: "info.main",
-                  color: "info.contrastText",
+                  backgroundColor: "grey.400",
+                  color: "grey.800",
                 },
               }}
             />

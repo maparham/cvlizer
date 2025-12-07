@@ -276,7 +276,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, backgroundColor: "grey.100", minHeight: "100vh" }}>
       <DashboardHeader
         anchorEl={anchorEl}
         onMenuOpen={handleMenuOpen}
