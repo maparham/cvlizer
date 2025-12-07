@@ -135,8 +135,8 @@ DESCRIPTION FORMATTING RULES:
 EMPTY SECTIONS: If a section has no data (e.g., no projects found), return an empty array [] for that section. DO NOT create placeholder entries with "N/A" or similar text.
 
 TITLE INFERENCE RULES (REQUIRED):
-- work_experience.position: If missing, MUST infer from company, description, responsibilities, and context. DO NOT leave empty.
-- education.degree: If missing, MUST infer from institution level, field_of_study, and context. DO NOT leave empty.
+- work_experience.position: If the position field is completely missing or empty, MUST infer from company, description, responsibilities, and context. DO NOT leave empty. If ANY position text exists (even informal/unconventional), preserve it EXACTLY including parenthetical content.
+- education.degree: If the degree field is completely missing or empty, MUST infer from institution level, field_of_study, and context. DO NOT leave empty. If ANY degree text exists (even informal/unconventional like "BS (bullshit)"), preserve it EXACTLY including all parenthetical content, slang, or humor.
 
 PUBLICATIONS RULES (CRITICAL):
 - ONLY include publications explicitly listed in a dedicated "Publications" section
