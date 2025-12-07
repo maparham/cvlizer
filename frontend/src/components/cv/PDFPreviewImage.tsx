@@ -1,24 +1,25 @@
 /**
- * PDF Preview Image Component
+ * PDF Preview Component
  *
- * This component displays a preview image of a PDF file's first page.
- * It handles the loading state, success state with the preview image,
- * and error state with a fallback document icon.
+ * This component displays an embedded PDF viewer using the browser's native
+ * PDF rendering capabilities. It creates a blob URL from the File object
+ * and displays it in an iframe, allowing users to view the full PDF with
+ * navigation, zoom, and search capabilities.
  *
  * Key features:
- * - Async preview generation with loading skeleton
+ * - Instant preview (no server round-trip)
+ * - Full PDF navigation (all pages, zoom, search)
  * - Graceful error handling with fallback UI
- * - A4 aspect ratio (1:1.414) for realistic preview
- * - Cleanup on unmount to prevent memory leaks
+ * - Proper cleanup to prevent memory leaks
+ * - Client-side only (no backend processing)
  *
  * Usage:
- * <PDFPreviewImage file={pdfFile} maxWidth={300} />
+ * <PDFPreviewImage file={pdfFile} maxWidth={600} />
  */
 
 import React, { useState, useEffect } from 'react';
-import { Box, Skeleton, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { Description as DocumentIcon } from '@mui/icons-material';
-import { generatePDFPreview } from '../../services/cvPreviewService';
 
 interface PDFPreviewImageProps {
   file: File;
@@ -29,59 +30,39 @@ export const PDFPreviewImage: React.FC<PDFPreviewImageProps> = ({
   file,
   maxWidth = 300,
 }) => {
-  const [state, setState] = useState<{
-    status: 'loading' | 'success' | 'error';
-    imageUrl: string | null;
-  }>({ status: 'loading', imageUrl: null });
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      setHasError(true);
+      return;
+    }
 
-    const loadPreview = async () => {
-      setState({ status: 'loading', imageUrl: null });
+    // Create object URL from file
+    try {
+      const url = URL.createObjectURL(file);
+      setPdfUrl(url);
+      setHasError(false);
 
-      const imageUrl = await generatePDFPreview(file);
-
-      if (isMounted) {
-        setState({
-          status: imageUrl ? 'success' : 'error',
-          imageUrl,
-        });
-      }
-    };
-
-    loadPreview();
-
-    // Cleanup function to prevent state updates after unmount
-    return () => {
-      isMounted = false;
-    };
+      // Cleanup function to revoke object URL and prevent memory leaks
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } catch (error) {
+      console.error('Failed to create object URL for PDF:', error);
+      setHasError(true);
+    }
   }, [file]);
 
-  // Loading state: show skeleton with A4 aspect ratio
-  if (state.status === 'loading') {
-    return (
-      <Box>
-        <Skeleton
-          variant="rectangular"
-          width={maxWidth}
-          height={maxWidth * 1.414} // A4 aspect ratio (1:√2)
-          sx={{ borderRadius: 1 }}
-          data-testid="pdf-preview-skeleton"
-        />
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Generating preview...
-        </Typography>
-      </Box>
-    );
-  }
-
   // Error state: show fallback document icon
-  if (state.status === 'error' || !state.imageUrl) {
+  if (hasError || !pdfUrl) {
     return (
       <Box
         sx={{
-          width: maxWidth,
+          width: '100%',
+          maxWidth,
           p: 4,
           bgcolor: 'grey.50',
           borderRadius: 1,
@@ -101,20 +82,21 @@ export const PDFPreviewImage: React.FC<PDFPreviewImageProps> = ({
     );
   }
 
-  // Success state: show preview image
+  // Success state: show embedded PDF viewer
   return (
-    <Box data-testid="pdf-preview-image">
+    <Box data-testid="pdf-preview-viewer">
       <Box
-        component="img"
-        src={state.imageUrl}
-        alt="PDF Preview"
+        component="iframe"
+        src={pdfUrl}
+        title="PDF Preview"
         sx={{
           width: '100%',
           maxWidth,
-          height: 'auto',
+          height: '600px',
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: 1,
+          display: 'block',
         }}
       />
       <Typography
@@ -122,7 +104,7 @@ export const PDFPreviewImage: React.FC<PDFPreviewImageProps> = ({
         color="text.secondary"
         sx={{ mt: 1, display: 'block' }}
       >
-        First page preview
+        PDF preview - scroll to view all pages
       </Typography>
     </Box>
   );

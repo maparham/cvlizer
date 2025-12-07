@@ -1,18 +1,15 @@
 """
 CV Preview Generation API Endpoints
 
-This module handles async preview generation for CV templates and
-PDF file upload preview generation.
+This module handles async preview generation for CV templates.
 """
 
 from fastapi import (
     APIRouter,
     Depends,
-    File,
     HTTPException,
     Query,
     Request,
-    UploadFile,
     status,
 )
 from fastapi.responses import Response
@@ -22,18 +19,14 @@ from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import SessionLocal, get_db
 from src.models.user import User
 from src.services.cv_service import get_cv_by_id
-from src.services.cv_preview_service import convert_pdf_to_preview_image
 from src.services.latex_export_service import compile_pdf_from_latex, is_latex_available
 from src.services.latex_export_service import generate_cv_latex
 from src.services.preview_service import generate_blurred_preview, is_preview_available
 from src.services.template_loader import is_template_available
 
-from .common import executor, get_preview_jobs, logger, limiter
+from .common import executor, get_preview_jobs, logger
 
 router = APIRouter()
-
-# Preview-specific file size limit (more restrictive than full upload)
-MAX_PREVIEW_FILE_SIZE = 2 * 1024 * 1024  # 2MB
 
 
 def generate_preview_sync(cv_id: str, template_name: str, user_id: str):
@@ -227,119 +220,4 @@ async def get_preview_image(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No preview available",
-        )
-
-
-@router.post("/preview/upload")
-@limiter.limit("10/minute")  # Rate limit: 10 requests per minute per IP
-async def generate_uploaded_pdf_preview(
-    request: Request,  # Required for rate limiter
-    file: UploadFile = File(...),
-) -> dict:
-    """
-    Generate preview image from uploaded PDF file (unauthenticated, rate-limited).
-
-    This endpoint allows users to preview their PDF files before uploading
-    to the system. It converts the first page of the PDF to a base64-encoded
-    PNG image for display in the upload dialog.
-
-    Security:
-    - Rate limited to 10 requests per minute per IP
-    - File size limited to 2MB
-    - Content-type validation (PDF only)
-    - No file persistence (memory-only operation)
-    - Security event logging
-
-    Args:
-        request: FastAPI request object (for rate limiting)
-        file: PDF file to preview (max 2MB)
-
-    Returns:
-        dict: {"preview_image_base64": "iVBORw0KG..."}
-
-    Raises:
-        HTTPException: 400 if file is not a PDF
-        HTTPException: 413 if file exceeds 2MB
-        HTTPException: 429 if rate limit exceeded
-        HTTPException: 500 if preview generation fails
-    """
-    # Validate file type
-    if file.content_type != "application/pdf":
-        logger.warning(f"Invalid file type for preview: {file.content_type}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are supported for preview",
-        )
-
-    # Read file content with size validation
-    try:
-        file_content = await file.read()
-        file_size = len(file_content)
-
-        # Validate file size BEFORE processing
-        if file_size > MAX_PREVIEW_FILE_SIZE:
-            logger.warning(
-                f"Preview rejected: file too large ({file_size} bytes, max {MAX_PREVIEW_FILE_SIZE})",
-                extra={
-                    "event_type": "preview_size_rejection",
-                    "uploaded_filename": file.filename,
-                    "file_size": file_size,
-                    "max_size": MAX_PREVIEW_FILE_SIZE,
-                    "client_ip": request.client.host
-                    if hasattr(request, "client")
-                    else "unknown",
-                },
-            )
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File size ({file_size / (1024*1024):.1f}MB) exceeds maximum allowed size of {MAX_PREVIEW_FILE_SIZE / (1024*1024):.0f}MB for preview",
-            )
-
-        logger.info(
-            f"Generating preview for uploaded PDF: {file.filename} ({file_size} bytes)"
-        )
-    except HTTPException:
-        raise  # Re-raise HTTP exceptions (don't wrap)
-    except Exception as e:
-        logger.error(f"Failed to read uploaded file: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to read file: {str(e)}",
-        )
-
-    # Generate preview using existing PyMuPDF conversion
-    try:
-        preview_base64 = convert_pdf_to_preview_image(file_content, max_width=600)
-
-        logger.info(
-            f"Successfully generated preview for {file.filename}",
-            extra={
-                "event_type": "preview_success",
-                "uploaded_filename": file.filename,
-                "file_size": len(file_content),
-                "preview_size": len(preview_base64),
-                "client_ip": request.client.host
-                if hasattr(request, "client")
-                else "unknown",
-            },
-        )
-
-        return {"preview_image_base64": preview_base64}
-    except Exception as e:
-        logger.error(
-            f"Preview generation failed for {file.filename}: {str(e)}",
-            exc_info=True,
-            extra={
-                "event_type": "preview_error",
-                "uploaded_filename": file.filename,
-                "file_size": len(file_content),
-                "client_ip": request.client.host
-                if hasattr(request, "client")
-                else "unknown",
-                "error_type": type(e).__name__,
-            },
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Preview generation failed. Please try again or upload directly.",
         )
