@@ -118,21 +118,25 @@ Extraction and Preservation RULES:
 - DO NOT correct spelling errors, grammar mistakes, or improve wording
 - DO NOT change the meaning or content of the text
 - DO NOT add, infer, or extract keywords, tags, or any content not explicitly present in the original CV
+- EXCEPTION: Missing work_experience.position and education.degree fields MUST be inferred (see TITLE INFERENCE RULES below)
 - Keep original capitalization and formatting style
 
 DESCRIPTION FORMATTING RULES:
 - All description fields MUST be formatted in markdown
 - For descriptions with MULTIPLE items (2 or more), format as bullet lists using markdown syntax (e.g., "- Item 1\\n- Item 2")
-- CRITICAL RULE, avoid using bullets for SINGLE ITEMS: If a description has only ONE item, you MUST use plain text WITHOUT any bullet formatting
+    - CRITICAL RULE, avoid using bullets for SINGLE ITEMS: If a description has only ONE item, you MUST write it as a plain text WITHOUT any bullet formatting
+  - CORRECT single item: "Item description"
+  - WRONG single item: "- Item description"
+  - CORRECT multiple items: "- Item 1\\n- Item 2"
 - Use proper markdown formatting: **bold** for emphasis, *italic* for emphasis, \\n\\n for paragraph breaks
 - Short descriptions (<50 characters) can remain as plain text
 - professional_summary.content should follow markdown formatting with bullet points ONLY if there are multiple items (2+), otherwise use plain text
 
 EMPTY SECTIONS: If a section has no data (e.g., no projects found), return an empty array [] for that section. DO NOT create placeholder entries with "N/A" or similar text.
 
-TITLE INFERENCE RULES:
-- work_experience.position: If not explicitly given, infer from company, description, responsibilities, or context (e.g., "Software Developer", "Research Assistant")
-- education.degree: If not explicitly given, infer from institution level, field_of_study, or context (e.g., "Bachelor of Science", "Master of Science", "PhD")
+TITLE INFERENCE RULES (REQUIRED):
+- work_experience.position: If missing, MUST infer from company, description, responsibilities, and context. DO NOT leave empty.
+- education.degree: If missing, MUST infer from institution level, field_of_study, and context. DO NOT leave empty.
 
 PUBLICATIONS RULES (CRITICAL):
 - ONLY include publications explicitly listed in a dedicated "Publications" section

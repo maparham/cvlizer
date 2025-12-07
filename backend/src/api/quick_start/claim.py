@@ -119,7 +119,12 @@ async def claim_quick_start_data(
                 f"Parsing CV for claim: {cv_file.filename} for user {current_user.id}"
             )
             parsed_cv_data = await parse_cv_with_openai(
-                file_content, cv_file.filename, cv_file.content_type
+                file_content,
+                cv_file.filename,
+                cv_file.content_type,
+                user_id=str(current_user.id),
+                cv_id=None,  # CV will be created after parsing
+                db_session=db,
             )
 
             # Create CV record

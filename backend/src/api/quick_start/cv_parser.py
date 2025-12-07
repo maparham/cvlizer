@@ -57,7 +57,12 @@ async def parse_cv_for_preview(
         try:
             parsed_cv = await asyncio.wait_for(
                 parse_cv_with_openai(
-                    file_content, cv_file.filename, cv_file.content_type
+                    file_content,
+                    cv_file.filename,
+                    cv_file.content_type,
+                    user_id=None,  # Anonymous preview - no user context
+                    cv_id=None,  # No CV record yet
+                    db_session=None,  # No database session for anonymous preview
                 ),
                 timeout=QUICK_START_TIMEOUT,
             )

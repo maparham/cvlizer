@@ -43,13 +43,23 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
     """
     db = SessionLocal()
     try:
+        # Get CV record to retrieve user_id for AI usage logging
+        cv = db.query(CV).filter(CV.id == cv_id).first()
+        user_id = str(cv.user_id) if cv else None
+
         # Parse CV content (run async function in sync context)
         parsed_data = asyncio.run(
-            parse_cv_with_openai(file_content, filename, content_type)
+            parse_cv_with_openai(
+                file_content,
+                filename,
+                content_type,
+                user_id=user_id,
+                cv_id=cv_id,
+                db_session=db,
+            )
         )
 
         # Update CV record with parsed data
-        cv = db.query(CV).filter(CV.id == cv_id).first()
         if cv:
             cv.parsed_data = parsed_data
             # Check for errors before setting is_parsed

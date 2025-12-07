@@ -7,11 +7,33 @@ This module provides specialized functions for:
 - Parsing error handling and fallback responses
 """
 
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
 
 async def parse_cv_with_openai(
-    file_content: bytes, filename: str, content_type: str
+    file_content: bytes,
+    filename: str,
+    content_type: str,
+    user_id: Optional[str] = None,
+    cv_id: Optional[str] = None,
+    db_session: Optional[Session] = None,
 ) -> dict:
-    """Parse CV content using OpenAI"""
+    """
+    Parse CV content using OpenAI.
+
+    Args:
+        file_content: CV file content bytes
+        filename: Original filename
+        content_type: MIME type of the file
+        user_id: User identifier for AI usage logging (optional)
+        cv_id: CV identifier for AI usage logging (optional)
+        db_session: Database session for AI usage logging (optional)
+
+    Returns:
+        Dictionary containing parsed CV data or error information
+    """
     import uuid
 
     from .file_service import extract_text_from_file
@@ -23,7 +45,9 @@ async def parse_cv_with_openai(
         # Parse with OpenAI
         from .ai_service import parse_cv_text_with_openai
 
-        parsed_data = await parse_cv_text_with_openai(text_content)
+        parsed_data = await parse_cv_text_with_openai(
+            text_content, user_id=user_id, cv_id=cv_id, db_session=db_session
+        )
 
         # Check if parsing resulted in an error
         if parsed_data.get("error"):
