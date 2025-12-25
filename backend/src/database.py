@@ -25,6 +25,7 @@ from src.models.base import Base, engine  # type: ignore  # noqa: E402
 from src.models.cv import CV  # noqa: F401, E402
 from src.models.cv_history import CVHistory  # noqa: F401, E402
 from src.models.cv_job_description import CVJobDescription  # noqa: F401, E402
+from src.models.cv_quality_analysis import CVQualityAnalysis  # noqa: F401, E402
 from src.models.impersonation_session import ImpersonationSession  # noqa: F401, E402
 from src.models.job_description import JobDescription  # noqa: F401, E402
 from src.models.optimization_history import OptimizationHistory  # noqa: F401, E402

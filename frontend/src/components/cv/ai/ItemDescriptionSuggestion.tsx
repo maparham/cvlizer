@@ -12,21 +12,20 @@ import {
   Button,
   IconButton,
   Tooltip,
-  ToggleButton,
-  ToggleButtonGroup,
   Chip,
+  Divider,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Close as CloseIcon,
   Info as InfoIcon,
-  Code as CodeIcon,
-  CompareArrows as CompareArrowsIcon,
 } from "@mui/icons-material";
 import { ItemDescriptionSuggestion as ItemDescriptionSuggestionType } from "../../../types/ai";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
 import SemanticDiff from "./SemanticDiff";
-import { Divider } from "@mui/material";
+import { ViewModeToggle } from "./ViewModeToggle";
+import { OriginalSuggestedDisplay } from "./OriginalSuggestedDisplay";
+import { getContentScoreColor } from "./utils/suggestionUtils";
 
 interface ItemDescriptionSuggestionProps {
   suggestion: ItemDescriptionSuggestionType;
@@ -50,12 +49,6 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
     if (newViewMode !== null) {
       setViewMode(newViewMode);
     }
-  };
-
-  const getContentScoreColor = (score: number): "success" | "warning" | "error" => {
-    if (score >= 80) return "success";
-    if (score >= 60) return "warning";
-    return "error";
   };
 
   return (
@@ -90,24 +83,12 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
             sx={{ ml: 1 }}
           />
         </Tooltip>
-        <ToggleButtonGroup
+        <ViewModeToggle
           value={viewMode}
-          exclusive
           onChange={handleViewModeChange}
-          size="small"
+          variant="compare"
           sx={{ ml: "auto" }}
-        >
-          <Tooltip title="Show diff view with highlighted changes">
-            <ToggleButton value="diff" aria-label="diff view">
-              <CompareArrowsIcon fontSize="small" />
-            </ToggleButton>
-          </Tooltip>
-          <Tooltip title="Show raw suggested content">
-            <ToggleButton value="raw" aria-label="raw view">
-              <CodeIcon fontSize="small" />
-            </ToggleButton>
-          </Tooltip>
-        </ToggleButtonGroup>
+        />
         <IconButton
           size="small"
           onClick={onDiscard}
@@ -134,20 +115,24 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
               <SemanticDiff markdownDiff={suggestion.markdown_diff} />
             ) : (
               // No diff available - show side-by-side comparison
-              <Box>
-                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
-                  Original:
-                </Typography>
-                <MarkdownRenderer content={suggestion.original} variant="body2" />
-                <Divider sx={{ my: 1 }} />
-                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
-                  Suggested:
-                </Typography>
-                <MarkdownRenderer content={suggestion.suggested} variant="body2" />
-              </Box>
+              <OriginalSuggestedDisplay
+                original={suggestion.original || ""}
+                suggested={suggestion.suggested || ""}
+                originalLabel="Original:"
+                suggestedLabel="Suggested:"
+                renderOriginal={(content) => (
+                  <>
+                    <MarkdownRenderer content={content} variant="body2" />
+                    <Divider sx={{ my: 1 }} />
+                  </>
+                )}
+                renderSuggested={(content) => (
+                  <MarkdownRenderer content={content} variant="body2" />
+                )}
+              />
             )
           ) : (
-            <MarkdownRenderer content={suggestion.suggested} variant="body2" />
+            <MarkdownRenderer content={suggestion.suggested || ""} variant="body2" />
           )}
         </Box>
       </Box>

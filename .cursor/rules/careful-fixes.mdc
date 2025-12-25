@@ -31,7 +31,12 @@ Be careful and precise when fixing issues.
 3. **Identify the source** - Which specific component/test/function causes it?
 4. **Inspect state** - Use screenshots, logs, HTML reports to see actual state
 5. **Trace the flow** - What happened before the failure? What accumulated?
-6. **Pinpoint the culprit** - Which specific action left things in a bad state?
+6. **VERIFY RUNTIME VALUES** - When a feature works for some components but not others:
+   - Map which components work vs don't work
+   - Identify their underlying component patterns (e.g., components using local state vs context vs props for the same concept)
+   - Check if similar-looking components use different state variables or prop names for the same concept
+   - Verify actual prop/state values with logs/instrumentation before assuming behavior
+7. **Pinpoint the culprit** - Which specific action left things in a bad state?
 
 ### Anti-Patterns to Avoid
 - ❌ **Don't assume based on naming/patterns/conventions** - READ THE SOURCE CODE instead

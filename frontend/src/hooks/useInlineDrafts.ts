@@ -54,6 +54,7 @@ export const useInlineDrafts = (cvId: string, cvData?: any) => {
   }, [cvId]);
 
   // Update state when drafts change - use a more stable comparison
+  // NOTE: cvData is in deps but we don't reload drafts when it changes - we only use it for positioning
   useEffect(() => {
     if (drafts && drafts.length >= 0) {
       // Filter out drafts that are still generating - wait for completion

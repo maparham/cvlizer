@@ -60,7 +60,7 @@ class JobFitService {
   async getCVDrafts(cvId: string): Promise<any[]> {
     try {
       const response = await api.get(`/api/cvs/${cvId}/drafts`);
-      return response.data.drafts;
+      return response.data.drafts || [];
     } catch (error: any) {
       const aiError: AIServiceError = {
         error: error.response?.data?.detail || "Failed to get CV drafts",

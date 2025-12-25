@@ -18,6 +18,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   headerActions,
   headerActionsLeft,
   isEditing,
+  isSaving = false,
   isValid = true,
   onTitleSave,
   sectionId,
@@ -43,6 +44,19 @@ const BaseSection: React.FC<BaseSectionProps> = ({
       data-section={sectionId}
       sx={{
         position: "relative",
+        transition: "background-color 1s ease, border 0.3s ease, border-radius 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease",
+        ...(isSaving && {
+          bgcolor: "rgba(76, 175, 80, 0.2)",
+          transition: "background-color 0s",
+        }),
+        ...(isEditing && !isSaving && {
+          border: "3px solid #1976d2",
+          borderRadius: "8px",
+          bgcolor: "rgba(25, 118, 210, 0.08)",
+          boxShadow:
+            "0 0 0 2px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15)",
+          p: 2,
+        }),
       }}
     >
       {isEditing && (onSave || onCancel) ? (

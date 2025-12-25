@@ -124,6 +124,9 @@ function IndividualItemSection<T>({
     index: number | null;
   }>({ open: false, index: null });
 
+  // State for save animation
+  const [savingItemIndex, setSavingItemIndex] = useState<number | null>(null);
+
   // Use sectionType prop directly instead of calculating from title
   // This ensures data-section attribute matches validation errors even when title is customized
   const sectionId = sectionType || useMemo(() => getSectionId(title), [title]);
@@ -209,16 +212,28 @@ function IndividualItemSection<T>({
         }
       }
 
-      setItemsData(newData);
-      onUpdate(newData);
-      onSave(
-        newData,
-        editingItemIndex >= itemsData.length
-          ? `${autoSaveMessage} added`
-          : `${autoSaveMessage} updated`,
-      );
+      const message = editingItemIndex >= itemsData.length
+        ? `${autoSaveMessage} added`
+        : `${autoSaveMessage} updated`;
+
+      // Flash green immediately
+      setSavingItemIndex(editingItemIndex);
+
+      // Close edit mode after brief delay to show green flash
+      setTimeout(() => {
+        handleCancelEdit(true); // Pass true to indicate this is a save operation
+        setSavingItemIndex(null);
+      }, 100);
+
+      // Delay state updates to allow background color transition to complete (1000ms)
+      setTimeout(() => {
+        setItemsData(newData);
+        onUpdate(newData);
+        onSave(newData, message);
+      }, 1100);
+    } else {
+      handleCancelEdit(true);
     }
-    handleCancelEdit(true); // Pass true to indicate this is a save operation
   }, [
     editingItemIndex,
     editData,
@@ -572,46 +587,66 @@ function IndividualItemSection<T>({
                             sx={{
                               position: "relative",
                               mb: 0.25,
-                              p: 1,
-                              border: "1px solid",
-                              borderColor: snapshot.isDragging
+                              p: editingItemIndex === index ? 2 : 1,
+                              border: editingItemIndex === index
+                                ? "3px solid #1976d2"
+                                : snapshot.isDragging
+                                  ? "1px solid #1976d2"
+                                  : "1px solid transparent",
+                              borderColor: editingItemIndex === index
                                 ? "#1976d2"
-                                : "transparent",
-                              borderRadius: 1,
+                                : snapshot.isDragging
+                                  ? "#1976d2"
+                                  : "transparent",
+                              borderRadius: editingItemIndex === index ? "8px" : 1,
                               boxSizing: "border-box",
+                              bgcolor: savingItemIndex === index
+                                ? "rgba(76, 175, 80, 0.2)"
+                                : editingItemIndex === index
+                                ? "rgba(25, 118, 210, 0.08)"
+                                : snapshot.isDragging
+                                  ? "#f5f5f5"
+                                  : "transparent",
+                              boxShadow: editingItemIndex === index
+                                ? "0 0 0 2px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15)"
+                                : snapshot.isDragging
+                                  ? "0 8px 16px rgba(0,0,0,0.15)"
+                                  : "0 1px 3px rgba(0,0,0,0.05)",
                               // Force GPU acceleration to prevent sub-pixel rendering issues
                               backfaceVisibility: "hidden",
                               WebkitBackfaceVisibility: "hidden",
                               WebkitFontSmoothing: "subpixel-antialiased",
                               transition: isReordering
                                 ? "none"
-                                : "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",
+                                : savingItemIndex === index
+                                  ? "background-color 0s"
+                                : editingItemIndex === index
+                                  ? "all 0.3s ease"
+                                  : "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.3s ease, background-color 1s ease",
                               transform: snapshot.isDragging
                                 ? "scale(1.02) rotate(1deg) translateZ(0)"
                                 : "translateZ(0)",
-                              backgroundColor: snapshot.isDragging
-                                ? "#f5f5f5"
-                                : "transparent",
-                              boxShadow: snapshot.isDragging
-                                ? "0 8px 16px rgba(0,0,0,0.15)"
-                                : "0 1px 3px rgba(0,0,0,0.05)",
                               zIndex: snapshot.isDragging ? 1000 : "auto",
                               "&:hover": {
                                 willChange: "transform, border-color, box-shadow",
                                 borderColor:
-                                  editingItemIndex === null
-                                    ? "#e0e0e0"
-                                    : "transparent",
+                                  editingItemIndex === index
+                                    ? "#1976d2"
+                                    : editingItemIndex === null
+                                      ? "#e0e0e0"
+                                      : "transparent",
                                 transform:
                                   editingItemIndex === null &&
                                   !snapshot.isDragging
                                     ? "translateY(-1px) translateZ(0)"
                                     : "translateZ(0)",
                                 boxShadow:
-                                  editingItemIndex === null &&
-                                  !snapshot.isDragging
-                                    ? "0 4px 8px rgba(0,0,0,0.1)"
-                                    : undefined,
+                                  editingItemIndex === index
+                                    ? "0 0 0 2px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15)"
+                                    : editingItemIndex === null &&
+                                      !snapshot.isDragging
+                                      ? "0 4px 8px rgba(0,0,0,0.1)"
+                                      : undefined,
                                 "& .reorder-control": {
                                   opacity: 1,
                                   visibility: "visible",

@@ -20,6 +20,8 @@ import { jobDescriptionService } from "./jobDescriptionService";
 import { aiSectionsService } from "./aiSectionsService";
 import { utilityService } from "./utilityService";
 import { atsService } from "./atsService";
+import { cvQualityService } from "./cvQualityService";
+import { writingCorrectionsService } from "./writingCorrectionsService";
 
 /**
  * Unified AI Service aggregating all AI service modules
@@ -59,6 +61,18 @@ class AIService {
   // ATS optimization
   analyzeATSOptimization = atsService.analyzeATSOptimization.bind(atsService);
 
+  // CV Quality Analysis
+  createQualityAnalysis = cvQualityService.createQualityAnalysis.bind(cvQualityService);
+  getQualityAnalysisStatus = cvQualityService.getQualityAnalysisStatus.bind(cvQualityService);
+  getLatestQualityAnalysis = cvQualityService.getLatestQualityAnalysis.bind(cvQualityService);
+  updateQualityAnalysis = cvQualityService.updateQualityAnalysis.bind(cvQualityService);
+  deleteQualityAnalysis = cvQualityService.deleteQualityAnalysis.bind(cvQualityService);
+  deleteAllQualityAnalyses = cvQualityService.deleteAllQualityAnalyses.bind(cvQualityService);
+
+  // Writing Corrections
+  applyWritingCorrection = writingCorrectionsService.applyWritingCorrection.bind(writingCorrectionsService);
+  applyWritingCorrectionsBatch = writingCorrectionsService.applyWritingCorrectionsBatch.bind(writingCorrectionsService);
+
   // Utility functions
   checkAIFeatureStatus = utilityService.checkAIFeatureStatus.bind(utilityService);
   retryWithBackoff = utilityService.retryWithBackoff.bind(utilityService);
@@ -93,6 +107,14 @@ export const {
   deleteAIEnhancement,
   deleteAllAIEnhancementsForCV,
   analyzeATSOptimization,
+  createQualityAnalysis,
+  getQualityAnalysisStatus,
+  getLatestQualityAnalysis,
+  updateQualityAnalysis,
+  deleteQualityAnalysis,
+  deleteAllQualityAnalyses,
+  applyWritingCorrection,
+  applyWritingCorrectionsBatch,
   checkAIFeatureStatus,
   retryWithBackoff,
   generateAllSuggestions,

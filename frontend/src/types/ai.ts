@@ -347,6 +347,138 @@ export interface ATSOptimizationResponse {
 }
 
 // ============================================================================
+// CV Quality Analysis Types
+// ============================================================================
+
+export interface FieldCorrection {
+  field_name: string;
+  original_value: string;
+  corrected_value: string;
+  markdown_diff: string;
+  reasoning?: string;
+}
+
+export interface WritingCorrection {
+  item_id: string;
+  section: string;
+  markdown_diff?: string;
+  field_corrections?: FieldCorrection[];
+  reasoning: string;
+  importance: 'highly_recommended' | 'standard';
+}
+
+export interface CoachingQuestion {
+  question: string;
+}
+
+export interface ContentCoachingItem {
+  item_id: string;
+  section: string;
+  issue_category: 'insufficient_content' | 'missing_impact' | 'too_brief' | 'missing_achievements' | 'lacks_specificity' | 'missing_context' | 'weak_action_verbs';
+  coaching_questions: CoachingQuestion[];
+  direct_prompts: string[];
+}
+
+export interface ProfessionalSummaryQualitySuggestion {
+  suggested_text?: string;
+  original_text: string;
+  key_changes: string[];
+  markdown_diff?: string;
+  coaching_questions?: CoachingQuestion[];
+}
+
+export interface HighQualityItem {
+  item_type: 'high_score';
+  item_id: string;
+  section: string;
+  quality_score: number;
+}
+
+export interface LowQualityItem {
+  item_type: 'low_score';
+  item_id: string;
+  section: string;
+  quality_score: number;
+  original: string;
+  suggested: string;
+  reasoning: string;
+  markdown_diff: string;
+  coaching_questions?: CoachingQuestion[];
+}
+
+export type QualityItem = HighQualityItem | LowQualityItem;
+
+/**
+ * Type guard to check if a QualityItem is a LowQualityItem
+ */
+export function isLowQualityItem(item: QualityItem): item is LowQualityItem {
+  return item.item_type === 'low_score';
+}
+
+/**
+ * Type guard to check if a QualityItem is a HighQualityItem
+ */
+export function isHighQualityItem(item: QualityItem): item is HighQualityItem {
+  return item.item_type === 'high_score';
+}
+
+export interface TimelineGap {
+  gap_type: 'work_experience' | 'education' | 'combined';
+  gap_duration_months: number;
+  start_date: string;
+  end_date: string;
+  item_before?: {
+    type: string;
+    id: string;
+    title: string;
+  };
+  item_after?: {
+    type: string;
+    id: string;
+    title: string;
+  };
+}
+
+export interface SkillQualitySuggestion {
+  skill: string;
+  reasoning: string;
+}
+
+export interface CVQualityAnalysisData {
+  overall_quality_score: number;
+  writing_corrections: WritingCorrection[];
+  content_coaching: ContentCoachingItem[];
+  professional_summary?: ProfessionalSummaryQualitySuggestion;
+  work_experience: QualityItem[];
+  education: QualityItem[];
+  skills: {
+    technical: SkillQualitySuggestion[];
+    soft: SkillQualitySuggestion[];
+  };
+  timeline_gaps: TimelineGap[];
+}
+
+export interface CVQualityAnalysisResponse {
+  id: string;
+  cv_id: string;
+  user_id: string;
+  quality_data?: CVQualityAnalysisData;
+  overall_quality_score?: number;
+  is_generating: boolean;
+  generation_error?: string;
+  tokens_used: number;
+  generation_time: number;
+  model_used?: string;
+  created_at: string;
+}
+
+export interface CVQualityAnalysisCreateResponse {
+  analysis_id: string;
+  is_generating: boolean;
+  message?: string;
+}
+
+// ============================================================================
 // Inline Diff Types
 // ============================================================================
 

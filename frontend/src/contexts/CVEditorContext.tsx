@@ -55,6 +55,7 @@ interface CVEditorContextType {
     sectionId: string,
     itemIndex: number,
   ) => void;
+  cancelIndividualItemEditing: () => void;
   requestIndividualItemCancel: (
     sectionId: string,
     onCancel: () => void,
@@ -181,6 +182,7 @@ export const useCVEditorState = () => {
       onRequestSectionCancel: context.requestSectionCancel,
       onRegisterIndividualItem: context.registerIndividualItemEditing,
       onUnregisterIndividualItem: context.unregisterIndividualItemEditing,
+      onCancelIndividualItem: context.cancelIndividualItemEditing,
       onRequestIndividualCancel: context.requestIndividualItemCancel,
     },
 

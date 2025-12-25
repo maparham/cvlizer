@@ -256,6 +256,9 @@ export const formatModelName = (model: string): string => {
     "gpt-4o-mini": "GPT-4o Mini",
     "gpt-4o": "GPT-4o",
     "gpt-3.5-turbo": "GPT-3.5 Turbo",
+    "gpt-5": "GPT-5",
+    "gpt-5.1": "GPT-5.1",
+    "gpt-5.2": "GPT-5.2",
     "gpt-5-mini": "GPT-5 Mini",
     "gpt-5-nano": "GPT-5 Nano",
   };

@@ -365,6 +365,8 @@ class AIUsageConfig:
         "gpt-4o": {"input_price_per_1m": 2.50, "output_price_per_1m": 10.00},
         "gpt-3.5-turbo": {"input_price_per_1m": 0.50, "output_price_per_1m": 1.50},
         "gpt-5": {"input_price_per_1m": 1.25, "output_price_per_1m": 10.00},
+        "gpt-5.1": {"input_price_per_1m": 1.25, "output_price_per_1m": 10.00},
+        "gpt-5.2": {"input_price_per_1m": 1.75, "output_price_per_1m": 14.00},
         "gpt-5-mini": {"input_price_per_1m": 0.250, "output_price_per_1m": 2.000},
         "gpt-5-nano": {"input_price_per_1m": 0.050, "output_price_per_1m": 0.400},
         "gpt-5-pro": {"input_price_per_1m": 15.00, "output_price_per_1m": 120.00},

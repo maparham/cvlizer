@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from src.models.ai_draft import AIDraft
 from src.models.ai_enhancement import AIEnhancement
+from src.models.cv_quality_analysis import CVQualityAnalysis
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ def find_stuck_ai_enhancements(
     stuck_enhancements = (
         db.query(AIEnhancement)
         .filter(
-            AIEnhancement.is_generating == True,
+            AIEnhancement.is_generating.is_(True),
             AIEnhancement.created_at < cutoff_time,
         )
         .all()
@@ -133,7 +134,7 @@ def get_enhancement_statistics(db: Session) -> dict:
         Dictionary with enhancement statistics
     """
     total_generating = (
-        db.query(AIEnhancement).filter(AIEnhancement.is_generating == True).count()
+        db.query(AIEnhancement).filter(AIEnhancement.is_generating.is_(True)).count()
     )
 
     stuck_enhancements = find_stuck_ai_enhancements(db)
@@ -161,7 +162,7 @@ def get_enhancement_statistics(db: Session) -> dict:
     }
 
 
-def cancel_all_running_ai_tasks(db: Session) -> Tuple[int, int]:
+def cancel_all_running_ai_tasks(db: Session) -> Tuple[int, int, int]:
     """
     Cancel all running AI tasks by marking them as failed.
 
@@ -172,17 +173,18 @@ def cancel_all_running_ai_tasks(db: Session) -> Tuple[int, int]:
         db: Database session
 
     Returns:
-        Tuple of (enhancements_cancelled, drafts_cancelled)
+        Tuple of (enhancements_cancelled, drafts_cancelled, quality_analyses_cancelled)
     """
-    error_message = "AI task was cancelled due to a server error. Please try again."
+    error_message = "AI task was cancelled due to server restart. Please try again."
 
     enhancements_cancelled = 0
     drafts_cancelled = 0
+    quality_analyses_cancelled = 0
 
     try:
         # Cancel all running AI enhancements
         running_enhancements = (
-            db.query(AIEnhancement).filter(AIEnhancement.is_generating == True).all()
+            db.query(AIEnhancement).filter(AIEnhancement.is_generating.is_(True)).all()
         )
 
         for enhancement in running_enhancements:
@@ -191,25 +193,43 @@ def cancel_all_running_ai_tasks(db: Session) -> Tuple[int, int]:
             enhancements_cancelled += 1
 
         # Cancel all running AI drafts
-        running_drafts = db.query(AIDraft).filter(AIDraft.is_generating == True).all()
+        running_drafts = db.query(AIDraft).filter(AIDraft.is_generating.is_(True)).all()
 
         for draft in running_drafts:
             draft.is_generating = False
             draft.generation_error = error_message
             drafts_cancelled += 1
 
+        # Cancel all running CV quality analyses
+        running_quality_analyses = (
+            db.query(CVQualityAnalysis)
+            .filter(CVQualityAnalysis.is_generating.is_(True))
+            .all()
+        )
+
+        for analysis in running_quality_analyses:
+            analysis.is_generating = False
+            analysis.generation_error = error_message
+            quality_analyses_cancelled += 1
+
         # Commit all changes
-        if enhancements_cancelled > 0 or drafts_cancelled > 0:
+        if (
+            enhancements_cancelled > 0
+            or drafts_cancelled > 0
+            or quality_analyses_cancelled > 0
+        ):
             db.commit()
             logger.info(
-                f"Cancelled {enhancements_cancelled} AI enhancement(s) and {drafts_cancelled} AI draft(s) on startup"
+                f"Cancelled {enhancements_cancelled} AI enhancement(s), "
+                f"{drafts_cancelled} AI draft(s), and "
+                f"{quality_analyses_cancelled} CV quality analysis/analyses on startup"
             )
         else:
             logger.info("No running AI tasks found to cancel on startup")
 
-        return enhancements_cancelled, drafts_cancelled
+        return enhancements_cancelled, drafts_cancelled, quality_analyses_cancelled
 
     except Exception as e:
         logger.error(f"Failed to cancel running AI tasks: {str(e)}")
         db.rollback()
-        return enhancements_cancelled, drafts_cancelled
+        return enhancements_cancelled, drafts_cancelled, quality_analyses_cancelled

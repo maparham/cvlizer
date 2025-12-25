@@ -434,7 +434,11 @@ async def call_openai_with_schema(
     client = get_openai_client()
     start_time = time.time()
 
-    # Log AI prompt
+    # Log AI prompt (INFO level for visibility, DEBUG for full content)
+    logger.info(
+        f"[{operation_type}] Calling OpenAI API - user_id={user_id}, cv_id={cv_id}, "
+        f"prompt_length={len(user_prompt)} chars"
+    )
     logger.debug(
         f"[{operation_type}] System prompt (user_id={user_id}, cv_id={cv_id}):\n{system_prompt}"
     )
@@ -467,16 +471,21 @@ async def call_openai_with_schema(
         tokens_used = prompt_tokens + completion_tokens
         cached_tokens = extract_cached_tokens(response)
 
-        # Log AI response
+        # Log AI response (INFO level for summary, DEBUG for full content)
+        logger.info(
+            f"[{operation_type}] OpenAI API call successful - user_id={user_id}, cv_id={cv_id}, "
+            f"tokens={tokens_used} (prompt={prompt_tokens}, completion={completion_tokens}, cached={cached_tokens}), "
+            f"time={generation_time}ms"
+        )
         try:
             response_json = json.dumps(parsed_data, indent=2, ensure_ascii=False)
-            logger.debug(
+            # Log AI response at INFO level for all operations for visibility
+            logger.info(
                 f"[{operation_type}] AI response (user_id={user_id}, cv_id={cv_id}, tokens={tokens_used}):\n{response_json}"
             )
         except Exception as e:
-            logger.debug(
-                f"[{operation_type}] AI response (user_id={user_id}, cv_id={cv_id}, tokens={tokens_used}): [Failed to serialize response: {str(e)}]"
-            )
+            error_msg = f"[{operation_type}] AI response (user_id={user_id}, cv_id={cv_id}, tokens={tokens_used}): [Failed to serialize response: {str(e)}]"
+            logger.info(error_msg)
 
         # Build metadata dictionary
         metadata = {

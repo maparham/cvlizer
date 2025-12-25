@@ -207,7 +207,10 @@ const CVEditor: React.FC = () => {
           // Update existing CV
           if (!cvId) return;
 
-          await updateCV(cvId, { parsed_data: dataToSave });
+          const updatedCV = await updateCV(cvId, { parsed_data: dataToSave });
+          if (updatedCV) {
+            setCurrentCV(updatedCV);
+          }
 
           // Create snapshot for user-initiated changes (when message is provided)
           // or when we can detect actual changes through diff comparison

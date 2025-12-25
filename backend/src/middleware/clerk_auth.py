@@ -70,8 +70,6 @@ def is_admin_user(user: User) -> bool:
 
     if not is_admin:
         logger.warning(f"Admin access denied for {user.email} (expected: {admin_email})")
-    else:
-        logger.debug(f"Admin access granted for {user.email}")
 
     return is_admin
 

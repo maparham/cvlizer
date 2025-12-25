@@ -44,6 +44,8 @@ import {
   parseDateForPicker,
 } from "../../../utils/dateUtils";
 import dayjs from "dayjs";
+import { WritingCorrection } from "../../../types/ai";
+import { InlineFieldCorrection } from "../ai/InlineFieldCorrection";
 
 export interface FormFieldConfig {
   name: string;
@@ -77,7 +79,11 @@ export const FormField: React.FC<{
   error?: boolean;
   helperText?: string;
   disabled?: boolean;
-}> = ({ config, value, onChange, onSave, sx, error: errorOverride, helperText: helperTextOverride, disabled }) => {
+  // Writing correction props for markdown diff corrections
+  markdownDiffCorrection?: { markdown_diff: string; correction: WritingCorrection } | null;
+  onApplyCorrection?: (correction: WritingCorrection) => void;
+  onDismissCorrection?: () => void;
+}> = ({ config, value, onChange, onSave, sx, error: errorOverride, helperText: helperTextOverride, disabled, markdownDiffCorrection, onApplyCorrection, onDismissCorrection }) => {
   const {
     name,
     label,
@@ -127,52 +133,74 @@ export const FormField: React.FC<{
   // Use markdown editor if enabled and multiline is true
   if (useMarkdownEditor && multiline) {
     return (
-      <Box sx={sx}>
-        <MarkdownEditor
-          value={value || ""}
-          onChange={(newValue) => onChange(newValue || "")}
-          placeholder={placeholder || `e.g., ${label.toLowerCase()}`}
-          error={isError}
-          helperText={helperText}
-          rows={rows || 4}
-          disabled={disabled}
-        />
+      <Box>
+        <Box sx={sx}>
+          <MarkdownEditor
+            value={value || ""}
+            onChange={(newValue) => onChange(newValue || "")}
+            placeholder={placeholder || `e.g., ${label.toLowerCase()}`}
+            error={isError}
+            helperText={helperText}
+            rows={rows || 4}
+            disabled={disabled}
+          />
+        </Box>
+        {markdownDiffCorrection && (
+          <InlineFieldCorrection
+            markdownDiffCorrection={markdownDiffCorrection}
+            importance={markdownDiffCorrection.correction.importance}
+            reasoning={markdownDiffCorrection.correction.reasoning}
+            onApply={() => onApplyCorrection?.(markdownDiffCorrection.correction)}
+            onDismiss={onDismissCorrection || (() => {})}
+          />
+        )}
       </Box>
     );
   }
 
   return (
-    <TextField
-      {...{
-        name,
-        label: required ? `${label} *` : label,
-        placeholder: placeholder || `e.g., ${label.toLowerCase()}`,
-        value: value || "",
-        onChange: (e) => onChange(e.target.value),
-        onKeyDown: handleKeyDown,
-        error: isError,
-        helperText: helperText,
-        variant: "standard",
-        fullWidth: true,
-        multiline,
-        rows,
-        type,
-        InputProps: {
-          endAdornment: isSuccess ? (
-            <InputAdornment position="end">
-              <CheckIcon color="success" fontSize="small" />
-            </InputAdornment>
-          ) : isError ? (
-            <InputAdornment position="end">
-              <WarningIcon color="error" fontSize="small" />
-            </InputAdornment>
-          ) : undefined,
-        },
-        sx: {
-          ...sx,
-        },
-      }}
-    />
+    <Box>
+      <TextField
+        {...{
+          name,
+          label: required ? `${label} *` : label,
+          placeholder: placeholder || `e.g., ${label.toLowerCase()}`,
+          value: value || "",
+          onChange: (e) => onChange(e.target.value),
+          onKeyDown: handleKeyDown,
+          error: isError,
+          helperText: helperText,
+          variant: "standard",
+          fullWidth: true,
+          multiline,
+          rows,
+          type,
+          InputProps: {
+            endAdornment: isSuccess ? (
+              <InputAdornment position="end">
+                <CheckIcon color="success" fontSize="small" />
+              </InputAdornment>
+            ) : isError ? (
+              <InputAdornment position="end">
+                <WarningIcon color="error" fontSize="small" />
+              </InputAdornment>
+            ) : undefined,
+          },
+          sx: {
+            ...sx,
+          },
+        }}
+      />
+      {markdownDiffCorrection && (
+        <InlineFieldCorrection
+          markdownDiffCorrection={markdownDiffCorrection}
+          importance={markdownDiffCorrection.correction.importance}
+          reasoning={markdownDiffCorrection.correction.reasoning}
+          onApply={() => onApplyCorrection?.(markdownDiffCorrection.correction)}
+          onDismiss={onDismissCorrection || (() => {})}
+        />
+      )}
+    </Box>
   );
 };
 

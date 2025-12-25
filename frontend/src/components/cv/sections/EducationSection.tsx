@@ -1,23 +1,16 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import {
   Box,
   TextField,
   Button,
   Typography,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
-  Chip,
-  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
 import { FormField } from "../core/formUtils";
-import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from "../core/validatedFields";
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation, type ItemValidationState } from "../core/validatedFields";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import DegreeAutocomplete from "../ui/DegreeAutocomplete";
 import FieldOfStudyAutocomplete from "../ui/FieldOfStudyAutocomplete";
@@ -25,12 +18,20 @@ import AcademicDegreeAutocomplete from "../ui/AcademicDegreeAutocomplete";
 import { generateSectionId } from "../../../utils/idGenerator";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
 import ItemDescriptionSuggestion from "../ai/ItemDescriptionSuggestion";
-import {
-  useAISuggestionsStore,
-  useValidatedSuggestions,
-} from "../../../stores/aiSuggestionsStore";
+import { CoachingQuestionsPanel } from "../ai/CoachingQuestionsPanel";
+import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
+import { useCVQualityStore, useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
 import { useNotifications } from "../../../packages/notifications";
 import { useFieldValidation } from "../../../hooks/useFieldValidation";
+import { LowQualityItem, WritingCorrection, FieldCorrection } from "../../../types/ai";
+import { UnifiedQualitySuggestion } from "../ai/UnifiedQualitySuggestion";
+import { InlineFieldCorrection } from "../ai/InlineFieldCorrection";
+import { useFieldCorrections } from "./hooks/useFieldCorrections";
+import { useSectionSuggestions } from "./hooks/useSectionSuggestions";
+import { useSectionHandlers } from "./hooks/useSectionHandlers";
+import { useFormHandlers } from "./hooks/useFormHandlers";
+import { ScoreChip } from "./common/ScoreChip";
+import { DiscardAllDialog } from "./common/DiscardAllDialog";
 
 interface Education {
   id: string;
@@ -53,9 +54,45 @@ const EducationForm: React.FC<{
   index: number;
   updateEducation: (field: keyof Education, value: any) => void;
   onSave?: () => void;
-}> = ({ edu, index, updateEducation, onSave }) => {
+  qualitySuggestion?: LowQualityItem;
+  writingCorrections?: WritingCorrection[];
+  onApplyQualitySuggestion?: (suggested: string) => void;
+  onDismissQualitySuggestion?: () => void;
+  onApplyWritingCorrection?: (correction: WritingCorrection) => void;
+  onDismissWritingCorrection?: (correction: WritingCorrection) => void;
+  onApplySingleFieldCorrection?: (fieldCorrection: FieldCorrection, parentCorrection: WritingCorrection) => void;
+  onApplyAll?: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void;
+}> = ({
+  edu,
+  index,
+  updateEducation,
+  onSave,
+  qualitySuggestion,
+  writingCorrections,
+  onApplyQualitySuggestion,
+  onDismissQualitySuggestion,
+  onApplyWritingCorrection,
+  onDismissWritingCorrection,
+  onApplySingleFieldCorrection,
+  onApplyAll,
+}) => {
   // Get validation errors for degree (used by DegreeAutocomplete)
   const degreeValidation = useFieldValidation('education', index, 'degree');
+
+  // Extract field-specific corrections using unified hook
+  const { fieldCorrectionProps, descriptionCorrection } = useFieldCorrections(
+    edu.id,
+    writingCorrections || [],
+    [
+      { fieldName: 'institution' },
+      { fieldName: 'degree' },
+      { fieldName: 'location' },
+      { fieldName: 'start_date' },
+      { fieldName: 'end_date' },
+    ],
+    onApplySingleFieldCorrection!,
+    onDismissWritingCorrection!
+  );
 
   const addHonor = () => {
     const currentHonors = edu.honors || [];
@@ -107,6 +144,7 @@ const EducationForm: React.FC<{
         label="Degree"
         error={degreeValidation.hasError}
         helperText={degreeValidation.errorMessage}
+        {...fieldCorrectionProps.degree}
       />
       <ValidatedFormField
         section="education"
@@ -121,6 +159,7 @@ const EducationForm: React.FC<{
         value={edu.institution}
         onChange={(value) => updateEducation("institution", value)}
         onSave={onSave}
+        {...fieldCorrectionProps.institution}
       />
       <FieldOfStudyAutocomplete
         value={edu.field_of_study || ""}
@@ -141,6 +180,7 @@ const EducationForm: React.FC<{
         onChange={(value) => updateEducation("location", value)}
         onSave={onSave}
         placeholder="e.g., Boston, MA"
+        {...fieldCorrectionProps.location}
       />
       <Box sx={{ display: "flex", gap: 2 }}>
         <ValidatedDateField
@@ -156,6 +196,7 @@ const EducationForm: React.FC<{
           onChange={(value) => updateEducation("start_date", value)}
           onSave={onSave}
           sx={{ flex: 1 }}
+          {...fieldCorrectionProps.start_date}
         />
         <ValidatedDateField
           section="education"
@@ -170,6 +211,7 @@ const EducationForm: React.FC<{
           onChange={(value) => updateEducation("end_date", value)}
           onSave={onSave}
           sx={{ flex: 1 }}
+          {...fieldCorrectionProps.end_date}
         />
       </Box>
       <FormField
@@ -195,6 +237,9 @@ const EducationForm: React.FC<{
         value={edu.description || ""}
         onChange={(value) => updateEducation("description", value)}
         onSave={onSave}
+        markdownDiffCorrection={descriptionCorrection}
+        onApplyCorrection={onApplyWritingCorrection}
+        onDismissCorrection={() => descriptionCorrection && onDismissWritingCorrection?.(descriptionCorrection.correction)}
       />
 
       <Box>
@@ -294,6 +339,21 @@ const EducationForm: React.FC<{
           Add Honor/Award
         </Button>
       </Box>
+
+      {/* Quality Suggestions (writing corrections now shown inline) */}
+      {qualitySuggestion && (
+        <UnifiedQualitySuggestion
+          itemId={edu.id}
+          section="education"
+          qualitySuggestion={qualitySuggestion}
+          writingCorrections={[]}
+          onApplyAll={onApplyAll}
+          onApplyQuality={onApplyQualitySuggestion}
+          onDismissQuality={onDismissQualitySuggestion}
+          onApplyWritingCorrection={onApplyWritingCorrection}
+          onDismissWritingCorrection={onDismissWritingCorrection}
+        />
+      )}
     </Box>
   );
 };
@@ -302,24 +362,53 @@ const EducationForm: React.FC<{
 const EducationDisplay: React.FC<{
   edu: Education;
   index: number;
-  validation: {
-    institution: { hasError: boolean; errorMessage?: string };
-    degree: { hasError: boolean; errorMessage?: string };
-    start_date: { hasError: boolean; errorMessage?: string };
-    end_date: { hasError: boolean; errorMessage?: string };
-  };
+  validation: ItemValidationState;
   suggestionsByItemId: Map<string, any>;
+  qualitySuggestionsByItemId: Map<string, LowQualityItem>;
+  coachingByItemId: Map<string, any>;
+  writingCorrectionsByItemId: Map<string, WritingCorrection[]>;
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
   handleDiscardSuggestion: (itemId: string) => void;
-}> = ({ edu, index: _index, validation, suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion }) => {
+  handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => void;
+  handleDismissQualitySuggestion: (itemId: string) => void;
+  handleApplyWritingCorrection: (correction: WritingCorrection) => void;
+  handleDismissWritingCorrection: (correction: WritingCorrection) => void;
+  handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void;
+}> = ({
+  edu,
+  index: _index,
+  validation,
+  suggestionsByItemId,
+  qualitySuggestionsByItemId,
+  coachingByItemId,
+  writingCorrectionsByItemId,
+  handleApplySuggestion,
+  handleDiscardSuggestion,
+  handleApplyQualitySuggestion,
+  handleDismissQualitySuggestion,
+  handleApplyWritingCorrection,
+  handleDismissWritingCorrection,
+  handleApplyAll,
+}) => {
   const suggestion = suggestionsByItemId.get(edu.id);
+  const qualitySuggestion = qualitySuggestionsByItemId.get(edu.id);
+  const coachingItem = coachingByItemId.get(edu.id);
+  const writingCorrections = writingCorrectionsByItemId.get(edu.id) || [];
 
-  // Helper function to get score color
-  const getContentScoreColor = (score: number): "success" | "warning" | "error" => {
-    if (score >= 80) return "success";
-    if (score >= 60) return "warning";
-    return "error";
-  };
+  // Extract field-specific corrections using unified hook
+  const { fieldCorrectionProps, descriptionCorrection } = useFieldCorrections(
+    edu.id,
+    writingCorrections,
+    [
+      { fieldName: 'institution' },
+      { fieldName: 'degree' },
+      { fieldName: 'location' },
+      { fieldName: 'start_date' },
+      { fieldName: 'end_date' },
+    ],
+    (_, parent) => handleApplyWritingCorrection(parent),
+    handleDismissWritingCorrection
+  );
 
   return (
     <>
@@ -344,16 +433,7 @@ const EducationDisplay: React.FC<{
           </ValidatedDisplay>
           {/* Display score for all items */}
           {suggestion && (
-            <Tooltip
-              title="Quality score (0-100) based on how well the story is told and confidence of presentation"
-            >
-              <Chip
-                label={`${suggestion.current_content_score}/100`}
-                color={getContentScoreColor(suggestion.current_content_score)}
-                size="small"
-                variant="filled"
-              />
-            </Tooltip>
+            <ScoreChip score={suggestion.current_content_score} />
           )}
         </Box>
         <Box sx={{ flexShrink: 0, ml: 2, minWidth: 120 }}>
@@ -372,6 +452,39 @@ const EducationDisplay: React.FC<{
           </ValidatedDisplay>
         </Box>
       </Box>
+      {fieldCorrectionProps.degree.correctionImportance !== undefined && fieldCorrectionProps.degree.fieldCorrection && (
+        <Box sx={{ mb: 1 }}>
+          <InlineFieldCorrection
+            fieldCorrection={fieldCorrectionProps.degree.fieldCorrection}
+            importance={fieldCorrectionProps.degree.correctionImportance!}
+            reasoning={fieldCorrectionProps.degree.correctionReasoning}
+            onApply={() => fieldCorrectionProps.degree.onApplyCorrection(fieldCorrectionProps.degree.fieldCorrection!)}
+            onDismiss={fieldCorrectionProps.degree.onDismissCorrection}
+          />
+        </Box>
+      )}
+      {(fieldCorrectionProps.start_date.correctionImportance !== undefined || fieldCorrectionProps.end_date.correctionImportance !== undefined) && (
+        <Box sx={{ mb: 1 }}>
+          {fieldCorrectionProps.start_date.correctionImportance !== undefined && fieldCorrectionProps.start_date.fieldCorrection && (
+            <InlineFieldCorrection
+              fieldCorrection={fieldCorrectionProps.start_date.fieldCorrection}
+              importance={fieldCorrectionProps.start_date.correctionImportance!}
+              reasoning={fieldCorrectionProps.start_date.correctionReasoning}
+              onApply={() => fieldCorrectionProps.start_date.onApplyCorrection(fieldCorrectionProps.start_date.fieldCorrection!)}
+              onDismiss={fieldCorrectionProps.start_date.onDismissCorrection}
+            />
+          )}
+          {fieldCorrectionProps.end_date.correctionImportance !== undefined && fieldCorrectionProps.end_date.fieldCorrection && (
+            <InlineFieldCorrection
+              fieldCorrection={fieldCorrectionProps.end_date.fieldCorrection}
+              importance={fieldCorrectionProps.end_date.correctionImportance!}
+              reasoning={fieldCorrectionProps.end_date.correctionReasoning}
+              onApply={() => fieldCorrectionProps.end_date.onApplyCorrection(fieldCorrectionProps.end_date.fieldCorrection!)}
+              onDismiss={fieldCorrectionProps.end_date.onDismissCorrection}
+            />
+          )}
+        </Box>
+      )}
       <Box sx={{ mb: 1 }}>
         <ValidatedDisplay
           validation={validation.institution}
@@ -383,6 +496,28 @@ const EducationDisplay: React.FC<{
           {edu.institution || "Institution"}
           {edu.location && ` • ${edu.location}`}
         </ValidatedDisplay>
+        {(fieldCorrectionProps.institution.correctionImportance !== undefined || fieldCorrectionProps.location.correctionImportance !== undefined) && (
+          <Box sx={{ mt: 1 }}>
+            {fieldCorrectionProps.institution.correctionImportance !== undefined && fieldCorrectionProps.institution.fieldCorrection && (
+              <InlineFieldCorrection
+                fieldCorrection={fieldCorrectionProps.institution.fieldCorrection}
+                importance={fieldCorrectionProps.institution.correctionImportance!}
+                reasoning={fieldCorrectionProps.institution.correctionReasoning}
+                onApply={() => fieldCorrectionProps.institution.onApplyCorrection(fieldCorrectionProps.institution.fieldCorrection!)}
+                onDismiss={fieldCorrectionProps.institution.onDismissCorrection}
+              />
+            )}
+            {fieldCorrectionProps.location.correctionImportance !== undefined && fieldCorrectionProps.location.fieldCorrection && (
+              <InlineFieldCorrection
+                fieldCorrection={fieldCorrectionProps.location.fieldCorrection}
+                importance={fieldCorrectionProps.location.correctionImportance!}
+                reasoning={fieldCorrectionProps.location.correctionReasoning}
+                onApply={() => fieldCorrectionProps.location.onApplyCorrection(fieldCorrectionProps.location.fieldCorrection!)}
+                onDismiss={fieldCorrectionProps.location.onDismissCorrection}
+              />
+            )}
+          </Box>
+        )}
       </Box>
       {edu.gpa && (
         <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
@@ -392,6 +527,15 @@ const EducationDisplay: React.FC<{
       {edu.description && (
         <Box sx={{ mb: 1 }}>
           <MarkdownRenderer content={edu.description} variant="body1" />
+          {descriptionCorrection && descriptionCorrection.correction.importance && (
+            <InlineFieldCorrection
+              markdownDiffCorrection={descriptionCorrection}
+              importance={descriptionCorrection.correction.importance}
+              reasoning={descriptionCorrection.correction.reasoning}
+              onApply={() => handleApplyWritingCorrection(descriptionCorrection.correction)}
+              onDismiss={() => handleDismissWritingCorrection(descriptionCorrection.correction)}
+            />
+          )}
         </Box>
       )}
       {edu.achievements && edu.achievements.length > 0 && (
@@ -430,6 +574,26 @@ const EducationDisplay: React.FC<{
           onDiscard={() => handleDiscardSuggestion(edu.id)}
         />
       )}
+
+      {/* Unified Quality Suggestion (combines quality suggestion and writing corrections) */}
+      {(qualitySuggestion || writingCorrections.length > 0) && (
+        <UnifiedQualitySuggestion
+          itemId={edu.id}
+          section="education"
+          qualitySuggestion={qualitySuggestion}
+          writingCorrections={[]}
+          onApplyAll={handleApplyAll}
+          onApplyQuality={qualitySuggestion ? (suggested) => handleApplyQualitySuggestion(edu.id, suggested) : undefined}
+          onDismissQuality={qualitySuggestion ? () => handleDismissQualitySuggestion(edu.id) : undefined}
+          onApplyWritingCorrection={handleApplyWritingCorrection}
+          onDismissWritingCorrection={handleDismissWritingCorrection}
+        />
+      )}
+
+      {/* Coaching Questions */}
+      {coachingItem && (
+        <CoachingQuestionsPanel coachingItem={coachingItem} />
+      )}
     </>
   );
 };
@@ -450,33 +614,37 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
   cvId,
   sectionType,
 }) => {
-  // Get AI suggestions from store
-  const allSuggestions = useValidatedSuggestions(cvId || "");
-  const { dismissEducationSuggestion, dismissAllEducationSuggestions } =
-    useAISuggestionsStore();
+  // Get quality analysis from store (independent of jobs)
+  const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
+
+  const { dismissAllEducationSuggestions } = useAISuggestionsStore();
+  const { dismissWritingCorrection } = useCVQualityStore();
   const { showSuccess } = useNotifications();
-  const [discardAllDialogOpen, setDiscardAllDialogOpen] = React.useState(false);
 
-  // Get education suggestions
-  const educationSuggestions = useMemo(() => {
-    return allSuggestions?.education || [];
-  }, [allSuggestions]);
+  // Use section suggestions hook
+  const {
+    suggestionsByItemId,
+    qualitySuggestionsByItemId,
+    coachingByItemId,
+    writingCorrectionsByItemId,
+    visibleSuggestions,
+  } = useSectionSuggestions(cvId || "", 'education', qualityAnalysis);
 
-  // Filter to only visible suggestions (those with suggested text)
-  const visibleSuggestions = useMemo(() => {
-    return educationSuggestions.filter((s) => s.suggested);
-  }, [educationSuggestions]);
-
-  // Map suggestions by item ID for quick lookup
-  const suggestionsByItemId = useMemo(() => {
-    const map = new Map();
-    educationSuggestions.forEach((suggestion) => {
-      map.set(suggestion.id, suggestion);
-    });
-    return map;
-  }, [educationSuggestions]);
-
-  const hasSuggestions = visibleSuggestions.length > 0;
+  // Use section handlers hook
+  const {
+    handleApplySuggestion,
+    handleDiscardSuggestion,
+    handleApplyQualitySuggestion,
+    handleDismissQualitySuggestion,
+    handleApplyWritingCorrection,
+    handleApplyAll,
+  } = useSectionHandlers<Education>(
+    'education',
+    cvId,
+    data as Education[],
+    onUpdate,
+    onSave
+  );
 
   const createNewEducation = (): Education => ({
     id: generateSectionId("education"),
@@ -499,56 +667,47 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
     updateEducation: (field: keyof Education, value: any) => void,
     onSave?: () => void,
   ) => {
+    // Look up quality suggestions for this item
+    const qualitySuggestion = qualitySuggestionsByItemId.get(edu.id);
+    const writingCorrections = writingCorrectionsByItemId.get(edu.id) || [];
+
+    // Use form handlers hook
+    const {
+      handleApplyQualitySuggestionForm,
+      handleDismissQualitySuggestionForm,
+      handleApplyWritingCorrectionForm,
+      handleDismissWritingCorrectionForm,
+      handleApplyAllForm,
+      handleApplySingleFieldCorrectionForm,
+    } = useFormHandlers<Education>(
+      'education',
+      edu.id,
+      updateEducation,
+      onSave,
+      handleApplyWritingCorrection
+    );
+
     return (
       <EducationForm
         edu={edu}
         index={index}
         updateEducation={updateEducation}
         onSave={onSave}
+        qualitySuggestion={qualitySuggestion}
+        writingCorrections={writingCorrections}
+        onApplyQualitySuggestion={handleApplyQualitySuggestionForm}
+        onDismissQualitySuggestion={handleDismissQualitySuggestionForm}
+        onApplyWritingCorrection={handleApplyWritingCorrectionForm}
+        onDismissWritingCorrection={handleDismissWritingCorrectionForm}
+        onApplySingleFieldCorrection={handleApplySingleFieldCorrectionForm}
+        onApplyAll={handleApplyAllForm}
       />
     );
   };
 
-  // Handle applying a suggestion
-  const handleApplySuggestion = useCallback(
-    (itemId: string, suggestedDescription: string) => {
-      const items = (data as Education[]) || [];
-      const itemIndex = items.findIndex((item) => item.id === itemId);
-
-      if (itemIndex === -1) {
-        console.error("Item not found for suggestion application:", itemId);
-        return;
-      }
-
-      const updatedItems = [...items];
-      updatedItems[itemIndex] = {
-        ...updatedItems[itemIndex],
-        description: suggestedDescription,
-      };
-
-      onUpdate(updatedItems);
-      onSave?.(updatedItems, "Education description updated");
-
-      // Dismiss the suggestion
-      dismissEducationSuggestion(itemId);
-      showSuccess("Suggestion applied successfully");
-    },
-    [data, onUpdate, onSave, dismissEducationSuggestion, showSuccess]
-  );
-
-  // Handle discarding a suggestion
-  const handleDiscardSuggestion = useCallback(
-    (itemId: string) => {
-      dismissEducationSuggestion(itemId);
-      showSuccess("Suggestion discarded");
-    },
-    [dismissEducationSuggestion, showSuccess]
-  );
-
   // Handle discarding all suggestions
   const handleDiscardAll = useCallback(async () => {
     await dismissAllEducationSuggestions();
-    setDiscardAllDialogOpen(false);
     showSuccess("All suggestions discarded");
   }, [dismissAllEducationSuggestions, showSuccess]);
 
@@ -563,15 +722,39 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
             index={index}
             validation={validation}
             suggestionsByItemId={suggestionsByItemId}
+            qualitySuggestionsByItemId={qualitySuggestionsByItemId}
+            coachingByItemId={coachingByItemId}
+            writingCorrectionsByItemId={writingCorrectionsByItemId}
             handleApplySuggestion={handleApplySuggestion}
             handleDiscardSuggestion={handleDiscardSuggestion}
+            handleApplyQualitySuggestion={handleApplyQualitySuggestion}
+            handleDismissQualitySuggestion={handleDismissQualitySuggestion}
+            handleApplyWritingCorrection={handleApplyWritingCorrection}
+            handleDismissWritingCorrection={async (correction: WritingCorrection) => {
+              await dismissWritingCorrection(correction.item_id, correction.section);
+              showSuccess("Writing correction dismissed");
+            }}
+            handleApplyAll={handleApplyAll}
           />
         );
       };
 
       return <EducationDisplayWrapper edu={edu} index={index} />;
     },
-    [suggestionsByItemId, handleApplySuggestion, handleDiscardSuggestion]
+    [
+      suggestionsByItemId,
+      qualitySuggestionsByItemId,
+      coachingByItemId,
+      writingCorrectionsByItemId,
+      handleApplySuggestion,
+      handleDiscardSuggestion,
+      handleApplyQualitySuggestion,
+      handleDismissQualitySuggestion,
+      handleApplyWritingCorrection,
+      handleApplyAll,
+      dismissWritingCorrection,
+      showSuccess,
+    ]
   );
 
   return (
@@ -609,48 +792,12 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
       }}
     />
 
-      {/* Discard All Suggestions Button - shown at bottom of section */}
-      {hasSuggestions && !isEditing && (
-        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setDiscardAllDialogOpen(true)}
-            sx={{
-              textTransform: "none",
-              borderColor: "#f44336",
-              color: "#f44336",
-              "&:hover": {
-                borderColor: "#d32f2f",
-                backgroundColor: "#ffebee",
-              },
-            }}
-          >
-            Discard All Suggestions ({visibleSuggestions.length})
-          </Button>
-        </Box>
-      )}
-
-      {/* Discard All Confirmation Dialog */}
-      <Dialog
-        open={discardAllDialogOpen}
-        onClose={() => setDiscardAllDialogOpen(false)}
-      >
-        <DialogTitle>Discard All Suggestions?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Discard all {visibleSuggestions.length} AI suggestions for this section?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDiscardAllDialogOpen(false)} color="inherit">
-            Cancel
-          </Button>
-          <Button onClick={handleDiscardAll} color="error" variant="contained">
-            Discard All
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Discard All Suggestions Dialog */}
+      <DiscardAllDialog
+        visibleCount={visibleSuggestions.length}
+        isEditing={isEditing}
+        onDiscardAll={handleDiscardAll}
+      />
     </>
   );
 };

@@ -66,6 +66,9 @@ class CV(Base):
     ai_enhancements = relationship(
         "AIEnhancement", back_populates="cv", cascade="all, delete-orphan"
     )
+    cv_quality_analyses = relationship(
+        "CVQualityAnalysis", back_populates="cv", cascade="all, delete-orphan"
+    )
     optimization_history = relationship(
         "OptimizationHistory",
         back_populates="cv",

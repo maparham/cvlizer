@@ -36,8 +36,11 @@
  * @module ValidatedFormField
  */
 import React from 'react';
+import { Box } from '@mui/material';
 import { FormField, FormFieldConfig } from '../formUtils';
 import { useFieldValidation } from '../../../../hooks/useFieldValidation';
+import { FieldCorrection } from '../../../../types/ai';
+import { InlineFieldCorrection } from '../../../cv/ai/InlineFieldCorrection';
 
 export interface ValidatedFormFieldProps {
   section: string;
@@ -48,6 +51,12 @@ export interface ValidatedFormFieldProps {
   onChange: (value: string) => void;
   onSave?: () => void;
   sx?: any;
+  // Writing correction props
+  fieldCorrection?: FieldCorrection | null;
+  correctionImportance?: 'highly_recommended' | 'standard';
+  correctionReasoning?: string;
+  onApplyCorrection?: (correction: FieldCorrection) => void;
+  onDismissCorrection?: () => void;
 }
 
 export const ValidatedFormField: React.FC<ValidatedFormFieldProps> = ({
@@ -59,18 +68,34 @@ export const ValidatedFormField: React.FC<ValidatedFormFieldProps> = ({
   onChange,
   onSave,
   sx,
+  fieldCorrection,
+  correctionImportance,
+  correctionReasoning,
+  onApplyCorrection,
+  onDismissCorrection,
 }) => {
   const validation = useFieldValidation(section, index, field);
 
   return (
-    <FormField
-      config={config}
-      value={value}
-      onChange={onChange}
-      onSave={onSave}
-      sx={sx}
-      error={validation.hasError}
-      helperText={validation.errorMessage}
-    />
+    <Box>
+      <FormField
+        config={config}
+        value={value}
+        onChange={onChange}
+        onSave={onSave}
+        sx={sx}
+        error={validation.hasError}
+        helperText={validation.errorMessage}
+      />
+      {fieldCorrection && correctionImportance && (
+        <InlineFieldCorrection
+          fieldCorrection={fieldCorrection}
+          importance={correctionImportance}
+          reasoning={correctionReasoning}
+          onApply={() => onApplyCorrection?.(fieldCorrection)}
+          onDismiss={onDismissCorrection || (() => {})}
+        />
+      )}
+    </Box>
   );
 };

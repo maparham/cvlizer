@@ -199,7 +199,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           value={value || ""}
           onChange={disabled ? undefined : onChange}
           preview="edit"
-          visibleDragBar={false}
           height={height}
           data-color-mode="light"
           textareaProps={{

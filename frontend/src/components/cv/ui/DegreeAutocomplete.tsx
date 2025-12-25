@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, TextField, Box } from "@mui/material";
+import { FieldCorrection } from '../../../types/ai';
+import { InlineFieldCorrection } from '../ai/InlineFieldCorrection';
 
 // Common degree names
 const COMMON_DEGREES = [
@@ -242,6 +244,12 @@ interface DegreeAutocompleteProps {
   error?: boolean;
   helperText?: string;
   sx?: any;
+  // Writing correction props
+  fieldCorrection?: FieldCorrection | null;
+  correctionImportance?: 'highly_recommended' | 'standard';
+  correctionReasoning?: string;
+  onApplyCorrection?: (correction: FieldCorrection) => void;
+  onDismissCorrection?: () => void;
 }
 
 const DegreeAutocomplete: React.FC<DegreeAutocompleteProps> = ({
@@ -256,6 +264,11 @@ const DegreeAutocomplete: React.FC<DegreeAutocompleteProps> = ({
   error = false,
   helperText,
   sx,
+  fieldCorrection,
+  correctionImportance,
+  correctionReasoning,
+  onApplyCorrection,
+  onDismissCorrection,
 }) => {
   const [inputValue, setInputValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
@@ -355,47 +368,58 @@ const DegreeAutocomplete: React.FC<DegreeAutocompleteProps> = ({
   };
 
   return (
-    <Autocomplete
-      value={value}
-      onChange={handleChange}
-      inputValue={inputValue}
-      onInputChange={handleInputChange}
-      options={filteredDegrees}
-      freeSolo
-      handleHomeEndKeys
-      open={isOpen}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label={label}
-          placeholder={placeholder}
-          fullWidth={fullWidth}
-          disabled={disabled}
-          error={error}
-          helperText={helperText}
-          variant="standard"
-          onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          sx={{
-            ...sx,
-          }}
+    <Box>
+      <Autocomplete
+        value={value}
+        onChange={handleChange}
+        inputValue={inputValue}
+        onInputChange={handleInputChange}
+        options={filteredDegrees}
+        freeSolo
+        handleHomeEndKeys
+        open={isOpen}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label={label}
+            placeholder={placeholder}
+            fullWidth={fullWidth}
+            disabled={disabled}
+            error={error}
+            helperText={helperText}
+            variant="standard"
+            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            sx={{
+              ...sx,
+            }}
+          />
+        )}
+        renderOption={(props, option, { index }) => (
+          <li {...props} key={`${option}-${index}`}>
+            {option}
+          </li>
+        )}
+        noOptionsText="Type to search degrees..."
+        sx={{
+          "& .MuiAutocomplete-inputRoot": {
+            paddingTop: 0,
+            paddingBottom: 0,
+          },
+          ...sx,
+        }}
+      />
+      {fieldCorrection && correctionImportance && (
+        <InlineFieldCorrection
+          fieldCorrection={fieldCorrection}
+          importance={correctionImportance}
+          reasoning={correctionReasoning}
+          onApply={() => onApplyCorrection?.(fieldCorrection)}
+          onDismiss={onDismissCorrection || (() => {})}
         />
       )}
-      renderOption={(props, option, { index }) => (
-        <li {...props} key={`${option}-${index}`}>
-          {option}
-        </li>
-      )}
-      noOptionsText="Type to search degrees..."
-      sx={{
-        "& .MuiAutocomplete-inputRoot": {
-          paddingTop: 0,
-          paddingBottom: 0,
-        },
-        ...sx,
-      }}
-    />
+    </Box>
   );
 };
 

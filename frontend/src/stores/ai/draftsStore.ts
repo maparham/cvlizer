@@ -58,11 +58,12 @@ export const createDraftsSlice: StateCreator<
         const otherCVDrafts = state.drafts.drafts.filter(
           (draft) => draft.cv_id !== cvId,
         );
+        const newDrafts = [...otherCVDrafts, ...drafts];
 
         return {
           drafts: {
             ...state.drafts,
-            drafts: [...otherCVDrafts, ...drafts],
+            drafts: newDrafts,
             isLoading: false,
             error: undefined,
           },

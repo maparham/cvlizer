@@ -34,6 +34,7 @@ export interface BaseSectionProps {
   children?: React.ReactNode;
   title?: string;
   isEditing?: boolean;
+  isSaving?: boolean;
   onEdit?: () => void;
   onClose?: () => void;
   onSave?: () => void;

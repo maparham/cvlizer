@@ -200,22 +200,32 @@ def cancel_running_ai_tasks_on_startup():
     in-flight AI tasks since the AI API connections are lost during restart.
 
     Returns:
-        Tuple of (enhancements_cancelled, drafts_cancelled)
+        Tuple of (enhancements_cancelled, drafts_cancelled, quality_analyses_cancelled)
     """
     db = SessionLocal()
     try:
         try:
-            enhancements_cancelled, drafts_cancelled = cancel_all_running_ai_tasks(db)
-            if enhancements_cancelled > 0 or drafts_cancelled > 0:
+            (
+                enhancements_cancelled,
+                drafts_cancelled,
+                quality_analyses_cancelled,
+            ) = cancel_all_running_ai_tasks(db)
+            if (
+                enhancements_cancelled > 0
+                or drafts_cancelled > 0
+                or quality_analyses_cancelled > 0
+            ):
                 logger.info(
-                    f"Cancelled {enhancements_cancelled} AI enhancement(s) and {drafts_cancelled} AI draft(s) on startup"
+                    f"Cancelled {enhancements_cancelled} AI enhancement(s), "
+                    f"{drafts_cancelled} AI draft(s), and "
+                    f"{quality_analyses_cancelled} CV quality analysis/analyses on startup"
                 )
-            return enhancements_cancelled, drafts_cancelled
+            return enhancements_cancelled, drafts_cancelled, quality_analyses_cancelled
         finally:
             db.close()
     except Exception as e:
         logger.error(f"Failed to cancel running AI tasks on startup: {e}")
-        return 0, 0
+        return 0, 0, 0
 
 
 def run_cleanup_once():

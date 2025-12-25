@@ -29,13 +29,13 @@ import { useNavigate } from "react-router-dom";
 import {
   SignedIn,
   SignedOut,
-  SignInButton,
-  SignUpButton,
   UserButton,
+  useClerk,
 } from "@clerk/clerk-react";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const { openSignUp, openSignIn } = useClerk();
 
   const features = [
     {
@@ -195,56 +195,54 @@ const Home: React.FC = () => {
               >
                 Try It Now
               </Button>
-              <SignUpButton mode="modal">
-                <Button
-                  variant="outlined"
-                  size="large"
-                  sx={{
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => openSignUp()}
+                sx={{
+                  borderColor: "white",
+                  color: "white",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  borderWidth: 2,
+                  "&:hover": {
                     borderColor: "white",
-                    color: "white",
-                    fontWeight: 600,
-                    textTransform: "none",
-                    px: 4,
-                    py: 1.5,
-                    borderRadius: 3,
                     borderWidth: 2,
-                    "&:hover": {
-                      borderColor: "white",
-                      borderWidth: 2,
-                      bgcolor: "rgba(255,255,255,0.15)",
-                      transform: "translateY(-1px)"
-                    },
-                    transition: "all 0.2s ease-in-out"
-                  }}
-                >
-                  Get Started
-                </Button>
-              </SignUpButton>
-              <SignInButton mode="modal">
-                <Button
-                  variant="outlined"
-                  size="large"
-                  sx={{
+                    bgcolor: "rgba(255,255,255,0.15)",
+                    transform: "translateY(-1px)"
+                  },
+                  transition: "all 0.2s ease-in-out"
+                }}
+              >
+                Get Started
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => openSignIn()}
+                sx={{
+                  borderColor: "white",
+                  color: "white",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  borderWidth: 2,
+                  "&:hover": {
                     borderColor: "white",
-                    color: "white",
-                    fontWeight: 600,
-                    textTransform: "none",
-                    px: 4,
-                    py: 1.5,
-                    borderRadius: 3,
                     borderWidth: 2,
-                    "&:hover": {
-                      borderColor: "white",
-                      borderWidth: 2,
-                      bgcolor: "rgba(255,255,255,0.15)",
-                      transform: "translateY(-1px)"
-                    },
-                    transition: "all 0.2s ease-in-out"
-                  }}
-                >
-                  Sign In
-                </Button>
-              </SignInButton>
+                    bgcolor: "rgba(255,255,255,0.15)",
+                    transform: "translateY(-1px)"
+                  },
+                  transition: "all 0.2s ease-in-out"
+                }}
+              >
+                Sign In
+              </Button>
             </Box>
           </SignedOut>
         </Container>
@@ -378,27 +376,26 @@ const Home: React.FC = () => {
             AI-enhanced CVs
           </Typography>
           <SignedOut>
-            <SignUpButton mode="modal">
-              <Button
-                variant="contained"
-                size="large"
-                sx={{
-                  fontWeight: 600,
-                  textTransform: "none",
-                  px: 5,
-                  py: 2,
-                  borderRadius: 3,
-                  boxShadow: 3,
-                  "&:hover": {
-                    boxShadow: 6,
-                    transform: "translateY(-1px)"
-                  },
-                  transition: "all 0.2s ease-in-out"
-                }}
-              >
-                Start Free Today
-              </Button>
-            </SignUpButton>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => openSignUp()}
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                px: 5,
+                py: 2,
+                borderRadius: 3,
+                boxShadow: 3,
+                "&:hover": {
+                  boxShadow: 6,
+                  transform: "translateY(-1px)"
+                },
+                transition: "all 0.2s ease-in-out"
+              }}
+            >
+              Start Free Today
+            </Button>
           </SignedOut>
         </Container>
       </Box>

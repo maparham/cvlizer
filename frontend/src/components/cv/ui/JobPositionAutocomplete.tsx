@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, TextField, Box } from "@mui/material";
 
 // Comprehensive job positions dataset
 const COMMON_JOB_POSITIONS = [
@@ -263,6 +263,9 @@ const COMMON_JOB_POSITIONS = [
   "Graduate Trainee",
 ];
 
+import { FieldCorrection } from '../../../types/ai';
+import { InlineFieldCorrection } from '../ai/InlineFieldCorrection';
+
 interface JobPositionAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
@@ -275,6 +278,12 @@ interface JobPositionAutocompleteProps {
   error?: boolean;
   helperText?: string;
   sx?: any;
+  // Writing correction props
+  fieldCorrection?: FieldCorrection | null;
+  correctionImportance?: 'highly_recommended' | 'standard';
+  correctionReasoning?: string;
+  onApplyCorrection?: (correction: FieldCorrection) => void;
+  onDismissCorrection?: () => void;
 }
 
 const JobPositionAutocomplete: React.FC<JobPositionAutocompleteProps> = ({
@@ -289,6 +298,11 @@ const JobPositionAutocomplete: React.FC<JobPositionAutocompleteProps> = ({
   error = false,
   helperText,
   sx,
+  fieldCorrection,
+  correctionImportance,
+  correctionReasoning,
+  onApplyCorrection,
+  onDismissCorrection,
 }) => {
   const [inputValue, setInputValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
@@ -406,47 +420,58 @@ const JobPositionAutocomplete: React.FC<JobPositionAutocompleteProps> = ({
   };
 
   return (
-    <Autocomplete
-      value={value}
-      onChange={handleChange}
-      inputValue={inputValue}
-      onInputChange={handleInputChange}
-      options={filteredPositions}
-      freeSolo
-      handleHomeEndKeys
-      open={isOpen}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label={label}
-          placeholder={placeholder}
-          fullWidth={fullWidth}
-          disabled={disabled}
-          error={error}
-          helperText={helperText}
-          variant="standard"
-          onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          sx={{
-            ...sx,
-          }}
+    <Box>
+      <Autocomplete
+        value={value}
+        onChange={handleChange}
+        inputValue={inputValue}
+        onInputChange={handleInputChange}
+        options={filteredPositions}
+        freeSolo
+        handleHomeEndKeys
+        open={isOpen}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label={label}
+            placeholder={placeholder}
+            fullWidth={fullWidth}
+            disabled={disabled}
+            error={error}
+            helperText={helperText}
+            variant="standard"
+            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            sx={{
+              ...sx,
+            }}
+          />
+        )}
+        renderOption={(props, option, { index }) => (
+          <li {...props} key={`${option}-${index}`}>
+            {option}
+          </li>
+        )}
+        noOptionsText="Type to search job positions..."
+        sx={{
+          "& .MuiAutocomplete-inputRoot": {
+            paddingTop: 0,
+            paddingBottom: 0,
+          },
+          ...sx,
+        }}
+      />
+      {fieldCorrection && correctionImportance && (
+        <InlineFieldCorrection
+          fieldCorrection={fieldCorrection}
+          importance={correctionImportance}
+          reasoning={correctionReasoning}
+          onApply={() => onApplyCorrection?.(fieldCorrection)}
+          onDismiss={onDismissCorrection || (() => {})}
         />
       )}
-      renderOption={(props, option, { index }) => (
-        <li {...props} key={`${option}-${index}`}>
-          {option}
-        </li>
-      )}
-      noOptionsText="Type to search job positions..."
-      sx={{
-        "& .MuiAutocomplete-inputRoot": {
-          paddingTop: 0,
-          paddingBottom: 0,
-        },
-        ...sx,
-      }}
-    />
+    </Box>
   );
 };
 

@@ -819,8 +819,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
               />
 
               {/* Suggestions Sidebar */}
-              {totalSuggestionsCount > 0 && (
-                <SuggestionsSidebar cvData={cvData} />
+              {(totalSuggestionsCount > 0 || cvId) && (
+                <SuggestionsSidebar cvData={cvData} cvId={cvId} />
               )}
 
               {/* Discard All Suggestions Button */}

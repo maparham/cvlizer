@@ -38,6 +38,7 @@ interface PDFCVEditorHook {
     sectionId: string,
     itemIndex: number,
   ) => void;
+  cancelIndividualItemEditing: () => void;
   requestIndividualItemCancel: (
     sectionId: string,
     onCancel: () => void,
@@ -171,6 +172,7 @@ export const usePDFCVEditor = ({
     registerIndividualItemEditing: editingState.registerIndividualItemEditing,
     unregisterIndividualItemEditing:
       editingState.unregisterIndividualItemEditing,
+    cancelIndividualItemEditing: editingState.cancelIndividualItemEditing,
     requestIndividualItemCancel: editingState.requestIndividualItemCancel,
 
     // Unsaved changes

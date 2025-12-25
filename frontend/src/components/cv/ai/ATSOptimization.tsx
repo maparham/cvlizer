@@ -62,6 +62,7 @@ import {
 } from "../../../stores/ai";
 import { MissingKeyword } from "../../../types/ai";
 import { useNotifications } from "../../../packages/notifications";
+import { getContentScoreColor } from "./utils/suggestionUtils";
 
 interface ATSOptimizationProps {
   cvId: string;
@@ -138,9 +139,7 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
   }, [selectedKeyword, onKeywordAdd, showSuccess]);
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "success";
-    if (score >= 60) return "warning";
-    return "error";
+    return getContentScoreColor(score);
   };
 
   const getScoreLabel = (score: number) => {

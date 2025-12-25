@@ -20,13 +20,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAIStore } from "../stores/ai";
 import { useAISuggestionsStore } from "../stores/aiSuggestionsStore";
+import { useCVQualityStore } from "../stores/cvQualityStore";
 import { useNotifications } from "../packages/notifications";
+import { useAuth } from "../contexts/AuthContext";
 import { POLLING_CONFIG } from "../config/constants";
 import { Logger } from "../utils/logger";
 
 export interface AITask {
   id: string;
-  type: "draft" | "ai_enhancement";
+  type: "draft" | "ai_enhancement" | "cv_quality_analysis";
   cvId: string;
   isGenerating: boolean;
   generationError?: string;
@@ -79,10 +81,14 @@ export const useAITaskPolling = (
   });
   const [isPolling, setIsPolling] = useState(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Ref to always access latest activeTasks without stale closure
+  const activeTasksRef = useRef<Map<string, AITask>>(activeTasks);
 
   const { updateDraftStatus } = useAIStore();
   const { updateAIEnhancementStatus } = useAISuggestionsStore();
+  const { updateQualityAnalysisStatus } = useCVQualityStore();
   const { showError } = useNotifications();
+  const { isAuthenticated } = useAuth();
 
   // Use refs for callbacks to avoid re-creating interval
   const onTaskCompleteRef = useRef(onTaskComplete);
@@ -95,6 +101,11 @@ export const useAITaskPolling = (
     showErrorRef.current = showError;
   }, [onTaskComplete, onTaskError, showError]);
 
+  // Keep ref in sync with state
+  useEffect(() => {
+    activeTasksRef.current = activeTasks;
+  }, [activeTasks]);
+
   // Persist active tasks to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -106,11 +117,41 @@ export const useAITaskPolling = (
     }
   }, [activeTasks]);
 
+  // Store pollTasks in a ref so the interval always calls the latest version
+  const pollTasksRef = useRef<() => Promise<void>>();
+
   const pollTasks = useCallback(async () => {
-    const tasksToUpdate = Array.from(activeTasks.values()).filter(
+    // Don't poll if user is not authenticated
+    if (!isAuthenticated) {
+      // Clear all tasks when user is not authenticated
+      setActiveTasks(new Map());
+      activeTasksRef.current = new Map();
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+        setIsPolling(false);
+      }
+      return;
+    }
+
+    // Use ref to get latest tasks, avoiding stale closure
+    // CRITICAL: Always use ref.current to get the absolute latest tasks
+    const currentTasks = activeTasksRef.current;
+    const tasksArray = Array.from(currentTasks.values());
+    const tasksToUpdate = tasksArray.filter(
       (task) => task.isGenerating,
     );
-    const newActiveTasks = new Map(activeTasks);
+
+    if (tasksToUpdate.length === 0) {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+        setIsPolling(false);
+      }
+      return;
+    }
+
+    const newActiveTasks = new Map(currentTasks);
     let anyTaskStillGenerating = false;
 
     for (const task of tasksToUpdate) {
@@ -120,6 +161,8 @@ export const useAITaskPolling = (
           updatedTaskData = await updateDraftStatus(task.id);
         } else if (task.type === "ai_enhancement") {
           updatedTaskData = await updateAIEnhancementStatus(task.id);
+        } else if (task.type === "cv_quality_analysis") {
+          updatedTaskData = await updateQualityAnalysisStatus(task.id);
         } else {
           continue; // Skip unknown task types
         }
@@ -195,6 +238,8 @@ export const useAITaskPolling = (
     }
 
     setActiveTasks(newActiveTasks);
+    // Update ref immediately so next poll uses latest state
+    activeTasksRef.current = newActiveTasks;
 
     if (!anyTaskStillGenerating && pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
@@ -202,17 +247,42 @@ export const useAITaskPolling = (
       setIsPolling(false);
     }
   }, [
-    activeTasks,
     updateDraftStatus,
     updateAIEnhancementStatus,
+    updateQualityAnalysisStatus,
+    isAuthenticated,
   ]);
 
+  // Update ref whenever pollTasks changes
+  // Initialize immediately and keep it updated
+  pollTasksRef.current = pollTasks;
+  useEffect(() => {
+    pollTasksRef.current = pollTasks;
+  }, [pollTasks]);
+
   const startPolling = useCallback(() => {
-    if (!pollingIntervalRef.current) {
-      setIsPolling(true);
-      pollingIntervalRef.current = setInterval(pollTasks, pollingInterval);
+    // Clear existing interval if it exists (handles pollingInterval changes)
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
-  }, [pollTasks, pollingInterval]);
+
+    setIsPolling(true);
+    // Ensure pollTasksRef is initialized before starting interval
+    if (!pollTasksRef.current) {
+      pollTasksRef.current = pollTasks;
+    }
+    // Use ref-based callback so it always calls latest version
+    pollingIntervalRef.current = setInterval(() => {
+      if (pollTasksRef.current) {
+        pollTasksRef.current();
+      }
+    }, pollingInterval);
+    // Trigger immediate poll to include any tasks that were just added
+    if (pollTasksRef.current) {
+      pollTasksRef.current();
+    }
+  }, [pollingInterval, pollTasks, isAuthenticated]); // Include pollTasks to ensure ref is set
 
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
@@ -224,12 +294,23 @@ export const useAITaskPolling = (
 
   const addTask = useCallback(
     (task: AITask) => {
-      setActiveTasks((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(task.id, task);
-        return newMap;
-      });
-      startPolling();
+      // CRITICAL: Update ref FIRST before state update to ensure immediate poll sees the task
+      const newMap = new Map(activeTasksRef.current);
+      newMap.set(task.id, task);
+      activeTasksRef.current = newMap;
+
+      // Then update state (for React re-renders)
+      setActiveTasks(newMap);
+
+      // Always ensure polling is active
+      if (!pollingIntervalRef.current) {
+        startPolling();
+      } else {
+        // Trigger immediate poll to include new task
+        if (pollTasksRef.current) {
+          pollTasksRef.current();
+        }
+      }
     },
     [startPolling],
   );
@@ -242,20 +323,39 @@ export const useAITaskPolling = (
       }
       const newMap = new Map(prev);
       newMap.delete(taskId);
+      // Update ref immediately
+      activeTasksRef.current = newMap;
       return newMap;
     });
   }, []);
 
-  // Resume polling on component mount if there are active tasks
+  // Effect 1: Handle authentication state changes
+  // Clear tasks and stop polling when user is not authenticated
   useEffect(() => {
+    if (!isAuthenticated) {
+      setActiveTasks(new Map());
+      activeTasksRef.current = new Map();
+      stopPolling();
+    }
+  }, [isAuthenticated, stopPolling]);
+
+  // Effect 2: Start/stop polling based on active generating tasks
+  // This effect watches activeTasks and ensures polling starts when tasks are added
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return; // Don't start polling if not authenticated
+    }
+
     const hasGeneratingTasks = Array.from(activeTasks.values()).some(
       (task) => task.isGenerating,
     );
-    if (hasGeneratingTasks) {
+
+    if (hasGeneratingTasks && !pollingIntervalRef.current) {
       startPolling();
+    } else if (!hasGeneratingTasks && pollingIntervalRef.current) {
+      stopPolling();
     }
-    return () => stopPolling();
-  }, [startPolling, stopPolling, activeTasks]);
+  }, [activeTasks, isAuthenticated, startPolling, stopPolling]);
 
   return { activeTasks, isPolling, addTask, removeTask, stopPolling };
 };

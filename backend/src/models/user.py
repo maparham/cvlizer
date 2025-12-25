@@ -47,6 +47,9 @@ class User(Base):
     ai_enhancements = relationship(
         "AIEnhancement", back_populates="user", cascade="all, delete-orphan"
     )
+    cv_quality_analyses = relationship(
+        "CVQualityAnalysis", back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __str__(self):
         return f"<User {self.email}>"

@@ -62,6 +62,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
 
   const actualData = data || defaultData;
   const [editData, setEditData] = useState(actualData);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setEditData(data || defaultData);
@@ -108,20 +109,33 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
     if (!validateForm(editData)) {
       return;
     }
-    onUpdate(editData);
-    try {
-      await onSave(editData);
-      // Clear unsaved changes after successful save
-      if (onUnsavedChanges) {
-        onUnsavedChanges(sectionId, false);
-      }
-      // Don't close for Skills section in auto-save mode
+
+    // Clear unsaved changes immediately
+    if (onUnsavedChanges) {
+      onUnsavedChanges(sectionId, false);
+    }
+
+    // Flash green immediately
+    setIsSaving(true);
+
+    // Close edit mode after brief delay to show green flash
+    setTimeout(() => {
       if (sectionId !== "skills" || !autoSaveMode) {
         onClose();
       }
-    } catch (error) {
-      // Don't close on error so user can retry
-    }
+      setIsSaving(false);
+    }, 100);
+
+    // Delay state updates to allow background color transition to complete (1000ms)
+    setTimeout(async () => {
+      onUpdate(editData);
+      try {
+        await onSave(editData);
+      } catch (error) {
+        // Error handling - data already updated locally
+        console.error('Save error:', error);
+      }
+    }, 1100);
   };
 
   const handleCancel = () => {
@@ -147,6 +161,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
     <BaseSection
       title={title}
       isEditing={isEditing}
+      isSaving={isSaving}
       onEdit={onEdit}
       onClose={onClose}
       onSave={!autoSaveMode ? handleSave : undefined}

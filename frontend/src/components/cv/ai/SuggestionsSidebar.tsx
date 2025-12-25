@@ -35,12 +35,14 @@ import {
   CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
+import { useCVQualityStore } from "../../../stores/cvQualityStore";
 import { CVData, WorkExperience, Education } from "../../../types";
 import {
   SkillSuggestion,
   ProfessionalSummarySuggestion,
   ItemDescriptionSuggestion,
 } from "../../../types/ai";
+import { CVQualityPanel } from "./CVQualityPanel";
 
 interface SuggestionItem {
   id: string;
@@ -51,6 +53,7 @@ interface SuggestionItem {
 
 interface SuggestionsSidebarProps {
   cvData?: CVData;
+  cvId?: string;
 }
 
 interface SuggestionGroupProps {
@@ -169,13 +172,14 @@ const SuggestionGroup: React.FC<SuggestionGroupProps> = ({
   );
 };
 
-const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
+const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData, cvId }) => {
   const { allSuggestions } = useAISuggestionsStore();
+  const { qualityAnalysis } = useCVQualityStore();
 
   // Ref to store timeout IDs for cleanup
   const timeoutRefs = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
-  // Cleanup timeouts on unmount
+  // Cleanup timeouts when cvData or cvId changes (not just on unmount)
   useEffect(() => {
     return () => {
       timeoutRefs.current.forEach((timeoutId) => {
@@ -183,7 +187,7 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
       });
       timeoutRefs.current = [];
     };
-  }, []);
+  }, [cvData, cvId]);
 
   // Helper function to get shortened title for a suggestion
   const getSuggestionTitle = useCallback(
@@ -475,22 +479,41 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
     timeoutRefs.current.push(timeoutId1);
   }, []);
 
-  if (totalCount === 0) {
-    return null;
-  }
+  const hasQualitySuggestions = qualityAnalysis !== null;
+  const hasJobSuggestions = totalCount > 0;
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-        <AutoAwesomeIcon fontSize="small" color="primary" />
-        <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-          AI Suggestions ({totalCount})
-        </Typography>
-      </Box>
+      {/* CV Quality Panel - Always shown if cvId is available */}
+      {cvId && (
+        <>
+          <CVQualityPanel cvId={cvId} />
+          {(hasJobSuggestions || hasQualitySuggestions) && <Divider sx={{ my: 2 }} />}
+        </>
+      )}
 
-      <List disablePadding sx={{ maxHeight: 400, overflow: "auto" }}>
-        {/* Why Good Fit - Direct item (no expandable group) */}
-        {groupedSuggestions.whyGoodFit.length > 0 && (
+      {/* Job-Based Suggestions */}
+      {hasJobSuggestions && (
+        <>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <AutoAwesomeIcon fontSize="small" color="primary" />
+            <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
+              Job Fit Suggestions ({totalCount})
+            </Typography>
+          </Box>
+        </>
+      )}
+
+      {!hasJobSuggestions && !hasQualitySuggestions && (
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+          No suggestions available. Analyze your CV quality or add a job description to get started.
+        </Typography>
+      )}
+
+      {hasJobSuggestions && (
+        <List disablePadding sx={{ maxHeight: 400, overflow: "auto" }}>
+          {/* Why Good Fit - Direct item (no expandable group) */}
+          {groupedSuggestions.whyGoodFit.length > 0 && (
           <>
             <ListItem disablePadding>
               <ListItemButton
@@ -605,7 +628,8 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData }) => {
           onToggleExpanded={() => setEducationExpanded(!educationExpanded)}
           onItemClick={handleItemClick}
         />
-      </List>
+        </List>
+      )}
     </Box>
   );
 };

@@ -8,7 +8,7 @@
  * - Unsaved changes detection and confirmation dialogs
  * - Integration with CV editor context for state management
  */
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { Box } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -27,9 +27,11 @@ import {
 import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from "./index";
 import { useAIStore } from "../../stores/ai";
 import { useAISuggestionsStore } from "../../stores/aiSuggestionsStore";
-import { isTempCVId } from "../../stores/cv";
+import { useCVQualityStore } from "../../stores/cvQualityStore";
+import { isTempCVId, useCVStore } from "../../stores/cv";
 import { CVData } from "../../types/cv";
 import { useUIStore } from "../../stores/uiStore";
+import { useAITaskPollingContext } from "../../contexts/AITaskPollingContext";
 
 interface PDFCVEditorProps {
   title?: string;
@@ -50,6 +52,10 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   const { loadJobDescriptions, getCVDrafts } = useAIStore();
   const { loadLatestAIEnhancement, clearAllSuggestions } =
     useAISuggestionsStore();
+  const { loadLatestQualityAnalysis, generateQualityAnalysis, qualityAnalysis, analysisLoading, currentAnalysisId } =
+    useCVQualityStore();
+  const { addTask, activeTasks } = useAITaskPollingContext();
+  const currentCV = useCVStore((state) => state.currentCV);
 
 
   const setCVEditorTab = useUIStore((state) => state.setCVEditorTab);
@@ -94,7 +100,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     };
   }, [setSidebarTab]);
 
-  // Load job descriptions, drafts, and AI enhancements when CV changes
+  // Load job descriptions, drafts, and AI enhancements when CV ID changes (switching CVs)
   // loadJobDescriptions automatically restores the active job description from localStorage
   useEffect(() => {
     if (cvId && !isTempCVId(cvId)) {
@@ -103,6 +109,8 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
       loadJobDescriptions(cvId);
       getCVDrafts(cvId);
       loadLatestAIEnhancement(cvId);
+      // Pass CV updated_at to ensure we don't load stale analyses
+      loadLatestQualityAnalysis(cvId, currentCV?.updated_at);
     }
   }, [
     cvId,
@@ -110,7 +118,96 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     getCVDrafts,
     loadLatestAIEnhancement,
     clearAllSuggestions,
+    loadLatestQualityAnalysis,
   ]);
+
+  // Reload quality analysis when CV is updated (but don't reload drafts - they're independent)
+  // This ensures we don't show stale quality analysis after CV changes
+  useEffect(() => {
+    if (cvId && !isTempCVId(cvId) && currentCV?.updated_at) {
+      loadLatestQualityAnalysis(cvId, currentCV.updated_at);
+    }
+  }, [cvId, currentCV?.updated_at, loadLatestQualityAnalysis]);
+
+  // Resume polling for in-progress quality analyses after page refresh
+  useEffect(() => {
+    if (currentAnalysisId && analysisLoading && cvId && !isTempCVId(cvId)) {
+      // Analysis is generating - resume polling
+      addTask({
+        id: currentAnalysisId,
+        type: 'cv_quality_analysis',
+        cvId,
+        isGenerating: true,
+      });
+    }
+  }, [currentAnalysisId, analysisLoading, cvId, addTask]);
+
+  // Auto-trigger CV quality analysis on first load for AI-parsed CVs
+  // Use ref to track if auto-trigger has been attempted for this CV
+  const autoTriggerAttemptedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    // Reset ref when CV changes
+    if (cvId !== autoTriggerAttemptedRef.current) {
+      autoTriggerAttemptedRef.current = null;
+    }
+
+    // Only auto-trigger if CV is parsed and no analysis exists yet
+    const shouldAutoTrigger =
+      cvId &&
+      !isTempCVId(cvId) &&
+      cvData?.is_parsed &&
+      !qualityAnalysis &&
+      !analysisLoading &&
+      !autoTriggerAttemptedRef.current;
+
+    // Check if analysis is already being polled for this CV
+    const hasActivePolling = Array.from(activeTasks.values()).some(
+      (task) => task.type === 'cv_quality_analysis' && task.cvId === cvId && task.isGenerating
+    );
+
+    if (shouldAutoTrigger && !hasActivePolling) {
+      // Mark as attempted to prevent multiple triggers
+      autoTriggerAttemptedRef.current = cvId;
+
+      // Auto-trigger quality analysis for newly AI-parsed CVs
+      // Delay ensures loadLatestQualityAnalysis has time to complete first
+      const triggerAnalysis = async () => {
+        // Double-check conditions before triggering
+        if (!cvId || isTempCVId(cvId) || !cvData?.is_parsed || qualityAnalysis || analysisLoading) {
+          return;
+        }
+
+        // Check again if already polling
+        const stillHasActivePolling = Array.from(activeTasks.values()).some(
+          (task) => task.type === 'cv_quality_analysis' && task.cvId === cvId && task.isGenerating
+        );
+        if (stillHasActivePolling) {
+          return;
+        }
+
+        try {
+          const analysisId = await generateQualityAnalysis(cvId);
+          if (analysisId) {
+            addTask({
+              id: analysisId,
+              type: 'cv_quality_analysis',
+              cvId,
+              isGenerating: true,
+            });
+          }
+        } catch (error) {
+          // Reset ref on error so it can retry
+          autoTriggerAttemptedRef.current = null;
+        }
+      };
+
+      // Delay to allow loadLatestQualityAnalysis to complete and update state
+      // This prevents race condition where auto-trigger fires before existing analysis loads
+      const timeoutId = setTimeout(triggerAnalysis, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [cvId, cvData?.is_parsed, qualityAnalysis, analysisLoading, generateQualityAnalysis, addTask, activeTasks, currentCV?.updated_at]);
 
 
   return (

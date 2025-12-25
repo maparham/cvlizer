@@ -20,18 +20,39 @@ function ItemControls<T>({
 }: ItemControlsProps<T>) {
   return (
     <Box>
-      {/* Action buttons - stacked vertically in top right */}
+      {/* Action buttons - horizontally aligned in top right */}
       <Box
         sx={{
           position: "absolute",
           top: 0,
           right: 0,
           display: "flex",
-          flexDirection: "column",
-          gap: 0.5,
+          flexDirection: "row",
+          gap: 0,
           zIndex: 1,
         }}
       >
+        <Tooltip title={`Delete this ${getSingularTitle(title).toLowerCase()}`}>
+          <IconButton
+            onClick={() => onDelete(index)}
+            className="item-action-button"
+            data-testid={`delete-${title.toLowerCase().replace(/ /g, "-")}-item-${index}`}
+            sx={{
+              color: "text.secondary",
+              bgcolor: "transparent",
+              opacity: 0.3,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: "error.main",
+                bgcolor: "rgba(255, 235, 238, 0.5)",
+                opacity: 1,
+              },
+            }}
+            size="small"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Tooltip
           title={
             isAnotherItemBeingEdited
@@ -62,33 +83,11 @@ function ItemControls<T>({
             </IconButton>
           </span>
         </Tooltip>
-        <Tooltip title={`Delete this ${getSingularTitle(title).toLowerCase()}`}>
-          <IconButton
-            onClick={() => onDelete(index)}
-            className="item-action-button"
-            data-testid={`delete-${title.toLowerCase().replace(/ /g, "-")}-item-${index}`}
-            sx={{
-              color: "text.secondary",
-              bgcolor: "transparent",
-              opacity: 0.3,
-              transition: "all 0.2s ease",
-              "&:hover": {
-                color: "error.main",
-                bgcolor: "rgba(255, 235, 238, 0.5)",
-                opacity: 1,
-              },
-            }}
-            size="small"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
       </Box>
 
       <Box
         sx={{
-          pl: editingItemIndex === null ? 5 : 0,
-          transition: "padding-left 0.3s ease",
+          pl: editingItemIndex !== index ? 5 : 0,
         }}
       >
         {renderItemDisplay(item, index)}

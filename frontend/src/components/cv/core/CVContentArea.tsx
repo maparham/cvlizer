@@ -33,6 +33,7 @@ import {
 import { useInlineDrafts } from "../../../hooks/useInlineDrafts";
 import InlineDraftSection from "../ai/InlineDraftSection";
 import { ValidationErrorBanner } from "../ValidationErrorBanner";
+import EditingIndicator from "./EditingIndicator";
 
 interface CVContentAreaProps {
   cvId?: string;
@@ -469,11 +470,27 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
     );
   };
 
+  // Find the section title for the currently editing section
+  const getEditingSectionTitle = (): string | null => {
+    const sectionType = editingSection || editingIndividualItem?.sectionId;
+    if (!sectionType) return null;
+
+    const section = safeSections.find((s) => s.type === sectionType);
+    return section?.title || null;
+  };
+
   return (
     <Box
       data-scrollable-container
       sx={{ flex: 1, overflow: "auto", bgcolor: "#f5f5f5", p: 2 }}
     >
+      {/* Editing Indicator */}
+      <EditingIndicator
+        editingSection={editingSection}
+        editingIndividualItem={safeEditingIndividualItem}
+        sectionTitle={getEditingSectionTitle()}
+      />
+
       {/* Validation Error Banner */}
       {validationErrors.length > 0 && (
         <Box sx={{ maxWidth: "210mm", margin: "0 auto", mb: 2 }}>

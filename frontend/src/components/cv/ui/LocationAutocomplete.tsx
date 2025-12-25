@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, TextField, Box } from "@mui/material";
+import { FieldCorrection } from '../../../types/ai';
+import { InlineFieldCorrection } from '../ai/InlineFieldCorrection';
 
 // Comprehensive locations dataset - in a real app, this would come from an API
 const COMMON_LOCATIONS = [
@@ -215,6 +217,12 @@ interface LocationAutocompleteProps {
   error?: boolean;
   helperText?: string;
   sx?: any;
+  // Writing correction props
+  fieldCorrection?: FieldCorrection | null;
+  correctionImportance?: 'highly_recommended' | 'standard';
+  correctionReasoning?: string;
+  onApplyCorrection?: (correction: FieldCorrection) => void;
+  onDismissCorrection?: () => void;
 }
 
 const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
@@ -229,6 +237,11 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   error = false,
   helperText,
   sx,
+  fieldCorrection,
+  correctionImportance,
+  correctionReasoning,
+  onApplyCorrection,
+  onDismissCorrection,
 }) => {
   const [inputValue, setInputValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
@@ -345,46 +358,57 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   };
 
   return (
-    <Autocomplete
-      value={value}
-      onChange={handleChange}
-      inputValue={inputValue}
-      onInputChange={handleInputChange}
-      options={filteredLocations}
-      freeSolo
-      handleHomeEndKeys
-      open={isOpen}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          placeholder={placeholder}
-          fullWidth={fullWidth}
-          disabled={disabled}
-          error={error}
-          helperText={helperText}
-          variant="standard"
-          onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          sx={{
-            ...sx,
-          }}
+    <Box>
+      <Autocomplete
+        value={value}
+        onChange={handleChange}
+        inputValue={inputValue}
+        onInputChange={handleInputChange}
+        options={filteredLocations}
+        freeSolo
+        handleHomeEndKeys
+        open={isOpen}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder={placeholder}
+            fullWidth={fullWidth}
+            disabled={disabled}
+            error={error}
+            helperText={helperText}
+            variant="standard"
+            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            sx={{
+              ...sx,
+            }}
+          />
+        )}
+        renderOption={(props, option, { index }) => (
+          <li {...props} key={`${option}-${index}`}>
+            {option}
+          </li>
+        )}
+        noOptionsText="Type to search locations..."
+        sx={{
+          "& .MuiAutocomplete-inputRoot": {
+            paddingTop: 0,
+            paddingBottom: 0,
+          },
+          ...sx,
+        }}
+      />
+      {fieldCorrection && correctionImportance && (
+        <InlineFieldCorrection
+          fieldCorrection={fieldCorrection}
+          importance={correctionImportance}
+          reasoning={correctionReasoning}
+          onApply={() => onApplyCorrection?.(fieldCorrection)}
+          onDismiss={onDismissCorrection || (() => {})}
         />
       )}
-      renderOption={(props, option, { index }) => (
-        <li {...props} key={`${option}-${index}`}>
-          {option}
-        </li>
-      )}
-      noOptionsText="Type to search locations..."
-      sx={{
-        "& .MuiAutocomplete-inputRoot": {
-          paddingTop: 0,
-          paddingBottom: 0,
-        },
-        ...sx,
-      }}
-    />
+    </Box>
   );
 };
 
