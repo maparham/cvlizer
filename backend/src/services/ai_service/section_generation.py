@@ -5,29 +5,18 @@ This module provides functions for generating AI-enhanced CV sections
 based on job descriptions, such as "Why I'm a Good Fit" sections.
 """
 
-import asyncio
-import json
 import logging
-import time
 from typing import Any, Dict, Optional
 
-from openai.types.shared_params import Reasoning
 from sqlalchemy.orm import Session
 
 from src.config import AIConfig
 from src.schemas.ai_response_schemas import CVSectionGenerationResponseSchema
+from src.utils.cv_data_optimizer import clean_control_characters
 
 from .common import (
-    RETRY_ATTEMPTS,
-    RETRY_DELAY,
     call_openai_with_schema,
-    extract_cached_tokens,
-    extract_response_data,
-    get_openai_client,
     is_ai_enabled,
-    log_ai_usage_safe,
-    validate_with_schema,
-    with_retries,
 )
 from .ai_suggestions_service import generate_ai_suggestions
 from .cv_filter import filter_hidden_sections
@@ -80,6 +69,10 @@ async def generate_cv_section(
 
     # Filter out hidden sections before sending to AI
     filtered_cv_data = filter_hidden_sections(cv_data)
+
+    # Clean control characters from all text fields
+    # This ensures AI doesn't see formatting artifacts like \u000b
+    filtered_cv_data = clean_control_characters(filtered_cv_data)
 
     # Create prompt based on section type
     if section_type == "why_good_fit":

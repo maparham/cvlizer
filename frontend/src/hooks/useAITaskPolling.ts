@@ -25,6 +25,8 @@ import { useNotifications } from "../packages/notifications";
 import { useAuth } from "../contexts/AuthContext";
 import { POLLING_CONFIG } from "../config/constants";
 import { Logger } from "../utils/logger";
+import { playAudioNotification } from "../utils/audioNotification";
+import { setTitleNotification, isPageHidden } from "../utils/titleNotification";
 
 export interface AITask {
   id: string;
@@ -187,6 +189,25 @@ export const useAITaskPolling = (
           } else {
             // Task completed successfully
             onTaskCompleteRef.current?.(completedTask);
+
+            // Show browser tab notification if page is hidden
+            if (isPageHidden()) {
+              let notificationMessage = "Task completed";
+              if (task.type === "cv_quality_analysis") {
+                notificationMessage = "CV Quality Analysis Ready";
+              } else if (task.type === "draft") {
+                notificationMessage = "AI Draft Ready";
+              } else if (task.type === "ai_enhancement") {
+                notificationMessage = "AI Enhancement Ready";
+              }
+              setTitleNotification(notificationMessage);
+            }
+
+            // Play audio notification
+            playAudioNotification().catch((err) => {
+              // Silently handle errors - audio notification is non-critical
+              Logger.info("Audio notification failed", { error: err });
+            });
           }
         } else {
           // Task still generating

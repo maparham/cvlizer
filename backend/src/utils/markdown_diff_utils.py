@@ -14,6 +14,7 @@ def clean_markdown_diff_string(markdown_diff: str) -> str:
     Clean markdown_diff string to fix whitespace issues that break rendering.
 
     Fixes:
+    - Literal \\n escape sequences → actual newline characters
     - Trailing space before closing strikethrough: `~~text ~~` → `~~text~~`
     - Leading space after opening strikethrough: `~~ text~~` → `~~text~~`
     - Empty strikethrough markers: `~~ ~~` → removed
@@ -34,6 +35,11 @@ def clean_markdown_diff_string(markdown_diff: str) -> str:
         return markdown_diff
 
     result = markdown_diff
+
+    # Convert literal \n escape sequences to actual newlines
+    # AI generates strings with literal "\n" (backslash + n) that need to be converted
+    # to actual newline characters for proper markdown rendering
+    result = result.replace("\\n", "\n")
 
     # Remove empty strikethrough markers (~~ ~~ or ~~   ~~)
     result = re.sub(r"~~\s+~~", "", result)

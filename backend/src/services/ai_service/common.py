@@ -40,7 +40,7 @@ MAX_EXPECTED_TOKENS = 4000
 # OpenAI client singleton
 if AIConfig.is_enabled():
     openai.api_key = AIConfig.OPENAI_API_KEY
-    _openai_client = openai.OpenAI()
+    _openai_client = openai.OpenAI(timeout=float(AIConfig.REQUEST_TIMEOUT_SECONDS))
 else:
     _openai_client = None
 
@@ -385,6 +385,7 @@ async def call_openai_with_schema(
     db_session: Optional[Session] = None,
     retry_attempts: int = RETRY_ATTEMPTS,
     retry_delay: float = RETRY_DELAY,
+    text_verbosity: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Unified OpenAI API call with schema validation, retry logic, and usage logging.
@@ -412,6 +413,7 @@ async def call_openai_with_schema(
         db_session: Database session for logging
         retry_attempts: Number of retry attempts (defaults to RETRY_ATTEMPTS)
         retry_delay: Base delay between retries in seconds (defaults to RETRY_DELAY)
+        text_verbosity: Text verbosity level (e.g., "low", "medium", "high") for Response API
 
     Returns:
         Tuple of (parsed_data, metadata) where:
@@ -449,15 +451,24 @@ async def call_openai_with_schema(
     try:
 
         async def _call():
-            return await asyncio.to_thread(
-                client.responses.parse,
-                model=model,
-                input=[
+            call_kwargs = {
+                "model": model,
+                "input": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
-                text_format=response_schema,
-                reasoning=Reasoning(effort=reasoning_effort),
+                "text_format": response_schema,
+                "reasoning": Reasoning(effort=reasoning_effort),
+                "service_tier": AIConfig.AGENT_PROCESSING_TIER,
+            }
+
+            # Add text verbosity if specified
+            if text_verbosity:
+                call_kwargs["text"] = {"verbosity": text_verbosity}
+
+            return await asyncio.to_thread(
+                client.responses.parse,
+                **call_kwargs,
             )
 
         response = await with_retries(_call, attempts=retry_attempts, delay=retry_delay)

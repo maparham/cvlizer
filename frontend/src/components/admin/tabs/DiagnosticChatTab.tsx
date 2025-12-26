@@ -56,6 +56,7 @@ import {
   DiagnosticRequest,
   DiagnosticMessage,
 } from '../../../services/api';
+import { playAudioNotification } from '../../../utils/audioNotification';
 
 const SAMPLE_PROMPTS = [
   {
@@ -155,6 +156,14 @@ const DiagnosticChatTab: React.FC = () => {
 
       setMessages([newMessage, ...messages]);
       setPrompt(''); // Clear prompt on success
+
+      // Play audio notification for successful AI response
+      if (response.success) {
+        playAudioNotification().catch((err) => {
+          // Silently handle errors - audio notification is non-critical
+          console.debug("Audio notification failed", err);
+        });
+      }
     } catch (err: any) {
       newMessage.error = err.message || 'Failed to send request';
       newMessage.success = false;

@@ -90,9 +90,16 @@ const ProfessionalSummaryQualitySuggestion: React.FC<{
         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 1, display: 'block' }}>
           Quality Suggestion:
         </Typography>
-        {qualitySummarySuggestion.reasoning && (
+        {qualitySummarySuggestion.key_changes &&
+         qualitySummarySuggestion.key_changes.length > 0 && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            <Typography variant="body2">{qualitySummarySuggestion.reasoning}</Typography>
+            <Typography variant="body2" component="div">
+              {qualitySummarySuggestion.key_changes.map((change: string, index: number) => (
+                <Box key={index} sx={{ mb: index < qualitySummarySuggestion.key_changes.length - 1 ? 0.5 : 0 }}>
+                  • {change}
+                </Box>
+              ))}
+            </Typography>
           </Alert>
         )}
 

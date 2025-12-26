@@ -61,6 +61,11 @@ class AIConfig:
     # Options: "minimal", "low", "medium", "high"
     OPENAI_PARSING_EFFORT: str = os.getenv("OPENAI_PARSING_EFFORT", "minimal")
 
+    # CV Quality Analysis verbosity (for Response API text verbosity)
+    # Defaults to "low" for concise quality feedback
+    # Options: "low", "medium", "high"
+    CV_QUALITY_VERBOSITY: str = os.getenv("CV_QUALITY_VERBOSITY", "low")
+
     @classmethod
     def is_enabled(cls) -> bool:
         """Check if AI features are enabled"""

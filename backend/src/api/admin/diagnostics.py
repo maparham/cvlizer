@@ -109,7 +109,10 @@ async def test_openai_api(
         system_message = request.system_message or "You are a helpful assistant."
 
         # Create client and track timing
-        client = openai_module.OpenAI(api_key=AIConfig.OPENAI_API_KEY)
+        client = openai_module.OpenAI(
+            api_key=AIConfig.OPENAI_API_KEY,
+            timeout=float(AIConfig.REQUEST_TIMEOUT_SECONDS),
+        )
         request_start = time.time()
 
         # Call Responses API asynchronously to avoid blocking the event loop
@@ -123,6 +126,7 @@ async def test_openai_api(
             input=request.prompt,
             max_output_tokens=max_tokens,
             reasoning={"effort": "minimal", "summary": "auto"},
+            service_tier=AIConfig.AGENT_PROCESSING_TIER,
         )
         logger.debug(f"OpenAI Response API response: {response}")
 

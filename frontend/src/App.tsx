@@ -28,6 +28,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { useCVStore } from "./stores/cv";
 import { useImpersonation } from "./hooks/useImpersonation";
 import { useActivityLogger } from "./hooks/useActivityLogger";
+import { unlockAudio } from "./utils/audioNotification";
+import { clearTitleNotification } from "./utils/titleNotification";
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import("./pages/Home"));
@@ -70,6 +72,26 @@ const AppContent = () => {
       logPageView(location.pathname);
     }
   }, [location.pathname, isAuthenticated, authLoading, logPageView]);
+
+  // Unlock audio on first user interaction (required by browser autoplay policies)
+  useEffect(() => {
+    unlockAudio();
+  }, []);
+
+  // Clear title notification when user returns to tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // User returned to tab, clear title notification
+        clearTitleNotification();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const handleImpersonationEnd = useCallback(async () => {
     // Only refresh CV data if authenticated

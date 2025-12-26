@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from src.schemas.cv_quality_schemas import CVQualityAnalysisResponseSchema
 from src.utils.timeline_analyzer import analyze_timeline_gaps
 from src.utils.markdown_diff_utils import clean_quality_response
+from src.utils.cv_data_optimizer import optimize_cv_data_for_quality_analysis
+from src.config import AIConfig
 from .common import call_openai_with_schema, is_ai_enabled
 from .cv_filter import filter_hidden_sections
 
@@ -21,106 +23,28 @@ logger = logging.getLogger(__name__)
 
 def _build_cv_quality_prompt(cv_data: Dict[str, Any]) -> str:
     """
-    Build AI prompt for CV quality analysis.
+    Build user prompt for CV quality analysis (data only).
 
     Args:
         cv_data: Complete CV data dictionary
 
     Returns:
-        Formatted prompt string for OpenAI
+        Formatted user prompt string containing only CV data
     """
     # Filter hidden sections
     filtered_cv = filter_hidden_sections(cv_data)
 
-    # Extract sections for context
-    has_professional_summary = bool(
-        filtered_cv.get("professional_summary", {}).get("content")
-    )
-    has_work_experience = bool(filtered_cv.get("work_experience", []))
-    has_education = bool(filtered_cv.get("education", []))
-    has_skills = bool(
-        filtered_cv.get("skills", {}).get("technical")
-        or filtered_cv.get("skills", {}).get("soft")
-    )
+    # Optimize for prompt (reduce token usage by 20-40%)
+    optimized_cv = optimize_cv_data_for_quality_analysis(filtered_cv)
 
-    cv_json = json.dumps(filtered_cv, indent=2)
+    # Minified JSON (no indentation, minimal separators for token efficiency)
+    cv_json = json.dumps(optimized_cv, separators=(",", ":"))
 
-    prompt = f"""Analyze CV quality and provide coaching to improve clarity, professionalism, and impact.
-
-CRITICAL PRINCIPLES:
-1. Write in SAME LANGUAGE as CV
-2. Be BRIEF and CONCISE - maximum 30 words per reasoning field
-3. Use HUMAN COACH voice, not corporate recruiter tone
-4. Use SIMPLE language, avoid corporate jargon (never: "role", "leverage", "utilize", "synergize")
-5. RESPECT candidate's writing style (bullets vs paragraphs, metrics usage), wording (technical, academic, simple), tone (formal, casual, friendly)
-6. Preserve ALL Unicode characters exactly
-7. MINIMAL CHANGES: Only suggest when there's CLEAR, SUBSTANTIAL benefit
-8. Remove redundant phrases that don't add meaning or value (e.g., "very unique", "completely finished")
-
-CV DATA:
+    # User prompt: Only the CV data
+    prompt = f"""CV DATA:
 {cv_json}
 
-YOUR TASKS:
-
-1. WRITING CORRECTIONS (grammar, typos, punctuation, unprofessional language, profanity):
-   - Identify clear errors only (not style preferences)
-   - Categorize importance: highly_recommended (critical errors) or standard
-   - CRITICAL: item_id MUST exactly match an actual CV item ID from CV DATA (work_experience or education item IDs)
-
-   ALL FIELD CORRECTIONS (company, position, institution, degree, location, description, etc.):
-      - Use field_corrections array with separate entries for each field
-      - Each entry MUST include: field_name, original_value, corrected_value, and markdown_diff
-      - markdown_diff is REQUIRED for visual display
-      - corrected_value is used by the user to apply the correction
-      - Example for correcting company, position, and description:
-        field_corrections: [
-          {{"field_name": "company", "original_value": "Acme Inc", "corrected_value": "Acme Corporation", "markdown_diff": "~~Acme Inc~~ **Acme Corporation**"}},
-          {{"field_name": "position", "original_value": "Dev", "corrected_value": "Senior Developer", "markdown_diff": "~~Dev~~ **Senior Developer**"}},
-          {{"field_name": "description", "original_value": "Led a team in developing web applications", "corrected_value": "Led team of 5 engineers in developing scalable web applications", "markdown_diff": "Led ~~a team~~ **team of 5 engineers** in developing **scalable** web applications"}}
-        ]
-      - Field names must match actual CV data field names (company, position, institution, degree, location, description, start_date, end_date, etc.)
-      - original_value and corrected_value must be the actual field values, not formatted strings with labels
-      - For description fields, markdown_diff shows the COMPLETE corrected text with inline change markers using ~~strikethrough~~ and **bold** markers
-
-2. PROFESSIONAL SUMMARY{"" if has_professional_summary else " (EMPTY - Generate new)"}:
-   - If empty: Generate new 2-4 sentence professional summary using only the information from the CV
-   - If exists: Only suggest changes for CLEAR issues (grammar, unclear messaging, weak impact)
-   - Preserve original structure and key phrases
-   - Return NULL if no changes needed
-   - Include coaching_questions if content insufficient (too brief, too generic, etc)
-
-3. WORK EXPERIENCE & EDUCATION:
-   - Evaluate quality_score (0-100) for EACH item
-   - Score >= 50: Return {{item_type: "high_score", item_id, section, quality_score}} only
-   - Score < 50: Return {{item_type: "low_score", item_id, section, quality_score, original, suggested, reasoning, markdown_diff}}
-   - Suggested text must be READY-TO-USE in candidate's voice (not meta-instructions)
-   - Include coaching_questions for items needing expansion (too brief, missing impact)
-
-4. CONTENT COACHING (items needing MORE content, not fixes):
-   - Identify items with: insufficient detail, vague statements, missing context, weak verbs
-   - Provide 1-3 specific, contextual coaching questions per item
-   - Optionally, include 1-2 direct suggestions like "Write more about your key responsibilities"
-   - Issue categories: insufficient_content, too_brief, missing_impact, missing_achievements, lacks_specificity, missing_context, weak_action_verbs
-   - NO rewritten content - only coaching questions and direct suggestions
-
-5. SKILLS SUGGESTIONS (optional):
-   - Suggest NEW technical skills (max 10)
-   - Suggest NEW soft skills (max 5)
-   - Only suggest if highly relevant to candidate's background and not already in the CV
-   - Provide brief reasoning for each
-
-6. OVERALL QUALITY SCORE (0-100):
-   - Consider: writing quality, content completeness, clarity, professionalism
-   - Be honest but encouraging
-
-MARKDOWN DIFF FORMAT:
-- Show COMPLETE suggested text with inline markers
-- Use ~~strikethrough~~ for removed text
-- Use **bold** for added text
-- Mark ONLY changed portions, keep unchanged text plain
-
-OUTPUT JSON matching CVQualityAnalysisResponseSchema structure.
-"""
+Analyze this CV and provide quality feedback according to the instructions provided."""
 
     return prompt
 
@@ -149,21 +73,73 @@ async def generate_cv_corrections_and_feedback(
     if not is_ai_enabled():
         raise RuntimeError("AI features are not enabled")
 
-    # Build prompt
+    # Filter and optimize CV data for section detection
+    filtered_cv = filter_hidden_sections(cv_data)
+    optimized_cv = optimize_cv_data_for_quality_analysis(filtered_cv)
+
+    # Extract sections for context (needed for system prompt)
+    has_professional_summary = bool(
+        optimized_cv.get("professional_summary", {}).get("content")
+    )
+
+    # Build user prompt (data only)
     prompt = _build_cv_quality_prompt(cv_data)
 
-    system_prompt = (
-        "You are a professional career coach providing constructive feedback to help candidates "
-        "improve their CVs. Focus on clarity, professionalism, and authentic presentation. "
-        "Be encouraging and specific. Use simple, human language. Respect the candidate's unique voice."
-    )
+    # System prompt: Role + Principles + Tasks (behavioral instructions)
+    system_prompt = f"""You are a professional career coach offering clear, constructive CV feedback. Prioritize clarity, professionalism, authenticity, and actionable advice. Always preserve the candidate's unique voice.
+
+PRINCIPLES:
+1. Use the CV's language. Limit reasoning to 30 words max.
+2. CRITICAL: Suggested text must be final, ready-to-use content for the CV. NO placeholders like [brackets], NO instructions like "(add X)", NO templates. Write actual concrete text that can be used directly.
+3. NO CORPORATE JARGON: Use plain words (e.g., "position" for "role", "used" for "leverage"/"utilize", "built"/"created" for "deliver").
+4. Keep style (bullets, metrics, tone, Unicode).
+5. Make only clearly helpful, non-redundant edits.
+
+TASKS:
+
+1. WRITING CORRECTIONS:
+- Fix clear errors only. Mark importance (highly_recommended/standard). Match item_id.
+- field_corrections: [{{"field_name":"position", "original_value":"Dev", "corrected_value":"Developer", "markdown_diff":"~~Dev~~ **Developer**"}}]
+- Highlight all changes inline: **insert**, ~~delete~~, ~~old~~ **new**.
+- Example:
+Original: "- Unchanged text\\n- ~~text to remove~~\\n- Text missing punctuation"
+Corrected: "- Unchanged text.\\n- text to add\\n- Text missing punctuation."
+Markdown diff: "- Unchanged text**.**\\n- ~~text to remove~~ **text to add**\\n- Text missing punctuation**.**"
+
+2. PROFESSIONAL SUMMARY{"" if has_professional_summary else " (EMPTY - Generate new)"}:
+- If missing: Write 2–4 CV-based sentences.
+- If present: Suggest changes only for definite grammar, unclear messages, or weak impact.
+- CRITICAL: If no changes are needed (original and suggested would be identical), return null for the entire professional_summary field.
+- Add coaching_questions if brief/generic (only when suggesting changes).
+
+3. WORK EXPERIENCE & EDUCATION:
+- Score each item 0–100.
+- Score ≥50: {{item_type: "high_score", item_id, section, quality_score}}
+- Score <50: {{item_type: "low_score", item_id, section, quality_score, original, suggested, reasoning, markdown_diff, coaching_questions (optional - add to this object if content is brief)}}
+- Suggested text must be READY-TO-USE in candidate's voice (not meta-instructions, not templates, not placeholders, not instructions).
+- If original is empty, generate ready-to-use final content that fits the item based on CV context, not templates.
+
+4. CONTENT COACHING:
+- Flag vague/brief areas, missing context, or weak verbs.
+- Give 1–3 coaching questions and 1–2 direct prompts per item.
+- Categories: insufficient_content, too_brief, missing_impact, lacks_specificity, weak_action_verbs.
+- Do not rewrite here.
+
+5. SKILLS (optional):
+- Suggest up to 10 technical and 5 soft skills (only if relevant/not listed) with a brief reason each.
+
+6. OVERALL QUALITY SCORE (0–100):
+- Score: writing, completeness, clarity, professionalism.
+
+OUTPUT JSON matching CVQualityAnalysisResponseSchema structure.
+- professional_summary can be null if no changes are needed (this is valid per the schema)."""
 
     logger.info(
         f"Generating CV corrections and feedback - user_id={user_id}, cv_id={cv_id}"
     )
 
     try:
-        # Single AI call
+        # Single AI call with configurable verbosity
         response, metadata = await call_openai_with_schema(
             system_prompt=system_prompt,
             user_prompt=prompt,
@@ -172,6 +148,7 @@ async def generate_cv_corrections_and_feedback(
             cv_id=cv_id,
             operation_type="cv_quality_analysis",
             db_session=db_session,
+            text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
         )
 
         # Post-process to clean markdown_diff strings

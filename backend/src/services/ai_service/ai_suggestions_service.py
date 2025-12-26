@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from src.schemas.ai_response_schemas import AISuggestionsResponseSchema
+from src.utils.cv_data_optimizer import clean_control_characters
 
 from .common import call_openai_with_schema, is_ai_enabled
 from .cv_filter import filter_hidden_sections
@@ -84,6 +85,10 @@ def _build_ai_suggestions_prompt(
 ) -> str:
     # Filter out hidden sections before sending to AI
     filtered_cv_data = filter_hidden_sections(cv_data)
+
+    # Clean control characters from all text fields
+    # This ensures AI doesn't see formatting artifacts like \u000b
+    filtered_cv_data = clean_control_characters(filtered_cv_data)
 
     # Extract current CV data for optimization (compact format)
     # Use filtered_cv_data to ensure hidden sections are excluded

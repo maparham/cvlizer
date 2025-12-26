@@ -72,7 +72,7 @@ class ContentCoachingItemSchema(BaseModel):
     issue_category: str = Field(
         pattern="^(insufficient_content|missing_impact|too_brief|missing_achievements|lacks_specificity|missing_context|weak_action_verbs)$"
     )
-    coaching_questions: List[CoachingQuestionSchema] = Field(min_items=2, max_items=4)
+    coaching_questions: List[CoachingQuestionSchema] = Field(min_items=1, max_items=3)
     direct_prompts: List[str] = Field(max_items=2, description="Direct expansion prompts")
 
 
