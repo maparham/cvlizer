@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from src.schemas.cv_quality_schemas import CVQualityAnalysisResponseSchema
 from src.utils.timeline_analyzer import analyze_timeline_gaps
+from src.utils.markdown_diff_utils import clean_quality_response
 from .common import call_openai_with_schema, is_ai_enabled
 from .cv_filter import filter_hidden_sections
 
@@ -68,16 +69,14 @@ YOUR TASKS:
 
    ALL FIELD CORRECTIONS (company, position, institution, degree, location, description, etc.):
       - Use field_corrections array with separate entries for each field
-      - Each entry MUST include: field_name, original_value, corrected_value, markdown_diff, and reasoning
+      - Each entry MUST include: field_name, original_value, corrected_value, and markdown_diff
       - markdown_diff is REQUIRED for visual display
       - corrected_value is used by the user to apply the correction
-      - reasoning should be field-specific (e.g., "Fixes typo in company name" for company field, "Fixes typos and removes profanity in the title" for position field)
-      - Keep reasoning brief (max 30 words) and specific to that field
       - Example for correcting company, position, and description:
         field_corrections: [
-          {{"field_name": "company", "original_value": "Acme Inc", "corrected_value": "Acme Corporation", "markdown_diff": "~~Acme Inc~~ **Acme Corporation**", "reasoning": "Fixes typo in company name"}},
-          {{"field_name": "position", "original_value": "Dev", "corrected_value": "Senior Developer", "markdown_diff": "~~Dev~~ **Senior Developer**", "reasoning": "Expands abbreviated title for clarity"}},
-          {{"field_name": "description", "original_value": "Led a team in developing web applications", "corrected_value": "Led team of 5 engineers in developing scalable web applications", "markdown_diff": "Led ~~a team~~ **team of 5 engineers** in developing **scalable** web applications", "reasoning": "Adds specific team size and scalability detail"}}
+          {{"field_name": "company", "original_value": "Acme Inc", "corrected_value": "Acme Corporation", "markdown_diff": "~~Acme Inc~~ **Acme Corporation**"}},
+          {{"field_name": "position", "original_value": "Dev", "corrected_value": "Senior Developer", "markdown_diff": "~~Dev~~ **Senior Developer**"}},
+          {{"field_name": "description", "original_value": "Led a team in developing web applications", "corrected_value": "Led team of 5 engineers in developing scalable web applications", "markdown_diff": "Led ~~a team~~ **team of 5 engineers** in developing **scalable** web applications"}}
         ]
       - Field names must match actual CV data field names (company, position, institution, degree, location, description, start_date, end_date, etc.)
       - original_value and corrected_value must be the actual field values, not formatted strings with labels
@@ -174,6 +173,9 @@ async def generate_cv_corrections_and_feedback(
             operation_type="cv_quality_analysis",
             db_session=db_session,
         )
+
+        # Post-process to clean markdown_diff strings
+        response = clean_quality_response(response)
 
         # Detect timeline gaps (rule-based, not AI)
         timeline_gaps = analyze_timeline_gaps(cv_data)
