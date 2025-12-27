@@ -115,8 +115,8 @@ HTML diff: "- Unchanged text<ins>.</ins>\\n<del>- text to remove\\n</del><ins>- 
 
 3. WORK EXPERIENCE & EDUCATION:
 - Score each item 0–100.
-- Score ≥50: {{item_type: "high_score", item_id, section, quality_score}}
-- Score <50: {{item_type: "low_score", item_id, section, quality_score, original, reasoning, html_diff, coaching_questions (optional - add to this object if content is brief)}}
+- Only return items with score < 50 that need improvement: {{item_type: "low_score", item_id, section, quality_score, original, reasoning, html_diff, coaching_questions (optional - add to this object if content is brief)}}
+- Do NOT return items with score ≥ 50 (they don't need improvement).
 - html_diff must contain READY-TO-USE content in candidate's voice (not meta-instructions, not templates, not placeholders, not instructions).
 - If original is empty, generate ready-to-use final content in html_diff that fits the item based on CV context, not templates.
 - Use html_diff field with <del> and <ins> tags to show changes.

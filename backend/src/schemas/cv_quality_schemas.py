@@ -5,7 +5,7 @@ Defines strict validation for all quality analysis data structures.
 """
 
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -100,19 +100,12 @@ class ProfessionalSummaryQualitySuggestionSchema(BaseModel):
 # ============================================================================
 
 
-class HighQualityItemSchema(BaseModel):
-    """Item with high quality score - no suggestions needed."""
-
-    item_type: str = Field(
-        default="high_score", description="Discriminator for item type"
-    )
-    item_id: str
-    section: str
-    quality_score: int = Field(ge=50, le=100)
-
-
 class LowQualityItemSchema(BaseModel):
-    """Item with low quality score - includes rewritten content."""
+    """Item with low quality score - includes rewritten content.
+
+    Only items with quality score < 50 are returned in the analysis.
+    Items with score >= 50 are not included in the response.
+    """
 
     item_type: str = Field(default="low_score", description="Discriminator for item type")
     item_id: str
@@ -127,8 +120,8 @@ class LowQualityItemSchema(BaseModel):
     coaching_questions: Optional[List[CoachingQuestionSchema]] = Field(default=None)
 
 
-# Union type for quality items
-QualityItemSchema = Union[HighQualityItemSchema, LowQualityItemSchema]
+# Only low_score items are returned (items with score < 50 that need improvement)
+QualityItemSchema = LowQualityItemSchema
 
 
 # ============================================================================
@@ -186,7 +179,11 @@ class SkillsSuggestionsSchema(BaseModel):
 
 
 class CVQualityAnalysisResponseSchema(BaseModel):
-    """Complete CV quality analysis response from AI."""
+    """Complete CV quality analysis response from AI.
+
+    Note: work_experience and education arrays only contain items with quality score < 50
+    that need improvement. Items with score >= 50 are not included in the response.
+    """
 
     overall_quality_score: int = Field(ge=0, le=100)
 
@@ -197,8 +194,14 @@ class CVQualityAnalysisResponseSchema(BaseModel):
         default=None
     )
 
-    work_experience: List[QualityItemSchema] = Field(default_factory=list)
-    education: List[QualityItemSchema] = Field(default_factory=list)
+    work_experience: List[QualityItemSchema] = Field(
+        default_factory=list,
+        description="Only items with quality score < 50 that need improvement",
+    )
+    education: List[QualityItemSchema] = Field(
+        default_factory=list,
+        description="Only items with quality score < 50 that need improvement",
+    )
 
     skills: SkillsSuggestionsSchema = Field(
         default_factory=SkillsSuggestionsSchema,

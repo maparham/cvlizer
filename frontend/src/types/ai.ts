@@ -353,7 +353,7 @@ export interface ATSOptimizationResponse {
 export interface FieldCorrection {
   field_name: string;
   original_value: string;
-  corrected_value: string;
+  corrected_value?: string; // Optional - computed from html_diff in post-processing
   html_diff: string;
   reasoning?: string;
 }
