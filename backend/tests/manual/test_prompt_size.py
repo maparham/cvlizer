@@ -30,17 +30,16 @@ YOUR TASKS:
 
    ALL FIELD CORRECTIONS (company, position, institution, degree, location, description, etc.):
       - Use field_corrections array with separate entries for each field
-      - Each entry MUST include: field_name, original_value, corrected_value, and markdown_diff
+      - Each entry MUST include: field_name, original_value, and markdown_diff
       - markdown_diff is REQUIRED for visual display
-      - corrected_value is used by the user to apply the correction
       - Example for correcting company, position, and description:
         field_corrections: [
-          {{"field_name": "company", "original_value": "Acme Inc", "corrected_value": "Acme Corporation", "markdown_diff": "~~Acme Inc~~ **Acme Corporation**"}},
-          {{"field_name": "position", "original_value": "Dev", "corrected_value": "Senior Developer", "markdown_diff": "~~Dev~~ **Senior Developer**"}},
-          {{"field_name": "description", "original_value": "Led a team in developing web applications", "corrected_value": "Led team of 5 engineers in developing scalable web applications", "markdown_diff": "Led ~~a team~~ **team of 5 engineers** in developing **scalable** web applications"}}
+          {{"field_name": "company", "original_value": "Acme Inc", "markdown_diff": "~~Acme Inc~~ **Acme Corporation**"}},
+          {{"field_name": "position", "original_value": "Dev", "markdown_diff": "~~Dev~~ **Senior Developer**"}},
+          {{"field_name": "description", "original_value": "Led a team in developing web applications", "markdown_diff": "Led ~~a team~~ **team of 5 engineers** in developing **scalable** web applications"}}
         ]
       - Field names must match actual CV data field names (company, position, institution, degree, location, description, start_date, end_date, etc.)
-      - original_value and corrected_value must be the actual field values, not formatted strings with labels
+      - original_value must be the actual field value, not a formatted string with labels
       - For description fields, markdown_diff shows the COMPLETE corrected text with inline change markers using ~~strikethrough~~ and **bold** markers
 
 2. PROFESSIONAL SUMMARY:
@@ -98,7 +97,7 @@ TASKS:
 1. WRITING CORRECTIONS (grammar, typos, unprofessional language):
    Identify clear errors only. Importance: highly_recommended or standard. item_id must match CV DATA ID.
 
-   Use field_corrections: [{{"field_name":"position","original_value":"Dev","corrected_value":"Developer","markdown_diff":"~~Dev~~ **Developer**"}}]
+   Use field_corrections: [{{"field_name":"position","original_value":"Dev","markdown_diff":"~~Dev~~ **Developer**"}}]
    Descriptions: show COMPLETE text with ~~removed~~ **added** markers.
 
 2. PROFESSIONAL SUMMARY:
@@ -109,7 +108,7 @@ TASKS:
 3. WORK EXPERIENCE & EDUCATION:
    Score (0-100) each item
    ≥50: {{item_type:"high_score", item_id, section, quality_score}}
-   <50: {{item_type:"low_score", item_id, section, quality_score, original, suggested, reasoning, markdown_diff}}
+   <50: {{item_type:"low_score", item_id, section, quality_score, original, reasoning, markdown_diff}}
    Suggested text: ready-to-use, candidate's voice. Add coaching_questions if too brief
 
 4. CONTENT COACHING (items needing more content):

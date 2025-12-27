@@ -44,19 +44,19 @@ export function getFieldCorrection(
 }
 
 /**
- * Get markdown diff correction for description/text fields
+ * Get HTML diff correction for description/text fields
  *
  * @deprecated Use getFieldCorrection(writingCorrections, itemId, "description") instead.
  * Description corrections are now handled through field_corrections with field_name="description".
  *
  * @param writingCorrections - Array of writing corrections for an item
  * @param itemId - ID of the CV item (work experience, education, professional_summary, etc.)
- * @returns Object with markdown_diff string and full WritingCorrection, or null if not found
+ * @returns Object with html_diff string and full WritingCorrection, or null if not found
  */
-export function getMarkdownDiffCorrection(
+export function getHtmlDiffCorrection(
   writingCorrections: WritingCorrection[],
   itemId: string
-): { markdown_diff: string; correction: WritingCorrection } | null {
+): { html_diff: string; correction: WritingCorrection } | null {
   if (!writingCorrections || writingCorrections.length === 0) {
     return null;
   }
@@ -71,21 +71,21 @@ export function getMarkdownDiffCorrection(
     );
     if (correction) {
       return {
-        markdown_diff: descriptionFieldCorrection.markdown_diff,
+        html_diff: descriptionFieldCorrection.html_diff,
         correction: correction,
       };
     }
   }
 
-  // Fallback to legacy markdown_diff at WritingCorrection level (backward compatibility)
+  // Fallback to legacy html_diff at WritingCorrection level (backward compatibility)
   for (const correction of writingCorrections) {
     if (correction.item_id !== itemId) {
       continue;
     }
 
-    if (correction.markdown_diff && correction.markdown_diff.trim() !== '') {
+    if (correction.html_diff && correction.html_diff.trim() !== '') {
       return {
-        markdown_diff: correction.markdown_diff,
+        html_diff: correction.html_diff,
         correction: correction,
       };
     }

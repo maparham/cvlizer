@@ -135,32 +135,33 @@ def _build_ai_suggestions_prompt(
     education_json = json.dumps(education_items)
 
     # ============================================================================
-    # MARKDOWN DIFF FORMATTING INSTRUCTIONS
+    # HTML DIFF FORMATTING INSTRUCTIONS
     # ============================================================================
     # This instruction applies to professional_summary, work_experience, and education
-    # sections when they include markdown_diff fields.
-    markdown_diff_instruction = (
-        "Provide markdown_diff showing the COMPLETE suggested text with inline change markers. "
+    # sections when they include html_diff fields.
+    html_diff_instruction = (
+        "Provide html_diff showing the COMPLETE suggested text with inline HTML change markers. "
         "GOAL: Enable users to quickly see changes—single out ONLY changed parts, keep all unchanged text plain. "
-        "CRITICAL: markdown_diff must contain EVERY word from 'suggested' field, but mark ONLY changed phrases/words/punctuation. "
-        "Rules: Use ~~strikethrough~~ for removed text, **bold** for added text. "
+        "CRITICAL: html_diff must contain EVERY word from 'suggested' field, but mark ONLY changed phrases/words/punctuation. "
+        "Rules: Use <del>text</del> for removed text, <ins>text</ins> for added text. "
         "Process: Compare word-by-word and punctuation-by-punctuation with 'original', mark only changed elements. "
-        "Examples: '- existing part**, new part**' (inserting or appending text), "
-        "'- Unchanged part and ~~old part~~**new part**' (partial change), "
-        "'- Text with ~~Old~~**old** word' (capitalization), "
-        "'First part ~~and~~**;** second part' (punctuation change), "
-        "CRITICAL: for line removals: When an entire line is removed, include the COMPLETE line including newline character in strikethrough. "
+        "Examples: '- existing part<ins>, new part</ins>' (inserting or appending text), "
+        "'- Unchanged part and <del>old part</del><ins>new part</ins>' (partial change), "
+        "'- Text with <del>Old</del><ins>old</ins> word' (capitalization), "
+        "'First part <del>and</del><ins>;</ins> second part' (punctuation change), "
+        "CRITICAL: for line removals: When an entire line is removed, include the COMPLETE line including newline character in <del> tags. "
         "Example: Original: '- Line1 A\\n- Line2 B\\n- Line3 C', Suggested: '- Line1 A\\n- Line3 C'. "
-        "markdown_diff: '- Line A\\n- ~~Line B\\n-~~ Line C' (entire removed line including \\n is strikethrough). "
-        "CRITICAL: for line additions: When an entire line is added, show the complete new line in bold including newline. "
+        "html_diff: '- Line A\\n<del>- Line B\\n</del>- Line C' (entire removed line including \\n is in <del>). "
+        "CRITICAL: for line additions: When an entire line is added, show the complete new line in <ins> tags including newline. "
         "Example: Original: '- Line1 A\\n- Line3 C', Suggested: '- Line1 A\\n- Line2 B\\n- Line3 C'. "
-        "markdown_diff: '- Line A\\n- **Line B\\n-** Line C' (entire added line including \\n is bold). "
+        "html_diff: '- Line A\\n<ins>- Line B\\n</ins>- Line C' (entire added line including \\n is in <ins>). "
         "CRITICAL: for complete additions when original_text is empty and all suggested_text is new: "
-        "the entire suggested_text should be in bold with NO strikethrough. "
+        "the entire suggested_text should be in <ins> tags with NO <del> tags. "
         "Example: Original: empty, Suggested: 'New complete text here'. "
-        "markdown_diff: '**New complete text here**' (entire text in bold, no strikethrough). "
-        'CRITICAL for markdown_diff: Mark at phrase/word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
-        "CRITICAL: applying the markdown_diff to the original text must produce the suggested text. If not, you are doing it wrong."
+        "html_diff: '<ins>New complete text here</ins>' (entire text in <ins>, no <del>). "
+        'CRITICAL for html_diff: Mark at phrase/word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
+        "CRITICAL: The HTML tags must be properly closed and balanced. Use only <del> and <ins> tags, no other HTML."
+        "CRITICAL: Escape special HTML characters in text content: &amp; for &, &lt; for <, &gt; for >, &quot; for \", &#39; for '"
     )
 
     # Build conditional optimization instructions
@@ -190,7 +191,7 @@ def _build_ai_suggestions_prompt(
             "Preserve original structure and key phrases. Avoid unnecessary rephrasing. "
             "Stay close to original wording—only modify when the change addresses a concrete problem that significantly improves clarity or impact. "
             "If no changes needed, set professional_summary field to null. "
-            f"See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above for markdown_diff format requirements."
+            f"See HTML DIFF FORMATTING INSTRUCTIONS section above for html_diff format requirements."
         )
 
     # Shared instructions for item-based sections (work_experience and education)
@@ -207,7 +208,7 @@ def _build_ai_suggestions_prompt(
             f"   \n"
             f"   Output format based on score:\n"
             f'   - Score >= 50: {{"item_type": "high_score", "id": "...", "current_content_score": XX}}\n'
-            f'   - Score < 50: {{"item_type": "low_score", "id": "...", "current_content_score": XX, "original": "...", "suggested": "...", "reasoning": "...", "importance": "standard", "markdown_diff": "..."}}\n'
+            f'   - Score < 50: {{"item_type": "low_score", "id": "...", "current_content_score": XX, "original": "...", "suggested": "...", "reasoning": "...", "importance": "standard", "html_diff": "..."}}\n'
             f"   \n"
             f"   Schema enforces this structure - you CANNOT include extra fields for high scores.\n"
             f"   Only suggest changes for score < 50 when there are clear issues: grammar errors, unclear messaging, missing impact, or factual errors. "
@@ -216,7 +217,7 @@ def _build_ai_suggestions_prompt(
             f"   CRITICAL: The 'suggested' field must contain the ACTUAL rewritten content written as the candidate's own text. "
             f"Write the complete improved version directly. DO NOT include meta-instructions like 'Clarify X' or 'Add Y'. "
             f"The 'suggested' field is ready-to-use content, not instructions.\n"
-            f"   See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above for markdown_diff format requirements."
+            f"   See HTML DIFF FORMATTING INSTRUCTIONS section above for html_diff format requirements."
         )
 
     optimization_tasks_text = (
@@ -266,7 +267,7 @@ def _build_ai_suggestions_prompt(
     if has_professional_summary:
         comma = "," if has_any_after_summary else ""
         json_output_parts.append(
-            f'  "professional_summary": {{"suggested_text": "...", "original_text": "...", "key_changes": ["..."], "markdown_diff": "~~Original text~~**Improved text** with changes marked inline"}}{comma}'
+            f'  "professional_summary": {{"suggested_text": "...", "original_text": "...", "key_changes": ["..."], "html_diff": "<del>Original text</del><ins>Improved text</ins> with changes marked inline"}}{comma}'
         )
 
     # Shared JSON example for item-based sections (work_experience and education)
@@ -274,10 +275,10 @@ def _build_ai_suggestions_prompt(
     item_suggestion_example = (
         '{"item_type": "low_score", "id": "work_1", "current_content_score": 45, '
         '"original": "- Old bullet point\\n- Another point", '
-        '"suggested": "- Improved bullet point**, with enhancements**\\n- Another point", '
+        '"suggested": "- Improved bullet point, with enhancements\\n- Another point", '
         '"reasoning": "...", '
         '"importance": "standard", '
-        '"markdown_diff": "- ~~Old~~**Improved** bullet point**, with enhancements**\\n- Another point"}, '
+        '"html_diff": "- <del>Old</del><ins>Improved</ins> bullet point<ins>, with enhancements</ins>\\n- Another point"}, '
         '{"item_type": "high_score", "id": "work_2", "current_content_score": 85}'
     )
 
@@ -347,8 +348,8 @@ def _build_ai_suggestions_prompt(
 CV: {cv_json}
 Job: {job_description}
 
-⚠️ MARKDOWN DIFF FORMATTING INSTRUCTIONS:
-{markdown_diff_instruction}
+⚠️ HTML DIFF FORMATTING INSTRUCTIONS:
+{html_diff_instruction}
 
 TASKS:
 1. Job Fit Analysis (write as candidate, first person):
@@ -409,9 +410,9 @@ OUTPUT JSON:
 - CRITICAL for 'suggested' field: Write the ACTUAL improved content as the candidate's own text. DO NOT write instructions like 'Clarify X' or 'Add Y'. The 'reasoning' field explains what to improve; the 'suggested' field is the actual rewritten text ready to use.
 - Be as specific as possible. Be very brief, concise and to the point. Reasoning fields: maximum 30 words each.
 - CRITICAL: Only suggest changes when there's a clear, substantial benefit. Avoid cosmetic modifications, synonym swapping, or unnecessary rephrasing.
-- For professional_summary: If no changes needed, set the field to null. If changes exist, include markdown_diff with the diff string.
+- For professional_summary: If no changes needed, set the field to null. If changes exist, include html_diff with the diff string.
 - CRITICAL for work_experience and education: Include ALL items with their current_content_score. Use item_type="high_score" for score >= 50 (only id and score). Use item_type="low_score" for score < 50 with clear issues (all suggestion fields). The schema will reject responses that don't follow this format.
-- CRITICAL for markdown_diff: See MARKDOWN DIFF FORMATTING INSTRUCTIONS section above. Must show the COMPLETE suggested text with INLINE change markers only. Mark ONLY changed portions, keep unchanged text plain. NEVER mark entire lines—only wrap changed words/phrases.
+- CRITICAL for html_diff: See HTML DIFF FORMATTING INSTRUCTIONS section above. Must show the COMPLETE suggested text with INLINE HTML change markers only. Mark ONLY changed portions, keep unchanged text plain. Use only <del> and <ins> tags. Properly escape HTML special characters.
 """
 
 
@@ -532,16 +533,14 @@ async def generate_ai_suggestions(
             "suggested_text": "",
             "original_text": "",
             "key_changes": [],
-            "markdown_diff": "",
+            "html_diff": "",
         }
         if has_professional_summary:
             professional_summary_response = response.get("professional_summary")
             if professional_summary_response:
                 professional_summary_value = {
                     **professional_summary_response,
-                    "markdown_diff": professional_summary_response.get(
-                        "markdown_diff", ""
-                    ),
+                    "html_diff": professional_summary_response.get("html_diff", ""),
                 }
 
         # Process suggestions - schema guarantees correct structure

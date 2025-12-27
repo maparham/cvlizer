@@ -80,10 +80,10 @@ export const FormField: React.FC<{
   helperText?: string;
   disabled?: boolean;
   // Writing correction props for markdown diff corrections
-  markdownDiffCorrection?: { markdown_diff: string; correction: WritingCorrection } | null;
+  htmlDiffCorrection?: { html_diff: string; correction: WritingCorrection } | null;
   onApplyCorrection?: (correction: WritingCorrection) => void;
   onDismissCorrection?: () => void;
-}> = ({ config, value, onChange, onSave, sx, error: errorOverride, helperText: helperTextOverride, disabled, markdownDiffCorrection, onApplyCorrection, onDismissCorrection }) => {
+}> = ({ config, value, onChange, onSave, sx, error: errorOverride, helperText: helperTextOverride, disabled, htmlDiffCorrection, onApplyCorrection, onDismissCorrection }) => {
   const {
     name,
     label,
@@ -145,12 +145,12 @@ export const FormField: React.FC<{
             disabled={disabled}
           />
         </Box>
-        {markdownDiffCorrection && (
+        {htmlDiffCorrection && (
           <InlineFieldCorrection
-            markdownDiffCorrection={markdownDiffCorrection}
-            importance={markdownDiffCorrection.correction.importance}
-            reasoning={markdownDiffCorrection.correction.reasoning}
-            onApply={() => onApplyCorrection?.(markdownDiffCorrection.correction)}
+            htmlDiffCorrection={htmlDiffCorrection}
+            importance={htmlDiffCorrection.correction.importance}
+            reasoning={htmlDiffCorrection.correction.reasoning}
+            onApply={() => onApplyCorrection?.(htmlDiffCorrection.correction)}
             onDismiss={onDismissCorrection || (() => {})}
           />
         )}
@@ -191,12 +191,12 @@ export const FormField: React.FC<{
           },
         }}
       />
-      {markdownDiffCorrection && (
+      {htmlDiffCorrection && (
         <InlineFieldCorrection
-          markdownDiffCorrection={markdownDiffCorrection}
-          importance={markdownDiffCorrection.correction.importance}
-          reasoning={markdownDiffCorrection.correction.reasoning}
-          onApply={() => onApplyCorrection?.(markdownDiffCorrection.correction)}
+          htmlDiffCorrection={htmlDiffCorrection}
+          importance={htmlDiffCorrection.correction.importance}
+          reasoning={htmlDiffCorrection.correction.reasoning}
+          onApply={() => onApplyCorrection?.(htmlDiffCorrection.correction)}
           onDismiss={onDismissCorrection || (() => {})}
         />
       )}

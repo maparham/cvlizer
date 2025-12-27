@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from src.schemas.cv_quality_schemas import CVQualityAnalysisResponseSchema
 from src.utils.timeline_analyzer import analyze_timeline_gaps
-from src.utils.markdown_diff_utils import clean_quality_response
+from src.utils.html_diff_utils import clean_quality_response
 from src.utils.cv_data_optimizer import optimize_cv_data_for_quality_analysis
 from src.config import AIConfig
 from .common import call_openai_with_schema, is_ai_enabled
@@ -99,25 +99,27 @@ TASKS:
 
 1. WRITING CORRECTIONS:
 - Fix clear errors only. Mark importance (highly_recommended/standard). Match item_id.
-- field_corrections: [{{"field_name":"position", "original_value":"Dev", "corrected_value":"Developer", "markdown_diff":"~~Dev~~ **Developer**"}}]
-- Highlight all changes inline: **insert**, ~~delete~~, ~~old~~ **new**.
+- field_corrections: [{{"field_name":"position", "original_value":"Dev", "html_diff":"<del>Dev</del><ins>Developer</ins>"}}]
+- Highlight all changes inline using HTML: <ins>insert</ins>, <del>delete</del>, <del>old</del><ins>new</ins>.
+- CRITICAL: Properly escape HTML special characters in text: &amp; for &, &lt; for <, &gt; for >, &quot; for ", &#39; for '
 - Example:
-Original: "- Unchanged text\\n- ~~text to remove~~\\n- Text missing punctuation"
-Corrected: "- Unchanged text.\\n- text to add\\n- Text missing punctuation."
-Markdown diff: "- Unchanged text**.**\\n- ~~text to remove~~ **text to add**\\n- Text missing punctuation**.**"
+Original: "- Unchanged text\\n- text to remove\\n- Text missing punctuation"
+HTML diff: "- Unchanged text<ins>.</ins>\\n<del>- text to remove\\n</del><ins>- text to add\\n</ins>- Text missing punctuation<ins>.</ins>"
 
 2. PROFESSIONAL SUMMARY{"" if has_professional_summary else " (EMPTY - Generate new)"}:
 - If missing: Write 2–4 CV-based sentences.
 - If present: Suggest changes only for definite grammar, unclear messages, or weak impact.
 - CRITICAL: If no changes are needed (original and suggested would be identical), return null for the entire professional_summary field.
 - Add coaching_questions if brief/generic (only when suggesting changes).
+- Use html_diff field with <del> and <ins> tags to show changes.
 
 3. WORK EXPERIENCE & EDUCATION:
 - Score each item 0–100.
 - Score ≥50: {{item_type: "high_score", item_id, section, quality_score}}
-- Score <50: {{item_type: "low_score", item_id, section, quality_score, original, suggested, reasoning, markdown_diff, coaching_questions (optional - add to this object if content is brief)}}
-- Suggested text must be READY-TO-USE in candidate's voice (not meta-instructions, not templates, not placeholders, not instructions).
-- If original is empty, generate ready-to-use final content that fits the item based on CV context, not templates.
+- Score <50: {{item_type: "low_score", item_id, section, quality_score, original, reasoning, html_diff, coaching_questions (optional - add to this object if content is brief)}}
+- html_diff must contain READY-TO-USE content in candidate's voice (not meta-instructions, not templates, not placeholders, not instructions).
+- If original is empty, generate ready-to-use final content in html_diff that fits the item based on CV context, not templates.
+- Use html_diff field with <del> and <ins> tags to show changes.
 
 4. CONTENT COACHING:
 - Flag vague/brief areas, missing context, or weak verbs.
@@ -151,7 +153,7 @@ OUTPUT JSON matching CVQualityAnalysisResponseSchema structure.
             text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
         )
 
-        # Post-process to clean markdown_diff strings
+        # Post-process to clean html_diff strings
         response = clean_quality_response(response)
 
         # Detect timeline gaps (rule-based, not AI)

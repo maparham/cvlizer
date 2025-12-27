@@ -2,7 +2,7 @@
  * Writing Correction Suggestion Component
  *
  * Displays writing corrections from the quality analysis writing_corrections array.
- * Shows markdown_diff for description field corrections and field_corrections
+ * Shows html_diff for description field corrections and field_corrections
  * for structured field corrections (company, position, institution, degree, etc.).
  */
 
@@ -38,7 +38,7 @@ export const WritingCorrectionSuggestion: React.FC<WritingCorrectionSuggestionPr
   };
 
   // Description is now handled through field_corrections with field_name="description"
-  // Legacy markdown_diff at WritingCorrection level is deprecated but kept for backward compatibility
+  // Legacy html_diff at WritingCorrection level is deprecated but kept for backward compatibility
   const hasFieldCorrections = correction.field_corrections && correction.field_corrections.length > 0;
 
   return (
@@ -86,7 +86,7 @@ export const WritingCorrectionSuggestion: React.FC<WritingCorrectionSuggestionPr
                     {getFieldLabel(fieldCorrection.field_name)}
                   </Typography>
                   <Box sx={{ width: '100%' }}>
-                    <SemanticDiff markdownDiff={fieldCorrection.markdown_diff} />
+                    <SemanticDiff htmlDiff={fieldCorrection.html_diff} />
                   </Box>
                 </ListItem>
               ))}

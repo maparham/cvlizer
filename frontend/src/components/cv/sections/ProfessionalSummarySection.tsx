@@ -47,7 +47,7 @@ const ProfessionalSummaryQualitySuggestion: React.FC<{
   onDismiss: () => void;
 }> = ({ qualitySummarySuggestion, onApply, onDismiss }) => {
   const [viewMode, setViewMode] = React.useState<'diff' | 'raw'>('diff');
-  const hasMarkdownDiff = qualitySummarySuggestion.markdown_diff && qualitySummarySuggestion.markdown_diff.trim() !== '';
+  const hasHtmlDiff = qualitySummarySuggestion.html_diff && qualitySummarySuggestion.html_diff.trim() !== '';
 
   return (
     <Paper
@@ -68,7 +68,7 @@ const ProfessionalSummaryQualitySuggestion: React.FC<{
         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
           Quality Suggestions
         </Typography>
-        {hasMarkdownDiff && (
+        {hasHtmlDiff && (
           <ToggleButtonGroup
             value={viewMode}
             exclusive
@@ -113,8 +113,8 @@ const ProfessionalSummaryQualitySuggestion: React.FC<{
             mb: 2,
           }}
         >
-          {hasMarkdownDiff && viewMode === 'diff' ? (
-            <SemanticDiff markdownDiff={qualitySummarySuggestion.markdown_diff || ''} />
+          {hasHtmlDiff && viewMode === 'diff' ? (
+            <SemanticDiff htmlDiff={qualitySummarySuggestion.html_diff || ''} />
           ) : (
             <Box>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
@@ -340,7 +340,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           onChange={(value) => updateData("content", value)}
           error={hasError}
           helperText={helperText}
-          markdownDiffCorrection={descriptionCorrection}
+          htmlDiffCorrection={descriptionCorrection}
           onApplyCorrection={handleApplyWritingCorrectionWrapper}
           onDismissCorrection={() => descriptionCorrection && handleDismissWritingCorrectionWrapper(descriptionCorrection.correction)}
           sx={{
@@ -382,9 +382,9 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
             </Box>
 
             <Box sx={{ mb: 2, lineHeight: 1.6 }}>
-              {summarySuggestion.markdown_diff &&
-              summarySuggestion.markdown_diff.trim() !== "" ? (
-                <SemanticDiff markdownDiff={summarySuggestion.markdown_diff} />
+              {summarySuggestion.html_diff &&
+              summarySuggestion.html_diff.trim() !== "" ? (
+                <SemanticDiff htmlDiff={summarySuggestion.html_diff} />
               ) : (
                 // No diff available - show side-by-side comparison
                 <Box>
@@ -549,9 +549,9 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           </Box>
 
           <Box sx={{ mb: 2, lineHeight: 1.6 }}>
-            {summarySuggestion.markdown_diff &&
-            summarySuggestion.markdown_diff.trim() !== "" ? (
-              <SemanticDiff markdownDiff={summarySuggestion.markdown_diff} />
+            {summarySuggestion.html_diff &&
+            summarySuggestion.html_diff.trim() !== "" ? (
+              <SemanticDiff htmlDiff={summarySuggestion.html_diff} />
             ) : (
               // No diff available - show side-by-side comparison
               <Box>

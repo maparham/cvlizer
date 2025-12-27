@@ -2,7 +2,7 @@
 Writing Corrections Service
 
 Service for applying writing corrections to CV data.
-Handles markdown_diff parsing and field corrections application.
+Handles html_diff parsing and field corrections application.
 """
 
 import re
@@ -31,36 +31,36 @@ ALLOWED_FIELD_NAMES = {
 }
 
 
-def apply_markdown_diff(text: str, markdown_diff: str) -> str:
+def apply_html_diff(text: str, html_diff: str) -> str:
     """
-    Parse markdown_diff string to extract corrected text.
+    Parse html_diff string to extract corrected text.
 
-    Removes strikethrough markers (~~text~~) and bold markers (**text**),
+    Removes <del> tags and their content, and removes <ins> tags but keeps the content,
     keeping only the final corrected text.
 
     Args:
         text: Original text (not used, but kept for consistency)
-        markdown_diff: The markdown diff string with strikethrough and bold markers
+        html_diff: The HTML diff string with <del> and <ins> tags
 
     Returns:
-        The corrected text with all markers removed
+        The corrected text with all HTML tags removed
 
     Example:
-        Input: "Led ~~a team~~ **team of 5 engineers** in developing **scalable** web applications"
+        Input: "Led <del>a team</del><ins>team of 5 engineers</ins> in developing <ins>scalable</ins> web applications"
         Output: "Led team of 5 engineers in developing scalable web applications"
     """
-    if not markdown_diff or markdown_diff.strip() == "":
+    if not html_diff or html_diff.strip() == "":
         return text
 
-    result = markdown_diff
+    result = html_diff
 
-    # Remove strikethrough blocks (~~text~~) including the markers
-    # This regex matches ~~ followed by any characters (non-greedy) followed by ~~
-    result = re.sub(r"~~(.*?)~~", "", result)
+    # Remove <del> tags and their content
+    # This regex matches <del> followed by any characters (non-greedy) followed by </del>
+    result = re.sub(r"<del>.*?</del>", "", result)
 
-    # Remove bold markers (**text**) but keep the text
-    # This regex matches ** followed by any characters (non-greedy) followed by **
-    result = re.sub(r"\*\*(.*?)\*\*", r"\1", result)
+    # Remove <ins> tags but keep the content
+    # This regex matches <ins> followed by any characters (non-greedy) followed by </ins>
+    result = re.sub(r"<ins>(.*?)</ins>", r"\1", result)
 
     # Clean up any extra whitespace that might have been left
     # Replace multiple spaces with single space
@@ -79,12 +79,12 @@ def apply_field_corrections(
     Apply field corrections to a CV item.
 
     Updates all fields (company, position, institution, degree, location, description, dates)
-    with corrected values. Uses corrected_value for application logic.
-    markdown_diff is for visual display only and is not used in application logic.
+    with corrected values. Uses corrected_value field which is computed from html_diff
+    in post-processing (see clean_quality_response in html_diff_utils).
 
     Args:
         item: The CV item dictionary to update
-        field_corrections: List of field corrections to apply
+        field_corrections: List of field corrections to apply (with corrected_value pre-computed)
 
     Returns:
         Tuple of (updated item dictionary, list of skipped field names)
@@ -104,7 +104,16 @@ def apply_field_corrections(
             skipped_fields.append(field_name)
             continue
 
+        # Get corrected_value (should be pre-computed in post-processing)
+        # Fallback: compute from html_diff if missing (defensive check for edge cases)
         corrected_value = field_correction.corrected_value
+        if corrected_value is None:
+            logger.warning(
+                f"corrected_value missing for {field_name}, computing from html_diff"
+            )
+            corrected_value = apply_html_diff(
+                field_correction.original_value, field_correction.html_diff
+            )
 
         # Update the field if it exists in the item
         if field_name in updated_item:
@@ -156,19 +165,17 @@ def apply_writing_correction(
         item_key = "education"
     elif section == "professional_summary":
         # Professional summary is a single object, not a list
-        # Handle legacy markdown_diff for backward compatibility
-        if correction.markdown_diff and correction.markdown_diff.strip():
-            # Apply markdown_diff to content (legacy support)
+        # Handle legacy html_diff for backward compatibility
+        if correction.html_diff and correction.html_diff.strip():
+            # Apply html_diff to content (legacy support)
             if (
                 "professional_summary" in cv_data
                 and "content" in cv_data["professional_summary"]
             ):
-                cv_data["professional_summary"]["content"] = apply_markdown_diff(
-                    cv_data["professional_summary"]["content"], correction.markdown_diff
+                cv_data["professional_summary"]["content"] = apply_html_diff(
+                    cv_data["professional_summary"]["content"], correction.html_diff
                 )
-                logger.info(
-                    f"Applied legacy markdown_diff to professional_summary content"
-                )
+                logger.info(f"Applied legacy html_diff to professional_summary content")
             else:
                 logger.warning("professional_summary.content not found in CV data")
         # Apply field_corrections if any (includes description field)
@@ -199,14 +206,14 @@ def apply_writing_correction(
     # Get the item to update
     item = items[item_index].copy()
 
-    # Handle legacy markdown_diff for backward compatibility (deprecated)
-    if correction.markdown_diff and correction.markdown_diff.strip():
+    # Handle legacy html_diff for backward compatibility (deprecated)
+    if correction.html_diff and correction.html_diff.strip():
         if "description" in item:
-            item["description"] = apply_markdown_diff(
-                item["description"], correction.markdown_diff
+            item["description"] = apply_html_diff(
+                item["description"], correction.html_diff
             )
             logger.debug(
-                f"Applied legacy markdown_diff to {section} item {item_id} description"
+                f"Applied legacy html_diff to {section} item {item_id} description"
             )
         else:
             logger.warning(f"description field not found in {section} item {item_id}")

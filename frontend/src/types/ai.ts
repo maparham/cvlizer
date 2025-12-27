@@ -181,7 +181,7 @@ export interface ProfessionalSummarySuggestion {
   suggested_text: string;
   original_text: string;
   key_changes: string[];
-  markdown_diff?: string;
+  html_diff?: string;
 }
 
 export interface ItemDescriptionSuggestion {
@@ -191,7 +191,7 @@ export interface ItemDescriptionSuggestion {
   suggested?: string; // Only present for items with suggestions (score < 50)
   reasoning?: string; // Only present for items with suggestions (score < 50)
   importance?: 'highly_recommended' | 'standard'; // Only present for items with suggestions (score < 50)
-  markdown_diff?: string; // Only present for items with suggestions (score < 50)
+  html_diff?: string; // Only present for items with suggestions (score < 50)
 }
 
 export interface WhyGoodFitSuggestion {
@@ -354,14 +354,14 @@ export interface FieldCorrection {
   field_name: string;
   original_value: string;
   corrected_value: string;
-  markdown_diff: string;
+  html_diff: string;
   reasoning?: string;
 }
 
 export interface WritingCorrection {
   item_id: string;
   section: string;
-  markdown_diff?: string;
+  html_diff?: string;
   field_corrections?: FieldCorrection[];
   reasoning: string;
   importance: 'highly_recommended' | 'standard';
@@ -383,7 +383,7 @@ export interface ProfessionalSummaryQualitySuggestion {
   suggested_text?: string;
   original_text: string;
   key_changes: string[];
-  markdown_diff?: string;
+  html_diff?: string;
   coaching_questions?: CoachingQuestion[];
 }
 
@@ -402,7 +402,7 @@ export interface LowQualityItem {
   original: string;
   suggested: string;
   reasoning: string;
-  markdown_diff: string;
+  html_diff: string;
   coaching_questions?: CoachingQuestion[];
 }
 

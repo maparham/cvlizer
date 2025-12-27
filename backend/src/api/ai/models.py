@@ -98,7 +98,7 @@ class ItemDescriptionSuggestion(BaseModel):
     suggested: Optional[str] = None
     reasoning: Optional[str] = None
     importance: Optional[str] = None
-    markdown_diff: Optional[str] = None
+    html_diff: Optional[str] = None
 
 
 class WhyGoodFitSuggestion(BaseModel):

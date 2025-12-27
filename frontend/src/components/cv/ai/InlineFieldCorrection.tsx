@@ -30,8 +30,8 @@ import { getImportanceColor, getFieldLabel } from './utils/suggestionUtils';
 interface InlineFieldCorrectionProps {
   // For field corrections (structured fields)
   fieldCorrection?: FieldCorrection | null;
-  // For markdown diff corrections (description/text fields)
-  markdownDiffCorrection?: { markdown_diff: string; correction: WritingCorrection } | null;
+  // For HTML diff corrections (description/text fields)
+  htmlDiffCorrection?: { html_diff: string; correction: WritingCorrection } | null;
   // Importance level
   importance: 'highly_recommended' | 'standard';
   // Optional reasoning
@@ -43,7 +43,7 @@ interface InlineFieldCorrectionProps {
 
 export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
   fieldCorrection,
-  markdownDiffCorrection,
+  htmlDiffCorrection,
   importance,
   reasoning,
   onApply,
@@ -53,9 +53,9 @@ export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
 
   // Determine which type of correction we have
   const hasFieldCorrection = !!fieldCorrection;
-  const hasMarkdownDiff = !!markdownDiffCorrection;
+  const hasHtmlDiff = !!htmlDiffCorrection;
 
-  if (!hasFieldCorrection && !hasMarkdownDiff) {
+  if (!hasFieldCorrection && !hasHtmlDiff) {
     return null;
   }
 
@@ -154,14 +154,14 @@ export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
           {/* Field Correction Display */}
           {hasFieldCorrection && fieldCorrection && (
             <Box sx={{ mb: 0 }}>
-              <SemanticDiff markdownDiff={fieldCorrection.markdown_diff} />
+              <SemanticDiff htmlDiff={fieldCorrection.html_diff} />
             </Box>
           )}
 
-          {/* Markdown Diff Display */}
-          {hasMarkdownDiff && markdownDiffCorrection && (
+          {/* HTML Diff Display */}
+          {hasHtmlDiff && htmlDiffCorrection && (
             <Box sx={{ mb: 0 }}>
-              <SemanticDiff markdownDiff={markdownDiffCorrection.markdown_diff} />
+              <SemanticDiff htmlDiff={htmlDiffCorrection.html_diff} />
             </Box>
           )}
         </Box>

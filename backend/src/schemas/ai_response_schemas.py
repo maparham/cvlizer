@@ -225,9 +225,9 @@ class ProfessionalSummarySuggestionSchema(BaseModel):
     suggested_text: str = Field(default="")
     original_text: str = Field(default="")
     key_changes: List[str] = Field(default_factory=list)
-    markdown_diff: str = Field(
+    html_diff: str = Field(
         default="",
-        description="Markdown-formatted diff showing changes: ~~strikethrough~~ for removed text, **bold** for added text",
+        description="HTML-formatted diff showing changes: <del>text</del> for removed text, <ins>text</ins> for added text",
     )
 
 
@@ -285,9 +285,9 @@ class LowScoreItemSchema(BaseModel):
         pattern="^(highly_recommended|standard)$",
         description="Importance level: 'highly_recommended' for high-impact changes, 'standard' for moderate improvements",
     )
-    markdown_diff: str = Field(
+    html_diff: str = Field(
         default="",
-        description="Markdown-formatted diff showing changes: ~~strikethrough~~ for removed text, **bold** for added text",
+        description="HTML-formatted diff showing changes: <del>text</del> for removed text, <ins>text</ins> for added text",
     )
 
     class Config:

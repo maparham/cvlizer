@@ -8,7 +8,7 @@ describe('useWritingCorrectionHelpers', () => {
     field_name: 'company',
     original_value: 'Google Inc',
     corrected_value: 'Google',
-    markdown_diff: '- Google Inc\n+ Google',
+    html_diff: '- Google Inc\n+ Google',
     reasoning: 'Use official company name'
   };
 
@@ -16,7 +16,7 @@ describe('useWritingCorrectionHelpers', () => {
     field_name: 'position',
     original_value: 'Developer',
     corrected_value: 'Software Engineer',
-    markdown_diff: '- Developer\n+ Software Engineer'
+    html_diff: '- Developer\n+ Software Engineer'
     // No field-specific reasoning
   };
 
@@ -24,7 +24,7 @@ describe('useWritingCorrectionHelpers', () => {
     field_name: 'description',
     original_value: 'Built web apps',
     corrected_value: 'Developed scalable web applications using React and Node.js',
-    markdown_diff: '- Built web apps\n+ Developed scalable web applications using React and Node.js',
+    html_diff: '- Built web apps\n+ Developed scalable web applications using React and Node.js',
     reasoning: 'Be more specific and use stronger verbs'
   };
 
@@ -42,7 +42,7 @@ describe('useWritingCorrectionHelpers', () => {
     {
       item_id: 'work-2',
       section: 'work_experience',
-      markdown_diff: '- Old description\n+ New improved description',
+      html_diff: '- Old description\n+ New improved description',
       reasoning: 'Legacy correction format',
       importance: 'standard'
     }
@@ -57,7 +57,7 @@ describe('useWritingCorrectionHelpers', () => {
           field_name: 'institution',
           original_value: 'MIT',
           corrected_value: 'Massachusetts Institute of Technology',
-          markdown_diff: '- MIT\n+ Massachusetts Institute of Technology',
+          html_diff: '- MIT\n+ Massachusetts Institute of Technology',
           reasoning: 'Use full institution name'
         }
       ],
@@ -159,7 +159,7 @@ describe('useWritingCorrectionHelpers', () => {
         field_name: 'nonexistent',
         original_value: 'test',
         corrected_value: 'test',
-        markdown_diff: '- test\n+ test'
+        html_diff: '- test\n+ test'
       };
 
       act(() => {
@@ -229,7 +229,7 @@ describe('useWritingCorrectionHelpers', () => {
         field_name: 'nonexistent',
         original_value: 'test',
         corrected_value: 'test',
-        markdown_diff: '- test\n+ test'
+        html_diff: '- test\n+ test'
       };
 
       act(() => {
@@ -317,7 +317,7 @@ describe('useWritingCorrectionHelpers', () => {
         field_name: 'orphaned',
         original_value: 'value',
         corrected_value: 'newvalue',
-        markdown_diff: '- value\n+ newvalue'
+        html_diff: '- value\n+ newvalue'
       };
 
       const metadata = result.current.getCorrectionMetadata(orphanedField);
@@ -328,7 +328,7 @@ describe('useWritingCorrectionHelpers', () => {
   });
 
   describe('getDescriptionCorrection', () => {
-    it('should return markdown_diff format for description field when found', () => {
+    it('should return html_diff format for description field when found', () => {
       const { result } = renderHook(() =>
         useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
       );
@@ -336,11 +336,11 @@ describe('useWritingCorrectionHelpers', () => {
       const descriptionCorrection = result.current.getDescriptionCorrection('work-1');
 
       expect(descriptionCorrection).toBeDefined();
-      expect(descriptionCorrection?.markdown_diff).toBe('- Built web apps\n+ Developed scalable web applications using React and Node.js');
+      expect(descriptionCorrection?.html_diff).toBe('- Built web apps\n+ Developed scalable web applications using React and Node.js');
       expect(descriptionCorrection?.correction).toEqual(mockWritingCorrections[0]);
     });
 
-    it('should fall back to legacy markdown_diff format when no field correction exists', () => {
+    it('should fall back to legacy html_diff format when no field correction exists', () => {
       const { result } = renderHook(() =>
         useWritingCorrectionHelpers(mockWritingCorrectionsLegacy, mockOnApply, mockOnDismiss)
       );
@@ -348,7 +348,7 @@ describe('useWritingCorrectionHelpers', () => {
       const descriptionCorrection = result.current.getDescriptionCorrection('work-2');
 
       expect(descriptionCorrection).toBeDefined();
-      expect(descriptionCorrection?.markdown_diff).toBe('- Old description\n+ New improved description');
+      expect(descriptionCorrection?.html_diff).toBe('- Old description\n+ New improved description');
       expect(descriptionCorrection?.correction).toEqual(mockWritingCorrectionsLegacy[0]);
     });
 

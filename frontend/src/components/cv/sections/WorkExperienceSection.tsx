@@ -171,7 +171,7 @@ const WorkExperienceForm: React.FC<{
         value={exp.description}
         onChange={(value) => updateExperience("description", value)}
         onSave={onSave}
-        markdownDiffCorrection={descriptionCorrection}
+        htmlDiffCorrection={descriptionCorrection}
         onApplyCorrection={onApplyWritingCorrection}
         onDismissCorrection={() => descriptionCorrection && onDismissWritingCorrection?.(descriptionCorrection.correction)}
       />
@@ -349,7 +349,7 @@ const WorkExperienceDisplay: React.FC<{
           <MarkdownRenderer content={exp.description} variant="body1" />
           {descriptionCorrection && descriptionCorrection.correction.importance && (
             <InlineFieldCorrection
-              markdownDiffCorrection={descriptionCorrection}
+              htmlDiffCorrection={descriptionCorrection}
               importance={descriptionCorrection.correction.importance}
               reasoning={descriptionCorrection.correction.reasoning}
               onApply={() => handleApplyWritingCorrection(descriptionCorrection.correction)}

@@ -149,7 +149,7 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
 
             <ContentDisplayBox>
               {viewMode === 'diff' ? (
-                <SemanticDiff markdownDiff={qualitySuggestion.markdown_diff || ''} />
+                <SemanticDiff htmlDiff={qualitySuggestion.html_diff || ''} />
               ) : (
                 <OriginalSuggestedDisplay
                   original={qualitySuggestion.original}
@@ -184,7 +184,7 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
           </Typography>
           {writingCorrections.map((correction, correctionIndex) => {
             // Description is now handled through field_corrections with field_name="description"
-            // Legacy markdown_diff at WritingCorrection level is deprecated but kept for backward compatibility
+            // Legacy html_diff at WritingCorrection level is deprecated but kept for backward compatibility
             const hasFieldCorrections = correction.field_corrections && correction.field_corrections.length > 0;
 
             return (
@@ -235,7 +235,7 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
                             {getFieldLabel(fieldCorrection.field_name)}
                           </Typography>
                           <Box sx={{ width: '100%' }}>
-                            <SemanticDiff markdownDiff={fieldCorrection.markdown_diff} />
+                            <SemanticDiff htmlDiff={fieldCorrection.html_diff} />
                           </Box>
                         </ListItem>
                       ))}

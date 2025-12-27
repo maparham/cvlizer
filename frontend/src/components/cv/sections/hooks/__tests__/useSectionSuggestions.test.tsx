@@ -42,7 +42,7 @@ describe('useSectionSuggestions', () => {
     original: 'Poor quality description',
     suggested: 'Improved quality description',
     reasoning: 'Lacks specific achievements and metrics',
-    markdown_diff: '- Poor quality description\n+ Improved quality description'
+    html_diff: '- Poor quality description\n+ Improved quality description'
   };
 
   const mockHighQualityWork: QualityItem = {
@@ -60,7 +60,7 @@ describe('useSectionSuggestions', () => {
     original: 'Basic education description',
     suggested: 'Enhanced education description',
     reasoning: 'Could include more details about projects',
-    markdown_diff: '- Basic education description\n+ Enhanced education description'
+    html_diff: '- Basic education description\n+ Enhanced education description'
   };
 
   const mockWritingCorrectionWork1: WritingCorrection = {
@@ -71,7 +71,7 @@ describe('useSectionSuggestions', () => {
         field_name: 'company',
         original_value: 'Google Inc',
         corrected_value: 'Google',
-        markdown_diff: '- Google Inc\n+ Google',
+        html_diff: '- Google Inc\n+ Google',
         reasoning: 'Use official company name'
       }
     ],
@@ -87,7 +87,7 @@ describe('useSectionSuggestions', () => {
         field_name: 'position',
         original_value: 'Developer',
         corrected_value: 'Software Engineer',
-        markdown_diff: '- Developer\n+ Software Engineer'
+        html_diff: '- Developer\n+ Software Engineer'
       }
     ],
     reasoning: 'Use formal job title',
@@ -102,7 +102,7 @@ describe('useSectionSuggestions', () => {
         field_name: 'institution',
         original_value: 'MIT',
         corrected_value: 'Massachusetts Institute of Technology',
-        markdown_diff: '- MIT\n+ Massachusetts Institute of Technology'
+        html_diff: '- MIT\n+ Massachusetts Institute of Technology'
       }
     ],
     reasoning: 'Use full institution name',

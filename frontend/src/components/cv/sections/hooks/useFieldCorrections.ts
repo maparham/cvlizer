@@ -30,7 +30,7 @@ export interface FieldCorrectionProps {
 
 export interface UseFieldCorrectionsResult {
   fieldCorrectionProps: Record<string, FieldCorrectionProps>;
-  descriptionCorrection: { markdown_diff: string; correction: WritingCorrection } | null;
+  descriptionCorrection: { html_diff: string; correction: WritingCorrection } | null;
   helpers: WritingCorrectionHelpers;
 }
 

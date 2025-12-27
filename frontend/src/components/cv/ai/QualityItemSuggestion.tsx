@@ -81,7 +81,7 @@ export const QualityItemSuggestion: React.FC<QualityItemSuggestionProps> = ({
       {/* Content Display */}
       <ContentDisplayBox>
         {viewMode === 'diff' ? (
-          <SemanticDiff markdownDiff={item.markdown_diff || ''} />
+          <SemanticDiff htmlDiff={item.html_diff || ''} />
         ) : (
           <OriginalSuggestedDisplay
             original={item.original}

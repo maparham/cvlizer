@@ -111,8 +111,8 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
           }}
         >
           {viewMode === "diff" ? (
-            suggestion.markdown_diff && suggestion.markdown_diff.trim() !== "" ? (
-              <SemanticDiff markdownDiff={suggestion.markdown_diff} />
+            suggestion.html_diff && suggestion.html_diff.trim() !== "" ? (
+              <SemanticDiff htmlDiff={suggestion.html_diff} />
             ) : (
               // No diff available - show side-by-side comparison
               <OriginalSuggestedDisplay

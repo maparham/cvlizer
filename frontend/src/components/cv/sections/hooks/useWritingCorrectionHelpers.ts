@@ -8,12 +8,12 @@
 
 import { useCallback } from 'react';
 import { WritingCorrection, FieldCorrection } from '../../../../types/ai';
-import { getFieldCorrection, getMarkdownDiffCorrection } from '../../../../utils/writingCorrections';
+import { getFieldCorrection, getHtmlDiffCorrection } from '../../../../utils/writingCorrections';
 
 export interface WritingCorrectionUtils {
   findWritingCorrectionForField: (fieldName: string, originalValue: string) => WritingCorrection | undefined;
   getCorrectionMetadata: (fieldCorrection: FieldCorrection | null) => { importance?: 'highly_recommended' | 'standard'; reasoning?: string };
-  getDescriptionCorrection: (itemId: string) => { markdown_diff: string; correction: WritingCorrection } | null;
+  getDescriptionCorrection: (itemId: string) => { html_diff: string; correction: WritingCorrection } | null;
 }
 
 /**
@@ -50,18 +50,18 @@ export function useWritingCorrectionHelpers(
     [findWritingCorrectionForField]
   );
 
-  // Get description correction in markdownDiffCorrection format
+  // Get description correction in htmlDiffCorrection format
   const getDescriptionCorrection = useCallback(
-    (itemId: string): { markdown_diff: string; correction: WritingCorrection } | null => {
+    (itemId: string): { html_diff: string; correction: WritingCorrection } | null => {
       const descriptionFieldCorrection = getFieldCorrection(writingCorrections, itemId, 'description');
       if (descriptionFieldCorrection) {
         const writingCorrection = findWritingCorrectionForField('description', descriptionFieldCorrection.original_value);
         return writingCorrection
-          ? { markdown_diff: descriptionFieldCorrection.markdown_diff, correction: writingCorrection }
+          ? { html_diff: descriptionFieldCorrection.html_diff, correction: writingCorrection }
           : null;
       }
       // Fallback to legacy format
-      return getMarkdownDiffCorrection(writingCorrections, itemId);
+      return getHtmlDiffCorrection(writingCorrections, itemId);
     },
     [writingCorrections, findWritingCorrectionForField]
   );

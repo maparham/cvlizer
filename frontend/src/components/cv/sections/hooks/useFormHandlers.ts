@@ -9,7 +9,7 @@ import { useCallback } from 'react';
 import { useNotifications } from '../../../../packages/notifications';
 import { useCVQualityStore } from '../../../../stores/cvQualityStore';
 import { WritingCorrection, FieldCorrection } from '../../../../types/ai';
-import { parseMarkdownDiff } from '../../../../utils/markdownDiffParser';
+import { parseHtmlDiff } from '../../../../utils/htmlDiffParser';
 
 export interface FormHandlers {
   handleApplyQualitySuggestionForm: (suggested: string) => void;
@@ -85,8 +85,8 @@ export function useFormHandlers<T extends { id: string }>(
       }
 
       // Apply markdown diff (description field)
-      if (correction.markdown_diff) {
-        const correctedDescription = parseMarkdownDiff(correction.markdown_diff);
+      if (correction.html_diff) {
+        const correctedDescription = parseHtmlDiff(correction.html_diff);
         updateItem("description" as keyof T, correctedDescription);
       }
 
@@ -146,8 +146,8 @@ export function useFormHandlers<T extends { id: string }>(
           }
 
           // Apply markdown diff (description field)
-          if (correction.markdown_diff) {
-            const correctedDescription = parseMarkdownDiff(correction.markdown_diff);
+          if (correction.html_diff) {
+            const correctedDescription = parseHtmlDiff(correction.html_diff);
             updateItem("description" as keyof T, correctedDescription);
           }
         }

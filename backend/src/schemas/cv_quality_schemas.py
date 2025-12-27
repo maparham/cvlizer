@@ -21,9 +21,11 @@ class FieldCorrectionSchema(BaseModel):
         description="Name of the field (company, position, institution, degree, location, description, etc.)"
     )
     original_value: str = Field(description="Current value in CV")
-    corrected_value: str = Field(description="Corrected value")
-    markdown_diff: str = Field(
-        description="Required markdown diff showing visual changes with ~~strikethrough~~ and **bold** markers. Used for display only. corrected_value is used for application."
+    corrected_value: Optional[str] = Field(
+        default=None, description="Computed from html_diff in post-processing"
+    )
+    html_diff: str = Field(
+        description="Required HTML diff showing visual changes with <del> and <ins> tags. Used for display. Corrected value is computed from this in post-processing."
     )
     reasoning: Optional[str] = Field(
         default=None,
@@ -39,7 +41,7 @@ class WritingCorrectionSchema(BaseModel):
     section: str = Field(
         description="Section name: work_experience, education, professional_summary, etc."
     )
-    markdown_diff: Optional[str] = Field(
+    html_diff: Optional[str] = Field(
         default=None,
         description="DEPRECATED: Use field_corrections with field_name='description' instead. Kept for backward compatibility.",
     )
@@ -84,10 +86,12 @@ class ContentCoachingItemSchema(BaseModel):
 class ProfessionalSummaryQualitySuggestionSchema(BaseModel):
     """Professional summary quality suggestion."""
 
-    suggested_text: Optional[str] = Field(default=None)
+    suggested_text: Optional[str] = Field(
+        default=None, description="Computed from html_diff in post-processing"
+    )
     original_text: str = Field(default="")
     key_changes: List[str] = Field(default_factory=list)
-    markdown_diff: Optional[str] = Field(default=None)
+    html_diff: Optional[str] = Field(default=None)
     coaching_questions: Optional[List[CoachingQuestionSchema]] = Field(default=None)
 
 
@@ -115,9 +119,11 @@ class LowQualityItemSchema(BaseModel):
     section: str
     quality_score: int = Field(ge=0, lt=50)
     original: str
-    suggested: str
+    suggested: Optional[str] = Field(
+        default=None, description="Computed from html_diff in post-processing"
+    )
     reasoning: str = Field(max_length=200)
-    markdown_diff: str
+    html_diff: str
     coaching_questions: Optional[List[CoachingQuestionSchema]] = Field(default=None)
 
 

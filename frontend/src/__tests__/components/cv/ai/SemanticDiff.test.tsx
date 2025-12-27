@@ -1,153 +1,145 @@
 /**
  * Unit tests for SemanticDiff component
  *
- * Tests the markdown diff rendering and normalization logic
+ * Tests the HTML diff rendering with DOMPurify sanitization
  */
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { SemanticDiff } from '../../../../components/cv/ai/SemanticDiff';
 
-// Mock the MarkdownRenderer component
-jest.mock('../../../../components/common/MarkdownRenderer', () => {
-  return function MockMarkdownRenderer({ content }: { content: string }) {
-    return <div data-testid="markdown-renderer">{content}</div>;
-  };
-});
-
 describe('SemanticDiff', () => {
   describe('Empty content handling', () => {
     it('should return null for empty string', () => {
-      const { container } = render(<SemanticDiff markdownDiff="" />);
+      const { container } = render(<SemanticDiff htmlDiff="" />);
       expect(container.firstChild).toBeNull();
     });
 
     it('should return null for whitespace-only string', () => {
-      const { container } = render(<SemanticDiff markdownDiff="   " />);
+      const { container } = render(<SemanticDiff htmlDiff="   " />);
       expect(container.firstChild).toBeNull();
     });
   });
 
-  describe('Markdown normalization', () => {
-    it('should add space between adjacent strikethrough and bold', () => {
-      const input = '~~Leveraged~~**Used**';
-      render(<SemanticDiff markdownDiff={input} />);
+  describe('HTML rendering', () => {
+    it('should render HTML with del and ins tags', () => {
+      const input = '<del>Leveraged</del><ins>Used</ins>';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
 
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('~~Leveraged~~ **Used**');
+      expect(container.querySelector('del')).toHaveTextContent('Leveraged');
+      expect(container.querySelector('ins')).toHaveTextContent('Used');
     });
 
-    it('should add space between adjacent bold and strikethrough', () => {
-      const input = '**New**~~Old~~';
-      render(<SemanticDiff markdownDiff={input} />);
+    it('should convert newlines to br tags', () => {
+      const input = 'Line 1\nLine 2';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
 
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('**New** ~~Old~~');
+      const brTags = container.querySelectorAll('br');
+      expect(brTags.length).toBe(1);
     });
 
-    it('should add space between text and bold', () => {
-      const input = 'text**bold**';
-      render(<SemanticDiff markdownDiff={input} />);
+    it('should handle mixed content', () => {
+      const input = 'The <del>job is</del><ins>job was</ins> challenging';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
 
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('text **bold**');
-    });
-
-    it('should add space between bold and text', () => {
-      const input = '**bold**text';
-      render(<SemanticDiff markdownDiff={input} />);
-
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('**bold** text');
-    });
-
-    it('should handle period after text with bold period', () => {
-      const input = 'text**.**';
-      render(<SemanticDiff markdownDiff={input} />);
-
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      // Matches t**. → t **. (opening), but .** at end doesn't match because no char after final *
-      expect(content).toBe('text **.**');
-    });
-
-    it('should handle multiple adjacent elements in sequence', () => {
-      const input = '~~old1~~**new1**~~old2~~**new2**';
-      render(<SemanticDiff markdownDiff={input} />);
-
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('~~old1~~ **new1** ~~old2~~ **new2**');
-    });
-
-    it('should not add extra spaces if already spaced', () => {
-      const input = '~~old~~ **new**';
-      render(<SemanticDiff markdownDiff={input} />);
-
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      // Should not double-space
-      expect(content).toBe('~~old~~ **new**');
-    });
-
-    it('should handle real-world example: job/is was', () => {
-      const input = 'The ~~job is~~**job was** challenging';
-      render(<SemanticDiff markdownDiff={input} />);
-
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('The ~~job is~~ **job was** challenging');
-    });
-
-    it('should handle bullet list with adjacent elements', () => {
-      const input = '- ~~Managed~~**Led** team\n- ~~Worked~~**Developed** app';
-      render(<SemanticDiff markdownDiff={input} />);
-
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('- ~~Managed~~ **Led** team\n- ~~Worked~~ **Developed** app');
+      expect(container.querySelector('del')).toHaveTextContent('job is');
+      expect(container.querySelector('ins')).toHaveTextContent('job was');
+      expect(container.textContent).toContain('The');
+      expect(container.textContent).toContain('challenging');
     });
   });
 
-  describe('Rendering', () => {
-    it('should render with proper className', () => {
+  describe('Sanitization', () => {
+    it('should sanitize dangerous HTML tags', () => {
+      const input = '<script>alert("xss")</script><del>old</del><ins>new</ins>';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
+
+      // Script tag should be removed
+      expect(container.querySelector('script')).toBeNull();
+      expect(container.textContent).not.toContain('alert');
+
+      // But del and ins should remain
+      expect(container.querySelector('del')).toHaveTextContent('old');
+      expect(container.querySelector('ins')).toHaveTextContent('new');
+    });
+
+    it('should remove disallowed attributes', () => {
+      const input = '<del onclick="alert(1)">old</del><ins style="color:red">new</ins>';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
+
+      const delEl = container.querySelector('del');
+      const insEl = container.querySelector('ins');
+
+      expect(delEl?.hasAttribute('onclick')).toBe(false);
+      expect(insEl?.hasAttribute('style')).toBe(false);
+    });
+  });
+
+  describe('Styling', () => {
+    it('should render with custom className', () => {
       const { container } = render(
-        <SemanticDiff markdownDiff="test" className="custom-class" />
+        <SemanticDiff htmlDiff="<del>old</del><ins>new</ins>" className="custom-class" />
       );
 
       const box = container.querySelector('.custom-class');
       expect(box).toBeInTheDocument();
     });
 
-    it('should pass diffMode=true to MarkdownRenderer', () => {
-      // This is implicitly tested by the mock, but we verify the component structure
-      render(<SemanticDiff markdownDiff="test content" />);
+    it('should apply del styling via CSS', () => {
+      const { container } = render(<SemanticDiff htmlDiff="<del>removed</del>" />);
 
-      expect(screen.getByTestId('markdown-renderer')).toBeInTheDocument();
+      // Just check that the element exists - actual styling is applied via sx prop
+      expect(container.querySelector('del')).toBeInTheDocument();
+    });
+
+    it('should apply ins styling via CSS', () => {
+      const { container } = render(<SemanticDiff htmlDiff="<ins>added</ins>" />);
+
+      // Just check that the element exists - actual styling is applied via sx prop
+      expect(container.querySelector('ins')).toBeInTheDocument();
     });
   });
 
   describe('Complex scenarios', () => {
-    it('should handle text with bold at word boundary', () => {
-      const input = 'Led ~~a team~~**team of 5 engineers**';
-      render(<SemanticDiff markdownDiff={input} />);
+    it('should handle multiple changes in one line', () => {
+      const input = 'Led <del>a team</del><ins>team of 5 engineers</ins> and <del>worked</del><ins>collaborated</ins>';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
 
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('Led ~~a team~~ **team of 5 engineers**');
+      const delTags = container.querySelectorAll('del');
+      const insTags = container.querySelectorAll('ins');
+
+      expect(delTags.length).toBe(2);
+      expect(insTags.length).toBe(2);
+      expect(delTags[0]).toHaveTextContent('a team');
+      expect(insTags[0]).toHaveTextContent('team of 5 engineers');
     });
 
-    it('should preserve normal spacing in content', () => {
-      const input = '~~old text~~ **new text** and more';
-      render(<SemanticDiff markdownDiff={input} />);
+    it('should handle multi-line content with newlines', () => {
+      const input = '- First item\n- <del>Old</del><ins>New</ins> second item\n- Third item';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
 
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      expect(content).toBe('~~old text~~ **new text** and more');
+      expect(container.querySelector('del')).toHaveTextContent('Old');
+      expect(container.querySelector('ins')).toHaveTextContent('New');
+
+      // Should have converted newlines to br tags
+      const brTags = container.querySelectorAll('br');
+      expect(brTags.length).toBe(2);
     });
 
-    it('should handle consecutive bold elements', () => {
-      const input = 'text**bold1****bold2**more';
-      render(<SemanticDiff markdownDiff={input} />);
+    it('should handle only additions (no deletions)', () => {
+      const input = 'Text with <ins>new addition</ins> here';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
 
-      const content = screen.getByTestId('markdown-renderer').textContent;
-      // First: text**bold1** → text **bold1**
-      // Then: **bold1****bold2** → **bold1** **bold2**
-      // Then: **bold2**more → **bold2** more
-      expect(content).toBe('text **bold1** **bold2** more');
+      expect(container.querySelector('ins')).toHaveTextContent('new addition');
+      expect(container.querySelector('del')).toBeNull();
+    });
+
+    it('should handle only deletions (no additions)', () => {
+      const input = 'Text with <del>removed part</del> here';
+      const { container } = render(<SemanticDiff htmlDiff={input} />);
+
+      expect(container.querySelector('del')).toHaveTextContent('removed part');
+      expect(container.querySelector('ins')).toBeNull();
     });
   });
 });
