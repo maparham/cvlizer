@@ -118,8 +118,8 @@ HTML diff: "- Unchanged text<ins>.</ins>\\n<del>- text to remove\\n</del><ins>- 
 - Only return entries with a score below 50 using: {{item_type: "low_score", item_id, section, quality_score, original, reasoning, html_diff, coaching_questions (optional)}}
 - Do not return entries with a score of 50+.
 - html_diff must present immediately usable content in the candidate's tone (no templates, instructions, or placeholders).
-- If the original is empty, generate concise, appropriate content in html_diff.
-- Always use <del> and <ins> to show differences in html_diff.
+- If the original is empty, generate concise, appropriate content in html_diff using only <ins> tags (no <del> tags).
+- For non-empty originals, always use <del> and <ins> to show differences in html_diff.
 
 4. CONTENT COACHING:
 - Flag areas that are vague, overly brief, missing key context, or use weak verbs.

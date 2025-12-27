@@ -16,6 +16,7 @@ def clean_html_diff_string(html_diff: str) -> str:
 
     Fixes:
     - Literal \\n escape sequences → actual newline characters
+    - Empty <del></del> tags (removes them to prevent visual indentation)
 
     Preserves:
     - Valid HTML syntax
@@ -36,6 +37,10 @@ def clean_html_diff_string(html_diff: str) -> str:
     # AI generates strings with literal "\n" (backslash + n) that need to be converted
     # to actual newline characters for proper rendering
     result = result.replace("\\n", "\n")
+
+    # Remove empty <del></del> tags (common when original is empty)
+    # Prevents visual indentation from empty deleted tags
+    result = re.sub(r"<del></del>", "", result)
 
     return result
 
