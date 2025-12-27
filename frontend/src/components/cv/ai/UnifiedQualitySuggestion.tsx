@@ -15,25 +15,25 @@ import {
   ListItem,
   Divider,
 } from '@mui/material';
-import { LowQualityItem, WritingCorrection } from '../../../types/ai';
+import { LowQualityItem, WritingCorrection, ProfessionalSummaryQualitySuggestion } from '../../../types/ai';
 import { SemanticDiff } from './SemanticDiff';
 import { SuggestionActionButtons } from './SuggestionActionButtons';
-import { ViewModeToggle } from './ViewModeToggle';
 import { SuggestionPaper } from './SuggestionPaper';
-import { ContentDisplayBox } from './ContentDisplayBox';
-import { OriginalSuggestedDisplay } from './OriginalSuggestedDisplay';
-import { getScoreColor, getImportanceColor, getFieldLabel } from './utils/suggestionUtils';
+import { getImportanceColor, getFieldLabel } from './utils/suggestionUtils';
+import { QualitySuggestionHeader } from './QualitySuggestionHeader';
+import { QualitySuggestionContent } from './QualitySuggestionContent';
+import { normalizeQualitySuggestion } from './utils/qualitySuggestionNormalizer';
 
 interface UnifiedQualitySuggestionProps {
   itemId: string;
-  section: 'work_experience' | 'education';
-  qualitySuggestion?: LowQualityItem;
+  section: 'work_experience' | 'education' | 'professional_summary';
+  qualitySuggestion?: LowQualityItem | ProfessionalSummaryQualitySuggestion;
   writingCorrections?: WritingCorrection[];
-  onApplyQuality?: (suggested: string) => void;
-  onDismissQuality?: () => void;
-  onApplyWritingCorrection?: (correction: WritingCorrection) => void;
-  onDismissWritingCorrection?: (correction: WritingCorrection) => void;
-  onApplyAll?: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void;
+  onApplyQuality?: (suggested: string) => void | Promise<void>;
+  onDismissQuality?: () => void | Promise<void>;
+  onApplyWritingCorrection?: (correction: WritingCorrection) => void | Promise<void>;
+  onDismissWritingCorrection?: (correction: WritingCorrection) => void | Promise<void>;
+  onApplyAll?: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void | Promise<void>;
 }
 
 export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> = ({
@@ -48,6 +48,8 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
   onApplyAll,
 }) => {
   const [viewMode, setViewMode] = useState<'diff' | 'raw'>('diff');
+  const [showReasoning, setShowReasoning] = useState<boolean>(false);
+  const [showKeyChanges, setShowKeyChanges] = useState<boolean>(false);
 
   const hasQualitySuggestion = !!qualitySuggestion;
   // Writing corrections are now shown inline next to fields, so don't include them in render check
@@ -55,9 +57,12 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
   // const hasAnySuggestions = hasQualitySuggestion || hasWritingCorrections;
 
   // Only render if there's a quality suggestion (writing corrections are shown inline)
-  if (!hasQualitySuggestion) {
+  if (!hasQualitySuggestion || !qualitySuggestion) {
     return null;
   }
+
+  // Normalize quality suggestion data for consistent rendering
+  const normalized = normalizeQualitySuggestion(qualitySuggestion);
 
   const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: 'diff' | 'raw' | null) => {
     if (newMode !== null) {
@@ -68,13 +73,14 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
   /**
    * Handle Apply All - applies both quality suggestion and all writing corrections
    * Uses atomic apply if available, otherwise falls back to sequential applies
+   * Properly awaits all apply operations to handle errors and prevent race conditions
    */
-  const handleApplyAll = () => {
+  const handleApplyAll = async () => {
     // If onApplyAll is provided, use atomic apply (preferred)
     if (onApplyAll) {
-      onApplyAll(
+      await onApplyAll(
         itemId,
-        qualitySuggestion?.suggested,
+        normalized.suggested,
         writingCorrections.length > 0 ? writingCorrections : undefined
       );
       return;
@@ -82,99 +88,67 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
 
     // Fallback to sequential applies (may cause conflicts if both update description)
     // Apply quality suggestion first (if present)
-    if (qualitySuggestion && onApplyQuality) {
-      onApplyQuality(qualitySuggestion.suggested);
+    if (onApplyQuality) {
+      await onApplyQuality(normalized.suggested);
     }
 
     // Apply all writing corrections (if present)
+    // Note: Writing corrections are applied in parallel using Promise.all for performance.
+    // If multiple corrections target the same field, this may cause race conditions (last-write-wins).
+    // However, the backend typically handles field-level corrections independently, minimizing conflicts.
+    // For professional_summary section, there's typically only one description correction at a time.
     if (writingCorrections.length > 0 && onApplyWritingCorrection) {
-      writingCorrections.forEach((correction) => {
-        onApplyWritingCorrection(correction);
-      });
+      await Promise.all(
+        writingCorrections.map((correction) =>
+          onApplyWritingCorrection(correction)
+        )
+      );
     }
   };
 
   /**
    * Handle Dismiss All - dismisses both quality suggestion and all writing corrections
+   * Properly awaits all dismissal operations to handle errors and prevent race conditions
    */
   const handleDismissAll = async () => {
     // Dismiss quality suggestion (if present)
-    if (qualitySuggestion && onDismissQuality) {
-      onDismissQuality();
+    if (onDismissQuality) {
+      await onDismissQuality();
     }
 
     // Dismiss all writing corrections (if present)
+    // Dismissals are safe to run in parallel as they're independent operations
     if (writingCorrections.length > 0 && onDismissWritingCorrection) {
-      writingCorrections.forEach((correction) => {
-        onDismissWritingCorrection(correction);
-      });
+      await Promise.all(
+        writingCorrections.map((correction) =>
+          onDismissWritingCorrection(correction)
+        )
+      );
     }
   };
 
   return (
     <SuggestionPaper>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-            Quality Suggestions
-          </Typography>
-          {qualitySuggestion && (
-            <Chip
-              label={`Quality Score: ${qualitySuggestion.quality_score}/100`}
-              size="small"
-              color={getScoreColor(qualitySuggestion.quality_score)}
-            />
-          )}
-          {/* Writing corrections chip removed - they're now shown inline next to fields */}
-        </Box>
-        {hasQualitySuggestion && (
-          <ViewModeToggle
-            value={viewMode}
-            onChange={handleViewModeChange}
-          />
-        )}
-      </Box>
+      {/* Quality Suggestion Header and Content */}
+      <QualitySuggestionHeader
+        qualityScore={normalized.qualityScore}
+        reasoning={normalized.reasoning}
+        keyChanges={normalized.keyChanges}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+        showReasoning={showReasoning}
+        onToggleReasoning={() => setShowReasoning(!showReasoning)}
+        showKeyChanges={showKeyChanges}
+        onToggleKeyChanges={() => setShowKeyChanges(!showKeyChanges)}
+      />
 
-      {/* Quality Suggestion Section */}
-      {hasQualitySuggestion && qualitySuggestion && (
-        <>
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 1, display: 'block' }}>
-              Quality Suggestion:
-            </Typography>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="body2">{qualitySuggestion.reasoning}</Typography>
-            </Alert>
-
-            <ContentDisplayBox>
-              {viewMode === 'diff' ? (
-                <SemanticDiff htmlDiff={qualitySuggestion.html_diff || ''} />
-              ) : (
-                <OriginalSuggestedDisplay
-                  original={qualitySuggestion.original}
-                  suggested={qualitySuggestion.suggested}
-                />
-              )}
-            </ContentDisplayBox>
-
-            {/* Coaching Questions (if present) */}
-            {qualitySuggestion.coaching_questions && qualitySuggestion.coaching_questions.length > 0 && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                  Consider these questions to further improve:
-                </Typography>
-                {qualitySuggestion.coaching_questions.map((q, idx) => (
-                  <Typography key={idx} variant="body2" sx={{ mb: 0.5, pl: 2 }}>
-                    • {q.question}
-                  </Typography>
-                ))}
-              </Box>
-            )}
-          </Box>
-          {/* Divider removed - writing corrections are now shown inline */}
-        </>
-      )}
+      <QualitySuggestionContent
+        original={normalized.original}
+        suggested={normalized.suggested}
+        htmlDiff={normalized.htmlDiff}
+        viewMode={viewMode}
+        coachingQuestions={normalized.coachingQuestions}
+      />
 
       {/* Writing Corrections Section */}
       {writingCorrections.length > 0 && (

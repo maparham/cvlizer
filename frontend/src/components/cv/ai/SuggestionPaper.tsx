@@ -26,7 +26,7 @@ interface SuggestionPaperProps extends Omit<PaperProps, 'elevation'> {
  */
 export const SuggestionPaper: React.FC<SuggestionPaperProps> = ({
   children,
-  elevation = 2,
+  elevation = 0,
   sx = {},
   ...otherProps
 }) => {
@@ -34,14 +34,11 @@ export const SuggestionPaper: React.FC<SuggestionPaperProps> = ({
     <Paper
       elevation={elevation}
       sx={{
-        p: 2,
-        my: 2,
-        border: '2px solid',
-        borderColor: 'info.main',
-        backgroundColor: (theme) =>
-          theme.palette.mode === 'dark'
-            ? 'rgba(33, 150, 243, 0.05)'
-            : 'rgba(33, 150, 243, 0.02)',
+        p: 1.5,
+        my: 1.5,
+        border: '1px solid',
+        borderColor: 'divider',
+        backgroundColor: 'transparent',
         ...sx,
       }}
       {...otherProps}

@@ -1,25 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import {
-  Typography,
-  Box,
-  Button,
-  Chip,
-  Tooltip,
-  IconButton,
-  Divider,
-  Paper,
-  Alert,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
-import {
-  Add as AddIcon,
-  Close as CloseIcon,
-  InfoOutlined as InfoIcon,
-} from "@mui/icons-material";
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import CodeIcon from '@mui/icons-material/Code';
+import { Box } from "@mui/material";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import { FormField } from "../core/formUtils";
@@ -29,122 +10,17 @@ import {
 } from "../../../stores/aiSuggestionsStore";
 import { useCVQualityStore, useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
 import { useNotifications } from "../../../packages/notifications";
-import SemanticDiff from "../ai/SemanticDiff";
-import { WritingCorrection } from "../../../types/ai";
+import { WritingCorrection, FieldCorrection } from "../../../types/ai";
 import { useFieldCorrections } from "./hooks/useFieldCorrections";
 import { aiService } from "../../../services/ai";
 import { useCVStore } from "../../../stores/cv";
-import { SuggestionActionButtons } from "../ai/SuggestionActionButtons";
+import { UnifiedQualitySuggestion } from "../ai/UnifiedQualitySuggestion";
+import { AISummarySuggestionCard } from "../ai/AISummarySuggestionCard";
 
 interface ProfessionalSummarySectionProps extends SectionProps {
   cvId?: string;
 }
 
-// Component for rendering quality suggestion with consistent styling
-const ProfessionalSummaryQualitySuggestion: React.FC<{
-  qualitySummarySuggestion: any;
-  onApply: () => void;
-  onDismiss: () => void;
-}> = ({ qualitySummarySuggestion, onApply, onDismiss }) => {
-  const [viewMode, setViewMode] = React.useState<'diff' | 'raw'>('diff');
-  const hasHtmlDiff = qualitySummarySuggestion.html_diff && qualitySummarySuggestion.html_diff.trim() !== '';
-
-  return (
-    <Paper
-      elevation={2}
-      sx={{
-        p: 2,
-        my: 2,
-        border: '2px solid',
-        borderColor: 'info.main',
-        backgroundColor: (theme) =>
-          theme.palette.mode === 'dark'
-            ? 'rgba(33, 150, 243, 0.05)'
-            : 'rgba(33, 150, 243, 0.02)',
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-          Quality Suggestions
-        </Typography>
-        {hasHtmlDiff && (
-          <ToggleButtonGroup
-            value={viewMode}
-            exclusive
-            onChange={(_, newMode) => newMode && setViewMode(newMode)}
-            size="small"
-          >
-            <ToggleButton value="diff" aria-label="diff view">
-              <CodeIcon fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="raw" aria-label="raw view">
-              <VisibilityIcon fontSize="small" />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        )}
-      </Box>
-
-      {/* Quality Suggestion Section */}
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 1, display: 'block' }}>
-          Quality Suggestion:
-        </Typography>
-        {qualitySummarySuggestion.key_changes &&
-         qualitySummarySuggestion.key_changes.length > 0 && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            <Typography variant="body2" component="div">
-              {qualitySummarySuggestion.key_changes.map((change: string, index: number) => (
-                <Box key={index} sx={{ mb: index < qualitySummarySuggestion.key_changes.length - 1 ? 0.5 : 0 }}>
-                  • {change}
-                </Box>
-              ))}
-            </Typography>
-          </Alert>
-        )}
-
-        <Box
-          sx={{
-            p: 2,
-            backgroundColor: 'background.default',
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'divider',
-            mb: 2,
-          }}
-        >
-          {hasHtmlDiff && viewMode === 'diff' ? (
-            <SemanticDiff htmlDiff={qualitySummarySuggestion.html_diff || ''} />
-          ) : (
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                Original:
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-                {qualitySummarySuggestion.original_text}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                Suggested:
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {qualitySummarySuggestion.suggested_text}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </Box>
-
-      {/* Actions */}
-      <Box sx={{ mt: 2 }}>
-        <SuggestionActionButtons
-          onApply={onApply}
-          onDismiss={onDismiss}
-          variant="standard"
-        />
-      </Box>
-    </Paper>
-  );
-};
 
 const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
   data,
@@ -199,79 +75,23 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
   // Move useFieldCorrections to top level to fix Rules of Hooks violation
   const itemId = writingCorrections.length > 0 ? writingCorrections[0].item_id : 'professional_summary';
 
-  const handleApplyWritingCorrection = React.useCallback(async (correction: WritingCorrection) => {
-    if (!cvId || !currentAnalysisId) {
-      showError("Cannot apply correction: CV ID or analysis ID missing");
-      return;
-    }
-
-    try {
-      // Apply correction via backend
-      const updatedCV = await aiService.applyWritingCorrection(
-        cvId,
-        currentAnalysisId,
-        correction.item_id
-      );
-
-      // Update CV store
-      setCurrentCV(updatedCV);
-      updateCVInList(updatedCV);
-
-      // Dismiss the correction from the analysis
-      await dismissWritingCorrection(correction.item_id, correction.section);
-      showSuccess("Writing correction applied successfully");
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.detail || error?.message || "Failed to apply writing correction";
-      showError(errorMessage);
-    }
-  }, [cvId, currentAnalysisId, setCurrentCV, updateCVInList, dismissWritingCorrection, showError, showSuccess]);
-
-  const handleDismissWritingCorrection = React.useCallback(async (correction: WritingCorrection) => {
-    await dismissWritingCorrection(correction.item_id, correction.section);
-    showSuccess("Writing correction dismissed");
-  }, [dismissWritingCorrection, showSuccess]);
-
-  const { descriptionCorrection } = useFieldCorrections(
-    itemId,
-    writingCorrections,
-    [{ fieldName: 'description' }],  // Only description field for professional_summary
-    handleApplyWritingCorrection,
-    handleDismissWritingCorrection
-  );
-
-  const renderForm = (
-    editData: any,
-    updateData: (field: string, value: any) => void,
+  /**
+   * Factory function to create writing correction handlers
+   * Consolidates duplicate logic between edit and display modes
+   *
+   * @param mode - 'edit' or 'display' to determine if form data should be updated
+   * @param editData - Current form data (only needed in edit mode)
+   * @param updateData - Function to update form field (only needed in edit mode)
+   * @param onSaveCallback - Function to save form data (only needed in edit mode)
+   * @returns Handler function compatible with useFieldCorrections hook signature
+   */
+  const createWritingCorrectionHandler = React.useCallback((
+    mode: 'edit' | 'display',
+    editData?: any,
+    updateData?: (field: string, value: any) => void,
+    onSaveCallback?: (data: any) => Promise<void>
   ) => {
-    const handleApplySummarySuggestion = async () => {
-      if (summarySuggestion?.suggested_text) {
-        updateData("content", summarySuggestion.suggested_text);
-        // Update the editData with the new content for saving
-        const updatedEditData = {
-          ...editData,
-          content: summarySuggestion.suggested_text,
-        };
-        onSave?.(updatedEditData);
-        await dismissSummarySuggestion();
-        showSuccess("Professional summary updated with AI suggestion");
-      }
-    };
-
-    const handleApplyQualitySuggestion = async () => {
-      if (qualitySummarySuggestion?.suggested_text) {
-        updateData("content", qualitySummarySuggestion.suggested_text);
-        // Update the editData with the new content for saving
-        const updatedEditData = {
-          ...editData,
-          content: qualitySummarySuggestion.suggested_text,
-        };
-        onSave?.(updatedEditData);
-        await dismissQualitySummarySuggestion();
-        showSuccess("Professional summary updated with quality suggestion");
-      }
-    };
-
-    const handleApplyWritingCorrectionWrapper = async (correction: WritingCorrection) => {
+    return async (_fieldCorrection: FieldCorrection, parentCorrection: WritingCorrection) => {
       if (!cvId || !currentAnalysisId) {
         showError("Cannot apply correction: CV ID or analysis ID missing");
         return;
@@ -282,36 +102,159 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
         const updatedCV = await aiService.applyWritingCorrection(
           cvId,
           currentAnalysisId,
-          correction.item_id
+          parentCorrection.item_id
         );
 
         // Update CV store
         setCurrentCV(updatedCV);
         updateCVInList(updatedCV);
 
-        // Update local form data with new content
-        const contentValue = (typeof editData === "string" ? editData : editData.content) || "";
-        const newContent = updatedCV.parsed_data?.professional_summary?.content || contentValue;
-        updateData("content", newContent);
-        const updatedEditData = {
-          ...editData,
-          content: newContent,
-        };
-        onSave?.(updatedEditData);
+        // In edit mode: also update local form data
+        if (mode === 'edit' && updateData && onSaveCallback) {
+          const contentValue = (typeof editData === "string" ? editData : editData?.content) || "";
+          const newContent = updatedCV.parsed_data?.professional_summary?.content || contentValue;
+          updateData("content", newContent);
+          const updatedEditData = {
+            ...editData,
+            content: newContent,
+          };
+          await onSaveCallback(updatedEditData);
+        }
 
         // Dismiss the correction from the analysis
-        await dismissWritingCorrection(correction.item_id, correction.section);
+        await dismissWritingCorrection(parentCorrection.item_id, parentCorrection.section);
         showSuccess("Writing correction applied successfully");
       } catch (error: any) {
         const errorMessage = error?.response?.data?.detail || error?.message || "Failed to apply writing correction";
         showError(errorMessage);
       }
     };
+  }, [cvId, currentAnalysisId, setCurrentCV, updateCVInList, dismissWritingCorrection, showError, showSuccess]);
 
-    const handleDismissWritingCorrectionWrapper = async (correction: WritingCorrection) => {
-      await dismissWritingCorrection(correction.item_id, correction.section);
-      showSuccess("Writing correction dismissed");
+  // Create handler for display mode (used by useFieldCorrections hook)
+  const handleApplyFieldCorrection = React.useMemo(
+    () => createWritingCorrectionHandler('display'),
+    [createWritingCorrectionHandler]
+  );
+
+  const handleDismissWritingCorrection = React.useCallback(async (correction: WritingCorrection) => {
+    await dismissWritingCorrection(correction.item_id, correction.section);
+    showSuccess("Writing correction dismissed");
+  }, [dismissWritingCorrection, showSuccess]);
+
+  const { descriptionCorrection } = useFieldCorrections(
+    itemId,
+    writingCorrections,
+    [{ fieldName: 'description' }],  // Only description field for professional_summary
+    handleApplyFieldCorrection,
+    handleDismissWritingCorrection
+  );
+
+  /**
+   * Helper to safely extract keywords from data based on mode
+   */
+  const extractKeywords = React.useCallback((
+    mode: 'edit' | 'display',
+    editData?: any
+  ): string[] => {
+    if (mode === 'edit') {
+      return editData?.keywords || [];
+    }
+
+    // Display mode - safely check if data has keywords property
+    if (data && typeof data === 'object' && 'keywords' in data) {
+      const typedData = data as { keywords?: string[] };
+      return typedData.keywords || [];
+    }
+
+    return [];
+  }, [data]);
+
+  /**
+   * Shared handler for applying AI summary suggestions
+   * Works for both edit and display modes
+   */
+  const handleApplySummarySuggestion = React.useCallback(async (
+    suggestedText: string,
+    mode: 'edit' | 'display',
+    editData?: any,
+    updateData?: (field: string, value: any) => void
+  ) => {
+    // Validate that suggested text is non-empty
+    if (!suggestedText || !suggestedText.trim()) {
+      showError("Cannot apply empty suggestion");
+      return;
+    }
+
+    const keywords = extractKeywords(mode, editData);
+
+    if (mode === 'edit' && updateData) {
+      // Edit mode: update form state and save
+      updateData("content", suggestedText);
+      const updatedEditData = {
+        ...editData,
+        content: suggestedText,
+      };
+      await onSave?.(updatedEditData);
+    } else {
+      // Display mode: update via onUpdate and save
+      const updatedData = {
+        content: suggestedText,
+        keywords,
+      };
+      onUpdate(updatedData);
+      await onSave?.(updatedData);
+    }
+
+    await dismissSummarySuggestion();
+    showSuccess("Professional summary updated with AI suggestion");
+  }, [extractKeywords, onSave, onUpdate, dismissSummarySuggestion, showSuccess, showError]);
+
+  /**
+   * Shared handler for applying quality suggestions
+   * Works for both edit and display modes
+   */
+  const handleApplyQualitySuggestion = React.useCallback(async (
+    suggested: string,
+    mode: 'edit' | 'display',
+    editData?: any,
+    updateData?: (field: string, value: any) => void
+  ) => {
+    // Validate that suggested is non-empty
+    if (!suggested || !suggested.trim()) {
+      showError("Cannot apply empty suggestion");
+      return;
+    }
+
+    const keywords = extractKeywords(mode, editData);
+    const updatedData = {
+      content: suggested,
+      keywords,
     };
+
+    if (mode === 'edit' && updateData) {
+      updateData("content", suggested);
+      onSave?.({ ...editData, content: suggested });
+    } else {
+      onUpdate(updatedData);
+      onSave?.(updatedData);
+    }
+
+    await dismissQualitySummarySuggestion();
+    showSuccess("Professional summary updated with quality suggestion");
+  }, [extractKeywords, onSave, onUpdate, dismissQualitySummarySuggestion, showSuccess, showError]);
+
+  const renderForm = (
+    editData: any,
+    updateData: (field: string, value: any) => void,
+  ) => {
+    // Create edit mode handler using factory pattern
+    const handleApplyWritingCorrectionInEdit = createWritingCorrectionHandler(
+      'edit',
+      editData,
+      updateData,
+      onSave
+    );
 
     const contentValue =
       (typeof editData === "string" ? editData : editData.content) || "";
@@ -341,8 +284,12 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           error={hasError}
           helperText={helperText}
           htmlDiffCorrection={descriptionCorrection}
-          onApplyCorrection={handleApplyWritingCorrectionWrapper}
-          onDismissCorrection={() => descriptionCorrection && handleDismissWritingCorrectionWrapper(descriptionCorrection.correction)}
+          onApplyCorrection={async (correction) => {
+            // Call the factory-generated handler with proper signature
+            // The first param (fieldCorrection) is ignored, we use parentCorrection
+            await handleApplyWritingCorrectionInEdit({} as FieldCorrection, correction);
+          }}
+          onDismissCorrection={() => descriptionCorrection && handleDismissWritingCorrection(descriptionCorrection.correction)}
           sx={{
             "& .MuiInputBase-input": {
               lineHeight: 1.6,
@@ -353,128 +300,25 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
 
         {/* AI Summary Suggestion - Only show if suggestion exists */}
         {hasSummarySuggestion && (
-          <Box
-            sx={{
-              mt: 2,
-              p: { xs: 1.5, sm: 2 },
-              backgroundColor: "#E3F2FD",
-              border: "1px solid #BBDEFB",
-              borderRadius: 1,
+          <AISummarySuggestionCard
+            suggestion={summarySuggestion}
+            onApply={async (suggestedText) => {
+              await handleApplySummarySuggestion(suggestedText, 'edit', editData, updateData);
             }}
-          >
-            <Box display="flex" alignItems="center" mb={1}>
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: "bold", color: "#1976d2" }}
-              >
-                AI Suggested Professional Summary
-              </Typography>
-              <Tooltip title="AI-generated improvement based on job description">
-                <InfoIcon sx={{ ml: 1, fontSize: 16, color: "#1976d2" }} />
-              </Tooltip>
-              <IconButton
-                size="small"
-                onClick={dismissSummarySuggestion}
-                sx={{ ml: "auto", color: "#666" }}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Box>
-
-            <Box sx={{ mb: 2, lineHeight: 1.6 }}>
-              {summarySuggestion.html_diff &&
-              summarySuggestion.html_diff.trim() !== "" ? (
-                <SemanticDiff htmlDiff={summarySuggestion.html_diff} />
-              ) : (
-                // No diff available - show side-by-side comparison
-                <Box>
-                  <Typography variant="caption" sx={{ fontWeight: "bold" }}>
-                    Original:
-                  </Typography>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    {summarySuggestion.original_text}
-                  </Typography>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography variant="caption" sx={{ fontWeight: "bold" }}>
-                    Suggested:
-                  </Typography>
-                  <Typography variant="body2">
-                    {summarySuggestion.suggested_text}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-
-            {summarySuggestion.key_changes &&
-              summarySuggestion.key_changes.length > 0 && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography
-                    variant="caption"
-                    sx={{ fontWeight: "bold", color: "#666" }}
-                  >
-                    Key improvements:
-                  </Typography>
-                  <Box sx={{ mt: 0.5 }}>
-                    {summarySuggestion.key_changes.map((change, index) => (
-                      <Chip
-                        key={index}
-                        label={change}
-                        size="small"
-                        sx={{
-                          mr: { xs: 0.25, sm: 0.5 },
-                          mb: { xs: 0.25, sm: 0.5 },
-                          backgroundColor: "#E8F5E8",
-                          color: "#2E7D32",
-                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<AddIcon />}
-                onClick={handleApplySummarySuggestion}
-                sx={{
-                  textTransform: "none",
-                  backgroundColor: "#4CAF50",
-                  "&:hover": {
-                    backgroundColor: "#45a049",
-                  },
-                }}
-              >
-                Apply Suggestion
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={dismissSummarySuggestion}
-                sx={{
-                  textTransform: "none",
-                  borderColor: "#f44336",
-                  color: "#f44336",
-                  "&:hover": {
-                    borderColor: "#d32f2f",
-                    backgroundColor: "#ffebee",
-                  },
-                }}
-              >
-                Reject
-              </Button>
-            </Box>
-          </Box>
+            onDismiss={dismissSummarySuggestion}
+          />
         )}
 
         {/* Quality Suggestion - independent of job */}
-        {hasQualitySuggestion && (
-          <ProfessionalSummaryQualitySuggestion
-            qualitySummarySuggestion={qualitySummarySuggestion}
-            onApply={handleApplyQualitySuggestion}
-            onDismiss={dismissQualitySummarySuggestion}
+        {hasQualitySuggestion && qualitySummarySuggestion && (
+          <UnifiedQualitySuggestion
+            itemId="professional_summary"
+            section="professional_summary"
+            qualitySuggestion={qualitySummarySuggestion}
+            onApplyQuality={async (suggested) => {
+              await handleApplyQualitySuggestion(suggested, 'edit', editData, updateData);
+            }}
+            onDismissQuality={dismissQualitySummarySuggestion}
           />
         )}
 
@@ -520,149 +364,25 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
 
       {/* AI Summary Suggestion - Show in display mode too */}
       {hasSummarySuggestion && (
-        <Box
-          sx={{
-            mt: 2,
-            p: { xs: 1.5, sm: 2 },
-            backgroundColor: "#E3F2FD",
-            border: "1px solid #BBDEFB",
-            borderRadius: 1,
+        <AISummarySuggestionCard
+          suggestion={summarySuggestion}
+          onApply={async (suggestedText) => {
+            await handleApplySummarySuggestion(suggestedText, 'display');
           }}
-        >
-          <Box display="flex" alignItems="center" mb={1}>
-            <Typography
-              variant="subtitle2"
-              sx={{ fontWeight: "bold", color: "#1976d2" }}
-            >
-              AI Suggested Professional Summary
-            </Typography>
-            <Tooltip title="AI-generated improvement based on job description">
-              <InfoIcon sx={{ ml: 1, fontSize: 16, color: "#1976d2" }} />
-            </Tooltip>
-            <IconButton
-              size="small"
-              onClick={dismissSummarySuggestion}
-              sx={{ ml: "auto", color: "#666" }}
-            >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Box>
-
-          <Box sx={{ mb: 2, lineHeight: 1.6 }}>
-            {summarySuggestion.html_diff &&
-            summarySuggestion.html_diff.trim() !== "" ? (
-              <SemanticDiff htmlDiff={summarySuggestion.html_diff} />
-            ) : (
-              // No diff available - show side-by-side comparison
-              <Box>
-                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
-                  Original:
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  {summarySuggestion.original_text}
-                </Typography>
-                <Divider sx={{ my: 1 }} />
-                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
-                  Suggested:
-                </Typography>
-                <Typography variant="body2">
-                  {summarySuggestion.suggested_text}
-                </Typography>
-              </Box>
-            )}
-          </Box>
-
-          {summarySuggestion.key_changes &&
-            summarySuggestion.key_changes.length > 0 && (
-              <Box sx={{ mb: 2 }}>
-                <Typography
-                  variant="caption"
-                  sx={{ fontWeight: "bold", color: "#666" }}
-                >
-                  Key improvements:
-                </Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  {summarySuggestion.key_changes.map((change, index) => (
-                    <Chip
-                      key={index}
-                      label={change}
-                      size="small"
-                      sx={{
-                        mr: { xs: 0.25, sm: 0.5 },
-                        mb: { xs: 0.25, sm: 0.5 },
-                        backgroundColor: "#E8F5E8",
-                        color: "#2E7D32",
-                        fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                      }}
-                    />
-                  ))}
-                </Box>
-              </Box>
-            )}
-
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={async () => {
-                // Apply the suggestion by updating the CV data
-                // Fix the corrupted data structure by ensuring professional_summary is an object
-                const updatedData = {
-                  content: summarySuggestion.suggested_text,
-                  keywords: data.keywords || [],
-                };
-                onUpdate(updatedData);
-                onSave?.(updatedData);
-                await dismissSummarySuggestion();
-                showSuccess("Professional summary updated with AI suggestion");
-              }}
-              sx={{
-                textTransform: "none",
-                backgroundColor: "#4CAF50",
-                "&:hover": {
-                  backgroundColor: "#45a049",
-                },
-              }}
-            >
-              Apply Suggestion
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={dismissSummarySuggestion}
-              sx={{
-                textTransform: "none",
-                borderColor: "#f44336",
-                color: "#f44336",
-                "&:hover": {
-                  borderColor: "#d32f2f",
-                  backgroundColor: "#ffebee",
-                },
-              }}
-            >
-              Reject
-            </Button>
-          </Box>
-        </Box>
+          onDismiss={dismissSummarySuggestion}
+        />
       )}
 
       {/* Quality Suggestion - independent of job - Show in display mode too */}
-      {hasQualitySuggestion && (
-        <ProfessionalSummaryQualitySuggestion
-          qualitySummarySuggestion={qualitySummarySuggestion}
-          onApply={async () => {
-            // Apply the suggestion by updating the CV data
-            const updatedData = {
-              content: qualitySummarySuggestion.suggested_text,
-              keywords: data.keywords || [],
-            };
-            onUpdate(updatedData);
-            onSave?.(updatedData);
-            await dismissQualitySummarySuggestion();
-            showSuccess("Professional summary updated with quality suggestion");
+      {hasQualitySuggestion && qualitySummarySuggestion && (
+        <UnifiedQualitySuggestion
+          itemId="professional_summary"
+          section="professional_summary"
+          qualitySuggestion={qualitySummarySuggestion}
+          onApplyQuality={async (suggested) => {
+            await handleApplyQualitySuggestion(suggested, 'display');
           }}
-          onDismiss={dismissQualitySummarySuggestion}
+          onDismissQuality={dismissQualitySummarySuggestion}
         />
       )}
 

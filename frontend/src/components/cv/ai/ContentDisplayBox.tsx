@@ -31,12 +31,12 @@ export const ContentDisplayBox: React.FC<ContentDisplayBoxProps> = ({
   return (
     <Box
       sx={{
-        p: 2,
-        backgroundColor: 'background.default',
+        p: 1.5,
+        backgroundColor: 'transparent',
         borderRadius: 1,
-        border: '1px solid',
+        border: '1px dashed',
         borderColor: 'divider',
-        mb: 2,
+        mb: 1.5,
         ...sx,
       }}
       {...otherProps}
