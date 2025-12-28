@@ -149,7 +149,13 @@ export const FormField: React.FC<{
           <InlineFieldCorrection
             htmlDiffCorrection={htmlDiffCorrection}
             importance={htmlDiffCorrection.correction.importance}
-            reasoning={htmlDiffCorrection.correction.reasoning}
+            reasoning={(() => {
+              // Get reasoning from the description FieldCorrection
+              const descFieldCorrection = htmlDiffCorrection.correction.field_corrections?.find(
+                fc => fc.field_name === 'description'
+              );
+              return descFieldCorrection?.reasoning;
+            })()}
             onApply={() => onApplyCorrection?.(htmlDiffCorrection.correction)}
             onDismiss={onDismissCorrection || (() => {})}
           />
@@ -195,7 +201,13 @@ export const FormField: React.FC<{
         <InlineFieldCorrection
           htmlDiffCorrection={htmlDiffCorrection}
           importance={htmlDiffCorrection.correction.importance}
-          reasoning={htmlDiffCorrection.correction.reasoning}
+          reasoning={(() => {
+            // Get reasoning from the description FieldCorrection
+            const descFieldCorrection = htmlDiffCorrection.correction.field_corrections?.find(
+              fc => fc.field_name === 'description'
+            );
+            return descFieldCorrection?.reasoning;
+          })()}
           onApply={() => onApplyCorrection?.(htmlDiffCorrection.correction)}
           onDismiss={onDismissCorrection || (() => {})}
         />

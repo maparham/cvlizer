@@ -10,9 +10,15 @@ import logging
 from typing import Dict, Any, Tuple
 from sqlalchemy.orm import Session
 
-from src.schemas.cv_quality_schemas import CVQualityAnalysisResponseSchema
+from src.schemas.cv_quality_schemas import (
+    CVQualityAnalysisAIResponseSchema,
+    CVQualityAnalysisResponseSchema,
+)
 from src.utils.timeline_analyzer import analyze_timeline_gaps
-from src.utils.html_diff_utils import clean_quality_response
+from src.utils.html_diff_utils import (
+    clean_quality_response,
+    extract_original_from_cv_data,
+)
 from src.utils.cv_data_optimizer import optimize_cv_data_for_quality_analysis
 from src.config import AIConfig
 from .common import call_openai_with_schema, is_ai_enabled
@@ -86,66 +92,71 @@ async def generate_cv_corrections_and_feedback(
     prompt = _build_cv_quality_prompt(cv_data)
 
     # System prompt: Role + Principles + Tasks (behavioral instructions)
-    system_prompt = f"""You are a career coach providing concise, actionable CV feedback focused on clarity, professionalism, authenticity, and constructive advice. Always preserve the candidate's unique voice.
+    system_prompt = """
+You are a career coach and an expert in the candidate's field.
+Provide concise, actionable CV feedback with clear, professional, and constructive suggestions.
+Always preserve the candidate's unique voice and writing style.
 
 PRINCIPLES:
-1. Use existing CV language. Limit explanations or reasoning to 30 words per item.
-2. CRITICAL: Only suggest final, ready-to-use content—no placeholders, instructions, or templates. Supply concrete, directly usable text.
-3. Avoid corporate jargon. Use plain terms (e.g., replace 'role' with 'position', 'leverage/utilize' with 'used', 'deliver' with 'built' or 'created').
-4. Maintain the CV's format, including bullet points, quantifiable metrics, tone, and Unicode symbols.
-5. Make only edits that are clearly helpful and remove redundancies.
+1. Use the candidate's CV language; limit explanations to 30 words per item.
+2. CRITICAL: Suggest only complete, final text — no placeholders, instructions, or templates. Provide directly usable content only.
+3. Avoid corporate jargon. Use plain terms (e.g., replace 'role' with 'position', 'leverage/utilize' with 'used', 'deliver' with 'built' or 'created') for new content.
+4. Keep the CV's format, including bullets, metrics, tone, and Unicode symbols.
+5. Edit only for clear improvements; remove redundancies.
 
 TASKS:
 
 1. WRITING CORRECTIONS:
-- Correct only definite errors and specify importance (highly_recommended/standard). Always match the item_id.
-- Use field_corrections: [{{"field_name":"position", "original_value":"Dev", "html_diff":"<del>Dev</del><ins>Developer</ins>"}}]
-- Make changes inline using HTML: <ins>insert</ins> for additions, <del>delete</del> for removals, and <del>old</del><ins>new</ins> for replacements.
+- Correct only definite errors and specify importance (highly_recommended/standard). Match each correction to item_id.
+- Return corrections in field_corrections: [{{"field_name":"position", "html_diff":"<del>Dev</del><ins>Developer</ins>", "reasoning":"(max 30 words)"}}].
 - Always escape HTML special characters (&amp;, &lt;, &gt;, &quot;, &#39;).
-- Example:
-Original: "- Unchanged text\\n- text to remove\\n- Text missing punctuation"
-HTML diff: "- Unchanged text<ins>.</ins>\\n<del>- text to remove\\n</del><ins>- text to add\\n</ins>- Text missing punctuation<ins>.</ins>"
+- MINIMALITY RULE: html_diff must contain the COMPLETE final text. Wrap ONLY changed portions in <del>/<ins> tags; keep unchanged text outside tags. Applying the diff (remove <del>, keep <ins>) produces the final corrected text.
+- Examples:
+- Replacement: "Unchanged text<del>Old</del><ins>New</ins>"
+- Deletion: "text1 <del>text to remove</del> text2"
+- Addition: "text1 <ins>text to add</ins> text2"
+- Typo: "text <del>wiht</del><ins>with</ins> typo"
+- Invalid (not minimal): "<del>Unchanged, change</del><ins>Unchanged, changed</ins>"
+- Valid (minimal): "Unchanged, <del>change</del><ins>changed</ins>"
 
 2. PROFESSIONAL SUMMARY{"" if has_professional_summary else " (EMPTY - Generate new)"}:
-- If missing, write a 2–4 sentence summary drawn from CV details.
-- If present, only suggest changes for clear grammar issues, unclear messages, or weak impact.
+- If missing, create a 2–4 sentence summary using CV info.
+- If present, suggest changes only for grammar, unclear meaning, or weak impact.
 - If no change is needed, set professional_summary to null.
-- For changes, add coaching_questions if the summary is brief or generic.
-- Always show suggestions using html_diff with <del> and <ins> tags.
+- Give coaching_questions if summary is brief or generic.
+- Show changes with html_diff (adhere to MINIMALITY RULE).
 
 3. WORK EXPERIENCE & EDUCATION:
-- Assign each entry a quality score (0–100).
-- Only return entries with a score below 50 using: {{item_type: "low_score", item_id, section, quality_score, original, reasoning, html_diff, coaching_questions (optional)}}
-- Do not return entries with a score of 50+.
-- html_diff must present immediately usable content in the candidate's tone (no templates, instructions, or placeholders).
-- If the original is empty, generate concise, appropriate content in html_diff using only <ins> tags (no <del> tags).
-- For non-empty originals, always use <del> and <ins> to show differences in html_diff.
+- Assign a quality score (0–100) for each entry.
+- Return only entries with scores below 50: {{item_type:"low_score", item_id, section, quality_score, reasoning, html_diff, coaching_questions (optional)}}.
+- Don't return items scored 50 or higher.
+- If the description is empty, create concise content in html_diff using only <ins> tags.
+- For non-empty, show changes in html_diff (adhere to MINIMALITY RULE).
 
 4. CONTENT COACHING:
-- Flag areas that are vague, overly brief, missing key context, or use weak verbs.
-- Provide 1–3 coaching questions and 1–2 actionable prompts per flagged item.
-- Use relevant categories: insufficient_content, too_brief, missing_impact, lacks_specificity, weak_action_verbs.
-- Do not rewrite text here.
+- Flag items that are vague, too brief, missing context, or use weak verbs.
+- Give 1–3 coaching questions and 1–2 prompts per flagged item.
+- Use categories: insufficient_content, too_brief, missing_impact, lacks_specificity, weak_action_verbs.
+- Don't rewrite item text here.
 
-5. SKILLS (optional):
-- If relevant and not already listed, suggest up to 10 technical and 5 soft skills, each with brief justification.
+5. SKILLS (Optional):
+- Suggest up to 10 technical and 5 soft skills if relevant & not already listed, each with brief justification.
 
 6. OVERALL QUALITY SCORE (0–100):
 - Assess overall writing, completeness, clarity, and professionalism.
 
-Output must strictly conform to the CVQualityAnalysisResponseSchema JSON structure.
-- Set professional_summary to null if no changes are needed."""
+Set professional_summary to null if no change is required."""
 
     logger.info(
         f"Generating CV corrections and feedback - user_id={user_id}, cv_id={cv_id}"
     )
 
     try:
-        # Single AI call with configurable verbosity
+        # Single AI call with configurable verbosity (using AI-only schema)
         response, metadata = await call_openai_with_schema(
             system_prompt=system_prompt,
             user_prompt=prompt,
-            response_schema=CVQualityAnalysisResponseSchema,
+            response_schema=CVQualityAnalysisAIResponseSchema,
             user_id=user_id,
             cv_id=cv_id,
             operation_type="cv_quality_analysis",
@@ -153,12 +164,18 @@ Output must strictly conform to the CVQualityAnalysisResponseSchema JSON structu
             text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
         )
 
-        # Post-process to clean html_diff strings
+        # Extract original description from CV data for each item
+        response = extract_original_from_cv_data(response, cv_data)
+
+        # Post-process to clean html_diff strings and compute derived fields
         response = clean_quality_response(response)
 
         # Detect timeline gaps (rule-based, not AI)
         timeline_gaps = analyze_timeline_gaps(cv_data)
         response["timeline_gaps"] = timeline_gaps
+
+        # Convert to full schema to ensure type safety and add computed fields
+        response = CVQualityAnalysisResponseSchema(**response).model_dump()
 
         logger.info(
             f"CV corrections and feedback complete - "

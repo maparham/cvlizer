@@ -531,7 +531,13 @@ const EducationDisplay: React.FC<{
             <InlineFieldCorrection
               htmlDiffCorrection={descriptionCorrection}
               importance={descriptionCorrection.correction.importance}
-              reasoning={descriptionCorrection.correction.reasoning}
+              reasoning={(() => {
+                // Get reasoning from the description FieldCorrection
+                const descFieldCorrection = descriptionCorrection.correction.field_corrections?.find(
+                  fc => fc.field_name === 'description'
+                );
+                return descFieldCorrection?.reasoning;
+              })()}
               onApply={() => handleApplyWritingCorrection(descriptionCorrection.correction)}
               onDismiss={() => handleDismissWritingCorrection(descriptionCorrection.correction)}
             />

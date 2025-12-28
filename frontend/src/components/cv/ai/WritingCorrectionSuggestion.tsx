@@ -57,11 +57,6 @@ export const WritingCorrectionSuggestion: React.FC<WritingCorrectionSuggestionPr
         </Box>
       </Box>
 
-      {/* Reasoning */}
-      <Alert severity="info" sx={{ mb: 2 }}>
-        <Typography variant="body2">{correction.reasoning}</Typography>
-      </Alert>
-
       {/* Content Display */}
       {hasFieldCorrections && (
         <ContentDisplayBox>

@@ -44,7 +44,7 @@ export function useWritingCorrectionHelpers(
       const writingCorrection = findWritingCorrectionForField(fieldCorrection.field_name, fieldCorrection.original_value);
       return {
         importance: writingCorrection?.importance,
-        reasoning: fieldCorrection.reasoning || writingCorrection?.reasoning, // Field-specific first, fallback to parent
+        reasoning: fieldCorrection.reasoning, // Field-specific reasoning only, no fallback
       };
     },
     [findWritingCorrectionForField]

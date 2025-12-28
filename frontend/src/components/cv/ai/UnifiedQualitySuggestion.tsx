@@ -182,11 +182,6 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
                   />
                 </Box>
 
-                {/* Reasoning */}
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  <Typography variant="body2">{correction.reasoning}</Typography>
-                </Alert>
-
                 {/* Field Corrections (All fields including description) */}
                 {hasFieldCorrections && (
                   <Box>

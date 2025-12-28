@@ -361,9 +361,8 @@ export interface FieldCorrection {
 export interface WritingCorrection {
   item_id: string;
   section: string;
-  html_diff?: string;
+  html_diff?: string;  // Legacy, deprecated
   field_corrections?: FieldCorrection[];
-  reasoning: string;
   importance: 'highly_recommended' | 'standard';
 }
 
