@@ -7,7 +7,7 @@ fixing formatting issues, and derive computed fields from html_diff.
 
 import logging
 import re
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from src.services.ai_service.writing_corrections_service import apply_html_diff
 
 logger = logging.getLogger(__name__)
@@ -49,14 +49,18 @@ def clean_html_diff_string(html_diff: str) -> str:
 
 
 def extract_original_from_cv_data(
-    response: Dict[str, Any], cv_data: Dict[str, Any]
+    response: Dict[str, Any],
+    cv_data: Dict[str, Any],
+    id_mapping: Optional[Dict[str, Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     """
     Extract original values from CV data for work experience, education, and field corrections.
 
-    The AI response contains items with item_id but no original field.
-    This function looks up each item in cv_data using item_id and section,
-    then extracts the description field to populate original.
+    The AI response contains items with item_id (short IDs like "1", "2", "3") but no original field.
+    This function:
+    1. Maps short IDs back to actual IDs using id_mapping
+    2. Looks up each item in cv_data using actual_id and section
+    3. Extracts the description field to populate original
 
     For writing_corrections, it also extracts original_value for each field_correction
     by looking up the field value in the CV data.
@@ -64,12 +68,55 @@ def extract_original_from_cv_data(
     Args:
         response: AI response dictionary with work_experience, education, and writing_corrections
         cv_data: Original CV data dictionary containing the actual item data
+        id_mapping: Optional dictionary mapping section names to {short_id: actual_id} mappings.
+                   If provided, short IDs in response are mapped back to actual IDs before lookup.
 
     Returns:
-        Modified response dictionary with original and original_value fields populated
+        Modified response dictionary with original and original_value fields populated,
+        and item_ids converted from short IDs to actual IDs
     """
     if not response or not isinstance(response, dict):
         return response
+
+    # Map short IDs back to actual IDs if mapping is provided
+    if id_mapping:
+        # Map work_experience IDs
+        for item in response.get("work_experience", []):
+            if isinstance(item, dict) and "item_id" in item:
+                short_id = item["item_id"]
+                if "work_experience" in id_mapping:
+                    actual_id = id_mapping["work_experience"].get(short_id)
+                    if actual_id:
+                        item["item_id"] = actual_id
+
+        # Map education IDs
+        for item in response.get("education", []):
+            if isinstance(item, dict) and "item_id" in item:
+                short_id = item["item_id"]
+                if "education" in id_mapping:
+                    actual_id = id_mapping["education"].get(short_id)
+                    if actual_id:
+                        item["item_id"] = actual_id
+
+        # Map writing_corrections IDs
+        for correction in response.get("writing_corrections", []):
+            if isinstance(correction, dict) and "item_id" in correction:
+                short_id = correction["item_id"]
+                section = correction.get("section")
+                if section in id_mapping:
+                    actual_id = id_mapping[section].get(short_id)
+                    if actual_id:
+                        correction["item_id"] = actual_id
+
+        # Map content_coaching IDs
+        for coaching in response.get("content_coaching", []):
+            if isinstance(coaching, dict) and "item_id" in coaching:
+                short_id = coaching["item_id"]
+                section = coaching.get("section")
+                if section in id_mapping:
+                    actual_id = id_mapping[section].get(short_id)
+                    if actual_id:
+                        coaching["item_id"] = actual_id
 
     # Process work_experience items
     for item in response.get("work_experience", []):

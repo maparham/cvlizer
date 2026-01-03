@@ -130,17 +130,17 @@ class TestOptimizeCVDataForQualityAnalysis:
 
     def test_removes_section_config(self, sample_cv_data):
         """Should remove section_config (UI metadata)."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         assert "section_config" not in result
 
     def test_removes_draft_sections(self, sample_cv_data):
         """Should remove draft_sections (not used in analysis)."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         assert "draft_sections" not in result
 
     def test_removes_unused_personal_info_fields(self, sample_cv_data):
         """Should remove phone, linkedin_url, website_url, github_url."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         personal = result["personal_info"]
 
         # Should keep
@@ -157,12 +157,12 @@ class TestOptimizeCVDataForQualityAnalysis:
 
     def test_removes_empty_keywords(self, sample_cv_data):
         """Should remove empty keywords array from professional_summary."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         assert "keywords" not in result["professional_summary"]
 
     def test_removes_id_from_languages(self, sample_cv_data):
         """Should remove id field from skills.languages."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         languages = result["skills"]["languages"]
         assert len(languages) == 1
         assert "id" not in languages[0]
@@ -171,25 +171,30 @@ class TestOptimizeCVDataForQualityAnalysis:
 
     def test_removes_empty_achievements(self, sample_cv_data):
         """Should remove empty achievements array from work experience."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         work = result["work_experience"][0]
         assert "achievements" not in work
 
-    def test_preserves_non_empty_technologies(self, sample_cv_data):
-        """Should keep non-empty technologies array."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
+    def test_removes_technologies_arrays(self, sample_cv_data):
+        """Should remove technologies arrays (not used in quality analysis)."""
+        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         work = result["work_experience"][0]
-        assert "technologies" in work
-        assert work["technologies"] == ["Python", "Django"]
+        assert "technologies" not in work
 
-    def test_preserves_item_ids(self, sample_cv_data):
-        """Should preserve item IDs (critical for corrections)."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
-        assert result["work_experience"][0]["id"] == "work_1"
+    def test_replaces_ids_with_short_ids(self, sample_cv_data):
+        """Should replace UUIDs with short numeric IDs (1, 2, 3...)."""
+        result, id_mapping = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        work = result["work_experience"][0]
+        # ID should be a short numeric string
+        assert work["id"] in ["1", "2", "3", "4", "5"]
+        # Mapping should contain the original ID
+        assert "work_experience" in id_mapping
+        assert work["id"] in id_mapping["work_experience"]
+        assert id_mapping["work_experience"][work["id"]] == "work_1"
 
     def test_preserves_all_critical_fields(self, sample_cv_data):
         """Should preserve all fields needed for quality analysis."""
-        result = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
 
         # Critical fields for corrections
         work = result["work_experience"][0]
@@ -210,7 +215,7 @@ class TestOptimizeCVDataForQualityAnalysis:
         import json
 
         original_json = json.dumps(sample_cv_data, separators=(",", ":"))
-        optimized = optimize_cv_data_for_quality_analysis(sample_cv_data)
+        optimized, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         optimized_json = json.dumps(optimized, separators=(",", ":"))
 
         original_size = len(original_json)

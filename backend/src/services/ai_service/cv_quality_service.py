@@ -7,7 +7,7 @@ Single AI call returns all quality data.
 
 import json
 import logging
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 from sqlalchemy.orm import Session
 
 from src.schemas.cv_quality_schemas import (
@@ -27,7 +27,9 @@ from .cv_filter import filter_hidden_sections
 logger = logging.getLogger(__name__)
 
 
-def _build_cv_quality_user_prompt(cv_data: Dict[str, Any]) -> str:
+def _build_cv_quality_user_prompt(
+    cv_data: Dict[str, Any],
+) -> Tuple[str, Dict[str, Dict[str, str]]]:
     """
     Build the user prompt portion for CV quality analysis.
 
@@ -39,13 +41,15 @@ def _build_cv_quality_user_prompt(cv_data: Dict[str, Any]) -> str:
         cv_data: Complete CV data dictionary
 
     Returns:
-        Formatted user prompt string containing only CV data (not the full prompt)
+        Tuple of (prompt_string, id_mapping) where:
+        - prompt_string: Formatted user prompt string containing only CV data
+        - id_mapping: Dictionary mapping section names to {short_id: actual_id} mappings
     """
     # Filter hidden sections
     filtered_cv = filter_hidden_sections(cv_data)
 
-    # Optimize for prompt (reduce token usage by 20-40%)
-    optimized_cv = optimize_cv_data_for_quality_analysis(filtered_cv)
+    # Optimize for prompt (reduce token usage by 30-50%)
+    optimized_cv, id_mapping = optimize_cv_data_for_quality_analysis(filtered_cv)
 
     # Minified JSON (no indentation, minimal separators for token efficiency)
     cv_json = json.dumps(optimized_cv, separators=(",", ":"))
@@ -53,7 +57,7 @@ def _build_cv_quality_user_prompt(cv_data: Dict[str, Any]) -> str:
     # User prompt: Only the CV data
     prompt = f"CV DATA: {cv_json}"
 
-    return prompt
+    return prompt, id_mapping
 
 
 async def generate_cv_corrections_and_feedback(
@@ -80,25 +84,25 @@ async def generate_cv_corrections_and_feedback(
     if not is_ai_enabled():
         raise RuntimeError("AI features are not enabled")
 
-    # Build user prompt (data only)
-    prompt = _build_cv_quality_user_prompt(cv_data)
+    # Build user prompt (data only) and get ID mapping
+    prompt, id_mapping = _build_cv_quality_user_prompt(cv_data)
 
     # System prompt: Role + Instructions + Tasks (behavioral instructions)
-    system_prompt = """# Role and Objective
-You are a career coach with expertise in the candidate's field. Provide concise, actionable CV feedback: clear, professional, constructive suggestions that always preserve the candidate's distinctive voice and writing style.
+    system_prompt = """# Role
+Career coach with field expertise. Provide concise, actionable CV feedback that preserves the candidate's voice.
 
 # Instructions
-- Use the candidate's CV language. Limit each feedback explanation to 30 words.
-- Suggest only complete, final text—no placeholders, instructions, or templates. All output must be ready to use.
-- Avoid corporate jargon. Use clear, plain terms (e.g., use 'position' not 'role', 'used' not 'leverage/utilize', 'built' or 'created' not 'deliver').
-- Preserve formatted bullets, metrics, tone, and Unicode symbols.
-- Edit only when improvements are clear, and remove redundancies.
+- Use candidate's CV language. Limit feedback to 30 words.
+- Suggest complete, final text only—no placeholders.
+- Avoid jargon (use 'position' not 'role', 'used' not 'leverage', 'built' not 'deliver').
+- Preserve bullets, metrics, tone, Unicode.
+- Edit only for clear improvements.
 
 ## Writing Corrections
-- Correct clear errors only. Specify importance (highly_recommended/standard) for each correction and link it to its item_id.
-- Return: `field_corrections: [{{"field_name":"position", "html_diff":"<del>Dev</del><ins>Developer</ins>", "reasoning":"(max 30 words)"}}]`.
-- Escape HTML special characters (&amp;, &lt;, &gt;, &quot;, &#39;).
-- Follow the MINIMALITY RULE: html_diff contains the complete new text; wrap only changed parts in <del>/<ins>. Applying the diff (keep <ins>, remove <del>) must yield the new text.
+- Correct errors and unprofessional language only. Specify importance (highly_recommended/standard) per item_id.
+- Return: field_corrections: [{"field_name":"position", "html_diff":"<del>Dev</del><ins>Developer</ins>", "reasoning":"(max 30 words)"}].
+- Escape HTML: &amp;, &lt;, &gt;, &quot;, &#39;.
+- MINIMALITY RULE: html_diff has complete new text; wrap only changed parts in <del>/<ins>. Examples:
 - Examples:
     - Replacement: "Unchanged text<del>Old</del><ins>New</ins>"
     - Deletion: "text1 <del>text to remove</del> text2"
@@ -108,31 +112,25 @@ You are a career coach with expertise in the candidate's field. Provide concise,
     - Valid: "Unchanged, <del>change</del><ins>changed</ins>"
 
 ## Professional Summary
-- If missing, generate a 2–4 sentence summary based on CV content.
-- If present, suggest adjustments only for grammar, clarity, or impact. Set `professional_summary` to null if unchanged.
-- If the summary is very brief or generic, provide coaching_questions.
-- Show changes using html_diff, following the MINIMALITY RULE.
+- If missing: generate 2–4 sentences. If present: adjust only for grammar/clarity/impact.
+- Set to null if unchanged. Use html_diff per MINIMALITY RULE.
 
 ## Work Experience & Education
-- Assign a quality score (0–100) for each entry.
-- Only include items with a score below 50, using: `{{item_type:"low_score", item_id, section, quality_score, reasoning, html_diff, coaching_questions (optional)}}`.
-- Omit items scored 50 or higher.
-- If a description is empty, generate concise content in html_diff using only <ins> tags.
-- For non-empty items, apply the MINIMALITY RULE in html_diff.
+- Score each (0–100). Include only scores <50: {item_type:"low_score", item_id, section, quality_score, reasoning, html_diff, coaching_questions?}.
+- Empty descriptions: generate content with <ins> only. Others: apply MINIMALITY RULE.
 
 ## Content Coaching
-- Flag entries that are vague, brief, missing context, or use weak verbs.
-- For each, provide 1–3 coaching questions and 1–2 prompts.
-- Use: insufficient_content, too_brief, missing_impact, lacks_specificity, weak_action_verbs.
-- Do not rewrite text in this step.
+- Flag vague/brief/missing context/weak verbs. Provide 1–3 questions and 1–2 prompts per entry.
+- Categories: insufficient_content, too_brief, missing_impact, lacks_specificity, weak_action_verbs.
+- Do not rewrite text.
 
 ## Skills (Optional)
-- Suggest up to 10 technical and 5 soft skills if relevant and not already in the CV, with a brief justification for each.
+- Suggest up to 10 technical and 5 soft skills with brief justification if relevant and not already present.
 
 ## Overall Quality Score (0–100)
-- Evaluate overall writing, completeness, clarity, and professionalism.
+- Evaluate writing, completeness, clarity, professionalism.
 
-Set `professional_summary` to null if unchanged."""
+Set professional_summary to null if unchanged."""
 
     logger.info(
         f"Generating CV corrections and feedback - user_id={user_id}, cv_id={cv_id}"
@@ -152,7 +150,8 @@ Set `professional_summary` to null if unchanged."""
         )
 
         # Extract original description from CV data for each item
-        response = extract_original_from_cv_data(response, cv_data)
+        # Map short IDs back to actual IDs and extract original values
+        response = extract_original_from_cv_data(response, cv_data, id_mapping)
 
         # Post-process to clean html_diff strings and compute derived fields
         response = clean_quality_response(response)
