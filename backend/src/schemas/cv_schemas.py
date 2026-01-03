@@ -23,6 +23,13 @@ class PersonalInfoSchema(BaseModel):
     linkedin_url: Optional[str] = Field(None, description="LinkedIn profile URL")
     website_url: Optional[str] = Field(None, description="Personal website URL")
     github_url: Optional[str] = Field(None, description="GitHub profile URL")
+    description: Optional[str] = Field(None, description="Personal description or bio")
+    description_center_align: Optional[bool] = Field(
+        False, description="Center align description"
+    )
+    show_horizontal_line: Optional[bool] = Field(
+        False, description="Show horizontal line separator"
+    )
 
     class Config:
         extra = "forbid"  # Reject any additional fields

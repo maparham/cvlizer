@@ -8,7 +8,15 @@
  * - Form validation and editing states
  */
 import React from "react";
-import { Box, TextField, InputAdornment, Typography, Autocomplete } from "@mui/material";
+import {
+  Box,
+  TextField,
+  InputAdornment,
+  Typography,
+  Autocomplete,
+  FormControlLabel,
+  Checkbox,
+} from "@mui/material";
 import {
   GitHub as GitHubIcon,
   LinkedIn as LinkedInIcon,
@@ -18,6 +26,8 @@ import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import { useFieldValidation } from "../../../hooks/useFieldValidation";
+import { FormField } from "../core/formUtils";
+import MarkdownRenderer from "../../common/MarkdownRenderer";
 
 const ACADEMIC_TITLES = [
   // English
@@ -282,6 +292,39 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
           }}
         />
       </Box>
+      <FormField
+        config={{
+          name: "description",
+          label: "Description",
+          placeholder: "Add a brief personal description or bio...",
+          multiline: true,
+          rows: 3,
+          useMarkdownEditor: true,
+        }}
+        value={editData.description || ""}
+        onChange={(value) => updateData("description", value)}
+        onSave={onSave}
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={editData.description_center_align || false}
+            onChange={(e) => updateData("description_center_align", e.target.checked)}
+          />
+        }
+        label="Center align description"
+        sx={{ mt: 1 }}
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={editData.show_horizontal_line || false}
+            onChange={(e) => updateData("show_horizontal_line", e.target.checked)}
+          />
+        }
+        label="Show horizontal line"
+        sx={{ mt: 1 }}
+      />
     </Box>
   );
 
@@ -356,6 +399,17 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
           </Typography>
         )}
       </Box>
+      {data.description && (
+        <Box sx={{ mb: 2 }}>
+          <MarkdownRenderer
+            content={data.description}
+            variant="body1"
+            sx={{
+              textAlign: data.description_center_align ? "center" : "left",
+            }}
+          />
+        </Box>
+      )}
     </Box>
   );
 

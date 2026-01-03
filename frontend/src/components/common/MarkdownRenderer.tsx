@@ -55,7 +55,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         mr: 0, // Ensure no right margin
         ...sx,
       }
-    : { mr: 0, ...sx };
+    : { display: "block", mr: 0, ...sx };
 
   return (
     <Box sx={wrapperSx}>
@@ -116,7 +116,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           p: ({ children }) => (
             <Typography
               variant={variant}
-              sx={{ mb: 1, color, lineHeight: 1.6, mr: 0 }}
+              sx={{
+                mb: 1,
+                color,
+                lineHeight: 1.6,
+                mr: 0,
+                textAlign: "inherit",
+              }}
             >
               {children}
             </Typography>

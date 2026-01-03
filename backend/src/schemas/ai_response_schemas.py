@@ -26,6 +26,15 @@ class PersonalInfoResponseSchema(BaseModel):
     linkedin_url: str = Field(default="")
     website_url: str = Field(default="")
     github_url: str = Field(default="")
+    description: Optional[str] = Field(
+        default="", description="Personal description or bio"
+    )
+    description_center_align: Optional[bool] = Field(
+        default=False, description="Center align description"
+    )
+    show_horizontal_line: Optional[bool] = Field(
+        default=False, description="Show horizontal line separator"
+    )
 
 
 class ProfessionalSummaryResponseSchema(BaseModel):

@@ -721,7 +721,41 @@ def _format_personal_info_header(pi: Dict[str, Any]) -> str:
             f"\\end{{center}}\n"
         )
 
-    return header + contact_block
+    # Description: formatted markdown content below contact block
+    description_block = ""
+    description = pi.get("description", "")
+    if description:
+        desc_latex = _markdown_to_latex(description)
+        description_center_align = pi.get("description_center_align", False)
+        if description_center_align:
+            description_block = (
+                f"\\vspace{{0.5\\baselineskip}}\n"
+                f"\\begin{{center}}\n"
+                f"\\begin{{minipage}}{{0.9\\textwidth}}\n"
+                f"\\centering\n"
+                f"\\textit{{{desc_latex}}}\n"
+                f"\\end{{minipage}}\n"
+                f"\\end{{center}}\n"
+            )
+        else:
+            description_block = (
+                f"\\vspace{{0.5\\baselineskip}}\n"
+                f"\\begin{{minipage}}{{0.9\\textwidth}}\n"
+                f"\\textit{{{desc_latex}}}\n"
+                f"\\end{{minipage}}\n"
+            )
+
+    # Horizontal rule separator below personal info section
+    separator = ""
+    show_horizontal_line = pi.get("show_horizontal_line", False)
+    if show_horizontal_line:
+        separator = (
+            "\n\\vspace{0.5\\baselineskip}\n"
+            "\\rule{\\textwidth}{0.4pt}\n"
+            "\\vspace{0.5\\baselineskip}\n"
+        )
+
+    return header + contact_block + description_block + separator
 
 
 def _generate_from_template(

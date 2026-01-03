@@ -59,6 +59,9 @@ export interface PersonalInfo {
   website_url: string;
   github_url?: string;
   portfolio_url?: string;
+  description?: string;
+  description_center_align?: boolean;
+  show_horizontal_line?: boolean;
 }
 
 // Professional Summary

@@ -22,6 +22,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   isValid = true,
   onTitleSave,
   sectionId,
+  showDivider = true,
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -227,7 +228,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
           )}
         </Box>
       )}
-      <Divider sx={{ my: 2 }} />
+      {showDivider && <Divider sx={{ my: 2 }} />}
     </Box>
   );
 };

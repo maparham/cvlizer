@@ -157,6 +157,13 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
     setEditData({ ...editData, [field]: value });
   };
 
+  // For personal_info section, control divider visibility based on show_horizontal_line
+  // Default to false (line hidden) for personal_info, true for other sections
+  const showDivider =
+    sectionId === "personal_info"
+      ? actualData?.show_horizontal_line ?? false
+      : true;
+
   return (
     <BaseSection
       title={title}
@@ -170,6 +177,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       editButton={null}
       onTitleSave={onTitleSave}
       sectionId={sectionId}
+      showDivider={showDivider}
     >
       {isEditing ? (
         <Box>{renderForm(editData, updateData, handleSave, handleCancel)}</Box>
