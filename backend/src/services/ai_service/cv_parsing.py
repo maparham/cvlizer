@@ -120,6 +120,7 @@ Extraction and Preservation RULES:
 - DO NOT add, infer, or extract keywords, tags, or any content not explicitly present in the original CV
 - EXCEPTION: Missing work_experience.position and education.degree fields MUST be inferred (see TITLE INFERENCE RULES below)
 - Keep original capitalization and formatting style
+- LOCATION SEPARATION: Extract location (city, country) into the separate "location" field
 
 DESCRIPTION FORMATTING RULES:
 - All description fields MUST be formatted in markdown
@@ -171,8 +172,8 @@ Return JSON (omit empty sections):
 {{
   "personal_info": {{"full_name": "str", "email": "str", "phone": "str", "location": "str", "linkedin_url": "str", "website_url": "str", "github_url": "str"}},
   "professional_summary": {{"content": "str (markdown bullets/paragraphs, NO headers, plain text if single item)", "keywords": []}},
-  "work_experience": [{{"company": "str", "position": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "technologies": []}}],
-  "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "honors": []}}],
+  "work_experience": [{{"company": "str", "position": "str", "location": "str|null", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "technologies": []}}],
+  "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "location": "str|null", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "honors": []}}],
   "skills": {{"technical": ["Python", "FastAPI", "React"], "soft": ["Problem Solving", "Communication"], "languages": [{{"language": "English", "proficiency": "Fluent"}}]}},
   "certifications": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD|null", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
   "projects": [{{"name": "str", "description": "str (markdown bullets/paragraphs, NO headers)", "technologies": [], "url": "str|null"}}],
