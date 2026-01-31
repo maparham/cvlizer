@@ -328,7 +328,7 @@ def _build_ai_suggestions_prompt(
 - Use phrases like 'position' or 'job' instead of corporate jargons like 'role'.
 - Respect the candidate's existing writing STYLE: observe their CV—only suggest metrics if they already use them. If CV uses bullets, suggest bullets except when there is only one item. If CV has no metrics, don't add metrics.
 - Write naturally: avoid hyphenated compounds like "multi-year" and "data-pipeline"—use separate words or rephrase for a conversational, human tone.
-- Avoid overusing the pronoun "I"—vary sentence structure and use active voice to reduce repetition. Example: Instead of "I developed a system. I implemented features. I managed the team.", use "Developed a system, implementing key features while managing the team."
+- CRITICAL: Do NOT start every sentence with "I". Maximum 30% of sentences should begin with "I"/"I've"/"I'm".
 
 ⚠️ MINIMAL CHANGES PRINCIPLE (CRITICAL):
 - Only suggest changes when there is a CLEAR, SUBSTANTIAL benefit: fixing grammar errors, clarifying unclear messaging, adding missing impact, or correcting factual issues.
@@ -356,36 +356,20 @@ TASKS:
 {company_name_instruction}
    - confidence_score: 1-100 match quality based on transferable skills and authentic fit
    - fit_analysis: markdown, start with a concise introduction paragraph, then specific requirements with cover paragraphs.
+   - CRITICAL: Cover ALL technical/experience requirements AND soft-skill/behavioral/mindset requirements from the job description, regardless of how they're organized in the JD.
 
    ⚠️ MANDATORY FORMATTING (NON-NEGOTIABLE):
    - Format the fit analysis into two sections: "## Introduction" and "## Your Requirements".
    - In the "Your Requirements" section, for each requirement, you MUST follow this EXACT format:
-
+     \n
      **"[requirement text from job description]"**
-
-     [Your cover paragraph explaining how you meet this requirement]
-
-     **"[next requirement]"**
-
-     [Next cover paragraph]
+    \n
+     [cover paragraph explaining how the CV meet this requirement]
+     \n
 
    - CRITICAL: There MUST be a blank line after each requirement quote and a blank line after each cover paragraph
    - Each requirement MUST be wrapped in **bold** WITH quotation marks: **"[requirement text]"**
    - Blank lines are REQUIRED for readability and do NOT count toward word limit
-   - Example showing EXACT required spacing:
-
-   ## Introduction
-   I am a PhD computer scientist focused on backend and scientific pipelines.
-
-   ## Your Requirements
-   **"Experience with Python"**
-
-   I have 5 years using Python for data analysis and web development, building scalable APIs with FastAPI.
-
-   **"Strong communication skills"**
-
-   I regularly present technical findings to non-technical stakeholders and lead team discussions.
-
    - Word count: Maximum 200 words total (blank lines don't count)—count ONLY text words and ensure you stay within this limit.
    - CRITICAL: Write ENTIRELY in first person from the candidate's perspective. NEVER refer to "CV" directly, e.g. "My CV..." or "This CV...". Remember, you are the owner of the CV.
    - Be honest about gaps: "I don't have X but eager to learn" or "I bring Y transferable skills"
@@ -480,15 +464,6 @@ async def generate_ai_suggestions(
             "natural and human.\n\n"
         )
 
-        # Debug log: Print entire prompts
-        logger.info("=" * 80)
-        logger.info("AI SUGGESTION GENERATION PROMPTS")
-        logger.info("=" * 80)
-        logger.info(f"SYSTEM PROMPT:\n{system_prompt}")
-        logger.info("-" * 80)
-        logger.info(f"USER PROMPT:\n{prompt}")
-        logger.info("=" * 80)
-
         # Single unified OpenAI call
         response, metadata = await call_openai_with_schema(
             system_prompt=system_prompt,
@@ -499,13 +474,6 @@ async def generate_ai_suggestions(
             operation_type="ai_suggestions",
             db_session=db_session,
         )
-
-        # Debug log: Print entire AI response
-        logger.info("=" * 80)
-        logger.info("AI SUGGESTION GENERATION RESPONSE")
-        logger.info("=" * 80)
-        logger.info(f"RESPONSE:\n{json.dumps(response, indent=2)}")
-        logger.info("=" * 80)
 
         logger.info(
             f"AI suggestions complete - tokens={metadata['tokens_used']}, time={metadata['generation_time']}ms"

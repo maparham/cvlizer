@@ -1,28 +1,32 @@
 /**
  * Unified Quality Suggestion Component
  *
- * Combines quality suggestions and writing corrections into a single unified card.
- * Displays both types of suggestions together when present for the same item.
+ * Compact quality suggestion card with inline reasoning and icon-only action buttons.
+ * Coaching questions are shown in a tooltip for space efficiency.
+ * Uses CompactSuggestionCard for consistent UI.
  */
 
-import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Chip,
-  Alert,
-  List,
-  ListItem,
-  Divider,
-} from '@mui/material';
-import { LowQualityItem, WritingCorrection, ProfessionalSummaryQualitySuggestion } from '../../../types/ai';
-import { SemanticDiff } from './SemanticDiff';
-import { SuggestionActionButtons } from './SuggestionActionButtons';
-import { SuggestionPaper } from './SuggestionPaper';
-import { getImportanceColor, getFieldLabel } from './utils/suggestionUtils';
-import { QualitySuggestionHeader } from './QualitySuggestionHeader';
-import { QualitySuggestionContent } from './QualitySuggestionContent';
+import React from 'react';
+import { Box, Typography } from '@mui/material';
+import { LowQualityItem, WritingCorrection, ProfessionalSummaryQualitySuggestion, CoachingQuestion } from '../../../types/ai';
+import { CompactSuggestionCard } from './CompactSuggestionCard';
 import { normalizeQualitySuggestion } from './utils/qualitySuggestionNormalizer';
+
+/**
+ * Tooltip content for coaching questions
+ */
+const CoachingQuestionsTooltipContent: React.FC<{ questions: CoachingQuestion[] }> = ({ questions }) => (
+  <Box sx={{ p: 0.5 }}>
+    <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+      Consider these questions:
+    </Typography>
+    {questions.map((q, idx) => (
+      <Typography key={idx} variant="caption" sx={{ display: 'block', mt: 0.5 }}>
+        • {q.question}
+      </Typography>
+    ))}
+  </Box>
+);
 
 interface UnifiedQualitySuggestionProps {
   itemId: string;
@@ -47,14 +51,7 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
   onDismissWritingCorrection,
   onApplyAll,
 }) => {
-  const [viewMode, setViewMode] = useState<'diff' | 'raw'>('diff');
-  const [showReasoning, setShowReasoning] = useState<boolean>(false);
-  const [showKeyChanges, setShowKeyChanges] = useState<boolean>(false);
-
   const hasQualitySuggestion = !!qualitySuggestion;
-  // Writing corrections are now shown inline next to fields, so don't include them in render check
-  // const hasWritingCorrections = writingCorrections.length > 0;
-  // const hasAnySuggestions = hasQualitySuggestion || hasWritingCorrections;
 
   // Only render if there's a quality suggestion (writing corrections are shown inline)
   if (!hasQualitySuggestion || !qualitySuggestion) {
@@ -64,19 +61,25 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
   // Normalize quality suggestion data for consistent rendering
   const normalized = normalizeQualitySuggestion(qualitySuggestion);
 
-  const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: 'diff' | 'raw' | null) => {
-    if (newMode !== null) {
-      setViewMode(newMode);
-    }
-  };
+  // Build importance label for tooltip
+  const importanceLabel = normalized.qualityScore !== undefined
+    ? `Quality Score: ${normalized.qualityScore}/100`
+    : 'Quality Suggestion';
+
+  // Get coaching questions if available
+  const coachingQuestions = normalized.coachingQuestions || [];
+
+  // Build reasoning text (prioritize reasoning, fallback to keyChanges)
+  const reasoningText = normalized.reasoning ||
+    (normalized.keyChanges && normalized.keyChanges.length > 0
+      ? normalized.keyChanges.join(' • ')
+      : undefined);
 
   /**
    * Handle Apply All - applies both quality suggestion and all writing corrections
    * Uses atomic apply if available, otherwise falls back to sequential applies
-   * Properly awaits all apply operations to handle errors and prevent race conditions
    */
   const handleApplyAll = async () => {
-    // If onApplyAll is provided, use atomic apply (preferred)
     if (onApplyAll) {
       await onApplyAll(
         itemId,
@@ -86,17 +89,11 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
       return;
     }
 
-    // Fallback to sequential applies (may cause conflicts if both update description)
-    // Apply quality suggestion first (if present)
+    // Fallback to sequential applies
     if (onApplyQuality) {
       await onApplyQuality(normalized.suggested);
     }
 
-    // Apply all writing corrections (if present)
-    // Note: Writing corrections are applied in parallel using Promise.all for performance.
-    // If multiple corrections target the same field, this may cause race conditions (last-write-wins).
-    // However, the backend typically handles field-level corrections independently, minimizing conflicts.
-    // For professional_summary section, there's typically only one description correction at a time.
     if (writingCorrections.length > 0 && onApplyWritingCorrection) {
       await Promise.all(
         writingCorrections.map((correction) =>
@@ -108,16 +105,12 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
 
   /**
    * Handle Dismiss All - dismisses both quality suggestion and all writing corrections
-   * Properly awaits all dismissal operations to handle errors and prevent race conditions
    */
   const handleDismissAll = async () => {
-    // Dismiss quality suggestion (if present)
     if (onDismissQuality) {
       await onDismissQuality();
     }
 
-    // Dismiss all writing corrections (if present)
-    // Dismissals are safe to run in parallel as they're independent operations
     if (writingCorrections.length > 0 && onDismissWritingCorrection) {
       await Promise.all(
         writingCorrections.map((correction) =>
@@ -128,106 +121,16 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
   };
 
   return (
-    <SuggestionPaper>
-      {/* Quality Suggestion Header and Content */}
-      <QualitySuggestionHeader
-        qualityScore={normalized.qualityScore}
-        reasoning={normalized.reasoning}
-        keyChanges={normalized.keyChanges}
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-        showReasoning={showReasoning}
-        onToggleReasoning={() => setShowReasoning(!showReasoning)}
-        showKeyChanges={showKeyChanges}
-        onToggleKeyChanges={() => setShowKeyChanges(!showKeyChanges)}
-      />
-
-      <QualitySuggestionContent
-        original={normalized.original}
-        suggested={normalized.suggested}
-        htmlDiff={normalized.htmlDiff}
-        viewMode={viewMode}
-        coachingQuestions={normalized.coachingQuestions}
-      />
-
-      {/* Writing Corrections Section */}
-      {writingCorrections.length > 0 && (
-        <Box>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 1, display: 'block' }}>
-            Writing Corrections:
-          </Typography>
-          {writingCorrections.map((correction, correctionIndex) => {
-            // Description is now handled through field_corrections with field_name="description"
-            // Legacy html_diff at WritingCorrection level is deprecated but kept for backward compatibility
-            const hasFieldCorrections = correction.field_corrections && correction.field_corrections.length > 0;
-
-            return (
-              <Box
-                key={`${correction.item_id}-${correctionIndex}`}
-                sx={{
-                  mb: correctionIndex < writingCorrections.length - 1 ? 3 : 2,
-                  p: 2,
-                  backgroundColor: 'background.default',
-                  borderRadius: 1,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                {/* Correction Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Chip
-                    label={correction.importance === 'highly_recommended' ? 'Highly Recommended' : 'Standard'}
-                    size="small"
-                    color={getImportanceColor(correction.importance)}
-                  />
-                </Box>
-
-                {/* Field Corrections (All fields including description) */}
-                {hasFieldCorrections && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
-                      Field Corrections:
-                    </Typography>
-                    <List dense sx={{ pl: 0 }}>
-                      {correction.field_corrections?.map((fieldCorrection, fieldIndex) => (
-                        <ListItem
-                          key={fieldIndex}
-                          sx={{
-                            flexDirection: 'column',
-                            alignItems: 'flex-start',
-                            py: 1,
-                            borderBottom: fieldIndex < (correction.field_corrections?.length || 0) - 1 ? '1px solid' : 'none',
-                            borderColor: 'divider',
-                          }}
-                        >
-                          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                            {getFieldLabel(fieldCorrection.field_name)}
-                          </Typography>
-                          <Box sx={{ width: '100%' }}>
-                            <SemanticDiff htmlDiff={fieldCorrection.html_diff} />
-                          </Box>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
-
-                {/* Divider between corrections */}
-                {correctionIndex < writingCorrections.length - 1 && <Divider sx={{ mt: 2 }} />}
-              </Box>
-            );
-          })}
-        </Box>
-      )}
-
-      {/* Unified Actions */}
-      <Box sx={{ mt: 2 }}>
-        <SuggestionActionButtons
-          onApply={handleApplyAll}
-          onDismiss={handleDismissAll}
-          variant="all"
-        />
-      </Box>
-    </SuggestionPaper>
+    <CompactSuggestionCard
+      htmlDiff={normalized.htmlDiff}
+      reasoning={reasoningText}
+      infoTooltip={importanceLabel}
+      infoIconColor={normalized.qualityScore !== undefined && normalized.qualityScore < 50 ? 'error' : 'warning'}
+      helpTooltipContent={coachingQuestions.length > 0 ? <CoachingQuestionsTooltipContent questions={coachingQuestions} /> : undefined}
+      onApply={handleApplyAll}
+      onDismiss={handleDismissAll}
+      dismissDialogTitle="Dismiss Suggestion?"
+      variant="default"
+    />
   );
 };

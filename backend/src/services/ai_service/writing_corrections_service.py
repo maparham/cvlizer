@@ -55,16 +55,16 @@ def apply_html_diff(text: str, html_diff: str) -> str:
     result = html_diff
 
     # Remove <del> tags and their content
-    # This regex matches <del> followed by any characters (non-greedy) followed by </del>
-    result = re.sub(r"<del>.*?</del>", "", result)
+    # Use [\s\S] instead of . to match across newlines (. doesn't match \n by default)
+    result = re.sub(r"<del>[\s\S]*?</del>", "", result)
 
     # Remove <ins> tags but keep the content
-    # This regex matches <ins> followed by any characters (non-greedy) followed by </ins>
-    result = re.sub(r"<ins>(.*?)</ins>", r"\1", result)
+    # Use [\s\S] instead of . to match across newlines (. doesn't match \n by default)
+    result = re.sub(r"<ins>([\s\S]*?)</ins>", r"\1", result)
 
-    # Clean up any extra whitespace that might have been left
-    # Replace multiple spaces with single space
-    result = re.sub(r"\s+", " ", result)
+    # Clean up extra horizontal whitespace only (multiple spaces/tabs)
+    # Preserve newlines for bullet formatting - only collapse horizontal whitespace
+    result = re.sub(r"[^\S\n]+", " ", result)
 
     # Trim leading and trailing whitespace
     result = result.strip()
