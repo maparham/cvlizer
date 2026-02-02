@@ -15,6 +15,7 @@ import LocationAutocomplete from "../ui/LocationAutocomplete";
 import DegreeAutocomplete from "../ui/DegreeAutocomplete";
 import FieldOfStudyAutocomplete from "../ui/FieldOfStudyAutocomplete";
 import AcademicDegreeAutocomplete from "../ui/AcademicDegreeAutocomplete";
+import InstitutionAutocomplete from "../ui/InstitutionAutocomplete";
 import { generateSectionId } from "../../../utils/idGenerator";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
 import ItemDescriptionSuggestion from "../ai/ItemDescriptionSuggestion";
@@ -76,8 +77,9 @@ const EducationForm: React.FC<{
   onApplySingleFieldCorrection,
   onApplyAll,
 }) => {
-  // Get validation errors for degree (used by DegreeAutocomplete)
+  // Get validation errors for degree and institution (used by autocomplete components)
   const degreeValidation = useFieldValidation('education', index, 'degree');
+  const institutionValidation = useFieldValidation('education', index, 'institution');
 
   // Extract field-specific corrections using unified hook
   const { fieldCorrectionProps, descriptionCorrection } = useFieldCorrections(
@@ -146,19 +148,14 @@ const EducationForm: React.FC<{
         helperText={degreeValidation.errorMessage}
         {...fieldCorrectionProps.degree}
       />
-      <ValidatedFormField
-        section="education"
-        field="institution"
-        index={index}
-        config={{
-          name: "institution",
-          label: "Institution",
-          placeholder: "e.g., University of California",
-          required: true,
-        }}
-        value={edu.institution}
+      <InstitutionAutocomplete
+        value={edu.institution || ""}
         onChange={(value) => updateEducation("institution", value)}
         onSave={onSave}
+        placeholder="e.g., University of California"
+        label="Institution"
+        error={institutionValidation.hasError}
+        helperText={institutionValidation.errorMessage}
         {...fieldCorrectionProps.institution}
       />
       <FieldOfStudyAutocomplete
