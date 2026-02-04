@@ -10,12 +10,11 @@ import {
 } from "../../../stores/aiSuggestionsStore";
 import { useCVQualityStore, useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
 import { useNotifications } from "../../../packages/notifications";
-import { WritingCorrection, FieldCorrection } from "../../../types/ai";
-import { useFieldCorrections } from "./hooks/useFieldCorrections";
-import { aiService } from "../../../services/ai";
-import { useCVStore } from "../../../stores/cv";
+import { FieldCorrection } from "../../../types/ai";
+import { useSingleSectionWritingCorrections } from "./hooks/useSingleSectionWritingCorrections";
 import { UnifiedQualitySuggestion } from "../ai/UnifiedQualitySuggestion";
 import { AISummarySuggestionCard } from "../ai/AISummarySuggestionCard";
+import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
 
 interface ProfessionalSummarySectionProps extends SectionProps {
   cvId?: string;
@@ -45,22 +44,24 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
   const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
   const {
     dismissProfessionalSummarySuggestion: dismissQualitySummarySuggestion,
-    dismissWritingCorrection,
-    currentAnalysisId,
   } = useCVQualityStore();
-
-  // Get CV store for updating CV after applying corrections
-  const { setCurrentCV, updateCVInList } = useCVStore();
-
-  // Get writing corrections for professional_summary section
-  const writingCorrections = React.useMemo(() => {
-    return qualityAnalysis?.writing_corrections?.filter(
-      (correction) => correction.section === 'professional_summary'
-    ) || [];
-  }, [qualityAnalysis?.writing_corrections]);
 
   // Get notifications for user feedback
   const { showSuccess, showError } = useNotifications();
+
+  const {
+    descriptionCorrection,
+    handleApplyFieldCorrection,
+    handleDismissWritingCorrection,
+    createWritingCorrectionHandler,
+  } = useSingleSectionWritingCorrections({
+    cvId,
+    sectionKeys: ["professional_summary"],
+    getValueFromCV: (c) =>
+      (c.parsed_data?.professional_summary as { content?: string } | undefined)
+        ?.content ?? "",
+    formFieldName: "content",
+  });
 
   // Extract professional summary suggestion from unified store (job-based)
   const summarySuggestion = allSuggestions?.professional_summary;
@@ -71,84 +72,6 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
   const qualitySummarySuggestion = qualityAnalysis?.professional_summary;
   const hasQualitySuggestion =
     qualitySummarySuggestion && qualitySummarySuggestion.suggested_text;
-
-  // Move useFieldCorrections to top level to fix Rules of Hooks violation
-  const itemId = writingCorrections.length > 0 ? writingCorrections[0].item_id : 'professional_summary';
-
-  /**
-   * Factory function to create writing correction handlers
-   * Consolidates duplicate logic between edit and display modes
-   *
-   * @param mode - 'edit' or 'display' to determine if form data should be updated
-   * @param editData - Current form data (only needed in edit mode)
-   * @param updateData - Function to update form field (only needed in edit mode)
-   * @param onSaveCallback - Function to save form data (only needed in edit mode)
-   * @returns Handler function compatible with useFieldCorrections hook signature
-   */
-  const createWritingCorrectionHandler = React.useCallback((
-    mode: 'edit' | 'display',
-    editData?: any,
-    updateData?: (field: string, value: any) => void,
-    onSaveCallback?: (data: any) => Promise<void>
-  ) => {
-    return async (_fieldCorrection: FieldCorrection, parentCorrection: WritingCorrection) => {
-      if (!cvId || !currentAnalysisId) {
-        showError("Cannot apply correction: CV ID or analysis ID missing");
-        return;
-      }
-
-      try {
-        // Apply correction via backend
-        const updatedCV = await aiService.applyWritingCorrection(
-          cvId,
-          currentAnalysisId,
-          parentCorrection.item_id
-        );
-
-        // Update CV store
-        setCurrentCV(updatedCV);
-        updateCVInList(updatedCV);
-
-        // In edit mode: also update local form data
-        if (mode === 'edit' && updateData && onSaveCallback) {
-          const contentValue = (typeof editData === "string" ? editData : editData?.content) || "";
-          const newContent = updatedCV.parsed_data?.professional_summary?.content || contentValue;
-          updateData("content", newContent);
-          const updatedEditData = {
-            ...editData,
-            content: newContent,
-          };
-          await onSaveCallback(updatedEditData);
-        }
-
-        // Dismiss the correction from the analysis
-        await dismissWritingCorrection(parentCorrection.item_id, parentCorrection.section);
-        showSuccess("Writing correction applied successfully");
-      } catch (error: any) {
-        const errorMessage = error?.response?.data?.detail || error?.message || "Failed to apply writing correction";
-        showError(errorMessage);
-      }
-    };
-  }, [cvId, currentAnalysisId, setCurrentCV, updateCVInList, dismissWritingCorrection, showError, showSuccess]);
-
-  // Create handler for display mode (used by useFieldCorrections hook)
-  const handleApplyFieldCorrection = React.useMemo(
-    () => createWritingCorrectionHandler('display'),
-    [createWritingCorrectionHandler]
-  );
-
-  const handleDismissWritingCorrection = React.useCallback(async (correction: WritingCorrection) => {
-    await dismissWritingCorrection(correction.item_id, correction.section);
-    showSuccess("Writing correction dismissed");
-  }, [dismissWritingCorrection, showSuccess]);
-
-  const { descriptionCorrection } = useFieldCorrections(
-    itemId,
-    writingCorrections,
-    [{ fieldName: 'description' }],  // Only description field for professional_summary
-    handleApplyFieldCorrection,
-    handleDismissWritingCorrection
-  );
 
   /**
    * Helper to safely extract keywords from data based on mode
@@ -386,7 +309,13 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
         />
       )}
 
-      {/* Writing Corrections now shown inline in edit mode */}
+      {/* Writing corrections - display mode (content/description field) */}
+      <DescriptionCorrectionBlock
+        descriptionCorrection={descriptionCorrection}
+        handleApplyFieldCorrection={handleApplyFieldCorrection}
+        handleDismissWritingCorrection={handleDismissWritingCorrection}
+        fieldName="content"
+      />
     </Box>
   );
 

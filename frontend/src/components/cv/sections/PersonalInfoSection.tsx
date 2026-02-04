@@ -6,6 +6,7 @@
  * - Social media links (LinkedIn, GitHub, website)
  * - Location autocomplete functionality
  * - Form validation and editing states
+ * - Inline writing corrections for description (CV quality analysis)
  */
 import React from "react";
 import {
@@ -28,6 +29,9 @@ import LocationAutocomplete from "../ui/LocationAutocomplete";
 import { useFieldValidation } from "../../../hooks/useFieldValidation";
 import { FormField } from "../core/formUtils";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
+import { useSingleSectionWritingCorrections } from "./hooks/useSingleSectionWritingCorrections";
+import { FieldCorrection } from "../../../types/ai";
+import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
 
 const ACADEMIC_TITLES = [
   // English
@@ -56,7 +60,11 @@ const ACADEMIC_TITLES = [
   "Mag.rer.nat.",
 ];
 
-const PersonalInfoSection: React.FC<SectionProps> = ({
+interface PersonalInfoSectionProps extends SectionProps {
+  cvId?: string;
+}
+
+const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   data,
   onUpdate,
   onSave,
@@ -66,18 +74,43 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
   onUnsavedChanges,
   title = "Personal Information",
   onTitleSave,
+  cvId,
 }) => {
   // Get validation errors for required fields (hooks must be called at component level)
   const fullNameValidation = useFieldValidation("personal_info", undefined, "full_name");
   const emailValidation = useFieldValidation("personal_info", undefined, "email");
   const locationValidation = useFieldValidation("personal_info", undefined, "location");
 
+  const {
+    descriptionCorrection,
+    handleApplyFieldCorrection,
+    handleDismissWritingCorrection,
+    createWritingCorrectionHandler,
+  } = useSingleSectionWritingCorrections({
+    cvId,
+    sectionKeys: ["personal_info", "personal_info.description"],
+    getValueFromCV: (c) =>
+      (c.parsed_data?.personal_info as { description?: string } | undefined)
+        ?.description ?? "",
+    formFieldName: "description",
+  });
+
   const renderForm = (
     editData: any,
     updateData: (field: string, value: any) => void,
-    onSave: () => void,
+    handleSave: () => void,
     onCancel: () => void,
-  ) => (
+  ) => {
+    const saveWithData: (data: Record<string, unknown>) => Promise<void> = (
+      data
+    ) => onSave(data, undefined);
+    const handleApplyWritingCorrectionInEdit = createWritingCorrectionHandler(
+      "edit",
+      editData,
+      updateData,
+      saveWithData
+    );
+    return (
       <Box>
         <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "baseline" }}>
           <TextField
@@ -304,6 +337,22 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
         value={editData.description || ""}
         onChange={(value) => updateData("description", value)}
         onSave={onSave}
+        htmlDiffCorrection={descriptionCorrection}
+        onApplyCorrection={
+          descriptionCorrection
+            ? async (correction) => {
+                await handleApplyWritingCorrectionInEdit(
+                  {} as FieldCorrection,
+                  correction
+                );
+              }
+            : undefined
+        }
+        onDismissCorrection={
+          descriptionCorrection
+            ? () => handleDismissWritingCorrection(descriptionCorrection.correction)
+            : undefined
+        }
       />
       <FormControlLabel
         control={
@@ -326,7 +375,8 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
         sx={{ mt: 1 }}
       />
     </Box>
-  );
+    );
+  };
 
   const renderDisplay = (data: any) => (
     <Box>
@@ -410,6 +460,12 @@ const PersonalInfoSection: React.FC<SectionProps> = ({
           />
         </Box>
       )}
+      <DescriptionCorrectionBlock
+        descriptionCorrection={descriptionCorrection}
+        handleApplyFieldCorrection={handleApplyFieldCorrection}
+        handleDismissWritingCorrection={handleDismissWritingCorrection}
+        fieldName="description"
+      />
     </Box>
   );
 

@@ -6,7 +6,7 @@ Values are read from environment variables with sensible defaults.
 """
 
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
 
@@ -65,6 +65,16 @@ class AIConfig:
     # Defaults to "low" for concise quality feedback
     # Options: "low", "medium", "high"
     CV_QUALITY_VERBOSITY: str = os.getenv("CV_QUALITY_VERBOSITY", "low")
+
+    # Temperature for all AI reasoning calls (where AI_REASONING_EFFORT is used).
+    # Lower values (e.g. 0) give more consistent output.
+    AI_REASONING_TEMPERATURE: float = float(os.getenv("AI_REASONING_TEMPERATURE", "0"))
+    # Optional fixed seed for reproducibility; set to empty to disable
+    CV_QUALITY_SEED: Optional[int] = (
+        int(x)
+        if (x := os.getenv("CV_QUALITY_SEED", "").strip()) and x.isdigit()
+        else None
+    )
 
     @classmethod
     def is_enabled(cls) -> bool:

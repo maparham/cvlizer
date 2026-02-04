@@ -119,6 +119,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               onEdit={() => handleSectionEdit("personal_info")}
               onClose={() => requestSectionCancel()}
               onUnsavedChanges={onUnsavedChanges}
+              cvId={cvId}
             />
           );
         case "professional_summary":

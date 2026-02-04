@@ -13,7 +13,8 @@ import { getFieldCorrection, getHtmlDiffCorrection } from '../../../../utils/wri
 export interface WritingCorrectionUtils {
   findWritingCorrectionForField: (fieldName: string, originalValue: string) => WritingCorrection | undefined;
   getCorrectionMetadata: (fieldCorrection: FieldCorrection | null) => { importance?: 'highly_recommended' | 'standard'; reasoning?: string };
-  getDescriptionCorrection: (itemId: string) => { html_diff: string; correction: WritingCorrection } | null;
+  /** Get description/content correction. fieldName defaults to 'description' (use 'content' for Professional Summary). */
+  getDescriptionCorrection: (itemId: string, fieldName?: string) => { html_diff: string; correction: WritingCorrection } | null;
 }
 
 /**
@@ -50,12 +51,12 @@ export function useWritingCorrectionHelpers(
     [findWritingCorrectionForField]
   );
 
-  // Get description correction in htmlDiffCorrection format
+  // Get description/content correction in htmlDiffCorrection format
   const getDescriptionCorrection = useCallback(
-    (itemId: string): { html_diff: string; correction: WritingCorrection } | null => {
-      const descriptionFieldCorrection = getFieldCorrection(writingCorrections, itemId, 'description');
+    (itemId: string, fieldName: string = 'description'): { html_diff: string; correction: WritingCorrection } | null => {
+      const descriptionFieldCorrection = getFieldCorrection(writingCorrections, itemId, fieldName);
       if (descriptionFieldCorrection) {
-        const writingCorrection = findWritingCorrectionForField('description', descriptionFieldCorrection.original_value);
+        const writingCorrection = findWritingCorrectionForField(fieldName, descriptionFieldCorrection.original_value);
         return writingCorrection
           ? { html_diff: descriptionFieldCorrection.html_diff, correction: writingCorrection }
           : null;

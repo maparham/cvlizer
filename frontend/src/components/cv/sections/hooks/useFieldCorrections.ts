@@ -14,7 +14,7 @@
 import { useMemo } from 'react';
 import { WritingCorrection, FieldCorrection } from '../../../../types/ai';
 import { getFieldCorrection } from '../../../../utils/writingCorrections';
-import { useWritingCorrectionHelpers, WritingCorrectionHelpers } from './useWritingCorrectionHelpers';
+import { useWritingCorrectionHelpers, WritingCorrectionUtils } from './useWritingCorrectionHelpers';
 
 export interface FieldConfig {
   fieldName: string;
@@ -31,7 +31,7 @@ export interface FieldCorrectionProps {
 export interface UseFieldCorrectionsResult {
   fieldCorrectionProps: Record<string, FieldCorrectionProps>;
   descriptionCorrection: { html_diff: string; correction: WritingCorrection } | null;
-  helpers: WritingCorrectionHelpers;
+  helpers: WritingCorrectionUtils;
 }
 
 /**
@@ -53,12 +53,10 @@ export function useFieldCorrections(
   writingCorrections: WritingCorrection[],
   fieldConfigs: FieldConfig[],
   onApplyFieldCorrection: (fieldCorrection: FieldCorrection, parentCorrection: WritingCorrection) => void,
-  onDismissWritingCorrection: (correction: WritingCorrection) => void
+  onDismissWritingCorrection: (correction: WritingCorrection) => void,
+  descriptionFieldName: string = 'description'
 ): UseFieldCorrectionsResult {
-  const helpers = useWritingCorrectionHelpers(
-    writingCorrections,
-    onDismissWritingCorrection
-  );
+  const helpers = useWritingCorrectionHelpers(writingCorrections);
 
   const fieldCorrectionProps = useMemo(() => {
     const props: Record<string, FieldCorrectionProps> = {};
@@ -97,8 +95,8 @@ export function useFieldCorrections(
   }, [writingCorrections, itemId, fieldConfigs, onApplyFieldCorrection, onDismissWritingCorrection, helpers]);
 
   const descriptionCorrection = useMemo(() => {
-    return helpers.getDescriptionCorrection(itemId);
-  }, [helpers, itemId]);
+    return helpers.getDescriptionCorrection(itemId, descriptionFieldName);
+  }, [helpers, itemId, descriptionFieldName]);
 
   return {
     fieldCorrectionProps,

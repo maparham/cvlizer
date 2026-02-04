@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Box, Typography, Chip, Tooltip, Button } from "@mui/material";
-import { Add as AddIcon, InfoOutlined as InfoIcon, Close as CloseIcon } from "@mui/icons-material";
+import { Box, Typography, Chip } from "@mui/material";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import SkillsAutocomplete from "../ui/SkillsAutocomplete";
@@ -9,6 +8,59 @@ import {
   useValidatedSuggestions,
 } from "../../../stores/aiSuggestionsStore";
 import { useNotifications } from "../../../packages/notifications";
+import {
+  useValidatedQualityAnalysis,
+  useCVQualityStore,
+} from "../../../stores/cvQualityStore";
+import { JobBasedSkillsSuggestionsBox } from "./JobBasedSkillsSuggestionsBox";
+import { SkillsQualitySuggestions } from "./SkillsQualitySuggestions";
+import {
+  useSkillsQualitySuggestions,
+  type UseSkillsQualitySuggestionsResult,
+  type UpdateAndSaveSkills,
+} from "./hooks/useSkillsQualitySuggestions";
+import type { SkillsSuggestions } from "../../../types/ai";
+
+/** Section data shape for skills (technical + soft arrays). */
+export interface SkillsSectionData {
+  technical?: string[];
+  soft?: string[];
+}
+
+/** Wrapper that wires CV quality skill suggestions to context-specific sectionData and updateAndSave. */
+const SkillsQualityBlock: React.FC<{
+  suggestions: SkillsSuggestions;
+  sectionData: SkillsSectionData;
+  updateAndSave: UpdateAndSaveSkills;
+  onDismissOne: (skill: string, type: "technical" | "soft") => Promise<void>;
+  qualityHandlers: UseSkillsQualitySuggestionsResult;
+}> = ({
+  suggestions,
+  sectionData,
+  updateAndSave,
+  onDismissOne,
+  qualityHandlers,
+}) => (
+  <SkillsQualitySuggestions
+    suggestions={suggestions}
+    onApplyOne={(suggestion, type) =>
+      qualityHandlers.handleAddQualitySkill(
+        suggestion,
+        type,
+        sectionData,
+        updateAndSave,
+      )
+    }
+    onDismissOne={onDismissOne}
+    onApplyAll={() =>
+      qualityHandlers.handleApplyAllQualitySuggestions(
+        sectionData,
+        updateAndSave,
+      )
+    }
+    onDismissAll={qualityHandlers.handleRejectAllQualitySuggestions}
+  />
+);
 
 interface SkillsSectionProps extends SectionProps {
   cvId?: string;
@@ -29,8 +81,17 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
   const [newSoftSkill, setNewSoftSkill] = useState("");
 
   // Get unified AI suggestions store with CV validation
-  const { dismissSkillSuggestion, dismissAllSkillSuggestions } =
-    useAISuggestionsStore();
+  const {
+    dismissSkillSuggestion: dismissJobSkillSuggestion,
+    dismissAllSkillSuggestions: dismissAllJobSkillSuggestions,
+  } = useAISuggestionsStore();
+
+  // Get CV-quality analysis (independent of job descriptions)
+  const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
+  const {
+    dismissSkillSuggestion: dismissQualitySkillSuggestion,
+    dismissSkillSuggestionsBatch: dismissQualitySkillSuggestionsBatch,
+  } = useCVQualityStore();
 
   // Use CV-validated selector to prevent cross-CV contamination
   const allSuggestions = useValidatedSuggestions(cvId || "");
@@ -45,11 +106,27 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
     (skillsSuggestions.technical.length > 0 ||
       skillsSuggestions.soft.length > 0);
 
-  // Helper function to save data immediately without closing edit mode
+  // Extract skills suggestions from CV-quality analysis
+  const qualitySkills = qualityAnalysis?.skills;
+  const qualityHasSuggestions =
+    !!qualitySkills &&
+    (qualitySkills.technical.length > 0 || qualitySkills.soft.length > 0);
+
+  // CV-quality skill handlers (shared between edit and display; pass sectionData + updateAndSave at call site)
+  const qualityHandlers = useSkillsQualitySuggestions({
+    qualitySkills: qualitySkills ?? null,
+    dismissOne: dismissQualitySkillSuggestion,
+    dismissBatch: dismissQualitySkillSuggestionsBatch,
+    showSuccess,
+  });
+
+  // Helper: persist skills to CV (await so backend receives update before we dismiss suggestions).
   const saveDataImmediately = useCallback(
-    (updatedData: any, message?: string) => {
+    async (updatedData: SkillsSectionData, message?: string) => {
       onUpdate(updatedData);
-      onSave?.(updatedData, message);
+      if (onSave) {
+        await onSave(updatedData, message);
+      }
     },
     [onUpdate, onSave],
   );
@@ -131,7 +208,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       };
       updateData(type, updatedData[type]);
       saveDataImmediately(updatedData, `AI suggested skill "${skill}" added`);
-      await dismissSkillSuggestion(skill, type);
+      await dismissJobSkillSuggestion(skill, type);
     };
 
     const handleApplyAllSuggestions = async () => {
@@ -163,13 +240,13 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       saveDataImmediately(updatedData, "All AI suggested skills applied");
 
       // Dismiss all suggestions - this will DELETE the enhancement from backend since all are applied
-      await dismissAllSkillSuggestions();
+      await dismissAllJobSkillSuggestions();
 
       showSuccess("All AI suggested skills have been applied");
     };
 
     const handleRejectAllSuggestions = async () => {
-      await dismissAllSkillSuggestions();
+      await dismissAllJobSkillSuggestions();
       showSuccess("All AI suggestions have been rejected");
     };
 
@@ -177,6 +254,15 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       skillsSuggestions &&
       (skillsSuggestions.technical.length > 0 ||
         skillsSuggestions.soft.length > 0);
+
+    const updateAndSaveEdit = async (
+      updatedData: SkillsSectionData,
+      message?: string,
+    ) => {
+      updateData("technical", updatedData.technical);
+      updateData("soft", updatedData.soft);
+      await saveDataImmediately(updatedData, message);
+    };
 
     return (
       <Box>
@@ -236,209 +322,34 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
           />
         </Box>
 
-        {/* AI Suggestions Section - Only show if suggestions exist */}
+        {/* AI Suggestions Section (Job-based) - Only show if suggestions exist */}
         {hasSuggestions && (
-          <Box
-            sx={{
-              mt: 2,
-              p: 2,
-              backgroundColor: "#E3F2FD",
-              border: "1px solid #90CAF9",
-              borderRadius: "8px",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "14px",
-                  color: "#1976D2",
-                }}
-              >
-                AI Suggested Skills
-              </Typography>
-              <Tooltip title="These skills from the job description are not in your CV yet">
-                <InfoIcon
-                  sx={{ ml: 0.5, fontSize: "16px", color: "#1976D2" }}
-                />
-              </Tooltip>
-            </Box>
+          <JobBasedSkillsSuggestionsBox
+            suggestions={skillsSuggestions}
+            onApplyOne={(suggestion, type) =>
+              handleAddSuggestedSkill(suggestion.skill, type)
+            }
+            onApplyAll={handleApplyAllSuggestions}
+            onRejectAll={handleRejectAllSuggestions}
+            variant="edit"
+          />
+        )}
 
-            {skillsSuggestions.technical.length > 0 && (
-              <Box sx={{ mb: skillsSuggestions.soft.length > 0 ? 2 : 0 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 500,
-                    fontSize: "13px",
-                    color: "#424242",
-                    mb: 1,
-                  }}
-                >
-                  Technical Skills
-                </Typography>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {skillsSuggestions.technical.map((suggestion) => (
-                    <Tooltip
-                      key={suggestion.skill}
-                      title={suggestion.reasoning}
-                      arrow
-                    >
-                      <Chip
-                        label={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <span>{suggestion.skill}</span>
-                            <AddIcon sx={{ fontSize: "16px" }} />
-                          </Box>
-                        }
-                        onClick={() =>
-                          handleAddSuggestedSkill(suggestion.skill, "technical")
-                        }
-                        sx={{
-                          backgroundColor: "white",
-                          border: "1px solid #64B5F6",
-                          borderRadius: "16px",
-                          padding: "6px 12px",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                          "&:hover": {
-                            backgroundColor: "#E3F2FD",
-                            borderColor: "#42A5F5",
-                          },
-                          "& .MuiChip-label": {
-                            padding: 0,
-                          },
-                        }}
-                      />
-                    </Tooltip>
-                  ))}
-                </Box>
-              </Box>
-            )}
-
-            {skillsSuggestions.soft.length > 0 && (
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 500,
-                    fontSize: "13px",
-                    color: "#424242",
-                    mb: 1,
-                  }}
-                >
-                  Soft Skills
-                </Typography>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {skillsSuggestions.soft.map((suggestion) => (
-                    <Tooltip
-                      key={suggestion.skill}
-                      title={suggestion.reasoning}
-                      arrow
-                    >
-                      <Chip
-                        label={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <span>{suggestion.skill}</span>
-                            <AddIcon sx={{ fontSize: "16px" }} />
-                          </Box>
-                        }
-                        onClick={() =>
-                          handleAddSuggestedSkill(suggestion.skill, "soft")
-                        }
-                        sx={{
-                          backgroundColor: "white",
-                          border: "1px solid #64B5F6",
-                          borderRadius: "16px",
-                          padding: "6px 12px",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                          "&:hover": {
-                            backgroundColor: "#E3F2FD",
-                            borderColor: "#42A5F5",
-                          },
-                          "& .MuiChip-label": {
-                            padding: 0,
-                          },
-                        }}
-                      />
-                    </Tooltip>
-                  ))}
-                </Box>
-              </Box>
-            )}
-
-            {/* Action Buttons */}
-            <Box
-              sx={{
-                display: "flex",
-                gap: 1,
-                mt: 2,
-                pt: 2,
-                borderTop: "1px solid #BBDEFB",
-              }}
-            >
-              <Button
-                variant="contained"
-                size="small"
-                onClick={handleApplyAllSuggestions}
-                sx={{
-                  backgroundColor: "#1976D2",
-                  color: "white",
-                  textTransform: "none",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  px: 2,
-                  py: 0.5,
-                  "&:hover": {
-                    backgroundColor: "#1565C0",
-                  },
-                }}
-              >
-                Apply All
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleRejectAllSuggestions}
-                startIcon={<CloseIcon />}
-                sx={{
-                  borderColor: "#1976D2",
-                  color: "#1976D2",
-                  textTransform: "none",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  px: 2,
-                  py: 0.5,
-                  "&:hover": {
-                    borderColor: "#1565C0",
-                    backgroundColor: "#E3F2FD",
-                  },
-                }}
-              >
-                Discard
-              </Button>
-            </Box>
-          </Box>
+        {/* CV Quality Skill Corrections - shared component for edit and display */}
+        {qualityHasSuggestions && qualitySkills && (
+          <SkillsQualityBlock
+            suggestions={qualitySkills}
+            sectionData={editData}
+            updateAndSave={updateAndSaveEdit}
+            onDismissOne={dismissQualitySkillSuggestion}
+            qualityHandlers={qualityHandlers}
+          />
         )}
       </Box>
     );
   };
 
-  const renderDisplay = (data: any) => {
+  const renderDisplay = (data: SkillsSectionData) => {
     // Handler functions for display mode
     const handleApplyAllSuggestionsDisplay = async () => {
       if (!skillsSuggestions) {
@@ -468,14 +379,30 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       onSave?.(updatedData, "All AI suggested skills applied");
 
       // Dismiss all suggestions - this will DELETE the enhancement from backend since all are applied
-      await dismissAllSkillSuggestions();
+      await dismissAllJobSkillSuggestions();
 
       showSuccess("All AI suggested skills have been applied");
     };
 
     const handleRejectAllSuggestionsDisplay = async () => {
-      await dismissAllSkillSuggestions();
+      await dismissAllJobSkillSuggestions();
       showSuccess("All AI suggestions have been rejected");
+    };
+
+    const handleApplyOneDisplay = async (
+      suggestion: { skill: string },
+      type: "technical" | "soft",
+    ) => {
+      const updatedData = {
+        ...data,
+        [type]: [...(data[type] || []), suggestion.skill],
+      };
+      onUpdate(updatedData);
+      onSave?.(updatedData);
+      await dismissJobSkillSuggestion(suggestion.skill, type);
+      showSuccess(
+        `Added "${suggestion.skill}" to ${type === "technical" ? "technical" : "soft"} skills`,
+      );
     };
 
     return (
@@ -503,198 +430,26 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
           ))}
         </Box>
 
-        {/* AI Skills Suggestions - Show in display mode too */}
+        {/* AI Skills Suggestions (Job-based) - Show in display mode too */}
         {hasSuggestions && (
-          <Box
-            sx={{
-              mt: 2,
-              p: { xs: 1.5, sm: 2 },
-              backgroundColor: "#E3F2FD",
-              border: "1px solid #BBDEFB",
-              borderRadius: 1,
-            }}
-          >
-            <Box display="flex" alignItems="center" mb={1}>
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: "bold", color: "#1976d2" }}
-              >
-                AI Suggested Skills
-              </Typography>
-              <Tooltip title="AI-generated skills based on job description">
-                <InfoIcon sx={{ ml: 1, fontSize: 16, color: "#1976d2" }} />
-              </Tooltip>
-            </Box>
+          <JobBasedSkillsSuggestionsBox
+            suggestions={skillsSuggestions}
+            onApplyOne={handleApplyOneDisplay}
+            onApplyAll={handleApplyAllSuggestionsDisplay}
+            onRejectAll={handleRejectAllSuggestionsDisplay}
+            variant="display"
+          />
+        )}
 
-            {(skillsSuggestions.technical.length > 0 ||
-              skillsSuggestions.soft.length > 0) && (
-              <Box>
-                {skillsSuggestions.technical.length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: "bold",
-                        color: "#666",
-                        display: "block",
-                        mb: 1,
-                      }}
-                    >
-                      Technical Skills:
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: { xs: 0.25, sm: 0.5 },
-                      }}
-                    >
-                      {skillsSuggestions.technical.map((suggestion, index) => (
-                        <Tooltip key={index} title={suggestion.reasoning}>
-                          <Chip
-                            label={suggestion.skill}
-                            size="small"
-                            sx={{
-                              backgroundColor: "white",
-                              border: "1px solid #1976d2",
-                              color: "#1976d2",
-                              cursor: "pointer",
-                              "&:hover": {
-                                backgroundColor: "#f5f5f5",
-                              },
-                            }}
-                            onClick={() => {
-                              const updatedData = {
-                                ...data,
-                                technical: [
-                                  ...(data.technical || []),
-                                  suggestion.skill,
-                                ],
-                              };
-                              onUpdate(updatedData);
-                              onSave?.(updatedData);
-                              dismissSkillSuggestion(
-                                suggestion.skill,
-                                "technical",
-                              );
-                              showSuccess(
-                                `Added "${suggestion.skill}" to technical skills`,
-                              );
-                            }}
-                          />
-                        </Tooltip>
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-
-                {skillsSuggestions.soft.length > 0 && (
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: "bold",
-                        color: "#666",
-                        display: "block",
-                        mb: 1,
-                      }}
-                    >
-                      Soft Skills:
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: { xs: 0.25, sm: 0.5 },
-                      }}
-                    >
-                      {skillsSuggestions.soft.map((suggestion, index) => (
-                        <Tooltip key={index} title={suggestion.reasoning}>
-                          <Chip
-                            label={suggestion.skill}
-                            size="small"
-                            sx={{
-                              backgroundColor: "white",
-                              border: "1px solid #7b1fa2",
-                              color: "#7b1fa2",
-                              cursor: "pointer",
-                              "&:hover": {
-                                backgroundColor: "#f5f5f5",
-                              },
-                            }}
-                            onClick={() => {
-                              const updatedData = {
-                                ...data,
-                                soft: [...(data.soft || []), suggestion.skill],
-                              };
-                              onUpdate(updatedData);
-                              onSave?.(updatedData);
-                              dismissSkillSuggestion(suggestion.skill, "soft");
-                              showSuccess(
-                                `Added "${suggestion.skill}" to soft skills`,
-                              );
-                            }}
-                          />
-                        </Tooltip>
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-
-                {/* Action Buttons for Display Mode */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    mt: 2,
-                    pt: 2,
-                    borderTop: "1px solid #BBDEFB",
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={handleApplyAllSuggestionsDisplay}
-                    sx={{
-                      backgroundColor: "#1976D2",
-                      color: "white",
-                      textTransform: "none",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      px: 2,
-                      py: 0.5,
-                      "&:hover": {
-                        backgroundColor: "#1565C0",
-                      },
-                    }}
-                  >
-                    Apply All
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={handleRejectAllSuggestionsDisplay}
-                    startIcon={<CloseIcon />}
-                    sx={{
-                      borderColor: "#1976D2",
-                      color: "#1976D2",
-                      textTransform: "none",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      px: 2,
-                      py: 0.5,
-                      "&:hover": {
-                        borderColor: "#1565C0",
-                        backgroundColor: "#E3F2FD",
-                      },
-                    }}
-                  >
-                    Discard
-                  </Button>
-                </Box>
-              </Box>
-            )}
-          </Box>
+        {/* CV Quality Skill Corrections - shared component (display mode) */}
+        {qualityHasSuggestions && qualitySkills && (
+          <SkillsQualityBlock
+            suggestions={qualitySkills}
+            sectionData={data}
+            updateAndSave={saveDataImmediately}
+            onDismissOne={dismissQualitySkillSuggestion}
+            qualityHandlers={qualityHandlers}
+          />
         )}
       </Box>
     );

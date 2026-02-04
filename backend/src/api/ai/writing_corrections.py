@@ -25,6 +25,7 @@ from .quality_analysis_helpers import (
     find_correction_by_id,
     find_corrections_batch,
     update_cv_with_corrections,
+    update_analysis_after_applying_corrections,
 )
 
 logger = logging.getLogger(__name__)
@@ -54,11 +55,6 @@ async def apply_writing_correction_endpoint(
         HTTPException: 404 if CV, analysis, or correction not found
         HTTPException: 400 if correction cannot be applied
     """
-    logger.info(
-        f"Applying writing correction: correction_id={correction_id}, "
-        f"cv_id={request.cv_id}, analysis_id={request.analysis_id}, user_id={user.id}"
-    )
-
     # Validate and load resources using helpers
     cv = validate_and_load_cv(db, request.cv_id, user.id)
     analysis = load_quality_analysis(db, request.analysis_id, request.cv_id, user.id)
@@ -85,8 +81,9 @@ async def apply_writing_correction_endpoint(
     # Update CV using helper
     updated_cv = update_cv_with_corrections(db, request.cv_id, user.id, updated_cv_data)
 
-    logger.info(
-        f"Successfully applied writing correction {correction_id} to CV {request.cv_id}"
+    # Remove applied correction from analysis so GET latest returns correct state
+    update_analysis_after_applying_corrections(
+        db, analysis, quality_data, [correction_id]
     )
 
     return CVResponse(**updated_cv.to_response_dict())
@@ -113,11 +110,6 @@ async def apply_writing_corrections_batch_endpoint(
         HTTPException: 404 if CV, analysis, or any correction not found
         HTTPException: 400 if any correction cannot be applied
     """
-    logger.info(
-        f"Applying batch writing corrections: cv_id={request.cv_id}, "
-        f"analysis_id={request.analysis_id}, count={len(request.correction_ids)}, user_id={user.id}"
-    )
-
     # Validate and load resources using helpers
     cv = validate_and_load_cv(db, request.cv_id, user.id)
     analysis = load_quality_analysis(db, request.analysis_id, request.cv_id, user.id)
@@ -150,8 +142,8 @@ async def apply_writing_corrections_batch_endpoint(
     # Update CV using helper
     updated_cv = update_cv_with_corrections(db, request.cv_id, user.id, updated_cv_data)
 
-    logger.info(
-        f"Successfully applied {len(corrections_to_apply)} writing corrections to CV {request.cv_id}"
-    )
+    # Remove applied corrections from analysis so GET latest returns correct state
+    applied_ids = [c.item_id for c in corrections_to_apply]
+    update_analysis_after_applying_corrections(db, analysis, quality_data, applied_ids)
 
     return CVResponse(**updated_cv.to_response_dict())

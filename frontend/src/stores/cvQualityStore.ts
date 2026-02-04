@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand';
-import { aiService } from '../services/ai';
+import { aiService, type CorrectionMode } from '../services/ai';
 import { Logger } from '../utils/logger';
 import { ErrorHandler } from '../utils/errorHandler';
 import { useNotificationStore } from '../packages/notifications/store';
@@ -14,6 +14,9 @@ import {
   CVQualityAnalysisData,
   CVQualityAnalysisResponse,
 } from '../types/ai';
+
+/** Skip overwriting with GET for this long after a dismiss to avoid ghost suggestion cards. */
+const DISMISS_COOLDOWN_MS = 3000;
 
 interface CVQualityStore {
   // State
@@ -24,9 +27,11 @@ interface CVQualityStore {
   analysisError: string | null;
   overallScore: number | null;
   isDismissing: boolean;
+  /** Set after a successful dismiss PATCH; loadLatestQualityAnalysis skips overwriting for DISMISS_COOLDOWN_MS to avoid ghost cards. */
+  lastDismissedAt: number | null;
 
   // Actions
-  generateQualityAnalysis: (cvId: string) => Promise<string | void>;
+  generateQualityAnalysis: (cvId: string, correctionMode?: CorrectionMode) => Promise<string | void>;
   updateQualityAnalysisStatus: (
     analysisId: string
   ) => Promise<CVQualityAnalysisResponse>;
@@ -47,6 +52,10 @@ interface CVQualityStore {
   dismissWorkExperienceSuggestion: (itemId: string) => Promise<void>;
   dismissEducationSuggestion: (itemId: string) => Promise<void>;
   dismissSkillSuggestion: (skill: string, type: 'technical' | 'soft') => Promise<void>;
+  /** Remove multiple skill suggestions in one PATCH (for Apply All). */
+  dismissSkillSuggestionsBatch: (
+    suggestions: Array<{ skill: string; type: 'technical' | 'soft' }>,
+  ) => Promise<void>;
   dismissAllQualitySuggestions: () => Promise<void>;
 
   clearQualityAnalysis: () => void;
@@ -63,9 +72,10 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
   analysisError: null,
   overallScore: null,
   isDismissing: false,
+  lastDismissedAt: null,
 
   // Generate quality analysis
-  generateQualityAnalysis: async (cvId: string) => {
+  generateQualityAnalysis: async (cvId: string, correctionMode: CorrectionMode = 'writing_only') => {
     set({ analysisLoading: true, analysisError: null });
 
     try {
@@ -80,7 +90,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
         overallScore: null,
       });
 
-      const result = await aiService.createQualityAnalysis(cvId);
+      const result = await aiService.createQualityAnalysis(cvId, correctionMode);
 
       if (!result || !result.analysis_id) {
         throw new Error('Invalid response from quality analysis API');
@@ -186,6 +196,16 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
         return;
       }
 
+      // Avoid overwriting with stale GET after a dismiss (prevents ghost cards)
+      const { currentAnalysisId, lastDismissedAt } = get();
+      if (
+        currentAnalysisId === analysis.id &&
+        lastDismissedAt != null &&
+        Date.now() - lastDismissedAt < DISMISS_COOLDOWN_MS
+      ) {
+        return;
+      }
+
       // Analysis complete - load the stored data
       if (analysis.quality_data) {
         set({
@@ -195,6 +215,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           analysisLoading: false,
           analysisError: analysis.generation_error || null,
           overallScore: analysis.overall_quality_score || null,
+          lastDismissedAt: null,
         });
       } else {
         // No quality data returned; clear local state
@@ -205,6 +226,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           analysisLoading: false,
           analysisError: analysis.generation_error || null,
           overallScore: analysis.overall_quality_score || null,
+          lastDismissedAt: null,
         });
       }
     } catch (error: any) {
@@ -256,6 +278,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     if (analysisId) {
       try {
         await aiService.updateQualityAnalysis(analysisId, updated);
+        set({ lastDismissedAt: Date.now() });
       } catch (error) {
         // Rollback state on error
         set({ qualityAnalysis: previousState });
@@ -351,6 +374,31 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     );
   },
 
+  // Dismiss multiple skill suggestions in one PATCH (for Apply All)
+  dismissSkillSuggestionsBatch: async (
+    suggestions: Array<{ skill: string; type: 'technical' | 'soft' }>,
+  ) => {
+    if (suggestions.length === 0) return;
+    const toRemove = new Set(
+      suggestions.map((s) => `${s.type}:${s.skill}`),
+    );
+    await get()._dismissItem(
+      (current) => ({
+        ...current,
+        skills: {
+          technical: current.skills.technical.filter(
+            (s) => !toRemove.has(`technical:${s.skill}`),
+          ),
+          soft: current.skills.soft.filter(
+            (s) => !toRemove.has(`soft:${s.skill}`),
+          ),
+        },
+      }),
+      'Failed to dismiss suggestions',
+      'Skill suggestions could not be dismissed. Please try again.'
+    );
+  },
+
   // Dismiss all quality suggestions
   dismissAllQualitySuggestions: async () => {
     await get().deleteCurrentAnalysis();
@@ -365,14 +413,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     try {
       await aiService.deleteQualityAnalysis(analysisId);
 
-      set({
-        qualityAnalysis: null,
-        currentCvId: null,
-        currentAnalysisId: null,
-        analysisLoading: false,
-        analysisError: null,
-        overallScore: null,
-      });
+      get().clearQualityAnalysis();
     } catch (error: any) {
       Logger.error('Failed to delete quality analysis', {
         analysisId,
@@ -391,6 +432,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
       analysisError: null,
       overallScore: null,
       isDismissing: false,
+      lastDismissedAt: null,
     });
   },
 

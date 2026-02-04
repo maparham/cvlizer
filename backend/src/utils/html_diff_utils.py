@@ -118,13 +118,9 @@ def extract_original_from_cv_data(
                     if actual_id:
                         coaching["item_id"] = actual_id
 
-    # Process work_experience items
+    # Process work_experience items (all items need original field)
     for item in response.get("work_experience", []):
-        if (
-            isinstance(item, dict)
-            and item.get("item_type") == "low_score"
-            and "item_id" in item
-        ):
+        if isinstance(item, dict) and "item_id" in item:
             item_id = item["item_id"]
             # Find matching item in CV data
             work_items = cv_data.get("work_experience", [])
@@ -140,13 +136,9 @@ def extract_original_from_cv_data(
                 )
                 item["original"] = ""
 
-    # Process education items
+    # Process education items (all items need original field)
     for item in response.get("education", []):
-        if (
-            isinstance(item, dict)
-            and item.get("item_type") == "low_score"
-            and "item_id" in item
-        ):
+        if isinstance(item, dict) and "item_id" in item:
             item_id = item["item_id"]
             # Find matching item in CV data
             education_items = cv_data.get("education", [])
@@ -177,6 +169,9 @@ def extract_original_from_cv_data(
         cv_item = None
         if section == "professional_summary":
             cv_item = cv_data.get("professional_summary", {})
+        elif section in ("personal_info", "personal_info.description"):
+            # AI sometimes returns "personal_info.description"; treat same as "personal_info"
+            cv_item = cv_data.get("personal_info", {})
         elif section in ["work_experience", "education"]:
             items = cv_data.get(section, [])
             for item in items:
@@ -275,12 +270,7 @@ def clean_quality_response(response: Dict[str, Any]) -> Dict[str, Any]:
 
     # Clean and compute fields for work experience and education
     for item in response.get("work_experience", []) + response.get("education", []):
-        if (
-            isinstance(item, dict)
-            and item.get("item_type") == "low_score"
-            and "html_diff" in item
-            and item["html_diff"]
-        ):
+        if isinstance(item, dict) and "html_diff" in item and item["html_diff"]:
             # Clean html_diff string
             item["html_diff"] = clean_html_diff_string(item["html_diff"])
             # Compute suggested from html_diff

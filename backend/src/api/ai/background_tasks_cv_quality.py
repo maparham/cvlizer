@@ -9,7 +9,13 @@ from src.utils.background_tasks import run_task_in_background
 logger = logging.getLogger(__name__)
 
 
-def cv_quality_analysis_sync(analysis_id: str, cv_data: dict, user_id: str, cv_id: str):
+def cv_quality_analysis_sync(
+    analysis_id: str,
+    cv_data: dict,
+    user_id: str,
+    cv_id: str,
+    correction_mode: str = "writing_only",
+):
     """
     Synchronous CV quality analysis task.
 
@@ -20,6 +26,7 @@ def cv_quality_analysis_sync(analysis_id: str, cv_data: dict, user_id: str, cv_i
         cv_data: Complete CV data dictionary
         user_id: User ID for logging
         cv_id: CV ID for logging
+        correction_mode: 'writing_only' or 'writing_and_content'
     """
     from src.services.ai_service.cv_quality_service import (
         generate_cv_corrections_and_feedback,
@@ -27,7 +34,8 @@ def cv_quality_analysis_sync(analysis_id: str, cv_data: dict, user_id: str, cv_i
 
     logger.info(
         f"Starting CV quality analysis background task - "
-        f"analysis_id={analysis_id}, cv_id={cv_id}, user_id={user_id}"
+        f"analysis_id={analysis_id}, cv_id={cv_id}, user_id={user_id}, "
+        f"correction_mode={correction_mode}"
     )
 
     loop = asyncio.new_event_loop()
@@ -37,7 +45,9 @@ def cv_quality_analysis_sync(analysis_id: str, cv_data: dict, user_id: str, cv_i
     try:
         # Generate corrections and feedback via AI
         quality_data, metadata = loop.run_until_complete(
-            generate_cv_corrections_and_feedback(cv_data, user_id, cv_id, db)
+            generate_cv_corrections_and_feedback(
+                cv_data, user_id, cv_id, db, correction_mode
+            )
         )
 
         # Update database record
@@ -102,7 +112,11 @@ def cv_quality_analysis_sync(analysis_id: str, cv_data: dict, user_id: str, cv_i
 
 
 async def cv_quality_analysis_background(
-    analysis_id: str, cv_data: dict, user_id: str, cv_id: str
+    analysis_id: str,
+    cv_data: dict,
+    user_id: str,
+    cv_id: str,
+    correction_mode: str = "writing_only",
 ):
     """
     Background task wrapper for CV quality analysis.
@@ -112,6 +126,7 @@ async def cv_quality_analysis_background(
         cv_data: Complete CV data dictionary
         user_id: User ID
         cv_id: CV ID
+        correction_mode: 'writing_only' or 'writing_and_content'
     """
     await run_task_in_background(
         analysis_id,
@@ -120,4 +135,5 @@ async def cv_quality_analysis_background(
         cv_data,
         user_id,
         cv_id,
+        correction_mode,
     )

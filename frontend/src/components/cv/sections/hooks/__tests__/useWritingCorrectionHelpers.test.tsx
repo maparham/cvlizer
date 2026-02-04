@@ -1,305 +1,170 @@
-import { renderHook, act } from '@testing-library/react';
-import { useWritingCorrectionHelpers } from '../useWritingCorrectionHelpers';
-import { WritingCorrection, FieldCorrection } from '../../../../../types/ai';
+/**
+ * Tests for useWritingCorrectionHelpers.
+ * Covers findWritingCorrectionForField, getCorrectionMetadata, getDescriptionCorrection
+ * (including fieldName and legacy html_diff fallback). No store/API mocks.
+ */
 
-describe('useWritingCorrectionHelpers', () => {
-  // Mock data fixtures
-  const mockFieldCorrection1: FieldCorrection = {
-    field_name: 'company',
-    original_value: 'Google Inc',
-    corrected_value: 'Google',
-    html_diff: '- Google Inc\n+ Google',
-    reasoning: 'Use official company name'
-  };
+import { renderHook } from "@testing-library/react";
+import { useWritingCorrectionHelpers } from "../useWritingCorrectionHelpers";
+import type { WritingCorrection, FieldCorrection } from "../../../../../types/ai";
 
-  const mockFieldCorrection2: FieldCorrection = {
-    field_name: 'position',
-    original_value: 'Developer',
-    corrected_value: 'Software Engineer',
-    html_diff: '- Developer\n+ Software Engineer'
-    // No field-specific reasoning
-  };
+const mockFieldCorrection1: FieldCorrection = {
+  field_name: "company",
+  original_value: "Google Inc",
+  html_diff: "<del>Google Inc</del><ins>Google</ins>",
+  reasoning: "Use official company name",
+};
 
-  const mockFieldCorrection3: FieldCorrection = {
-    field_name: 'description',
-    original_value: 'Built web apps',
-    corrected_value: 'Developed scalable web applications using React and Node.js',
-    html_diff: '- Built web apps\n+ Developed scalable web applications using React and Node.js',
-    reasoning: 'Be more specific and use stronger verbs'
-  };
+const mockFieldCorrection2: FieldCorrection = {
+  field_name: "position",
+  original_value: "Developer",
+  html_diff: "<del>Developer</del><ins>Software Engineer</ins>",
+};
 
-  const mockWritingCorrections: WritingCorrection[] = [
+const mockFieldCorrection3: FieldCorrection = {
+  field_name: "description",
+  original_value: "Built web apps",
+  html_diff: "<del>Built web apps</del><ins>Developed scalable web applications</ins>",
+  reasoning: "Be more specific",
+};
+
+const mockWritingCorrections: WritingCorrection[] = [
+  {
+    item_id: "work-1",
+    section: "work_experience",
+    field_corrections: [
+      mockFieldCorrection1,
+      mockFieldCorrection2,
+      mockFieldCorrection3,
+    ],
+    importance: "highly_recommended",
+  },
+];
+
+const mockWritingCorrectionContent: WritingCorrection = {
+  item_id: "professional_summary",
+  section: "professional_summary",
+  field_corrections: [
     {
-      item_id: 'work-1',
-      section: 'work_experience',
-      field_corrections: [mockFieldCorrection1, mockFieldCorrection2, mockFieldCorrection3],
-      reasoning: 'Parent reasoning for all corrections',
-      importance: 'highly_recommended'
-    }
-  ];
+      field_name: "content",
+      original_value: "Weak summary",
+      html_diff: "<del>Weak</del><ins>Strong</ins>",
+      reasoning: "Stronger opening",
+    },
+  ],
+  importance: "standard",
+};
 
-  const mockWritingCorrectionsLegacy: WritingCorrection[] = [
-    {
-      item_id: 'work-2',
-      section: 'work_experience',
-      html_diff: '- Old description\n+ New improved description',
-      reasoning: 'Legacy correction format',
-      importance: 'standard'
-    }
-  ];
+const mockLegacyCorrection: WritingCorrection = {
+  item_id: "work-2",
+  section: "work_experience",
+  html_diff: "- Old description\n+ New improved description",
+  importance: "standard",
+};
 
-  const mockWritingCorrectionsStandard: WritingCorrection[] = [
-    {
-      item_id: 'edu-1',
-      section: 'education',
-      field_corrections: [
-        {
-          field_name: 'institution',
-          original_value: 'MIT',
-          corrected_value: 'Massachusetts Institute of Technology',
-          html_diff: '- MIT\n+ Massachusetts Institute of Technology',
-          reasoning: 'Use full institution name'
-        }
-      ],
-      reasoning: 'Educational consistency',
-      importance: 'standard'
-    }
-  ];
-
-  const mockOnApply = jest.fn();
-  const mockOnDismiss = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  describe('findWritingCorrectionForField', () => {
-    it('should find correction when field and value match', () => {
+describe("useWritingCorrectionHelpers", () => {
+  describe("findWritingCorrectionForField", () => {
+    it("finds correction when field name and original value match", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
-      const found = result.current.findWritingCorrectionForField('company', 'Google Inc');
+      const found = result.current.findWritingCorrectionForField(
+        "company",
+        "Google Inc"
+      );
 
       expect(found).toBeDefined();
-      expect(found?.item_id).toBe('work-1');
-      expect(found?.importance).toBe('highly_recommended');
+      expect(found?.item_id).toBe("work-1");
+      expect(found?.importance).toBe("highly_recommended");
     });
 
-    it('should return undefined when field name does not match', () => {
+    it("returns undefined when field name does not match", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
-      const found = result.current.findWritingCorrectionForField('nonexistent', 'Google Inc');
+      const found = result.current.findWritingCorrectionForField(
+        "nonexistent",
+        "Google Inc"
+      );
 
       expect(found).toBeUndefined();
     });
 
-    it('should return undefined when original value does not match', () => {
+    it("returns undefined when original value does not match", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
-      const found = result.current.findWritingCorrectionForField('company', 'Microsoft');
+      const found = result.current.findWritingCorrectionForField(
+        "company",
+        "Microsoft"
+      );
 
       expect(found).toBeUndefined();
     });
 
-    it('should handle empty corrections array', () => {
+    it("handles empty corrections array", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers([], mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers([])
       );
 
-      const found = result.current.findWritingCorrectionForField('company', 'Google Inc');
+      const found = result.current.findWritingCorrectionForField(
+        "company",
+        "Google Inc"
+      );
 
       expect(found).toBeUndefined();
     });
 
-    it('should handle WritingCorrection without field_corrections', () => {
+    it("handles WritingCorrection without field_corrections", () => {
       const correctionsWithoutFields: WritingCorrection[] = [
         {
-          item_id: 'work-3',
-          section: 'work_experience',
-          reasoning: 'No field corrections',
-          importance: 'standard'
-        }
+          item_id: "work-3",
+          section: "work_experience",
+          importance: "standard",
+        },
       ];
 
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(correctionsWithoutFields, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(correctionsWithoutFields)
       );
 
-      const found = result.current.findWritingCorrectionForField('company', 'Google');
+      const found = result.current.findWritingCorrectionForField(
+        "company",
+        "Google"
+      );
 
       expect(found).toBeUndefined();
     });
   });
 
-  describe('handleApplyFieldCorrection', () => {
-    it('should call onApplyWritingCorrection with parent WritingCorrection when field exists', () => {
+  describe("getCorrectionMetadata", () => {
+    it("returns importance and reasoning when correction exists", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
-      );
-
-      act(() => {
-        result.current.handleApplyFieldCorrection(mockFieldCorrection1);
-      });
-
-      expect(mockOnApply).toHaveBeenCalledTimes(1);
-      expect(mockOnApply).toHaveBeenCalledWith(mockWritingCorrections[0]);
-    });
-
-    it('should not call onApplyWritingCorrection when field does not exist', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
-      );
-
-      const nonExistentField: FieldCorrection = {
-        field_name: 'nonexistent',
-        original_value: 'test',
-        corrected_value: 'test',
-        html_diff: '- test\n+ test'
-      };
-
-      act(() => {
-        result.current.handleApplyFieldCorrection(nonExistentField);
-      });
-
-      expect(mockOnApply).not.toHaveBeenCalled();
-    });
-
-    it('should handle missing callback gracefully', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, undefined, mockOnDismiss)
-      );
-
-      expect(() => {
-        act(() => {
-          result.current.handleApplyFieldCorrection(mockFieldCorrection1);
-        });
-      }).not.toThrow();
-
-      expect(mockOnApply).not.toHaveBeenCalled();
-    });
-
-    it('should work with multiple field corrections in same WritingCorrection', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
-      );
-
-      // Apply first field correction
-      act(() => {
-        result.current.handleApplyFieldCorrection(mockFieldCorrection1);
-      });
-
-      expect(mockOnApply).toHaveBeenCalledWith(mockWritingCorrections[0]);
-
-      mockOnApply.mockClear();
-
-      // Apply second field correction from same WritingCorrection
-      act(() => {
-        result.current.handleApplyFieldCorrection(mockFieldCorrection2);
-      });
-
-      expect(mockOnApply).toHaveBeenCalledWith(mockWritingCorrections[0]);
-    });
-  });
-
-  describe('handleDismissFieldCorrection', () => {
-    it('should call onDismissWritingCorrection with parent WritingCorrection when field exists', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
-      );
-
-      act(() => {
-        result.current.handleDismissFieldCorrection(mockFieldCorrection1);
-      });
-
-      expect(mockOnDismiss).toHaveBeenCalledTimes(1);
-      expect(mockOnDismiss).toHaveBeenCalledWith(mockWritingCorrections[0]);
-    });
-
-    it('should not call onDismissWritingCorrection when field does not exist', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
-      );
-
-      const nonExistentField: FieldCorrection = {
-        field_name: 'nonexistent',
-        original_value: 'test',
-        corrected_value: 'test',
-        html_diff: '- test\n+ test'
-      };
-
-      act(() => {
-        result.current.handleDismissFieldCorrection(nonExistentField);
-      });
-
-      expect(mockOnDismiss).not.toHaveBeenCalled();
-    });
-
-    it('should handle missing callback gracefully', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, undefined)
-      );
-
-      expect(() => {
-        act(() => {
-          result.current.handleDismissFieldCorrection(mockFieldCorrection1);
-        });
-      }).not.toThrow();
-
-      expect(mockOnDismiss).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('getCorrectionMetadata', () => {
-    it('should return importance and field-specific reasoning when correction exists', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
       const metadata = result.current.getCorrectionMetadata(mockFieldCorrection1);
 
-      expect(metadata.importance).toBe('highly_recommended');
-      expect(metadata.reasoning).toBe('Use official company name'); // Field-specific reasoning
+      expect(metadata.importance).toBe("highly_recommended");
+      expect(metadata.reasoning).toBe("Use official company name");
     });
 
-    it('should prioritize field-specific reasoning over parent reasoning', () => {
+    it("returns field-specific reasoning", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
       const metadata = result.current.getCorrectionMetadata(mockFieldCorrection3);
 
-      expect(metadata.reasoning).toBe('Be more specific and use stronger verbs'); // Field-specific, not parent
+      expect(metadata.reasoning).toBe("Be more specific");
     });
 
-    it('should fall back to parent reasoning when field reasoning is missing', () => {
+    it("returns undefined importance and reasoning when field correction is null", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
-      );
-
-      const metadata = result.current.getCorrectionMetadata(mockFieldCorrection2);
-
-      expect(metadata.reasoning).toBe('Parent reasoning for all corrections'); // Fallback to parent
-    });
-
-    it('should return standard importance correctly', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrectionsStandard, mockOnApply, mockOnDismiss)
-      );
-
-      const fieldCorrection = mockWritingCorrectionsStandard[0].field_corrections![0];
-      const metadata = result.current.getCorrectionMetadata(fieldCorrection);
-
-      expect(metadata.importance).toBe('standard');
-    });
-
-    it('should return undefined importance and reasoning when correction is null', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
       const metadata = result.current.getCorrectionMetadata(null);
@@ -308,16 +173,15 @@ describe('useWritingCorrectionHelpers', () => {
       expect(metadata.reasoning).toBeUndefined();
     });
 
-    it('should return undefined importance and reasoning when field correction cannot be found', () => {
+    it("returns undefined when field correction has no matching writing correction", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
       const orphanedField: FieldCorrection = {
-        field_name: 'orphaned',
-        original_value: 'value',
-        corrected_value: 'newvalue',
-        html_diff: '- value\n+ newvalue'
+        field_name: "orphaned",
+        original_value: "value",
+        html_diff: "- value\n+ newvalue",
       };
 
       const metadata = result.current.getCorrectionMetadata(orphanedField);
@@ -327,143 +191,96 @@ describe('useWritingCorrectionHelpers', () => {
     });
   });
 
-  describe('getDescriptionCorrection', () => {
-    it('should return html_diff format for description field when found', () => {
+  describe("getDescriptionCorrection", () => {
+    it("returns html_diff and correction when description field exists", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
-      const descriptionCorrection = result.current.getDescriptionCorrection('work-1');
+      const desc = result.current.getDescriptionCorrection("work-1");
 
-      expect(descriptionCorrection).toBeDefined();
-      expect(descriptionCorrection?.html_diff).toBe('- Built web apps\n+ Developed scalable web applications using React and Node.js');
-      expect(descriptionCorrection?.correction).toEqual(mockWritingCorrections[0]);
+      expect(desc).not.toBeNull();
+      expect(desc?.html_diff).toContain("Built web apps");
+      expect(desc?.correction.item_id).toBe("work-1");
     });
 
-    it('should fall back to legacy html_diff format when no field correction exists', () => {
+    it("uses default fieldName 'description' when second arg omitted", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrectionsLegacy, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(mockWritingCorrections)
       );
 
-      const descriptionCorrection = result.current.getDescriptionCorrection('work-2');
+      const desc = result.current.getDescriptionCorrection("work-1");
 
-      expect(descriptionCorrection).toBeDefined();
-      expect(descriptionCorrection?.html_diff).toBe('- Old description\n+ New improved description');
-      expect(descriptionCorrection?.correction).toEqual(mockWritingCorrectionsLegacy[0]);
+      expect(desc).not.toBeNull();
+      expect(desc?.html_diff).toBe(mockFieldCorrection3.html_diff);
     });
 
-    it('should return null when no description correction exists', () => {
-      const correctionsWithoutDescription: WritingCorrection[] = [
+    it("uses fieldName 'content' for professional summary", () => {
+      const corrections = [mockWritingCorrectionContent];
+      const { result } = renderHook(() =>
+        useWritingCorrectionHelpers(corrections)
+      );
+
+      const desc = result.current.getDescriptionCorrection(
+        "professional_summary",
+        "content"
+      );
+
+      expect(desc).not.toBeNull();
+      expect(desc?.html_diff).toContain("Weak");
+      expect(desc?.correction.section).toBe("professional_summary");
+    });
+
+    it("returns null when itemId has no matching correction", () => {
+      const { result } = renderHook(() =>
+        useWritingCorrectionHelpers(mockWritingCorrections)
+      );
+
+      const desc = result.current.getDescriptionCorrection("nonexistent-id");
+
+      expect(desc).toBeNull();
+    });
+
+    it("returns null when field has no correction for that item", () => {
+      const correctionsNoDescription: WritingCorrection[] = [
         {
-          item_id: 'work-3',
-          section: 'work_experience',
-          field_corrections: [mockFieldCorrection1], // Only company correction, no description
-          reasoning: 'No description correction',
-          importance: 'standard'
-        }
+          item_id: "work-3",
+          section: "work_experience",
+          field_corrections: [mockFieldCorrection1],
+          importance: "standard",
+        },
       ];
 
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(correctionsWithoutDescription, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(correctionsNoDescription)
       );
 
-      const descriptionCorrection = result.current.getDescriptionCorrection('work-3');
+      const desc = result.current.getDescriptionCorrection("work-3");
 
-      expect(descriptionCorrection).toBeNull();
+      expect(desc).toBeNull();
     });
 
-    it('should return null when item ID does not match', () => {
+    it("falls back to legacy html_diff when no field_corrections for description", () => {
+      const correctionsWithLegacy = [mockLegacyCorrection];
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers(correctionsWithLegacy)
       );
 
-      const descriptionCorrection = result.current.getDescriptionCorrection('nonexistent-id');
+      const desc = result.current.getDescriptionCorrection("work-2");
 
-      expect(descriptionCorrection).toBeNull();
+      expect(desc).not.toBeNull();
+      expect(desc?.html_diff).toBe("- Old description\n+ New improved description");
+      expect(desc?.correction.item_id).toBe("work-2");
     });
 
-    it('should return null for empty corrections array', () => {
+    it("returns null for empty corrections array", () => {
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers([], mockOnApply, mockOnDismiss)
+        useWritingCorrectionHelpers([])
       );
 
-      const descriptionCorrection = result.current.getDescriptionCorrection('work-1');
+      const desc = result.current.getDescriptionCorrection("work-1");
 
-      expect(descriptionCorrection).toBeNull();
-    });
-
-    it('should include full WritingCorrection object in result', () => {
-      const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(mockWritingCorrections, mockOnApply, mockOnDismiss)
-      );
-
-      const descriptionCorrection = result.current.getDescriptionCorrection('work-1');
-
-      expect(descriptionCorrection?.correction).toHaveProperty('item_id', 'work-1');
-      expect(descriptionCorrection?.correction).toHaveProperty('section', 'work_experience');
-      expect(descriptionCorrection?.correction).toHaveProperty('importance', 'highly_recommended');
-      expect(descriptionCorrection?.correction).toHaveProperty('reasoning');
-    });
-  });
-
-  describe('Callback memoization', () => {
-    it('should memoize callbacks when dependencies do not change', () => {
-      const { result, rerender } = renderHook(
-        ({ corrections, onApply, onDismiss }) =>
-          useWritingCorrectionHelpers(corrections, onApply, onDismiss),
-        {
-          initialProps: {
-            corrections: mockWritingCorrections,
-            onApply: mockOnApply,
-            onDismiss: mockOnDismiss
-          }
-        }
-      );
-
-      const firstCallbacks = result.current;
-
-      // Rerender with same props
-      rerender({
-        corrections: mockWritingCorrections,
-        onApply: mockOnApply,
-        onDismiss: mockOnDismiss
-      });
-
-      const secondCallbacks = result.current;
-
-      // Callbacks should be the same reference
-      expect(firstCallbacks.handleApplyFieldCorrection).toBe(secondCallbacks.handleApplyFieldCorrection);
-      expect(firstCallbacks.handleDismissFieldCorrection).toBe(secondCallbacks.handleDismissFieldCorrection);
-      expect(firstCallbacks.getCorrectionMetadata).toBe(secondCallbacks.getCorrectionMetadata);
-      expect(firstCallbacks.getDescriptionCorrection).toBe(secondCallbacks.getDescriptionCorrection);
-    });
-
-    it('should update callbacks when corrections change', () => {
-      const { result, rerender } = renderHook(
-        ({ corrections, onApply, onDismiss }) =>
-          useWritingCorrectionHelpers(corrections, onApply, onDismiss),
-        {
-          initialProps: {
-            corrections: mockWritingCorrections,
-            onApply: mockOnApply,
-            onDismiss: mockOnDismiss
-          }
-        }
-      );
-
-      const firstCallbacks = result.current;
-
-      // Rerender with different corrections
-      rerender({
-        corrections: mockWritingCorrectionsStandard,
-        onApply: mockOnApply,
-        onDismiss: mockOnDismiss
-      });
-
-      const secondCallbacks = result.current;
-
-      // Callbacks should be different references
-      expect(firstCallbacks.getDescriptionCorrection).not.toBe(secondCallbacks.getDescriptionCorrection);
+      expect(desc).toBeNull();
     });
   });
 });

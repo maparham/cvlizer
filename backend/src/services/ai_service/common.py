@@ -379,6 +379,7 @@ async def call_openai_with_schema(
     response_schema: Type[BaseModel],
     model: Optional[str] = None,
     reasoning_effort: Optional[str] = None,
+    use_reasoning: bool = True,
     user_id: Optional[str] = None,
     cv_id: Optional[str] = None,
     operation_type: str,
@@ -407,6 +408,7 @@ async def call_openai_with_schema(
         response_schema: Pydantic schema for response parsing and validation
         model: OpenAI model to use (defaults to AIConfig.OPENAI_MODEL)
         reasoning_effort: Reasoning effort level (defaults to AIConfig.REASONING_EFFORT)
+        use_reasoning: If True, use reasoning model (omit temperature). If False, use temperature.
         user_id: User identifier for logging
         cv_id: CV identifier for logging
         operation_type: Type of operation (for logging, e.g., "parse_cv", "enhance_content")
@@ -450,21 +452,35 @@ async def call_openai_with_schema(
 
     try:
 
+        def _get_seed_for_operation(op_type: str) -> Optional[int]:
+            """Return deterministic seed for operations that support it."""
+            if op_type == "cv_quality_analysis":
+                return AIConfig.CV_QUALITY_SEED
+            return None
+
         async def _call():
-            call_kwargs = {
+            call_kwargs: Dict[str, Any] = {
                 "model": model,
                 "input": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
                 "text_format": response_schema,
-                "reasoning": Reasoning(effort=reasoning_effort),
                 "service_tier": AIConfig.AGENT_PROCESSING_TIER,
             }
+            if use_reasoning:
+                call_kwargs["reasoning"] = Reasoning(effort=reasoning_effort)
+            else:
+                call_kwargs["temperature"] = AIConfig.AI_REASONING_TEMPERATURE
 
             # Add text verbosity if specified
             if text_verbosity:
                 call_kwargs["text"] = {"verbosity": text_verbosity}
+
+            # Optional deterministic seed per operation type
+            seed = _get_seed_for_operation(operation_type)
+            if seed is not None:
+                call_kwargs["seed"] = seed
 
             return await asyncio.to_thread(
                 client.responses.parse,

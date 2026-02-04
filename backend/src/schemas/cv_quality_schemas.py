@@ -156,10 +156,14 @@ class TimelineGapSchema(BaseModel):
 
 
 class SkillQualitySuggestionSchema(BaseModel):
-    """Skill suggestion with reasoning."""
+    """Skill suggestion with reasoning. Optional original for replace semantics (spelling/capitalization)."""
 
     skill: str
     reasoning: str = Field(max_length=100)
+    original: Optional[str] = Field(
+        default=None,
+        description="Exact string as it appears in the CV when correcting spelling/capitalization; omit for new suggestions.",
+    )
 
 
 class SkillsSuggestionsSchema(BaseModel):
@@ -225,7 +229,7 @@ class FieldCorrectionAISchema(BaseModel):
         description="Name of the field (company, position, institution, degree, location, description, etc.)"
     )
     html_diff: str = Field(
-        description="Required HTML diff showing visual changes with <del> and <ins> tags. Used for display. Corrected value is computed from this in post-processing."
+        description="Only include this field_correction when there is an actual edit; then html_diff must contain <del> or <ins>. Omit if no edits.",
     )
     reasoning: Optional[str] = Field(
         default=None,
@@ -247,7 +251,7 @@ class WritingCorrectionAISchema(BaseModel):
     )
     field_corrections: List[FieldCorrectionAISchema] = Field(
         default_factory=list,
-        description="Array of field corrections (company, position, institution, degree, location, description, etc.). All fields including description use this format.",
+        description="Only include a field_correction when that field has an actual edit (html_diff contains <del> or <ins>). Omit fields with no changes.",
     )
     importance: str = Field(pattern="^(highly_recommended|standard)$")
 
@@ -280,7 +284,27 @@ class LowQualityItemAISchema(BaseModel):
     coaching_questions: Optional[List[CoachingQuestionSchema]] = Field(default=None)
 
 
-class CVQualityAnalysisAIResponseSchema(BaseModel):
+class CVQualityAnalysisAIResponseBaseSchema(BaseModel):
+    """Base AI response schema for CV quality analysis (shared fields across modes)."""
+
+    overall_quality_score: int = Field(ge=0, le=100)
+
+    writing_corrections: List[WritingCorrectionAISchema] = Field(
+        default_factory=list,
+        description="Only items where at least one field_correction has an html_diff containing <del> or <ins>. Omit items with no edits; do not include entries with only 'No changes needed'.",
+    )
+
+    professional_summary: Optional[ProfessionalSummaryQualitySuggestionAISchema] = Field(
+        default=None
+    )
+
+    skills: SkillsSuggestionsSchema = Field(
+        default_factory=SkillsSuggestionsSchema,
+        description="Optional new skills suggestions",
+    )
+
+
+class CVQualityAnalysisAIResponseSchema(CVQualityAnalysisAIResponseBaseSchema):
     """AI response schema for CV quality analysis (excludes computed fields).
 
     This schema is used for OpenAI API calls. Computed fields (corrected_value,
@@ -291,14 +315,7 @@ class CVQualityAnalysisAIResponseSchema(BaseModel):
     that need improvement. Items with score >= 50 are not included in the response.
     """
 
-    overall_quality_score: int = Field(ge=0, le=100)
-
-    writing_corrections: List[WritingCorrectionAISchema] = Field(default_factory=list)
     content_coaching: List[ContentCoachingItemSchema] = Field(default_factory=list)
-
-    professional_summary: Optional[ProfessionalSummaryQualitySuggestionAISchema] = Field(
-        default=None
-    )
 
     work_experience: List[LowQualityItemAISchema] = Field(
         default_factory=list,
@@ -309,9 +326,32 @@ class CVQualityAnalysisAIResponseSchema(BaseModel):
         description="Only items with quality score < 50 that need improvement",
     )
 
-    skills: SkillsSuggestionsSchema = Field(
-        default_factory=SkillsSuggestionsSchema,
-        description="Optional new skills suggestions",
+
+class LowQualityItemAISchemaWritingOnly(BaseModel):
+    """Low-quality item schema for writing_only mode; no coaching_questions.
+
+    Used so the JSON schema sent to the model does not include coaching_questions,
+    preventing the model from generating them in writing_only mode.
+    """
+
+    item_type: str = Field(default="low_score", description="Discriminator for item type")
+    item_id: str
+    section: str
+    quality_score: int = Field(ge=0, lt=50)
+    reasoning: str = Field(max_length=200)
+    html_diff: str
+
+
+class CVQualityAnalysisAIResponseSchemaWritingOnly(CVQualityAnalysisAIResponseBaseSchema):
+    """AI response schema for writing_only mode; no content_coaching or item coaching_questions."""
+
+    work_experience: List[LowQualityItemAISchemaWritingOnly] = Field(
+        default_factory=list,
+        description="Only items with quality score < 50 that need improvement",
+    )
+    education: List[LowQualityItemAISchemaWritingOnly] = Field(
+        default_factory=list,
+        description="Only items with quality score < 50 that need improvement",
     )
 
 
@@ -353,6 +393,17 @@ class CVQualityAnalysisCreateResponseSchema(BaseModel):
     analysis_id: str
     is_generating: bool
     message: Optional[str] = None
+
+
+class CVQualityAnalysisCreateRequestSchema(BaseModel):
+    """Request schema for creating quality analysis."""
+
+    correction_mode: str = Field(
+        default="writing_only",
+        pattern="^(writing_only|writing_and_content)$",
+        description="Correction mode: 'writing_only' for spelling/grammar only, "
+        "'writing_and_content' to also fix unprofessional content",
+    )
 
 
 class CVQualityAnalysisUpdateSchema(BaseModel):

@@ -1,11 +1,11 @@
 /**
  * CV Quality Panel Component
  *
- * Displays quality score badge and "Analyze CV Quality" button.
+ * Displays quality score badge and "Improve my CV" button.
  * Shown in the AI suggestions sidebar.
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -13,11 +13,19 @@ import {
   CircularProgress,
   Chip,
   Alert,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import SpellcheckIcon from '@mui/icons-material/Spellcheck';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
 import { useCVQualityStore } from '../../../stores/cvQualityStore';
 import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
+import type { CorrectionMode } from '../../../services/ai';
 
 // Scoped selector: Only return values if they belong to the current CV
 const useScopedQualityState = (cvId: string) => {
@@ -69,10 +77,15 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
   const {
     generateQualityAnalysis,
     clearAnalysisError,
+    dismissAllQualitySuggestions,
   } = useCVQualityStore();
 
   const { addTask } = useAITaskPollingContext();
   const isMountedRef = useRef(true);
+
+  // Menu state for correction mode selection
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(menuAnchorEl);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -81,9 +94,19 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
     };
   }, []);
 
-  const handleAnalyze = async () => {
+  const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+
+  const handleAnalyze = async (correctionMode: CorrectionMode) => {
+    handleMenuClose();
+
     try {
-      const analysisId = await generateQualityAnalysis(cvId);
+      const analysisId = await generateQualityAnalysis(cvId, correctionMode);
 
       // Only proceed if component is still mounted
       if (!isMountedRef.current) {
@@ -131,8 +154,11 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
         startIcon={
           analysisLoading ? <CircularProgress size={20} /> : <AutoAwesomeIcon />
         }
-        onClick={handleAnalyze}
+        onClick={handleButtonClick}
         disabled={analysisLoading}
+        aria-controls={menuOpen ? 'correction-mode-menu' : undefined}
+        aria-haspopup="true"
+        aria-expanded={menuOpen ? 'true' : undefined}
         sx={{
           py: 1.5,
           textTransform: 'none',
@@ -140,11 +166,74 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
         }}
       >
         {analysisLoading
-          ? 'Analyzing CV Quality...'
+          ? 'Improving CV...'
           : overallScore === null
-          ? 'Analyze CV Quality'
-          : 'Re-analyze CV Quality'}
+          ? 'Improve my CV'
+          : 'Improve my CV again'}
       </Button>
+
+      {/* Correction Mode Menu */}
+      <Menu
+        id="correction-mode-menu"
+        anchorEl={menuAnchorEl}
+        open={menuOpen}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+        slotProps={{
+          paper: {
+            sx: { minWidth: 280 },
+          },
+        }}
+      >
+        <MenuItem onClick={() => handleAnalyze('writing_only')}>
+          <ListItemIcon>
+            <SpellcheckIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText
+            primary="Fix spelling and grammar"
+            secondary="Correct typos, grammar, and punctuation only"
+          />
+        </MenuItem>
+        <MenuItem onClick={() => handleAnalyze('writing_and_content')}>
+          <ListItemIcon>
+            <EditNoteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText
+            primary="Fix writing and unprofessional content"
+            secondary="Also reword unprofessional language"
+          />
+        </MenuItem>
+      </Menu>
+
+      {/* Clear All Suggestions Button */}
+      {overallScore !== null && (
+        <Button
+          variant="text"
+          color="inherit"
+          fullWidth
+          size="small"
+          startIcon={<ClearAllIcon />}
+          onClick={dismissAllQualitySuggestions}
+          disabled={analysisLoading}
+          sx={{
+            mt: 1,
+            textTransform: 'none',
+            color: 'text.secondary',
+            '&:hover': {
+              color: 'text.primary',
+            },
+          }}
+        >
+          Clear all suggestions
+        </Button>
+      )}
 
       {/* Error Display */}
       {analysisError && (

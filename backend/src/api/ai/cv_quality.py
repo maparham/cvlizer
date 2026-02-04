@@ -18,6 +18,7 @@ from src.models.cv import CV
 from src.models.cv_quality_analysis import CVQualityAnalysis
 from src.schemas.cv_quality_schemas import (
     CVQualityAnalysisDBSchema,
+    CVQualityAnalysisCreateRequestSchema,
     CVQualityAnalysisCreateResponseSchema,
     CVQualityAnalysisUpdateSchema,
 )
@@ -31,6 +32,7 @@ router = APIRouter()
 @router.post("/cvs/{cv_id}/quality-analysis", status_code=202)
 async def create_cv_quality_analysis(
     cv_id: str,
+    request: CVQualityAnalysisCreateRequestSchema = CVQualityAnalysisCreateRequestSchema(),
     user: User = Depends(get_effective_user),
     db: Session = Depends(get_db),
 ) -> CVQualityAnalysisCreateResponseSchema:
@@ -41,6 +43,7 @@ async def create_cv_quality_analysis(
 
     Args:
         cv_id: CV ID to analyze
+        request: Request body with correction_mode (writing_only or writing_and_content)
         user: Authenticated user (from dependency)
         db: Database session (from dependency)
 
@@ -50,7 +53,10 @@ async def create_cv_quality_analysis(
     Raises:
         HTTPException: 404 if CV not found or not parsed
     """
-    logger.info(f"Creating CV quality analysis: cv_id={cv_id}, user_id={user.id}")
+    logger.info(
+        f"Creating CV quality analysis: cv_id={cv_id}, user_id={user.id}, "
+        f"correction_mode={request.correction_mode}"
+    )
 
     # Validate CV ownership and parsed data
     cv = get_cv_by_id(db, cv_id, user.id)
@@ -135,6 +141,7 @@ async def create_cv_quality_analysis(
             cv_data=cv.parsed_data,
             user_id=user.id,
             cv_id=cv_id,
+            correction_mode=request.correction_mode,
         )
     )
 

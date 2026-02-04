@@ -118,10 +118,6 @@ def apply_field_corrections(
         # Update the field if it exists in the item
         if field_name in updated_item:
             updated_item[field_name] = corrected_value
-            logger.debug(
-                f"Applied field correction: {field_name} = '{corrected_value}' "
-                f"(was: '{field_correction.original_value}')"
-            )
         else:
             skipped_fields.append(field_name)
             logger.warning(f"Field '{field_name}' not found in item, skipping correction")
@@ -152,8 +148,14 @@ def apply_writing_correction(
     item_id = correction.item_id
     section = correction.section
 
-    # Validate section
-    if section not in ["work_experience", "education", "professional_summary"]:
+    # Validate section (personal_info.description accepted for backward compatibility with AI output)
+    if section not in [
+        "work_experience",
+        "education",
+        "professional_summary",
+        "personal_info",
+        "personal_info.description",
+    ]:
         raise ValueError(f"Invalid section: {section}")
 
     # Find the item in CV data
@@ -188,6 +190,23 @@ def apply_writing_correction(
             if skipped_fields:
                 logger.warning(
                     f"Skipped {len(skipped_fields)} fields for professional_summary: {skipped_fields}"
+                )
+        return cv_data
+    elif section in ("personal_info", "personal_info.description"):
+        # Personal info is a single object, not a list (similar to professional_summary)
+        # personal_info.description accepted for backward compatibility with AI output
+        # Apply field_corrections if any (includes description field)
+        if correction.field_corrections:
+            personal_info = cv_data.get("personal_info")
+            if personal_info is None:
+                personal_info = {}
+            personal_info, skipped_fields = apply_field_corrections(
+                personal_info, correction.field_corrections
+            )
+            cv_data["personal_info"] = personal_info
+            if skipped_fields:
+                logger.warning(
+                    f"Skipped {len(skipped_fields)} fields for personal_info: {skipped_fields}"
                 )
         return cv_data
     else:
@@ -234,7 +253,5 @@ def apply_writing_correction(
 
     # Update CV data
     cv_data[item_key] = items
-
-    logger.info(f"Successfully applied writing correction to {section} item {item_id}")
 
     return cv_data

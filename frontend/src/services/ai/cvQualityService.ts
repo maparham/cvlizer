@@ -11,15 +11,24 @@ import {
   CVQualityAnalysisData,
 } from '../../types/ai';
 
+export type CorrectionMode = 'writing_only' | 'writing_and_content';
+
 export const cvQualityService = {
   /**
    * Create new quality analysis for a CV
+   *
+   * @param cvId - CV ID to analyze
+   * @param correctionMode - 'writing_only' for spelling/grammar only,
+   *                         'writing_and_content' to also fix unprofessional content
    */
   async createQualityAnalysis(
-    cvId: string
+    cvId: string,
+    correctionMode: CorrectionMode = 'writing_only'
   ): Promise<CVQualityAnalysisCreateResponse> {
     try {
-      const response = await api.post(`/api/cvs/${cvId}/quality-analysis`);
+      const response = await api.post(`/api/cvs/${cvId}/quality-analysis`, {
+        correction_mode: correctionMode,
+      });
 
       if (!response.data || !response.data.analysis_id) {
         throw new Error('Invalid response from quality analysis API: missing analysis_id');

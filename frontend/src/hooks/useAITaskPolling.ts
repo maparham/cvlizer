@@ -317,6 +317,22 @@ export const useAITaskPolling = (
     (task: AITask) => {
       // CRITICAL: Update ref FIRST before state update to ensure immediate poll sees the task
       const newMap = new Map(activeTasksRef.current);
+
+      // When adding a new cv_quality_analysis task, remove any existing one for the same cvId
+      // so we only poll the new analysis ID (avoids 404 after "Improve my CV again" deletes old analyses)
+      if (task.type === "cv_quality_analysis" && task.cvId) {
+        for (const [id, t] of newMap.entries()) {
+          if (
+            t.type === "cv_quality_analysis" &&
+            t.cvId === task.cvId &&
+            id !== task.id
+          ) {
+            newMap.delete(id);
+            break;
+          }
+        }
+      }
+
       newMap.set(task.id, task);
       activeTasksRef.current = newMap;
 

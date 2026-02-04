@@ -441,6 +441,8 @@ export interface TimelineGap {
 export interface SkillQualitySuggestion {
   skill: string;
   reasoning: string;
+  /** If set, replace this exact string in the CV list with `skill` (spelling/capitalization correction). */
+  original?: string;
 }
 
 export interface CVQualityAnalysisData {

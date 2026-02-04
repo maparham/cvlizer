@@ -169,6 +169,56 @@ def find_corrections_batch(
     return corrections
 
 
+def remove_applied_corrections_from_quality_data(
+    quality_data: CVQualityAnalysisResponseSchema, correction_ids: List[str]
+) -> dict:
+    """
+    Build quality_data dict with given writing corrections removed (by item_id).
+
+    Used after applying corrections so GET latest analysis returns correct state.
+
+    Args:
+        quality_data: Parsed quality analysis data
+        correction_ids: item_ids of applied corrections to remove
+
+    Returns:
+        dict: quality_data suitable for analysis.quality_data (JSON)
+    """
+    ids_to_remove = set(correction_ids)
+    new_writing_corrections = [
+        wc for wc in quality_data.writing_corrections if wc.item_id not in ids_to_remove
+    ]
+    updated = quality_data.model_dump()
+    updated["writing_corrections"] = [wc.model_dump() for wc in new_writing_corrections]
+    return updated
+
+
+def update_analysis_after_applying_corrections(
+    db: Session,
+    analysis: CVQualityAnalysis,
+    quality_data: CVQualityAnalysisResponseSchema,
+    correction_ids: List[str],
+) -> None:
+    """
+    Update analysis.quality_data to remove applied corrections and commit.
+
+    Call after applying writing corrections so GET latest analysis returns
+    correct state (applied corrections no longer listed).
+
+    Args:
+        db: Database session
+        analysis: CVQualityAnalysis record to update
+        quality_data: Parsed quality analysis data (before removal)
+        correction_ids: item_ids of applied corrections to remove
+    """
+    updated_quality_data = remove_applied_corrections_from_quality_data(
+        quality_data, correction_ids
+    )
+    analysis.quality_data = updated_quality_data
+    db.commit()
+    db.refresh(analysis)
+
+
 def update_cv_with_corrections(
     db: Session, cv_id: str, user_id: str, updated_cv_data: dict
 ) -> CV:
