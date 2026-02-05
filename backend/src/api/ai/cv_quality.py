@@ -53,11 +53,6 @@ async def create_cv_quality_analysis(
     Raises:
         HTTPException: 404 if CV not found or not parsed
     """
-    logger.info(
-        f"Creating CV quality analysis: cv_id={cv_id}, user_id={user.id}, "
-        f"correction_mode={request.correction_mode}"
-    )
-
     # Validate CV ownership and parsed data
     cv = get_cv_by_id(db, cv_id, user.id)
     if not cv or not cv.parsed_data:
@@ -73,9 +68,6 @@ async def create_cv_quality_analysis(
     )
 
     if existing:
-        logger.info(
-            f"CV quality analysis already in progress: analysis_id={existing.id}, cv_id={cv_id}"
-        )
         return CVQualityAnalysisCreateResponseSchema(
             analysis_id=existing.id,
             is_generating=True,
@@ -108,9 +100,6 @@ async def create_cv_quality_analysis(
         )
 
         if existing:
-            logger.info(
-                f"CV quality analysis already in progress (race condition): analysis_id={existing.id}, cv_id={cv_id}"
-            )
             return CVQualityAnalysisCreateResponseSchema(
                 analysis_id=existing.id,
                 is_generating=True,
@@ -173,9 +162,6 @@ async def create_cv_quality_analysis(
                         f"Task initialization failed: {str(e)}"
                     )
                     db_session.commit()
-                    logger.info(
-                        f"Updated failed analysis state: analysis_id={analysis_id}"
-                    )
             except Exception as db_error:
                 logger.critical(
                     f"CRITICAL: Failed to update error state for stuck analysis - "
@@ -185,8 +171,6 @@ async def create_cv_quality_analysis(
                 db_session.close()
 
     task.add_done_callback(task_done_callback)
-
-    logger.info(f"Created CV quality analysis: analysis_id={analysis_id}, cv_id={cv_id}")
 
     return CVQualityAnalysisCreateResponseSchema(
         analysis_id=analysis_id,

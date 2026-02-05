@@ -438,17 +438,22 @@ async def call_openai_with_schema(
     client = get_openai_client()
     start_time = time.time()
 
-    # Log AI prompt (INFO level for visibility, DEBUG for full content)
-    logger.info(
-        f"[{operation_type}] Calling OpenAI API - user_id={user_id}, cv_id={cv_id}, "
-        f"prompt_length={len(user_prompt)} chars"
+    # Log AI prompts at DEBUG level with truncated previews to keep logs readable
+    max_preview_chars = 2000
+    logger.debug(
+        "[%s] System prompt (len=%d): %s",
+        operation_type,
+        len(system_prompt),
+        system_prompt[:max_preview_chars],
     )
     logger.debug(
-        f"[{operation_type}] System prompt (user_id={user_id}, cv_id={cv_id}):\n{system_prompt}"
+        "[%s] User prompt (len=%d): %s",
+        operation_type,
+        len(user_prompt),
+        user_prompt[:max_preview_chars],
     )
-    logger.debug(
-        f"[{operation_type}] User prompt (user_id={user_id}, cv_id={cv_id}, length={len(user_prompt)}):\n{user_prompt}"
-    )
+    schema_json = json.dumps(response_schema.model_json_schema(), indent=2)
+    logger.debug("[%s] Response JSON schema: %s", operation_type, schema_json)
 
     try:
 
@@ -498,21 +503,31 @@ async def call_openai_with_schema(
         tokens_used = prompt_tokens + completion_tokens
         cached_tokens = extract_cached_tokens(response)
 
-        # Log AI response (INFO level for summary, DEBUG for full content)
-        logger.info(
-            f"[{operation_type}] OpenAI API call successful - user_id={user_id}, cv_id={cv_id}, "
-            f"tokens={tokens_used} (prompt={prompt_tokens}, completion={completion_tokens}, cached={cached_tokens}), "
-            f"time={generation_time}ms"
+        # Log concise AI call summary at DEBUG level
+        logger.debug(
+            "[%s] OpenAI call ok - user_id=%s, cv_id=%s, tokens=%d, time=%dms",
+            operation_type,
+            user_id,
+            cv_id,
+            tokens_used,
+            generation_time,
         )
+
+        # Log parsed AI response preview at DEBUG level
         try:
-            response_json = json.dumps(parsed_data, indent=2, ensure_ascii=False)
-            # Log AI response at INFO level for all operations for visibility
-            logger.info(
-                f"[{operation_type}] AI response (user_id={user_id}, cv_id={cv_id}, tokens={tokens_used}):\n{response_json}"
+            response_json = json.dumps(parsed_data, ensure_ascii=False)
+            logger.debug(
+                "[%s] AI response (len=%d): %s",
+                operation_type,
+                len(response_json),
+                response_json[:max_preview_chars],
             )
-        except Exception as e:
-            error_msg = f"[{operation_type}] AI response (user_id={user_id}, cv_id={cv_id}, tokens={tokens_used}): [Failed to serialize response: {str(e)}]"
-            logger.info(error_msg)
+        except Exception as serialize_error:
+            logger.debug(
+                "[%s] Failed to serialize AI response for logging: %s",
+                operation_type,
+                str(serialize_error),
+            )
 
         # Build metadata dictionary
         metadata = {

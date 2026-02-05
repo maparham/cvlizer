@@ -32,12 +32,6 @@ def cv_quality_analysis_sync(
         generate_cv_corrections_and_feedback,
     )
 
-    logger.info(
-        f"Starting CV quality analysis background task - "
-        f"analysis_id={analysis_id}, cv_id={cv_id}, user_id={user_id}, "
-        f"correction_mode={correction_mode}"
-    )
-
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
