@@ -89,6 +89,7 @@ async def run_openai_call(
     client: Any,
     model: str,
     reasoning_effort: str,
+    reasoning_summary: Optional[str],
     use_prompt_ref: bool,
     use_reasoning: bool,
     system_prompt: Optional[str],
@@ -201,7 +202,10 @@ async def run_openai_call(
         if AIConfig.AGENT_PROCESSING_TIER:
             call_kwargs["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
         if use_reasoning:
-            call_kwargs["reasoning"] = Reasoning(effort=reasoning_effort)
+            reasoning_kw: Dict[str, str] = {"effort": reasoning_effort}
+            if reasoning_summary:
+                reasoning_kw["summary"] = reasoning_summary
+            call_kwargs["reasoning"] = Reasoning(**reasoning_kw)
         else:
             call_kwargs["temperature"] = AIConfig.AI_REASONING_TEMPERATURE
         if text_verbosity:

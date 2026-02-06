@@ -347,6 +347,7 @@ async def call_openai_with_schema(
             client=client,
             model=model,
             reasoning_effort=reasoning_effort,
+            reasoning_summary=AIConfig.REASONING_SUMMARY,
             use_prompt_ref=use_prompt_ref,
             use_reasoning=use_reasoning,
             system_prompt=system_prompt,

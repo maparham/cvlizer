@@ -55,6 +55,10 @@ class AIConfig:
     # - high: Better quality, slower, more expensive
     REASONING_EFFORT: str = os.getenv("AI_REASONING_EFFORT", "low")
 
+    # Reasoning summary: how much reasoning trace to include in the response.
+    # Options: "auto", "concise", "detailed". Passed to OpenAI Responses API.
+    REASONING_SUMMARY: str = os.getenv("AI_REASONING_SUMMARY", "auto")
+
     # Parsing-specific reasoning effort (for CV and JD parsing)
     # Defaults to "minimal" for faster parsing operations
     # Options: "minimal", "low", "medium", "high"
