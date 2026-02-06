@@ -283,6 +283,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                 <TableCell>User</TableCell>
                 <TableCell>Operation</TableCell>
                 <TableCell>Model</TableCell>
+                <TableCell>Tier</TableCell>
                 <TableCell align="right">Tokens</TableCell>
                 <TableCell align="right">Cost</TableCell>
                 <TableCell align="right">Duration</TableCell>
@@ -327,6 +328,12 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                     <TableCell>
                       <Typography variant="body2">
                         {formatModelName(log.model_used)}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="body2">
+                        {log.service_tier ?? "—"}
                       </Typography>
                     </TableCell>
 

@@ -43,7 +43,7 @@ async def create_cv_quality_analysis(
 
     Args:
         cv_id: CV ID to analyze
-        request: Request body with correction_mode (writing_only or writing_and_content)
+        request: Request body with correction_mode (proofread or coaching)
         user: Authenticated user (from dependency)
         db: Database session (from dependency)
 

@@ -136,6 +136,7 @@ export interface AIUsageLogDetail {
   cv_id: string | null;
   operation_type: string;
   model_used: string;
+  service_tier?: string | null;
   prompt_tokens: number;
   completion_tokens: number;
   cached_tokens: number;

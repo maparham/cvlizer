@@ -328,10 +328,10 @@ class CVQualityAnalysisAIResponseSchema(CVQualityAnalysisAIResponseBaseSchema):
 
 
 class LowQualityItemAISchemaWritingOnly(BaseModel):
-    """Low-quality item schema for writing_only mode; no coaching_questions.
+    """Low-quality item schema for proofread mode; no coaching_questions.
 
     Used so the JSON schema sent to the model does not include coaching_questions,
-    preventing the model from generating them in writing_only mode.
+    preventing the model from generating them in proofread mode.
     """
 
     item_type: str = Field(default="low_score", description="Discriminator for item type")
@@ -343,7 +343,7 @@ class LowQualityItemAISchemaWritingOnly(BaseModel):
 
 
 class CVQualityAnalysisAIResponseSchemaWritingOnly(CVQualityAnalysisAIResponseBaseSchema):
-    """AI response schema for writing_only mode; no content_coaching or item coaching_questions."""
+    """AI response schema for proofread mode; no content_coaching or item coaching_questions."""
 
     work_experience: List[LowQualityItemAISchemaWritingOnly] = Field(
         default_factory=list,
@@ -399,10 +399,10 @@ class CVQualityAnalysisCreateRequestSchema(BaseModel):
     """Request schema for creating quality analysis."""
 
     correction_mode: str = Field(
-        default="writing_only",
-        pattern="^(writing_only|writing_and_content)$",
-        description="Correction mode: 'writing_only' for spelling/grammar only, "
-        "'writing_and_content' to also fix unprofessional content",
+        default="proofread",
+        pattern="^(proofread|coaching)$",
+        description="Correction mode: 'proofread' for spelling/grammar only, "
+        "'coaching' to also fix unprofessional content",
     )
 
 

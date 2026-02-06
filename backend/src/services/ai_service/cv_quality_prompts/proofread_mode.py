@@ -8,7 +8,7 @@ from .common import WRITING_CORRECTIONS_COMMON
 
 
 def build_proofread_mode_system_prompt() -> str:
-    """Return the full system prompt for correction_mode == 'writing_only' (proofread)."""
+    """Return the full system prompt for correction_mode == 'proofread'."""
     role_section = (
         "Proofreader. Fix only spelling, grammar, and punctuation. Do not reword, "
         "paraphrase, or suggest content changes. Do not change word choice or style; "

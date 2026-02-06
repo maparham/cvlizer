@@ -23,13 +23,12 @@ from .common import (
     RETRY_DELAY,
     call_openai_with_schema,
     extract_cached_tokens,
-    extract_response_data,
     get_openai_client,
     is_ai_enabled,
     log_ai_usage_safe,
-    validate_with_schema,
     with_retries,
 )
+from .response_parsing import extract_response_data, validate_with_schema
 
 logger = logging.getLogger(__name__)
 

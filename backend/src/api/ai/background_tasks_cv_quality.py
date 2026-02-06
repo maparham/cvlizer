@@ -14,7 +14,7 @@ def cv_quality_analysis_sync(
     cv_data: dict,
     user_id: str,
     cv_id: str,
-    correction_mode: str = "writing_only",
+    correction_mode: str = "proofread",
 ):
     """
     Synchronous CV quality analysis task.
@@ -26,7 +26,7 @@ def cv_quality_analysis_sync(
         cv_data: Complete CV data dictionary
         user_id: User ID for logging
         cv_id: CV ID for logging
-        correction_mode: 'writing_only' or 'writing_and_content'
+        correction_mode: 'proofread' or 'coaching'
     """
     from src.services.ai_service.cv_quality_service import (
         generate_cv_corrections_and_feedback,
@@ -110,7 +110,7 @@ async def cv_quality_analysis_background(
     cv_data: dict,
     user_id: str,
     cv_id: str,
-    correction_mode: str = "writing_only",
+    correction_mode: str = "proofread",
 ):
     """
     Background task wrapper for CV quality analysis.
@@ -120,7 +120,7 @@ async def cv_quality_analysis_background(
         cv_data: Complete CV data dictionary
         user_id: User ID
         cv_id: CV ID
-        correction_mode: 'writing_only' or 'writing_and_content'
+        correction_mode: 'proofread' or 'coaching'
     """
     await run_task_in_background(
         analysis_id,

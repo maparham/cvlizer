@@ -5,10 +5,12 @@ This module handles database connection setup, table creation,
 and imports all models to ensure proper relationship definitions.
 """
 
+import logging
 import os
 import sys
 
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 # Ensure src is importable
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -34,15 +36,38 @@ from src.models.user_activity import UserActivity, UserSession  # noqa: F401, E4
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 
 def get_database_url():
     """Get the database URL from environment variables."""
     return os.getenv("DATABASE_URL", "sqlite:///./cv_optimizer.db")
 
 
+def _migrate_ai_usage_logs_service_tier():
+    """
+    Add service_tier column to ai_usage_logs if missing (one-off migration).
+    Safe to run multiple times; no-op if column already exists.
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(
+                text("ALTER TABLE ai_usage_logs ADD COLUMN service_tier VARCHAR(50)")
+            )
+            conn.commit()
+        logger.info("Migration: added ai_usage_logs.service_tier")
+    except Exception as e:
+        msg = str(e).lower()
+        if "duplicate column" in msg or "already exists" in msg:
+            pass
+        else:
+            raise
+
+
 def create_tables():
     """Create all database tables using the shared engine."""
     Base.metadata.create_all(bind=engine)
+    _migrate_ai_usage_logs_service_tier()
 
 
 if __name__ == "__main__":

@@ -11,19 +11,19 @@ import {
   CVQualityAnalysisData,
 } from '../../types/ai';
 
-export type CorrectionMode = 'writing_only' | 'writing_and_content';
+export type CorrectionMode = 'proofread' | 'coaching';
 
 export const cvQualityService = {
   /**
    * Create new quality analysis for a CV
    *
    * @param cvId - CV ID to analyze
-   * @param correctionMode - 'writing_only' for spelling/grammar only,
-   *                         'writing_and_content' to also fix unprofessional content
+   * @param correctionMode - 'proofread' for spelling/grammar only,
+   *                         'coaching' to also fix unprofessional content
    */
   async createQualityAnalysis(
     cvId: string,
-    correctionMode: CorrectionMode = 'writing_only'
+    correctionMode: CorrectionMode = 'proofread'
   ): Promise<CVQualityAnalysisCreateResponse> {
     try {
       const response = await api.post(`/api/cvs/${cvId}/quality-analysis`, {

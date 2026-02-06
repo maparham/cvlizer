@@ -148,7 +148,9 @@ async def startup_event():
     logger.info(f"  Agent Model: {AIConfig.AGENT_MODEL}")
     logger.info(f"  Reasoning Effort: {AIConfig.REASONING_EFFORT}")
     logger.info(f"  Parsing Effort: {AIConfig.OPENAI_PARSING_EFFORT}")
-    logger.info(f"  Agent Processing Tier: {AIConfig.AGENT_PROCESSING_TIER}")
+    logger.info(
+        f"  Agent Processing Tier: {AIConfig.AGENT_PROCESSING_TIER or '(not set)'}"
+    )
     logger.info("=" * 60)
 
     # Fail fast on missing/placeholder secrets in non-dev

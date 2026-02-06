@@ -10,6 +10,7 @@ import asyncio
 import logging
 import time
 from datetime import datetime
+from typing import Any, Dict
 
 import openai as openai_module
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -119,14 +120,18 @@ async def test_openai_api(
         # Note: Responses API uses 'instructions' for system message and 'input' for prompt
         # It uses max_output_tokens instead of max_tokens
         # Temperature parameter is not supported in Responses API
+        create_kwargs: Dict[str, Any] = {
+            "model": model,
+            "instructions": system_message,
+            "input": request.prompt,
+            "max_output_tokens": max_tokens,
+            "reasoning": {"effort": "minimal", "summary": "auto"},
+        }
+        if AIConfig.AGENT_PROCESSING_TIER:
+            create_kwargs["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
         response = await asyncio.to_thread(
             client.responses.create,
-            model=model,
-            instructions=system_message,
-            input=request.prompt,
-            max_output_tokens=max_tokens,
-            reasoning={"effort": "minimal", "summary": "auto"},
-            service_tier=AIConfig.AGENT_PROCESSING_TIER,
+            **create_kwargs,
         )
         logger.debug(f"OpenAI Response API response: {response}")
 

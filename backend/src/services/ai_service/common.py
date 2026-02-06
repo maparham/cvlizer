@@ -7,16 +7,16 @@ and utility functions for API interaction and response processing.
 """
 
 import asyncio
-import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Type, TypedDict
 
 import openai
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.config import AIConfig
+from src.services.ai_service.responses_runner import run_openai_call
 
 logger = logging.getLogger(__name__)
 
@@ -121,96 +121,6 @@ def extract_cached_tokens(response: Any) -> int:
     return 0
 
 
-def extract_response_data(response: Any) -> Tuple[Optional[str], int, int]:
-    """
-    Extract content and token usage from OpenAI Response API response.
-
-    This utility function handles the Response API's format which differs from
-    the Chat Completions API format. It extracts:
-    - The response text/content
-    - Prompt/input tokens
-    - Completion/output tokens
-
-    Args:
-        response: OpenAI Response API response object
-
-    Returns:
-        Tuple of (content, prompt_tokens, completion_tokens)
-        - content: The response text, or None if not found
-        - prompt_tokens: Number of input tokens used
-        - completion_tokens: Number of output tokens generated
-    """
-    # Extract content from Response API format
-    content = None
-    if hasattr(response, "output_text"):
-        content = response.output_text
-    elif hasattr(response, "output"):
-        for item in response.output:
-            if hasattr(item, "type") and item.type == "message":
-                if hasattr(item, "content"):
-                    if isinstance(item.content, list):
-                        # Handle content as array
-                        for content_item in item.content:
-                            if (
-                                hasattr(content_item, "type")
-                                and content_item.type == "output_text"
-                            ):
-                                content = content_item.text
-                                break
-                    else:
-                        # Handle content as string
-                        content = item.content
-                    break
-
-    # Extract token usage - Response API uses input_tokens/output_tokens or prompt_tokens/completion_tokens
-    prompt_tokens = 0
-    completion_tokens = 0
-    if hasattr(response, "usage"):
-        # Try both naming conventions (SDK versions may vary)
-        prompt_tokens = getattr(response.usage, "prompt_tokens", 0) or getattr(
-            response.usage, "input_tokens", 0
-        )
-        completion_tokens = getattr(response.usage, "completion_tokens", 0) or getattr(
-            response.usage, "output_tokens", 0
-        )
-
-    return content, prompt_tokens, completion_tokens
-
-
-def parse_json_from_markdown(content: str) -> str:
-    """
-    Extract JSON content from markdown code blocks.
-
-    Handles both ```json and ``` code block formats.
-
-    Args:
-        content: Raw content that may contain markdown code blocks
-
-    Returns:
-        Cleaned JSON string without markdown formatting
-    """
-    if not content:
-        return content
-
-    # Extract JSON from ```json code blocks
-    if "```json" in content:
-        start = content.find("```json") + 7
-        end = content.find("```", start)
-        if end != -1:
-            return content[start:end].strip()
-        return content
-
-    # Extract from generic ``` code blocks
-    if "```" in content:
-        start = content.find("```") + 3
-        end = content.find("```", start)
-        if end != -1:
-            return content[start:end].strip()
-        return content
-
-    return content
-
-
 def build_error_response(
     error_message: str, operation_type: str = "ai_operation"
 ) -> Dict[str, Any]:
@@ -251,6 +161,7 @@ def log_ai_usage_safe(
     error_message: Optional[str] = None,
     cv_id: Optional[str] = None,
     cached_tokens: int = 0,
+    service_tier: Optional[str] = None,
 ) -> None:
     """
     Safely log AI usage without breaking existing functionality.
@@ -270,6 +181,7 @@ def log_ai_usage_safe(
         error_message: Error message if operation failed
         cv_id: CV identifier (optional)
         cached_tokens: Number of cached input tokens (default: 0)
+        service_tier: Optional tier (flex, standard, priority) for cost and display.
     """
     try:
         if db_session:
@@ -287,6 +199,7 @@ def log_ai_usage_safe(
                 error_message=error_message,
                 cv_id=cv_id,
                 cached_tokens=cached_tokens,
+                service_tier=service_tier,
             )
     except Exception as e:
         # Log the error but don't raise it to avoid breaking main functionality
@@ -322,35 +235,6 @@ async def with_retries(
     raise last_exc
 
 
-def validate_with_schema(
-    content: str, schema: Type[BaseModel], operation: str
-) -> Optional[BaseModel]:
-    """
-    Validate AI response content against Pydantic schema.
-
-    Args:
-        content: JSON string content to validate
-        schema: Pydantic BaseModel schema class to validate against
-        operation: Operation name for logging purposes
-
-    Returns:
-        Validated Pydantic model instance, or None if validation fails
-    """
-    try:
-        validated_model = schema.model_validate_json(content)
-        return validated_model
-    except ValidationError as e:
-        logger.error(
-            f"Schema validation failed for {operation}: {e.error_count()} errors"
-        )
-        logger.error(f"Validation errors: {e.errors()}")
-        logger.error(f"Content preview: {content[:500]}...")
-        return None
-    except Exception as e:
-        logger.error(f"Unexpected error during schema validation for {operation}: {e}")
-        return None
-
-
 def get_user_friendly_error_message(error: Exception) -> str:
     """
     Convert technical OpenAI errors to user-friendly messages.
@@ -374,25 +258,31 @@ def get_user_friendly_error_message(error: Exception) -> str:
 
 async def call_openai_with_schema(
     *,
-    system_prompt: str,
-    user_prompt: str,
+    system_prompt: Optional[str] = None,
+    user_prompt: Optional[str] = None,
     response_schema: Type[BaseModel],
     model: Optional[str] = None,
     reasoning_effort: Optional[str] = None,
     use_reasoning: bool = True,
     user_id: Optional[str] = None,
     cv_id: Optional[str] = None,
-    operation_type: str,
+    operation_type: str = "ai_operation",
     db_session: Optional[Session] = None,
     retry_attempts: int = RETRY_ATTEMPTS,
     retry_delay: float = RETRY_DELAY,
     text_verbosity: Optional[str] = None,
+    prompt_ref: Optional[Dict[str, Any]] = None,
+    prompt_variables: Optional[Dict[str, str]] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Unified OpenAI API call with schema validation, retry logic, and usage logging.
 
-    This function centralizes all OpenAI API interactions across AI services,
-    providing consistent error handling, retry logic, token tracking, and usage logging.
+    Two branches:
+    - Inline input: pass system_prompt and user_prompt; uses client.responses.parse
+      with input=[system, user].
+    - Prompt-by-ID: pass prompt_ref (id, version?) and prompt_variables; uses
+      client.responses.create with prompt=... and no input, then parses and
+      validates output with response_schema.
 
     Handles:
     - AI enabled check with standardized error response
@@ -403,8 +293,8 @@ async def call_openai_with_schema(
     - Consistent error handling and logging
 
     Args:
-        system_prompt: System message content for OpenAI
-        user_prompt: User message content for OpenAI
+        system_prompt: System message content (required when not using prompt_ref)
+        user_prompt: User message content (required when not using prompt_ref)
         response_schema: Pydantic schema for response parsing and validation
         model: OpenAI model to use (defaults to AIConfig.OPENAI_MODEL)
         reasoning_effort: Reasoning effort level (defaults to AIConfig.REASONING_EFFORT)
@@ -416,6 +306,8 @@ async def call_openai_with_schema(
         retry_attempts: Number of retry attempts (defaults to RETRY_ATTEMPTS)
         retry_delay: Base delay between retries in seconds (defaults to RETRY_DELAY)
         text_verbosity: Text verbosity level (e.g., "low", "medium", "high") for Response API
+        prompt_ref: Optional dict with "id" and optionally "version" for reusable prompt
+        prompt_variables: Optional map of placeholder names to values (used with prompt_ref)
 
     Returns:
         Tuple of (parsed_data, metadata) where:
@@ -426,9 +318,15 @@ async def call_openai_with_schema(
     Raises:
         RuntimeError: If OpenAI API is not enabled or call fails after retries
     """
-    import time
-
-    from openai.types.shared_params import Reasoning
+    use_prompt_ref = prompt_ref is not None and prompt_variables is not None
+    if use_prompt_ref:
+        if not prompt_ref.get("id"):
+            raise ValueError("prompt_ref must include 'id'")
+    else:
+        if system_prompt is None or user_prompt is None:
+            raise ValueError(
+                "system_prompt and user_prompt are required when not using prompt_ref"
+            )
 
     if not is_ai_enabled():
         raise RuntimeError("OpenAI API is not enabled")
@@ -436,24 +334,6 @@ async def call_openai_with_schema(
     model = model or AIConfig.OPENAI_MODEL
     reasoning_effort = reasoning_effort or AIConfig.REASONING_EFFORT
     client = get_openai_client()
-    start_time = time.time()
-
-    # Log AI prompts at DEBUG level with truncated previews to keep logs readable
-    max_preview_chars = 2000
-    logger.debug(
-        "[%s] System prompt (len=%d): %s",
-        operation_type,
-        len(system_prompt),
-        system_prompt[:max_preview_chars],
-    )
-    logger.debug(
-        "[%s] User prompt (len=%d): %s",
-        operation_type,
-        len(user_prompt),
-        user_prompt[:max_preview_chars],
-    )
-    schema_json = json.dumps(response_schema.model_json_schema(), indent=2)
-    logger.debug("[%s] Response JSON schema: %s", operation_type, schema_json)
 
     try:
 
@@ -463,81 +343,25 @@ async def call_openai_with_schema(
                 return AIConfig.CV_QUALITY_SEED
             return None
 
-        async def _call():
-            call_kwargs: Dict[str, Any] = {
-                "model": model,
-                "input": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                "text_format": response_schema,
-                "service_tier": AIConfig.AGENT_PROCESSING_TIER,
-            }
-            if use_reasoning:
-                call_kwargs["reasoning"] = Reasoning(effort=reasoning_effort)
-            else:
-                call_kwargs["temperature"] = AIConfig.AI_REASONING_TEMPERATURE
-
-            # Add text verbosity if specified
-            if text_verbosity:
-                call_kwargs["text"] = {"verbosity": text_verbosity}
-
-            # Optional deterministic seed per operation type
-            seed = _get_seed_for_operation(operation_type)
-            if seed is not None:
-                call_kwargs["seed"] = seed
-
-            return await asyncio.to_thread(
-                client.responses.parse,
-                **call_kwargs,
-            )
-
-        response = await with_retries(_call, attempts=retry_attempts, delay=retry_delay)
-
-        generation_time = int((time.time() - start_time) * 1000)
-
-        # Extract parsed data and token usage
-        parsed_data = response.output_parsed.model_dump()
-        prompt_tokens = response.usage.input_tokens
-        completion_tokens = response.usage.output_tokens
-        tokens_used = prompt_tokens + completion_tokens
-        cached_tokens = extract_cached_tokens(response)
-
-        # Log concise AI call summary at DEBUG level
-        logger.debug(
-            "[%s] OpenAI call ok - user_id=%s, cv_id=%s, tokens=%d, time=%dms",
-            operation_type,
-            user_id,
-            cv_id,
-            tokens_used,
-            generation_time,
+        parsed_data, metadata = await run_openai_call(
+            client=client,
+            model=model,
+            reasoning_effort=reasoning_effort,
+            use_prompt_ref=use_prompt_ref,
+            use_reasoning=use_reasoning,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            response_schema=response_schema,
+            operation_type=operation_type,
+            retry_attempts=retry_attempts,
+            retry_delay=retry_delay,
+            text_verbosity=text_verbosity,
+            prompt_ref=prompt_ref,
+            prompt_variables=prompt_variables,
+            get_seed_for_operation=_get_seed_for_operation,
+            with_retries_fn=with_retries,
+            extract_cached_tokens_fn=extract_cached_tokens,
         )
-
-        # Log parsed AI response preview at DEBUG level
-        try:
-            response_json = json.dumps(parsed_data, ensure_ascii=False)
-            logger.debug(
-                "[%s] AI response (len=%d): %s",
-                operation_type,
-                len(response_json),
-                response_json[:max_preview_chars],
-            )
-        except Exception as serialize_error:
-            logger.debug(
-                "[%s] Failed to serialize AI response for logging: %s",
-                operation_type,
-                str(serialize_error),
-            )
-
-        # Build metadata dictionary
-        metadata = {
-            "tokens_used": tokens_used,
-            "generation_time": generation_time,
-            "model_used": model,
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "cached_tokens": cached_tokens,
-        }
 
         # Log successful AI usage
         if user_id:
@@ -546,12 +370,13 @@ async def call_openai_with_schema(
                 user_id=user_id,
                 operation_type=operation_type,
                 model_used=model,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                generation_time=generation_time,
+                prompt_tokens=metadata.get("prompt_tokens", 0),
+                completion_tokens=metadata.get("completion_tokens", 0),
+                generation_time=metadata.get("generation_time", 0),
                 success=True,
                 cv_id=cv_id,
-                cached_tokens=cached_tokens,
+                cached_tokens=metadata.get("cached_tokens", 0),
+                service_tier=AIConfig.AGENT_PROCESSING_TIER or None,
             )
 
         return parsed_data, metadata
@@ -583,6 +408,7 @@ async def call_openai_with_schema(
                 success=False,
                 error_message=user_friendly_message,
                 cv_id=cv_id,
+                service_tier=AIConfig.AGENT_PROCESSING_TIER or None,
             )
 
         # Raise with user-friendly message

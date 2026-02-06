@@ -9,7 +9,7 @@ from .common import WRITING_CORRECTIONS_COMMON
 
 
 def build_coach_mode_system_prompt() -> str:
-    """Return the full system prompt for correction_mode == 'writing_and_content' (coach)."""
+    """Return the full system prompt for correction_mode == 'coaching'."""
     role_section = (
         "Career coach with field expertise. Provide concise, actionable CV feedback "
         "that preserves the candidate's voice."

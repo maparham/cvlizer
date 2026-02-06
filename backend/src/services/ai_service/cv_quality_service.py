@@ -29,6 +29,25 @@ from .cv_quality_prompts import build_system_prompt
 logger = logging.getLogger(__name__)
 
 
+def _cv_quality_prompt_ref(correction_mode: str) -> Dict[str, Any]:
+    """Build prompt_ref for CV quality (id + version only when set). Coach mode uses coach prompt ID."""
+    is_coach = correction_mode == "coaching"
+    prompt_id = (
+        AIConfig.CV_QUALITY_COACH_PROMPT_ID.strip()
+        if is_coach
+        else AIConfig.CV_QUALITY_PROMPT_ID.strip()
+    )
+    version_str = (
+        (AIConfig.CV_QUALITY_COACH_PROMPT_VERSION or "").strip()
+        if is_coach
+        else (AIConfig.CV_QUALITY_PROMPT_VERSION or "").strip()
+    )
+    ref: Dict[str, Any] = {"id": prompt_id}
+    if version_str:
+        ref["version"] = version_str
+    return ref
+
+
 def _build_cv_quality_user_prompt(
     cv_data: Dict[str, Any],
 ) -> Tuple[str, Dict[str, Dict[str, str]]]:
@@ -67,7 +86,7 @@ async def generate_cv_corrections_and_feedback(
     user_id: str,
     cv_id: str,
     db_session: Session,
-    correction_mode: str = "writing_only",
+    correction_mode: str = "proofread",
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Generate comprehensive CV corrections and feedback.
@@ -80,8 +99,8 @@ async def generate_cv_corrections_and_feedback(
         user_id: User ID for logging
         cv_id: CV ID for logging
         db_session: Database session for AI usage logging
-        correction_mode: 'writing_only' for spelling/grammar only,
-                        'writing_and_content' to also fix unprofessional content
+        correction_mode: 'proofread' for spelling/grammar only,
+                        'coaching' to also fix unprofessional content
 
     Returns:
         Tuple of (quality_data, metadata)
@@ -89,12 +108,9 @@ async def generate_cv_corrections_and_feedback(
     if not is_ai_enabled():
         raise RuntimeError("AI features are not enabled")
 
-    # Build user prompt (data only) and get ID mapping
+    # Build CV payload (same string as current user message) and ID mapping
     prompt, id_mapping = _build_cv_quality_user_prompt(cv_data)
 
-    system_prompt = build_system_prompt(correction_mode)
-
-    # Minimal debug context for troubleshooting without noisy logs
     logger.debug(
         "cv_quality_analysis: user_id=%s, cv_id=%s, correction_mode=%s",
         user_id,
@@ -102,22 +118,42 @@ async def generate_cv_corrections_and_feedback(
         correction_mode,
     )
 
+    response_schema = (
+        CVQualityAnalysisAIResponseSchemaWritingOnly
+        if correction_mode == "proofread"
+        else CVQualityAnalysisAIResponseSchema
+    )
+    cv_variable = AIConfig.CV_QUALITY_PROMPT_CV_VARIABLE
+    is_coach = correction_mode == "coaching"
+    prompt_id_for_mode = (
+        AIConfig.CV_QUALITY_COACH_PROMPT_ID if is_coach else AIConfig.CV_QUALITY_PROMPT_ID
+    )
+    use_prompt_ref = bool(prompt_id_for_mode and prompt_id_for_mode.strip())
+
     try:
-        response_schema = (
-            CVQualityAnalysisAIResponseSchemaWritingOnly
-            if correction_mode == "writing_only"
-            else CVQualityAnalysisAIResponseSchema
-        )
-        response, metadata = await call_openai_with_schema(
-            system_prompt=system_prompt,
-            user_prompt=prompt,
-            response_schema=response_schema,
-            user_id=user_id,
-            cv_id=cv_id,
-            operation_type="cv_quality_analysis",
-            db_session=db_session,
-            text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
-        )
+        if use_prompt_ref:
+            response, metadata = await call_openai_with_schema(
+                response_schema=response_schema,
+                user_id=user_id,
+                cv_id=cv_id,
+                operation_type="cv_quality_analysis",
+                db_session=db_session,
+                text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
+                prompt_ref=_cv_quality_prompt_ref(correction_mode),
+                prompt_variables={cv_variable: prompt},
+            )
+        else:
+            system_prompt = build_system_prompt(correction_mode)
+            response, metadata = await call_openai_with_schema(
+                system_prompt=system_prompt,
+                user_prompt=prompt,
+                response_schema=response_schema,
+                user_id=user_id,
+                cv_id=cv_id,
+                operation_type="cv_quality_analysis",
+                db_session=db_session,
+                text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
+            )
 
         # Extract original description from CV data for each item
         # Map short IDs back to actual IDs and extract original values
@@ -126,8 +162,8 @@ async def generate_cv_corrections_and_feedback(
         # Post-process to clean html_diff strings and compute derived fields
         response = clean_quality_response(response)
 
-        # writing_only: if model reported no corrections, score must be 100 (enforce prompt contract).
-        if correction_mode == "writing_only":
+        # proofread: if model reported no corrections, score must be 100 (enforce prompt contract).
+        if correction_mode == "proofread":
             skills = response.get("skills") or {}
             if not response.get("writing_corrections") and not (
                 skills.get("technical") or skills.get("soft")

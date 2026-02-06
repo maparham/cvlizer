@@ -229,3 +229,21 @@ class TestAIUsageService:
         cost = calculate_cost("gpt-5-mini", 1_000_000, 500_000)
         expected = 1.0 * 0.250 + 0.5 * 2.000  # $0.25 + $1.00 = $1.25
         assert abs(cost - 1.25) < 0.000001
+
+    def test_calculate_cost_flex_tier(self):
+        """Test cost with service_tier=flex is half of standard."""
+        cost_standard = calculate_cost(
+            "gpt-4o-mini", 1000, 500, 0, service_tier="standard"
+        )
+        cost_flex = calculate_cost("gpt-4o-mini", 1000, 500, 0, service_tier="flex")
+        assert abs(cost_flex - cost_standard * 0.5) < 0.000001
+
+    def test_calculate_cost_priority_tier(self):
+        """Test cost with service_tier=priority is double standard."""
+        cost_standard = calculate_cost(
+            "gpt-4o-mini", 1000, 500, 0, service_tier="standard"
+        )
+        cost_priority = calculate_cost(
+            "gpt-4o-mini", 1000, 500, 0, service_tier="priority"
+        )
+        assert abs(cost_priority - cost_standard * 2.0) < 0.000001

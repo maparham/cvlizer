@@ -75,7 +75,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
   lastDismissedAt: null,
 
   // Generate quality analysis
-  generateQualityAnalysis: async (cvId: string, correctionMode: CorrectionMode = 'writing_only') => {
+  generateQualityAnalysis: async (cvId: string, correctionMode: CorrectionMode = 'proofread') => {
     set({ analysisLoading: true, analysisError: null });
 
     try {

@@ -20,7 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_cost(
-    model: str, prompt_tokens: int, completion_tokens: int, cached_tokens: int = 0
+    model: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+    cached_tokens: int = 0,
+    service_tier: Optional[str] = None,
 ) -> float:
     """
     Calculate the estimated cost for OpenAI API usage.
@@ -30,11 +34,12 @@ def calculate_cost(
         prompt_tokens: Number of input tokens
         completion_tokens: Number of output tokens
         cached_tokens: Number of cached input tokens (billed at 10% of input price)
+        service_tier: Optional tier (flex, standard, priority); multiplies standard cost.
 
     Returns:
         Estimated cost in USD
     """
-    # Get pricing from config
+    # Get pricing from config (standard tier)
     pricing = AIUsageConfig.MODEL_PRICING.get(model)
 
     if not pricing:
@@ -54,7 +59,11 @@ def calculate_cost(
     # Output tokens
     output_cost = (completion_tokens / 1_000_000) * pricing["output_price_per_1m"]
 
-    return round(input_cost + cached_cost + output_cost, 6)
+    base_cost = input_cost + cached_cost + output_cost
+    multiplier = AIUsageConfig.TIER_COST_MULTIPLIER.get(
+        (service_tier or "standard").lower(), 1.0
+    )
+    return round(base_cost * multiplier, 6)
 
 
 def log_ai_usage(
@@ -69,6 +78,7 @@ def log_ai_usage(
     error_message: Optional[str] = None,
     cv_id: Optional[str] = None,
     cached_tokens: int = 0,
+    service_tier: Optional[str] = None,
 ) -> Optional[AIUsageLog]:
     """
     Log AI usage to the database.
@@ -85,6 +95,7 @@ def log_ai_usage(
         error_message: Error message if operation failed
         cv_id: Optional CV ID if operation was CV-related
         cached_tokens: Number of cached input tokens (default: 0)
+        service_tier: Optional tier (flex, standard, priority) for cost and display.
 
     Returns:
         Created AIUsageLog instance, or None if logging failed
@@ -92,7 +103,11 @@ def log_ai_usage(
     try:
         total_tokens = prompt_tokens + completion_tokens
         estimated_cost = calculate_cost(
-            model_used, prompt_tokens, completion_tokens, cached_tokens
+            model_used,
+            prompt_tokens,
+            completion_tokens,
+            cached_tokens,
+            service_tier=service_tier,
         )
 
         usage_log = AIUsageLog(
@@ -105,6 +120,7 @@ def log_ai_usage(
             cached_tokens=cached_tokens,
             total_tokens=total_tokens,
             estimated_cost=estimated_cost,
+            service_tier=service_tier,
             generation_time=generation_time,
             success=success,
             error_message=error_message,

@@ -58,6 +58,36 @@ class TestAIUsageAPIWithCachedTokens:
         assert log["completion_tokens"] == 500
         assert log["total_tokens"] == 1500
 
+    def test_get_ai_usage_logs_includes_service_tier(
+        self, client, test_user, admin_headers, db_session
+    ):
+        """Test that AI usage logs API returns service_tier and tier-based cost."""
+        usage_log = AIUsageLog(
+            user_id=test_user.id,
+            operation_type="job_fit_analysis",
+            model_used="gpt-4o-mini",
+            prompt_tokens=1000,
+            completion_tokens=500,
+            cached_tokens=0,
+            total_tokens=1500,
+            estimated_cost=0.000225,  # flex tier: 0.5 * 0.00045
+            service_tier="flex",
+            generation_time=1200,
+            success=True,
+        )
+        db_session.add(usage_log)
+        db_session.commit()
+
+        response = client.get("/admin/ai-usage/logs", headers=admin_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "logs" in data
+        assert len(data["logs"]) > 0
+        log = next((l for l in data["logs"] if l.get("service_tier") == "flex"), None)
+        assert log is not None
+        assert log["service_tier"] == "flex"
+        assert log["estimated_cost"] == pytest.approx(0.000225, abs=1e-6)
+
     def test_export_ai_usage_logs_includes_cached_tokens(
         self, client, test_user, admin_headers, db_session
     ):
@@ -91,6 +121,7 @@ class TestAIUsageAPIWithCachedTokens:
         # Check header
         header = lines[0]
         assert "Cached Tokens" in header
+        assert "Service Tier" in header
 
         # Check data row
         data_row = lines[1]

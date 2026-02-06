@@ -192,7 +192,7 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
           },
         }}
       >
-        <MenuItem onClick={() => handleAnalyze('writing_only')}>
+        <MenuItem onClick={() => handleAnalyze('proofread')}>
           <ListItemIcon>
             <SpellcheckIcon fontSize="small" />
           </ListItemIcon>
@@ -201,7 +201,7 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
             secondary="Correct typos, grammar, and punctuation only"
           />
         </MenuItem>
-        <MenuItem onClick={() => handleAnalyze('writing_and_content')}>
+        <MenuItem onClick={() => handleAnalyze('coaching')}>
           <ListItemIcon>
             <EditNoteIcon fontSize="small" />
           </ListItemIcon>

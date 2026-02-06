@@ -16,17 +16,7 @@ from sqlalchemy.orm import Session
 from src.config import AIConfig
 from src.schemas.ai_response_schemas import JobExtractionResponseSchema
 
-from .common import (
-    MAX_JOB_CONTENT_LENGTH,
-    call_openai_with_schema,
-    extract_cached_tokens,
-    extract_response_data,
-    get_openai_client,
-    is_ai_enabled,
-    log_ai_usage_safe,
-    parse_json_from_markdown,
-    validate_with_schema,
-)
+from .common import MAX_JOB_CONTENT_LENGTH, call_openai_with_schema, is_ai_enabled
 
 logger = logging.getLogger(__name__)
 

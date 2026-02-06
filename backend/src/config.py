@@ -31,9 +31,8 @@ class AIConfig:
     AGENT_MODEL: str = os.getenv(
         "AGENT_MODEL"
     )  # Optional: Reserved for future agent implementations
-    AGENT_PROCESSING_TIER: str = os.getenv(
-        "AGENT_PROCESSING_TIER", "flex"
-    )  # Processing tier: "flex" or "standard"
+    AGENT_PROCESSING_TIER: str = os.getenv("AGENT_PROCESSING_TIER", "") or ""
+    # When set: "flex" or "standard". When empty: not sent to API (no default).
 
     # Token limits
     MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "4000"))
@@ -74,6 +73,28 @@ class AIConfig:
         int(x)
         if (x := os.getenv("CV_QUALITY_SEED", "").strip()) and x.isdigit()
         else None
+    )
+
+    # Pre-made prompt by OpenAI ID for CV quality.
+    # When set, CV quality uses the dashboard prompt instead of inline system/user prompts.
+    # The dashboard prompt must include a placeholder named CV_QUALITY_PROMPT_CV_VARIABLE
+    # (e.g. {{cv_data}}); the app injects the same CV JSON string as the current user message.
+    # Set to empty string in env to use inline prompts instead.
+    CV_QUALITY_PROMPT_ID: str = os.getenv(
+        "CV_QUALITY_PROMPT_ID",
+        "pmpt_6984b849ab288190a1e49b2dcaf93e4b05b5c8950389ceb8",
+    )
+    CV_QUALITY_PROMPT_VERSION: str = os.getenv("CV_QUALITY_PROMPT_VERSION", "7")
+    # Coach mode (coaching): separate prompt ID. When set, coaching uses this prompt.
+    CV_QUALITY_COACH_PROMPT_ID: str = os.getenv(
+        "CV_QUALITY_COACH_PROMPT_ID",
+        "pmpt_6985147fbb988196a0c7eb4ed2af6eb00735859b2912416e",
+    )
+    CV_QUALITY_COACH_PROMPT_VERSION: str = os.getenv(
+        "CV_QUALITY_COACH_PROMPT_VERSION", ""
+    )  # Empty = use latest
+    CV_QUALITY_PROMPT_CV_VARIABLE: str = os.getenv(
+        "CV_QUALITY_PROMPT_CV_VARIABLE", "cv_data"
     )
 
     @classmethod
@@ -390,6 +411,14 @@ class AIUsageConfig:
     # Default pricing for unknown models
     DEFAULT_INPUT_PRICE_PER_1M: float = 0.150
     DEFAULT_OUTPUT_PRICE_PER_1M: float = 0.600
+
+    # Service tier cost multipliers (OpenAI: flex=50%, standard=100%, priority=200%)
+    # Unknown or missing tier defaults to 1.0 (standard).
+    TIER_COST_MULTIPLIER: Dict[str, float] = {
+        "flex": 0.5,
+        "standard": 1.0,
+        "priority": 2.0,
+    }
 
     # Usage limits
     USAGE_TRACKING_ENABLED: bool = (

@@ -93,6 +93,7 @@ class AIUsageLogDetail(BaseModel):
     cv_id: Optional[str]
     operation_type: str
     model_used: str
+    service_tier: Optional[str] = None
     prompt_tokens: int
     completion_tokens: int
     cached_tokens: int
@@ -503,6 +504,7 @@ async def export_all_ai_usage_logs(
             "User ID",
             "Operation Type",
             "Model Used",
+            "Service Tier",
             "Prompt Tokens",
             "Completion Tokens",
             "Cached Tokens",
@@ -526,6 +528,7 @@ async def export_all_ai_usage_logs(
                     sanitize_csv_field(usage_log.user_id),
                     sanitize_csv_field(usage_log.operation_type),
                     sanitize_csv_field(usage_log.model_used),
+                    sanitize_csv_field(usage_log.service_tier or ""),
                     usage_log.prompt_tokens or 0,
                     usage_log.completion_tokens or 0,
                     usage_log.cached_tokens or 0,

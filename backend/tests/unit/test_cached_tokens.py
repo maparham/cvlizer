@@ -290,9 +290,9 @@ class TestAIUsageLogging:
         assert usage_log.generation_time == generation_time
         assert usage_log.success is True
 
-        # Verify calculate_cost was called with cached_tokens
+        # Verify calculate_cost was called with cached_tokens and no tier
         mock_calculate_cost.assert_called_once_with(
-            model_used, prompt_tokens, completion_tokens, cached_tokens
+            model_used, prompt_tokens, completion_tokens, cached_tokens, service_tier=None
         )
 
     @patch("src.services.ai_usage_service.calculate_cost")
@@ -319,10 +319,35 @@ class TestAIUsageLogging:
         # Assert
         assert usage_log is not None
         assert usage_log.cached_tokens == 0
-        mock_calculate_cost.assert_called_once_with("gpt-4o-mini", 1000, 500, 0)
+        mock_calculate_cost.assert_called_once_with(
+            "gpt-4o-mini", 1000, 500, 0, service_tier=None
+        )
+
+    @patch("src.services.ai_usage_service.calculate_cost")
+    def test_log_ai_usage_with_service_tier(self, mock_calculate_cost, db_session):
+        """Test logging AI usage with service_tier stores tier and uses tier cost."""
+        mock_calculate_cost.return_value = 0.000225  # 0.5 × 0.00045 for flex
+        usage_log = log_ai_usage(
+            db=db_session,
+            user_id="user-123",
+            operation_type="job_fit_analysis",
+            model_used="gpt-4o-mini",
+            prompt_tokens=1000,
+            completion_tokens=500,
+            generation_time=1500,
+            success=True,
+            cached_tokens=0,
+            service_tier="flex",
+        )
+        assert usage_log is not None
+        assert usage_log.service_tier == "flex"
+        assert usage_log.estimated_cost == 0.000225
+        mock_calculate_cost.assert_called_once_with(
+            "gpt-4o-mini", 1000, 500, 0, service_tier="flex"
+        )
 
     def test_ai_usage_log_model_to_dict(self, db_session):
-        """Test AIUsageLog model to_dict includes cached_tokens."""
+        """Test AIUsageLog model to_dict includes cached_tokens and service_tier."""
         # Arrange
         usage_log = AIUsageLog(
             user_id="user-123",
@@ -333,6 +358,7 @@ class TestAIUsageLogging:
             cached_tokens=500,
             total_tokens=1200,
             estimated_cost=0.00035,
+            service_tier="priority",
             generation_time=1100,
             success=True,
         )
@@ -345,6 +371,8 @@ class TestAIUsageLogging:
         # Assert
         assert "cached_tokens" in log_dict
         assert log_dict["cached_tokens"] == 500
+        assert "service_tier" in log_dict
+        assert log_dict["service_tier"] == "priority"
         assert log_dict["prompt_tokens"] == 800
         assert log_dict["completion_tokens"] == 400
         assert log_dict["total_tokens"] == 1200
