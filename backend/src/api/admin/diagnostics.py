@@ -84,13 +84,14 @@ async def test_openai_api(
     Rate limited to 10 requests per minute per admin user.
     """
     if not AIConfig.is_enabled():
+        max_tokens_capped = min(request.max_tokens or 500, AIConfig.MAX_COMPLETION_TOKENS)
         return OpenAIDiagnosticResponse(
             success=False,
             api_type="responses",
             request_details=DiagnosticRequestDetails(
                 prompt=request.prompt,
                 system_message=request.system_message or "You are a helpful assistant.",
-                max_tokens=request.max_tokens or 500,
+                max_tokens=max_tokens_capped,
                 temperature=request.temperature or 0.7,
                 model=request.model_override or AIConfig.OPENAI_MODEL or "Not configured",
                 timestamp=datetime.utcnow().isoformat(),
@@ -103,9 +104,9 @@ async def test_openai_api(
         )
 
     try:
-        # Prepare request parameters
+        # Prepare request parameters (cap output tokens to app-wide limit)
         model = request.model_override or AIConfig.OPENAI_MODEL
-        max_tokens = request.max_tokens or 500
+        max_tokens = min(request.max_tokens or 500, AIConfig.MAX_COMPLETION_TOKENS)
         temperature = request.temperature or 0.7
         system_message = request.system_message or "You are a helpful assistant."
 

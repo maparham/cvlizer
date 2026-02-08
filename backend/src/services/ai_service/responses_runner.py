@@ -17,7 +17,6 @@ from pydantic import BaseModel
 
 from src.config import AIConfig
 
-from .openai_schema_utils import build_cv_corrections_format
 from .response_parsing import (
     extract_response_data,
     parse_json_from_markdown,
@@ -59,13 +58,14 @@ def _log_prompts(
             list(prompt_variables.keys()),
         )
         for var_name, var_value in prompt_variables.items():
-            log_value = var_value[8:] if var_value.startswith("CV DATA: ") else var_value
+            if var_value.startswith("CV DATA: "):
+                continue  # Do not log CV data (privacy / noise)
             logger.debug(
                 "[%s] Prompt variable %s (len=%d):\n%s",
                 operation_type,
                 var_name,
                 len(var_value),
-                log_value,
+                var_value[:max_preview_chars],
             )
     else:
         if system_prompt is not None:
@@ -125,8 +125,7 @@ async def run_openai_call(
 
     # Execute either prompt-by-ID or inline prompt branch
     if use_prompt_ref and prompt_ref is not None and prompt_variables is not None:
-        # Branch: pre-made prompt by ID; use responses.create with prompt, variables, response_format.
-        response_format = build_cv_corrections_format(response_schema)
+        # Branch: pre-made prompt by ID; use responses.create with prompt and variables (no schema).
         prompt_payload: Dict[str, Any] = {
             "id": prompt_ref["id"],
             "variables": prompt_variables,
@@ -136,12 +135,9 @@ async def run_openai_call(
         call_kwargs_base: Dict[str, Any] = {
             "model": model,
             "prompt": prompt_payload,
-            "text": {"format": response_format},
         }
         if text_verbosity:
-            call_kwargs_base["text"] = dict(
-                call_kwargs_base["text"], verbosity=text_verbosity
-            )
+            call_kwargs_base["text"] = {"verbosity": text_verbosity}
         if AIConfig.AGENT_PROCESSING_TIER:
             call_kwargs_base["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
 
