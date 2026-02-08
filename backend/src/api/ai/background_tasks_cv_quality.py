@@ -61,7 +61,7 @@ def cv_quality_analysis_sync(
             analysis.generation_error = None
             db.commit()
 
-            logger.info(f"CV quality analysis saved - analysis_id={analysis_id}")
+            logger.debug("CV quality saved %s", analysis_id)
         else:
             # Record was deleted between task creation and completion
             # This is expected behavior - frontend will get 404 and stop polling
@@ -71,10 +71,9 @@ def cv_quality_analysis_sync(
             )
 
     except Exception as e:
-        # Update error state
+        # Update error state (no stack trace; common.py already logs user-friendly message)
         logger.error(
             f"CV quality analysis failed - analysis_id={analysis_id}: {str(e)}",
-            exc_info=True,
         )
 
         try:

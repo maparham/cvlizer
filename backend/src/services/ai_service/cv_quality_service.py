@@ -25,6 +25,7 @@ from src.config import AIConfig
 from .common import call_openai_with_schema, is_ai_enabled
 from .cv_filter import filter_hidden_sections
 from .cv_quality_prompts import build_system_prompt
+from .openai_schema_utils import CV_CORRECTIONS_COACHING_FORMAT
 
 logger = logging.getLogger(__name__)
 
@@ -111,13 +112,6 @@ async def generate_cv_corrections_and_feedback(
     # Build CV payload (same string as current user message) and ID mapping
     prompt, id_mapping = _build_cv_quality_user_prompt(cv_data)
 
-    logger.debug(
-        "cv_quality_analysis: user_id=%s, cv_id=%s, correction_mode=%s",
-        user_id,
-        cv_id,
-        correction_mode,
-    )
-
     response_schema = (
         CVQualityAnalysisAIResponseSchemaWritingOnly
         if correction_mode == "proofread"
@@ -141,6 +135,7 @@ async def generate_cv_corrections_and_feedback(
                 text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
                 prompt_ref=_cv_quality_prompt_ref(correction_mode),
                 prompt_variables={cv_variable: prompt},
+                text_format_schema=(CV_CORRECTIONS_COACHING_FORMAT if is_coach else None),
             )
         else:
             system_prompt = build_system_prompt(correction_mode)
@@ -177,12 +172,7 @@ async def generate_cv_corrections_and_feedback(
         # Convert to full schema to ensure type safety and add computed fields
         response = CVQualityAnalysisResponseSchema(**response).model_dump()
 
-        logger.info(
-            f"CV corrections and feedback complete - "
-            f"score={response.get('overall_quality_score')}, "
-            f"tokens={metadata['tokens_used']}, "
-            f"gaps={len(timeline_gaps)}"
-        )
+        logger.info("CV quality done score=%s", response.get("overall_quality_score"))
 
         return response, metadata
 

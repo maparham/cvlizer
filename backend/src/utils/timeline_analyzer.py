@@ -192,5 +192,5 @@ def analyze_timeline_gaps(cv_data: Dict[str, Any]) -> List[Dict[str, Any]]:
                 }
             )
 
-    logger.info(f"Timeline analysis complete: {len(gaps)} gaps found")
+    logger.debug("Timeline: %d gaps", len(gaps))
     return gaps

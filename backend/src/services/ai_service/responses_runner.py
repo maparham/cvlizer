@@ -7,7 +7,6 @@ and pre-made dashboard prompts (prompt-by-ID), while remaining independent of
 """
 
 import asyncio
-import json
 import logging
 import time
 from typing import Any, Callable, Dict, Optional, Tuple, Type
@@ -47,41 +46,7 @@ def _log_prompts(
     prompt_ref: Optional[Dict[str, Any]],
     prompt_variables: Optional[Dict[str, str]],
 ) -> None:
-    """Log prompt information at DEBUG level with safe truncation."""
-    max_preview_chars = 2000
-    if use_prompt_ref and prompt_ref is not None and prompt_variables is not None:
-        logger.debug(
-            "[%s] Prompt ref: id=%s, version=%s, variables keys=%s",
-            operation_type,
-            prompt_ref.get("id"),
-            prompt_ref.get("version"),
-            list(prompt_variables.keys()),
-        )
-        for var_name, var_value in prompt_variables.items():
-            if var_value.startswith("CV DATA: "):
-                continue  # Do not log CV data (privacy / noise)
-            logger.debug(
-                "[%s] Prompt variable %s (len=%d):\n%s",
-                operation_type,
-                var_name,
-                len(var_value),
-                var_value[:max_preview_chars],
-            )
-    else:
-        if system_prompt is not None:
-            logger.debug(
-                "[%s] System prompt (len=%d): %s",
-                operation_type,
-                len(system_prompt),
-                system_prompt[:max_preview_chars],
-            )
-        if user_prompt is not None:
-            logger.debug(
-                "[%s] User prompt (len=%d): %s",
-                operation_type,
-                len(user_prompt),
-                user_prompt[:max_preview_chars],
-            )
+    """Log prompt information at DEBUG level; omitted to reduce log volume."""
 
 
 async def run_openai_call(
@@ -104,6 +69,7 @@ async def run_openai_call(
     get_seed_for_operation: Callable[[str], Optional[int]],
     with_retries_fn: Callable[..., Any],
     extract_cached_tokens_fn: Callable[[Any], int],
+    text_format_schema: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Execute an OpenAI Responses API call and return parsed data and metadata.
@@ -135,9 +101,15 @@ async def run_openai_call(
         call_kwargs_base: Dict[str, Any] = {
             "model": model,
             "prompt": prompt_payload,
+            "max_output_tokens": AIConfig.MAX_COMPLETION_TOKENS,
         }
-        if text_verbosity:
-            call_kwargs_base["text"] = {"verbosity": text_verbosity}
+        if text_verbosity or text_format_schema:
+            text_kw: Dict[str, Any] = {}
+            if text_verbosity:
+                text_kw["verbosity"] = text_verbosity
+            if text_format_schema:
+                text_kw["format"] = text_format_schema
+            call_kwargs_base["text"] = text_kw
         if AIConfig.AGENT_PROCESSING_TIER:
             call_kwargs_base["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
 
@@ -194,6 +166,7 @@ async def run_openai_call(
                 {"role": "user", "content": user_prompt},
             ],
             "text_format": response_schema,
+            "max_output_tokens": AIConfig.MAX_COMPLETION_TOKENS,
         }
         if AIConfig.AGENT_PROCESSING_TIER:
             call_kwargs["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
@@ -226,34 +199,6 @@ async def run_openai_call(
         cached_tokens = extract_cached_tokens_fn(response)
 
     tokens_used = prompt_tokens + completion_tokens
-
-    # Log OpenAI response metadata (all non-trivial info from the API)
-    logger.debug(
-        "[%s] OpenAI response metadata - model=%s, "
-        "prompt_tokens=%s, completion_tokens=%s, cached_tokens=%s, generation_time_ms=%s",
-        operation_type,
-        model,
-        prompt_tokens,
-        completion_tokens,
-        cached_tokens,
-        generation_time,
-    )
-
-    # Log parsed AI response preview at DEBUG level (truncated for safety)
-    try:
-        response_json = json.dumps(parsed_data, ensure_ascii=False)
-        logger.debug(
-            "[%s] AI response (len=%d): %s",
-            operation_type,
-            len(response_json),
-            response_json[:2000],
-        )
-    except Exception as serialize_error:  # pragma: no cover - defensive logging
-        logger.debug(
-            "[%s] Failed to serialize AI response for logging: %s",
-            operation_type,
-            str(serialize_error),
-        )
 
     metadata: Dict[str, Any] = {
         "tokens_used": tokens_used,

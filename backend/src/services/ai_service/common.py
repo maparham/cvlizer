@@ -243,17 +243,33 @@ def get_user_friendly_error_message(error: Exception) -> str:
     without exposing technical details or internal error codes.
 
     Args:
-        error: Exception raised by OpenAI API
+        error: Exception raised by OpenAI API or our AI layer (e.g. RuntimeError)
 
     Returns:
         User-friendly error message string
     """
     if isinstance(error, openai.RateLimitError):
         return "Our AI service is temporarily at capacity. Please try again in a few minutes."
-    elif isinstance(error, openai.APIError):
+    if isinstance(error, openai.APIError):
         return "There was an error connecting to our AI service. Please try again."
-    else:
-        return "An error occurred while processing your request. Please try again."
+    if hasattr(openai, "APITimeoutError") and isinstance(error, openai.APITimeoutError):
+        return "The request took too long. Please try again."
+    if hasattr(openai, "APIConnectionError") and isinstance(
+        error, openai.APIConnectionError
+    ):
+        return "We couldn't reach our AI service. Please check your connection and try again."
+    if isinstance(error, RuntimeError):
+        msg = str(error).strip().lower()
+        if "max_output_tokens" in msg or "response incomplete" in msg:
+            return (
+                "The analysis was too long to complete. "
+                "Try a shorter CV or try again later."
+            )
+        if "refusal" in msg or "refused" in msg:
+            return "The request could not be completed. Please try again."
+        if "no text output" in msg or "no text" in msg:
+            return "We didn't get a valid response. Please try again."
+    return "An error occurred while processing your request. Please try again."
 
 
 async def call_openai_with_schema(
@@ -273,6 +289,7 @@ async def call_openai_with_schema(
     text_verbosity: Optional[str] = None,
     prompt_ref: Optional[Dict[str, Any]] = None,
     prompt_variables: Optional[Dict[str, str]] = None,
+    text_format_schema: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Unified OpenAI API call with schema validation, retry logic, and usage logging.
@@ -308,6 +325,8 @@ async def call_openai_with_schema(
         text_verbosity: Text verbosity level (e.g., "low", "medium", "high") for Response API
         prompt_ref: Optional dict with "id" and optionally "version" for reusable prompt
         prompt_variables: Optional map of placeholder names to values (used with prompt_ref)
+        text_format_schema: Optional JSON schema format for responses.create when using
+            prompt_ref. Enables structured output (e.g. cv_corrections for coaching mode).
 
     Returns:
         Tuple of (parsed_data, metadata) where:
@@ -359,6 +378,7 @@ async def call_openai_with_schema(
             text_verbosity=text_verbosity,
             prompt_ref=prompt_ref,
             prompt_variables=prompt_variables,
+            text_format_schema=text_format_schema,
             get_seed_for_operation=_get_seed_for_operation,
             with_retries_fn=with_retries,
             extract_cached_tokens_fn=extract_cached_tokens,
@@ -386,11 +406,29 @@ async def call_openai_with_schema(
         # Convert to user-friendly message
         user_friendly_message = get_user_friendly_error_message(e)
 
-        # Log based on error type - expected errors without stack trace
-        if isinstance(e, (openai.RateLimitError, openai.APIError)):
-            # Expected operational errors - no stack trace needed
-            logger.warning(f"{operation_type} failed: {str(e)}")
-            logger.info(f"User-friendly message: {user_friendly_message}")
+        # Known/expected errors: log one line, no stack trace
+        is_known = (
+            isinstance(
+                e,
+                (
+                    openai.RateLimitError,
+                    openai.APIError,
+                    RuntimeError,
+                ),
+            )
+            or (
+                hasattr(openai, "APITimeoutError")
+                and isinstance(e, openai.APITimeoutError)
+            )
+            or (
+                hasattr(openai, "APIConnectionError")
+                and isinstance(e, openai.APIConnectionError)
+            )
+        )
+        if is_known:
+            logger.warning(
+                f"{operation_type} failed: {user_friendly_message}",
+            )
         else:
             # Unexpected errors - include stack trace for debugging
             logger.error(f"{operation_type} failed: {str(e)}", exc_info=True)

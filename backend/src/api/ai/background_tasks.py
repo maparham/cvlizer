@@ -136,7 +136,7 @@ def ai_suggestions_sync(
         except Exception:
             pass
         finally:
-            logger.exception(f"ai_suggestions_sync failed: {str(e)}")
+            logger.error(f"ai_suggestions_sync failed: {str(e)}")
     finally:
         try:
             loop.close()

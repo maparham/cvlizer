@@ -130,8 +130,8 @@ def log_ai_usage(
         db.commit()
         db.refresh(usage_log)
 
-        logger.info(
-            f"Logged AI usage: {operation_type} - {total_tokens} tokens ({cached_tokens} cached) - ${estimated_cost:.6f}"
+        logger.debug(
+            f"AI usage: {operation_type} {total_tokens} tok ${estimated_cost:.2f}"
         )
         return usage_log
 
