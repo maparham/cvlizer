@@ -46,7 +46,7 @@ interface CVQualityStore {
   ) => Promise<void>;
 
   // Dismissal actions
-  dismissWritingCorrection: (itemId: string, section: string) => Promise<void>;
+  dismissWritingCorrection: (itemId: string, fieldPath: string) => Promise<void>;
   dismissContentCoaching: (itemId: string) => Promise<void>;
   dismissProfessionalSummarySuggestion: () => Promise<void>;
   dismissWorkExperienceSuggestion: (itemId: string) => Promise<void>;
@@ -297,38 +297,71 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     }
   },
 
-  // Dismiss individual writing correction
-  dismissWritingCorrection: async (itemId: string, section: string) => {
+  // Dismiss individual writing correction. When itemId is a section key (e.g. personal_info),
+  // also remove issues whose field_path matches and starts with that section (for issues with no item_id).
+  // When itemId is prefixed (work_<uuid>, edu_<uuid>), also match issue.item_id to the UUID so backend-stored issues are removed.
+  // Same normalization (strip work_/edu_ prefix) must be kept in sync with backend quality_analysis_helpers._normalize_correction_id.
+  dismissWritingCorrection: async (itemId: string, fieldPath: string) => {
+    const normalizedId =
+      itemId.startsWith('work_') && itemId.length > 5
+        ? itemId.slice(5)
+        : itemId.startsWith('edu_') && itemId.length > 4
+          ? itemId.slice(4)
+          : null;
     await get()._dismissItem(
       (current) => ({
         ...current,
-        writing_corrections: current.writing_corrections.filter(
-          (w) => !(w.item_id === itemId && w.section === section)
-        ),
+        issues: current.issues.filter((i) => {
+          if (!i.html_diff) return true;
+          const idMatch =
+            (i.item_id ?? '') === itemId ||
+            (normalizedId !== null && (i.item_id ?? '') === normalizedId);
+          const matchById = idMatch && i.field_path === fieldPath;
+          const matchBySection =
+            (i.field_path ?? '') === fieldPath &&
+            itemId &&
+            fieldPath.startsWith(itemId + '.');
+          return !matchById && !matchBySection;
+        }),
       }),
       'Failed to dismiss suggestion',
       'The suggestion could not be dismissed. Please try again.'
     );
   },
 
-  // Dismiss content coaching item
+  // Dismiss content coaching item (itemId may be 'personal_info' or 'professional_summary' for section-level with null item_id)
   dismissContentCoaching: async (itemId: string) => {
     await get()._dismissItem(
       (current) => ({
         ...current,
-        content_coaching: current.content_coaching.filter((c) => c.item_id !== itemId),
+        issues: current.issues.filter((i) => {
+          if (!i.coaching) return true;
+          if (itemId === 'personal_info') {
+            return i.item_type !== 'personal_info';
+          }
+          if (itemId === 'professional_summary') {
+            return i.item_type !== 'professional_summary' && (i.field_path ?? '') !== 'professional_summary' && !(i.field_path ?? '').startsWith('professional_summary.');
+          }
+          return (i.item_id ?? '') !== itemId;
+        }),
       }),
       'Failed to dismiss coaching',
       'The coaching item could not be dismissed. Please try again.'
     );
   },
 
-  // Dismiss professional summary suggestion
+  // Dismiss professional summary suggestion (remove professional_summary issue from issues array)
   dismissProfessionalSummarySuggestion: async () => {
     await get()._dismissItem(
       (current) => ({
         ...current,
-        professional_summary: undefined,
+        issues: current.issues.filter((i) => {
+          if (i.item_type === 'professional_summary') return false;
+          const fp = i.field_path ?? '';
+          if (fp === 'professional_summary' || fp.startsWith('professional_summary.'))
+            return false;
+          return true;
+        }),
       }),
       'Failed to dismiss suggestion',
       'The professional summary suggestion could not be dismissed. Please try again.'
@@ -340,7 +373,10 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     await get()._dismissItem(
       (current) => ({
         ...current,
-        work_experience: current.work_experience.filter((w) => w.item_id !== itemId),
+        issues: current.issues.filter(
+          (i) =>
+            !(i.item_type === 'work_experience' && (i.item_id ?? '') === itemId)
+        ),
       }),
       'Failed to dismiss suggestion',
       'The work experience suggestion could not be dismissed. Please try again.'
@@ -352,7 +388,10 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     await get()._dismissItem(
       (current) => ({
         ...current,
-        education: current.education.filter((e) => e.item_id !== itemId),
+        issues: current.issues.filter(
+          (i) =>
+            !(i.item_type === 'education' && (i.item_id ?? '') === itemId)
+        ),
       }),
       'Failed to dismiss suggestion',
       'The education suggestion could not be dismissed. Please try again.'

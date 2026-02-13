@@ -8,7 +8,7 @@
  * - Form validation and editing states
  * - Inline writing corrections for description (CV quality analysis)
  */
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   TextField,
@@ -30,8 +30,10 @@ import { useFieldValidation } from "../../../hooks/useFieldValidation";
 import { FormField } from "../core/formUtils";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
 import { useSingleSectionWritingCorrections } from "./hooks/useSingleSectionWritingCorrections";
-import { FieldCorrection } from "../../../types/ai";
+import { FieldCorrection, ContentCoachingItem } from "../../../types/ai";
 import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
+import { CoachingQuestionsPanel } from "../ai/CoachingQuestionsPanel";
+import { useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
 
 const ACADEMIC_TITLES = [
   // English
@@ -94,6 +96,23 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         ?.description ?? "",
     formFieldName: "description",
   });
+
+  const qualityAnalysis = useValidatedQualityAnalysis(cvId ?? "");
+  const personalInfoCoaching = useMemo((): ContentCoachingItem | null => {
+    const issue = qualityAnalysis?.issues?.find(
+      (i) => i.item_type === "personal_info" && i.coaching
+    );
+    if (!issue?.coaching) return null;
+    const cat = issue.issue_category as ContentCoachingItem["issue_category"];
+    return {
+      item_id: "personal_info",
+      section: "personal_info",
+      issue_category: cat,
+      coaching_questions: issue.coaching.coaching_questions,
+      direct_prompts: issue.coaching.direct_prompts ?? [],
+      reasoning: issue.reasoning ?? undefined,
+    };
+  }, [qualityAnalysis?.issues]);
 
   const renderForm = (
     editData: any,
@@ -466,6 +485,9 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         handleDismissWritingCorrection={handleDismissWritingCorrection}
         fieldName="description"
       />
+      {personalInfoCoaching && (
+        <CoachingQuestionsPanel coachingItem={personalInfoCoaching} />
+      )}
     </Box>
   );
 

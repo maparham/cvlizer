@@ -13,9 +13,38 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _normalize_date_for_parse(date_str: str) -> Optional[str]:
+    """
+    Normalize date string to YYYY-MM-DD for parse_date.
+
+    - YYYY-MM-DD: returned unchanged.
+    - YYYY-MM: return YYYY-MM-01 (first of month).
+    - Other: return unchanged (parse_date will handle or return None).
+
+    Args:
+        date_str: Raw date string from CV data
+
+    Returns:
+        Normalized string or None if empty
+    """
+    if not date_str or not date_str.strip():
+        return None
+    s = date_str.strip()
+    if len(s) == 7 and s[4] == "-":
+        try:
+            datetime.strptime(s, "%Y-%m")
+            return s + "-01"
+        except ValueError:
+            pass
+    return s
+
+
 def parse_date(date_str: str) -> Optional[datetime]:
     """
-    Parse date string in YYYY-MM-DD or YYYY-MM format.
+    Parse date string to datetime.
+
+    Accepts YYYY-MM-DD and YYYY-MM (normalized to first of month). Other formats
+    are rejected (returns None).
 
     Args:
         date_str: Date string to parse
@@ -23,18 +52,13 @@ def parse_date(date_str: str) -> Optional[datetime]:
     Returns:
         datetime object or None if parsing fails
     """
-    if not date_str:
+    normalized = _normalize_date_for_parse(date_str)
+    if not normalized:
         return None
-    # Try YYYY-MM-DD format first (primary format used by CV data)
     try:
-        return datetime.strptime(date_str, "%Y-%m-%d")
+        return datetime.strptime(normalized, "%Y-%m-%d")
     except ValueError:
-        pass
-    # Fall back to YYYY-MM format (for backward compatibility)
-    try:
-        return datetime.strptime(date_str, "%Y-%m")
-    except ValueError:
-        logger.warning(f"Invalid date format: {date_str}")
+        logger.warning(f"Invalid date format: {date_str!r}")
         return None
 
 
@@ -75,9 +99,9 @@ def analyze_timeline_gaps(cv_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     current_work_items = []
     current_education_items = []
 
-    # Add work experience items
+    # Add work experience items (dates normalized: YYYY-MM -> YYYY-MM-01)
     for work in cv_data.get("work_experience", []):
-        start = parse_date(work.get("start_date", ""))
+        start = parse_date(work.get("start_date") or "")
         if not start:
             continue
 
@@ -86,7 +110,7 @@ def analyze_timeline_gaps(cv_data: Dict[str, Any]) -> List[Dict[str, Any]]:
             current_work_items.append(work.get("id"))
             end = datetime.now(timezone.utc)
         else:
-            end = parse_date(work.get("end_date", ""))
+            end = parse_date(work.get("end_date") or "")
             if not end:
                 continue
 
@@ -100,9 +124,9 @@ def analyze_timeline_gaps(cv_data: Dict[str, Any]) -> List[Dict[str, Any]]:
             }
         )
 
-    # Add education items
+    # Add education items (dates normalized: YYYY-MM -> YYYY-MM-01)
     for edu in cv_data.get("education", []):
-        start = parse_date(edu.get("start_date", ""))
+        start = parse_date(edu.get("start_date") or "")
         if not start:
             continue
 
@@ -111,7 +135,7 @@ def analyze_timeline_gaps(cv_data: Dict[str, Any]) -> List[Dict[str, Any]]:
             current_education_items.append(edu.get("id"))
             end = datetime.now(timezone.utc)
         else:
-            end = parse_date(edu.get("end_date", ""))
+            end = parse_date(edu.get("end_date") or "")
             if not end:
                 continue
 

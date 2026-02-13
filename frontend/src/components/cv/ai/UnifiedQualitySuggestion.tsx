@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { LowQualityItem, WritingCorrection, ProfessionalSummaryQualitySuggestion, CoachingQuestion } from '../../../types/ai';
+import { LowQualityItem, WritingCorrection, ProfessionalSummaryV2, CoachingQuestion } from '../../../types/ai';
 import { CompactSuggestionCard } from './CompactSuggestionCard';
 import { normalizeQualitySuggestion } from './utils/qualitySuggestionNormalizer';
 
@@ -31,7 +31,7 @@ const CoachingQuestionsTooltipContent: React.FC<{ questions: CoachingQuestion[] 
 interface UnifiedQualitySuggestionProps {
   itemId: string;
   section: 'work_experience' | 'education' | 'professional_summary';
-  qualitySuggestion?: LowQualityItem | ProfessionalSummaryQualitySuggestion;
+  qualitySuggestion?: LowQualityItem | ProfessionalSummaryV2;
   writingCorrections?: WritingCorrection[];
   onApplyQuality?: (suggested: string) => void | Promise<void>;
   onDismissQuality?: () => void | Promise<void>;
@@ -42,7 +42,7 @@ interface UnifiedQualitySuggestionProps {
 
 export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> = ({
   itemId,
-  section: _section,
+  section,
   qualitySuggestion,
   writingCorrections = [],
   onApplyQuality,
@@ -120,6 +120,8 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
     }
   };
 
+  const isProfessionalSummary = section === 'professional_summary';
+
   return (
     <CompactSuggestionCard
       htmlDiff={normalized.htmlDiff}
@@ -130,7 +132,9 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
       onApply={handleApplyAll}
       onDismiss={handleDismissAll}
       dismissDialogTitle="Dismiss Suggestion?"
-      variant="default"
+      variant={isProfessionalSummary ? 'importance' : 'default'}
+      importance={isProfessionalSummary ? 'standard' : undefined}
+      showContentBox={isProfessionalSummary ? false : undefined}
     />
   );
 };

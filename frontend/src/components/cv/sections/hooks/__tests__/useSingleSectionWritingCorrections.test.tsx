@@ -73,7 +73,10 @@ describe("useSingleSectionWritingCorrections", () => {
   describe("descriptionCorrection", () => {
     it("is null when there are no matching writing corrections", () => {
       mockUseValidatedQualityAnalysis.mockReturnValue({
-        writing_corrections: [],
+        issues: [],
+        overall_quality_score: 70,
+        skills: { technical: [], soft: [] },
+        timeline_gaps: [],
       });
 
       const { result } = renderHook(() =>
@@ -84,20 +87,25 @@ describe("useSingleSectionWritingCorrections", () => {
     });
 
     it("is set when there is a matching correction for the section (description field)", () => {
-      const correction: WritingCorrection = {
-        item_id: "personal_info",
-        section: "personal_info.description",
-        field_corrections: [
+      mockUseValidatedQualityAnalysis.mockReturnValue({
+        issues: [
           {
-            field_name: "description",
-            original_value: "Old bio",
+            item_type: "personal_info",
+            item_id: null,
+            field_path: "personal_info.description",
+            issue_severity: "minor",
+            issue_category: "unprofessional_tone",
+            quality_score: null,
+            reasoning: "Improve tone",
             html_diff: "<del>Old</del><ins>New</ins>",
+            coaching: null,
+            original: "Old bio",
+            suggested: "New bio",
           },
         ],
-        importance: "standard",
-      };
-      mockUseValidatedQualityAnalysis.mockReturnValue({
-        writing_corrections: [correction],
+        overall_quality_score: 70,
+        skills: { technical: [], soft: [] },
+        timeline_gaps: [],
       });
 
       const { result } = renderHook(() =>
@@ -112,29 +120,35 @@ describe("useSingleSectionWritingCorrections", () => {
       );
 
       expect(result.current.descriptionCorrection).not.toBeNull();
-      expect(result.current.descriptionCorrection?.correction.item_id).toBe(
-        "personal_info"
+      expect(result.current.descriptionCorrection?.correction.item_id).toBe("");
+      expect(result.current.descriptionCorrection?.correction.field_path).toBe(
+        "personal_info.description"
       );
       expect(result.current.descriptionCorrection?.html_diff).toContain(
         "Old"
       );
     });
 
-    it("finds correction when formFieldName is content and API returns field_name content (Professional Summary regression)", () => {
-      const correction: WritingCorrection = {
-        item_id: "professional_summary",
-        section: "professional_summary",
-        field_corrections: [
+    it("finds correction when formFieldName is content (Professional Summary)", () => {
+      mockUseValidatedQualityAnalysis.mockReturnValue({
+        issues: [
           {
-            field_name: "content",
-            original_value: "Weak summary text",
+            item_type: "professional_summary",
+            item_id: "professional_summary",
+            field_path: "professional_summary",
+            issue_severity: "minor",
+            issue_category: "too_brief",
+            quality_score: null,
+            reasoning: "Expand",
             html_diff: "<del>Weak</del><ins>Strong</ins>",
+            coaching: null,
+            original: "Weak summary text",
+            suggested: "Strong summary text",
           },
         ],
-        importance: "standard",
-      };
-      mockUseValidatedQualityAnalysis.mockReturnValue({
-        writing_corrections: [correction],
+        overall_quality_score: 70,
+        skills: { technical: [], soft: [] },
+        timeline_gaps: [],
       });
 
       const { result } = renderHook(() =>
@@ -142,7 +156,7 @@ describe("useSingleSectionWritingCorrections", () => {
       );
 
       expect(result.current.descriptionCorrection).not.toBeNull();
-      expect(result.current.descriptionCorrection?.correction.section).toBe(
+      expect(result.current.descriptionCorrection?.correction.field_path).toBe(
         "professional_summary"
       );
       expect(result.current.descriptionCorrection?.html_diff).toContain(
@@ -155,7 +169,7 @@ describe("useSingleSectionWritingCorrections", () => {
     it("calls API and dismiss when applied", async () => {
       const correction: WritingCorrection = {
         item_id: "professional_summary",
-        section: "professional_summary",
+        field_path: "professional_summary",
         field_corrections: [
           {
             field_name: "content",
@@ -166,7 +180,24 @@ describe("useSingleSectionWritingCorrections", () => {
         importance: "standard",
       };
       mockUseValidatedQualityAnalysis.mockReturnValue({
-        writing_corrections: [correction],
+        issues: [
+          {
+            item_type: "professional_summary",
+            item_id: "professional_summary",
+            field_path: "professional_summary",
+            issue_severity: "minor",
+            issue_category: "too_brief",
+            quality_score: null,
+            reasoning: "",
+            html_diff: "<ins>y</ins>",
+            coaching: null,
+            original: "x",
+            suggested: "y",
+          },
+        ],
+        overall_quality_score: 70,
+        skills: { technical: [], soft: [] },
+        timeline_gaps: [],
       });
       const dismissWritingCorrection = jest.fn().mockResolvedValue(undefined);
       mockUseCVQualityStore.mockReturnValue({
@@ -182,12 +213,15 @@ describe("useSingleSectionWritingCorrections", () => {
         useSingleSectionWritingCorrections(baseParams)
       );
 
-      const fieldCorrection: FieldCorrection = correction.field_corrections![0];
+      const desc = result.current.descriptionCorrection;
+      expect(desc).not.toBeNull();
+      const fieldCorrection: FieldCorrection = desc!.correction.field_corrections![0];
+      const parentCorrection = desc!.correction;
 
       await act(async () => {
         await result.current.handleApplyFieldCorrection(
           fieldCorrection,
-          correction
+          parentCorrection
         );
       });
 
@@ -197,8 +231,8 @@ describe("useSingleSectionWritingCorrections", () => {
         "professional_summary"
       );
       expect(dismissWritingCorrection).toHaveBeenCalledWith(
-        "professional_summary",
-        "professional_summary"
+        parentCorrection.item_id,
+        parentCorrection.field_path
       );
     });
   });
@@ -207,7 +241,7 @@ describe("useSingleSectionWritingCorrections", () => {
     it("updates form state via updateData and onSaveCallback when in edit mode", async () => {
       const correction: WritingCorrection = {
         item_id: "professional_summary",
-        section: "professional_summary",
+        field_path: "professional_summary",
         field_corrections: [
           {
             field_name: "content",
@@ -218,7 +252,24 @@ describe("useSingleSectionWritingCorrections", () => {
         importance: "standard",
       };
       mockUseValidatedQualityAnalysis.mockReturnValue({
-        writing_corrections: [correction],
+        issues: [
+          {
+            item_type: "professional_summary",
+            item_id: "professional_summary",
+            field_path: "professional_summary",
+            issue_severity: "minor",
+            issue_category: "too_brief",
+            quality_score: null,
+            reasoning: "",
+            html_diff: "<ins>new</ins>",
+            coaching: null,
+            original: "old",
+            suggested: "new",
+          },
+        ],
+        overall_quality_score: 70,
+        skills: { technical: [], soft: [] },
+        timeline_gaps: [],
       });
       const dismissWritingCorrection = jest.fn().mockResolvedValue(undefined);
       mockUseCVQualityStore.mockReturnValue({
@@ -239,6 +290,8 @@ describe("useSingleSectionWritingCorrections", () => {
         useSingleSectionWritingCorrections(baseParams)
       );
 
+      const desc = result.current.descriptionCorrection;
+      expect(desc).not.toBeNull();
       const handler = result.current.createWritingCorrectionHandler(
         "edit",
         editData,
@@ -247,7 +300,7 @@ describe("useSingleSectionWritingCorrections", () => {
       );
 
       await act(async () => {
-        await handler(correction.field_corrections![0], correction);
+        await handler(desc!.correction.field_corrections![0], desc!.correction);
       });
 
       expect(updateData).toHaveBeenCalledWith("content", "new");

@@ -85,7 +85,7 @@ const ATSOptimization: React.FC<ATSOptimizationProps> = ({
   const { analyzeATSOptimization, clearATSOptimization } = useAIStore();
 
   const atsOptimization = useATSOptimization();
-  const activeJobDescription = useActiveJobDescription();
+  const activeJobDescription = useActiveJobDescription(cvId);
 
   const handleAnalyze = useCallback(async () => {
     if (!activeJobDescription) {

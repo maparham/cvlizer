@@ -19,7 +19,7 @@ import { useFieldCorrections } from "./useFieldCorrections";
 
 export interface UseSingleSectionWritingCorrectionsParams {
   cvId: string | undefined;
-  /** Section key(s) to filter writing corrections (e.g. ["personal_info", "personal_info.description"] or ["professional_summary"]) */
+  /** Section key(s) to filter writing corrections; sub-sections match by prefix (e.g. "professional_summary" matches "professional_summary.content"). */
   sectionKeys: string[];
   /** Get the new value from the updated CV after apply (e.g. c => c.parsed_data?.personal_info?.description ?? "") */
   getValueFromCV: (cv: { parsed_data?: Record<string, unknown> }) => string;
@@ -45,6 +45,14 @@ export interface UseSingleSectionWritingCorrectionsResult {
   ) => Promise<void>;
 }
 
+/** Match issue field_path against sectionKeys (exact or prefix e.g. "professional_summary.content" matches key "professional_summary"). */
+function sectionMatchesKeys(fieldPath: string | undefined | null, sectionKeys: string[]): boolean {
+  if (!fieldPath) return false;
+  return sectionKeys.some(
+    (sk) => fieldPath === sk || fieldPath.startsWith(sk + ".")
+  );
+}
+
 /**
  * Hook for single-section writing corrections (Personal Info, Professional Summary).
  * Filters corrections by section, derives itemId, and wires apply/dismiss with optional edit-mode form update.
@@ -60,12 +68,30 @@ export function useSingleSectionWritingCorrections(
   const { showSuccess, showError } = useNotifications();
 
   const writingCorrections = React.useMemo(() => {
-    return (
-      qualityAnalysis?.writing_corrections?.filter((c) =>
-        sectionKeys.includes(c.section)
-      ) ?? []
-    );
-  }, [qualityAnalysis?.writing_corrections, sectionKeys]);
+    const issues = qualityAnalysis?.issues ?? [];
+    const out: WritingCorrection[] = [];
+    const expectedItemType = sectionKeys[0]?.split(".")[0] ?? "";
+    for (const i of issues) {
+      if (!sectionMatchesKeys(i.field_path, sectionKeys) || !i.html_diff) continue;
+      if (expectedItemType && i.item_type !== expectedItemType) continue;
+      const itemId = i.item_id ?? "";
+      out.push({
+        item_id: itemId,
+        field_path: i.field_path,
+        importance: i.issue_severity === "critical" ? "highly_recommended" : "standard",
+        field_corrections: [
+          {
+            field_name: formFieldName,
+            html_diff: i.html_diff,
+            reasoning: i.reasoning,
+            original_value: i.original ?? "",
+            corrected_value: i.suggested ?? "",
+          },
+        ],
+      });
+    }
+    return out;
+  }, [qualityAnalysis?.issues, sectionKeys, formFieldName]);
 
   const itemId =
     writingCorrections.length > 0
@@ -87,11 +113,21 @@ export function useSingleSectionWritingCorrections(
           showError("Cannot apply correction: CV ID or analysis ID missing");
           return;
         }
+        // Use item_id when present; for single-section (e.g. personal_info) backend may omit it, so fall back to section from field_path or sectionKeys
+        const correctionId =
+          parentCorrection.item_id ||
+          (parentCorrection.field_path?.split(".")[0]) ||
+          sectionKeys[0] ||
+          "";
+        if (!correctionId) {
+          showError("Cannot apply correction: correction ID missing");
+          return;
+        }
         try {
           const updatedCV = await aiService.applyWritingCorrection(
             cvId,
             currentAnalysisId,
-            parentCorrection.item_id
+            correctionId
           );
           setCurrentCV(updatedCV);
           updateCVInList(updatedCV);
@@ -114,8 +150,8 @@ export function useSingleSectionWritingCorrections(
             await onSaveCallback(updatedEditData);
           }
           await dismissWritingCorrection(
-            parentCorrection.item_id,
-            parentCorrection.section
+            correctionId,
+            parentCorrection.field_path
           );
           showSuccess("Writing correction applied successfully");
         } catch (error: unknown) {
@@ -131,6 +167,7 @@ export function useSingleSectionWritingCorrections(
     [
       cvId,
       currentAnalysisId,
+      sectionKeys,
       getValueFromCV,
       formFieldName,
       setCurrentCV,
@@ -148,7 +185,7 @@ export function useSingleSectionWritingCorrections(
 
   const handleDismissWritingCorrection = React.useCallback(
     async (correction: WritingCorrection) => {
-      await dismissWritingCorrection(correction.item_id, correction.section);
+      await dismissWritingCorrection(correction.item_id, correction.field_path);
       showSuccess("Writing correction dismissed");
     },
     [dismissWritingCorrection, showSuccess]

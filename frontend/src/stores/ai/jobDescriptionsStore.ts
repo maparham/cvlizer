@@ -15,7 +15,6 @@ import { ErrorHandler } from "../../utils/errorHandler";
 
 export interface JobDescriptionsSliceState {
   jobDescriptions: JobDescription[];
-  activeJobDescriptionId?: string;
   activeJobDescriptionIdPerCV: Record<string, string>;
   hiddenJobDescriptionIds: string[];
 }
@@ -74,7 +73,6 @@ export const createJobDescriptionsSlice: StateCreator<
 
   return {
     jobDescriptions: [],
-    activeJobDescriptionId: undefined,
     activeJobDescriptionIdPerCV: stored.activeJobDescriptionIdPerCV,
     hiddenJobDescriptionIds: stored.hiddenJobDescriptionIds,
 
@@ -88,29 +86,9 @@ export const createJobDescriptionsSlice: StateCreator<
         // Load ALL user job descriptions (user-scoped, not CV-specific)
         const jobDescriptions = await aiService.getJobDescriptions();
 
-        set((state) => {
-          // Restore the CV-specific active job description selection if cvId provided
-          if (cvId) {
-            const activeIdForCV = state.activeJobDescriptionIdPerCV[cvId];
-            const isActiveIdValid =
-              activeIdForCV &&
-              jobDescriptions.some(
-                (jd) => jd.id === activeIdForCV && jd.cv_ids.includes(cvId),
-              );
-
-            return {
-              jobDescriptions,
-              activeJobDescriptionId: isActiveIdValid
-                ? activeIdForCV
-                : undefined,
-            };
-          }
-
-          // If no cvId, just update the job descriptions
-          return {
-            jobDescriptions,
-          };
-        });
+        set(() => ({
+          jobDescriptions,
+        }));
       } catch (error) {
         ErrorHandler.handleSilent(error, {
           feature: "job-descriptions",
@@ -185,16 +163,12 @@ export const createJobDescriptionsSlice: StateCreator<
             );
           }
 
-          return {
-            jobDescriptions: state.jobDescriptions.filter(
-              (jd) => jd.id !== jobDescriptionId,
-            ),
-            activeJobDescriptionId:
-              state.activeJobDescriptionId === jobDescriptionId
-                ? undefined
-                : state.activeJobDescriptionId,
-            activeJobDescriptionIdPerCV: newMap,
-          };
+            return {
+              jobDescriptions: state.jobDescriptions.filter(
+                (jd) => jd.id !== jobDescriptionId,
+              ),
+              activeJobDescriptionIdPerCV: newMap,
+            };
         });
       } catch (error) {
         ErrorHandler.handle(error, {
@@ -259,20 +233,6 @@ export const createJobDescriptionsSlice: StateCreator<
       }
 
       set((state) => {
-        // Prevent clearing if localStorage has a saved value for this CV and it hasn't been restored yet
-        // This prevents premature clearing during page load before restoration
-        if (!jobDescriptionId) {
-          const storedValue = typeof window !== "undefined"
-            ? JSON.parse(localStorage.getItem("activeJobDescriptionIdPerCV") || "{}")[cvId]
-            : undefined;
-
-          if (storedValue && !state.activeJobDescriptionId) {
-            // Don't clear - return unchanged state
-            return state;
-          }
-        }
-
-        // Update both the current active and the per-CV map
         const newMap = { ...state.activeJobDescriptionIdPerCV };
         if (jobDescriptionId) {
           newMap[cvId] = jobDescriptionId;
@@ -280,14 +240,12 @@ export const createJobDescriptionsSlice: StateCreator<
           delete newMap[cvId];
         }
 
-        // Persist per-CV map to localStorage
         localStorage.setItem(
           "activeJobDescriptionIdPerCV",
           JSON.stringify(newMap),
         );
 
         return {
-          activeJobDescriptionId: jobDescriptionId,
           activeJobDescriptionIdPerCV: newMap,
         };
       });
@@ -328,23 +286,11 @@ export const createJobDescriptionsSlice: StateCreator<
     },
 
     clearJobDescriptionsForCV: (cvId: string) => {
-      set((state) => {
-        // Check if current active job description belongs to this CV
-        const currentActiveJD = state.jobDescriptions.find(
-          (jd) => jd.id === state.activeJobDescriptionId,
-        );
-        const shouldClearActive = currentActiveJD?.cv_id === cvId;
-
-        // Don't remove from activeJobDescriptionIdPerCV - keep it for restoration later
-        return {
-          jobDescriptions: state.jobDescriptions.filter(
-            (jd) => jd.cv_id !== cvId,
-          ),
-          activeJobDescriptionId: shouldClearActive
-            ? undefined
-            : state.activeJobDescriptionId,
-        };
-      });
+      set((state) => ({
+        jobDescriptions: state.jobDescriptions.filter(
+          (jd) => jd.cv_id !== cvId,
+        ),
+      }));
     },
 
     parseJobDescriptionUrl: async (cvId: string, url: string) => {
@@ -387,7 +333,6 @@ export const createJobDescriptionsSlice: StateCreator<
                 ...state.jobDescriptions,
                 placeholderJobDescription,
               ],
-              activeJobDescriptionId: placeholderJobDescription.id,
               activeJobDescriptionIdPerCV: newMap,
             };
           });
@@ -457,10 +402,6 @@ export const createJobDescriptionsSlice: StateCreator<
               jobDescriptions: state.jobDescriptions.filter(
                 (jd) => jd.id !== jobDescriptionId,
               ),
-              activeJobDescriptionId:
-                state.activeJobDescriptionId === jobDescriptionId
-                  ? undefined
-                  : state.activeJobDescriptionId,
               activeJobDescriptionIdPerCV: newMap,
             };
           });

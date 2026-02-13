@@ -112,6 +112,16 @@ async def run_openai_call(
             call_kwargs_base["text"] = text_kw
         if AIConfig.AGENT_PROCESSING_TIER:
             call_kwargs_base["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
+        if use_reasoning:
+            reasoning_create: Dict[str, str] = {"effort": reasoning_effort}
+            if reasoning_summary:
+                reasoning_create["summary"] = reasoning_summary
+            call_kwargs_base["reasoning"] = Reasoning(**reasoning_create)
+        else:
+            call_kwargs_base["temperature"] = AIConfig.AI_REASONING_TEMPERATURE
+        seed = get_seed_for_operation(operation_type)
+        if seed is not None:
+            call_kwargs_base["seed"] = seed
 
         async def _call_create():
             return await asyncio.to_thread(

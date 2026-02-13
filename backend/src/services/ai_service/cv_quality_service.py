@@ -7,18 +7,14 @@ Single AI call returns all quality data.
 
 import json
 import logging
-from typing import Dict, Any, Tuple, Optional
+from typing import Any, Dict, Optional, Tuple
 from sqlalchemy.orm import Session
 
-from src.schemas.cv_quality_schemas import (
-    CVQualityAnalysisAIResponseSchema,
-    CVQualityAnalysisAIResponseSchemaWritingOnly,
-    CVQualityAnalysisResponseSchema,
-)
+from src.schemas.cv_quality_schemas import CVQualityAnalysisResponseSchemaV2
 from src.utils.timeline_analyzer import analyze_timeline_gaps
 from src.utils.html_diff_utils import (
-    clean_quality_response,
-    extract_original_from_cv_data,
+    clean_quality_response_issues,
+    extract_original_from_cv_data_issues,
 )
 from src.utils.cv_data_optimizer import optimize_cv_data_for_quality_analysis
 from src.config import AIConfig
@@ -112,11 +108,7 @@ async def generate_cv_corrections_and_feedback(
     # Build CV payload (same string as current user message) and ID mapping
     prompt, id_mapping = _build_cv_quality_user_prompt(cv_data)
 
-    response_schema = (
-        CVQualityAnalysisAIResponseSchemaWritingOnly
-        if correction_mode == "proofread"
-        else CVQualityAnalysisAIResponseSchema
-    )
+    response_schema = CVQualityAnalysisResponseSchemaV2
     cv_variable = AIConfig.CV_QUALITY_PROMPT_CV_VARIABLE
     is_coach = correction_mode == "coaching"
     prompt_id_for_mode = (
@@ -135,7 +127,7 @@ async def generate_cv_corrections_and_feedback(
                 text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
                 prompt_ref=_cv_quality_prompt_ref(correction_mode),
                 prompt_variables={cv_variable: prompt},
-                text_format_schema=(CV_CORRECTIONS_COACHING_FORMAT if is_coach else None),
+                text_format_schema=CV_CORRECTIONS_COACHING_FORMAT,
             )
         else:
             system_prompt = build_system_prompt(correction_mode)
@@ -150,27 +142,18 @@ async def generate_cv_corrections_and_feedback(
                 text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
             )
 
-        # Extract original description from CV data for each item
-        # Map short IDs back to actual IDs and extract original values
-        response = extract_original_from_cv_data(response, cv_data, id_mapping)
-
-        # Post-process to clean html_diff strings and compute derived fields
-        response = clean_quality_response(response)
-
-        # proofread: if model reported no corrections, score must be 100 (enforce prompt contract).
+        response = extract_original_from_cv_data_issues(response, cv_data, id_mapping)
+        response = clean_quality_response_issues(response, cv_data)
         if correction_mode == "proofread":
             skills = response.get("skills") or {}
-            if not response.get("writing_corrections") and not (
-                skills.get("technical") or skills.get("soft")
-            ):
+            issues = response.get("issues") or []
+            if not issues and not (skills.get("technical") or skills.get("soft")):
                 response["overall_quality_score"] = 100
 
-        # Detect timeline gaps (rule-based, not AI)
         timeline_gaps = analyze_timeline_gaps(cv_data)
         response["timeline_gaps"] = timeline_gaps
 
-        # Convert to full schema to ensure type safety and add computed fields
-        response = CVQualityAnalysisResponseSchema(**response).model_dump()
+        response = CVQualityAnalysisResponseSchemaV2(**response).model_dump()
 
         logger.info("CV quality done score=%s", response.get("overall_quality_score"))
 

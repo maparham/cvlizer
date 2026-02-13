@@ -105,7 +105,6 @@ describe("AI Store Job Description Management", () => {
     // Reset store state before each test
     useAIStore.setState({
       jobDescriptions: [],
-      activeJobDescriptionId: undefined,
       activeJobDescriptionIdPerCV: {},
       hiddenJobDescriptionIds: [],
     });
@@ -195,8 +194,10 @@ describe("AI Store Job Description Management", () => {
   });
 
   describe("useActiveJobDescription Selector", () => {
+    const testCvId = "cv-1";
+
     it("returns active job description when it exists and is not hidden", () => {
-      const { result } = renderHook(() => useActiveJobDescription());
+      const { result } = renderHook(() => useActiveJobDescription(testCvId));
 
       act(() => {
         useAIStore.setState({
@@ -205,7 +206,7 @@ describe("AI Store Job Description Management", () => {
             mockJobDescription2,
             mockJobDescription3,
           ],
-          activeJobDescriptionId: "jd-1",
+          activeJobDescriptionIdPerCV: { [testCvId]: "jd-1" },
           hiddenJobDescriptionIds: ["jd-2"],
         });
       });
@@ -214,7 +215,7 @@ describe("AI Store Job Description Management", () => {
     });
 
     it("returns undefined when active job description is hidden", () => {
-      const { result } = renderHook(() => useActiveJobDescription());
+      const { result } = renderHook(() => useActiveJobDescription(testCvId));
 
       act(() => {
         useAIStore.setState({
@@ -223,7 +224,7 @@ describe("AI Store Job Description Management", () => {
             mockJobDescription2,
             mockJobDescription3,
           ],
-          activeJobDescriptionId: "jd-1",
+          activeJobDescriptionIdPerCV: { [testCvId]: "jd-1" },
           hiddenJobDescriptionIds: ["jd-1"],
         });
       });
@@ -232,31 +233,32 @@ describe("AI Store Job Description Management", () => {
     });
 
     it("returns undefined when no active job description is set", () => {
-      const { result } = renderHook(() => useActiveJobDescription());
+      const { result } = renderHook(() => useActiveJobDescription(testCvId));
 
       act(() => {
-        useAIStore.getState().jobDescriptions = [
-          mockJobDescription1,
-          mockJobDescription2,
-          mockJobDescription3,
-        ];
-        useAIStore.getState().activeJobDescriptionId = undefined;
-        useAIStore.getState().hiddenJobDescriptionIds = [];
+        useAIStore.setState({
+          jobDescriptions: [
+            mockJobDescription1,
+            mockJobDescription2,
+            mockJobDescription3,
+          ],
+          activeJobDescriptionIdPerCV: {},
+          hiddenJobDescriptionIds: [],
+        });
       });
 
       expect(result.current).toBeUndefined();
     });
 
     it("returns undefined when active job description does not exist in job descriptions", () => {
-      const { result } = renderHook(() => useActiveJobDescription());
+      const { result } = renderHook(() => useActiveJobDescription(testCvId));
 
       act(() => {
-        useAIStore.getState().jobDescriptions = [
-          mockJobDescription1,
-          mockJobDescription2,
-        ];
-        useAIStore.getState().activeJobDescriptionId = "jd-nonexistent";
-        useAIStore.getState().hiddenJobDescriptionIds = [];
+        useAIStore.setState({
+          jobDescriptions: [mockJobDescription1, mockJobDescription2],
+          activeJobDescriptionIdPerCV: { [testCvId]: "jd-nonexistent" },
+          hiddenJobDescriptionIds: [],
+        });
       });
 
       expect(result.current).toBeUndefined();
@@ -387,25 +389,27 @@ describe("AI Store Job Description Management", () => {
   });
 
   describe("setActiveJobDescription", () => {
-    it("sets active job description ID", () => {
+    it("sets active job description ID per CV", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
         result.current.setActiveJobDescription("jd-1", "cv-1");
       });
 
-      expect(result.current.activeJobDescriptionId).toBe("jd-1");
+      expect(result.current.activeJobDescriptionIdPerCV["cv-1"]).toBe("jd-1");
     });
 
     it("clears active job description when undefined is passed", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.activeJobDescriptionId = "jd-1";
+        result.current.setActiveJobDescription("jd-1", "cv-1");
+      });
+      act(() => {
         result.current.setActiveJobDescription(undefined, "cv-1");
       });
 
-      expect(result.current.activeJobDescriptionId).toBeUndefined();
+      expect(result.current.activeJobDescriptionIdPerCV["cv-1"]).toBeUndefined();
     });
 
     it("persists active job description ID to localStorage", () => {
@@ -494,12 +498,15 @@ describe("AI Store Job Description Management", () => {
     });
 
     it("triggers re-render when active job description changes", () => {
-      const { result, rerender } = renderHook(() => useActiveJobDescription());
+      const cvId = "cv-1";
+      const { result, rerender } = renderHook(() =>
+        useActiveJobDescription(cvId),
+      );
 
       act(() => {
         useAIStore.setState({
           jobDescriptions: [mockJobDescription1, mockJobDescription2],
-          activeJobDescriptionId: undefined,
+          activeJobDescriptionIdPerCV: {},
           hiddenJobDescriptionIds: [],
         });
       });
@@ -508,7 +515,7 @@ describe("AI Store Job Description Management", () => {
 
       act(() => {
         useAIStore.setState({
-          activeJobDescriptionId: "jd-1",
+          activeJobDescriptionIdPerCV: { [cvId]: "jd-1" },
         });
       });
 
@@ -570,12 +577,11 @@ describe("AI Store Job Description Management", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.jobDescriptions = [
-          mockJobDescription1,
-          mockJobDescription2,
-        ];
-        result.current.activeJobDescriptionId = "jd-1";
-        result.current.hiddenJobDescriptionIds = [];
+        useAIStore.setState({
+          jobDescriptions: [mockJobDescription1, mockJobDescription2],
+          activeJobDescriptionIdPerCV: { "cv-1": "jd-1" },
+          hiddenJobDescriptionIds: [],
+        });
       });
 
       act(() => {
@@ -583,19 +589,18 @@ describe("AI Store Job Description Management", () => {
       });
 
       expect(result.current.hiddenJobDescriptionIds).toContain("jd-1");
-      expect(result.current.activeJobDescriptionId).toBe("jd-1"); // ID remains but selector will return undefined
+      expect(result.current.activeJobDescriptionIdPerCV["cv-1"]).toBe("jd-1");
     });
 
     it("handles selecting a previously hidden job description", () => {
       const { result } = renderHook(() => useAIStore());
 
       act(() => {
-        result.current.jobDescriptions = [
-          mockJobDescription1,
-          mockJobDescription2,
-        ];
-        result.current.activeJobDescriptionId = undefined;
-        result.current.hiddenJobDescriptionIds = ["jd-1"];
+        useAIStore.setState({
+          jobDescriptions: [mockJobDescription1, mockJobDescription2],
+          activeJobDescriptionIdPerCV: {},
+          hiddenJobDescriptionIds: ["jd-1"],
+        });
       });
 
       act(() => {
@@ -604,7 +609,7 @@ describe("AI Store Job Description Management", () => {
       });
 
       expect(result.current.hiddenJobDescriptionIds).not.toContain("jd-1");
-      expect(result.current.activeJobDescriptionId).toBe("jd-1");
+      expect(result.current.activeJobDescriptionIdPerCV["cv-1"]).toBe("jd-1");
     });
 
     it("handles rapid state changes", () => {
@@ -640,8 +645,9 @@ describe("AI Store Job Description Management", () => {
 
   describe("Integration with Component State", () => {
     it("maintains consistent state across multiple selectors", () => {
+      const cvId = "cv-1";
       const visibleHook = renderHook(() => useVisibleJobDescriptions());
-      const activeHook = renderHook(() => useActiveJobDescription());
+      const activeHook = renderHook(() => useActiveJobDescription(cvId));
 
       act(() => {
         useAIStore.setState({
@@ -650,7 +656,7 @@ describe("AI Store Job Description Management", () => {
             mockJobDescription2,
             mockJobDescription3,
           ],
-          activeJobDescriptionId: "jd-1",
+          activeJobDescriptionIdPerCV: { [cvId]: "jd-1" },
           hiddenJobDescriptionIds: ["jd-2"],
         });
       });

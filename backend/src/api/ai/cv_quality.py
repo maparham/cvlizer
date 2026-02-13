@@ -280,8 +280,8 @@ async def update_cv_quality_analysis(
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
 
-    # Convert validated Pydantic model to dict for storage
-    analysis.quality_data = update_data.quality_data.model_dump()
+    # Convert validated Pydantic model to dict for storage (by_alias so field_path is used)
+    analysis.quality_data = update_data.quality_data.model_dump(by_alias=True)
 
     try:
         db.commit()

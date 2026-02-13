@@ -1,16 +1,20 @@
 /**
  * Quality Suggestion Normalizer Utility
  *
- * Normalizes different quality suggestion types (LowQualityItem and ProfessionalSummaryQualitySuggestion)
+ * Normalizes quality suggestion types (LowQualityItem and ProfessionalSummaryV2)
  * into a unified data structure for consistent rendering.
  */
 
-import { LowQualityItem, ProfessionalSummaryQualitySuggestion, CoachingQuestion } from '../../../../types/ai';
+import {
+  LowQualityItem,
+  ProfessionalSummaryV2,
+  CoachingQuestion,
+} from '../../../../types/ai';
 
 /**
- * Union type for all quality suggestion types
+ * Union type for quality suggestion types (cv_review_v2)
  */
-export type QualitySuggestionUnion = LowQualityItem | ProfessionalSummaryQualitySuggestion;
+export type QualitySuggestionUnion = LowQualityItem | ProfessionalSummaryV2;
 
 /**
  * Normalized quality suggestion data structure
@@ -27,46 +31,46 @@ export interface NormalizedQualitySuggestion {
 
 /**
  * Type guard to check if suggestion is LowQualityItem
- * LowQualityItem has: quality_score, original, suggested, reasoning
- * ProfessionalSummaryQualitySuggestion has: original_text, suggested_text, key_changes
  */
 export function isLowQualityItem(
   suggestion: QualitySuggestionUnion
 ): suggestion is LowQualityItem {
-  return 'quality_score' in suggestion && 'original' in suggestion && 'suggested' in suggestion;
+  return (
+    'quality_score' in suggestion &&
+    'original' in suggestion &&
+    'suggested' in suggestion
+  );
 }
 
 /**
- * Normalizes quality suggestion data from different source types
- * into a unified structure for rendering.
+ * Normalizes quality suggestion data into a unified structure for rendering.
  *
- * @param suggestion - LowQualityItem or ProfessionalSummaryQualitySuggestion
+ * @param suggestion - LowQualityItem or ProfessionalSummaryV2
  * @returns Normalized suggestion with consistent field names
  */
 export function normalizeQualitySuggestion(
   suggestion: QualitySuggestionUnion
 ): NormalizedQualitySuggestion {
   if (isLowQualityItem(suggestion)) {
-    // LowQualityItem structure
     return {
       original: suggestion.original || '',
       suggested: suggestion.suggested || '',
       htmlDiff: suggestion.html_diff || '',
       qualityScore: suggestion.quality_score,
       reasoning: suggestion.reasoning || undefined,
-      keyChanges: undefined, // LowQualityItem doesn't have key_changes
+      keyChanges: undefined,
       coachingQuestions: suggestion.coaching_questions,
     };
   }
 
-  // ProfessionalSummaryQualitySuggestion structure
+  const v2 = suggestion as ProfessionalSummaryV2;
   return {
-    original: suggestion.original_text || '',
-    suggested: suggestion.suggested_text || '',
-    htmlDiff: suggestion.html_diff || '',
-    qualityScore: undefined, // ProfessionalSummaryQualitySuggestion doesn't have quality_score
-    reasoning: undefined, // ProfessionalSummaryQualitySuggestion doesn't have reasoning
-    keyChanges: suggestion.key_changes && suggestion.key_changes.length > 0 ? suggestion.key_changes : undefined,
-    coachingQuestions: suggestion.coaching_questions,
+    original: v2.original_text || '',
+    suggested: v2.suggested_text ?? '',
+    htmlDiff: v2.html_diff || '',
+    qualityScore: undefined,
+    reasoning: v2.reasoning ?? undefined,
+    keyChanges: undefined,
+    coachingQuestions: undefined,
   };
 }

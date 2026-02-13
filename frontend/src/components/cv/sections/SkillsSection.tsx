@@ -322,6 +322,17 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
           />
         </Box>
 
+        {/* CV Quality Skill Corrections - shared component for edit and display */}
+        {qualityHasSuggestions && qualitySkills && (
+          <SkillsQualityBlock
+            suggestions={qualitySkills}
+            sectionData={editData}
+            updateAndSave={updateAndSaveEdit}
+            onDismissOne={dismissQualitySkillSuggestion}
+            qualityHandlers={qualityHandlers}
+          />
+        )}
+
         {/* AI Suggestions Section (Job-based) - Only show if suggestions exist */}
         {hasSuggestions && (
           <JobBasedSkillsSuggestionsBox
@@ -332,17 +343,6 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
             onApplyAll={handleApplyAllSuggestions}
             onRejectAll={handleRejectAllSuggestions}
             variant="edit"
-          />
-        )}
-
-        {/* CV Quality Skill Corrections - shared component for edit and display */}
-        {qualityHasSuggestions && qualitySkills && (
-          <SkillsQualityBlock
-            suggestions={qualitySkills}
-            sectionData={editData}
-            updateAndSave={updateAndSaveEdit}
-            onDismissOne={dismissQualitySkillSuggestion}
-            qualityHandlers={qualityHandlers}
           />
         )}
       </Box>
@@ -430,17 +430,6 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
           ))}
         </Box>
 
-        {/* AI Skills Suggestions (Job-based) - Show in display mode too */}
-        {hasSuggestions && (
-          <JobBasedSkillsSuggestionsBox
-            suggestions={skillsSuggestions}
-            onApplyOne={handleApplyOneDisplay}
-            onApplyAll={handleApplyAllSuggestionsDisplay}
-            onRejectAll={handleRejectAllSuggestionsDisplay}
-            variant="display"
-          />
-        )}
-
         {/* CV Quality Skill Corrections - shared component (display mode) */}
         {qualityHasSuggestions && qualitySkills && (
           <SkillsQualityBlock
@@ -449,6 +438,17 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
             updateAndSave={saveDataImmediately}
             onDismissOne={dismissQualitySkillSuggestion}
             qualityHandlers={qualityHandlers}
+          />
+        )}
+
+        {/* AI Skills Suggestions (Job-based) - Show in display mode too */}
+        {hasSuggestions && (
+          <JobBasedSkillsSuggestionsBox
+            suggestions={skillsSuggestions}
+            onApplyOne={handleApplyOneDisplay}
+            onApplyAll={handleApplyAllSuggestionsDisplay}
+            onRejectAll={handleRejectAllSuggestionsDisplay}
+            variant="display"
           />
         )}
       </Box>

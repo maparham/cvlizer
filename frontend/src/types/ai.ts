@@ -160,7 +160,6 @@ export interface AIStoreState {
   jobFitAnalysis: JobFitAnalysisState;
   suggestions: Record<string, AISuggestionState>; // keyed by content hash
   jobDescriptions: JobDescription[];  // User-level job descriptions (shared across CVs)
-  activeJobDescriptionId?: string;  // Deprecated: use activeJobDescriptionIdPerCV instead
   activeJobDescriptionIdPerCV: Record<string, string>; // Map of cvId -> activeJobDescriptionId
   hiddenJobDescriptionIds: string[]; // IDs of job descriptions hidden from sidebar
   drafts: DraftState;
@@ -360,8 +359,9 @@ export interface FieldCorrection {
 
 export interface WritingCorrection {
   item_id: string;
-  section: string;
-  html_diff?: string;  // Legacy, deprecated
+  /** Field path for UI placement. */
+  field_path: string;
+  html_diff?: string;  // Optional; apply logic uses field_corrections only
   field_corrections?: FieldCorrection[];
   importance: 'highly_recommended' | 'standard';
 }
@@ -373,11 +373,71 @@ export interface CoachingQuestion {
 export interface ContentCoachingItem {
   item_id: string;
   section: string;
-  issue_category: 'insufficient_content' | 'missing_impact' | 'too_brief' | 'missing_achievements' | 'lacks_specificity' | 'missing_context' | 'weak_action_verbs';
+  issue_category: 'offensive_language' | 'unprofessional_tone' | 'discriminatory_content' | 'insufficient_content' | 'missing_impact' | 'too_brief' | 'missing_achievements' | 'lacks_specificity' | 'missing_context' | 'weak_action_verbs';
+  coaching_questions: CoachingQuestion[];
+  direct_prompts: string[];
+  /** Optional reasoning from the issue, shown in a tooltip on the coaching card. */
+  reasoning?: string;
+}
+
+/** Coaching block nested in an issue (cv_review_v2). */
+export interface Coaching {
   coaching_questions: CoachingQuestion[];
   direct_prompts: string[];
 }
 
+export type IssueItemType =
+  | 'personal_info'
+  | 'professional_summary'
+  | 'work_experience'
+  | 'education'
+  | 'skills'
+  | 'certifications'
+  | 'projects'
+  | 'awards'
+  | 'publications'
+  | 'volunteer_experience';
+export type IssueSeverity = 'critical' | 'major' | 'minor';
+export type IssueCategory = ContentCoachingItem['issue_category'];
+
+/** Single issue from cv_review_v2 (issues-based quality data). */
+export interface Issue {
+  item_type: IssueItemType;
+  item_id: string | null;
+  /** Field path for UI placement. */
+  field_path: string;
+  issue_severity: IssueSeverity;
+  issue_category: IssueCategory;
+  quality_score: number | null;
+  reasoning: string;
+  html_diff: string | null;
+  coaching: Coaching | null;
+  /** Set by backend post-processing */
+  original?: string;
+  suggested?: string;
+}
+
+/** Professional summary for cv_review_v2 (original_text + html_diff only). */
+export interface ProfessionalSummaryV2 {
+  original_text: string;
+  html_diff?: string | null;
+  suggested_text?: string;
+  reasoning?: string | null;
+}
+
+/** CV quality analysis data (issues-based only). */
+export interface CVQualityAnalysisData {
+  overall_quality_score: number;
+  issues: Issue[];
+  professional_summary?: ProfessionalSummaryV2 | null;
+  skills: {
+    technical: SkillQualitySuggestion[];
+    soft: SkillQualitySuggestion[];
+  };
+  timeline_gaps: TimelineGap[];
+}
+
+/** @deprecated Use CVQualityAnalysisData; kept for normalizer/summary component. */
 export interface ProfessionalSummaryQualitySuggestion {
   suggested_text?: string;
   original_text: string;
@@ -389,14 +449,14 @@ export interface ProfessionalSummaryQualitySuggestion {
 export interface HighQualityItem {
   item_type: 'high_score';
   item_id: string;
-  section: string;
+  field_path: string;
   quality_score: number;
 }
 
 export interface LowQualityItem {
   item_type: 'low_score';
   item_id: string;
-  section: string;
+  field_path: string;
   quality_score: number;
   original: string;
   suggested: string;
@@ -443,20 +503,6 @@ export interface SkillQualitySuggestion {
   reasoning: string;
   /** If set, replace this exact string in the CV list with `skill` (spelling/capitalization correction). */
   original?: string;
-}
-
-export interface CVQualityAnalysisData {
-  overall_quality_score: number;
-  writing_corrections: WritingCorrection[];
-  content_coaching: ContentCoachingItem[];
-  professional_summary?: ProfessionalSummaryQualitySuggestion;
-  work_experience: QualityItem[];
-  education: QualityItem[];
-  skills: {
-    technical: SkillQualitySuggestion[];
-    soft: SkillQualitySuggestion[];
-  };
-  timeline_gaps: TimelineGap[];
 }
 
 export interface CVQualityAnalysisResponse {

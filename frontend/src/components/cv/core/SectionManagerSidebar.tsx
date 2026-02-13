@@ -119,7 +119,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const { showInfo, showError } = useNotifications();
 
   // Active job description from existing AI store
-  const activeJobDescription = useActiveJobDescription();
+  const activeJobDescription = useActiveJobDescription(cvId || "");
   const prevJobDescriptionId = useRef<string | undefined>(
     activeJobDescription?.id,
   );

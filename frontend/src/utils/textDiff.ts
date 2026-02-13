@@ -51,3 +51,34 @@ export function computeInlineDiff(
     removed: change.removed || false,
   }));
 }
+
+/**
+ * Escape HTML special characters for use inside <del>/<ins> tags.
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Build an htmlDiff string from original and suggested text (for SemanticDiff).
+ * Uses word-level diff; outputs <del> and <ins> tags.
+ */
+export function originalAndSuggestedToHtmlDiff(
+  original: string,
+  suggested: string,
+): string {
+  const parts = computeInlineDiff(original, suggested);
+  return parts
+    .map((part) => {
+      const escaped = escapeHtml(part.value);
+      if (part.removed) return `<del>${escaped}</del>`;
+      if (part.added) return `<ins>${escaped}</ins>`;
+      return escaped;
+    })
+    .join("");
+}

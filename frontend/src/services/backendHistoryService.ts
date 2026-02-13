@@ -274,54 +274,6 @@ export class BackendCVHistoryService {
   }
 
   /**
-   * Migrate existing localStorage history to backend
-   */
-  async migrateFromLocalStorage(cvId: string): Promise<number> {
-    try {
-      // Get localStorage history
-      const localStorageKey = `cv_history_${cvId}`;
-      const storedData = localStorage.getItem(localStorageKey);
-
-      if (!storedData) {
-        return 0;
-      }
-
-      const localHistory = JSON.parse(storedData);
-      const entries = localHistory.entries || [];
-
-      if (entries.length === 0) {
-        return 0;
-      }
-
-      // Migrate each entry
-      let migratedCount = 0;
-      for (const entry of entries) {
-        try {
-          await this.createSnapshot(cvId, entry.cvData, {
-            changeType: entry.changeType,
-            description: entry.description,
-            label: entry.label,
-            force: true,
-          });
-          migratedCount++;
-        } catch (error) {
-          // Skip failed entries during migration
-        }
-      }
-
-      // Clear localStorage after successful migration
-      if (migratedCount > 0) {
-        localStorage.removeItem(localStorageKey);
-        localStorage.removeItem(`cv_history_state_${cvId}`);
-      }
-
-      return migratedCount;
-    } catch (error) {
-      return 0;
-    }
-  }
-
-  /**
    * Get display name for a section
    */
   private getSectionDisplayName(section: string): string {

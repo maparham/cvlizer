@@ -13,8 +13,10 @@ import { useNotifications } from "../../../packages/notifications";
 import { FieldCorrection } from "../../../types/ai";
 import { useSingleSectionWritingCorrections } from "./hooks/useSingleSectionWritingCorrections";
 import { UnifiedQualitySuggestion } from "../ai/UnifiedQualitySuggestion";
+import { CoachingQuestionsPanel } from "../ai/CoachingQuestionsPanel";
 import { AISummarySuggestionCard } from "../ai/AISummarySuggestionCard";
 import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
+import { ContentCoachingItem } from "../../../types/ai";
 
 interface ProfessionalSummarySectionProps extends SectionProps {
   cvId?: string;
@@ -68,10 +70,51 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
   const hasSummarySuggestion =
     summarySuggestion && summarySuggestion.suggested_text;
 
-  // Extract quality suggestion (independent of jobs)
-  const qualitySummarySuggestion = qualityAnalysis?.professional_summary;
+  // Derive professional summary suggestion from issues only (no top-level professional_summary from backend).
+  const qualitySummaryIssue = React.useMemo(() => {
+    const issues = qualityAnalysis?.issues ?? [];
+    return issues.find(
+      (i) =>
+        i.item_type === "professional_summary" ||
+        i.field_path === "professional_summary" ||
+        (i.field_path ?? "").startsWith("professional_summary.")
+    ) ?? null;
+  }, [qualityAnalysis?.issues]);
+
+  // When issue has html_diff we show only DescriptionCorrectionBlock. When issue has no html_diff and no coaching, show UnifiedQualitySuggestion. When no html_diff but has coaching, show only CoachingQuestionsPanel (reasoning in tooltip) to avoid empty correction card.
   const hasQualitySuggestion =
-    qualitySummarySuggestion && qualitySummarySuggestion.suggested_text;
+    qualitySummaryIssue != null &&
+    !qualitySummaryIssue.html_diff &&
+    !qualitySummaryIssue.coaching &&
+    typeof qualitySummaryIssue.reasoning === "string" &&
+    qualitySummaryIssue.reasoning.trim() !== "";
+  const qualitySummarySuggestion = hasQualitySuggestion && qualitySummaryIssue
+    ? {
+        item_type: "low_score" as const,
+        item_id: qualitySummaryIssue.item_id ?? "professional_summary",
+        field_path: qualitySummaryIssue.field_path ?? "professional_summary",
+        original: qualitySummaryIssue.original ?? "",
+        suggested: qualitySummaryIssue.suggested ?? "",
+        reasoning: qualitySummaryIssue.reasoning,
+        quality_score: qualitySummaryIssue.quality_score ?? 0,
+        coaching_questions: qualitySummaryIssue.coaching?.coaching_questions,
+        html_diff: qualitySummaryIssue.html_diff ?? "",
+      }
+    : null;
+
+  // When issue has coaching (and optionally no html_diff), show only coaching card with reasoning in tooltip.
+  const summaryCoachingItem: ContentCoachingItem | null = React.useMemo(() => {
+    if (!qualitySummaryIssue?.coaching) return null;
+    const cat = qualitySummaryIssue.issue_category as ContentCoachingItem["issue_category"];
+    return {
+      item_id: "professional_summary",
+      section: "professional_summary",
+      issue_category: cat,
+      coaching_questions: qualitySummaryIssue.coaching.coaching_questions,
+      direct_prompts: qualitySummaryIssue.coaching.direct_prompts ?? [],
+      reasoning: qualitySummaryIssue.reasoning ?? undefined,
+    };
+  }, [qualitySummaryIssue]);
 
   /**
    * Helper to safely extract keywords from data based on mode
@@ -232,7 +275,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           />
         )}
 
-        {/* Quality Suggestion - independent of job */}
+        {/* Quality Suggestion - only when no html_diff and no coaching (avoids empty card) */}
         {hasQualitySuggestion && qualitySummarySuggestion && (
           <UnifiedQualitySuggestion
             itemId="professional_summary"
@@ -243,6 +286,11 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
             }}
             onDismissQuality={dismissQualitySummarySuggestion}
           />
+        )}
+
+        {/* Coaching card when issue has coaching (reasoning in tooltip); no empty correction card */}
+        {summaryCoachingItem && (
+          <CoachingQuestionsPanel coachingItem={summaryCoachingItem} />
         )}
 
         {/* Writing Corrections now shown inline above */}
@@ -296,7 +344,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
         />
       )}
 
-      {/* Quality Suggestion - independent of job - Show in display mode too */}
+      {/* Quality Suggestion - only when no html_diff and no coaching */}
       {hasQualitySuggestion && qualitySummarySuggestion && (
         <UnifiedQualitySuggestion
           itemId="professional_summary"
@@ -309,13 +357,18 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
         />
       )}
 
-      {/* Writing corrections - display mode (content/description field) */}
+      {/* Writing corrections first, then coaching - same order as work_experience/education */}
       <DescriptionCorrectionBlock
         descriptionCorrection={descriptionCorrection}
         handleApplyFieldCorrection={handleApplyFieldCorrection}
         handleDismissWritingCorrection={handleDismissWritingCorrection}
         fieldName="content"
       />
+
+      {/* Coaching card when issue has coaching (reasoning in tooltip) */}
+      {summaryCoachingItem && (
+        <CoachingQuestionsPanel coachingItem={summaryCoachingItem} />
+      )}
     </Box>
   );
 

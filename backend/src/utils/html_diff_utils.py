@@ -48,233 +48,201 @@ def clean_html_diff_string(html_diff: str) -> str:
     return result
 
 
-def extract_original_from_cv_data(
+def extract_original_from_cv_data_issues(
     response: Dict[str, Any],
     cv_data: Dict[str, Any],
     id_mapping: Optional[Dict[str, Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     """
-    Extract original values from CV data for work experience, education, and field corrections.
+    Map item_ids in issues and populate original from cv_data (cv_review_v2 shape).
 
-    The AI response contains items with item_id (short IDs like "1", "2", "3") but no original field.
-    This function:
-    1. Maps short IDs back to actual IDs using id_mapping
-    2. Looks up each item in cv_data using actual_id and section
-    3. Extracts the description field to populate original
+    When response has "issues", maps short IDs to actual IDs using id_mapping and
+    sets "original" on each issue with section work_experience/education from the
+    corresponding CV item's description.
 
-    For writing_corrections, it also extracts original_value for each field_correction
-    by looking up the field value in the CV data.
-
-    Args:
-        response: AI response dictionary with work_experience, education, and writing_corrections
-        cv_data: Original CV data dictionary containing the actual item data
-        id_mapping: Optional dictionary mapping section names to {short_id: actual_id} mappings.
-                   If provided, short IDs in response are mapped back to actual IDs before lookup.
-
-    Returns:
-        Modified response dictionary with original and original_value fields populated,
-        and item_ids converted from short IDs to actual IDs
+    For skills issues, extracts the original skill name from CV data.
     """
     if not response or not isinstance(response, dict):
         return response
+    issues = response.get("issues")
+    if not isinstance(issues, list):
+        return response
 
-    # Map short IDs back to actual IDs if mapping is provided
-    if id_mapping:
-        # Map work_experience IDs
-        for item in response.get("work_experience", []):
-            if isinstance(item, dict) and "item_id" in item:
-                short_id = item["item_id"]
-                if "work_experience" in id_mapping:
-                    actual_id = id_mapping["work_experience"].get(short_id)
-                    if actual_id:
-                        item["item_id"] = actual_id
+    for issue in issues:
+        if not isinstance(issue, dict):
+            continue
+        field_path = issue.get("field_path")
+        item_id = issue.get("item_id")
+        item_type = issue.get("item_type")
+        base_section = (field_path or "").split(".")[0] if field_path else ""
+        # id_mapping uses section names without array index (e.g. "work_experience", not "work_experience[1]")
+        section_key = (
+            base_section.split("[")[0]
+            if base_section and "[" in base_section
+            else base_section
+        )
 
-        # Map education IDs
-        for item in response.get("education", []):
-            if isinstance(item, dict) and "item_id" in item:
-                short_id = item["item_id"]
-                if "education" in id_mapping:
-                    actual_id = id_mapping["education"].get(short_id)
-                    if actual_id:
-                        item["item_id"] = actual_id
+        if id_mapping and item_id and section_key in id_mapping:
+            actual_id = id_mapping[section_key].get(item_id)
+            if actual_id:
+                issue["item_id"] = actual_id
+            item_id = issue.get("item_id")
 
-        # Map writing_corrections IDs
-        for correction in response.get("writing_corrections", []):
-            if isinstance(correction, dict) and "item_id" in correction:
-                short_id = correction["item_id"]
-                section = correction.get("section")
-                if section in id_mapping:
-                    actual_id = id_mapping[section].get(short_id)
-                    if actual_id:
-                        correction["item_id"] = actual_id
-
-        # Map content_coaching IDs
-        for coaching in response.get("content_coaching", []):
-            if isinstance(coaching, dict) and "item_id" in coaching:
-                short_id = coaching["item_id"]
-                section = coaching.get("section")
-                if section in id_mapping:
-                    actual_id = id_mapping[section].get(short_id)
-                    if actual_id:
-                        coaching["item_id"] = actual_id
-
-    # Process work_experience items (all items need original field)
-    for item in response.get("work_experience", []):
-        if isinstance(item, dict) and "item_id" in item:
-            item_id = item["item_id"]
-            # Find matching item in CV data
+        if field_path and field_path.startswith("work_experience") and item_id:
             work_items = cv_data.get("work_experience", [])
             for cv_item in work_items:
                 if isinstance(cv_item, dict) and cv_item.get("id") == item_id:
-                    # Extract description field (or empty string if missing)
-                    item["original"] = cv_item.get("description", "") or ""
+                    issue["original"] = cv_item.get("description", "") or ""
                     break
             else:
-                # Item not found in CV data, set empty string
                 logger.warning(
-                    f"Item {item_id} not found in work_experience CV data, setting original to empty"
+                    "Item %s not found in work_experience CV data, setting original to empty",
+                    item_id,
                 )
-                item["original"] = ""
+                issue["original"] = ""
 
-    # Process education items (all items need original field)
-    for item in response.get("education", []):
-        if isinstance(item, dict) and "item_id" in item:
-            item_id = item["item_id"]
-            # Find matching item in CV data
+        elif field_path and field_path.startswith("education") and item_id:
             education_items = cv_data.get("education", [])
             for cv_item in education_items:
                 if isinstance(cv_item, dict) and cv_item.get("id") == item_id:
-                    # Extract description field (or empty string if missing)
-                    item["original"] = cv_item.get("description", "") or ""
+                    issue["original"] = cv_item.get("description", "") or ""
                     break
             else:
-                # Item not found in CV data, set empty string
                 logger.warning(
-                    f"Item {item_id} not found in education CV data, setting original to empty"
+                    "Item %s not found in education CV data, setting original to empty",
+                    item_id,
                 )
-                item["original"] = ""
+                issue["original"] = ""
 
-    # Process writing_corrections to extract original_value for field_corrections
-    for correction in response.get("writing_corrections", []):
-        if not isinstance(correction, dict):
-            continue
+        elif item_type == "skills" and field_path:
+            skill_type = _skill_type_from_field_path(field_path)
+            if skill_type:
+                skills_data = cv_data.get("skills", {})
+                skill_list = skills_data.get(skill_type, [])
+                if isinstance(skill_list, list):
+                    original_skill, _ = _extract_skill_from_html_diff(
+                        issue.get("html_diff") or ""
+                    )
+                    if original_skill is not None:
+                        for skill in skill_list:
+                            if (
+                                isinstance(skill, str)
+                                and skill.lower() == original_skill.lower()
+                            ):
+                                issue["original"] = skill
+                                break
+                        else:
+                            issue["original"] = original_skill
+                    else:
+                        issue["original"] = None
 
-        item_id = correction.get("item_id")
-        section = correction.get("section")
-
-        if not item_id or not section:
-            continue
-
-        # Find the item in CV data
-        cv_item = None
-        if section == "professional_summary":
-            cv_item = cv_data.get("professional_summary", {})
-        elif section in ("personal_info", "personal_info.description"):
-            # AI sometimes returns "personal_info.description"; treat same as "personal_info"
-            cv_item = cv_data.get("personal_info", {})
-        elif section in ["work_experience", "education"]:
-            items = cv_data.get(section, [])
-            for item in items:
-                if isinstance(item, dict) and item.get("id") == item_id:
-                    cv_item = item
-                    break
-
-        if not cv_item:
-            logger.warning(
-                f"Item {item_id} not found in {section}, cannot extract field values"
-            )
-            # Set empty original_value for all field_corrections
-            for field_corr in correction.get("field_corrections", []):
-                if isinstance(field_corr, dict):
-                    field_corr["original_value"] = ""
-            continue
-
-        # Extract original_value for each field_correction
-        for field_corr in correction.get("field_corrections", []):
-            if not isinstance(field_corr, dict):
-                continue
-
-            field_name = field_corr.get("field_name")
-            if not field_name:
-                field_corr["original_value"] = ""
-                continue
-
-            # Extract value from cv_item
-            original_value = cv_item.get(field_name, "") or ""
-            field_corr["original_value"] = original_value
+        elif item_type == "professional_summary":
+            summary_obj = cv_data.get("professional_summary") or {}
+            issue["original"] = summary_obj.get("content", "") or ""
 
     return response
 
 
-def clean_quality_response(response: Dict[str, Any]) -> Dict[str, Any]:
+def _skill_type_from_field_path(field_path: str) -> Optional[str]:
     """
-    Post-process AI response to clean html_diff strings, fix formatting issues,
-    and derive computed fields (corrected_value, suggested, suggested_text) from html_diff.
+    Return "technical" or "soft" if field_path is skills.technical or skills.soft
+    (with optional [index]); otherwise None.
+    """
+    if not field_path or "." not in field_path:
+        return None
+    segment = field_path.split(".")[-1]
+    if "[" in segment:
+        segment = segment.split("[")[0]
+    return segment if segment in ("technical", "soft") else None
 
-    Recursively processes all html_diff fields in:
-    - writing_corrections[].field_corrections[].html_diff
-    - writing_corrections[].html_diff (deprecated, but still exists)
-    - professional_summary.html_diff
-    - work_experience[].html_diff (for low_score items)
-    - education[].html_diff (for low_score items)
 
-    Also computes derived fields:
-    - field_corrections[].corrected_value from html_diff
-    - low_score items[].suggested from html_diff (requires original field, which is extracted from CV data in post-processing)
-    - professional_summary.suggested_text from html_diff
-
-    Note: The `original` field for work_experience and education items is extracted
-    from CV data in post-processing (not generated by AI), and must be present
-    before calling this function.
-
-    Args:
-        response: AI response dictionary with original fields already populated from CV data
+def _extract_skill_from_html_diff(html_diff: str) -> tuple[Optional[str], Optional[str]]:
+    """
+    Extract original and suggested skill names from html_diff.
 
     Returns:
-        Cleaned response dictionary with computed fields added
+        Tuple of (original_skill, suggested_skill) or (None, None) if not found
+    """
+    if not html_diff:
+        return None, None
+
+    # Extract <del> content as original
+    del_match = re.search(r"<del>([^<]*)</del>", html_diff)
+    original = del_match.group(1).strip() if del_match else None
+
+    # Extract <ins> content as suggested
+    ins_match = re.search(r"<ins>([^<]*)</ins>", html_diff)
+    suggested = ins_match.group(1).strip() if ins_match else None
+
+    return original, suggested
+
+
+def clean_quality_response_issues(
+    response: Dict[str, Any], cv_data: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Clean html_diff in issues and compute suggested/suggested_text (cv_review_v2).
+
+    Cleans each issue's html_diff; for issues with "original" sets "suggested".
+    Converts skills issues into skills.technical/soft format.
+    Does not add a top-level professional_summary; the frontend derives
+    professional summary suggestions from the issues array only (single source
+    of truth).
     """
     if not response or not isinstance(response, dict):
         return response
+    issues = response.get("issues")
+    if not isinstance(issues, list):
+        return response
 
-    # Clean and compute fields for writing corrections
-    for correction in response.get("writing_corrections", []):
-        if not isinstance(correction, dict):
+    # Initialize skills object if not present
+    if "skills" not in response:
+        response["skills"] = {"technical": [], "soft": []}
+    elif not isinstance(response["skills"], dict):
+        response["skills"] = {"technical": [], "soft": []}
+    if "technical" not in response["skills"]:
+        response["skills"]["technical"] = []
+    if "soft" not in response["skills"]:
+        response["skills"]["soft"] = []
+
+    for issue in issues:
+        if not isinstance(issue, dict):
             continue
+        html_diff = issue.get("html_diff")
+        item_type = issue.get("item_type")
+        field_path = issue.get("field_path")
 
-        # Clean and compute fields for field corrections
-        for field_corr in correction.get("field_corrections", []):
-            if isinstance(field_corr, dict) and "html_diff" in field_corr:
-                # Clean html_diff string
-                field_corr["html_diff"] = clean_html_diff_string(field_corr["html_diff"])
-                # Compute corrected_value from html_diff
-                if "original_value" in field_corr:
-                    field_corr["corrected_value"] = apply_html_diff(
-                        field_corr["original_value"], field_corr["html_diff"]
-                    )
-
-        # Clean deprecated top-level html_diff
-        if "html_diff" in correction and correction["html_diff"]:
-            correction["html_diff"] = clean_html_diff_string(correction["html_diff"])
-
-    # Clean and compute fields for professional summary
-    if "professional_summary" in response and response["professional_summary"]:
-        ps = response["professional_summary"]
-        if isinstance(ps, dict) and "html_diff" in ps and ps["html_diff"]:
-            # Clean html_diff string
-            ps["html_diff"] = clean_html_diff_string(ps["html_diff"])
-            # Compute suggested_text from html_diff
-            if "original_text" in ps:
-                ps["suggested_text"] = apply_html_diff(
-                    ps["original_text"], ps["html_diff"]
+        if html_diff:
+            issue["html_diff"] = clean_html_diff_string(html_diff)
+            if issue.get("original") is not None:
+                issue["suggested"] = apply_html_diff(
+                    issue["original"], issue["html_diff"]
                 )
 
-    # Clean and compute fields for work experience and education
-    for item in response.get("work_experience", []) + response.get("education", []):
-        if isinstance(item, dict) and "html_diff" in item and item["html_diff"]:
-            # Clean html_diff string
-            item["html_diff"] = clean_html_diff_string(item["html_diff"])
-            # Compute suggested from html_diff
-            if "original" in item:
-                item["suggested"] = apply_html_diff(item["original"], item["html_diff"])
+        # Convert skills issues to skills.technical/soft format
+        if item_type == "skills" and field_path and html_diff:
+            skill_type = _skill_type_from_field_path(field_path)
+            if skill_type:
+                original_skill, suggested_skill = _extract_skill_from_html_diff(html_diff)
+                if issue.get("original") is not None:
+                    original_skill = issue["original"]
+                if suggested_skill:
+                    # Check for duplicates (case-insensitive)
+                    existing_skills = [
+                        s.get("skill", "").lower()
+                        for s in response["skills"][skill_type]
+                        if isinstance(s, dict)
+                    ]
+
+                    if suggested_skill.lower() not in existing_skills:
+                        # Create skill suggestion object
+                        skill_suggestion = {
+                            "skill": suggested_skill,
+                            "reasoning": issue.get("reasoning", ""),
+                            "original": original_skill if original_skill else None,
+                        }
+
+                        # Add to appropriate skills array
+                        response["skills"][skill_type].append(skill_suggestion)
 
     return response

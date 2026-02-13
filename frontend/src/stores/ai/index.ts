@@ -30,7 +30,6 @@ const initialState = {
   },
   suggestions: {},
   jobDescriptions: [],
-  activeJobDescriptionId: undefined,
   activeJobDescriptionIdPerCV:
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("activeJobDescriptionIdPerCV") || "{}")
@@ -128,15 +127,14 @@ export const useVisibleCVJobDescriptions = (cvId: string) =>
     shallow,
   );
 
-export const useActiveJobDescription = () =>
+export const useActiveJobDescription = (cvId: string) =>
   useAIStore((state) => {
-    const activeId = state.activeJobDescriptionId;
+    const activeId = state.activeJobDescriptionIdPerCV[cvId];
     if (!activeId) return undefined;
 
     const jobDescription = state.jobDescriptions.find(
       (jd) => jd.id === activeId,
     );
-    // If the active job description is hidden, return undefined
     if (jobDescription && state.hiddenJobDescriptionIds.includes(activeId)) {
       return undefined;
     }

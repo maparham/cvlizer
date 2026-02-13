@@ -69,7 +69,7 @@ const InlineDiffControls: React.FC<InlineDiffControlsProps> = ({
     exitDiffMode,
   } = useInlineDiffContext();
 
-  const activeJobDescription = useActiveJobDescription();
+  const activeJobDescription = useActiveJobDescription(cvId);
   const { cvData } = useCVEditor();
 
   const pendingCount = getPendingSuggestionsCount();

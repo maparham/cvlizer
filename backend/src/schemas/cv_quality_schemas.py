@@ -6,7 +6,7 @@ Defines strict validation for all quality analysis data structures.
 
 from datetime import datetime
 from typing import List, Optional
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 # ============================================================================
@@ -38,12 +38,12 @@ class WritingCorrectionSchema(BaseModel):
     """Individual writing correction suggestion."""
 
     item_id: str = Field(description="ID of the CV item containing the error")
-    section: str = Field(
-        description="Section name: work_experience, education, professional_summary, etc."
+    field_path: str = Field(
+        description="Field path for UI placement. E.g. work_experience.position, work_experience.description, education.degree.",
     )
     html_diff: Optional[str] = Field(
         default=None,
-        description="DEPRECATED: Use field_corrections with field_name='description' instead. Kept for backward compatibility.",
+        description="Optional; ignored in apply logic. Use field_corrections with field_name='description' instead.",
     )
     field_corrections: List[FieldCorrectionSchema] = Field(
         default_factory=list,
@@ -65,71 +65,6 @@ class CoachingQuestionSchema(BaseModel):
     question: str = Field(
         min_length=10, description="Specific, actionable coaching question"
     )
-
-
-class ContentCoachingItemSchema(BaseModel):
-    """Content coaching for a specific CV item.
-
-    Matches OpenAI cv_corrections ContentCoaching schema.
-    """
-
-    model_config = {"extra": "forbid"}
-
-    item_id: str = Field(description="ID of the CV item needing more content")
-    section: str = Field(description="Section name")
-    issue_category: str = Field(
-        pattern="^(insufficient_content|missing_impact|too_brief|missing_achievements|lacks_specificity|missing_context|weak_action_verbs)$"
-    )
-    coaching_questions: List[CoachingQuestionSchema] = Field(min_length=1, max_length=3)
-    direct_prompts: List[str] = Field(
-        max_length=2, description="Direct expansion prompts"
-    )
-
-
-# ============================================================================
-# Professional Summary
-# ============================================================================
-
-
-class ProfessionalSummaryQualitySuggestionSchema(BaseModel):
-    """Professional summary quality suggestion."""
-
-    suggested_text: Optional[str] = Field(
-        default=None, description="Computed from html_diff in post-processing"
-    )
-    original_text: str = Field(default="")
-    key_changes: List[str] = Field(default_factory=list)
-    html_diff: Optional[str] = Field(default=None)
-    coaching_questions: Optional[List[CoachingQuestionSchema]] = Field(default=None)
-
-
-# ============================================================================
-# Work Experience & Education Quality Items
-# ============================================================================
-
-
-class LowQualityItemSchema(BaseModel):
-    """Item with low quality score - includes rewritten content.
-
-    Only items with quality score < 50 are returned in the analysis.
-    Items with score >= 50 are not included in the response.
-    """
-
-    item_type: str = Field(default="low_score", description="Discriminator for item type")
-    item_id: str
-    section: str
-    quality_score: int = Field(ge=0, lt=50)
-    original: str
-    suggested: Optional[str] = Field(
-        default=None, description="Computed from html_diff in post-processing"
-    )
-    reasoning: str = Field(max_length=200)
-    html_diff: str
-    coaching_questions: Optional[List[CoachingQuestionSchema]] = Field(default=None)
-
-
-# Only low_score items are returned (items with score < 50 that need improvement)
-QualityItemSchema = LowQualityItemSchema
 
 
 # ============================================================================
@@ -192,201 +127,94 @@ class SkillsSuggestionsSchema(BaseModel):
 
 
 # ============================================================================
-# Main CV Quality Analysis Response
+# cv_review_v2 (issues-based) Schemas
 # ============================================================================
 
 
-class CVQualityAnalysisResponseSchema(BaseModel):
-    """Complete CV quality analysis response from AI.
+class CoachingSchema(BaseModel):
+    """Coaching block nested in an issue (coaching_questions + direct_prompts)."""
 
-    Note: work_experience and education arrays only contain items with quality score < 50
-    that need improvement. Items with score >= 50 are not included in the response.
-    """
+    model_config = {"extra": "forbid"}
 
-    overall_quality_score: int = Field(ge=0, le=100)
-
-    writing_corrections: List[WritingCorrectionSchema] = Field(default_factory=list)
-    content_coaching: List[ContentCoachingItemSchema] = Field(default_factory=list)
-
-    professional_summary: Optional[ProfessionalSummaryQualitySuggestionSchema] = Field(
-        default=None
-    )
-
-    work_experience: List[QualityItemSchema] = Field(
-        default_factory=list,
-        description="Only items with quality score < 50 that need improvement",
-    )
-    education: List[QualityItemSchema] = Field(
-        default_factory=list,
-        description="Only items with quality score < 50 that need improvement",
-    )
-
-    skills: SkillsSuggestionsSchema = Field(
-        default_factory=SkillsSuggestionsSchema,
-        description="Optional new skills suggestions",
-    )
-
-    timeline_gaps: List[TimelineGapSchema] = Field(default_factory=list)
+    coaching_questions: List[CoachingQuestionSchema] = Field(min_length=1, max_length=3)
+    direct_prompts: List[str] = Field(max_length=2, default_factory=list)
 
 
-# ============================================================================
-# AI-Only Schemas (Exclude Computed Fields)
-# ============================================================================
+ISSUE_ITEM_TYPES = (
+    "personal_info",
+    "professional_summary",
+    "work_experience",
+    "education",
+    "skills",
+    "certifications",
+    "projects",
+    "awards",
+    "publications",
+    "volunteer_experience",
+)
+ISSUE_SEVERITY = ("critical", "major", "minor")
+ISSUE_CATEGORY = (
+    "offensive_language",
+    "discriminatory_content",
+    "unprofessional_tone",
+    "grammar_errors",
+    "insufficient_content",
+    "missing_impact",
+    "missing_achievements",
+    "lacks_specificity",
+    "too_brief",
+    "missing_context",
+    "weak_action_verbs",
+)
 
 
-class FieldCorrectionAISchema(BaseModel):
-    """Field correction for AI responses (excludes computed fields).
-
-    Matches OpenAI cv_corrections schema: field_name, html_diff, reasoning (all required).
-    Accepts "field" as alias for field_name for model output robustness.
+class IssueSchema(BaseModel):
+    """Single issue from cv_review_v2 (item_type, severity, category, coaching).
+    One issue per detected problem; field_path identifies the target field for UI placement.
     """
 
     model_config = {"extra": "forbid"}
 
-    field_name: str = Field(
-        description="Name of the field (company, position, institution, degree, location, description, etc.)",
-        validation_alias=AliasChoices("field_name", "field"),
+    item_type: str = Field(
+        description="Section type: personal_info, professional_summary, work_experience, education, skills, certifications, projects, awards, publications, volunteer_experience"
     )
-    html_diff: str = Field(
-        description="HTML diff with <del> and <ins> tags. Must contain actual edits.",
-        pattern=r"<(del|ins)>",
+    item_id: Optional[str] = Field(default=None)
+    field_path: str = Field(
+        description="Field path for UI placement. One issue per field. E.g. work_experience.position, work_experience.description, education.degree, personal_info.description.",
     )
-    reasoning: str = Field(
-        max_length=200,
-        description="Field-specific explanation of the correction. Brief (max 30 words).",
-    )
+    issue_severity: str = Field(description="critical, major, minor")
+    issue_category: str = Field(description="Issue category enum")
+    quality_score: Optional[int] = Field(default=None, ge=0, le=100)
+    reasoning: str = Field(max_length=200)
+    html_diff: Optional[str] = Field(default=None)
+    coaching: Optional[CoachingSchema] = Field(default=None)
+    # Post-processing: populated by extract_original_from_cv_data_issues / clean
+    original: Optional[str] = Field(default=None, description="From CV data")
+    suggested: Optional[str] = Field(default=None, description="From html_diff")
 
 
-class WritingCorrectionAISchema(BaseModel):
-    """Individual writing correction suggestion for AI responses.
-
-    Matches OpenAI cv_corrections schema: item_id, section, importance, field_corrections
-    (min 1) all required.
-    """
-
-    model_config = {"extra": "forbid"}
-
-    item_id: str = Field(description="ID of the CV item containing the error")
-    section: str = Field(
-        description="Section name: work_experience, education, professional_summary, etc."
-    )
-    importance: str = Field(
-        default="standard",
-        pattern="^(highly_recommended|standard)$",
-        description="How strongly to recommend this correction.",
-    )
-    field_corrections: List[FieldCorrectionAISchema] = Field(
-        min_length=1,
-        description="Field corrections with html_diff. At least one required.",
-    )
-
-
-class ProfessionalSummaryQualitySuggestionAISchema(BaseModel):
-    """Professional summary for AI responses.
-
-    Matches OpenAI cv_corrections ProfessionalSummary schema. html_diff and
-    coaching_questions can be null.
-    """
+class ProfessionalSummaryV2Schema(BaseModel):
+    """Professional summary for cv_review_v2 (original_text + html_diff only)."""
 
     model_config = {"extra": "forbid"}
 
     original_text: str = Field(default="")
-    key_changes: List[str] = Field(default_factory=list)
     html_diff: Optional[str] = Field(default=None)
-    coaching_questions: Optional[List[CoachingQuestionSchema]] = Field(default=None)
+    reasoning: Optional[str] = Field(default=None)
+    # Post-processing
+    suggested_text: Optional[str] = Field(default=None, description="From html_diff")
 
 
-class LowQualityItemAISchema(BaseModel):
-    """Item with low quality score for AI responses (excludes computed fields).
-
-    Matches OpenAI cv_corrections LowQualityItem schema. Only items with
-    quality score < 50 are returned. coaching_questions can be null.
-    """
-
-    model_config = {"extra": "forbid"}
-
-    item_type: str = Field(default="low_score", description="Discriminator for item type")
-    item_id: str
-    section: str
-    quality_score: int = Field(ge=0, lt=50)
-    reasoning: str = Field(max_length=200)
-    html_diff: str = Field(pattern=r"<(del|ins)>")
-    coaching_questions: Optional[List[CoachingQuestionSchema]] = Field(
-        default=None,
-        description="Coaching questions for content expansion. Can be null.",
-    )
-
-
-class CVQualityAnalysisAIResponseBaseSchema(BaseModel):
-    """Base AI response schema for CV quality analysis (shared fields across modes)."""
+class CVQualityAnalysisResponseSchemaV2(BaseModel):
+    """CV quality analysis response from cv_review_v2 (issues-based)."""
 
     overall_quality_score: int = Field(ge=0, le=100)
-
-    writing_corrections: List[WritingCorrectionAISchema] = Field(
-        default_factory=list,
-        description="Only items where at least one field_correction has an html_diff containing <del> or <ins>. Omit items with no edits; do not include entries with only 'No changes needed'.",
-    )
-
-    professional_summary: Optional[ProfessionalSummaryQualitySuggestionAISchema] = Field(
-        default=None
-    )
-
+    issues: List[IssueSchema] = Field(default_factory=list)
+    professional_summary: Optional[ProfessionalSummaryV2Schema] = Field(default=None)
     skills: SkillsSuggestionsSchema = Field(
         default_factory=SkillsSuggestionsSchema,
-        description="Optional new skills suggestions",
     )
-
-
-class CVQualityAnalysisAIResponseSchema(CVQualityAnalysisAIResponseBaseSchema):
-    """AI response schema for CV quality analysis (excludes computed fields).
-
-    This schema is used for OpenAI API calls. Computed fields (corrected_value,
-    suggested, suggested_text, timeline_gaps) are excluded as they are computed
-    in post-processing, not generated by the AI.
-
-    Note: work_experience and education arrays only contain items with quality score < 50
-    that need improvement. Items with score >= 50 are not included in the response.
-    """
-
-    content_coaching: List[ContentCoachingItemSchema] = Field(default_factory=list)
-
-    work_experience: List[LowQualityItemAISchema] = Field(
-        default_factory=list,
-        description="Only items with quality score < 50 that need improvement",
-    )
-    education: List[LowQualityItemAISchema] = Field(
-        default_factory=list,
-        description="Only items with quality score < 50 that need improvement",
-    )
-
-
-class LowQualityItemAISchemaWritingOnly(BaseModel):
-    """Low-quality item schema for proofread mode; no coaching_questions.
-
-    Matches OpenAI cv_corrections schema for proofread mode.
-    """
-
-    model_config = {"extra": "forbid"}
-
-    item_type: str = Field(default="low_score", description="Discriminator for item type")
-    item_id: str
-    section: str
-    quality_score: int = Field(ge=0, lt=50)
-    reasoning: str = Field(max_length=200)
-    html_diff: str = Field(pattern=r"<(del|ins)>")
-
-
-class CVQualityAnalysisAIResponseSchemaWritingOnly(CVQualityAnalysisAIResponseBaseSchema):
-    """AI response schema for proofread mode; no content_coaching or item coaching_questions."""
-
-    work_experience: List[LowQualityItemAISchemaWritingOnly] = Field(
-        default_factory=list,
-        description="Only items with quality score < 50 that need improvement",
-    )
-    education: List[LowQualityItemAISchemaWritingOnly] = Field(
-        default_factory=list,
-        description="Only items with quality score < 50 that need improvement",
-    )
+    timeline_gaps: List[TimelineGapSchema] = Field(default_factory=list)
 
 
 # ============================================================================
@@ -441,9 +269,9 @@ class CVQualityAnalysisCreateRequestSchema(BaseModel):
 
 
 class CVQualityAnalysisUpdateSchema(BaseModel):
-    """Schema for updating quality analysis data (for dismissals)."""
+    """Schema for updating quality analysis data (for dismissals). V2 only."""
 
-    quality_data: CVQualityAnalysisResponseSchema = Field(
+    quality_data: CVQualityAnalysisResponseSchemaV2 = Field(
         description="Updated quality analysis data with dismissed items removed"
     )
 

@@ -61,10 +61,8 @@ export function getHtmlDiffCorrection(
     return null;
   }
 
-  // First try to find description in field_corrections (new approach)
   const descriptionFieldCorrection = getFieldCorrection(writingCorrections, itemId, 'description');
   if (descriptionFieldCorrection) {
-    // Find the WritingCorrection that contains this field correction
     const correction = writingCorrections.find(wc =>
       wc.item_id === itemId &&
       wc.field_corrections?.some(fc => fc.field_name === 'description')
@@ -72,20 +70,6 @@ export function getHtmlDiffCorrection(
     if (correction) {
       return {
         html_diff: descriptionFieldCorrection.html_diff,
-        correction: correction,
-      };
-    }
-  }
-
-  // Fallback to legacy html_diff at WritingCorrection level (backward compatibility)
-  for (const correction of writingCorrections) {
-    if (correction.item_id !== itemId) {
-      continue;
-    }
-
-    if (correction.html_diff && correction.html_diff.trim() !== '') {
-      return {
-        html_diff: correction.html_diff,
         correction: correction,
       };
     }

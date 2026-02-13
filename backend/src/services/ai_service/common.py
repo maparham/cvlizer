@@ -403,6 +403,7 @@ async def call_openai_with_schema(
         return parsed_data, metadata
 
     except Exception as e:
+        logger.error("AI call failed: %s: %s", type(e).__name__, str(e))
         # Convert to user-friendly message
         user_friendly_message = get_user_friendly_error_message(e)
 

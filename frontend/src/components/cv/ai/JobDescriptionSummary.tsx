@@ -111,7 +111,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
 
   const jobDescriptions = useVisibleJobDescriptions();
   const allJobDescriptions = useJobDescriptions();
-  const activeJobDescription = useActiveJobDescription();
+  const activeJobDescription = useActiveJobDescription(cvId);
 
   // Get AI suggestions to calculate total count
   const { allSuggestions } = useAISuggestionsStore();

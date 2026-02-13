@@ -1,7 +1,7 @@
 /**
  * Tests for useWritingCorrectionHelpers.
  * Covers findWritingCorrectionForField, getCorrectionMetadata, getDescriptionCorrection
- * (including fieldName and legacy html_diff fallback). No store/API mocks.
+ * (including fieldName). No store/API mocks.
  */
 
 import { renderHook } from "@testing-library/react";
@@ -31,7 +31,7 @@ const mockFieldCorrection3: FieldCorrection = {
 const mockWritingCorrections: WritingCorrection[] = [
   {
     item_id: "work-1",
-    section: "work_experience",
+    field_path: "work_experience",
     field_corrections: [
       mockFieldCorrection1,
       mockFieldCorrection2,
@@ -43,7 +43,7 @@ const mockWritingCorrections: WritingCorrection[] = [
 
 const mockWritingCorrectionContent: WritingCorrection = {
   item_id: "professional_summary",
-  section: "professional_summary",
+  field_path: "professional_summary",
   field_corrections: [
     {
       field_name: "content",
@@ -57,7 +57,7 @@ const mockWritingCorrectionContent: WritingCorrection = {
 
 const mockLegacyCorrection: WritingCorrection = {
   item_id: "work-2",
-  section: "work_experience",
+  field_path: "work_experience",
   html_diff: "- Old description\n+ New improved description",
   importance: "standard",
 };
@@ -122,7 +122,7 @@ describe("useWritingCorrectionHelpers", () => {
       const correctionsWithoutFields: WritingCorrection[] = [
         {
           item_id: "work-3",
-          section: "work_experience",
+          field_path: "work_experience",
           importance: "standard",
         },
       ];
@@ -228,7 +228,7 @@ describe("useWritingCorrectionHelpers", () => {
 
       expect(desc).not.toBeNull();
       expect(desc?.html_diff).toContain("Weak");
-      expect(desc?.correction.section).toBe("professional_summary");
+      expect(desc?.correction.field_path).toBe("professional_summary");
     });
 
     it("returns null when itemId has no matching correction", () => {
@@ -245,7 +245,7 @@ describe("useWritingCorrectionHelpers", () => {
       const correctionsNoDescription: WritingCorrection[] = [
         {
           item_id: "work-3",
-          section: "work_experience",
+          field_path: "work_experience",
           field_corrections: [mockFieldCorrection1],
           importance: "standard",
         },
@@ -260,17 +260,15 @@ describe("useWritingCorrectionHelpers", () => {
       expect(desc).toBeNull();
     });
 
-    it("falls back to legacy html_diff when no field_corrections for description", () => {
-      const correctionsWithLegacy = [mockLegacyCorrection];
+    it("returns null when only legacy html_diff present (no field_corrections for description)", () => {
+      const correctionsWithLegacyOnly = [mockLegacyCorrection];
       const { result } = renderHook(() =>
-        useWritingCorrectionHelpers(correctionsWithLegacy)
+        useWritingCorrectionHelpers(correctionsWithLegacyOnly)
       );
 
       const desc = result.current.getDescriptionCorrection("work-2");
 
-      expect(desc).not.toBeNull();
-      expect(desc?.html_diff).toBe("- Old description\n+ New improved description");
-      expect(desc?.correction.item_id).toBe("work-2");
+      expect(desc).toBeNull();
     });
 
     it("returns null for empty corrections array", () => {

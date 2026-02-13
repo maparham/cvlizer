@@ -20,7 +20,6 @@ export { default as InlineDraftSection } from "./InlineDraftSection";
 
 // AI diff components
 export { default as SemanticDiff } from "./SemanticDiff";
-// Note: InlineDiff is kept for backward compatibility with other features (SuggestionHighlight)
 
 // Suggestion card components
 export { CompactSuggestionCard } from "./CompactSuggestionCard";

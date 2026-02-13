@@ -63,7 +63,7 @@ interface JobFitAnalysisProps {
 }
 
 const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
-  cvId: _cvId,
+  cvId,
   cvData,
   onAddToCV: _onAddToCV,
   className,
@@ -90,7 +90,7 @@ const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
   }, [cvData]);
 
   const jobFitAnalysis = useJobFitAnalysis();
-  const activeJobDescription = useActiveJobDescription();
+  const activeJobDescription = useActiveJobDescription(cvId);
 
   const getConfidenceColor = (score: number) => {
     if (score >= 80) return "success";

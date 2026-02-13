@@ -181,7 +181,7 @@ export function useSectionHandlers<T extends { id: string; description?: string 
         onSave?.(updatedSectionData, "Writing correction applied successfully");
 
         // Dismiss the correction from the analysis
-        await dismissWritingCorrection(correction.item_id, correction.section);
+        await dismissWritingCorrection(correction.item_id, correction.field_path);
         showSuccess("Writing correction applied successfully");
       } catch (error: any) {
         const errorMessage = error?.response?.data?.detail || error?.message || "Failed to apply writing correction";
@@ -226,7 +226,7 @@ export function useSectionHandlers<T extends { id: string; description?: string 
 
           for (const correction of writingCorrections) {
             try {
-              await dismissWritingCorrection(correction.item_id, correction.section);
+              await dismissWritingCorrection(correction.item_id, correction.field_path);
               dismissedCorrections.push(correction);
             } catch (error) {
               failedDismissals.push(correction);

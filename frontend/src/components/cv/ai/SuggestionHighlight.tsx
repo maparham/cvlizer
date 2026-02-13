@@ -30,7 +30,8 @@ import {
 } from "@mui/icons-material";
 import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
 import { AISuggestion } from "../../../types/ai";
-import { InlineDiff } from "./InlineDiff";
+import { SemanticDiff } from "./SemanticDiff";
+import { originalAndSuggestedToHtmlDiff } from "../../../utils/textDiff";
 
 interface SuggestionHighlightProps {
   children: ReactNode;
@@ -240,7 +241,7 @@ export const SuggestionHighlight: React.FC<SuggestionHighlightProps> = ({
 
   // Determine content to render
   const renderContent = () => {
-    // For modifications with text content, show inline diff
+    // For modifications with text content, show semantic diff
     if (
       suggestion.changeType === "modification" &&
       suggestion.type === "enhance_content" &&
@@ -249,12 +250,11 @@ export const SuggestionHighlight: React.FC<SuggestionHighlightProps> = ({
       suggestion.originalValue.trim() &&
       suggestion.suggestedValue.trim()
     ) {
-      return (
-        <InlineDiff
-          original={suggestion.originalValue}
-          suggested={suggestion.suggestedValue}
-        />
+      const htmlDiff = originalAndSuggestedToHtmlDiff(
+        suggestion.originalValue,
+        suggestion.suggestedValue,
       );
+      return <SemanticDiff htmlDiff={htmlDiff} />;
     }
     // For other cases (additions, removals, or non-text modifications), use children
     return <>{children}</>;

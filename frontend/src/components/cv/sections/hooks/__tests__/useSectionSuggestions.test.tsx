@@ -37,7 +37,7 @@ describe('useSectionSuggestions', () => {
   const mockLowQualityWork: LowQualityItem = {
     item_type: 'low_score',
     item_id: 'work-1',
-    section: 'work_experience',
+    field_path: 'work_experience',
     quality_score: 45,
     original: 'Poor quality description',
     suggested: 'Improved quality description',
@@ -48,14 +48,14 @@ describe('useSectionSuggestions', () => {
   const mockHighQualityWork: QualityItem = {
     item_type: 'high_score',
     item_id: 'work-2',
-    section: 'work_experience',
+    field_path: 'work_experience',
     quality_score: 85
   };
 
   const mockLowQualityEducation: LowQualityItem = {
     item_type: 'low_score',
     item_id: 'edu-1',
-    section: 'education',
+    field_path: 'education',
     quality_score: 50,
     original: 'Basic education description',
     suggested: 'Enhanced education description',
@@ -65,7 +65,7 @@ describe('useSectionSuggestions', () => {
 
   const mockWritingCorrectionWork1: WritingCorrection = {
     item_id: 'work-1',
-    section: 'work_experience',
+    field_path: 'work_experience',
     field_corrections: [
       {
         field_name: 'company',
@@ -81,7 +81,7 @@ describe('useSectionSuggestions', () => {
 
   const mockWritingCorrectionWork2: WritingCorrection = {
     item_id: 'work-1',
-    section: 'work_experience',
+    field_path: 'work_experience',
     field_corrections: [
       {
         field_name: 'position',
@@ -96,7 +96,7 @@ describe('useSectionSuggestions', () => {
 
   const mockWritingCorrectionEducation: WritingCorrection = {
     item_id: 'edu-1',
-    section: 'education',
+    field_path: 'education',
     field_corrections: [
       {
         field_name: 'institution',
@@ -130,16 +130,84 @@ describe('useSectionSuggestions', () => {
     direct_prompts: ['Describe significant projects or research']
   };
 
+  // Single issues-based mock (V2-only); hook derives all maps from issues.
   const mockQualityAnalysis: CVQualityAnalysisData = {
     overall_quality_score: 65,
-    work_experience: [mockLowQualityWork, mockHighQualityWork],
-    education: [mockLowQualityEducation],
-    writing_corrections: [
-      mockWritingCorrectionWork1,
-      mockWritingCorrectionWork2,
-      mockWritingCorrectionEducation
+    issues: [
+      {
+        item_type: 'work_experience',
+        item_id: 'work-1',
+        field_path: 'work_experience',
+        issue_severity: 'major',
+        issue_category: 'insufficient_content',
+        quality_score: 45,
+        reasoning: mockLowQualityWork.reasoning,
+        html_diff: mockLowQualityWork.html_diff,
+        coaching: {
+          coaching_questions: mockCoachingWork.coaching_questions,
+          direct_prompts: mockCoachingWork.direct_prompts
+        },
+        original: mockLowQualityWork.original,
+        suggested: mockLowQualityWork.suggested
+      },
+      {
+        item_type: 'work_experience',
+        item_id: 'work-1',
+        field_path: 'work_experience',
+        issue_severity: 'minor',
+        issue_category: 'unprofessional_tone',
+        quality_score: 80,
+        reasoning: 'Use formal job title',
+        html_diff: '- Developer\n+ Software Engineer',
+        coaching: null,
+        original: 'Developer',
+        suggested: 'Software Engineer'
+      },
+      {
+        item_type: 'education',
+        item_id: 'edu-1',
+        field_path: 'education',
+        issue_severity: 'critical',
+        issue_category: 'missing_impact',
+        quality_score: 49,
+        reasoning: mockLowQualityEducation.reasoning,
+        html_diff: mockLowQualityEducation.html_diff,
+        coaching: {
+          coaching_questions: mockCoachingEducation.coaching_questions,
+          direct_prompts: mockCoachingEducation.direct_prompts ?? []
+        },
+        original: mockLowQualityEducation.original,
+        suggested: mockLowQualityEducation.suggested
+      },
+      // Issue with no html_diff and no coaching -> goes to qualitySuggestionsByItemId only
+      {
+        item_type: 'work_experience',
+        item_id: 'work-1',
+        field_path: 'work_experience[0].description',
+        issue_severity: 'major',
+        issue_category: 'lacks_specificity',
+        quality_score: 40,
+        reasoning: 'Needs more concrete examples',
+        html_diff: null,
+        coaching: null,
+        original: 'Built features',
+        suggested: 'Delivered 3 features that improved conversion by 10%'
+      },
+      {
+        item_type: 'education',
+        item_id: 'edu-1',
+        field_path: 'education[0].description',
+        issue_severity: 'minor',
+        issue_category: 'too_brief',
+        quality_score: 42,
+        reasoning: 'Could add more detail',
+        html_diff: null,
+        coaching: null,
+        original: 'Studied CS',
+        suggested: 'Focused on algorithms and distributed systems'
+      }
     ],
-    content_coaching: [mockCoachingWork, mockCoachingEducation],
+    professional_summary: undefined,
     skills: { technical: [], soft: [] },
     timeline_gaps: []
   };
@@ -242,7 +310,7 @@ describe('useSectionSuggestions', () => {
   });
 
   describe('Quality suggestions mapping (qualitySuggestionsByItemId)', () => {
-    it('should map only low_score items for work experience', () => {
+    it('should map only low_score items for work experience (no html_diff, no coaching)', () => {
       (aiSuggestionsStore.useValidatedSuggestions as jest.Mock).mockReturnValue(mockAllSuggestions);
 
       const { result } = renderHook(() =>
@@ -250,7 +318,13 @@ describe('useSectionSuggestions', () => {
       );
 
       expect(result.current.qualitySuggestionsByItemId.size).toBe(1);
-      expect(result.current.qualitySuggestionsByItemId.get('work-1')).toEqual(mockLowQualityWork);
+      const entry = result.current.qualitySuggestionsByItemId.get('work-1');
+      expect(entry).toMatchObject({
+        item_type: 'low_score',
+        item_id: 'work-1',
+        quality_score: 40,
+        reasoning: 'Needs more concrete examples',
+      });
     });
 
     it('should not include high_score items in quality suggestions map', () => {
@@ -263,7 +337,7 @@ describe('useSectionSuggestions', () => {
       expect(result.current.qualitySuggestionsByItemId.get('work-2')).toBeUndefined();
     });
 
-    it('should map low_score items for education section', () => {
+    it('should map low_score items for education section (no html_diff, no coaching)', () => {
       (aiSuggestionsStore.useValidatedSuggestions as jest.Mock).mockReturnValue(mockAllSuggestions);
 
       const { result } = renderHook(() =>
@@ -271,7 +345,13 @@ describe('useSectionSuggestions', () => {
       );
 
       expect(result.current.qualitySuggestionsByItemId.size).toBe(1);
-      expect(result.current.qualitySuggestionsByItemId.get('edu-1')).toEqual(mockLowQualityEducation);
+      const edu1Quality = result.current.qualitySuggestionsByItemId.get('edu-1');
+      expect(edu1Quality).toMatchObject({
+        item_type: 'low_score',
+        item_id: 'edu-1',
+        quality_score: 42,
+        reasoning: 'Could add more detail',
+      });
     });
 
     it('should return empty map when no quality analysis exists', () => {
@@ -289,7 +369,12 @@ describe('useSectionSuggestions', () => {
 
       const qualityAnalysisNoWork: CVQualityAnalysisData = {
         ...mockQualityAnalysis,
-        work_experience: []
+        issues: mockQualityAnalysis.issues.filter(
+          (i) =>
+            i.field_path !== 'work_experience' &&
+            !i.field_path?.startsWith('work_experience.') &&
+            !i.field_path?.startsWith('work_experience[')
+        )
       };
 
       const { result } = renderHook(() =>
@@ -309,7 +394,14 @@ describe('useSectionSuggestions', () => {
       );
 
       expect(result.current.coachingByItemId.size).toBe(1);
-      expect(result.current.coachingByItemId.get('work-1')).toEqual(mockCoachingWork);
+      expect(result.current.coachingByItemId.get('work-1')).toMatchObject({
+        item_id: 'work-1',
+        field_path: 'work_experience',
+        issue_category: mockCoachingWork.issue_category,
+        coaching_questions: mockCoachingWork.coaching_questions,
+        direct_prompts: mockCoachingWork.direct_prompts,
+        reasoning: mockLowQualityWork.reasoning,
+      });
     });
 
     it('should map coaching items for education section', () => {
@@ -320,7 +412,14 @@ describe('useSectionSuggestions', () => {
       );
 
       expect(result.current.coachingByItemId.size).toBe(1);
-      expect(result.current.coachingByItemId.get('edu-1')).toEqual(mockCoachingEducation);
+      expect(result.current.coachingByItemId.get('edu-1')).toMatchObject({
+        item_id: 'edu-1',
+        field_path: 'education',
+        issue_category: mockCoachingEducation.issue_category,
+        coaching_questions: mockCoachingEducation.coaching_questions,
+        direct_prompts: mockCoachingEducation.direct_prompts ?? [],
+        reasoning: mockLowQualityEducation.reasoning,
+      });
     });
 
     it('should filter by section name correctly', () => {
@@ -349,7 +448,7 @@ describe('useSectionSuggestions', () => {
 
       const qualityAnalysisNoCoaching: CVQualityAnalysisData = {
         ...mockQualityAnalysis,
-        content_coaching: []
+        issues: mockQualityAnalysis.issues.filter((i) => !i.coaching)
       };
 
       const { result } = renderHook(() =>
@@ -357,6 +456,50 @@ describe('useSectionSuggestions', () => {
       );
 
       expect(result.current.coachingByItemId.size).toBe(0);
+    });
+
+    it('should include reasoning on coaching items when issue has reasoning', () => {
+      (aiSuggestionsStore.useValidatedSuggestions as jest.Mock).mockReturnValue(mockAllSuggestions);
+
+      const { result } = renderHook(() =>
+        useSectionSuggestions(cvId, 'work_experience', mockQualityAnalysis)
+      );
+
+      const coaching = result.current.coachingByItemId.get('work-1');
+      expect(coaching?.reasoning).toBe(mockLowQualityWork.reasoning);
+    });
+
+    it('when issue has no html_diff but has coaching, appears only in coachingByItemId with reasoning not in qualitySuggestionsByItemId', () => {
+      const analysisCoachingOnly: CVQualityAnalysisData = {
+        ...mockQualityAnalysis,
+        issues: [
+          {
+            item_type: 'work_experience',
+            item_id: 'work-99',
+            field_path: 'work_experience[0].description',
+            issue_severity: 'major',
+            issue_category: 'lacks_specificity',
+            quality_score: 42,
+            reasoning: 'Contains broad claims without examples; impact is hard to judge',
+            html_diff: null,
+            coaching: {
+              coaching_questions: [{ question: 'What 1–2 MVPs did you build?' }],
+              direct_prompts: ['Replace one bullet with a concrete MVP bullet.'],
+            },
+            original: '',
+            suggested: '',
+          },
+        ],
+      };
+
+      const { result } = renderHook(() =>
+        useSectionSuggestions(cvId, 'work_experience', analysisCoachingOnly)
+      );
+
+      expect(result.current.qualitySuggestionsByItemId.has('work-99')).toBe(false);
+      const coaching = result.current.coachingByItemId.get('work-99');
+      expect(coaching).toBeDefined();
+      expect(coaching!.reasoning).toBe('Contains broad claims without examples; impact is hard to judge');
     });
   });
 
@@ -370,8 +513,9 @@ describe('useSectionSuggestions', () => {
 
       const work1Corrections = result.current.writingCorrectionsByItemId.get('work-1');
       expect(work1Corrections).toHaveLength(2);
-      expect(work1Corrections).toContainEqual(mockWritingCorrectionWork1);
-      expect(work1Corrections).toContainEqual(mockWritingCorrectionWork2);
+      // Hook builds corrections from issues with field_name 'description'
+      expect(work1Corrections!.every((c) => c.item_id === 'work-1' && c.field_path === 'work_experience')).toBe(true);
+      expect(work1Corrections!.every((c) => c.field_corrections?.some((f) => f.field_name === 'description'))).toBe(true);
     });
 
     it('should handle multiple corrections for single item', () => {
@@ -405,7 +549,9 @@ describe('useSectionSuggestions', () => {
 
       const eduCorrections = result.current.writingCorrectionsByItemId.get('edu-1');
       expect(eduCorrections).toHaveLength(1);
-      expect(eduCorrections).toContainEqual(mockWritingCorrectionEducation);
+      expect(eduCorrections![0].item_id).toBe('edu-1');
+      expect(eduCorrections![0].field_path).toBe('education');
+      expect(eduCorrections![0].field_corrections?.[0]?.field_name).toBe('description');
     });
 
     it('should return empty map when no quality analysis exists', () => {
@@ -423,7 +569,7 @@ describe('useSectionSuggestions', () => {
 
       const qualityAnalysisNoCorrections: CVQualityAnalysisData = {
         ...mockQualityAnalysis,
-        writing_corrections: []
+        issues: mockQualityAnalysis.issues.filter((i) => !i.html_diff)
       };
 
       const { result } = renderHook(() =>
@@ -431,6 +577,64 @@ describe('useSectionSuggestions', () => {
       );
 
       expect(result.current.writingCorrectionsByItemId.size).toBe(0);
+    });
+  });
+
+  describe('Issues-based quality analysis (cv_review_v2)', () => {
+    it('should derive writingCorrectionsByItemId from issues with html_diff', () => {
+      (aiSuggestionsStore.useValidatedSuggestions as jest.Mock).mockReturnValue(mockAllSuggestions);
+
+      const { result } = renderHook(() =>
+        useSectionSuggestions(cvId, 'work_experience', mockQualityAnalysis)
+      );
+
+      const corrections = result.current.writingCorrectionsByItemId.get('work-1');
+      expect(corrections).toBeDefined();
+      expect(corrections!.length).toBe(2);
+      expect(corrections![0].item_id).toBe('work-1');
+      expect(corrections![0].field_path).toBe('work_experience');
+      expect(corrections![0].field_corrections?.[0]?.field_name).toBe('description');
+    });
+
+    it('should derive coachingByItemId from issues with coaching', () => {
+      (aiSuggestionsStore.useValidatedSuggestions as jest.Mock).mockReturnValue(mockAllSuggestions);
+
+      const { result } = renderHook(() =>
+        useSectionSuggestions(cvId, 'work_experience', mockQualityAnalysis)
+      );
+
+      const coaching = result.current.coachingByItemId.get('work-1');
+      expect(coaching).toBeDefined();
+      expect(coaching!.coaching_questions.length).toBeGreaterThanOrEqual(1);
+      expect(coaching!.coaching_questions[0].question).toBeDefined();
+    });
+
+    it('should derive qualitySuggestionsByItemId from issues for work_experience (no html_diff, no coaching)', () => {
+      (aiSuggestionsStore.useValidatedSuggestions as jest.Mock).mockReturnValue(mockAllSuggestions);
+
+      const { result } = renderHook(() =>
+        useSectionSuggestions(cvId, 'work_experience', mockQualityAnalysis)
+      );
+
+      const low = result.current.qualitySuggestionsByItemId.get('work-1');
+      expect(low).toBeDefined();
+      expect(low!.item_type).toBe('low_score');
+      expect(low!.quality_score).toBe(40);
+      expect(low!.original).toBeDefined();
+      expect(low!.suggested).toBeDefined();
+    });
+
+    it('should derive quality and coaching for education from issues', () => {
+      (aiSuggestionsStore.useValidatedSuggestions as jest.Mock).mockReturnValue(mockAllSuggestions);
+
+      const { result } = renderHook(() =>
+        useSectionSuggestions(cvId, 'education', mockQualityAnalysis)
+      );
+
+      expect(result.current.qualitySuggestionsByItemId.get('edu-1')).toBeDefined();
+      expect(result.current.coachingByItemId.get('edu-1')).toBeDefined();
+      expect(result.current.writingCorrectionsByItemId.get('edu-1')).toBeDefined();
+      expect(result.current.writingCorrectionsByItemId.get('edu-1')).toHaveLength(1);
     });
   });
 
@@ -489,7 +693,7 @@ describe('useSectionSuggestions', () => {
       // New quality analysis without corrections
       const newQualityAnalysis: CVQualityAnalysisData = {
         ...mockQualityAnalysis,
-        writing_corrections: []
+        issues: mockQualityAnalysis.issues.filter((i) => !i.html_diff)
       };
 
       rerender({

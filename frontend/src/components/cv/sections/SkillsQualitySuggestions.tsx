@@ -53,24 +53,40 @@ export const SkillsQualitySuggestions: React.FC<SkillsQualitySuggestionsProps> =
 }) => {
   return (
     <Box sx={{ mt: 1.5 }}>
-      {CATEGORIES.map(({ key }) =>
-        suggestions[key].map((suggestion) => (
-          <Box key={`${key}-${suggestion.skill}`} sx={{ mb: 1 }}>
-            <CompactSuggestionCard
-              htmlDiff={`<ins>${escapeHtml(suggestion.skill)}</ins>`}
-              reasoning={suggestion.reasoning}
-              infoTooltip="Skill correction (CV quality)"
-              infoIconColor="warning"
-              onApply={() => onApplyOne(suggestion, key)}
-              onDismiss={() => onDismissOne(suggestion.skill, key)}
-              dismissDialogTitle="Dismiss skill correction?"
-              variant="importance"
-              importance="standard"
-              showContentBox={false}
-            />
-          </Box>
-        )),
-      )}
+      {CATEGORIES.map(({ key }) => {
+        // Sort: corrections (with original) first, then suggestions (without original)
+        const sorted = [...suggestions[key]].sort((a, b) => {
+          const aIsCorrection = a.original != null && a.original !== "";
+          const bIsCorrection = b.original != null && b.original !== "";
+          if (aIsCorrection && !bIsCorrection) return -1;
+          if (!aIsCorrection && bIsCorrection) return 1;
+          return 0;
+        });
+
+        return sorted.map((suggestion) => {
+          // Build htmlDiff: show both original (deleted) and suggested (inserted) if original exists
+          const htmlDiff = suggestion.original
+            ? `<del>${escapeHtml(suggestion.original)}</del><ins>${escapeHtml(suggestion.skill)}</ins>`
+            : `<ins>${escapeHtml(suggestion.skill)}</ins>`;
+
+          return (
+            <Box key={`${key}-${suggestion.skill}`} sx={{ mb: 1 }}>
+              <CompactSuggestionCard
+                htmlDiff={htmlDiff}
+                reasoning={suggestion.reasoning}
+                infoTooltip="Skill correction (CV quality)"
+                infoIconColor="warning"
+                onApply={() => onApplyOne(suggestion, key)}
+                onDismiss={() => onDismissOne(suggestion.skill, key)}
+                dismissDialogTitle="Dismiss skill correction?"
+                variant="importance"
+                importance="standard"
+                showContentBox={false}
+              />
+            </Box>
+          );
+        });
+      })}
       <Box sx={{ mt: 1.5, display: "flex", gap: 1, flexWrap: "wrap" }}>
         <SuggestionActionButtons
           onApply={onApplyAll}

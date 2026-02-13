@@ -1,6 +1,9 @@
 /**
  * Compact Suggestion Card Component
  *
+ * Canonical card for single-diff quality and writing correction suggestions;
+ * used by UnifiedQualitySuggestion, InlineFieldCorrection, SkillsQualitySuggestions.
+ *
  * Unified component for displaying AI suggestions with diff view.
  * Supports two variants:
  * - default: Uses SuggestionPaper with neutral styling

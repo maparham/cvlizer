@@ -6,17 +6,19 @@ Handles validation, loading, and parsing of CVs and quality analyses.
 """
 
 import logging
-from typing import List
+from typing import Any, List
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from src.models.cv import CV
 from src.models.cv_quality_analysis import CVQualityAnalysis
 from src.schemas.cv_quality_schemas import (
-    CVQualityAnalysisResponseSchema,
+    CVQualityAnalysisResponseSchemaV2,
+    FieldCorrectionSchema,
     WritingCorrectionSchema,
 )
 from src.services.cv_service import get_cv_by_id, update_cv
+from src.services.ai_service.writing_corrections_service import apply_html_diff
 
 logger = logging.getLogger(__name__)
 
@@ -80,21 +82,16 @@ def load_quality_analysis(
     return analysis
 
 
-def parse_quality_data(analysis: CVQualityAnalysis) -> CVQualityAnalysisResponseSchema:
+def parse_quality_data(analysis: CVQualityAnalysis) -> CVQualityAnalysisResponseSchemaV2:
     """
-    Parse quality analysis data into schema.
-
-    Args:
-        analysis: Quality analysis with quality_data dict
-
-    Returns:
-        CVQualityAnalysisResponseSchema: Parsed quality data
+    Parse quality analysis data into V2 schema (issues-based only).
 
     Raises:
         HTTPException: 500 if quality data format is invalid
     """
+    data = analysis.quality_data or {}
     try:
-        return CVQualityAnalysisResponseSchema(**analysis.quality_data)
+        return CVQualityAnalysisResponseSchemaV2(**data)
     except Exception as e:
         logger.error(f"Failed to parse quality analysis data: {e}")
         raise HTTPException(
@@ -103,100 +100,130 @@ def parse_quality_data(analysis: CVQualityAnalysis) -> CVQualityAnalysisResponse
         )
 
 
-def find_correction_by_id(
-    quality_data: CVQualityAnalysisResponseSchema, correction_id: str
+def _synthetic_correction_from_issues(
+    issues_with_html: List[Any], correction_id: str
 ) -> WritingCorrectionSchema:
-    """
-    Find a writing correction by item_id.
-
-    Args:
-        quality_data: Parsed quality analysis data
-        correction_id: The item_id to find
-
-    Returns:
-        WritingCorrectionSchema: The found correction
-
-    Raises:
-        HTTPException: 404 if correction not found
-    """
-    for wc in quality_data.writing_corrections:
-        if wc.item_id == correction_id:
-            return wc
-
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Writing correction with item_id '{correction_id}' not found in analysis",
+    """Build a WritingCorrectionSchema from issues with same item_id and html_diff."""
+    field_path = issues_with_html[0].field_path if issues_with_html else ""
+    importance = (
+        "highly_recommended"
+        if issues_with_html
+        and getattr(issues_with_html[0], "issue_severity", None) == "critical"
+        else "standard"
+    )
+    field_corrections = []
+    for issue in issues_with_html:
+        path = getattr(issue, "field_path", None) or ""
+        # Derive field name from path. professional_summary uses "content" in CV data.
+        if path == "professional_summary" or (
+            path and path.startswith("professional_summary.")
+        ):
+            field_name = path.split(".")[-1] if "." in path else "content"
+        elif path and "." in path:
+            field_name = path.split(".")[-1]
+        else:
+            field_name = "description"
+        orig = getattr(issue, "original", None) or ""
+        sugg = getattr(issue, "suggested", None)
+        if sugg is None and getattr(issue, "html_diff", None):
+            sugg = apply_html_diff(orig, issue.html_diff)
+        field_corrections.append(
+            FieldCorrectionSchema(
+                field_name=field_name,
+                html_diff=issue.html_diff or "",
+                reasoning=getattr(issue, "reasoning", "") or "",
+                original_value=orig,
+                corrected_value=sugg or orig,
+            )
+        )
+    return WritingCorrectionSchema(
+        item_id=correction_id,
+        field_path=field_path,
+        importance=importance,
+        field_corrections=field_corrections,
     )
 
 
+def _normalize_correction_id(correction_id: str) -> str:
+    """
+    If correction_id is a frontend section-prefixed id (work_<uuid>, edu_<uuid>),
+    return the UUID part so backend can match issues stored with raw UUID.
+    Same normalization (strip work_/edu_ prefix) must be kept in sync with frontend
+    (e.g. cvQualityStore dismissWritingCorrection).
+    """
+    if correction_id.startswith("work_") and len(correction_id) > 5:
+        return correction_id[5:]
+    if correction_id.startswith("edu_") and len(correction_id) > 4:
+        return correction_id[4:]
+    return correction_id
+
+
+def find_correction_by_id(
+    quality_data: CVQualityAnalysisResponseSchemaV2, correction_id: str
+) -> WritingCorrectionSchema:
+    """
+    Find a writing correction by item_id; builds synthetic WritingCorrection from issues.
+    Also matches by field_path prefix so section-level ids (e.g. personal_info,
+    professional_summary) work when issues have no item_id. Accepts frontend
+    prefixed ids (work_<uuid>, edu_<uuid>) by normalizing to the stored UUID.
+    """
+    resolved_id = _normalize_correction_id(correction_id)
+    issues_with_html = [
+        i
+        for i in quality_data.issues
+        if i.html_diff
+        and (
+            (i.item_id or "") == correction_id
+            or (i.item_id or "") == resolved_id
+            or (i.field_path or "").startswith(correction_id + ".")
+            or (i.field_path or "") == correction_id
+        )
+    ]
+    if not issues_with_html:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Writing correction with item_id '{correction_id}' not found in analysis",
+        )
+    return _synthetic_correction_from_issues(issues_with_html, correction_id)
+
+
 def find_corrections_batch(
-    quality_data: CVQualityAnalysisResponseSchema, correction_ids: List[str]
+    quality_data: CVQualityAnalysisResponseSchemaV2, correction_ids: List[str]
 ) -> List[WritingCorrectionSchema]:
-    """
-    Find multiple writing corrections by item_ids.
-
-    Optimized with O(m+n) complexity using dictionary lookup instead of O(n*m).
-
-    Args:
-        quality_data: Parsed quality analysis data
-        correction_ids: List of item_ids to find
-
-    Returns:
-        List[WritingCorrectionSchema]: List of found corrections in same order
-
-    Raises:
-        HTTPException: 404 if any correction not found
-    """
-    # Deduplicate correction IDs while preserving order
+    """Find multiple writing corrections by item_ids."""
     unique_correction_ids = list(dict.fromkeys(correction_ids))
-
-    # Build lookup dictionary O(m) where m = total corrections
-    corrections_by_id = {wc.item_id: wc for wc in quality_data.writing_corrections}
-
-    # Find corrections O(n) where n = requested corrections
     corrections = []
     for correction_id in unique_correction_ids:
-        correction = corrections_by_id.get(correction_id)
-
-        if not correction:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Writing correction with item_id '{correction_id}' not found in analysis",
-            )
-
-        corrections.append(correction)
-
+        corrections.append(find_correction_by_id(quality_data, correction_id))
     return corrections
 
 
 def remove_applied_corrections_from_quality_data(
-    quality_data: CVQualityAnalysisResponseSchema, correction_ids: List[str]
+    quality_data: CVQualityAnalysisResponseSchemaV2, correction_ids: List[str]
 ) -> dict:
-    """
-    Build quality_data dict with given writing corrections removed (by item_id).
-
-    Used after applying corrections so GET latest analysis returns correct state.
-
-    Args:
-        quality_data: Parsed quality analysis data
-        correction_ids: item_ids of applied corrections to remove
-
-    Returns:
-        dict: quality_data suitable for analysis.quality_data (JSON)
-    """
+    """Remove all issues whose item_id is in correction_ids or whose field_path matches a section-level id (e.g. personal_info.xxx). Accepts prefixed ids (work_xxx, edu_xxx) by including normalized UUIDs."""
     ids_to_remove = set(correction_ids)
-    new_writing_corrections = [
-        wc for wc in quality_data.writing_corrections if wc.item_id not in ids_to_remove
-    ]
-    updated = quality_data.model_dump()
-    updated["writing_corrections"] = [wc.model_dump() for wc in new_writing_corrections]
+    for rid in list(ids_to_remove):
+        ids_to_remove.add(_normalize_correction_id(rid))
+
+    # ids_to_remove: for item_id matching (includes normalized IDs, e.g. work_<uuid> -> uuid).
+    # correction_ids (raw): for field_path prefix matching only (section-level e.g. personal_info, professional_summary).
+    def should_remove(issue: Any) -> bool:
+        if (issue.item_id or "") in ids_to_remove:
+            return True
+        path = getattr(issue, "field_path", None) or ""
+        return any(path == rid or path.startswith(rid + ".") for rid in correction_ids)
+
+    new_issues = [i for i in quality_data.issues if not should_remove(i)]
+    updated = quality_data.model_dump(by_alias=True)
+    updated["issues"] = [i.model_dump(by_alias=True) for i in new_issues]
     return updated
 
 
 def update_analysis_after_applying_corrections(
     db: Session,
     analysis: CVQualityAnalysis,
-    quality_data: CVQualityAnalysisResponseSchema,
+    quality_data: CVQualityAnalysisResponseSchemaV2,
     correction_ids: List[str],
 ) -> None:
     """

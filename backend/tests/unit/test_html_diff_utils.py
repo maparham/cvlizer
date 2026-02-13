@@ -4,10 +4,10 @@ Unit tests for html_diff_utils module.
 Tests the cleaning and normalization of html_diff strings and computed field derivation.
 """
 
-import pytest
 from src.utils.html_diff_utils import (
     clean_html_diff_string,
-    clean_quality_response,
+    clean_quality_response_issues,
+    extract_original_from_cv_data_issues,
 )
 
 
@@ -89,201 +89,100 @@ class TestCleanHtmlDiffString:
         assert result == ""
 
 
-class TestCleanQualityResponse:
-    """Tests for clean_quality_response function."""
+class TestExtractOriginalFromCvDataIssues:
+    """Tests for extract_original_from_cv_data_issues id_mapping with array-style field_path."""
 
-    def test_clean_quality_response_computes_corrected_value(self):
-        """Test that corrected_value is computed from html_diff for field_corrections."""
+    def test_maps_short_id_to_actual_id_when_field_path_has_array_index(self):
+        """issue with field_path work_experience[1].position and item_id 2 should use id_mapping work_experience."""
+        actual_uuid = "work_abc-123-def"
         response = {
-            "writing_corrections": [
+            "issues": [
                 {
-                    "field_corrections": [
-                        {
-                            "field_name": "position",
-                            "original_value": "Dev",
-                            "html_diff": "<del>Dev</del><ins>Developer</ins>",
-                        }
-                    ]
+                    "field_path": "work_experience[1].position",
+                    "item_id": "2",
+                    "item_type": "work_experience",
+                    "issue_severity": "critical",
+                    "reasoning": "Contains profanity",
+                    "html_diff": "<del>Bad</del><ins>Good</ins>",
                 }
             ]
         }
-
-        result = clean_quality_response(response)
-
-        field_corr = result["writing_corrections"][0]["field_corrections"][0]
-        assert "corrected_value" in field_corr
-        assert field_corr["corrected_value"] == "Developer"
-        assert field_corr["html_diff"] == "<del>Dev</del><ins>Developer</ins>"
-
-    def test_clean_quality_response_with_newlines_in_field_corrections(self):
-        """Test that newlines are cleaned in field_corrections."""
-        response = {
-            "writing_corrections": [
-                {
-                    "field_corrections": [
-                        {
-                            "field_name": "description",
-                            "original_value": "Original text",
-                            "html_diff": "- Item 1\\n- Item 2",
-                        }
-                    ]
-                }
-            ]
-        }
-
-        result = clean_quality_response(response)
-
-        html_diff = result["writing_corrections"][0]["field_corrections"][0]["html_diff"]
-        assert "\n" in html_diff
-        assert "\\n" not in html_diff
-        assert html_diff == "- Item 1\n- Item 2"
-
-    def test_clean_quality_response_computes_suggested_text(self):
-        """Test that suggested_text is computed from html_diff for professional_summary."""
-        response = {
-            "professional_summary": {
-                "original_text": "Original summary text",
-                "html_diff": "Original summary <del>text</del><ins>content</ins>",
-            }
-        }
-
-        result = clean_quality_response(response)
-
-        ps = result["professional_summary"]
-        assert "suggested_text" in ps
-        assert ps["suggested_text"] == "Original summary content"
-
-    def test_clean_quality_response_with_newlines_in_professional_summary(self):
-        """Test that newlines are cleaned in professional_summary."""
-        response = {
-            "professional_summary": {
-                "original_text": "Original",
-                "html_diff": "Line 1\\nLine 2\\nLine 3",
-            }
-        }
-
-        result = clean_quality_response(response)
-
-        html_diff = result["professional_summary"]["html_diff"]
-        assert "\n" in html_diff
-        assert "\\n" not in html_diff
-        lines = html_diff.split("\n")
-        assert len(lines) == 3
-
-    def test_clean_quality_response_computes_suggested_for_work_experience(self):
-        """Test that suggested is computed from html_diff for low_score work_experience items."""
-        response = {
+        cv_data = {
             "work_experience": [
+                {"id": "work_first", "description": "First job"},
+                {"id": actual_uuid, "description": "Second job"},
+            ]
+        }
+        id_mapping = {"work_experience": {"1": "work_first", "2": actual_uuid}}
+
+        result = extract_original_from_cv_data_issues(response, cv_data, id_mapping)
+
+        assert result["issues"][0]["item_id"] == actual_uuid
+
+    def test_professional_summary_issue_gets_original_from_cv_data(self):
+        """issue with item_type professional_summary gets original from cv_data."""
+        response = {
+            "issues": [
                 {
-                    "item_type": "low_score",
-                    "original": "Original description",
-                    "html_diff": "Original <del>description</del><ins>content</ins>",
+                    "item_type": "professional_summary",
+                    "item_id": None,
+                    "field_path": "professional_summary",
+                    "issue_severity": "minor",
+                    "reasoning": "Grammar fix",
+                    "html_diff": "<del>sumary</del><ins>summary</ins>",
                 }
             ]
         }
+        cv_data = {"professional_summary": {"content": "My sumary text."}}
+        result = extract_original_from_cv_data_issues(response, cv_data, None)
+        assert result["issues"][0]["original"] == "My sumary text."
 
-        result = clean_quality_response(response)
 
-        item = result["work_experience"][0]
-        assert "suggested" in item
-        assert item["suggested"] == "Original content"
+class TestCleanQualityResponseIssuesProfessionalSummary:
+    """Tests: no top-level professional_summary is added; frontend uses issues only."""
 
-    def test_clean_quality_response_with_newlines_in_work_experience(self):
-        """Test that newlines are cleaned in work_experience low_score items."""
+    def test_no_top_level_professional_summary_when_issue_present(self):
+        """professional_summary is not added; issue remains in issues array."""
         response = {
-            "work_experience": [
+            "issues": [
                 {
-                    "item_type": "low_score",
-                    "original": "Original",
-                    "html_diff": "- Point 1\\n- Point 2",
-                }
-            ]
-        }
-
-        result = clean_quality_response(response)
-
-        html_diff = result["work_experience"][0]["html_diff"]
-        assert "\n" in html_diff
-        assert "\\n" not in html_diff
-        assert html_diff == "- Point 1\n- Point 2"
-
-    def test_clean_quality_response_computes_suggested_for_education(self):
-        """Test that suggested is computed from html_diff for low_score education items."""
-        response = {
-            "education": [
-                {
-                    "item_type": "low_score",
-                    "original": "Original description",
-                    "html_diff": "Original <del>description</del><ins>content</ins>",
-                }
-            ]
-        }
-
-        result = clean_quality_response(response)
-
-        item = result["education"][0]
-        assert "suggested" in item
-        assert item["suggested"] == "Original content"
-
-    def test_clean_quality_response_with_newlines_in_education(self):
-        """Test that newlines are cleaned in education low_score items."""
-        response = {
-            "education": [
-                {
-                    "item_type": "low_score",
-                    "original": "Original",
-                    "html_diff": "Bullet 1\\nBullet 2",
-                }
-            ]
-        }
-
-        result = clean_quality_response(response)
-
-        html_diff = result["education"][0]["html_diff"]
-        assert "\n" in html_diff
-        assert "\\n" not in html_diff
-
-    def test_clean_quality_response_none_input(self):
-        """Test that None input is handled gracefully."""
-        result = clean_quality_response(None)
-        assert result is None
-
-    def test_clean_quality_response_empty_dict(self):
-        """Test that empty dict is handled gracefully."""
-        result = clean_quality_response({})
-        assert result == {}
-
-    def test_clean_quality_response_preserves_other_fields(self):
-        """Test that cleaning and computation don't affect other fields."""
-        response = {
-            "writing_corrections": [
-                {
-                    "field_corrections": [
-                        {
-                            "field_name": "description",
-                            "original_value": "Original",
-                            "html_diff": "Text\\nwith\\nnewlines",
-                            "severity": "medium",
-                        }
-                    ],
-                    "section_name": "work_experience",
+                    "item_type": "professional_summary",
+                    "field_path": "professional_summary",
+                    "original": "My sumary.",
+                    "html_diff": "<del>sumary</del><ins>summary</ins>",
+                    "reasoning": "Spelling.",
                 }
             ],
-            "overall_quality_score": 85,
+            "skills": {"technical": [], "soft": []},
         }
+        cv_data = {"professional_summary": {"content": "My sumary."}}
+        result = clean_quality_response_issues(response, cv_data)
+        assert result.get("professional_summary") is None
+        assert len(result["issues"]) == 1
+        assert result["issues"][0]["item_type"] == "professional_summary"
 
-        result = clean_quality_response(response)
+    def test_omits_professional_summary_when_no_issue(self):
+        """professional_summary is not in result when there are no issues."""
+        response = {"issues": [], "skills": {"technical": [], "soft": []}}
+        cv_data = {"professional_summary": {"content": "Existing summary."}}
+        result = clean_quality_response_issues(response, cv_data)
+        assert result.get("professional_summary") is None
 
-        # Check html_diff was cleaned
-        html_diff = result["writing_corrections"][0]["field_corrections"][0]["html_diff"]
-        assert "\n" in html_diff
-        assert "\\n" not in html_diff
-
-        # Check corrected_value was computed
-        field_corr = result["writing_corrections"][0]["field_corrections"][0]
-        assert "corrected_value" in field_corr
-
-        # Check other fields preserved
-        assert field_corr["severity"] == "medium"
-        assert result["writing_corrections"][0]["section_name"] == "work_experience"
-        assert result["overall_quality_score"] == 85
+    def test_no_top_level_professional_summary_for_coaching_only_issue(self):
+        """professional_summary is not added for coaching-only issue; issue remains."""
+        response = {
+            "issues": [
+                {
+                    "item_type": "professional_summary",
+                    "field_path": "professional_summary",
+                    "reasoning": "Summary too brief; add impact.",
+                    "html_diff": None,
+                }
+            ],
+            "skills": {"technical": [], "soft": []},
+        }
+        cv_data = {"professional_summary": {"content": "Short summary."}}
+        result = clean_quality_response_issues(response, cv_data)
+        assert result.get("professional_summary") is None
+        assert len(result["issues"]) == 1
+        assert result["issues"][0]["reasoning"] == "Summary too brief; add impact."

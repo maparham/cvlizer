@@ -79,7 +79,7 @@ MARKDOWN DIFF FORMAT:
 - Use **bold** for added text
 - Mark ONLY changed portions, keep unchanged text plain
 
-OUTPUT JSON matching CVQualityAnalysisResponseSchema structure.
+OUTPUT JSON matching CVQualityAnalysisResponseSchemaV2 (issues-based) structure.
 """
 
 # Optimized prompt template (after Phase 1 + Phase 2)
@@ -126,7 +126,7 @@ TASKS:
 
 MARKDOWN DIFF: COMPLETE text with inline ~~removed~~ **added** markers. Mark only changed portions
 
-OUTPUT JSON matching CVQualityAnalysisResponseSchema structure.
+OUTPUT JSON matching CVQualityAnalysisResponseSchemaV2 (issues-based) structure.
 """
 
 

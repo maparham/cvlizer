@@ -43,7 +43,7 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
 
   const { cvData, onUpdateCV, onSave, validationErrors } = useCVEditor();
   // const jobDescriptions = useJobDescriptions(); // Unused variable removed
-  const activeJobDescription = useActiveJobDescription();
+  const activeJobDescription = useActiveJobDescription(cvId || "");
   const { generateInlineSuggestions, applyAllSuggestions } = useAIStore();
 
   const handleGenerateAISuggestions = useCallback(async () => {

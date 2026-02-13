@@ -53,7 +53,7 @@ export const createMockStoreState = (overrides = {}) => ({
   deleteJobDescription: jest.fn(),
   showJobDescriptionInSidebar: jest.fn(),
   jobDescriptions: [],
-  activeJobDescriptionId: undefined,
+  activeJobDescriptionIdPerCV: {},
   hiddenJobDescriptionIds: [],
   ...overrides,
 });

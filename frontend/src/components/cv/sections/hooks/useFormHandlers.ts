@@ -91,7 +91,7 @@ export function useFormHandlers<T extends { id: string }>(
       }
 
       // Dismiss the correction from store (client-side only, no backend call)
-      await dismissWritingCorrection(correction.item_id, correction.section);
+      await dismissWritingCorrection(correction.item_id, correction.field_path);
 
       // Show success notification
       showSuccess("Writing correction applied successfully");
@@ -105,7 +105,7 @@ export function useFormHandlers<T extends { id: string }>(
   // Handle dismissing writing correction in form
   const handleDismissWritingCorrectionForm = useCallback(
     async (correction: WritingCorrection) => {
-      await dismissWritingCorrection(correction.item_id, correction.section);
+      await dismissWritingCorrection(correction.item_id, correction.field_path);
       showSuccess("Writing correction dismissed");
     },
     [dismissWritingCorrection, showSuccess]
@@ -164,7 +164,7 @@ export function useFormHandlers<T extends { id: string }>(
       if (corrections && corrections.length > 0) {
         for (const correction of corrections) {
           try {
-            await dismissWritingCorrection(correction.item_id, correction.section);
+            await dismissWritingCorrection(correction.item_id, correction.field_path);
           } catch (error) {
             failedDismissals.push(correction);
             console.error(`Failed to dismiss correction ${correction.item_id}:`, error);

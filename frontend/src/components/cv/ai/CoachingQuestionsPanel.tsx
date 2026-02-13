@@ -18,6 +18,7 @@ import {
   ListItemText,
   Chip,
   IconButton,
+  Tooltip,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
@@ -49,6 +50,14 @@ const getIssueCategoryLabel = (category: string): string => {
       return 'Missing Context';
     case 'weak_action_verbs':
       return 'Weak Action Verbs';
+    case 'offensive_language':
+      return 'Offensive Language';
+    case 'unprofessional_tone':
+      return 'Unprofessional Tone';
+    case 'discriminatory_content':
+      return 'Discriminatory Content';
+    case 'grammar_errors':
+      return 'Grammar Errors';
     default:
       return 'Needs Expansion';
   }
@@ -57,9 +66,15 @@ const getIssueCategoryLabel = (category: string): string => {
 /**
  * Get issue category color
  */
-const getIssueCategoryColor = (category: string): 'info' | 'warning' => {
+const getIssueCategoryColor = (category: string): 'info' | 'warning' | 'error' => {
+  if (category === 'discriminatory_content' || category === 'offensive_language') {
+    return 'error';
+  }
   if (category === 'insufficient_content' || category === 'too_brief' || category === 'missing_achievements') {
     return 'warning';
+  }
+  if (category === 'grammar_errors') {
+    return 'info';
   }
   return 'info';
 };
@@ -94,27 +109,32 @@ export const CoachingQuestionsPanel: React.FC<CoachingQuestionsPanelProps> = ({
             '&:hover': { backgroundColor: 'action.hover' },
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-            <HelpOutlineIcon color="info" />
-            <Typography variant="subtitle2" sx={{ flex: 1, fontWeight: 600 }}>
-              Coaching Questions
-            </Typography>
-            <Chip
-              label={getIssueCategoryLabel(coachingItem.issue_category)}
-              size="small"
-              color={getIssueCategoryColor(coachingItem.issue_category)}
-            />
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDismiss();
-              }}
-              sx={{ ml: 1 }}
-            >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Box>
+          <Tooltip
+            title={coachingItem.reasoning?.trim() ?? ''}
+            disableHoverListener={!coachingItem.reasoning?.trim()}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+              <HelpOutlineIcon color="info" />
+              <Typography variant="subtitle2" sx={{ flex: 1, fontWeight: 600 }}>
+                Coaching Questions
+              </Typography>
+              <Chip
+                label={getIssueCategoryLabel(coachingItem.issue_category)}
+                size="small"
+                color={getIssueCategoryColor(coachingItem.issue_category)}
+              />
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDismiss();
+                }}
+                sx={{ ml: 1 }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Tooltip>
         </AccordionSummary>
         <AccordionDetails>
           <Box>

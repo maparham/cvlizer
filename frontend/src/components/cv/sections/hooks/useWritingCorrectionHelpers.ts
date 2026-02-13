@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react';
 import { WritingCorrection, FieldCorrection } from '../../../../types/ai';
-import { getFieldCorrection, getHtmlDiffCorrection } from '../../../../utils/writingCorrections';
+import { getFieldCorrection } from '../../../../utils/writingCorrections';
 
 export interface WritingCorrectionUtils {
   findWritingCorrectionForField: (fieldName: string, originalValue: string) => WritingCorrection | undefined;
@@ -61,8 +61,7 @@ export function useWritingCorrectionHelpers(
           ? { html_diff: descriptionFieldCorrection.html_diff, correction: writingCorrection }
           : null;
       }
-      // Fallback to legacy format
-      return getHtmlDiffCorrection(writingCorrections, itemId);
+      return null;
     },
     [writingCorrections, findWritingCorrectionForField]
   );

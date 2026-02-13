@@ -111,7 +111,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   } = useAIStore();
 
   const jobDescriptions = useAIStore((state) => state.jobDescriptions);
-  const activeJobDescription = useActiveJobDescription();
+  const activeJobDescription = useActiveJobDescription(cvId || "");
 
   // Use the centralized polling hook
   const { parsingJobDescriptions } = useJobDescriptionPolling(jobDescriptions, {

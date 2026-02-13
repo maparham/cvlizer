@@ -9,7 +9,7 @@
  * - Add, edit, delete, and reorder functionality
  * - AI-generated description improvement suggestions
  */
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
@@ -423,14 +423,18 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
   const { dismissWritingCorrection } = useCVQualityStore();
   const { showSuccess } = useNotifications();
 
-  // Use section suggestions hook
+  // Use section suggestions hook (pass item ids so index-based API item_id "0","1","2" maps to actual ids)
+  const sectionItemIds = useMemo(
+    () => (data as WorkExperience[]).map((d) => d.id),
+    [data]
+  );
   const {
     suggestionsByItemId,
     qualitySuggestionsByItemId,
     coachingByItemId,
     writingCorrectionsByItemId,
     visibleSuggestions,
-  } = useSectionSuggestions(cvId || "", 'work_experience', qualityAnalysis);
+  } = useSectionSuggestions(cvId || "", 'work_experience', qualityAnalysis, sectionItemIds);
 
   // Use section handlers hook
   const {
@@ -531,7 +535,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
             handleDismissQualitySuggestion={handleDismissQualitySuggestion}
             handleApplyWritingCorrection={handleApplyWritingCorrection}
             handleDismissWritingCorrection={async (correction: WritingCorrection) => {
-              await dismissWritingCorrection(correction.item_id, correction.section);
+              await dismissWritingCorrection(correction.item_id, correction.field_path);
               showSuccess("Writing correction dismissed");
             }}
             handleApplyAll={handleApplyAll}

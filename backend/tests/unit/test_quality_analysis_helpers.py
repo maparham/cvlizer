@@ -14,10 +14,12 @@ from src.api.ai.quality_analysis_helpers import (
     parse_quality_data,
     find_correction_by_id,
     find_corrections_batch,
+    remove_applied_corrections_from_quality_data,
     update_cv_with_corrections,
 )
 from src.schemas.cv_quality_schemas import (
-    CVQualityAnalysisResponseSchema,
+    CVQualityAnalysisResponseSchemaV2,
+    IssueSchema,
     WritingCorrectionSchema,
 )
 
@@ -104,25 +106,24 @@ class TestLoadQualityAnalysis:
 
 
 class TestParseQualityData:
-    """Test quality data parsing helper"""
+    """Test quality data parsing helper (V2 only)."""
 
     def test_success(self):
-        """Test successful parsing"""
-        # Use minimal valid quality data
+        """Test successful parsing of V2 quality data."""
         quality_dict = {
             "overall_quality_score": 85,
-            "work_experience": [],
-            "education": [],
-            "writing_corrections": [],
-            "content_coaching": [],
+            "issues": [],
+            "professional_summary": None,
+            "skills": {"technical": [], "soft": []},
             "timeline_gaps": [],
         }
         mock_analysis = Mock(quality_data=quality_dict)
 
         result = parse_quality_data(mock_analysis)
 
-        assert isinstance(result, CVQualityAnalysisResponseSchema)
+        assert isinstance(result, CVQualityAnalysisResponseSchemaV2)
         assert result.overall_quality_score == 85
+        assert result.issues == []
 
     def test_invalid_format_raises_500(self):
         """Test invalid format raises 500"""
@@ -134,34 +135,50 @@ class TestParseQualityData:
         assert exc_info.value.status_code == 500
         assert "Invalid quality analysis data format" in exc_info.value.detail
 
+    def test_parse_v2_issues_shape(self):
+        """Test parsing cv_review_v2 (issues) quality data"""
+        quality_dict = {
+            "overall_quality_score": 70,
+            "issues": [
+                {
+                    "item_type": "work_experience",
+                    "item_id": "item1",
+                    "field_path": "work_experience",
+                    "issue_severity": "major",
+                    "issue_category": "too_brief",
+                    "quality_score": 40,
+                    "reasoning": "Too short",
+                    "html_diff": "<del>x</del><ins>y</ins>",
+                    "coaching": None,
+                },
+            ],
+            "professional_summary": {"original_text": "Summary", "html_diff": None},
+            "skills": {"technical": [], "soft": []},
+            "timeline_gaps": [],
+        }
+        mock_analysis = Mock(quality_data=quality_dict)
+
+        result = parse_quality_data(mock_analysis)
+
+        assert isinstance(result, CVQualityAnalysisResponseSchemaV2)
+        assert result.overall_quality_score == 70
+        assert len(result.issues) == 1
+        assert result.issues[0].item_id == "item1"
+        assert result.issues[0].field_path == "work_experience"
+
 
 class TestFindCorrectionById:
-    """Test correction lookup helper"""
-
-    def test_find_existing_correction(self):
-        """Test finding existing correction"""
-        correction1 = WritingCorrectionSchema(
-            item_id="wc1",
-            section="work_experience",
-            reasoning="Test correction 1",
-            importance="standard",
-        )
-        correction2 = WritingCorrectionSchema(
-            item_id="wc2",
-            section="education",
-            reasoning="Test correction 2",
-            importance="highly_recommended",
-        )
-
-        quality_data = Mock(writing_corrections=[correction1, correction2])
-
-        result = find_correction_by_id(quality_data, "wc2")
-
-        assert result == correction2
+    """Test correction lookup helper (V2 only)."""
 
     def test_correction_not_found_raises_404(self):
         """Test correction not found raises 404"""
-        quality_data = Mock(writing_corrections=[])
+        quality_data = CVQualityAnalysisResponseSchemaV2(
+            overall_quality_score=80,
+            issues=[],
+            professional_summary=None,
+            skills={"technical": [], "soft": []},
+            timeline_gaps=[],
+        )
 
         with pytest.raises(HTTPException) as exc_info:
             find_correction_by_id(quality_data, "wc999")
@@ -170,65 +187,253 @@ class TestFindCorrectionById:
         assert "wc999" in exc_info.value.detail
         assert "not found in analysis" in exc_info.value.detail
 
+    def test_find_correction_from_issues(self):
+        """Test finding correction from issues-based quality data (synthetic)"""
+        issue = IssueSchema(
+            item_type="work_experience",
+            item_id="item1",
+            field_path="work_experience",
+            issue_severity="critical",
+            issue_category="unprofessional_tone",
+            quality_score=30,
+            reasoning="Needs improvement",
+            html_diff="<del>old</del><ins>new</ins>",
+            coaching=None,
+            original="old",
+            suggested="new",
+        )
+        quality_data = CVQualityAnalysisResponseSchemaV2(
+            overall_quality_score=70,
+            issues=[issue],
+            professional_summary=None,
+            skills={"technical": [], "soft": []},
+            timeline_gaps=[],
+        )
+
+        result = find_correction_by_id(quality_data, "item1")
+
+        assert isinstance(result, WritingCorrectionSchema)
+        assert result.item_id == "item1"
+        assert result.field_path == "work_experience"
+        assert result.importance == "highly_recommended"
+        assert len(result.field_corrections) == 1
+        assert result.field_corrections[0].field_name == "description"
+        assert result.field_corrections[0].html_diff == "<del>old</del><ins>new</ins>"
+
+    def test_find_correction_derives_field_name_from_field_path(self):
+        """Applying a correction uses the field from field_path (position, degree, description)."""
+        for field_path, expected_field_name in [
+            ("work_experience[1].position", "position"),
+            ("work_experience[0].company", "company"),
+            ("work_experience[2].description", "description"),
+            ("education[0].degree", "degree"),
+            ("education[3].institution", "institution"),
+        ]:
+            issue = IssueSchema(
+                item_type="work_experience"
+                if "work_experience" in field_path
+                else "education",
+                item_id="item1",
+                field_path=field_path,
+                issue_severity="critical",
+                issue_category="unprofessional_tone",
+                quality_score=30,
+                reasoning="Fix",
+                html_diff="<del>old</del><ins>new</ins>",
+                coaching=None,
+            )
+            quality_data = CVQualityAnalysisResponseSchemaV2(
+                overall_quality_score=70,
+                issues=[issue],
+                professional_summary=None,
+                skills={"technical": [], "soft": []},
+                timeline_gaps=[],
+            )
+            result = find_correction_by_id(quality_data, "item1")
+            assert (
+                result.field_corrections[0].field_name == expected_field_name
+            ), f"field_path {field_path!r} should yield field_name {expected_field_name!r}"
+
 
 class TestFindCorrectionsBatch:
-    """Test batch correction lookup helper"""
+    """Test batch correction lookup helper (V2 only)."""
 
     def test_find_all_corrections(self):
-        """Test finding all corrections in order"""
-        correction1 = WritingCorrectionSchema(
-            item_id="wc1",
-            section="work_experience",
-            reasoning="Test correction 1",
-            importance="standard",
+        """Test finding all corrections in order from issues."""
+        quality_data = CVQualityAnalysisResponseSchemaV2(
+            overall_quality_score=75,
+            issues=[
+                IssueSchema(
+                    item_type="work_experience",
+                    item_id="wc1",
+                    field_path="work_experience",
+                    issue_severity="minor",
+                    issue_category="too_brief",
+                    quality_score=45,
+                    reasoning="R1",
+                    html_diff="<del>a</del><ins>b</ins>",
+                    coaching=None,
+                ),
+                IssueSchema(
+                    item_type="education",
+                    item_id="wc2",
+                    field_path="education",
+                    issue_severity="major",
+                    issue_category="lacks_specificity",
+                    quality_score=30,
+                    reasoning="R2",
+                    html_diff="<del>c</del><ins>d</ins>",
+                    coaching=None,
+                ),
+                IssueSchema(
+                    item_type="work_experience",
+                    item_id="wc3",
+                    field_path="work_experience",
+                    issue_severity="critical",
+                    issue_category="unprofessional_tone",
+                    quality_score=20,
+                    reasoning="R3",
+                    html_diff="<del>e</del><ins>f</ins>",
+                    coaching=None,
+                ),
+            ],
+            professional_summary=None,
+            skills={"technical": [], "soft": []},
+            timeline_gaps=[],
         )
-        correction2 = WritingCorrectionSchema(
-            item_id="wc2",
-            section="education",
-            reasoning="Test correction 2",
-            importance="standard",
-        )
-        correction3 = WritingCorrectionSchema(
-            item_id="wc3",
-            section="work_experience",
-            reasoning="Test correction 3",
-            importance="highly_recommended",
-        )
-
-        quality_data = Mock(writing_corrections=[correction1, correction2, correction3])
 
         result = find_corrections_batch(quality_data, ["wc2", "wc1", "wc3"])
 
         assert len(result) == 3
-        assert result[0] == correction2  # Order preserved
-        assert result[1] == correction1
-        assert result[2] == correction3
+        assert result[0].item_id == "wc2"
+        assert result[1].item_id == "wc1"
+        assert result[2].item_id == "wc3"
 
     def test_missing_correction_raises_404(self):
         """Test missing correction in batch raises 404"""
-        correction1 = WritingCorrectionSchema(
-            item_id="wc1",
-            section="work_experience",
-            reasoning="Test correction",
-            importance="standard",
+        quality_data = CVQualityAnalysisResponseSchemaV2(
+            overall_quality_score=80,
+            issues=[
+                IssueSchema(
+                    item_type="work_experience",
+                    item_id="wc1",
+                    field_path="work_experience",
+                    issue_severity="minor",
+                    issue_category="too_brief",
+                    quality_score=40,
+                    reasoning="R",
+                    html_diff="<del>x</del><ins>y</ins>",
+                    coaching=None,
+                ),
+            ],
+            professional_summary=None,
+            skills={"technical": [], "soft": []},
+            timeline_gaps=[],
         )
-
-        quality_data = Mock(writing_corrections=[correction1])
 
         with pytest.raises(HTTPException) as exc_info:
             find_corrections_batch(quality_data, ["wc1", "wc999"])
 
         assert exc_info.value.status_code == 404
         assert "wc999" in exc_info.value.detail
-        assert "not found in analysis" in exc_info.value.detail
 
     def test_empty_batch(self):
         """Test empty batch returns empty list"""
-        quality_data = Mock(writing_corrections=[])
+        quality_data = CVQualityAnalysisResponseSchemaV2(
+            overall_quality_score=80,
+            issues=[],
+            professional_summary=None,
+            skills={"technical": [], "soft": []},
+            timeline_gaps=[],
+        )
 
         result = find_corrections_batch(quality_data, [])
 
         assert result == []
+
+
+class TestRemoveAppliedCorrectionsFromQualityData:
+    """Test remove applied corrections (V2 only)."""
+
+    def test_removes_issues_by_item_id(self):
+        """Test issues-based shape: issues with given item_ids removed"""
+        quality_data = CVQualityAnalysisResponseSchemaV2(
+            overall_quality_score=75,
+            issues=[
+                IssueSchema(
+                    item_type="work_experience",
+                    item_id="id1",
+                    field_path="work_experience",
+                    issue_severity="minor",
+                    issue_category="too_brief",
+                    quality_score=45,
+                    reasoning="Brief",
+                    html_diff="<del>x</del><ins>y</ins>",
+                    coaching=None,
+                ),
+                IssueSchema(
+                    item_type="education",
+                    item_id="id2",
+                    field_path="education",
+                    issue_severity="major",
+                    issue_category="lacks_specificity",
+                    quality_score=30,
+                    reasoning="Vague",
+                    html_diff=None,
+                    coaching=None,
+                ),
+            ],
+            professional_summary=None,
+            skills={"technical": [], "soft": []},
+            timeline_gaps=[],
+        )
+
+        updated = remove_applied_corrections_from_quality_data(quality_data, ["id1"])
+
+        assert "issues" in updated
+        assert len(updated["issues"]) == 1
+        assert updated["issues"][0]["item_id"] == "id2"
+
+    def test_removes_issues_by_section_level_id_exact_field_path(self):
+        """Dismissing by section-level id (e.g. professional_summary) removes issue with field_path == that id."""
+        quality_data = CVQualityAnalysisResponseSchemaV2(
+            overall_quality_score=70,
+            issues=[
+                IssueSchema(
+                    item_type="professional_summary",
+                    item_id=None,
+                    field_path="professional_summary",
+                    issue_severity="major",
+                    issue_category="insufficient_content",
+                    quality_score=40,
+                    reasoning="Summary too brief",
+                    html_diff=None,
+                    coaching=None,
+                ),
+                IssueSchema(
+                    item_type="personal_info",
+                    item_id=None,
+                    field_path="personal_info.description",
+                    issue_severity="minor",
+                    issue_category="too_brief",
+                    quality_score=45,
+                    reasoning="Description brief",
+                    html_diff=None,
+                    coaching=None,
+                ),
+            ],
+            professional_summary=None,
+            skills={"technical": [], "soft": []},
+            timeline_gaps=[],
+        )
+
+        updated = remove_applied_corrections_from_quality_data(
+            quality_data, ["professional_summary"]
+        )
+
+        assert "issues" in updated
+        assert len(updated["issues"]) == 1
+        assert updated["issues"][0]["field_path"] == "personal_info.description"
 
 
 class TestUpdateCVWithCorrections:
