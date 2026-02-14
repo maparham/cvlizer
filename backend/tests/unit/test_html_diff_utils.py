@@ -8,6 +8,7 @@ from src.utils.html_diff_utils import (
     clean_html_diff_string,
     clean_quality_response_issues,
     extract_original_from_cv_data_issues,
+    fill_skill_originals_from_cv_data,
 )
 
 
@@ -186,3 +187,76 @@ class TestCleanQualityResponseIssuesProfessionalSummary:
         assert result.get("professional_summary") is None
         assert len(result["issues"]) == 1
         assert result["issues"][0]["reasoning"] == "Summary too brief; add impact."
+
+
+class TestFillSkillOriginalsFromCvData:
+    """Tests for fill_skill_originals_from_cv_data: derive missing original from CV."""
+
+    def test_fills_original_when_suggested_matches_cv_technical(self):
+        """When skill suggestion has no original but matches CV technical (case-insensitive), original is set to CV string."""
+        response = {
+            "skills": {
+                "technical": [
+                    {"skill": "Python", "reasoning": "Capitalization fix."},
+                    {"skill": "TypeScript", "reasoning": "Relevant for role."},
+                ],
+                "soft": [],
+            }
+        }
+        cv_data = {
+            "skills": {
+                "technical": ["python", "FastAPI"],
+                "soft": ["Communication"],
+            }
+        }
+        result = fill_skill_originals_from_cv_data(response, cv_data)
+        assert result["skills"]["technical"][0]["original"] == "python"
+        assert result["skills"]["technical"][1].get("original") is None
+
+    def test_fills_original_when_suggested_matches_cv_soft(self):
+        """When skill suggestion matches CV soft skill, original is set to CV string."""
+        response = {
+            "skills": {
+                "technical": [],
+                "soft": [
+                    {"skill": "Problem Solving", "reasoning": "Fix casing."},
+                    {"skill": "Leadership", "reasoning": "New suggestion."},
+                ],
+            }
+        }
+        cv_data = {
+            "skills": {
+                "technical": [],
+                "soft": ["problem solving", "Communication"],
+            }
+        }
+        result = fill_skill_originals_from_cv_data(response, cv_data)
+        assert result["skills"]["soft"][0]["original"] == "problem solving"
+        assert result["skills"]["soft"][1].get("original") is None
+
+    def test_leaves_original_unchanged_when_already_set(self):
+        """When skill already has original, it is not overwritten."""
+        response = {
+            "skills": {
+                "technical": [
+                    {"skill": "Python", "reasoning": "Fix.", "original": "pyhton"},
+                ],
+                "soft": [],
+            }
+        }
+        cv_data = {"skills": {"technical": ["Python", "pyhton"], "soft": []}}
+        result = fill_skill_originals_from_cv_data(response, cv_data)
+        assert result["skills"]["technical"][0]["original"] == "pyhton"
+
+    def test_no_change_when_cv_data_empty(self):
+        """When cv_data is None or has no skills, response is unchanged."""
+        response = {
+            "skills": {
+                "technical": [{"skill": "Python", "reasoning": "New."}],
+                "soft": [],
+            }
+        }
+        result = fill_skill_originals_from_cv_data(response, None)
+        assert result["skills"]["technical"][0].get("original") is None
+        result2 = fill_skill_originals_from_cv_data(response, {})
+        assert result2["skills"]["technical"][0].get("original") is None

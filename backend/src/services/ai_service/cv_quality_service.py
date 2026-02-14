@@ -15,6 +15,7 @@ from src.utils.timeline_analyzer import analyze_timeline_gaps
 from src.utils.html_diff_utils import (
     clean_quality_response_issues,
     extract_original_from_cv_data_issues,
+    fill_skill_originals_from_cv_data,
 )
 from src.utils.cv_data_optimizer import optimize_cv_data_for_quality_analysis
 from src.config import AIConfig
@@ -111,13 +112,20 @@ async def generate_cv_corrections_and_feedback(
     response_schema = CVQualityAnalysisResponseSchemaV2
     cv_variable = AIConfig.CV_QUALITY_PROMPT_CV_VARIABLE
     is_coach = correction_mode == "coaching"
+    # Prompt-by-ID (dashboard prompts) is OpenAI-only; OpenRouter uses presets or inline.
     prompt_id_for_mode = (
         AIConfig.CV_QUALITY_COACH_PROMPT_ID if is_coach else AIConfig.CV_QUALITY_PROMPT_ID
     )
-    use_prompt_ref = bool(prompt_id_for_mode and prompt_id_for_mode.strip())
+    use_openai_prompt_id = AIConfig.AI_PROVIDER == "openai" and bool(
+        prompt_id_for_mode and prompt_id_for_mode.strip()
+    )
+    # OpenRouter preset: get_model_for_operation returns preset; runner sends only user message.
+    use_openrouter_preset = AIConfig.AI_PROVIDER == "openrouter" and bool(
+        (AIConfig.OPENROUTER_CV_QUALITY_PRESET or "").strip()
+    )
 
     try:
-        if use_prompt_ref:
+        if use_openai_prompt_id:
             response, metadata = await call_openai_with_schema(
                 response_schema=response_schema,
                 user_id=user_id,
@@ -127,6 +135,18 @@ async def generate_cv_corrections_and_feedback(
                 text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
                 prompt_ref=_cv_quality_prompt_ref(correction_mode),
                 prompt_variables={cv_variable: prompt},
+                text_format_schema=CV_CORRECTIONS_COACHING_FORMAT,
+            )
+        elif use_openrouter_preset:
+            response, metadata = await call_openai_with_schema(
+                system_prompt="",
+                user_prompt=prompt,
+                response_schema=response_schema,
+                user_id=user_id,
+                cv_id=cv_id,
+                operation_type="cv_quality_analysis",
+                db_session=db_session,
+                text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
                 text_format_schema=CV_CORRECTIONS_COACHING_FORMAT,
             )
         else:
@@ -140,10 +160,12 @@ async def generate_cv_corrections_and_feedback(
                 operation_type="cv_quality_analysis",
                 db_session=db_session,
                 text_verbosity=AIConfig.CV_QUALITY_VERBOSITY,
+                text_format_schema=CV_CORRECTIONS_COACHING_FORMAT,
             )
 
         response = extract_original_from_cv_data_issues(response, cv_data, id_mapping)
         response = clean_quality_response_issues(response, cv_data)
+        response = fill_skill_originals_from_cv_data(response, cv_data)
         if correction_mode == "proofread":
             skills = response.get("skills") or {}
             issues = response.get("issues") or []

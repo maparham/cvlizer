@@ -140,31 +140,45 @@ async def health_check():
 @app.on_event("startup")
 async def startup_event():
     """Startup tasks: config validation, initial cleanup, schedule periodic jobs."""
-    # Log AI model and effort configuration
+    # Log AI provider and model configuration
     logger.info("=" * 60)
     logger.info("AI Configuration:")
-    logger.info(f"  Model: {AIConfig.OPENAI_MODEL}")
-    logger.info(f"  Parsing Model: {AIConfig.OPENAI_PARSING_MODEL}")
-    logger.info(f"  Agent Model: {AIConfig.AGENT_MODEL}")
-    logger.info(f"  Reasoning Effort: {AIConfig.REASONING_EFFORT}")
-    logger.info(f"  Parsing Effort: {AIConfig.OPENAI_PARSING_EFFORT}")
-    logger.info(
-        f"  Agent Processing Tier: {AIConfig.AGENT_PROCESSING_TIER or '(not set)'}"
-    )
+    logger.info(f"  Provider: {AIConfig.AI_PROVIDER}")
+    if AIConfig.AI_PROVIDER == "openrouter":
+        logger.info(f"  Model: {AIConfig.OPENROUTER_MODEL or '(not set)'}")
+        logger.info(
+            f"  Parsing Model: {AIConfig.OPENROUTER_PARSING_MODEL or AIConfig.OPENROUTER_MODEL or '(not set)'}"
+        )
+    else:
+        logger.info(f"  Model: {AIConfig.OPENAI_MODEL}")
+        logger.info(f"  Parsing Model: {AIConfig.OPENAI_PARSING_MODEL}")
+        logger.info(f"  Agent Model: {AIConfig.AGENT_MODEL}")
+        logger.info(f"  Reasoning Effort: {AIConfig.REASONING_EFFORT}")
+        logger.info(f"  Parsing Effort: {AIConfig.OPENAI_PARSING_EFFORT}")
+        logger.info(
+            f"  Agent Processing Tier: {AIConfig.AGENT_PROCESSING_TIER or '(not set)'}"
+        )
     logger.info("=" * 60)
 
     # Fail fast on missing/placeholder secrets in non-dev
     if not DEV_MODE:
         jwt_secret = os.getenv("JWT_SECRET_KEY")
-        openai_key = os.getenv("OPENAI_API_KEY")
         clerk_key = os.getenv("CLERK_SECRET_KEY")
         if not jwt_secret or jwt_secret in {
             "your-secret-key-here",
             "your-secret-key-here-change-in-production",
         }:
             raise RuntimeError("JWT_SECRET_KEY is missing or placeholder in non-dev mode")
-        if not openai_key:
-            raise RuntimeError("OPENAI_API_KEY is missing in non-dev mode")
+        if AIConfig.AI_PROVIDER == "openrouter":
+            openrouter_key = os.getenv("OPENROUTER_API_KEY")
+            if not openrouter_key or not openrouter_key.strip():
+                raise RuntimeError(
+                    "OPENROUTER_API_KEY is missing in non-dev mode when AI_PROVIDER=openrouter"
+                )
+        else:
+            openai_key = os.getenv("OPENAI_API_KEY")
+            if not openai_key:
+                raise RuntimeError("OPENAI_API_KEY is missing in non-dev mode")
         if not clerk_key or clerk_key == "sk_test_your_secret_key_from_clerk_dashboard":
             raise RuntimeError(
                 "CLERK_SECRET_KEY is missing or placeholder in non-dev mode"

@@ -239,8 +239,8 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                     "original": {
                         "type": ["string", "null"],
                         "description": (
-                            "Original misspelled/incorrectly capitalized skill, "
-                            "or null if this is a new suggestion"
+                            "Exact string from the CV when correcting (typo/rephrase); "
+                            "null for new suggestions. Required so the UI can replace correctly."
                         ),
                     },
                 },

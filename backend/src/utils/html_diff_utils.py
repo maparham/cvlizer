@@ -143,6 +143,59 @@ def extract_original_from_cv_data_issues(
     return response
 
 
+def fill_skill_originals_from_cv_data(
+    response: Dict[str, Any],
+    cv_data: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Derive missing 'original' on skill suggestions from CV data.
+
+    When the model omits 'original' (to save tokens), match each suggestion's
+    'skill' against the CV's technical/soft lists (case-insensitive). If exactly
+    one CV skill matches, set original to that CV string (correction). Otherwise
+    leave original as None (new suggestion).
+
+    Modifies response in place; also returns response.
+    """
+    if not response or not isinstance(response, dict) or not cv_data:
+        return response
+    skills_obj = response.get("skills")
+    if not isinstance(skills_obj, dict):
+        return response
+    cv_skills = cv_data.get("skills") or {}
+    if not isinstance(cv_skills, dict):
+        return response
+
+    for skill_type in ("technical", "soft"):
+        skill_list = skills_obj.get(skill_type)
+        if not isinstance(skill_list, list):
+            continue
+        cv_list = cv_skills.get(skill_type) or []
+        if not isinstance(cv_list, list):
+            continue
+        # Build set of normalized CV skill strings for lookup; keep first exact CV string per normalized form
+        cv_normalized_to_original: Dict[str, str] = {}
+        for s in cv_list:
+            if isinstance(s, str) and s.strip():
+                key = s.strip().lower()
+                if key not in cv_normalized_to_original:
+                    cv_normalized_to_original[key] = s.strip()
+
+        for item in skill_list:
+            if not isinstance(item, dict):
+                continue
+            if item.get("original") not in (None, ""):
+                continue
+            suggested = item.get("skill")
+            if not isinstance(suggested, str) or not suggested.strip():
+                continue
+            key = suggested.strip().lower()
+            if key in cv_normalized_to_original:
+                item["original"] = cv_normalized_to_original[key]
+
+    return response
+
+
 def _skill_type_from_field_path(field_path: str) -> Optional[str]:
     """
     Return "technical" or "soft" if field_path is skills.technical or skills.soft

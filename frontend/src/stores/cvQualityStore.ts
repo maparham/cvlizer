@@ -273,15 +273,20 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     // Save previous state for rollback
     const previousState = current;
 
-    set({ qualityAnalysis: updated, isDismissing: true });
+    // Set lastDismissedAt immediately so loadLatestQualityAnalysis cooldown applies
+    // before any refetch triggered by CV update can overwrite this dismiss
+    set({
+      qualityAnalysis: updated,
+      isDismissing: true,
+      lastDismissedAt: Date.now(),
+    });
 
     if (analysisId) {
       try {
         await aiService.updateQualityAnalysis(analysisId, updated);
-        set({ lastDismissedAt: Date.now() });
       } catch (error) {
         // Rollback state on error
-        set({ qualityAnalysis: previousState });
+        set({ qualityAnalysis: previousState, lastDismissedAt: null });
         Logger.error('Failed to update quality analysis', { error });
         useNotificationStore.getState().showError(
           errorTitle,
@@ -320,7 +325,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           const matchBySection =
             (i.field_path ?? '') === fieldPath &&
             itemId &&
-            fieldPath.startsWith(itemId + '.');
+            (fieldPath === itemId || fieldPath.startsWith(itemId + '.'));
           return !matchById && !matchBySection;
         }),
       }),

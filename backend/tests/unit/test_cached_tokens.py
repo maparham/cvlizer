@@ -382,8 +382,8 @@ class TestAIServiceIntegration:
     """Test suite for AI service integration with cached tokens."""
 
     @pytest.mark.asyncio
-    @patch("src.services.ai_service.cv_parsing.get_openai_client")
-    @patch("src.services.ai_service.cv_parsing.log_ai_usage_safe")
+    @patch("src.services.ai_service.common.get_openai_client")
+    @patch("src.services.ai_service.common.log_ai_usage_safe")
     async def test_cv_parsing_logs_cached_tokens(
         self, mock_log_ai_usage, mock_get_client
     ):

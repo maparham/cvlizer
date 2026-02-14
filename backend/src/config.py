@@ -20,12 +20,40 @@ load_dotenv()
 class AIConfig:
     """AI and OpenAI related configuration"""
 
+    # Provider selection: "openai" or "openrouter". Invalid values fall back to "openai".
+    _provider_raw: str = os.getenv("AI_PROVIDER", "openai").strip().lower()
+    AI_PROVIDER: str = (
+        _provider_raw if _provider_raw in ("openai", "openrouter") else "openai"
+    )
+
     # OpenAI API Configuration
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL")  # Required: Must be set in .env
     OPENAI_PARSING_MODEL: str = os.getenv(
         "OPENAI_PARSING_MODEL"
     )  # Required: Used for CV and job description parsing
+
+    # OpenRouter API Configuration (used when AI_PROVIDER=openrouter)
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "")
+    OPENROUTER_PARSING_MODEL: str = os.getenv("OPENROUTER_PARSING_MODEL", "")
+
+    # OpenRouter presets (when set, use preset instead of inline prompts for that operation)
+    OPENROUTER_CV_QUALITY_PRESET: str = os.getenv("OPENROUTER_CV_QUALITY_PRESET", "")
+    OPENROUTER_PARSING_PRESET: str = os.getenv("OPENROUTER_PARSING_PRESET", "")
+    OPENROUTER_JOB_EXTRACTION_PRESET: str = os.getenv(
+        "OPENROUTER_JOB_EXTRACTION_PRESET", ""
+    )
+    OPENROUTER_SECTION_GENERATION_PRESET: str = os.getenv(
+        "OPENROUTER_SECTION_GENERATION_PRESET", ""
+    )
+    OPENROUTER_AI_SUGGESTIONS_PRESET: str = os.getenv(
+        "OPENROUTER_AI_SUGGESTIONS_PRESET", ""
+    )
+
+    # OpenRouter app attribution (for rankings/analytics on openrouter.ai)
+    OPENROUTER_APP_TITLE: str = os.getenv("OPENROUTER_APP_TITLE", "cvlator")
+    OPENROUTER_REFERER: str = os.getenv("OPENROUTER_REFERER", "")
 
     # Agent Model Configuration (for future agent-based features)
     AGENT_MODEL: str = os.getenv(
@@ -69,6 +97,11 @@ class AIConfig:
     # Options: "low", "medium", "high"
     CV_QUALITY_VERBOSITY: str = os.getenv("CV_QUALITY_VERBOSITY", "low")
 
+    # CV Quality reasoning effort (OpenRouter/reasoning models)
+    # Defaults to "minimal" to reduce reasoning tokens and leave room for JSON output
+    # Options: "minimal", "low", "medium", "high"
+    CV_QUALITY_REASONING_EFFORT: str = os.getenv("CV_QUALITY_REASONING_EFFORT", "minimal")
+
     # Temperature for all AI reasoning calls (where AI_REASONING_EFFORT is used).
     # Lower values (e.g. 0) give more consistent output.
     AI_REASONING_TEMPERATURE: float = float(os.getenv("AI_REASONING_TEMPERATURE", "0"))
@@ -103,8 +136,54 @@ class AIConfig:
 
     @classmethod
     def is_enabled(cls) -> bool:
-        """Check if AI features are enabled"""
+        """Check if AI features are enabled for the active provider."""
+        if cls.AI_PROVIDER == "openrouter":
+            return bool(cls.OPENROUTER_API_KEY and cls.OPENROUTER_API_KEY.strip())
         return bool(cls.OPENAI_API_KEY and cls.OPENAI_API_KEY != "your-openai-key-here")
+
+    @classmethod
+    def get_model_for_operation(cls, operation_type: str) -> str:
+        """
+        Return the model to use for the given operation and current provider.
+        Callers use this so they do not branch on provider.
+        """
+        if cls.AI_PROVIDER == "openrouter":
+            preset = ""
+            if operation_type == "cv_quality_analysis":
+                preset = (cls.OPENROUTER_CV_QUALITY_PRESET or "").strip()
+            elif operation_type == "parse_cv":
+                preset = (cls.OPENROUTER_PARSING_PRESET or "").strip()
+            elif operation_type == "extract_job_description":
+                preset = (cls.OPENROUTER_JOB_EXTRACTION_PRESET or "").strip()
+            elif operation_type == "generate_section":
+                preset = (cls.OPENROUTER_SECTION_GENERATION_PRESET or "").strip()
+            elif operation_type == "ai_suggestions":
+                preset = (cls.OPENROUTER_AI_SUGGESTIONS_PRESET or "").strip()
+            if preset:
+                return preset
+            if operation_type in ("parse_cv", "extract_job_description"):
+                return (
+                    (cls.OPENROUTER_PARSING_MODEL or "").strip()
+                    or (cls.OPENROUTER_MODEL or "").strip()
+                    or ""
+                )
+            return (cls.OPENROUTER_MODEL or "").strip() or ""
+        # OpenAI
+        if operation_type in ("parse_cv", "extract_job_description"):
+            return cls.OPENAI_PARSING_MODEL or cls.OPENAI_MODEL or ""
+        return cls.OPENAI_MODEL or ""
+
+    @classmethod
+    def get_reasoning_effort_for_operation(cls, operation_type: str) -> str:
+        """
+        Return reasoning effort for the given operation.
+        CV quality uses minimal by default to save tokens for JSON output.
+        """
+        if operation_type == "cv_quality_analysis":
+            return cls.CV_QUALITY_REASONING_EFFORT
+        if operation_type in ("parse_cv", "extract_job_description"):
+            return cls.OPENAI_PARSING_EFFORT
+        return cls.REASONING_EFFORT
 
 
 # ============================================================================
@@ -531,16 +610,31 @@ def validate_config() -> list:
     """Validate configuration and return list of warnings/errors"""
     warnings = []
 
-    if not AIConfig.OPENAI_API_KEY or AIConfig.OPENAI_API_KEY == "your-openai-key-here":
-        warnings.append("OPENAI_API_KEY not configured - AI features will be disabled")
-
-    if not AIConfig.OPENAI_MODEL:
-        warnings.append("OPENAI_MODEL not configured in .env - REQUIRED for AI features")
-
-    if not AIConfig.OPENAI_PARSING_MODEL:
-        warnings.append(
-            "OPENAI_PARSING_MODEL not configured in .env - REQUIRED for CV and job description parsing"
-        )
+    if AIConfig.AI_PROVIDER == "openrouter":
+        if not AIConfig.OPENROUTER_API_KEY or not AIConfig.OPENROUTER_API_KEY.strip():
+            warnings.append(
+                "OPENROUTER_API_KEY not configured - AI features will be disabled"
+            )
+        if not AIConfig.OPENROUTER_MODEL or not AIConfig.OPENROUTER_MODEL.strip():
+            warnings.append(
+                "OPENROUTER_MODEL not configured in .env - REQUIRED when AI_PROVIDER=openrouter"
+            )
+    else:
+        if (
+            not AIConfig.OPENAI_API_KEY
+            or AIConfig.OPENAI_API_KEY == "your-openai-key-here"
+        ):
+            warnings.append(
+                "OPENAI_API_KEY not configured - AI features will be disabled"
+            )
+        if not AIConfig.OPENAI_MODEL:
+            warnings.append(
+                "OPENAI_MODEL not configured in .env - REQUIRED for AI features"
+            )
+        if not AIConfig.OPENAI_PARSING_MODEL:
+            warnings.append(
+                "OPENAI_PARSING_MODEL not configured in .env - REQUIRED for CV and job description parsing"
+            )
 
     if not AIConfig.AGENT_MODEL:
         warnings.append(

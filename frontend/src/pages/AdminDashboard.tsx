@@ -39,7 +39,6 @@ import {
   ArrowBack,
   Refresh,
   Analytics,
-  BugReport,
 } from "@mui/icons-material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -52,7 +51,6 @@ import { adminApi, normalizeApiError } from "../services/api";
 import OverviewTab from "../components/admin/tabs/OverviewTab";
 import UsersTab from "../components/admin/tabs/UsersTab";
 import AIUsageTab from "../components/admin/tabs/AIUsageTab";
-import DiagnosticChatTab from "../components/admin/tabs/DiagnosticChatTab";
 
 const AdminDashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -77,8 +75,6 @@ const AdminDashboard: React.FC = () => {
       setCurrentTab(1);
     } else if (tabParam === "ai-usage") {
       setCurrentTab(2);
-    } else if (tabParam === "diagnostic") {
-      setCurrentTab(3);
     } else if (tabParam === "overview") {
       setCurrentTab(0);
     }
@@ -93,8 +89,6 @@ const AdminDashboard: React.FC = () => {
       newSearchParams.set("tab", "users");
     } else if (newValue === 2) {
       newSearchParams.set("tab", "ai-usage");
-    } else if (newValue === 3) {
-      newSearchParams.set("tab", "diagnostic");
     } else {
       newSearchParams.set("tab", "overview");
     }
@@ -284,7 +278,6 @@ const AdminDashboard: React.FC = () => {
           <Tab icon={<Dashboard />} label="Overview" />
           <Tab icon={<People />} label="Users" />
           <Tab icon={<Analytics />} label="AI Usage" />
-          <Tab icon={<BugReport />} label="OpenAI Diagnostic" />
         </Tabs>
       </Paper>
 
@@ -409,8 +402,6 @@ const AdminDashboard: React.FC = () => {
           isDeleting={isDeleting}
         />
       )}
-
-      {currentTab === 3 && <DiagnosticChatTab />}
     </Container>
   );
 };

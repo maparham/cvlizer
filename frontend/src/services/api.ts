@@ -425,73 +425,6 @@ export const cvApi = {
     },
   };
 
-// ============================================================================
-// OpenAI Diagnostic Types and API
-// ============================================================================
-
-export interface DiagnosticRequest {
-  prompt: string;
-  system_message?: string;
-  max_tokens?: number;
-  temperature?: number;
-  model_override?: string;
-}
-
-export interface DiagnosticMetrics {
-  response_time_ms: number;
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-  estimated_cost: number;
-  finish_reason: string;
-  model_used: string;
-  tokens_per_second: number;
-  cache_hit?: boolean;
-}
-
-export interface DiagnosticRequestDetails {
-  prompt: string;
-  system_message: string;
-  max_tokens: number;
-  temperature: number;
-  model: string;
-  timestamp: string;
-  prompt_length: number;
-  system_length: number;
-}
-
-export interface DiagnosticResponse {
-  success: boolean;
-  response_text?: string;
-  api_type: string;
-  metrics?: DiagnosticMetrics;
-  request_details: DiagnosticRequestDetails;
-  error?: string;
-}
-
-export interface OpenAIConfig {
-  is_enabled: boolean;
-  model: string;
-  agent_model?: string;
-  max_tokens: number;
-  request_timeout: number;
-  max_retries: number;
-  temperature: number;
-  api_key_configured: boolean;
-  api_key_prefix: string;
-  sdk_version: string;
-}
-
-export interface DiagnosticMessage {
-  id: string;
-  prompt: string;
-  response?: DiagnosticResponse;
-  metrics?: DiagnosticMetrics;
-  success: boolean;
-  error?: string;
-  timestamp: Date;
-}
-
 // Auth API functions
 export const authApi = {
   // Delete user account
@@ -503,20 +436,6 @@ export const authApi = {
 
 // Admin API functions
 export const adminApi = {
-  // Get OpenAI configuration
-  getOpenAIConfig: async (): Promise<OpenAIConfig> => {
-    const response = await api.get("/admin/openai/config");
-    return response.data;
-  },
-
-  // Test OpenAI API
-  testOpenAI: async (
-    request: DiagnosticRequest,
-  ): Promise<DiagnosticResponse> => {
-    const response = await api.post("/admin/openai/test", request);
-    return response.data;
-  },
-
   // Delete user account (admin only)
   deleteUser: async (userId: string) => {
     const response = await api.delete(`/admin/users/${userId}`);

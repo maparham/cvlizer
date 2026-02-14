@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from src.config import AIConfig
 from src.services.ai_service.responses_runner import run_openai_call
+from src.services.ai_service.openrouter_runner import run_openrouter_call
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +38,8 @@ MAX_JOB_CONTENT_LENGTH = 8000  # characters
 # Token limits (for logging/monitoring)
 MAX_EXPECTED_TOKENS = 4000
 
-# OpenAI client singleton
-if AIConfig.is_enabled():
-    openai.api_key = AIConfig.OPENAI_API_KEY
-    _openai_client = openai.OpenAI(timeout=float(AIConfig.REQUEST_TIMEOUT_SECONDS))
-else:
-    _openai_client = None
+# OpenAI client: created lazily only when AI_PROVIDER=openai
+_openai_client = None
 
 
 # ============================================================================
@@ -73,14 +70,29 @@ class JobFitResult(TypedDict, total=False):
 # ============================================================================
 
 
-def get_openai_client():
-    """Get the OpenAI client singleton."""
+def _get_openai_client_lazy():
+    """Create and return the OpenAI client when provider is openai; else None."""
+    global _openai_client
+    if AIConfig.AI_PROVIDER != "openai":
+        return None
+    if (
+        _openai_client is None
+        and AIConfig.OPENAI_API_KEY
+        and AIConfig.OPENAI_API_KEY != "your-openai-key-here"
+    ):
+        openai.api_key = AIConfig.OPENAI_API_KEY
+        _openai_client = openai.OpenAI(timeout=float(AIConfig.REQUEST_TIMEOUT_SECONDS))
     return _openai_client
 
 
+def get_openai_client():
+    """Get the OpenAI client singleton (None when AI_PROVIDER=openrouter)."""
+    return _get_openai_client_lazy()
+
+
 def is_ai_enabled() -> bool:
-    """Check if AI features are enabled."""
-    return _openai_client is not None
+    """Check if AI features are enabled for the active provider."""
+    return AIConfig.is_enabled()
 
 
 def extract_cached_tokens(response: Any) -> int:
@@ -259,15 +271,18 @@ def get_user_friendly_error_message(error: Exception) -> str:
     ):
         return "We couldn't reach our AI service. Please check your connection and try again."
     if isinstance(error, RuntimeError):
-        msg = str(error).strip().lower()
-        if "max_output_tokens" in msg or "response incomplete" in msg:
+        msg = str(error).strip()
+        if "Please try again" in msg or "please try again" in msg:
+            return msg
+        msg_lower = msg.lower()
+        if "max_output_tokens" in msg_lower or "response incomplete" in msg_lower:
             return (
                 "The analysis was too long to complete. "
                 "Try a shorter CV or try again later."
             )
-        if "refusal" in msg or "refused" in msg:
+        if "refusal" in msg_lower or "refused" in msg_lower:
             return "The request could not be completed. Please try again."
-        if "no text output" in msg or "no text" in msg:
+        if "no text output" in msg_lower or "no text" in msg_lower:
             return "We didn't get a valid response. Please try again."
     return "An error occurred while processing your request. Please try again."
 
@@ -292,20 +307,19 @@ async def call_openai_with_schema(
     text_format_schema: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
-    Unified OpenAI API call with schema validation, retry logic, and usage logging.
+    Unified AI API call with schema validation, retry logic, and usage logging.
 
-    Two branches:
-    - Inline input: pass system_prompt and user_prompt; uses client.responses.parse
-      with input=[system, user].
-    - Prompt-by-ID: pass prompt_ref (id, version?) and prompt_variables; uses
-      client.responses.create with prompt=... and no input, then parses and
-      validates output with response_schema.
+    Dispatches to OpenAI or OpenRouter based on AIConfig.AI_PROVIDER.
+    - Inline input: pass system_prompt and user_prompt (OpenAI: responses.parse;
+      OpenRouter: chat completions).
+    - Prompt-by-ID: pass prompt_ref and prompt_variables (OpenAI only; not
+      supported when AI_PROVIDER=openrouter).
 
     Handles:
     - AI enabled check with standardized error response
-    - Async execution via thread pool (asyncio.to_thread)
+    - Async execution (thread pool for OpenAI; httpx for OpenRouter)
     - Automatic retry with exponential backoff
-    - Token usage extraction (including cached tokens)
+    - Token usage extraction (including cached tokens for OpenAI)
     - AI usage logging (success and failure)
     - Consistent error handling and logging
 
@@ -313,7 +327,7 @@ async def call_openai_with_schema(
         system_prompt: System message content (required when not using prompt_ref)
         user_prompt: User message content (required when not using prompt_ref)
         response_schema: Pydantic schema for response parsing and validation
-        model: OpenAI model to use (defaults to AIConfig.OPENAI_MODEL)
+        model: Model to use (defaults from get_model_for_operation when not set)
         reasoning_effort: Reasoning effort level (defaults to AIConfig.REASONING_EFFORT)
         use_reasoning: If True, use reasoning model (omit temperature). If False, use temperature.
         user_id: User identifier for logging
@@ -335,12 +349,19 @@ async def call_openai_with_schema(
                    prompt_tokens, completion_tokens, cached_tokens
 
     Raises:
-        RuntimeError: If OpenAI API is not enabled or call fails after retries
+        RuntimeError: If AI is not enabled or call fails after retries
+        ValueError: If prompt_ref is used when AI_PROVIDER=openrouter
     """
     use_prompt_ref = prompt_ref is not None and prompt_variables is not None
     if use_prompt_ref:
         if not prompt_ref.get("id"):
             raise ValueError("prompt_ref must include 'id'")
+        if AIConfig.AI_PROVIDER == "openrouter":
+            raise ValueError(
+                "OpenRouter does not support prompt_ref; set "
+                "CV_QUALITY_PROMPT_ID and CV_QUALITY_COACH_PROMPT_ID to empty "
+                "to use inline prompts"
+            )
     else:
         if system_prompt is None or user_prompt is None:
             raise ValueError(
@@ -348,41 +369,68 @@ async def call_openai_with_schema(
             )
 
     if not is_ai_enabled():
-        raise RuntimeError("OpenAI API is not enabled")
+        raise RuntimeError("AI is not enabled")
 
-    model = model or AIConfig.OPENAI_MODEL
     reasoning_effort = reasoning_effort or AIConfig.REASONING_EFFORT
-    client = get_openai_client()
 
     try:
+        if AIConfig.AI_PROVIDER == "openrouter":
+            model = AIConfig.get_model_for_operation(operation_type)
+            if not model:
+                raise RuntimeError(
+                    "OPENROUTER_MODEL (or OPENROUTER_PARSING_MODEL for parsing) "
+                    "not configured"
+                )
+            openrouter_reasoning_effort = AIConfig.get_reasoning_effort_for_operation(
+                operation_type
+            )
+            parsed_data, metadata = await run_openrouter_call(
+                system_prompt=system_prompt or "",
+                user_prompt=user_prompt or "",
+                response_schema=response_schema,
+                model=model,
+                operation_type=operation_type,
+                retry_attempts=retry_attempts,
+                retry_delay=retry_delay,
+                with_retries_fn=with_retries,
+                reasoning_effort=openrouter_reasoning_effort,
+                reasoning_summary=AIConfig.REASONING_SUMMARY,
+                use_reasoning=use_reasoning,
+                text_format_schema=text_format_schema,
+            )
+        else:
+            model = model or AIConfig.get_model_for_operation(operation_type)
+            client = get_openai_client()
+            if client is None:
+                raise RuntimeError("OpenAI API is not enabled")
 
-        def _get_seed_for_operation(op_type: str) -> Optional[int]:
-            """Return deterministic seed for operations that support it."""
-            if op_type == "cv_quality_analysis":
-                return AIConfig.CV_QUALITY_SEED
-            return None
+            def _get_seed_for_operation(op_type: str) -> Optional[int]:
+                """Return deterministic seed for operations that support it."""
+                if op_type == "cv_quality_analysis":
+                    return AIConfig.CV_QUALITY_SEED
+                return None
 
-        parsed_data, metadata = await run_openai_call(
-            client=client,
-            model=model,
-            reasoning_effort=reasoning_effort,
-            reasoning_summary=AIConfig.REASONING_SUMMARY,
-            use_prompt_ref=use_prompt_ref,
-            use_reasoning=use_reasoning,
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            response_schema=response_schema,
-            operation_type=operation_type,
-            retry_attempts=retry_attempts,
-            retry_delay=retry_delay,
-            text_verbosity=text_verbosity,
-            prompt_ref=prompt_ref,
-            prompt_variables=prompt_variables,
-            text_format_schema=text_format_schema,
-            get_seed_for_operation=_get_seed_for_operation,
-            with_retries_fn=with_retries,
-            extract_cached_tokens_fn=extract_cached_tokens,
-        )
+            parsed_data, metadata = await run_openai_call(
+                client=client,
+                model=model,
+                reasoning_effort=reasoning_effort,
+                reasoning_summary=AIConfig.REASONING_SUMMARY,
+                use_prompt_ref=use_prompt_ref,
+                use_reasoning=use_reasoning,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                response_schema=response_schema,
+                operation_type=operation_type,
+                retry_attempts=retry_attempts,
+                retry_delay=retry_delay,
+                text_verbosity=text_verbosity,
+                prompt_ref=prompt_ref,
+                prompt_variables=prompt_variables,
+                text_format_schema=text_format_schema,
+                get_seed_for_operation=_get_seed_for_operation,
+                with_retries_fn=with_retries,
+                extract_cached_tokens_fn=extract_cached_tokens,
+            )
 
         # Log successful AI usage
         if user_id:
