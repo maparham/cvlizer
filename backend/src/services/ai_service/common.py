@@ -359,8 +359,8 @@ async def call_openai_with_schema(
         if AIConfig.AI_PROVIDER == "openrouter":
             raise ValueError(
                 "OpenRouter does not support prompt_ref; set "
-                "CV_QUALITY_PROMPT_ID and CV_QUALITY_COACH_PROMPT_ID to empty "
-                "to use inline prompts"
+                "OPENAI_CV_QUALITY_PROMPT_ID and OPENAI_CV_QUALITY_COACH_PROMPT_ID "
+                "to empty to use inline prompts"
             )
     else:
         if system_prompt is None or user_prompt is None:
@@ -375,7 +375,7 @@ async def call_openai_with_schema(
 
     try:
         if AIConfig.AI_PROVIDER == "openrouter":
-            model = AIConfig.get_model_for_operation(operation_type)
+            model = model or AIConfig.get_model_for_operation(operation_type)
             if not model:
                 raise RuntimeError(
                     "OPENROUTER_MODEL (or OPENROUTER_PARSING_MODEL for parsing) "
@@ -481,7 +481,6 @@ async def call_openai_with_schema(
         else:
             # Unexpected errors - include stack trace for debugging
             logger.error(f"{operation_type} failed: {str(e)}", exc_info=True)
-            logger.error(f"User-friendly message: {user_friendly_message}")
 
         # Log failed AI usage with user-friendly message
         if user_id:

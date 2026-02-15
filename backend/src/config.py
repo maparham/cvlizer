@@ -40,6 +40,16 @@ class AIConfig:
 
     # OpenRouter presets (when set, use preset instead of inline prompts for that operation)
     OPENROUTER_CV_QUALITY_PRESET: str = os.getenv("OPENROUTER_CV_QUALITY_PRESET", "")
+    OPENROUTER_CV_QUALITY_PROOFREAD_PRESET: str = (
+        os.getenv("OPENROUTER_CV_QUALITY_PROOFREAD_PRESET")
+        or os.getenv("OPENROUTER_CV_QUALITY_PRESET")
+        or ""
+    ).strip()
+    OPENROUTER_CV_QUALITY_COACH_PRESET: str = (
+        os.getenv("OPENROUTER_CV_QUALITY_COACH_PRESET")
+        or os.getenv("OPENROUTER_CV_QUALITY_PRESET")
+        or ""
+    ).strip()
     OPENROUTER_PARSING_PRESET: str = os.getenv("OPENROUTER_PARSING_PRESET", "")
     OPENROUTER_JOB_EXTRACTION_PRESET: str = os.getenv(
         "OPENROUTER_JOB_EXTRACTION_PRESET", ""
@@ -116,23 +126,35 @@ class AIConfig:
     # When set, CV quality uses the dashboard prompt instead of inline system/user prompts.
     # The dashboard prompt must include a placeholder named CV_QUALITY_PROMPT_CV_VARIABLE
     # (e.g. {{cv_data}}); the app injects the same CV JSON string as the current user message.
-    # Set to empty string in env to use inline prompts instead.
-    CV_QUALITY_PROMPT_ID: str = os.getenv(
-        "CV_QUALITY_PROMPT_ID",
-        "pmpt_6984b849ab288190a1e49b2dcaf93e4b05b5c8950389ceb8",
-    )
-    CV_QUALITY_PROMPT_VERSION: str = os.getenv("CV_QUALITY_PROMPT_VERSION", "7")
+    # Leave unset or empty to use inline prompts.
+    CV_QUALITY_PROMPT_ID: str = os.getenv("CV_QUALITY_PROMPT_ID", "")
+    CV_QUALITY_PROMPT_VERSION: str = os.getenv("CV_QUALITY_PROMPT_VERSION", "")
     # Coach mode (coaching): separate prompt ID. When set, coaching uses this prompt.
-    CV_QUALITY_COACH_PROMPT_ID: str = os.getenv(
-        "CV_QUALITY_COACH_PROMPT_ID",
-        "pmpt_6985147fbb988196a0c7eb4ed2af6eb00735859b2912416e",
-    )
+    CV_QUALITY_COACH_PROMPT_ID: str = os.getenv("CV_QUALITY_COACH_PROMPT_ID", "")
     CV_QUALITY_COACH_PROMPT_VERSION: str = os.getenv(
         "CV_QUALITY_COACH_PROMPT_VERSION", ""
     )  # Empty = use latest
     CV_QUALITY_PROMPT_CV_VARIABLE: str = os.getenv(
         "CV_QUALITY_PROMPT_CV_VARIABLE", "cv_data"
     )
+
+    # Provider-prefixed CV quality prompt IDs (preferred). Fall back to CV_QUALITY_* when unset.
+    # Leave unset or empty to use inline prompts.
+    OPENAI_CV_QUALITY_PROMPT_ID: str = (
+        os.getenv("OPENAI_CV_QUALITY_PROMPT_ID") or os.getenv("CV_QUALITY_PROMPT_ID", "")
+    ).strip()
+    OPENAI_CV_QUALITY_COACH_PROMPT_ID: str = (
+        os.getenv("OPENAI_CV_QUALITY_COACH_PROMPT_ID")
+        or os.getenv("CV_QUALITY_COACH_PROMPT_ID", "")
+    ).strip()
+    OPENAI_CV_QUALITY_PROMPT_VERSION: str = (
+        os.getenv("OPENAI_CV_QUALITY_PROMPT_VERSION")
+        or os.getenv("CV_QUALITY_PROMPT_VERSION", "")
+    ).strip()
+    OPENAI_CV_QUALITY_COACH_PROMPT_VERSION: str = (
+        os.getenv("OPENAI_CV_QUALITY_COACH_PROMPT_VERSION")
+        or os.getenv("CV_QUALITY_COACH_PROMPT_VERSION", "")
+    ).strip()
 
     @classmethod
     def is_enabled(cls) -> bool:
@@ -142,15 +164,31 @@ class AIConfig:
         return bool(cls.OPENAI_API_KEY and cls.OPENAI_API_KEY != "your-openai-key-here")
 
     @classmethod
+    def get_cv_quality_preset(cls, is_coach: bool) -> str:
+        """
+        Return the OpenRouter CV quality preset for the given mode.
+        Falls back to OPENROUTER_CV_QUALITY_PRESET when mode-specific preset is empty.
+        """
+        if is_coach:
+            return (cls.OPENROUTER_CV_QUALITY_COACH_PRESET or "").strip()
+        return (cls.OPENROUTER_CV_QUALITY_PROOFREAD_PRESET or "").strip()
+
+    @classmethod
     def get_model_for_operation(cls, operation_type: str) -> str:
         """
         Return the model to use for the given operation and current provider.
         Callers use this so they do not branch on provider.
+        For cv_quality_analysis with OpenRouter, prefer passing model from
+        get_cv_quality_preset(is_coach) to support proofread vs coach presets.
         """
         if cls.AI_PROVIDER == "openrouter":
             preset = ""
             if operation_type == "cv_quality_analysis":
-                preset = (cls.OPENROUTER_CV_QUALITY_PRESET or "").strip()
+                preset = (
+                    cls.OPENROUTER_CV_QUALITY_PROOFREAD_PRESET
+                    or cls.OPENROUTER_CV_QUALITY_PRESET
+                    or ""
+                ).strip()
             elif operation_type == "parse_cv":
                 preset = (cls.OPENROUTER_PARSING_PRESET or "").strip()
             elif operation_type == "extract_job_description":

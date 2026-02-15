@@ -130,9 +130,6 @@ def log_ai_usage(
         db.commit()
         db.refresh(usage_log)
 
-        logger.debug(
-            f"AI usage: {operation_type} {total_tokens} tok ${estimated_cost:.2f}"
-        )
         return usage_log
 
     except Exception as e:

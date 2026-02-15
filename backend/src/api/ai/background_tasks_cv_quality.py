@@ -72,10 +72,6 @@ def cv_quality_analysis_sync(
 
     except Exception as e:
         # Update error state (no stack trace; common.py already logs user-friendly message)
-        logger.error(
-            f"CV quality analysis failed - analysis_id={analysis_id}: {str(e)}",
-        )
-
         try:
             db.rollback()  # Always rollback first before querying
             analysis = (

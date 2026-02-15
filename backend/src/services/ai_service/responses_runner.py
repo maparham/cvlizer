@@ -37,6 +37,33 @@ def _extract_output_text(response: Any) -> Optional[str]:
     return content
 
 
+def _process_structured_response(
+    response: Any,
+    response_schema: Type[BaseModel],
+    operation_type: str,
+    extract_cached_tokens_fn: Callable[[Any], int],
+) -> Tuple[Dict[str, Any], int, int, int]:
+    """
+    Extract text from a Responses API response, parse JSON, validate against
+    schema, and return parsed data plus token counts. Shared by prompt_ref and
+    text_format_schema branches.
+    """
+    output_text = _extract_output_text(response)
+    if not output_text:
+        raise RuntimeError("No text output in model response")
+    raw_content = parse_json_from_markdown(output_text)
+    validated = validate_with_schema(raw_content, response_schema, operation_type)
+    if validated is None:
+        raise RuntimeError(
+            "Model output did not match expected schema; check logs for details"
+        )
+    parsed_data = validated.model_dump()
+    prompt_tokens = response.usage.input_tokens
+    completion_tokens = response.usage.output_tokens
+    cached_tokens = extract_cached_tokens_fn(response)
+    return parsed_data, prompt_tokens, completion_tokens, cached_tokens
+
+
 def _log_prompts(
     *,
     use_prompt_ref: bool,
@@ -154,28 +181,24 @@ async def run_openai_call(
                             )
                             raise RuntimeError(msg)
 
-        output_text = _extract_output_text(response)
-        if not output_text:
-            raise RuntimeError("No text output in model response")
-        raw_content = parse_json_from_markdown(output_text)
-        validated = validate_with_schema(raw_content, response_schema, operation_type)
-        if validated is None:
-            raise RuntimeError(
-                "Model output did not match expected schema; check logs for details"
-            )
-        parsed_data = validated.model_dump()
-        prompt_tokens = response.usage.input_tokens
-        completion_tokens = response.usage.output_tokens
-        cached_tokens = extract_cached_tokens_fn(response)
-    else:
-        # Branch: inline system + user prompt; use responses.parse
+        (
+            parsed_data,
+            prompt_tokens,
+            completion_tokens,
+            cached_tokens,
+        ) = _process_structured_response(
+            response, response_schema, operation_type, extract_cached_tokens_fn
+        )
+    elif text_format_schema:
+        # Branch: inline with schema (e.g. CV quality); use responses.create with
+        # input + text.format so the same cv_review_v2 schema is used as preset modes.
         call_kwargs: Dict[str, Any] = {
             "model": model,
             "input": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            "text_format": response_schema,
+            "text": {"format": text_format_schema},
             "max_output_tokens": AIConfig.MAX_COMPLETION_TOKENS,
         }
         if AIConfig.AGENT_PROCESSING_TIER:
@@ -187,8 +210,68 @@ async def run_openai_call(
             call_kwargs["reasoning"] = Reasoning(**reasoning_kw)
         else:
             call_kwargs["temperature"] = AIConfig.AI_REASONING_TEMPERATURE
-        if text_verbosity:
-            call_kwargs["text"] = {"verbosity": text_verbosity}
+        seed = get_seed_for_operation(operation_type)
+        if seed is not None:
+            call_kwargs["seed"] = seed
+
+        async def _call_create_inline():
+            return await asyncio.to_thread(
+                client.responses.create,
+                **call_kwargs,
+            )
+
+        response = await with_retries_fn(
+            _call_create_inline, attempts=retry_attempts, delay=retry_delay
+        )
+        generation_time = int((time.time() - start_time) * 1000)
+
+        if getattr(response, "status", None) == "incomplete":
+            detail = getattr(
+                getattr(response, "incomplete_details", None), "reason", None
+            )
+            raise RuntimeError(f"Model response incomplete: {detail or 'unknown reason'}")
+
+        if hasattr(response, "output") and response.output:
+            for item in response.output:
+                if getattr(item, "content", None):
+                    contents = (
+                        item.content if isinstance(item.content, list) else [item.content]
+                    )
+                    for c in contents:
+                        if getattr(c, "type", None) == "refusal":
+                            msg = (
+                                getattr(c, "refusal", None) or "Model refused the request"
+                            )
+                            raise RuntimeError(msg)
+
+        (
+            parsed_data,
+            prompt_tokens,
+            completion_tokens,
+            cached_tokens,
+        ) = _process_structured_response(
+            response, response_schema, operation_type, extract_cached_tokens_fn
+        )
+    else:
+        # Branch: inline system + user prompt; use responses.parse
+        call_kwargs = {
+            "model": model,
+            "input": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "text_format": response_schema,
+            "max_output_tokens": AIConfig.MAX_COMPLETION_TOKENS,
+        }
+        if AIConfig.AGENT_PROCESSING_TIER:
+            call_kwargs["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
+        if use_reasoning:
+            reasoning_kw = {"effort": reasoning_effort}
+            if reasoning_summary:
+                reasoning_kw["summary"] = reasoning_summary
+            call_kwargs["reasoning"] = Reasoning(**reasoning_kw)
+        else:
+            call_kwargs["temperature"] = AIConfig.AI_REASONING_TEMPERATURE
         seed = get_seed_for_operation(operation_type)
         if seed is not None:
             call_kwargs["seed"] = seed

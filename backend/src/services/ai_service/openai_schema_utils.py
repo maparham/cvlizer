@@ -1,90 +1,20 @@
 """
 OpenAI Responses API JSON schema utilities.
 
-These helpers normalize Pydantic-generated JSON schemas into a shape that is
-compatible with the OpenAI Responses API structured output requirements.
+Provides CV_CORRECTIONS_COACHING_FORMAT: the JSON schema used for CV quality
+analysis (proofread and coaching modes) structured output.
 """
 
-from typing import Any, Dict, Type
-
-from pydantic import BaseModel
+from typing import Any, Dict
 
 
-def normalize_schema_for_openai(schema: Any) -> Any:
-    """
-    Recursively normalize JSON schema for OpenAI Responses API structured output.
-
-    Adjustments:
-    - Set ``additionalProperties: false`` on all object types.
-    - Ensure ``required`` includes every key in ``properties`` (the API expects
-      all declared properties to be listed as required).
-    - Strip keywords alongside ``$ref`` (the API disallows extra fields such as
-      ``description`` next to ``$ref``).
-    """
-    if not isinstance(schema, dict):
-        return schema
-
-    out = dict(schema)
-
-    # Refs must be alone: no other keywords (e.g. description) alongside $ref.
-    if "$ref" in out and len(out) > 1:
-        return {"$ref": out["$ref"]}
-
-    if out.get("type") == "object":
-        out["additionalProperties"] = False
-        if "properties" in out:
-            prop_keys = list(out["properties"].keys())
-            existing_required = set(out.get("required") or [])
-            out["required"] = sorted(existing_required | set(prop_keys))
-
-    if "properties" in out:
-        out["properties"] = {
-            key: normalize_schema_for_openai(value)
-            for key, value in out["properties"].items()
-        }
-
-    if "items" in out:
-        out["items"] = normalize_schema_for_openai(out["items"])
-
-    for key in ("oneOf", "anyOf", "allOf"):
-        if key in out and isinstance(out[key], list):
-            out[key] = [normalize_schema_for_openai(value) for value in out[key]]
-
-    if "$defs" in out:
-        out["$defs"] = {
-            key: normalize_schema_for_openai(value) for key, value in out["$defs"].items()
-        }
-
-    return out
-
-
-def build_cv_corrections_format(response_schema: Type[BaseModel]) -> Dict[str, Any]:
-    """
-    Build Responses API ``text.format`` payload for CV corrections JSON schema.
-
-    This wraps the normalized Pydantic schema in the structure expected by the
-    Responses API when using JSON schema based output formatting.
-    """
-    schema = response_schema.model_json_schema()
-    schema = normalize_schema_for_openai(schema)
-    return {
-        "type": "json_schema",
-        "name": "cv_corrections",
-        "schema": schema,
-        "strict": True,
-    }
-
-
-# Custom JSON schema for CV quality coaching mode (prompt-by-ID).
-# cv_review_v2: single issues array with nested coaching; transformed to legacy shape downstream.
+# JSON schema for CV quality analysis (proofread + coaching modes).
+# Wrapper adds type for Responses API; inner schema matches cv_review_v2 spec.
 CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
     "type": "json_schema",
     "name": "cv_review_v2",
     "strict": True,
-    "description": (
-        "Structured CV review output with minimal-diff editing "
-        "and severity-based issues."
-    ),
+    "description": "Structured CV review output with minimal-diff editing and severity-based issues.",
     "schema": {
         "$defs": {
             "CoachingQuestion": {
@@ -144,24 +74,16 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                     },
                     "item_id": {
                         "type": ["string", "null"],
-                        "description": (
-                            "ID from CV data for work_experience, education, etc. "
-                            "Null for singular sections like personal_info."
-                        ),
+                        "description": "ID from CV data for work_experience, education, etc. Null for singular sections like personal_info.",
                     },
                     "field_path": {
                         "type": "string",
-                        "description": (
-                            "Dot notation path to specific field, e.g., "
-                            "'personal_info.description' or 'work_experience[2].position'"
-                        ),
+                        "description": "Dot notation path to specific field, e.g., 'personal_info.description' or 'work_experience[2].position'",
                     },
                     "issue_severity": {
                         "type": "string",
                         "enum": ["critical", "major", "minor"],
-                        "description": (
-                            "critical: 0-25 score, major: 26-49, minor: 50-74"
-                        ),
+                        "description": "critical: 0-25 score, major: 26-49, minor: 50-74",
                     },
                     "issue_category": {
                         "type": "string",
@@ -183,27 +105,18 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                         "type": "integer",
                         "minimum": 0,
                         "maximum": 100,
-                        "description": (
-                            "Score for this specific field. Must be <50 to be "
-                            "included as issue. Must align with severity: "
-                            "critical=0-25, major=26-49, minor=50-74."
-                        ),
+                        "description": "Score for this specific field. Must be <50 to be included as issue. Must align with severity: critical=0-25, major=26-49, minor=50-74.",
                     },
                     "reasoning": {
                         "type": "string",
                         "minLength": 15,
                         "maxLength": 80,
-                        "description": (
-                            "Complete sentence explaining the issue within 80 chars. "
-                            "Format: 'Contains/Missing [X]; [impact]'"
-                        ),
+                        "description": "Complete sentence explaining the issue within 80 chars. Format: 'Contains/Missing [X]; [impact]'",
                     },
                     "html_diff": {
                         "type": ["string", "null"],
                         "maxLength": 2000,
-                        "description": (
-                            "HTML diff showing corrections using <del> and <ins>."
-                        ),
+                        "description": "HTML diff showing corrections using <del> and <ins>.",
                     },
                     "coaching": {"$ref": "#/$defs/Coaching"},
                 },
@@ -225,23 +138,17 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                 "properties": {
                     "skill": {
                         "type": "string",
-                        "description": ("Corrected or suggested skill name"),
+                        "description": "Corrected or suggested skill name",
                     },
                     "reasoning": {
                         "type": "string",
                         "minLength": 10,
                         "maxLength": 150,
-                        "description": (
-                            "Why this skill is included (correction reason or "
-                            "relevance to experience)"
-                        ),
+                        "description": "Why this skill is included (correction reason or relevance to experience)",
                     },
                     "original": {
                         "type": ["string", "null"],
-                        "description": (
-                            "Exact string from the CV when correcting (typo/rephrase); "
-                            "null for new suggestions. Required so the UI can replace correctly."
-                        ),
+                        "description": "Exact string from the CV when correcting (typo/rephrase); null for new suggestions. Required so the UI can replace correctly.",
                     },
                 },
                 "required": ["skill", "reasoning", "original"],
@@ -254,15 +161,13 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                         "type": "array",
                         "maxItems": 50,
                         "items": {"$ref": "#/$defs/Skill"},
-                        "description": (
-                            "Corrected existing skills + up to 7 new suggestions"
-                        ),
+                        "description": "Corrected existing skills + up to 7 new suggestions",
                     },
                     "soft": {
                         "type": "array",
                         "maxItems": 20,
                         "items": {"$ref": "#/$defs/Skill"},
-                        "description": ("Up to 5 new soft skill suggestions"),
+                        "description": "Up to 5 new soft skill suggestions",
                     },
                 },
                 "required": ["technical", "soft"],
@@ -275,27 +180,15 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 100,
-                "description": (
-                    "Weighted average of all CV sections. No flagged issues = 100."
-                ),
+                "description": "Weighted average of all CV sections. No flagged issues = 100.",
             },
             "issues": {
                 "type": "array",
                 "items": {"$ref": "#/$defs/Issue"},
-                "description": (
-                    "Only sections/fields with quality_score <50. Issues with "
-                    "html_diff set must have quality_score null or >=50. Use "
-                    "item_type "
-                    "'professional_summary' and field_path 'professional_summary' "
-                    "for summary feedback. Empty array if CV has no issues."
-                ),
+                "description": "Only sections/fields with quality_score <50. Issues with html_diff set must have quality_score null or >=50. Use item_type 'professional_summary' and field_path 'professional_summary' for summary feedback. Empty array if CV has no issues.",
             },
             "skills": {"$ref": "#/$defs/Skills"},
         },
-        "required": [
-            "overall_quality_score",
-            "issues",
-            "skills",
-        ],
+        "required": ["overall_quality_score", "issues", "skills"],
     },
 }

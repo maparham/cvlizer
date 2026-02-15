@@ -28,17 +28,17 @@ logger = logging.getLogger(__name__)
 
 
 def _cv_quality_prompt_ref(correction_mode: str) -> Dict[str, Any]:
-    """Build prompt_ref for CV quality (id + version only when set). Coach mode uses coach prompt ID."""
+    """Build prompt_ref for CV quality (id + version). Uses OpenAI provider-prefixed vars."""
     is_coach = correction_mode == "coaching"
     prompt_id = (
-        AIConfig.CV_QUALITY_COACH_PROMPT_ID.strip()
+        (AIConfig.OPENAI_CV_QUALITY_COACH_PROMPT_ID or "").strip()
         if is_coach
-        else AIConfig.CV_QUALITY_PROMPT_ID.strip()
+        else (AIConfig.OPENAI_CV_QUALITY_PROMPT_ID or "").strip()
     )
     version_str = (
-        (AIConfig.CV_QUALITY_COACH_PROMPT_VERSION or "").strip()
+        (AIConfig.OPENAI_CV_QUALITY_COACH_PROMPT_VERSION or "").strip()
         if is_coach
-        else (AIConfig.CV_QUALITY_PROMPT_VERSION or "").strip()
+        else (AIConfig.OPENAI_CV_QUALITY_PROMPT_VERSION or "").strip()
     )
     ref: Dict[str, Any] = {"id": prompt_id}
     if version_str:
@@ -114,14 +114,16 @@ async def generate_cv_corrections_and_feedback(
     is_coach = correction_mode == "coaching"
     # Prompt-by-ID (dashboard prompts) is OpenAI-only; OpenRouter uses presets or inline.
     prompt_id_for_mode = (
-        AIConfig.CV_QUALITY_COACH_PROMPT_ID if is_coach else AIConfig.CV_QUALITY_PROMPT_ID
+        AIConfig.OPENAI_CV_QUALITY_COACH_PROMPT_ID
+        if is_coach
+        else AIConfig.OPENAI_CV_QUALITY_PROMPT_ID
     )
     use_openai_prompt_id = AIConfig.AI_PROVIDER == "openai" and bool(
         prompt_id_for_mode and prompt_id_for_mode.strip()
     )
-    # OpenRouter preset: get_model_for_operation returns preset; runner sends only user message.
+    openrouter_preset = AIConfig.get_cv_quality_preset(is_coach)
     use_openrouter_preset = AIConfig.AI_PROVIDER == "openrouter" and bool(
-        (AIConfig.OPENROUTER_CV_QUALITY_PRESET or "").strip()
+        openrouter_preset
     )
 
     try:
@@ -142,6 +144,7 @@ async def generate_cv_corrections_and_feedback(
                 system_prompt="",
                 user_prompt=prompt,
                 response_schema=response_schema,
+                model=openrouter_preset,
                 user_id=user_id,
                 cv_id=cv_id,
                 operation_type="cv_quality_analysis",
@@ -182,5 +185,4 @@ async def generate_cv_corrections_and_feedback(
         return response, metadata
 
     except Exception as e:
-        logger.error(f"Failed to generate CV corrections and feedback: {str(e)}")
         raise RuntimeError(f"CV corrections and feedback failed: {str(e)}")
