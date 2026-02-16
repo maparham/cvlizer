@@ -16,13 +16,14 @@
  * - Dismiss confirmation dialog
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Typography,
   Paper,
   Tooltip,
   IconButton,
+  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -34,6 +35,9 @@ import InfoIcon from '@mui/icons-material/Info';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import ReplayIcon from '@mui/icons-material/Replay';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { SemanticDiff } from './SemanticDiff';
 import { SuggestionPaper } from './SuggestionPaper';
 import { ContentDisplayBox } from './ContentDisplayBox';
@@ -62,6 +66,22 @@ export interface CompactSuggestionCardProps {
   importance?: 'highly_recommended' | 'standard';
   /** Whether to wrap content in ContentDisplayBox (default: true for 'default' variant) */
   showContentBox?: boolean;
+  /** Optional: callback for retry (single-field coaching); when set, shows retry icon */
+  onRetry?: () => void | Promise<void>;
+  /** Optional: callback for back (revisit older generation); when set and canGoBack, shows back icon */
+  onBack?: () => void;
+  /** When true and onBack is set, back icon is enabled (there is an older generation to show) */
+  canGoBack?: boolean;
+  /** Optional: callback for forward (newer generation); when set, shows forward icon (disabled when !canGoForward) */
+  onForward?: () => void;
+  /** When true, forward icon is enabled; when false, forward icon is disabled */
+  canGoForward?: boolean;
+  /** 1-based draft index (e.g. 1, 2, 3) shown between arrows */
+  draftIndex?: number;
+  /** Total number of draft versions */
+  draftTotal?: number;
+  /** When true, retry button is disabled and shows a loading indicator */
+  isRetrying?: boolean;
 }
 
 /**
@@ -85,8 +105,31 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
   variant = 'default',
   importance = 'standard',
   showContentBox,
+  onRetry,
+  onBack,
+  canGoBack = false,
+  onForward,
+  canGoForward = false,
+  draftIndex,
+  draftTotal,
+  isRetrying = false,
 }) => {
   const [dismissDialogOpen, setDismissDialogOpen] = useState(false);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && canGoBack && onBack) {
+        e.preventDefault();
+        e.stopPropagation();
+        onBack();
+      } else if (e.key === 'ArrowRight' && canGoForward && onForward) {
+        e.preventDefault();
+        e.stopPropagation();
+        onForward();
+      }
+    },
+    [canGoBack, canGoForward, onBack, onForward]
+  );
 
   // Default showContentBox based on variant
   const shouldShowContentBox = showContentBox ?? (variant === 'default');
@@ -131,6 +174,81 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
           >
             <HelpOutlineIcon sx={{ fontSize: 16 }} />
           </IconButton>
+        </Tooltip>
+      )}
+
+      {onBack && (
+        <Tooltip title="Previous generation (←)">
+          <span>
+            <IconButton
+              size="small"
+              onClick={() => onBack()}
+              disabled={!canGoBack}
+              sx={{
+                p: 0.25,
+                color: 'text.secondary',
+                '&:hover': { backgroundColor: 'action.hover' },
+              }}
+            >
+              <ChevronLeftIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+      )}
+
+      {draftIndex != null && draftTotal != null && draftTotal > 1 && (
+        <Typography
+          variant="caption"
+          sx={{
+            px: 0.5,
+            alignSelf: 'center',
+            color: 'text.secondary',
+            fontSize: '0.7rem',
+          }}
+        >
+          {draftIndex}/{draftTotal}
+        </Typography>
+      )}
+
+      {onForward && (
+        <Tooltip title="Next generation (→)">
+          <span>
+            <IconButton
+              size="small"
+              onClick={() => onForward()}
+              disabled={!canGoForward}
+              sx={{
+                p: 0.25,
+                color: 'text.secondary',
+                '&:hover': { backgroundColor: 'action.hover' },
+              }}
+            >
+              <ChevronRightIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+      )}
+
+      {onRetry && (
+        <Tooltip title="Regenerate suggestion">
+          <span>
+            <IconButton
+              size="small"
+              onClick={() => onRetry()}
+              disabled={isRetrying}
+              sx={{
+                p: 0.25,
+                color: 'primary.main',
+                '&:hover': { backgroundColor: 'primary.light', color: 'primary.dark' },
+              }}
+            >
+              {isRetrying ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <ReplayIcon sx={{ fontSize: 16 }} />
+              )}
+            </IconButton>
+          </span>
         </Tooltip>
       )}
 
@@ -258,7 +376,11 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
           borderRadius: 1,
         }}
       >
-        <Box sx={{ position: 'relative' }}>
+        <Box
+          sx={{ position: 'relative', outline: 'none' }}
+          tabIndex={onBack || onForward ? 0 : undefined}
+          onKeyDown={handleKeyDown}
+        >
           {ActionIcons}
           {Content}
         </Box>
@@ -270,7 +392,11 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
   // Default variant uses SuggestionPaper
   return (
     <SuggestionPaper>
-      <Box sx={{ position: 'relative' }}>
+      <Box
+        sx={{ position: 'relative', outline: 'none' }}
+        tabIndex={onBack || onForward ? 0 : undefined}
+        onKeyDown={handleKeyDown}
+      >
         {ActionIcons}
         {Content}
       </Box>

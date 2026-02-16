@@ -29,6 +29,7 @@ import { LowQualityItem, WritingCorrection, FieldCorrection } from "../../../typ
 import { UnifiedQualitySuggestion } from "../ai/UnifiedQualitySuggestion";
 import { InlineFieldCorrection } from "../ai/InlineFieldCorrection";
 import { useFieldCorrections } from "./hooks/useFieldCorrections";
+import { useItemDescriptionDraftHistory } from "./hooks/useItemDescriptionDraftHistory";
 import { useSectionSuggestions } from "./hooks/useSectionSuggestions";
 import { useSectionHandlers } from "./hooks/useSectionHandlers";
 import { useFormHandlers } from "./hooks/useFormHandlers";
@@ -210,6 +211,7 @@ const WorkExperienceDisplay: React.FC<{
   handleApplyWritingCorrection: (correction: WritingCorrection) => void;
   handleDismissWritingCorrection: (correction: WritingCorrection) => void;
   handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void;
+  cvId?: string;
 }> = ({
   exp,
   index: _index,
@@ -225,6 +227,7 @@ const WorkExperienceDisplay: React.FC<{
   handleApplyWritingCorrection,
   handleDismissWritingCorrection,
   handleApplyAll,
+  cvId,
 }) => {
   const suggestion = suggestionsByItemId.get(exp.id);
   const qualitySuggestion = qualitySuggestionsByItemId.get(exp.id);
@@ -232,7 +235,7 @@ const WorkExperienceDisplay: React.FC<{
   const writingCorrections = writingCorrectionsByItemId.get(exp.id) || [];
 
   // Extract field-specific corrections using unified hook
-  const { fieldCorrectionProps, descriptionCorrection } = useFieldCorrections(
+  const { fieldCorrectionProps, descriptionCorrection: rawDescriptionCorrection } = useFieldCorrections(
     exp.id,
     writingCorrections,
     [
@@ -245,6 +248,15 @@ const WorkExperienceDisplay: React.FC<{
     (_, parent) => handleApplyWritingCorrection(parent),
     handleDismissWritingCorrection
   );
+
+  const draftHistory = useItemDescriptionDraftHistory({
+    cvId,
+    itemId: exp.id,
+    section: "work_experience",
+    descriptionCorrection: rawDescriptionCorrection,
+    formFieldName: "description",
+  });
+  const descriptionCorrection = draftHistory.descriptionCorrection;
 
   return (
     <>
@@ -352,7 +364,6 @@ const WorkExperienceDisplay: React.FC<{
               htmlDiffCorrection={descriptionCorrection}
               importance={descriptionCorrection.correction.importance}
               reasoning={(() => {
-                // Get reasoning from the description FieldCorrection
                 const descFieldCorrection = descriptionCorrection.correction.field_corrections?.find(
                   fc => fc.field_name === 'description'
                 );
@@ -360,6 +371,14 @@ const WorkExperienceDisplay: React.FC<{
               })()}
               onApply={() => handleApplyWritingCorrection(descriptionCorrection.correction)}
               onDismiss={() => handleDismissWritingCorrection(descriptionCorrection.correction)}
+              onRetry={draftHistory.onRetry}
+              onBack={draftHistory.onBack}
+              canGoBack={draftHistory.canGoBack}
+              onForward={draftHistory.onForward}
+              canGoForward={draftHistory.canGoForward}
+              draftIndex={draftHistory.draftIndex}
+              draftTotal={draftHistory.draftTotal}
+              isRetrying={draftHistory.isRetrying}
             />
           )}
         </Box>
@@ -539,6 +558,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
               showSuccess("Writing correction dismissed");
             }}
             handleApplyAll={handleApplyAll}
+            cvId={cvId}
           />
         );
       };
@@ -546,6 +566,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
       return <WorkExperienceDisplayWrapper exp={exp} index={index} />;
     },
     [
+      cvId,
       suggestionsByItemId,
       qualitySuggestionsByItemId,
       coachingByItemId,

@@ -9,7 +9,13 @@ import {
   CVQualityAnalysisResponse,
   CVQualityAnalysisCreateResponse,
   CVQualityAnalysisData,
+  Issue,
 } from '../../types/ai';
+
+export interface FieldRetryResponse {
+  issue: Issue;
+  list_for_field: Issue[];
+}
 
 export type CorrectionMode = 'proofread' | 'coaching';
 
@@ -85,5 +91,21 @@ export const cvQualityService = {
    */
   async deleteAllQualityAnalyses(cvId: string): Promise<void> {
     await api.delete(`/api/cvs/${cvId}/quality-analysis/all`);
+  },
+
+  /**
+   * Run single-field coaching for one description field (retry). Appends to draft history.
+   */
+  async requestFieldRetry(
+    cvId: string,
+    analysisId: string,
+    fieldPath: string,
+    itemId?: string
+  ): Promise<FieldRetryResponse> {
+    const response = await api.post(
+      `/api/cvs/${cvId}/quality-analysis/field-retry`,
+      { analysis_id: analysisId, field_path: fieldPath, item_id: itemId ?? null }
+    );
+    return response.data;
   },
 };

@@ -71,6 +71,7 @@ class AIService {
   updateQualityAnalysis = cvQualityService.updateQualityAnalysis.bind(cvQualityService);
   deleteQualityAnalysis = cvQualityService.deleteQualityAnalysis.bind(cvQualityService);
   deleteAllQualityAnalyses = cvQualityService.deleteAllQualityAnalyses.bind(cvQualityService);
+  requestFieldRetry = cvQualityService.requestFieldRetry.bind(cvQualityService);
 
   // Writing Corrections
   applyWritingCorrection = writingCorrectionsService.applyWritingCorrection.bind(writingCorrectionsService);
@@ -116,6 +117,7 @@ export const {
   updateQualityAnalysis,
   deleteQualityAnalysis,
   deleteAllQualityAnalyses,
+  requestFieldRetry,
   applyWritingCorrection,
   applyWritingCorrectionsBatch,
   checkAIFeatureStatus,

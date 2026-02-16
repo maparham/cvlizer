@@ -5,7 +5,7 @@ Defines strict validation for all quality analysis data structures.
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -215,6 +215,22 @@ class CVQualityAnalysisResponseSchemaV2(BaseModel):
         default_factory=SkillsSuggestionsSchema,
     )
     timeline_gaps: List[TimelineGapSchema] = Field(default_factory=list)
+    # Per-field draft history for retry (length capped by CV_QUALITY_MAX_DRAFT_HISTORY, default 3)
+    field_draft_histories: Optional[Dict[str, List[IssueSchema]]] = Field(
+        default=None,
+        description="Keyed by draft history key; each value is a list of issues (newest first), length capped by config",
+    )
+    # Mode used to generate this analysis; only 'coaching' enables regenerate/history in UI
+    correction_mode: Optional[str] = Field(
+        default=None,
+        description="'proofread' or 'coaching'; frontend gates retry/history on coaching",
+    )
+
+
+class SingleIssueResponseSchema(BaseModel):
+    """Response schema for single-field coaching (field retry). One issue only."""
+
+    issue: IssueSchema
 
 
 # ============================================================================
@@ -295,4 +311,33 @@ class WritingCorrectionBatchApplyRequest(BaseModel):
     analysis_id: str = Field(description="Quality analysis ID containing the corrections")
     correction_ids: List[str] = Field(
         min_length=1, description="List of correction IDs to apply"
+    )
+
+
+# ============================================================================
+# Field retry (single-field coaching)
+# ============================================================================
+
+
+class FieldRetryRequestSchema(BaseModel):
+    """Request schema for field retry (single-field coaching)."""
+
+    analysis_id: str = Field(description="Quality analysis ID to attach the new issue to")
+    field_path: str = Field(
+        description="Field path e.g. professional_summary, personal_info.description, "
+        "work_experience.<id>.description, education.<id>.description"
+    )
+    item_id: Optional[str] = Field(
+        default=None,
+        description="Item ID for work_experience or education list items",
+    )
+
+
+class FieldRetryResponseSchema(BaseModel):
+    """Response schema for field retry. Returns new issue and updated list for that field."""
+
+    issue: IssueSchema = Field(description="The new issue from single-field coaching")
+    list_for_field: List[IssueSchema] = Field(
+        default_factory=list,
+        description="Updated list of issues for this field (newest first), length capped by CV_QUALITY_MAX_DRAFT_HISTORY",
     )

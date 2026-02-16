@@ -1,15 +1,136 @@
 """
 OpenAI Responses API JSON schema utilities.
 
-Provides CV_CORRECTIONS_COACHING_FORMAT: the JSON schema used for CV quality
-analysis (proofread and coaching modes) structured output.
+Provides CV_CORRECTIONS_COACHING_FORMAT (full CV quality analysis) and
+SINGLE_ISSUE_RESPONSE_FORMAT (single-field coaching / field retry).
+Shared defs (CoachingQuestion, Coaching, Issue) are defined once and reused.
 """
 
 from typing import Any, Dict
 
+# Shared $defs used by both full coaching and single-issue schemas.
+# Issue: quality_score and coaching are optional (type ["integer","null"]) so single-field
+# can omit them. Full-analysis (CV_CORRECTIONS_COACHING_FORMAT) must set quality_score
+# for each issue; single-field (SINGLE_ISSUE_RESPONSE_FORMAT) may set null.
+SHARED_ISSUE_DEFS: Dict[str, Any] = {
+    "CoachingQuestion": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "question": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 200,
+            },
+        },
+        "required": ["question"],
+    },
+    "Coaching": {
+        "anyOf": [
+            {"type": "null"},
+            {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "coaching_questions": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 3,
+                        "items": {"$ref": "#/$defs/CoachingQuestion"},
+                    },
+                    "direct_prompts": {
+                        "type": "array",
+                        "minItems": 0,
+                        "maxItems": 2,
+                        "items": {"type": "string", "maxLength": 300},
+                    },
+                },
+                "required": ["coaching_questions", "direct_prompts"],
+            },
+        ],
+    },
+    "Issue": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "item_type": {
+                "type": "string",
+                "enum": [
+                    "personal_info",
+                    "professional_summary",
+                    "work_experience",
+                    "education",
+                    "skills",
+                    "certifications",
+                    "projects",
+                    "awards",
+                    "publications",
+                    "volunteer_experience",
+                ],
+            },
+            "item_id": {
+                "type": ["string", "null"],
+                "description": "ID from CV data for work_experience, education, etc. Null for singular sections like personal_info.",
+            },
+            "field_path": {
+                "type": "string",
+                "description": "Dot notation path to specific field, e.g., 'personal_info.description' or 'work_experience[2].position'",
+            },
+            "issue_severity": {
+                "type": "string",
+                "enum": ["critical", "major", "minor"],
+                "description": "critical: 0-25 score, major: 26-49, minor: 50-74",
+            },
+            "issue_category": {
+                "type": "string",
+                "enum": [
+                    "offensive_language",
+                    "discriminatory_content",
+                    "unprofessional_tone",
+                    "grammar_errors",
+                    "insufficient_content",
+                    "missing_impact",
+                    "missing_achievements",
+                    "lacks_specificity",
+                    "too_brief",
+                    "missing_context",
+                    "weak_action_verbs",
+                ],
+            },
+            "quality_score": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Score for this specific field. Must be <50 to be included as issue. Must align with severity: critical=0-25, major=26-49, minor=50-74.",
+            },
+            "reasoning": {
+                "type": "string",
+                "minLength": 15,
+                "maxLength": 80,
+                "description": "Complete sentence explaining the issue within 80 chars. Format: 'Contains/Missing [X]; [impact]'",
+            },
+            "html_diff": {
+                "type": ["string", "null"],
+                "maxLength": 2000,
+                "description": "HTML diff showing corrections using <del> and <ins>.",
+            },
+            "coaching": {"$ref": "#/$defs/Coaching"},
+        },
+        "required": [
+            "item_type",
+            "item_id",
+            "field_path",
+            "issue_severity",
+            "issue_category",
+            "quality_score",
+            "reasoning",
+            "html_diff",
+            "coaching",
+        ],
+    },
+}
 
-# JSON schema for CV quality analysis (proofread + coaching modes).
-# Wrapper adds type for Responses API; inner schema matches cv_review_v2 spec.
+# Full CV quality schema adds Skill and Skills defs and root with overall_quality_score, issues, skills.
 CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
     "type": "json_schema",
     "name": "cv_review_v2",
@@ -17,121 +138,7 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
     "description": "Structured CV review output with minimal-diff editing and severity-based issues.",
     "schema": {
         "$defs": {
-            "CoachingQuestion": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "question": {
-                        "type": "string",
-                        "minLength": 10,
-                        "maxLength": 200,
-                    },
-                },
-                "required": ["question"],
-            },
-            "Coaching": {
-                "anyOf": [
-                    {"type": "null"},
-                    {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "properties": {
-                            "coaching_questions": {
-                                "type": "array",
-                                "minItems": 1,
-                                "maxItems": 3,
-                                "items": {"$ref": "#/$defs/CoachingQuestion"},
-                            },
-                            "direct_prompts": {
-                                "type": "array",
-                                "minItems": 0,
-                                "maxItems": 2,
-                                "items": {"type": "string", "maxLength": 300},
-                            },
-                        },
-                        "required": ["coaching_questions", "direct_prompts"],
-                    },
-                ],
-            },
-            "Issue": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "item_type": {
-                        "type": "string",
-                        "enum": [
-                            "personal_info",
-                            "professional_summary",
-                            "work_experience",
-                            "education",
-                            "skills",
-                            "certifications",
-                            "projects",
-                            "awards",
-                            "publications",
-                            "volunteer_experience",
-                        ],
-                    },
-                    "item_id": {
-                        "type": ["string", "null"],
-                        "description": "ID from CV data for work_experience, education, etc. Null for singular sections like personal_info.",
-                    },
-                    "field_path": {
-                        "type": "string",
-                        "description": "Dot notation path to specific field, e.g., 'personal_info.description' or 'work_experience[2].position'",
-                    },
-                    "issue_severity": {
-                        "type": "string",
-                        "enum": ["critical", "major", "minor"],
-                        "description": "critical: 0-25 score, major: 26-49, minor: 50-74",
-                    },
-                    "issue_category": {
-                        "type": "string",
-                        "enum": [
-                            "offensive_language",
-                            "discriminatory_content",
-                            "unprofessional_tone",
-                            "grammar_errors",
-                            "insufficient_content",
-                            "missing_impact",
-                            "missing_achievements",
-                            "lacks_specificity",
-                            "too_brief",
-                            "missing_context",
-                            "weak_action_verbs",
-                        ],
-                    },
-                    "quality_score": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 100,
-                        "description": "Score for this specific field. Must be <50 to be included as issue. Must align with severity: critical=0-25, major=26-49, minor=50-74.",
-                    },
-                    "reasoning": {
-                        "type": "string",
-                        "minLength": 15,
-                        "maxLength": 80,
-                        "description": "Complete sentence explaining the issue within 80 chars. Format: 'Contains/Missing [X]; [impact]'",
-                    },
-                    "html_diff": {
-                        "type": ["string", "null"],
-                        "maxLength": 2000,
-                        "description": "HTML diff showing corrections using <del> and <ins>.",
-                    },
-                    "coaching": {"$ref": "#/$defs/Coaching"},
-                },
-                "required": [
-                    "item_type",
-                    "item_id",
-                    "field_path",
-                    "issue_severity",
-                    "issue_category",
-                    "quality_score",
-                    "reasoning",
-                    "html_diff",
-                    "coaching",
-                ],
-            },
+            **SHARED_ISSUE_DEFS,
             "Skill": {
                 "type": "object",
                 "additionalProperties": False,
@@ -190,5 +197,20 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
             "skills": {"$ref": "#/$defs/Skills"},
         },
         "required": ["overall_quality_score", "issues", "skills"],
+    },
+}
+
+# Single-field coaching (field retry): same Issue def, root is just one "issue".
+SINGLE_ISSUE_RESPONSE_FORMAT: Dict[str, Any] = {
+    "type": "json_schema",
+    "name": "single_field_issue",
+    "strict": True,
+    "description": "Single issue output for one description field coaching.",
+    "schema": {
+        "$defs": SHARED_ISSUE_DEFS,
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {"issue": {"$ref": "#/$defs/Issue"}},
+        "required": ["issue"],
     },
 }

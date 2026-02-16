@@ -88,6 +88,14 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     handleApplyFieldCorrection,
     handleDismissWritingCorrection,
     createWritingCorrectionHandler,
+    onRetry,
+    onBack,
+    canGoBack,
+    onForward,
+    canGoForward,
+    isRetrying,
+    draftIndex,
+    draftTotal,
   } = useSingleSectionWritingCorrections({
     cvId,
     sectionKeys: ["personal_info", "personal_info.description"],
@@ -484,6 +492,14 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         handleApplyFieldCorrection={handleApplyFieldCorrection}
         handleDismissWritingCorrection={handleDismissWritingCorrection}
         fieldName="description"
+        onRetry={onRetry}
+        onBack={onBack}
+        canGoBack={canGoBack}
+        onForward={onForward}
+        canGoForward={canGoForward}
+        draftIndex={draftIndex}
+        draftTotal={draftTotal}
+        isRetrying={isRetrying}
       />
       {personalInfoCoaching && (
         <CoachingQuestionsPanel coachingItem={personalInfoCoaching} />

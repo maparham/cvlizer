@@ -34,6 +34,22 @@ export interface DescriptionCorrectionBlockProps {
   handleDismissWritingCorrection: (correction: WritingCorrection) => void | Promise<void>;
   /** Field name used in API (e.g. "description" for personal_info, "content" or "description" for professional_summary) */
   fieldName: "description" | "content";
+  /** Optional: retry (single-field coaching) */
+  onRetry?: () => void | Promise<void>;
+  /** Optional: back (revisit older generation) */
+  onBack?: () => void;
+  /** When true and onBack set, back icon enabled */
+  canGoBack?: boolean;
+  /** Optional: forward (newer generation) */
+  onForward?: () => void;
+  /** When true and onForward set, forward icon enabled */
+  canGoForward?: boolean;
+  /** 1-based draft index (e.g. 1, 2, 3) shown between arrows */
+  draftIndex?: number;
+  /** Total number of draft versions */
+  draftTotal?: number;
+  /** When true, retry button is disabled and shows loading (pass through to InlineFieldCorrection) */
+  isRetrying?: boolean;
 }
 
 export const DescriptionCorrectionBlock: React.FC<DescriptionCorrectionBlockProps> = ({
@@ -41,6 +57,14 @@ export const DescriptionCorrectionBlock: React.FC<DescriptionCorrectionBlockProp
   handleApplyFieldCorrection,
   handleDismissWritingCorrection,
   fieldName,
+  onRetry,
+  onBack,
+  canGoBack = false,
+  onForward,
+  canGoForward = false,
+  draftIndex,
+  draftTotal,
+  isRetrying = false,
 }) => {
   if (!descriptionCorrection) return null;
 
@@ -67,6 +91,14 @@ export const DescriptionCorrectionBlock: React.FC<DescriptionCorrectionBlockProp
         onDismiss={() =>
           handleDismissWritingCorrection(descriptionCorrection.correction)
         }
+        onRetry={onRetry}
+        onBack={onBack}
+        canGoBack={canGoBack}
+        onForward={onForward}
+        canGoForward={canGoForward}
+        draftIndex={draftIndex}
+        draftTotal={draftTotal}
+        isRetrying={isRetrying}
       />
     </Box>
   );

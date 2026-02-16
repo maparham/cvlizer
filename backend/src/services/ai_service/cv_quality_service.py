@@ -177,6 +177,7 @@ async def generate_cv_corrections_and_feedback(
 
         timeline_gaps = analyze_timeline_gaps(cv_data)
         response["timeline_gaps"] = timeline_gaps
+        response["correction_mode"] = correction_mode
 
         response = CVQualityAnalysisResponseSchemaV2(**response).model_dump()
 

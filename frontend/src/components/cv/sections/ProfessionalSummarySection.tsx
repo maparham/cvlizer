@@ -56,6 +56,14 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
     handleApplyFieldCorrection,
     handleDismissWritingCorrection,
     createWritingCorrectionHandler,
+    onRetry,
+    onBack,
+    canGoBack,
+    onForward,
+    canGoForward,
+    isRetrying,
+    draftIndex,
+    draftTotal,
   } = useSingleSectionWritingCorrections({
     cvId,
     sectionKeys: ["professional_summary"],
@@ -363,6 +371,14 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
         handleApplyFieldCorrection={handleApplyFieldCorrection}
         handleDismissWritingCorrection={handleDismissWritingCorrection}
         fieldName="content"
+        onRetry={onRetry}
+        onBack={onBack}
+        canGoBack={canGoBack}
+        onForward={onForward}
+        canGoForward={canGoForward}
+        draftIndex={draftIndex}
+        draftTotal={draftTotal}
+        isRetrying={isRetrying}
       />
 
       {/* Coaching card when issue has coaching (reasoning in tooltip) */}

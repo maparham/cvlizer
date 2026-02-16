@@ -13,10 +13,58 @@ import { useNotificationStore } from '../packages/notifications/store';
 import {
   CVQualityAnalysisData,
   CVQualityAnalysisResponse,
+  Issue,
 } from '../types/ai';
+import { getDraftHistoryKey } from '../utils/cvQualityDraftHistoryKey';
+import {
+  bothAreDescriptionField,
+  isDescriptionFieldPath,
+} from '../utils/cvQualityFieldPaths';
 
 /** Skip overwriting with GET for this long after a dismiss to avoid ghost suggestion cards. */
 const DISMISS_COOLDOWN_MS = 3000;
+
+/**
+ * True if this issue should be removed when dismissing the given itemId/fieldPath.
+ * Matches by exact id+field_path, or by description field when both are description-type paths.
+ */
+function matchesWritingCorrection(
+  issue: Issue,
+  itemId: string,
+  fieldPath: string,
+  normalizedId: string | null
+): boolean {
+  if (!issue.html_diff) return false;
+  const idMatch =
+    (issue.item_id ?? '') === itemId ||
+    (normalizedId !== null && (issue.item_id ?? '') === normalizedId);
+  const exactMatch = idMatch && issue.field_path === fieldPath;
+  const descriptionFieldMatch =
+    idMatch && bothAreDescriptionField(issue.field_path ?? '', fieldPath);
+  const matchById = exactMatch || descriptionFieldMatch;
+  const matchBySection =
+    (issue.field_path ?? '') === fieldPath &&
+    itemId &&
+    (fieldPath === itemId || fieldPath.startsWith(itemId + '.'));
+  return matchById || matchBySection;
+}
+
+/**
+ * Returns updated field_draft_histories with the entry for this field/item removed when
+ * the field is a description field; otherwise returns current histories unchanged.
+ */
+function computeNextDraftHistories(
+  current: CVQualityAnalysisData,
+  fieldPath: string,
+  itemId: string
+): Record<string, Issue[]> {
+  const next = { ...(current.field_draft_histories ?? {}) };
+  if (isDescriptionFieldPath(fieldPath)) {
+    const draftHistoryKey = getDraftHistoryKey(fieldPath, itemId);
+    delete next[draftHistoryKey];
+  }
+  return next;
+}
 
 interface CVQualityStore {
   // State
@@ -37,6 +85,8 @@ interface CVQualityStore {
   ) => Promise<CVQualityAnalysisResponse>;
   loadLatestQualityAnalysis: (cvId: string, cvUpdatedAt?: string) => Promise<void>;
   setAnalysisLoading: (loading: boolean) => void;
+  /** Merge field draft history from field-retry response so UI updates without refetch. */
+  setFieldDraftHistory: (cvId: string, fieldPath: string, listForField: Issue[]) => void;
 
   // Helper (internal use only - not part of public API)
   _dismissItem: (
@@ -253,6 +303,21 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     set({ analysisLoading: loading });
   },
 
+  setFieldDraftHistory: (cvId: string, fieldPath: string, listForField: Issue[]) => {
+    const { currentCvId, qualityAnalysis } = get();
+    if (currentCvId !== cvId || !qualityAnalysis) return;
+    const nextHistories = {
+      ...(qualityAnalysis.field_draft_histories ?? {}),
+      [fieldPath]: listForField,
+    };
+    set({
+      qualityAnalysis: {
+        ...qualityAnalysis,
+        field_draft_histories: nextHistories,
+      },
+    });
+  },
+
   // Helper function to handle dismissal logic (DRY principle)
   // Executes the exact same logic as the original 6 dismiss functions
   _dismissItem: async (
@@ -306,6 +371,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
   // also remove issues whose field_path matches and starts with that section (for issues with no item_id).
   // When itemId is prefixed (work_<uuid>, edu_<uuid>), also match issue.item_id to the UUID so backend-stored issues are removed.
   // Same normalization (strip work_/edu_ prefix) must be kept in sync with backend quality_analysis_helpers._normalize_correction_id.
+  // Also clears field_draft_histories for the item's description so description correction cards close.
   dismissWritingCorrection: async (itemId: string, fieldPath: string) => {
     const normalizedId =
       itemId.startsWith('work_') && itemId.length > 5
@@ -313,22 +379,24 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
         : itemId.startsWith('edu_') && itemId.length > 4
           ? itemId.slice(4)
           : null;
+
     await get()._dismissItem(
-      (current) => ({
-        ...current,
-        issues: current.issues.filter((i) => {
-          if (!i.html_diff) return true;
-          const idMatch =
-            (i.item_id ?? '') === itemId ||
-            (normalizedId !== null && (i.item_id ?? '') === normalizedId);
-          const matchById = idMatch && i.field_path === fieldPath;
-          const matchBySection =
-            (i.field_path ?? '') === fieldPath &&
-            itemId &&
-            (fieldPath === itemId || fieldPath.startsWith(itemId + '.'));
-          return !matchById && !matchBySection;
-        }),
-      }),
+      (current) => {
+        const nextIssues = current.issues.filter(
+          (i) => !matchesWritingCorrection(i, itemId, fieldPath, normalizedId)
+        );
+        const nextHistories = computeNextDraftHistories(
+          current,
+          fieldPath,
+          itemId
+        );
+
+        return {
+          ...current,
+          issues: nextIssues,
+          field_draft_histories: nextHistories,
+        };
+      },
       'Failed to dismiss suggestion',
       'The suggestion could not be dismissed. Please try again.'
     );

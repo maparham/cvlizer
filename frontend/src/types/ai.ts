@@ -435,6 +435,10 @@ export interface CVQualityAnalysisData {
     soft: SkillQualitySuggestion[];
   };
   timeline_gaps: TimelineGap[];
+  /** Per-field draft history for retry (up to 3 generations per field, newest first). */
+  field_draft_histories?: Record<string, Issue[]>;
+  /** Mode used to generate this analysis; only 'coaching' enables regenerate. */
+  correction_mode?: 'proofread' | 'coaching';
 }
 
 /** @deprecated Use CVQualityAnalysisData; kept for normalizer/summary component. */

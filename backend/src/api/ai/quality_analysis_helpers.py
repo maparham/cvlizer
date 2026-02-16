@@ -6,7 +6,7 @@ Handles validation, loading, and parsing of CVs and quality analyses.
 """
 
 import logging
-from typing import Any, List
+from typing import Any, List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -142,6 +142,92 @@ def _synthetic_correction_from_issues(
         importance=importance,
         field_corrections=field_corrections,
     )
+
+
+def _is_work_experience_description_path(field_path: str) -> bool:
+    """True if field_path refers to a work_experience description (dot or bracket notation)."""
+    return field_path.startswith("work_experience") and field_path.endswith(
+        ".description"
+    )
+
+
+def _is_education_description_path(field_path: str) -> bool:
+    """True if field_path refers to an education description (dot or bracket notation)."""
+    return field_path.startswith("education") and field_path.endswith(".description")
+
+
+def get_draft_history_key(field_path: str, item_id: Optional[str]) -> str:
+    """
+    Return the field_draft_histories key for a given field_path and optional item_id.
+
+    For work_experience/education description fields (including bracket notation
+    e.g. work_experience[0].description), the key is work_experience.<item_id>.description
+    or education.<item_id>.description. Otherwise the key is field_path as-is.
+    """
+    if item_id and _is_work_experience_description_path(field_path):
+        return f"work_experience.{item_id}.description"
+    if item_id and _is_education_description_path(field_path):
+        return f"education.{item_id}.description"
+    return field_path
+
+
+def get_initial_draft_list_for_key(
+    existing_quality_data: dict,
+    key: str,
+    request_item_id: Optional[str],
+) -> List[dict]:
+    """
+    Resolve the initial draft list for a field when field_draft_histories is empty.
+
+    First retry: the original suggestion lives in issues, not field_draft_histories.
+    This finds the matching issue so history navigation shows on first retry.
+    AI may return field_path in various forms (e.g. work_experience.1.description,
+    work_experience[0].description); we match by item_id and description-field semantics.
+
+    Args:
+        existing_quality_data: quality_data dict (issues, field_draft_histories, etc.)
+        key: Draft history key (e.g. work_experience.<id>.description, professional_summary)
+        request_item_id: Item ID from the request (for work_experience/education)
+
+    Returns:
+        List of at most one issue dict (the one that matches this key), or empty list.
+    """
+
+    def _fp_matches_work_exp_desc(fp: str) -> bool:
+        return fp.startswith("work_experience") and fp.endswith(".description")
+
+    def _fp_matches_education_desc(fp: str) -> bool:
+        return fp.startswith("education") and fp.endswith(".description")
+
+    current_list: List[dict] = []
+    req_item_id = (request_item_id or "") or None
+    norm_req = _normalize_correction_id(req_item_id or "")
+    for i in existing_quality_data.get("issues") or []:
+        if not i.get("html_diff"):
+            continue
+        fp = i.get("field_path") or ""
+        iid = (i.get("item_id") or "") or None
+        norm_iid = _normalize_correction_id(iid or "")
+        if key == fp:
+            current_list = [dict(i)]
+            break
+        if key.startswith("work_experience.") and norm_iid == norm_req:
+            if _fp_matches_work_exp_desc(fp):
+                current_list = [dict(i)]
+                break
+        if key.startswith("education.") and norm_iid == norm_req:
+            if _fp_matches_education_desc(fp):
+                current_list = [dict(i)]
+                break
+        if key == "professional_summary" or key.startswith("professional_summary."):
+            if fp == "professional_summary" or fp.startswith("professional_summary."):
+                current_list = [dict(i)]
+                break
+        if key.startswith("personal_info."):
+            if fp == "personal_info.description" or fp.startswith("personal_info."):
+                current_list = [dict(i)]
+                break
+    return current_list
 
 
 def _normalize_correction_id(correction_id: str) -> str:

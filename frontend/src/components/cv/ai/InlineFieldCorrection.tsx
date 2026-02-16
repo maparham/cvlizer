@@ -24,6 +24,22 @@ interface InlineFieldCorrectionProps {
   onApply: () => void;
   /** Callback when dismiss is clicked */
   onDismiss: () => void;
+  /** Optional: retry (single-field coaching); when set, shows retry icon */
+  onRetry?: () => void | Promise<void>;
+  /** Optional: back (revisit older generation) */
+  onBack?: () => void;
+  /** When true and onBack set, back icon enabled */
+  canGoBack?: boolean;
+  /** Optional: forward (newer generation) */
+  onForward?: () => void;
+  /** When true and onForward set, forward icon enabled */
+  canGoForward?: boolean;
+  /** 1-based draft index (e.g. 1, 2, 3) shown between arrows */
+  draftIndex?: number;
+  /** Total number of draft versions */
+  draftTotal?: number;
+  /** When true, retry button is disabled and shows loading (pass through to CompactSuggestionCard) */
+  isRetrying?: boolean;
 }
 
 export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
@@ -33,6 +49,14 @@ export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
   reasoning,
   onApply,
   onDismiss,
+  onRetry,
+  onBack,
+  canGoBack = false,
+  onForward,
+  canGoForward = false,
+  draftIndex,
+  draftTotal,
+  isRetrying = false,
 }) => {
   // Determine which type of correction we have
   const hasFieldCorrection = !!fieldCorrection;
@@ -64,6 +88,14 @@ export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
       variant="importance"
       importance={importance}
       showContentBox={false}
+      onRetry={onRetry}
+      onBack={onBack}
+      canGoBack={canGoBack}
+      onForward={onForward}
+      canGoForward={canGoForward}
+      draftIndex={draftIndex}
+      draftTotal={draftTotal}
+      isRetrying={isRetrying}
     />
   );
 };

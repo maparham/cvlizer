@@ -21,9 +21,20 @@ from src.schemas.cv_quality_schemas import (
     CVQualityAnalysisCreateRequestSchema,
     CVQualityAnalysisCreateResponseSchema,
     CVQualityAnalysisUpdateSchema,
+    FieldRetryRequestSchema,
+    FieldRetryResponseSchema,
+    IssueSchema,
 )
 from src.services.cv_service import get_cv_by_id
+from src.services.ai_service.single_field_quality_service import (
+    generate_single_field_correction,
+    get_max_draft_history_per_field,
+)
 from .background_tasks_cv_quality import cv_quality_analysis_background
+from .quality_analysis_helpers import (
+    get_draft_history_key,
+    get_initial_draft_list_for_key,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -215,6 +226,107 @@ async def get_latest_cv_quality_analysis(
         return None  # No analysis exists yet
 
     return CVQualityAnalysisDBSchema.model_validate(analysis)
+
+
+@router.post(
+    "/cvs/{cv_id}/quality-analysis/field-retry", response_model=FieldRetryResponseSchema
+)
+async def field_retry(
+    cv_id: str,
+    request: FieldRetryRequestSchema,
+    user: User = Depends(get_effective_user),
+    db: Session = Depends(get_db),
+) -> FieldRetryResponseSchema:
+    """
+    Run single-field coaching for one description field and append to draft history.
+
+    Loads the analysis, runs the single-field prompt, prepends the new issue to
+    field_draft_histories[key] (key from get_draft_history_key; list capped by
+    get_max_draft_history_per_field(), configurable 1-10, default 3), saves,
+    and returns the new issue and updated list for that field.
+    """
+    cv = get_cv_by_id(db, cv_id, user.id)
+    if not cv or not cv.parsed_data:
+        raise HTTPException(status_code=404, detail="CV not found or not parsed")
+
+    analysis = (
+        db.query(CVQualityAnalysis)
+        .filter(
+            CVQualityAnalysis.id == request.analysis_id,
+            CVQualityAnalysis.cv_id == cv_id,
+            CVQualityAnalysis.user_id == user.id,
+        )
+        .first()
+    )
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    # Capture quality_data before the await: the AI call uses db_session and
+    # log_ai_usage commits, which expires session objects. The analysis row
+    # may also be deleted by a concurrent request. We re-query after the await.
+    analysis_id = request.analysis_id
+    existing = (analysis.quality_data or {}).copy()
+
+    try:
+        issue_dict, _ = await generate_single_field_correction(
+            cv_data=cv.parsed_data,
+            field_path=request.field_path,
+            item_id=request.item_id,
+            user_id=user.id,
+            cv_id=cv_id,
+            db_session=db,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Re-query analysis after await: session may have been committed (expiring
+    # the instance) and the row may have been deleted by another request.
+    analysis = (
+        db.query(CVQualityAnalysis)
+        .filter(
+            CVQualityAnalysis.id == analysis_id,
+            CVQualityAnalysis.cv_id == cv_id,
+            CVQualityAnalysis.user_id == user.id,
+        )
+        .first()
+    )
+    if not analysis:
+        raise HTTPException(
+            status_code=404,
+            detail="Analysis not found or was removed; please refresh and retry",
+        )
+
+    # Build a new dict so SQLAlchemy detects the JSON column change (in-place
+    # mutation of the same reference may not be persisted on reload).
+    histories = dict(existing.get("field_draft_histories") or {})
+    key = get_draft_history_key(request.field_path, request.item_id)
+    current_list = list(histories.get(key) or [])
+    if not current_list:
+        current_list = get_initial_draft_list_for_key(existing, key, request.item_id)
+
+    new_list = [issue_dict] + current_list
+    new_list = new_list[: get_max_draft_history_per_field()]
+    histories[key] = new_list
+    new_quality_data = {**existing, "field_draft_histories": histories}
+    analysis.quality_data = new_quality_data
+
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error(
+            f"Failed to save field_draft_histories: analysis_id={request.analysis_id}, error={str(e)}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save draft history",
+        )
+
+    return FieldRetryResponseSchema(
+        issue=IssueSchema.model_validate(issue_dict),
+        list_for_field=[IssueSchema.model_validate(x) for x in new_list],
+    )
 
 
 @router.get("/quality-analysis/{analysis_id}")

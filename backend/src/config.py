@@ -12,6 +12,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _parse_max_draft_history(value: str) -> int:
+    """Parse CV_QUALITY_MAX_DRAFT_HISTORY; default 3, clamped to 1-10."""
+    try:
+        parsed = int(value.strip())
+    except (ValueError, AttributeError):
+        return 3
+    return max(1, min(10, parsed))
+
+
 # ============================================================================
 # AI / OpenAI Configuration
 # ============================================================================
@@ -111,6 +121,11 @@ class AIConfig:
     # Defaults to "minimal" to reduce reasoning tokens and leave room for JSON output
     # Options: "minimal", "low", "medium", "high"
     CV_QUALITY_REASONING_EFFORT: str = os.getenv("CV_QUALITY_REASONING_EFFORT", "minimal")
+
+    # Max number of draft generations to keep per field (retry history). Range 1-10.
+    CV_QUALITY_MAX_DRAFT_HISTORY: int = _parse_max_draft_history(
+        os.getenv("CV_QUALITY_MAX_DRAFT_HISTORY", "3")
+    )
 
     # Temperature for all AI reasoning calls (where AI_REASONING_EFFORT is used).
     # Lower values (e.g. 0) give more consistent output.
