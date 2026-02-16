@@ -16,20 +16,28 @@ function normalizeItemId(itemId: string): string {
 }
 
 /**
- * True if fieldPath refers to a work_experience description field (dot or bracket notation).
+ * True if fieldPath refers to a work_experience description field.
+ * Accepts both dot notation (work_experience.<id>.description) and bracket
+ * notation (work_experience[0].description) to match backend AI output.
  */
 function isWorkExperienceDescriptionPath(fieldPath: string): boolean {
   return (
-    fieldPath.startsWith('work_experience') && fieldPath.endsWith('.description')
+    (fieldPath.startsWith('work_experience.') ||
+      fieldPath.startsWith('work_experience[')) &&
+    fieldPath.endsWith('.description')
   );
 }
 
 /**
- * True if fieldPath refers to an education description field (dot or bracket notation).
+ * True if fieldPath refers to an education description field.
+ * Accepts both dot notation (education.<id>.description) and bracket
+ * notation (education[0].description) to match backend AI output.
  */
 function isEducationDescriptionPath(fieldPath: string): boolean {
   return (
-    fieldPath.startsWith('education') && fieldPath.endsWith('.description')
+    (fieldPath.startsWith('education.') ||
+      fieldPath.startsWith('education[')) &&
+    fieldPath.endsWith('.description')
   );
 }
 

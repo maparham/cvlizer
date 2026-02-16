@@ -40,7 +40,8 @@ export function useDraftHistoryNavigation({
     isCoaching &&
     generationsListLength > 1 &&
     currentIndex < generationsListLength - 1;
-  const canGoForward = isCoaching && currentIndex > 0;
+  const canGoForward =
+    isCoaching && generationsListLength > 1 && currentIndex > 0;
 
   return {
     onBack: showNav ? onBack : undefined,
