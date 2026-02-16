@@ -99,6 +99,7 @@ class AIUsageLogDetail(BaseModel):
     cached_tokens: int
     total_tokens: int
     estimated_cost: float
+    provider_cost: Optional[float] = None  # From provider response (e.g. OpenRouter)
     generation_time: int
     success: bool
     error_message: Optional[str]
@@ -510,6 +511,7 @@ async def export_all_ai_usage_logs(
             "Cached Tokens",
             "Total Tokens",
             "Estimated Cost",
+            "Provider Cost",
             "Generation Time (ms)",
             "Success",
             "Error Message",
@@ -534,6 +536,9 @@ async def export_all_ai_usage_logs(
                     usage_log.cached_tokens or 0,
                     usage_log.total_tokens or 0,
                     usage_log.estimated_cost or 0.0,
+                    usage_log.provider_cost
+                    if usage_log.provider_cost is not None
+                    else "",
                     usage_log.generation_time or 0,
                     usage_log.success,
                     sanitize_csv_field(usage_log.error_message),

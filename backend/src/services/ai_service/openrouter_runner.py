@@ -319,6 +319,17 @@ async def run_openrouter_call(
     )
     tokens_used = prompt_tokens + completion_tokens
 
+    # OpenRouter returns usage.cost (amount charged); use when valid for logging.
+    provider_cost: Optional[float] = None
+    raw_cost = usage.get("cost")
+    if raw_cost is not None:
+        try:
+            cost_float = float(raw_cost)
+            if cost_float >= 0:
+                provider_cost = cost_float
+        except (TypeError, ValueError):
+            pass
+
     metadata: Dict[str, Any] = {
         "tokens_used": tokens_used,
         "generation_time": generation_time,
@@ -327,4 +338,6 @@ async def run_openrouter_call(
         "completion_tokens": completion_tokens,
         "cached_tokens": 0,
     }
+    if provider_cost is not None:
+        metadata["provider_cost"] = provider_cost
     return parsed_data, metadata

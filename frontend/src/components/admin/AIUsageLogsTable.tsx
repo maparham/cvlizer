@@ -355,15 +355,25 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                     </TableCell>
 
                     <TableCell align="right">
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <AttachMoney color="success" fontSize="small" />
-                        <Typography
-                          variant="body2"
-                          fontWeight="medium"
-                          color="success.main"
-                        >
-                          {formatCost(log.estimated_cost)}
-                        </Typography>
+                      <Box display="flex" flexDirection="column" alignItems="flex-end" gap={0.25}>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <AttachMoney color="success" fontSize="small" />
+                          <Typography
+                            variant="body2"
+                            fontWeight="medium"
+                            color="success.main"
+                          >
+                            {formatCost(log.estimated_cost)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            est.
+                          </Typography>
+                        </Box>
+                        {log.provider_cost != null && (
+                          <Typography variant="caption" color="text.secondary">
+                            Reported: {formatCost(log.provider_cost)}
+                          </Typography>
+                        )}
                       </Box>
                     </TableCell>
 

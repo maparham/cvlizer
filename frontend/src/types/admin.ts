@@ -142,6 +142,7 @@ export interface AIUsageLogDetail {
   cached_tokens: number;
   total_tokens: number;
   estimated_cost: number;
+  provider_cost?: number | null;
   generation_time: number;
   success: boolean;
   error_message: string | null;

@@ -48,7 +48,9 @@ class AIUsageLog(Base):
     total_tokens = Column(Integer, nullable=False, default=0)
     estimated_cost = Column(
         Float(precision=6), nullable=False, default=0.0
-    )  # USD with 6 decimal places
+    )  # USD with 6 decimal places (local calculation)
+    # Provider-reported cost (e.g. OpenRouter usage.cost); NULL when not provided.
+    provider_cost = Column(Float(precision=6), nullable=True)
     # flex, standard, priority. Migration in database.py adds column if missing.
     service_tier = Column(String(50), nullable=True)
     generation_time = Column(Integer, nullable=False, default=0)  # milliseconds
@@ -88,6 +90,7 @@ class AIUsageLog(Base):
             "cached_tokens": self.cached_tokens,
             "total_tokens": self.total_tokens,
             "estimated_cost": self.estimated_cost,
+            "provider_cost": self.provider_cost,
             "service_tier": self.service_tier,
             "generation_time": self.generation_time,
             "success": self.success,

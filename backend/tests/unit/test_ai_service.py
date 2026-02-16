@@ -2,6 +2,7 @@ import json
 from unittest.mock import Mock, patch
 
 import pytest
+from pydantic import BaseModel
 
 from src.services.ai_service import generate_cv_section, parse_cv_text_with_openai
 from src.services.ai_usage_service import calculate_cost
@@ -248,3 +249,119 @@ class TestAIUsageService:
             "gpt-4o-mini", 1000, 500, 0, service_tier="priority"
         )
         assert abs(cost_priority - cost_standard * 2.0) < 0.000001
+
+    def test_calculate_cost_openrouter_model_id(self):
+        """OpenRouter-style model id (e.g. openai/gpt-5.2) uses same pricing as gpt-5.2."""
+        cost_short = calculate_cost("gpt-5.2", 1000, 500)
+        cost_openrouter = calculate_cost("openai/gpt-5.2", 1000, 500)
+        assert abs(cost_short - cost_openrouter) < 0.000001
+        # gpt-5.2: $1.75/1M in, $14/1M out
+        expected = (1000 / 1_000_000) * 1.75 + (500 / 1_000_000) * 14.00
+        assert abs(cost_openrouter - expected) < 0.000001
+
+    def test_calculate_cost_openrouter_skips_tier_multiplier(self):
+        """When provider=openrouter, tier multiplier is not applied (OpenRouter has no tier pricing)."""
+        base = calculate_cost("gpt-5.2", 1000, 500, provider="openrouter")
+        with_flex = calculate_cost(
+            "gpt-5.2", 1000, 500, service_tier="flex", provider="openrouter"
+        )
+        # Both should equal base cost (no 0.5 for flex).
+        expected = (1000 / 1_000_000) * 1.75 + (500 / 1_000_000) * 14.00
+        assert abs(base - expected) < 0.000001
+        assert abs(with_flex - expected) < 0.000001
+        # OpenAI flex would be half:
+        openai_flex = calculate_cost("gpt-5.2", 1000, 500, service_tier="flex")
+        assert abs(openai_flex - expected * 0.5) < 0.000001
+
+
+class _MinimalSchema(BaseModel):
+    """Minimal schema for OpenRouter runner tests."""
+
+    value: int
+
+
+class TestOpenRouterRunnerMetadata:
+    """Test OpenRouter run_openrouter_call returns provider_cost in metadata when present."""
+
+    @pytest.mark.asyncio
+    @patch("src.services.ai_service.openrouter_runner.AIConfig")
+    async def test_openrouter_metadata_includes_provider_cost_when_usage_has_cost(
+        self, mock_aiconfig
+    ):
+        """When OpenRouter response usage has cost, metadata includes provider_cost."""
+        mock_aiconfig.OPENROUTER_API_KEY = "test-key"
+        mock_aiconfig.REQUEST_TIMEOUT_SECONDS = 60
+        mock_aiconfig.MAX_COMPLETION_TOKENS = 4096
+        mock_aiconfig.OPENROUTER_APP_TITLE = ""
+        mock_aiconfig.OPENROUTER_REFERER = ""
+
+        from src.services.ai_service.openrouter_runner import run_openrouter_call
+
+        fake_raw = {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"value": 42}',
+                    }
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "cost": 0.00123,
+            },
+        }
+
+        async def fake_retries(f, *, attempts=None, delay=None):
+            return fake_raw
+
+        _, metadata = await run_openrouter_call(
+            system_prompt="",
+            user_prompt="test",
+            response_schema=_MinimalSchema,
+            model="openai/gpt-5.2",
+            operation_type="test_op",
+            retry_attempts=1,
+            retry_delay=0.1,
+            with_retries_fn=fake_retries,
+        )
+        assert metadata.get("provider_cost") == 0.00123
+        assert metadata["prompt_tokens"] == 100
+        assert metadata["completion_tokens"] == 50
+
+    @pytest.mark.asyncio
+    @patch("src.services.ai_service.openrouter_runner.AIConfig")
+    async def test_openrouter_metadata_omits_provider_cost_when_usage_cost_missing(
+        self, mock_aiconfig
+    ):
+        """When usage.cost is missing or invalid, metadata has no provider_cost."""
+        mock_aiconfig.OPENROUTER_API_KEY = "test-key"
+        mock_aiconfig.REQUEST_TIMEOUT_SECONDS = 60
+        mock_aiconfig.MAX_COMPLETION_TOKENS = 4096
+        mock_aiconfig.OPENROUTER_APP_TITLE = ""
+        mock_aiconfig.OPENROUTER_REFERER = ""
+
+        from src.services.ai_service.openrouter_runner import run_openrouter_call
+
+        fake_raw = {
+            "choices": [{"message": {"content": '{"value": 1}'}}],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+            },
+        }
+
+        async def fake_retries(f, *, attempts=None, delay=None):
+            return fake_raw
+
+        _, metadata = await run_openrouter_call(
+            system_prompt="",
+            user_prompt="x",
+            response_schema=_MinimalSchema,
+            model="openai/gpt-5.2",
+            operation_type="test_op",
+            retry_attempts=1,
+            retry_delay=0.1,
+            with_retries_fn=fake_retries,
+        )
+        assert metadata.get("provider_cost") is None

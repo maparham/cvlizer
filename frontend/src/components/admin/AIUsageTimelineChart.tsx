@@ -2,7 +2,7 @@
  * AI Usage Timeline Chart Component.
  *
  * This component displays AI usage data over time using Recharts,
- * showing both token consumption and costs in a time-series format.
+ * showing stacked Input/Output tokens and cost in a time-series format.
  */
 import React from "react";
 import {
@@ -17,7 +17,8 @@ import {
   MenuItem,
 } from "@mui/material";
 import {
-  LineChart,
+  ComposedChart,
+  Bar,
   Line,
   XAxis,
   YAxis,
@@ -25,7 +26,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine,
 } from "recharts";
 import { TimelineData } from "../../types/admin";
 import { formatCost, formatTokens } from "../../utils/formatters";
@@ -131,14 +131,6 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
     );
   }
 
-  // Calculate max values for reference lines
-  const maxTokens = Math.max(...data.map((d) => d.total_tokens));
-  const maxPromptTokens = Math.max(...data.map((d) => d.total_prompt_tokens));
-  const maxCompletionTokens = Math.max(
-    ...data.map((d) => d.total_completion_tokens),
-  );
-  const maxCost = Math.max(...data.map((d) => d.total_cost));
-
   // Format data for the chart
   const chartData = data.map((item) => ({
     ...item,
@@ -169,7 +161,6 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
           return date.toLocaleDateString();
         })()
       : "Unknown",
-    tokens: item.total_tokens,
     promptTokens: item.total_prompt_tokens,
     completionTokens: item.total_completion_tokens,
     cost: item.total_cost,
@@ -209,7 +200,7 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
 
         <Box sx={{ width: "100%", height: 300 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart
+            <ComposedChart
               data={chartData}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
@@ -236,35 +227,21 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
               <Tooltip content={<CustomTooltip />} />
               <Legend />
 
-              <Line
+              <Bar
                 yAxisId="tokens"
-                type="monotone"
-                dataKey="tokens"
-                stroke="#8884d8"
-                strokeWidth={2}
-                name="Total Tokens"
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-              <Line
-                yAxisId="tokens"
-                type="monotone"
                 dataKey="promptTokens"
-                stroke="#1976d2"
-                strokeWidth={2}
+                stackId="tokens"
+                fill="#1976d2"
                 name="Input Tokens"
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
+                radius={[0, 0, 0, 0]}
               />
-              <Line
+              <Bar
                 yAxisId="tokens"
-                type="monotone"
                 dataKey="completionTokens"
-                stroke="#9c27b0"
-                strokeWidth={2}
+                stackId="tokens"
+                fill="#9c27b0"
                 name="Output Tokens"
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
+                radius={[4, 4, 0, 0]}
               />
               <Line
                 yAxisId="cost"
@@ -276,37 +253,7 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
               />
-
-              {/* Reference lines for max values */}
-              <ReferenceLine
-                yAxisId="tokens"
-                y={maxTokens}
-                stroke="#8884d8"
-                strokeDasharray="5 5"
-                opacity={0.3}
-              />
-              <ReferenceLine
-                yAxisId="tokens"
-                y={maxPromptTokens}
-                stroke="#1976d2"
-                strokeDasharray="5 5"
-                opacity={0.3}
-              />
-              <ReferenceLine
-                yAxisId="tokens"
-                y={maxCompletionTokens}
-                stroke="#9c27b0"
-                strokeDasharray="5 5"
-                opacity={0.3}
-              />
-              <ReferenceLine
-                yAxisId="cost"
-                y={maxCost}
-                stroke="#82ca9d"
-                strokeDasharray="5 5"
-                opacity={0.3}
-              />
-            </LineChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </Box>
       </CardContent>

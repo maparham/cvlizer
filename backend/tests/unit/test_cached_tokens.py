@@ -290,9 +290,14 @@ class TestAIUsageLogging:
         assert usage_log.generation_time == generation_time
         assert usage_log.success is True
 
-        # Verify calculate_cost was called with cached_tokens and no tier
+        # Verify calculate_cost was called with cached_tokens, no tier, no provider
         mock_calculate_cost.assert_called_once_with(
-            model_used, prompt_tokens, completion_tokens, cached_tokens, service_tier=None
+            model_used,
+            prompt_tokens,
+            completion_tokens,
+            cached_tokens,
+            service_tier=None,
+            provider=None,
         )
 
     @patch("src.services.ai_usage_service.calculate_cost")
@@ -320,7 +325,7 @@ class TestAIUsageLogging:
         assert usage_log is not None
         assert usage_log.cached_tokens == 0
         mock_calculate_cost.assert_called_once_with(
-            "gpt-4o-mini", 1000, 500, 0, service_tier=None
+            "gpt-4o-mini", 1000, 500, 0, service_tier=None, provider=None
         )
 
     @patch("src.services.ai_usage_service.calculate_cost")
@@ -343,8 +348,49 @@ class TestAIUsageLogging:
         assert usage_log.service_tier == "flex"
         assert usage_log.estimated_cost == 0.000225
         mock_calculate_cost.assert_called_once_with(
-            "gpt-4o-mini", 1000, 500, 0, service_tier="flex"
+            "gpt-4o-mini", 1000, 500, 0, service_tier="flex", provider=None
         )
+
+    def test_log_ai_usage_with_provider_cost_stores_both(self, db_session):
+        """When provider_cost is provided, estimated_cost is local calc and provider_cost stored."""
+        usage_log = log_ai_usage(
+            db=db_session,
+            user_id="user-123",
+            operation_type="cv_quality_analysis",
+            model_used="openai/gpt-5.2",
+            prompt_tokens=1000,
+            completion_tokens=500,
+            generation_time=2000,
+            success=True,
+            provider_cost=0.002,
+        )
+        assert usage_log is not None
+        # estimated_cost is always our calculation (gpt-5.2 pricing).
+        expected_est = (1000 / 1_000_000) * 1.75 + (500 / 1_000_000) * 14.00
+        assert abs(usage_log.estimated_cost - expected_est) < 0.000001
+        assert usage_log.provider_cost == 0.002
+
+    @patch("src.services.ai_usage_service.calculate_cost")
+    def test_log_ai_usage_without_provider_cost_uses_calculate_cost(
+        self, mock_calculate_cost, db_session
+    ):
+        """When provider_cost is None, estimated_cost from calculate_cost, provider_cost is None."""
+        mock_calculate_cost.return_value = 0.00045
+        usage_log = log_ai_usage(
+            db=db_session,
+            user_id="user-123",
+            operation_type="cv_parsing",
+            model_used="gpt-4o-mini",
+            prompt_tokens=1000,
+            completion_tokens=500,
+            generation_time=1200,
+            success=True,
+            provider_cost=None,
+        )
+        assert usage_log is not None
+        assert usage_log.estimated_cost == 0.00045
+        assert usage_log.provider_cost is None
+        mock_calculate_cost.assert_called_once()
 
     def test_ai_usage_log_model_to_dict(self, db_session):
         """Test AIUsageLog model to_dict includes cached_tokens and service_tier."""

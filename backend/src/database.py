@@ -64,10 +64,29 @@ def _migrate_ai_usage_logs_service_tier():
             raise
 
 
+def _migrate_ai_usage_logs_provider_cost():
+    """
+    Add provider_cost column to ai_usage_logs if missing (one-off migration).
+    Safe to run multiple times; no-op if column already exists.
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE ai_usage_logs ADD COLUMN provider_cost FLOAT"))
+            conn.commit()
+        logger.info("Migration: added ai_usage_logs.provider_cost")
+    except Exception as e:
+        msg = str(e).lower()
+        if "duplicate column" in msg or "already exists" in msg:
+            pass
+        else:
+            raise
+
+
 def create_tables():
     """Create all database tables using the shared engine."""
     Base.metadata.create_all(bind=engine)
     _migrate_ai_usage_logs_service_tier()
+    _migrate_ai_usage_logs_provider_cost()
 
 
 if __name__ == "__main__":

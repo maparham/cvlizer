@@ -174,6 +174,8 @@ def log_ai_usage_safe(
     cv_id: Optional[str] = None,
     cached_tokens: int = 0,
     service_tier: Optional[str] = None,
+    provider_cost: Optional[float] = None,
+    provider: Optional[str] = None,
 ) -> None:
     """
     Safely log AI usage without breaking existing functionality.
@@ -194,6 +196,8 @@ def log_ai_usage_safe(
         cv_id: CV identifier (optional)
         cached_tokens: Number of cached input tokens (default: 0)
         service_tier: Optional tier (flex, standard, priority) for cost and display.
+        provider_cost: Optional provider-reported cost (e.g. OpenRouter usage.cost).
+        provider: Optional "openai" or "openrouter"; when "openrouter", tier multiplier not applied.
     """
     try:
         if db_session:
@@ -212,6 +216,8 @@ def log_ai_usage_safe(
                 cv_id=cv_id,
                 cached_tokens=cached_tokens,
                 service_tier=service_tier,
+                provider_cost=provider_cost,
+                provider=provider,
             )
     except Exception as e:
         # Log the error but don't raise it to avoid breaking main functionality
@@ -446,6 +452,8 @@ async def call_openai_with_schema(
                 cv_id=cv_id,
                 cached_tokens=metadata.get("cached_tokens", 0),
                 service_tier=AIConfig.AGENT_PROCESSING_TIER or None,
+                provider_cost=metadata.get("provider_cost"),
+                provider=AIConfig.AI_PROVIDER,
             )
 
         return parsed_data, metadata
@@ -496,6 +504,8 @@ async def call_openai_with_schema(
                 error_message=user_friendly_message,
                 cv_id=cv_id,
                 service_tier=AIConfig.AGENT_PROCESSING_TIER or None,
+                provider_cost=None,
+                provider=AIConfig.AI_PROVIDER,
             )
 
         # Raise with user-friendly message

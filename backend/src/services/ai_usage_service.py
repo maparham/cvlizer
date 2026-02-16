@@ -25,9 +25,10 @@ def calculate_cost(
     completion_tokens: int,
     cached_tokens: int = 0,
     service_tier: Optional[str] = None,
+    provider: Optional[str] = None,
 ) -> float:
     """
-    Calculate the estimated cost for OpenAI API usage.
+    Calculate the estimated cost for AI API usage.
 
     Args:
         model: The model used (e.g., "gpt-5-nano")
@@ -35,12 +36,17 @@ def calculate_cost(
         completion_tokens: Number of output tokens
         cached_tokens: Number of cached input tokens (billed at 10% of input price)
         service_tier: Optional tier (flex, standard, priority); multiplies standard cost.
+        provider: Optional "openai" or "openrouter". When "openrouter", tier multiplier
+            is not applied (OpenRouter has no throughput-tier pricing).
 
     Returns:
         Estimated cost in USD
     """
-    # Get pricing from config (standard tier)
+    # Get pricing from config (standard tier). Normalize OpenRouter-style ids
+    # (e.g. "openai/gpt-5.2") to the short model key ("gpt-5.2") for lookup.
     pricing = AIUsageConfig.MODEL_PRICING.get(model)
+    if not pricing and "/" in model:
+        pricing = AIUsageConfig.MODEL_PRICING.get(model.split("/")[-1])
 
     if not pricing:
         # Use default pricing for unknown models
@@ -60,9 +66,13 @@ def calculate_cost(
     output_cost = (completion_tokens / 1_000_000) * pricing["output_price_per_1m"]
 
     base_cost = input_cost + cached_cost + output_cost
-    multiplier = AIUsageConfig.TIER_COST_MULTIPLIER.get(
-        (service_tier or "standard").lower(), 1.0
-    )
+    # OpenRouter has no flex/standard/priority tier pricing; use 1.0. OpenAI uses tier.
+    if (provider or "").strip().lower() == "openrouter":
+        multiplier = 1.0
+    else:
+        multiplier = AIUsageConfig.TIER_COST_MULTIPLIER.get(
+            (service_tier or "standard").lower(), 1.0
+        )
     return round(base_cost * multiplier, 6)
 
 
@@ -79,6 +89,8 @@ def log_ai_usage(
     cv_id: Optional[str] = None,
     cached_tokens: int = 0,
     service_tier: Optional[str] = None,
+    provider_cost: Optional[float] = None,
+    provider: Optional[str] = None,
 ) -> Optional[AIUsageLog]:
     """
     Log AI usage to the database.
@@ -96,18 +108,30 @@ def log_ai_usage(
         cv_id: Optional CV ID if operation was CV-related
         cached_tokens: Number of cached input tokens (default: 0)
         service_tier: Optional tier (flex, standard, priority) for cost and display.
+        provider_cost: Optional provider-reported cost (e.g. OpenRouter usage.cost).
+            When set and >= 0, overrides estimated cost; otherwise cost is calculated.
+        provider: Optional "openai" or "openrouter". When "openrouter", estimated cost
+            does not apply OpenAI's tier multiplier.
 
     Returns:
         Created AIUsageLog instance, or None if logging failed
     """
     try:
         total_tokens = prompt_tokens + completion_tokens
+        # Always store our local calculation as estimated_cost.
         estimated_cost = calculate_cost(
             model_used,
             prompt_tokens,
             completion_tokens,
             cached_tokens,
             service_tier=service_tier,
+            provider=provider,
+        )
+        # When provider reports cost (e.g. OpenRouter), store it separately for display.
+        stored_provider_cost = (
+            round(provider_cost, 6)
+            if provider_cost is not None and provider_cost >= 0
+            else None
         )
 
         usage_log = AIUsageLog(
@@ -120,6 +144,7 @@ def log_ai_usage(
             cached_tokens=cached_tokens,
             total_tokens=total_tokens,
             estimated_cost=estimated_cost,
+            provider_cost=stored_provider_cost,
             service_tier=service_tier,
             generation_time=generation_time,
             success=success,

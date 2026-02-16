@@ -237,6 +237,7 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
         "Cached Tokens",
         "Total Tokens",
         "Estimated Cost",
+        "Provider Cost",
         "Generation Time (ms)",
         "Success",
       ];
@@ -255,6 +256,7 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
             log.cached_tokens,
             log.total_tokens,
             log.estimated_cost,
+            log.provider_cost ?? "",
             log.generation_time,
             log.success,
           ].join(","),
