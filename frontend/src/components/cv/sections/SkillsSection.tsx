@@ -12,6 +12,9 @@ import {
   useValidatedQualityAnalysis,
   useCVQualityStore,
 } from "../../../stores/cvQualityStore";
+import { useEditedSinceAIStore } from "../../../stores/editedSinceAIStore";
+import { useOverwriteConfirm, OVERWRITE_MSG } from "../../../contexts/OverwriteConfirmContext";
+import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { JobBasedSkillsSuggestionsBox } from "./JobBasedSkillsSuggestionsBox";
 import { SkillsQualitySuggestions } from "./SkillsQualitySuggestions";
 import {
@@ -98,6 +101,9 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
 
   // Get notifications for user feedback
   const { showSuccess } = useNotifications();
+  const { isEdited, clearEdited } = useEditedSinceAIStore();
+  const { confirm: overwriteConfirm } = useOverwriteConfirm();
+  const SKILLS_FIELD_KEY = "skills";
 
   // Extract skills suggestions from unified store
   const skillsSuggestions = allSuggestions?.skills || null;
@@ -135,13 +141,15 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
     editData: any,
     updateData: (field: string, value: any) => void,
   ) => {
+    const wrappedUpdateData = createTrackedFieldUpdater(cvId, SKILLS_FIELD_KEY, updateData, ["technical", "soft"]);
+
     const addTechnicalSkill = () => {
       if (newTechnicalSkill.trim()) {
         const updatedData = {
           ...editData,
           technical: [...(editData.technical || []), newTechnicalSkill.trim()],
         };
-        updateData("technical", updatedData.technical);
+        wrappedUpdateData("technical", updatedData.technical);
         saveDataImmediately(updatedData, "Technical skill added");
         setNewTechnicalSkill("");
       }
@@ -153,7 +161,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
           ...editData,
           soft: [...(editData.soft || []), newSoftSkill.trim()],
         };
-        updateData("soft", updatedData.soft);
+        wrappedUpdateData("soft", updatedData.soft);
         saveDataImmediately(updatedData, "Soft skill added");
         setNewSoftSkill("");
       }
@@ -164,7 +172,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
         ...editData,
         technical: [...(editData.technical || []), skill],
       };
-      updateData("technical", updatedData.technical);
+      wrappedUpdateData("technical", updatedData.technical);
       saveDataImmediately(updatedData, "Technical skill added");
     };
 
@@ -173,7 +181,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
         ...editData,
         soft: [...(editData.soft || []), skill],
       };
-      updateData("soft", updatedData.soft);
+      wrappedUpdateData("soft", updatedData.soft);
       saveDataImmediately(updatedData, "Soft skill added");
     };
 
@@ -184,7 +192,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
           (_: any, i: number) => i !== index,
         ),
       };
-      updateData("technical", updatedData.technical);
+      wrappedUpdateData("technical", updatedData.technical);
       saveDataImmediately(updatedData, "Technical skill removed");
     };
 
@@ -193,7 +201,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
         ...editData,
         soft: (editData.soft || []).filter((_: any, i: number) => i !== index),
       };
-      updateData("soft", updatedData.soft);
+      wrappedUpdateData("soft", updatedData.soft);
       saveDataImmediately(updatedData, "Soft skill removed");
     };
 
@@ -214,6 +222,10 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
     const handleApplyAllSuggestions = async () => {
       if (!skillsSuggestions) {
         return;
+      }
+      if (cvId && isEdited(cvId, SKILLS_FIELD_KEY)) {
+        const ok = await overwriteConfirm(OVERWRITE_MSG);
+        if (!ok) return;
       }
 
       const updatedData = { ...editData };
@@ -242,6 +254,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       // Dismiss all suggestions - this will DELETE the enhancement from backend since all are applied
       await dismissAllJobSkillSuggestions();
 
+      if (cvId) clearEdited(cvId, SKILLS_FIELD_KEY);
       showSuccess("All AI suggested skills have been applied");
     };
 
@@ -355,6 +368,10 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       if (!skillsSuggestions) {
         return;
       }
+      if (cvId && isEdited(cvId, SKILLS_FIELD_KEY)) {
+        const ok = await overwriteConfirm(OVERWRITE_MSG);
+        if (!ok) return;
+      }
 
       const updatedData = { ...data };
 
@@ -381,6 +398,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       // Dismiss all suggestions - this will DELETE the enhancement from backend since all are applied
       await dismissAllJobSkillSuggestions();
 
+      if (cvId) clearEdited(cvId, SKILLS_FIELD_KEY);
       showSuccess("All AI suggested skills have been applied");
     };
 

@@ -6,6 +6,7 @@ import { FormField, DateFieldComponent } from '../core/formUtils'
 import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
+import { createTrackedFieldUpdater } from './hooks/createTrackedFieldUpdater'
 
 interface VolunteerExperience {
   id: string
@@ -160,11 +161,12 @@ const VolunteerExperienceSection: React.FC<SectionProps & { sectionType?: string
   })
 
   const renderVolunteerForm = (volunteer: VolunteerExperience, index: number, updateVolunteer: (field: keyof VolunteerExperience, value: any) => void, onSave?: () => void) => {
+    const wrappedUpdateVolunteer = createTrackedFieldUpdater(cvId, `volunteer_experience:${volunteer.id}`, updateVolunteer, ['description']);
     return (
       <VolunteerExperienceForm
         volunteer={volunteer}
         index={index}
-        updateVolunteer={updateVolunteer}
+        updateVolunteer={wrappedUpdateVolunteer}
         onSave={onSave}
       />
     );

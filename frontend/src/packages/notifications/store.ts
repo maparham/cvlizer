@@ -99,13 +99,16 @@ export const useNotificationStore = create<NotificationStore>()(
           let notifications = [...state.notifications];
           const firstNotification = notifications[0];
 
-          // Check if identical AND same CV context
-          const isIdentical = firstNotification &&
-            firstNotification.cvId === cvId &&
+          // Group only when the new notification is identical to the most recent one
+          // (consecutive identical messages). Same CV context required (normalize undefined).
+          const cvKey = (id: string | undefined) => id ?? "__global__";
+          const isConsecutiveIdentical =
+            firstNotification &&
+            cvKey(firstNotification.cvId) === cvKey(cvId) &&
             areNotificationsIdentical(firstNotification, notification);
 
-          if (isIdentical) {
-            // Group with the first notification
+          if (isConsecutiveIdentical) {
+            // Group with the first (most recent) notification
             const newTimestamp = new Date();
             const updatedFirstNotification = {
               ...firstNotification,

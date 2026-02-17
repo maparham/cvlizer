@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type MutableRefObject } from "react";
 
 // Common Section Hook for Auto-save Logic
 export const useSectionAutoSave = (
@@ -12,6 +12,7 @@ export const useSectionAutoSave = (
   onUnsavedChanges?: (sectionId: string, hasChanges: boolean) => void,
   validateData?: (data: any) => boolean,
   immediateSave?: boolean, // New parameter for immediate saving
+  skipAutoSaveRef?: MutableRefObject<boolean>, // When true, skip "on close" auto-save (e.g. manual save in progress)
 ) => {
   const prevEditDataRef = useRef<any>();
   const prevIsEditingRef = useRef<boolean>();
@@ -66,6 +67,7 @@ export const useSectionAutoSave = (
     // Only auto-save when transitioning from editing to not editing
     // Don't auto-save when data changes due to CV switching
     // Don't auto-save when changes are being discarded
+    // Don't auto-save when manual save is in progress (avoids double notification)
     if (
       !isEditing &&
       editData &&
@@ -74,6 +76,10 @@ export const useSectionAutoSave = (
     ) {
       // Skip auto-save if we're currently discarding changes
       if (isDiscardingRef.current) {
+        return;
+      }
+      if (skipAutoSaveRef?.current) {
+        skipAutoSaveRef.current = false;
         return;
       }
 

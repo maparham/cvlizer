@@ -34,6 +34,9 @@ import { FieldCorrection, ContentCoachingItem } from "../../../types/ai";
 import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
 import { CoachingQuestionsPanel } from "../ai/CoachingQuestionsPanel";
 import { useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
+import { useEditedSinceAIStore } from "../../../stores/editedSinceAIStore";
+import { useOverwriteConfirm, OVERWRITE_MSG } from "../../../contexts/OverwriteConfirmContext";
+import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 
 const ACADEMIC_TITLES = [
   // English
@@ -122,12 +125,17 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     };
   }, [qualityAnalysis?.issues]);
 
+  const { isEdited, clearEdited } = useEditedSinceAIStore();
+  const { confirm: overwriteConfirm } = useOverwriteConfirm();
+  const DESCRIPTION_FIELD_KEY = "personal_info.description" as const;
+
   const renderForm = (
     editData: any,
     updateData: (field: string, value: any) => void,
     handleSave: () => void,
     onCancel: () => void,
   ) => {
+    const wrappedUpdateData = createTrackedFieldUpdater(cvId, DESCRIPTION_FIELD_KEY, updateData, ["description"]);
     const saveWithData: (data: Record<string, unknown>) => Promise<void> = (
       data
     ) => onSave(data, undefined);
@@ -362,16 +370,23 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           useMarkdownEditor: true,
         }}
         value={editData.description || ""}
-        onChange={(value) => updateData("description", value)}
+        onChange={(value) => wrappedUpdateData("description", value)}
         onSave={onSave}
         htmlDiffCorrection={descriptionCorrection}
         onApplyCorrection={
           descriptionCorrection
             ? async (correction) => {
+                if (cvId && isEdited(cvId, DESCRIPTION_FIELD_KEY)) {
+                  const ok = await overwriteConfirm(OVERWRITE_MSG);
+                  if (!ok) return;
+                }
                 await handleApplyWritingCorrectionInEdit(
                   {} as FieldCorrection,
                   correction
                 );
+                if (cvId) {
+                  clearEdited(cvId, DESCRIPTION_FIELD_KEY);
+                }
               }
             : undefined
         }
@@ -489,7 +504,19 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
       )}
       <DescriptionCorrectionBlock
         descriptionCorrection={descriptionCorrection}
-        handleApplyFieldCorrection={handleApplyFieldCorrection}
+        handleApplyFieldCorrection={async (
+          fieldCorrection,
+          parentCorrection
+        ) => {
+          if (cvId && isEdited(cvId, DESCRIPTION_FIELD_KEY)) {
+            const ok = await overwriteConfirm(OVERWRITE_MSG);
+            if (!ok) return;
+          }
+          await handleApplyFieldCorrection(fieldCorrection, parentCorrection);
+          if (cvId) {
+            clearEdited(cvId, DESCRIPTION_FIELD_KEY);
+          }
+        }}
         handleDismissWritingCorrection={handleDismissWritingCorrection}
         fieldName="description"
         onRetry={onRetry}

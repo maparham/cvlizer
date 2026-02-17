@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Box } from "@mui/material";
 import { SectionProps } from "../../../types";
 import { useSectionAutoSave } from "./hooks";
@@ -63,6 +63,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   const actualData = data || defaultData;
   const [editData, setEditData] = useState(actualData);
   const [isSaving, setIsSaving] = useState(false);
+  const skipAutoSaveRef = useRef(false);
 
   useEffect(() => {
     setEditData(data || defaultData);
@@ -103,12 +104,16 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
     onUnsavedChanges,
     validateForm,
     autoSaveMode && sectionId !== "skills", // Disable immediate save for skills as it handles its own saving
+    skipAutoSaveRef, // Skip "on close" auto-save when user clicked Save (avoids double notification)
   );
 
   const handleSave = async () => {
     if (!validateForm(editData)) {
       return;
     }
+
+    // Signal to useSectionAutoSave to skip "on close" save (we handle save below; avoids double notification)
+    skipAutoSaveRef.current = true;
 
     // Clear unsaved changes immediately
     if (onUnsavedChanges) {

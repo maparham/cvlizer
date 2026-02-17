@@ -32,6 +32,7 @@ import { useItemDescriptionDraftHistory } from "./hooks/useItemDescriptionDraftH
 import { useSectionSuggestions } from "./hooks/useSectionSuggestions";
 import { useSectionHandlers } from "./hooks/useSectionHandlers";
 import { useFormHandlers } from "./hooks/useFormHandlers";
+import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { ScoreChip } from "./common/ScoreChip";
 import { DiscardAllDialog } from "./common/DiscardAllDialog";
 
@@ -365,13 +366,13 @@ const EducationDisplay: React.FC<{
   qualitySuggestionsByItemId: Map<string, LowQualityItem>;
   coachingByItemId: Map<string, any>;
   writingCorrectionsByItemId: Map<string, WritingCorrection[]>;
-  handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
+  handleApplySuggestion: (itemId: string, suggestedDescription: string) => void | Promise<void>;
   handleDiscardSuggestion: (itemId: string) => void;
-  handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => void;
+  handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => void | Promise<void>;
   handleDismissQualitySuggestion: (itemId: string) => void;
-  handleApplyWritingCorrection: (correction: WritingCorrection) => void;
+  handleApplyWritingCorrection: (correction: WritingCorrection) => void | Promise<void>;
   handleDismissWritingCorrection: (correction: WritingCorrection) => void;
-  handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void;
+  handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void | Promise<void>;
   cvId?: string;
 }> = ({
   edu,
@@ -693,6 +694,7 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
     updateEducation: (field: keyof Education, value: any) => void,
     onSave?: () => void,
   ) => {
+    const wrappedUpdateEducation = createTrackedFieldUpdater(cvId, `education:${edu.id}`, updateEducation, ['description']);
     // Look up quality suggestions for this item
     const qualitySuggestion = qualitySuggestionsByItemId.get(edu.id);
     const writingCorrections = writingCorrectionsByItemId.get(edu.id) || [];
@@ -717,7 +719,7 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
       <EducationForm
         edu={edu}
         index={index}
-        updateEducation={updateEducation}
+        updateEducation={wrappedUpdateEducation}
         onSave={onSave}
         qualitySuggestion={qualitySuggestion}
         writingCorrections={writingCorrections}

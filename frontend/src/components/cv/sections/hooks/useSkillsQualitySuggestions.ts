@@ -123,13 +123,16 @@ export function useSkillsQualitySuggestions(
   const handleRejectAllQualitySuggestions = useCallback(async () => {
     if (!qualitySkills) return;
 
-    await Promise.all([
-      ...(qualitySkills.technical || []).map((s) => dismissOne(s.skill, "technical")),
-      ...(qualitySkills.soft || []).map((s) => dismissOne(s.skill, "soft")),
-    ]);
+    const toDismiss = [
+      ...(qualitySkills.technical || []).map((s) => ({ skill: s.skill, type: "technical" as const })),
+      ...(qualitySkills.soft || []).map((s) => ({ skill: s.skill, type: "soft" as const })),
+    ];
+    if (toDismiss.length > 0) {
+      await dismissBatch(toDismiss);
+    }
 
     showSuccess("All CV quality skill corrections have been dismissed");
-  }, [qualitySkills, dismissOne, showSuccess]);
+  }, [qualitySkills, dismissBatch, showSuccess]);
 
   return {
     handleAddQualitySkill,

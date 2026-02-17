@@ -55,6 +55,7 @@ export function resolveOriginal(
 
 /**
  * Apply a single quality skill suggestion to a list: replace by original (case-insensitive) or append; dedupe.
+ * If original is set but does not match any existing skill, the suggested skill is added regardless.
  * Returns the new list, or null if skill was already present and no original (caller should dismiss without applying).
  */
 export function applyOneQualitySuggestion(
@@ -65,16 +66,22 @@ export function applyOneQualitySuggestion(
   const original = resolveOriginal(suggestion, list);
 
   if (original) {
-    const replaced = list.map((s) =>
-      s.toLowerCase() === original.toLowerCase() ? skill : s,
+    const hasMatch = list.some(
+      (s) => s.toLowerCase() === original.toLowerCase(),
     );
-    const seen = new Set<string>();
-    return replaced.filter((s) => {
-      const key = s.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    if (hasMatch) {
+      const replaced = list.map((s) =>
+        s.toLowerCase() === original.toLowerCase() ? skill : s,
+      );
+      const seen = new Set<string>();
+      return replaced.filter((s) => {
+        const key = s.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+    /* original set but no matching item: add suggested skill regardless */
   }
 
   if (hasSkillAlready(list, skill)) return null;
@@ -83,6 +90,7 @@ export function applyOneQualitySuggestion(
 
 /**
  * Apply multiple quality skill suggestions to a list in order (replace or append, dedupe).
+ * If original is set but does not match any existing skill, the suggested skill is added regardless.
  */
 export function applyQualitySuggestionsToList(
   list: string[],
@@ -92,16 +100,23 @@ export function applyQualitySuggestionsToList(
   for (const s of suggestions) {
     const original = resolveOriginal(s, result);
     if (original) {
-      result = result.map((item) =>
-        item.toLowerCase() === original.toLowerCase() ? s.skill : item,
+      const hasMatch = result.some(
+        (item) => item.toLowerCase() === original.toLowerCase(),
       );
-      const seen = new Set<string>();
-      result = result.filter((item) => {
-        const key = item.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
+      if (hasMatch) {
+        result = result.map((item) =>
+          item.toLowerCase() === original.toLowerCase() ? s.skill : item,
+        );
+        const seen = new Set<string>();
+        result = result.filter((item) => {
+          const key = item.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      } else if (!hasSkillAlready(result, s.skill)) {
+        result = [...result, s.skill];
+      }
     } else if (!hasSkillAlready(result, s.skill)) {
       result = [...result, s.skill];
     }

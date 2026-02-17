@@ -138,9 +138,9 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
     setDismissDialogOpen(true);
   };
 
-  const handleDismissConfirm = () => {
+  const handleDismissConfirm = async () => {
     setDismissDialogOpen(false);
-    onDismiss();
+    await Promise.resolve(onDismiss());
   };
 
   const handleDismissCancel = () => {
@@ -255,7 +255,9 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
       <Tooltip title="Apply">
         <IconButton
           size="small"
-          onClick={() => onApply()}
+          onClick={async () => {
+            await Promise.resolve(onApply());
+          }}
           sx={{
             p: 0.25,
             color: 'success.main',

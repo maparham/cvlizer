@@ -15,6 +15,7 @@ import { cvApi, normalizeApiError } from "../../services/api";
 import { CVValidationService } from "../../services/cvValidationService";
 import { DEFAULT_CV_FILENAME, TEMP_CV_ID_PREFIX, DEFAULT_CV_DATA } from "./constants";
 import type { CVStore } from "./types";
+import { useEditedSinceAIStore } from "../editedSinceAIStore";
 
 export interface CVCrudSliceState {
   // State
@@ -467,7 +468,12 @@ export const createCVCrudSlice: StateCreator<
 
   // Utility actions
   setCurrentCV: (cv: CV | null) => {
+    const previousId = get().currentCV?.id ?? null;
+    const newId = cv?.id ?? null;
     set({ currentCV: cv });
+    if (previousId && previousId !== newId) {
+      useEditedSinceAIStore.getState().clearEditedForCV(previousId);
+    }
   },
 
   setTemporaryCV: (cv: CV | null) => {

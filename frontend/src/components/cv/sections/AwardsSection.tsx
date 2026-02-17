@@ -6,6 +6,7 @@ import { FormField } from '../core/formUtils'
 import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
+import { createTrackedFieldUpdater } from './hooks/createTrackedFieldUpdater'
 
 interface Award {
   id: string
@@ -145,11 +146,12 @@ const AwardsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data
   })
 
   const renderAwardForm = (award: Award, index: number, updateAward: (field: keyof Award, value: any) => void, onSave?: () => void) => {
+    const wrappedUpdateAward = createTrackedFieldUpdater(cvId, `awards:${award.id}`, updateAward, ['description']);
     return (
       <AwardForm
         award={award}
         index={index}
-        updateAward={updateAward}
+        updateAward={wrappedUpdateAward}
         onSave={onSave}
       />
     );

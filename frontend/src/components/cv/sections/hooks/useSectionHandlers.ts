@@ -11,13 +11,15 @@ import { useCVStore } from '../../../../stores/cv';
 import { useNotifications } from '../../../../packages/notifications';
 import { useAISuggestionsStore } from '../../../../stores/aiSuggestionsStore';
 import { useCVQualityStore } from '../../../../stores/cvQualityStore';
+import { useEditedSinceAIStore } from '../../../../stores/editedSinceAIStore';
+import { useOverwriteConfirm, OVERWRITE_MSG } from '../../../../contexts/OverwriteConfirmContext';
 import { WritingCorrection } from '../../../../types/ai';
 import { CV, WorkExperience, Education } from '../../../../types/cv';
 
 export interface SectionHandlers<T extends { id: string; description?: string }> {
-  handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
+  handleApplySuggestion: (itemId: string, suggestedDescription: string) => Promise<void>;
   handleDiscardSuggestion: (itemId: string) => void;
-  handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => void;
+  handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => Promise<void>;
   handleDismissQualitySuggestion: (itemId: string) => void;
   handleApplyWritingCorrection: (correction: WritingCorrection) => Promise<void>;
   handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => Promise<void>;
@@ -42,6 +44,8 @@ export function useSectionHandlers<T extends { id: string; description?: string 
   const { setCurrentCV, updateCVInList } = useCVStore();
   const { showSuccess, showError } = useNotifications();
   const { currentAnalysisId, dismissWritingCorrection } = useCVQualityStore();
+  const { isEdited, clearEdited } = useEditedSinceAIStore();
+  const { confirm: overwriteConfirm } = useOverwriteConfirm();
 
   // Get section-specific dismiss functions
   const {
@@ -72,36 +76,53 @@ export function useSectionHandlers<T extends { id: string; description?: string 
     return [];
   }, [sectionName]);
 
+  const getFieldKey = useCallback(
+    (itemId: string) =>
+      sectionName === 'work_experience' ? `work_experience:${itemId}` : `education:${itemId}`,
+    [sectionName]
+  );
+
   // Helper: Apply description update (DRY - used by both suggestion types)
   const applyDescriptionUpdate = useCallback(
-    (
+    async (
       itemId: string,
       suggestedDescription: string,
       dismissFn: (id: string) => void,
       successMessage: string
     ) => {
+      const fieldKey = getFieldKey(itemId);
+      if (cvId && isEdited(cvId, fieldKey)) {
+        const ok = await overwriteConfirm(OVERWRITE_MSG);
+        if (!ok) return;
+      }
+
       const items = data || [];
       const itemIndex = items.findIndex((item) => item.id === itemId);
 
       if (itemIndex === -1) {
-        console.error(`Item not found for suggestion application: ${itemId}`);
+        showError("Item not found for suggestion application.");
         return;
       }
 
-      const updatedItems = [...items];
-      updatedItems[itemIndex] = {
-        ...updatedItems[itemIndex],
-        description: suggestedDescription,
-      };
+      try {
+        const updatedItems = [...items];
+        updatedItems[itemIndex] = {
+          ...updatedItems[itemIndex],
+          description: suggestedDescription,
+        };
 
-      onUpdate(updatedItems);
-      onSave?.(updatedItems, `${sectionName === 'work_experience' ? 'Work experience' : 'Education'} description updated`);
+        onUpdate(updatedItems);
+        await onSave?.(updatedItems, `${sectionName === 'work_experience' ? 'Work experience' : 'Education'} description updated`);
 
-      // Dismiss the suggestion
-      dismissFn(itemId);
-      showSuccess(successMessage);
+        dismissFn(itemId);
+        if (cvId) clearEdited(cvId, fieldKey);
+        showSuccess(successMessage);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to apply suggestion.";
+        showError(message);
+      }
     },
-    [data, onUpdate, onSave, showSuccess, sectionName]
+    [cvId, data, onUpdate, onSave, showSuccess, showError, sectionName, getFieldKey, isEdited, clearEdited, overwriteConfirm]
   );
 
   // Helper: Dismiss suggestion (DRY - used by both suggestion types)
@@ -115,8 +136,8 @@ export function useSectionHandlers<T extends { id: string; description?: string 
 
   // Handle applying a suggestion
   const handleApplySuggestion = useCallback(
-    (itemId: string, suggestedDescription: string) => {
-      applyDescriptionUpdate(
+    async (itemId: string, suggestedDescription: string) => {
+      await applyDescriptionUpdate(
         itemId,
         suggestedDescription,
         dismissSuggestion,
@@ -136,8 +157,8 @@ export function useSectionHandlers<T extends { id: string; description?: string 
 
   // Handle applying a quality suggestion
   const handleApplyQualitySuggestion = useCallback(
-    (itemId: string, suggestedDescription: string) => {
-      applyDescriptionUpdate(
+    async (itemId: string, suggestedDescription: string) => {
+      await applyDescriptionUpdate(
         itemId,
         suggestedDescription,
         dismissQualitySuggestion,
@@ -163,6 +184,12 @@ export function useSectionHandlers<T extends { id: string; description?: string 
         return;
       }
 
+      const fieldKey = getFieldKey(correction.item_id);
+      if (isEdited(cvId, fieldKey)) {
+        const ok = await overwriteConfirm(OVERWRITE_MSG);
+        if (!ok) return;
+      }
+
       try {
         // Apply correction via backend
         const updatedCV = await aiService.applyWritingCorrection(
@@ -182,13 +209,14 @@ export function useSectionHandlers<T extends { id: string; description?: string 
 
         // Dismiss the correction from the analysis
         await dismissWritingCorrection(correction.item_id, correction.field_path);
+        clearEdited(cvId, fieldKey);
         showSuccess("Writing correction applied successfully");
       } catch (error: any) {
         const errorMessage = error?.response?.data?.detail || error?.message || "Failed to apply writing correction";
         showError(errorMessage);
       }
     },
-    [cvId, currentAnalysisId, setCurrentCV, updateCVInList, onUpdate, onSave, dismissWritingCorrection, showSuccess, showError, getSectionDataFromCV]
+    [cvId, currentAnalysisId, setCurrentCV, updateCVInList, onUpdate, onSave, dismissWritingCorrection, showSuccess, showError, getSectionDataFromCV, getFieldKey, isEdited, clearEdited, overwriteConfirm]
   );
 
   // Handle applying all suggestions (quality + writing corrections) atomically
@@ -201,6 +229,12 @@ export function useSectionHandlers<T extends { id: string; description?: string 
       if (!cvId || !currentAnalysisId) {
         showError("Cannot apply corrections: CV ID or analysis ID missing");
         return;
+      }
+
+      const fieldKey = getFieldKey(itemId);
+      if (isEdited(cvId, fieldKey)) {
+        const ok = await overwriteConfirm(OVERWRITE_MSG);
+        if (!ok) return;
       }
 
       try {
@@ -304,6 +338,7 @@ export function useSectionHandlers<T extends { id: string; description?: string 
         // Update local section data with final state (once, at the end)
         if (finalSectionData) {
           onUpdate(finalSectionData);
+          clearEdited(cvId, fieldKey);
 
           // Determine success message based on what was applied
           if (qualitySuggestionApplied && writingCorrections && writingCorrections.length > 0) {
@@ -337,6 +372,10 @@ export function useSectionHandlers<T extends { id: string; description?: string 
       showError,
       sectionName,
       getSectionDataFromCV,
+      getFieldKey,
+      isEdited,
+      clearEdited,
+      overwriteConfirm,
     ]
   );
 

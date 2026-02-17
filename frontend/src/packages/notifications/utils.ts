@@ -54,7 +54,16 @@ export const formatRelativeTime = (timestamp: Date): string => {
 };
 
 /**
- * Checks if two notifications are identical for grouping purposes
+ * Normalizes message for grouping: undefined and empty string are treated as the same
+ * so that consecutive identical notifications group regardless of optional message.
+ */
+const normalizedMessage = (message: string | undefined): string => message ?? "";
+
+/**
+ * Checks if two notifications are identical for grouping purposes.
+ * Consecutive identical notifications (same type, title, message) are grouped.
+ * Message comparison treats undefined and "" as equal.
+ *
  * @param notification1 - First notification
  * @param notification2 - Second notification
  * @returns True if notifications should be grouped together
@@ -64,9 +73,9 @@ export const areNotificationsIdentical = (
   notification2: Omit<Notification, "id" | "timestamp" | "shown" | "count" | "groupedIds">
 ): boolean => {
   return (
+    notification1.type === notification2.type &&
     notification1.title === notification2.title &&
-    notification1.message === notification2.message &&
-    notification1.type === notification2.type
+    normalizedMessage(notification1.message) === normalizedMessage(notification2.message)
   );
 };
 

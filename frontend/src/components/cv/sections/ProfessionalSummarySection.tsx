@@ -9,6 +9,9 @@ import {
   useValidatedSuggestions,
 } from "../../../stores/aiSuggestionsStore";
 import { useCVQualityStore, useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
+import { useEditedSinceAIStore } from "../../../stores/editedSinceAIStore";
+import { useOverwriteConfirm, OVERWRITE_MSG } from "../../../contexts/OverwriteConfirmContext";
+import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { useNotifications } from "../../../packages/notifications";
 import { FieldCorrection } from "../../../types/ai";
 import { useSingleSectionWritingCorrections } from "./hooks/useSingleSectionWritingCorrections";
@@ -50,6 +53,10 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
 
   // Get notifications for user feedback
   const { showSuccess, showError } = useNotifications();
+
+  const { isEdited, clearEdited } = useEditedSinceAIStore();
+  const { confirm: overwriteConfirm } = useOverwriteConfirm();
+  const FIELD_KEY = "professional_summary";
 
   const {
     descriptionCorrection,
@@ -160,6 +167,11 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
       return;
     }
 
+    if (cvId && isEdited(cvId, FIELD_KEY)) {
+      const ok = await overwriteConfirm(OVERWRITE_MSG);
+      if (!ok) return;
+    }
+
     const keywords = extractKeywords(mode, editData);
 
     if (mode === 'edit' && updateData) {
@@ -181,8 +193,9 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
     }
 
     await dismissSummarySuggestion();
+    if (cvId) clearEdited(cvId, FIELD_KEY);
     showSuccess("Professional summary updated with AI suggestion");
-  }, [extractKeywords, onSave, onUpdate, dismissSummarySuggestion, showSuccess, showError]);
+  }, [cvId, extractKeywords, onSave, onUpdate, dismissSummarySuggestion, showSuccess, showError, isEdited, clearEdited]);
 
   /**
    * Shared handler for applying quality suggestions
@@ -200,6 +213,11 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
       return;
     }
 
+    if (cvId && isEdited(cvId, FIELD_KEY)) {
+      const ok = await overwriteConfirm(OVERWRITE_MSG);
+      if (!ok) return;
+    }
+
     const keywords = extractKeywords(mode, editData);
     const updatedData = {
       content: suggested,
@@ -215,13 +233,15 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
     }
 
     await dismissQualitySummarySuggestion();
+    if (cvId) clearEdited(cvId, FIELD_KEY);
     showSuccess("Professional summary updated with quality suggestion");
-  }, [extractKeywords, onSave, onUpdate, dismissQualitySummarySuggestion, showSuccess, showError]);
+  }, [cvId, extractKeywords, onSave, onUpdate, dismissQualitySummarySuggestion, showSuccess, showError, isEdited, clearEdited]);
 
   const renderForm = (
     editData: any,
     updateData: (field: string, value: any) => void,
   ) => {
+    const wrappedUpdateData = createTrackedFieldUpdater(cvId, FIELD_KEY, updateData, ["content"]);
     // Create edit mode handler using factory pattern
     const handleApplyWritingCorrectionInEdit = createWritingCorrectionHandler(
       'edit',
@@ -254,14 +274,19 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
             useMarkdownEditor: true,
           }}
           value={contentValue}
-          onChange={(value) => updateData("content", value)}
+          onChange={(value) => wrappedUpdateData("content", value)}
           error={hasError}
           helperText={helperText}
           htmlDiffCorrection={descriptionCorrection}
           onApplyCorrection={async (correction) => {
+            if (cvId && isEdited(cvId, FIELD_KEY)) {
+              const ok = await overwriteConfirm(OVERWRITE_MSG);
+              if (!ok) return;
+            }
             // Call the factory-generated handler with proper signature
             // The first param (fieldCorrection) is ignored, we use parentCorrection
             await handleApplyWritingCorrectionInEdit({} as FieldCorrection, correction);
+            if (cvId) clearEdited(cvId, FIELD_KEY);
           }}
           onDismissCorrection={() => descriptionCorrection && handleDismissWritingCorrection(descriptionCorrection.correction)}
           sx={{
@@ -368,7 +393,14 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
       {/* Writing corrections first, then coaching - same order as work_experience/education */}
       <DescriptionCorrectionBlock
         descriptionCorrection={descriptionCorrection}
-        handleApplyFieldCorrection={handleApplyFieldCorrection}
+        handleApplyFieldCorrection={async (fieldCorrection, parentCorrection) => {
+          if (cvId && isEdited(cvId, FIELD_KEY)) {
+            const ok = await overwriteConfirm(OVERWRITE_MSG);
+            if (!ok) return;
+          }
+          await handleApplyFieldCorrection(fieldCorrection, parentCorrection);
+          if (cvId) clearEdited(cvId, FIELD_KEY);
+        }}
         handleDismissWritingCorrection={handleDismissWritingCorrection}
         fieldName="content"
         onRetry={onRetry}

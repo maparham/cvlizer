@@ -50,6 +50,9 @@ import {
   Settings,
 } from "@mui/icons-material";
 import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
+import { useOverwriteConfirm, getOverwriteMessageBulk } from "../../../contexts/OverwriteConfirmContext";
+import { useCVStore } from "../../../stores/cv";
+import { useEditedSinceAIStore } from "../../../stores/editedSinceAIStore";
 import { AISuggestion } from "../../../types/ai";
 import { CVData } from "../../../types";
 
@@ -207,6 +210,9 @@ export const FloatingSuggestionsPanel: React.FC<
   FloatingSuggestionsPanelProps
 > = ({ onNavigateToSuggestion, onContentUpdate, onSave }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const cvId = useCVStore((state) => state.currentCV?.id);
+  const { isEdited, clearEdited } = useEditedSinceAIStore();
+  const { confirm: overwriteConfirm } = useOverwriteConfirm();
   const {
     isInDiffMode,
     suggestions,
@@ -270,10 +276,21 @@ export const FloatingSuggestionsPanel: React.FC<
       return;
     }
 
-    // Add confirmation dialog to prevent accidental commits
-    const confirmed = window.confirm(
-      `Apply ${approvedCount} approved suggestion${approvedCount > 1 ? "s" : ""} to your CV?`,
-    );
+    // Collect field keys affected by approved suggestions (for overwrite warning)
+    const approvedSuggestions = suggestions.filter((s) => s.status === "approved");
+    const affectedKeys = new Set<string>();
+    approvedSuggestions.forEach((s) => {
+      if (s.section === "professional_summary") affectedKeys.add("professional_summary");
+      if (s.section === "skills") affectedKeys.add("skills");
+    });
+    const hasEditedAffected =
+      cvId &&
+      Array.from(affectedKeys).some((key) => isEdited(cvId, key));
+    const confirmMessage = hasEditedAffected
+      ? getOverwriteMessageBulk(approvedCount)
+      : `Apply ${approvedCount} approved suggestion${approvedCount > 1 ? "s" : ""} to your CV?`;
+
+    const confirmed = await overwriteConfirm(confirmMessage);
 
     if (!confirmed) {
       return;
@@ -281,6 +298,7 @@ export const FloatingSuggestionsPanel: React.FC<
 
     const finalData = commitChanges();
     if (finalData) {
+      if (cvId) affectedKeys.forEach((key) => clearEdited(cvId, key));
       // Trigger save or update CV data
       if (onContentUpdate) {
         onContentUpdate(finalData);

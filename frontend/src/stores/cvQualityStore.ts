@@ -20,6 +20,7 @@ import {
   bothAreDescriptionField,
   isDescriptionFieldPath,
 } from '../utils/cvQualityFieldPaths';
+import { useEditedSinceAIStore } from './editedSinceAIStore';
 
 /** Skip overwriting with GET for this long after a dismiss to avoid ghost suggestion cards. */
 const DISMISS_COOLDOWN_MS = 3000;
@@ -28,6 +29,53 @@ const DISMISS_COOLDOWN_MS = 3000;
  * True if this issue should be removed when dismissing the given itemId/fieldPath.
  * Matches by exact id+field_path, or by description field when both are description-type paths.
  */
+function clearEditedFlagsForQualityAnalysis(
+  cvId: string,
+  qualityData: CVQualityAnalysisData
+) {
+  const { clearEdited } = useEditedSinceAIStore.getState();
+  (qualityData.issues ?? []).forEach((issue: Issue) => {
+    const path = issue.field_path ?? '';
+    const itemId = issue.item_id ?? '';
+    if (
+      isDescriptionFieldPath(path) &&
+      (path.startsWith('work_experience') || path.includes('work_experience'))
+    ) {
+      if (itemId) clearEdited(cvId, `work_experience:${itemId}`);
+    } else if (
+      isDescriptionFieldPath(path) &&
+      (path.startsWith('education') || path.includes('education'))
+    ) {
+      if (itemId) clearEdited(cvId, `education:${itemId}`);
+    } else if (
+      isDescriptionFieldPath(path) &&
+      (path.startsWith('certifications') || path.includes('certifications'))
+    ) {
+      if (itemId) clearEdited(cvId, `certifications:${itemId}`);
+    } else if (
+      isDescriptionFieldPath(path) &&
+      (path.startsWith('projects') || path.includes('projects'))
+    ) {
+      if (itemId) clearEdited(cvId, `projects:${itemId}`);
+    } else if (
+      isDescriptionFieldPath(path) &&
+      (path.startsWith('awards') || path.includes('awards'))
+    ) {
+      if (itemId) clearEdited(cvId, `awards:${itemId}`);
+    } else if (
+      isDescriptionFieldPath(path) &&
+      (path.startsWith('volunteer_experience') || path.includes('volunteer_experience'))
+    ) {
+      if (itemId) clearEdited(cvId, `volunteer_experience:${itemId}`);
+    }
+  });
+  const hasSkills =
+    qualityData.skills &&
+    ((qualityData.skills.technical?.length ?? 0) > 0 ||
+      (qualityData.skills.soft?.length ?? 0) > 0);
+  if (hasSkills) clearEdited(cvId, 'skills');
+}
+
 function matchesWritingCorrection(
   issue: Issue,
   itemId: string,
@@ -192,6 +240,9 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           analysisError: analysis.generation_error || null,
           overallScore: analysis.overall_quality_score || null,
         });
+        if (analysis.quality_data) {
+          clearEditedFlagsForQualityAnalysis(analysis.cv_id, analysis.quality_data);
+        }
       }
 
       return analysis;
@@ -267,6 +318,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           overallScore: analysis.overall_quality_score || null,
           lastDismissedAt: null,
         });
+        clearEditedFlagsForQualityAnalysis(cvId, analysis.quality_data);
       } else {
         // No quality data returned; clear local state
         set({

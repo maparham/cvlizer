@@ -29,7 +29,7 @@ import { getContentScoreColor } from "./utils/suggestionUtils";
 
 interface ItemDescriptionSuggestionProps {
   suggestion: ItemDescriptionSuggestionType;
-  onApply: () => void;
+  onApply: () => void | Promise<void>;
   onDiscard: () => void;
   isLoading?: boolean;
 }
@@ -156,7 +156,9 @@ const ItemDescriptionSuggestion: React.FC<ItemDescriptionSuggestionProps> = ({
           variant="contained"
           size="small"
           startIcon={<AddIcon />}
-          onClick={onApply}
+          onClick={async () => {
+            await Promise.resolve(onApply());
+          }}
           disabled={isLoading}
           sx={{
             textTransform: "none",

@@ -120,8 +120,8 @@ const PDFCVEditorWithAI: React.FC<PDFCVEditorWithAIProps> = ({
   return (
     <InlineDiffProvider>
       <Box sx={{ position: "relative", height: "100vh" }}>
-        {/* Main CV Editor */}
-        <PDFCVEditor title={title} onTitleSave={onTitleSave} cvId={cvId} />
+          {/* Main CV Editor */}
+          <PDFCVEditor title={title} onTitleSave={onTitleSave} cvId={cvId} />
 
         {/* AI Suggestions FAB */}
         <Tooltip

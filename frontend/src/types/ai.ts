@@ -210,6 +210,11 @@ export interface AllSuggestionsResponse {
   work_experience: ItemDescriptionSuggestion[];
   education: ItemDescriptionSuggestion[];
   why_good_fit: WhyGoodFitSuggestion;
+  /** Optional description suggestions for additional sections */
+  certifications?: ItemDescriptionSuggestion[];
+  projects?: ItemDescriptionSuggestion[];
+  awards?: ItemDescriptionSuggestion[];
+  volunteer_experience?: ItemDescriptionSuggestion[];
 }
 
 // Draft Management Types

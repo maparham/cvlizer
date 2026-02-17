@@ -6,6 +6,7 @@ import { FormField, DateFieldComponent } from '../core/formUtils'
 import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
+import { createTrackedFieldUpdater } from './hooks/createTrackedFieldUpdater'
 
 interface Certification {
   id: string
@@ -161,11 +162,12 @@ const CertificationsSection: React.FC<SectionProps & { sectionType?: string }> =
   })
 
   const renderCertificationForm = (cert: Certification, index: number, updateCertification: (field: keyof Certification, value: any) => void, onSave?: () => void) => {
+    const wrappedUpdateCertification = createTrackedFieldUpdater(cvId, `certifications:${cert.id}`, updateCertification, ['description']);
     return (
       <CertificationForm
         cert={cert}
         index={index}
-        updateCertification={updateCertification}
+        updateCertification={wrappedUpdateCertification}
         onSave={onSave}
       />
     );

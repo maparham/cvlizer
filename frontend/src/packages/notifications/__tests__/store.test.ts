@@ -124,6 +124,61 @@ describe('Notification Store', () => {
       expect(notifications[0].count).toBe(1);
       expect(notifications[1].count).toBe(1);
     });
+
+    it('should group consecutive identical messages (A, A, B, A, A → 3 items)', () => {
+      const { result } = renderHook(() => useNotificationStore());
+      const cvId = TEST_CV_IDS.CV_1;
+      const addA = () =>
+        result.current.addNotification({
+          type: 'success',
+          title: 'Writing correction applied successfully',
+        }, cvId);
+      const addB = () =>
+        result.current.addNotification({
+          type: 'info',
+          title: 'Writing correction dismissed',
+        }, cvId);
+
+      act(() => {
+        addA();
+        addA();
+        addB();
+        addA();
+        addA();
+      });
+
+      const notifications = result.current.notifications;
+      expect(notifications).toHaveLength(3);
+      // Newest first: [A(group), B, A(group)]
+      expect(notifications[0].title).toBe('Writing correction applied successfully');
+      expect(notifications[0].count).toBe(2);
+      expect(notifications[1].title).toBe('Writing correction dismissed');
+      expect(notifications[1].count).toBe(1);
+      expect(notifications[2].title).toBe('Writing correction applied successfully');
+      expect(notifications[2].count).toBe(2);
+    });
+
+    it('should treat undefined and empty string message as identical for grouping', () => {
+      const { result } = renderHook(() => useNotificationStore());
+      const cvId = TEST_CV_IDS.CV_1;
+
+      act(() => {
+        result.current.addNotification({
+          type: 'success',
+          title: 'Same title',
+          message: undefined,
+        }, cvId);
+        result.current.addNotification({
+          type: 'success',
+          title: 'Same title',
+          message: '',
+        }, cvId);
+      });
+
+      const notifications = result.current.notifications;
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0].count).toBe(2);
+    });
   });
 
   describe('Toast-only Notifications', () => {

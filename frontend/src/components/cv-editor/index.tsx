@@ -32,6 +32,7 @@ import { useAIStore } from "../../stores/ai";
 import { CVData } from "../../types";
 import { parseValidationErrors } from "../../utils/validation";
 import { classifyError, ErrorType } from "../../utils/errors/errorTypes";
+import { OverwriteConfirmProvider } from "../../contexts/OverwriteConfirmContext";
 import { CVEditorContent } from "./CVEditorContent";
 import { CVEditorDialogs } from "./CVEditorDialogs";
 import { useCVEditorActions } from "./useCVEditorActions";
@@ -437,28 +438,30 @@ const CVEditor: React.FC = () => {
           }}
         >
           <Box sx={{ flex: 1, overflow: "hidden" }}>
-            <CVEditorProvider
-              cvData={cvData}
-              onUpdateCV={handleUpdateCV}
-              onSave={handleSave}
-            >
-              <SaveWithValidationErrors onSaveError={() => {}}>
-                <InitialValidation cvId={cvId}>
-                  <CVEditorContent
-                    cvId={cvId}
-                    activeCV={activeCV}
-                    onLogout={actions.handleLogout}
-                    onMenuOpen={actions.handleMenuOpen}
-                    onMenuClose={actions.handleMenuClose}
-                    anchorEl={actions.anchorEl}
-                    onTitleSave={actions.handleTitleSave}
-                    onDelete={actions.handleDeleteClick}
-                    isAdmin={isAdmin}
-                    isNewCV={isNewCV}
-                  />
-                </InitialValidation>
-              </SaveWithValidationErrors>
-            </CVEditorProvider>
+            <OverwriteConfirmProvider>
+              <CVEditorProvider
+                cvData={cvData}
+                onUpdateCV={handleUpdateCV}
+                onSave={handleSave}
+              >
+                <SaveWithValidationErrors onSaveError={() => {}}>
+                  <InitialValidation cvId={cvId}>
+                    <CVEditorContent
+                      cvId={cvId}
+                      activeCV={activeCV}
+                      onLogout={actions.handleLogout}
+                      onMenuOpen={actions.handleMenuOpen}
+                      onMenuClose={actions.handleMenuClose}
+                      anchorEl={actions.anchorEl}
+                      onTitleSave={actions.handleTitleSave}
+                      onDelete={actions.handleDeleteClick}
+                      isAdmin={isAdmin}
+                      isNewCV={isNewCV}
+                    />
+                  </InitialValidation>
+                </SaveWithValidationErrors>
+              </CVEditorProvider>
+            </OverwriteConfirmProvider>
           </Box>
 
           {/* Notification Toast */}

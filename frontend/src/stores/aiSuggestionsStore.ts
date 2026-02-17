@@ -21,8 +21,48 @@ import { create } from "zustand";
 import { aiService } from "../services/ai";
 import { Logger } from "../utils/logger";
 import { ErrorHandler } from "../utils/errorHandler";
-import { AllSuggestionsResponse } from "../types/ai";
+import { AllSuggestionsResponse, ItemDescriptionSuggestion } from "../types/ai";
 import { useAIStore } from "./ai";
+import { useEditedSinceAIStore } from "./editedSinceAIStore";
+
+/** Section keys in AllSuggestionsResponse that have item arrays using id/item_id. */
+const SUGGESTION_SECTIONS: (keyof Pick<
+  AllSuggestionsResponse,
+  | "work_experience"
+  | "education"
+  | "certifications"
+  | "projects"
+  | "awards"
+  | "volunteer_experience"
+>)[] = [
+  "work_experience",
+  "education",
+  "certifications",
+  "projects",
+  "awards",
+  "volunteer_experience",
+];
+
+/** Get item identifier from API shape (id is canonical; item_id for compatibility). */
+function getSuggestionItemId(item: ItemDescriptionSuggestion | { id?: string; item_id?: string }): string | undefined {
+  return item.id ?? (item as { item_id?: string }).item_id;
+}
+
+function clearEditedFlagsForNewSuggestions(cvId: string, allSuggestions: AllSuggestionsResponse) {
+  const { clearEdited } = useEditedSinceAIStore.getState();
+  for (const section of SUGGESTION_SECTIONS) {
+    const items = allSuggestions[section];
+    if (!Array.isArray(items)) continue;
+    for (const item of items) {
+      const itemId = getSuggestionItemId(item);
+      if (itemId) clearEdited(cvId, `${section}:${itemId}`);
+    }
+  }
+  const hasSkills =
+    allSuggestions.skills &&
+    ((allSuggestions.skills.technical?.length ?? 0) > 0 || (allSuggestions.skills.soft?.length ?? 0) > 0);
+  if (hasSkills) clearEdited(cvId, "skills");
+}
 
 interface AIStore {
   // Unified state
@@ -138,6 +178,10 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
             strengths: [],
             weaknesses: [],
           },
+          certifications: Array.isArray(rawData.certifications) ? rawData.certifications : [],
+          projects: Array.isArray(rawData.projects) ? rawData.projects : [],
+          awards: Array.isArray(rawData.awards) ? rawData.awards : [],
+          volunteer_experience: Array.isArray(rawData.volunteer_experience) ? rawData.volunteer_experience : [],
         };
 
         set({
@@ -147,6 +191,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           suggestionsLoading: false,
           suggestionsError: enhancement.generation_error || null,
         });
+
+        clearEditedFlagsForNewSuggestions(enhancement.cv_id, allSuggestions);
 
         // Extract draft_id from meta and update job fit analysis
         const draftId = (rawData.meta as any)?.draft_id;
@@ -208,6 +254,10 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
               strengths: [],
               weaknesses: [],
             },
+            certifications: Array.isArray(rawData.certifications) ? rawData.certifications : [],
+            projects: Array.isArray(rawData.projects) ? rawData.projects : [],
+            awards: Array.isArray(rawData.awards) ? rawData.awards : [],
+            volunteer_experience: Array.isArray(rawData.volunteer_experience) ? rawData.volunteer_experience : [],
           };
 
           set({
@@ -217,6 +267,8 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
             suggestionsLoading: false,
             suggestionsError: enhancement.generation_error || null,
           });
+
+          clearEditedFlagsForNewSuggestions(cvId, allSuggestions);
 
           // Extract draft_id from meta and update job fit analysis
           const draftId = (rawData.meta as any)?.draft_id;

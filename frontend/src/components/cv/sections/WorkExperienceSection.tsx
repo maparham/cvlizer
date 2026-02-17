@@ -33,6 +33,7 @@ import { useItemDescriptionDraftHistory } from "./hooks/useItemDescriptionDraftH
 import { useSectionSuggestions } from "./hooks/useSectionSuggestions";
 import { useSectionHandlers } from "./hooks/useSectionHandlers";
 import { useFormHandlers } from "./hooks/useFormHandlers";
+import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { ScoreChip } from "./common/ScoreChip";
 import { DiscardAllDialog } from "./common/DiscardAllDialog";
 
@@ -204,13 +205,13 @@ const WorkExperienceDisplay: React.FC<{
   qualitySuggestionsByItemId: Map<string, LowQualityItem>;
   coachingByItemId: Map<string, any>;
   writingCorrectionsByItemId: Map<string, WritingCorrection[]>;
-  handleApplySuggestion: (itemId: string, suggestedDescription: string) => void;
+  handleApplySuggestion: (itemId: string, suggestedDescription: string) => void | Promise<void>;
   handleDiscardSuggestion: (itemId: string) => void;
-  handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => void;
+  handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => void | Promise<void>;
   handleDismissQualitySuggestion: (itemId: string) => void;
-  handleApplyWritingCorrection: (correction: WritingCorrection) => void;
+  handleApplyWritingCorrection: (correction: WritingCorrection) => void | Promise<void>;
   handleDismissWritingCorrection: (correction: WritingCorrection) => void;
-  handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void;
+  handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void | Promise<void>;
   cvId?: string;
 }> = ({
   exp,
@@ -490,6 +491,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
     updateExperience: (field: keyof WorkExperience, value: any) => void,
     onSave?: () => void,
   ) => {
+    const wrappedUpdateExperience = createTrackedFieldUpdater(cvId, `work_experience:${exp.id}`, updateExperience, ['description']);
     // Look up quality suggestions for this item
     const qualitySuggestion = qualitySuggestionsByItemId.get(exp.id);
     const writingCorrections = writingCorrectionsByItemId.get(exp.id) || [];
@@ -514,7 +516,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
       <WorkExperienceForm
         exp={exp}
         index={index}
-        updateExperience={updateExperience}
+        updateExperience={wrappedUpdateExperience}
         onSave={onSave}
         qualitySuggestion={qualitySuggestion}
         writingCorrections={writingCorrections}

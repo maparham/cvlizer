@@ -6,6 +6,7 @@ import { FormField } from '../core/formUtils'
 import { ValidatedFormField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
+import { createTrackedFieldUpdater } from './hooks/createTrackedFieldUpdater'
 
 interface Project {
   id: string
@@ -157,11 +158,12 @@ const ProjectsSection: React.FC<SectionProps & { sectionType?: string }> = ({ da
   })
 
   const renderProjectForm = (project: Project, index: number, updateProject: (field: keyof Project, value: any) => void, onSave?: () => void) => {
+    const wrappedUpdateProject = createTrackedFieldUpdater(cvId, `projects:${project.id}`, updateProject, ['description']);
     return (
       <ProjectForm
         project={project}
         index={index}
-        updateProject={updateProject}
+        updateProject={wrappedUpdateProject}
         onSave={onSave}
       />
     );
