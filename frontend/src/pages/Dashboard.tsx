@@ -287,16 +287,6 @@ const Dashboard: React.FC = () => {
       />
 
       <Container maxWidth="lg" sx={{ mt: 6, mb: 6, px: 3 }}>
-        {/* Job Applications Card */}
-        <JobApplicationsCard
-          jobDescriptions={jobDescriptions}
-          statusCounts={jdStatusCounts}
-          onEditJobDescription={handleEditJobDescription}
-          onUpdateStatus={handleUpdateStatus}
-          onAddJob={() => setJobDescriptionModalOpen(true)}
-          onViewAll={() => navigate("/applications")}
-        />
-
         {/* CVs Section */}
         {cvs.length === 0 ? (
           <EmptyState
@@ -327,6 +317,16 @@ const Dashboard: React.FC = () => {
             ))}
           </CVsCard>
         )}
+
+        {/* Job Applications Card */}
+        <JobApplicationsCard
+          jobDescriptions={jobDescriptions}
+          statusCounts={jdStatusCounts}
+          onEditJobDescription={handleEditJobDescription}
+          onUpdateStatus={handleUpdateStatus}
+          onAddJob={() => setJobDescriptionModalOpen(true)}
+          onViewAll={() => navigate("/applications")}
+        />
 
         {/* Dialogs */}
         <DashboardDialogs

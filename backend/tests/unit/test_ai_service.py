@@ -324,6 +324,7 @@ class TestOpenRouterRunnerMetadata:
             retry_attempts=1,
             retry_delay=0.1,
             with_retries_fn=fake_retries,
+            max_tokens=4096,
         )
         assert metadata.get("provider_cost") == 0.00123
         assert metadata["prompt_tokens"] == 100
@@ -363,5 +364,6 @@ class TestOpenRouterRunnerMetadata:
             retry_attempts=1,
             retry_delay=0.1,
             with_retries_fn=fake_retries,
+            max_tokens=4096,
         )
         assert metadata.get("provider_cost") is None

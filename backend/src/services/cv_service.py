@@ -7,14 +7,52 @@ This module provides functions for CRUD operations on CV records:
 - Database transaction management
 """
 
-import json
-import uuid
+import re
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
 from src.models.cv import CV
 from src.models.user import User
+
+
+def get_unique_filename_for_user(
+    db: Session, user_id: str, proposed_filename: str
+) -> str:
+    """
+    Return a filename unique among the user's CVs by appending an incremental
+    index when the proposed name already exists (e.g. "CV.pdf" -> "CV (1).pdf").
+    """
+    if not proposed_filename or not proposed_filename.strip():
+        proposed_filename = "CV.pdf"
+
+    existing = {
+        row[0]
+        for row in db.query(CV.original_filename).filter(CV.user_id == user_id).all()
+    }
+
+    if proposed_filename not in existing:
+        return proposed_filename
+
+    # Split stem and extension (e.g. "CV_Mahan_Parham.pdf" -> stem, ".pdf")
+    if "." in proposed_filename and not proposed_filename.startswith("."):
+        stem, ext = proposed_filename.rsplit(".", 1)
+        ext = "." + ext
+    else:
+        stem = proposed_filename
+        ext = ""
+
+    # Strip existing " (n)" suffix to get base stem for incremental naming
+    match = re.match(r"^(.+)\s+\((\d+)\)\s*$", stem)
+    base_stem = match.group(1) if match else stem
+
+    for i in range(1, 1000):
+        candidate = f"{base_stem} ({i}){ext}"
+        if candidate not in existing:
+            return candidate
+
+    # Fallback (should never hit in practice)
+    return f"{base_stem} (copy){ext}"
 
 
 def create_cv(
@@ -27,10 +65,11 @@ def create_cv(
     parsed_data: dict,
     is_parsed: bool = True,
 ) -> CV:
-    """Create a new CV record"""
+    """Create a new CV record with a unique display name for the user."""
+    unique_filename = get_unique_filename_for_user(db, user_id, original_filename.strip())
     cv = CV(
         user_id=user_id,
-        original_filename=original_filename,
+        original_filename=unique_filename,
         file_path=file_path,
         file_size=file_size,
         file_type=file_type,

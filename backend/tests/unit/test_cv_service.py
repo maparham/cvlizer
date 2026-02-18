@@ -15,6 +15,7 @@ from src.services.cv_service import (
     delete_cv,
     get_cv_by_id,
     get_cvs_by_user,
+    get_unique_filename_for_user,
     update_cv,
 )
 
@@ -29,6 +30,8 @@ class TestCVService:
         db.add.return_value = None
         db.commit.return_value = None
         db.refresh.return_value = None
+        # get_unique_filename_for_user queries existing filenames
+        db.query.return_value.filter.return_value.all.return_value = []
 
         with patch("src.services.cv_service.CV") as mock_cv_class:
             mock_cv_class.return_value = mock_cv
@@ -47,6 +50,34 @@ class TestCVService:
             db.add.assert_called_once_with(mock_cv)
             db.commit.assert_called_once()
             db.refresh.assert_called_once_with(mock_cv)
+
+    def test_get_unique_filename_returns_proposed_when_unique(self):
+        """Proposed filename is returned when no conflict exists."""
+        db = Mock()
+        db.query.return_value.filter.return_value.all.return_value = []
+        result = get_unique_filename_for_user(db, "user1", "CV_Mahan_Parham.pdf")
+        assert result == "CV_Mahan_Parham.pdf"
+
+    def test_get_unique_filename_appends_index_when_duplicate(self):
+        """Incremental index (1), (2), etc. is appended when name exists."""
+        db = Mock()
+        db.query.return_value.filter.return_value.all.return_value = [
+            ("CV_Mahan_Parham.pdf",),
+        ]
+        result = get_unique_filename_for_user(db, "user1", "CV_Mahan_Parham.pdf")
+        assert result == "CV_Mahan_Parham (1).pdf"
+
+    def test_get_unique_filename_increments_when_multiple_duplicates(self):
+        """Next available index is used when (1), (2), (3) already exist."""
+        db = Mock()
+        db.query.return_value.filter.return_value.all.return_value = [
+            ("CV_Mahan_Parham.pdf",),
+            ("CV_Mahan_Parham (1).pdf",),
+            ("CV_Mahan_Parham (2).pdf",),
+            ("CV_Mahan_Parham (3).pdf",),
+        ]
+        result = get_unique_filename_for_user(db, "user1", "CV_Mahan_Parham.pdf")
+        assert result == "CV_Mahan_Parham (4).pdf"
 
     def test_get_cv_by_id(self):
         """Test getting CV by ID"""

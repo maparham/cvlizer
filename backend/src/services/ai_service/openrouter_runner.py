@@ -169,6 +169,7 @@ async def run_openrouter_call(
     reasoning_summary: Optional[str] = None,
     use_reasoning: bool = True,
     text_format_schema: Optional[Dict[str, Any]] = None,
+    max_tokens: int = ...,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Execute an OpenRouter chat completions call and return parsed data and metadata.
@@ -177,11 +178,15 @@ async def run_openrouter_call(
     is provided (e.g. CV quality), uses it for response_format so the model output
     matches the same schema as OpenAI; otherwise builds format from response_schema.
     Response content is parsed as JSON and validated against response_schema.
+
+    Note:
+        ``max_tokens`` is required and must be provided by callers (typically
+        via ``call_openai_with_schema``) so each operation can control its own
+        completion token limit.
     """
     import httpx
 
     timeout_seconds = float(AIConfig.REQUEST_TIMEOUT_SECONDS)
-    max_tokens = AIConfig.MAX_COMPLETION_TOKENS
     api_key = (AIConfig.OPENROUTER_API_KEY or "").strip()
     if not api_key:
         raise RuntimeError("OpenRouter API is not enabled")

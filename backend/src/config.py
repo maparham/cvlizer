@@ -86,6 +86,13 @@ class AIConfig:
     MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "4000"))
     MAX_PROMPT_TOKENS: int = int(os.getenv("AI_MAX_PROMPT_TOKENS", "3000"))
     MAX_COMPLETION_TOKENS: int = int(os.getenv("AI_MAX_COMPLETION_TOKENS", "1000"))
+    # CV parsing: when set, overrides MAX_COMPLETION_TOKENS for parse_cv only
+    CV_PARSING_MAX_COMPLETION_TOKENS: int = int(
+        os.getenv(
+            "AI_CV_PARSING_MAX_COMPLETION_TOKENS",
+            os.getenv("AI_MAX_COMPLETION_TOKENS", "1000"),
+        )
+    )
 
     # Retry configuration
     MAX_RETRIES: int = int(os.getenv("AI_MAX_RETRIES", "3"))

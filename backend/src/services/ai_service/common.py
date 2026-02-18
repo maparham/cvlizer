@@ -378,6 +378,11 @@ async def call_openai_with_schema(
         raise RuntimeError("AI is not enabled")
 
     reasoning_effort = reasoning_effort or AIConfig.REASONING_EFFORT
+    max_completion_tokens = (
+        AIConfig.CV_PARSING_MAX_COMPLETION_TOKENS
+        if operation_type == "parse_cv"
+        else AIConfig.MAX_COMPLETION_TOKENS
+    )
 
     try:
         if AIConfig.AI_PROVIDER == "openrouter":
@@ -403,6 +408,7 @@ async def call_openai_with_schema(
                 reasoning_summary=AIConfig.REASONING_SUMMARY,
                 use_reasoning=use_reasoning,
                 text_format_schema=text_format_schema,
+                max_tokens=max_completion_tokens,
             )
         else:
             model = model or AIConfig.get_model_for_operation(operation_type)
@@ -436,6 +442,7 @@ async def call_openai_with_schema(
                 get_seed_for_operation=_get_seed_for_operation,
                 with_retries_fn=with_retries,
                 extract_cached_tokens_fn=extract_cached_tokens,
+                max_output_tokens=max_completion_tokens,
             )
 
         # Log successful AI usage

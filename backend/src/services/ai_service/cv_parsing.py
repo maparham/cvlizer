@@ -28,6 +28,7 @@ from .common import (
     log_ai_usage_safe,
     with_retries,
 )
+from .openai_schema_utils import CV_PARSING_RESPONSE_FORMAT
 from .response_parsing import extract_response_data, validate_with_schema
 
 logger = logging.getLogger(__name__)
@@ -107,87 +108,69 @@ async def parse_cv_text_with_openai(
             "volunteer_experience": [],
         }
 
-    prompt = f"""Parse CV into 10 sections: personal_info, professional_summary, work_experience, education, skills, certifications, projects, awards, publications, volunteer_experience.
+    prompt = f"""Parse this document into CV sections:
+personal_info, professional_summary, work_experience, education, skills,
+certifications, projects, awards, publications, volunteer_experience.
 
-IMPORTANT: First validate if this document is actually a CV/resume. If the content is NOT a CV (e.g., research paper, article, book, manual, academic paper, or any other non-CV document), set is_valid_cv to false and validation_error to: "This document does not appear to be a CV. Please upload a resume or curriculum vitae with your professional information."
+1) CV validity
+- First decide if this is actually a CV/resume.
+- If it is not a CV (e.g. paper, article, book, manual, generic text), set
+  is_valid_cv = false and validation_error =
+  "This document does not appear to be a CV. Please upload a resume or curriculum vitae with your professional information."
 
-Extraction and Preservation RULES:
-- Extract ALL text content
-- Preserve original wording, spelling, grammar, punctuation, and phrasing
-- DO NOT correct spelling errors, grammar mistakes, or improve wording
-- DO NOT change the meaning or content of the text
-- DO NOT add, infer, or extract keywords, tags, or any content not explicitly present in the original CV
-- EXCEPTION: Missing work_experience.position and education.degree fields MUST be inferred (see TITLE INFERENCE RULES below)
-- Keep original capitalization and formatting style
-- LOCATION SEPARATION: Extract location (city, country) into the separate "location" field
+2) Extraction rules
+- Extract ALL explicit content from the CV.
+- Correct spelling, grammar, punctuation, capitalization
+- Preserve original wording
+- EXCEPTIONS:
+  - work_experience.position: if completely missing/empty, infer a reasonable title from context; otherwise preserve exactly.
+  - education.degree: if completely missing/empty, infer a reasonable degree from context; otherwise preserve exactly.
 
-DESCRIPTION FORMATTING RULES:
-- All description fields MUST be formatted in markdown
-- For descriptions with MULTIPLE items (2 or more), format as bullet lists using markdown syntax (e.g., "- Item 1\\n- Item 2")
-    - CRITICAL RULE, avoid using bullets for SINGLE ITEMS: If a description has only ONE item, you MUST write it as a plain text WITHOUT any bullet formatting
-  - CORRECT single item: "Item description"
-  - WRONG single item: "- Item description"
-  - CORRECT multiple items: "- Item 1\\n- Item 2"
-- Use proper markdown formatting: **bold** for emphasis, *italic* for emphasis, \\n\\n for paragraph breaks
-- Short descriptions (<50 characters) can remain as plain text
-- professional_summary.content should follow markdown formatting with bullet points ONLY if there are multiple items (2+), otherwise use plain text
+3) Description formatting (markdown)
+- All long-form description fields (work_experience.description, education.description,
+  certifications.description, projects.description, awards.description,
+  publications.description, volunteer_experience.description,
+  professional_summary.content) must be markdown.
+- If there are 2+ distinct items, format as a bullet list:
+  "- Item 1\n  - Item 2".
+- If there is only 1 item, use plain text (NO bullet).
+- Short descriptions (roughly <50 characters) may remain plain text.
 
-EMPTY SECTIONS: If a section has no data (e.g., no projects found), return an empty array [] for that section. DO NOT create placeholder entries with "N/A" or similar text.
+4) Professional summary
+- If the CV has a dedicated summary/profile/objective/about section, copy its content
+  as-is into professional_summary.content.
+- If no such section exists, synthesize a brief 2–4 sentence professional summary
+  based on the CV (experience, education, skills, domains). Do not invent facts
+  beyond what the CV implies.
+- If the CV is too sparse to form a meaningful summary, leave it empty:
 
-PROFESSIONAL SUMMARY RULES:
-- FIRST: Look for any dedicated summary/profile/objective/about section in the CV (under headings like "Summary", "Profile", "Objective", "About Me", "Professional Summary", or similar)
-- If a dedicated summary section exists, extract ALL its content preserving the original wording
-- If NO dedicated summary section exists, synthesize a brief professional summary (2-4 sentences) based on the person's work experience, education, key skills, and career progression shown throughout the CV
-- The synthesized summary should highlight: years of experience, key domains/technologies, notable positions/companies, educational background, and core expertise
-- If the CV lacks sufficient information to create a meaningful summary (very sparse CV), return empty content: {{"content": "", "keywords": []}}
-- DO NOT just repeat the academic title from the header (e.g., "PhD in Computer Science" alone is too minimal)
-- Examples of content too minimal: "PhD in Computer Science", "Software Engineer", "John Doe"
+5) Skills
+- skills.technical: each item is a single atomic technology/skill
+  (e.g. "Python", "FastAPI", "React", "Docker").
+  - Do NOT include category labels like "Programming Languages:".
+  - Do NOT group multiple skills with commas/colons in one item; split into
+    separate items.
+- skills.soft: each item is a single atomic soft skill
+  (e.g. "Problem Solving", "Team Leadership").
+- skills.languages: each item is an object with "language" and "proficiency"
+  (e.g. {{"language": "English", "proficiency": "Fluent"}}).
 
-TITLE INFERENCE RULES (REQUIRED):
-- work_experience.position: If the position field is completely missing or empty, MUST infer from company, description, responsibilities, and context. DO NOT leave empty. If ANY position text exists (even informal/unconventional), preserve it EXACTLY including parenthetical content.
-- education.degree: If the degree field is completely missing or empty, MUST infer from institution level, field_of_study, and context. DO NOT leave empty. If ANY degree text exists (even informal/unconventional like "BS (bullshit)"), preserve it EXACTLY including all parenthetical content, slang, or humor.
+6) Publications
+- Only include items that appear in an explicit “Publications” section.
+- Do NOT infer publications from thesis/dissertation titles in education.
 
-PUBLICATIONS RULES (CRITICAL):
-- ONLY include publications explicitly listed in a dedicated "Publications" section
-- DO NOT infer publications from thesis/dissertation titles in education sections
-- If no Publications section exists, return empty array []
+7) Empty sections
+- If a section has no data, return an empty array [] (or default object for
+  personal_info / professional_summary). Do NOT use "N/A" or other placeholders.
 
-SKILLS FORMATTING RULES (CRITICAL):
-- technical: Each item must be ONE atomic skill/technology only (e.g., "Python", "FastAPI", "React", "Docker")
-  - DO NOT include category labels like "Programming Languages:" or "Web Technologies:"
-  - DO NOT combine multiple skills with commas or colons in one item (e.g., NOT "Python, JavaScript, TypeScript")
-  - Split grouped skills into separate atomic items: "Python", "JavaScript", "TypeScript"
-  - Example: ["Python", "FastAPI", "React", "Docker", "MongoDB"] NOT ["Programming Languages: Python, JavaScript"]
-  - IMPORTANT: Preserve the original wording of each skill exactly as written
-- soft: Each item must be ONE atomic soft skill only (e.g., "Problem Solving", "Team Leadership", "Communication")
-  - DO NOT combine multiple skills in one item
-  - Example: ["Problem Solving", "Team Leadership", "Communication"] NOT ["Problem Solving, Team Leadership"]
-- languages: Each item must be an object with "language" and "proficiency" fields
-  - Example: [{{"language": "English", "proficiency": "Fluent"}}, {{"language": "German", "proficiency": "B1"}}]
-
-CV: {text_content}
-
-Return JSON (omit empty sections):
-{{
-  "personal_info": {{"full_name": "str", "email": "str", "phone": "str", "location": "str", "linkedin_url": "str", "website_url": "str", "github_url": "str"}},
-  "professional_summary": {{"content": "str (markdown bullets/paragraphs, NO headers, plain text if single item)", "keywords": []}},
-  "work_experience": [{{"company": "str", "position": "str", "location": "str|null", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "current": bool, "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "technologies": []}}],
-  "education": [{{"institution": "str", "degree": "str", "field_of_study": "str", "location": "str|null", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "gpa": "str|null", "description": "str (markdown bullets/paragraphs, NO headers)", "achievements": [], "honors": []}}],
-  "skills": {{"technical": ["Python", "FastAPI", "React"], "soft": ["Problem Solving", "Communication"], "languages": [{{"language": "English", "proficiency": "Fluent"}}]}},
-  "certifications": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD|null", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
-  "projects": [{{"name": "str", "description": "str (markdown bullets/paragraphs, NO headers)", "technologies": [], "url": "str|null"}}],
-  "awards": [{{"name": "str", "issuer": "str", "date": "YYYY-MM-DD", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
-  "publications": [{{"title": "str", "authors": "str", "journal": "str", "date": "YYYY-MM-DD", "url": "str|null"}}] (ONLY if explicitly in Publications section),
-  "volunteer_experience": [{{"organization": "str", "role": "str", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "str (markdown bullets/paragraphs, NO headers)"}}],
-  "is_valid_cv": true,
-  "validation_error": null
-}}"""
+CV text:
+{text_content}"""
 
     try:
         if not is_ai_enabled():
             raise RuntimeError("OpenAI disabled")
 
-        # Use unified OpenAI call builder
+        # Use unified OpenAI call builder (schema attached to API call, not in prompt)
         parsed_content, metadata = await call_openai_with_schema(
             system_prompt="You are an expert CV parser. Extract structured information from CVs and return valid JSON.",
             user_prompt=prompt,
@@ -198,6 +181,7 @@ Return JSON (omit empty sections):
             cv_id=cv_id,
             operation_type="parse_cv",
             db_session=db_session,
+            text_format_schema=CV_PARSING_RESPONSE_FORMAT,
         )
 
         # Check if AI determined this is not a valid CV

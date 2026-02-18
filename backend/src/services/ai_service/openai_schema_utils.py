@@ -1,12 +1,17 @@
 """
 OpenAI Responses API JSON schema utilities.
 
-Provides CV_CORRECTIONS_COACHING_FORMAT (full CV quality analysis) and
-SINGLE_ISSUE_RESPONSE_FORMAT (single-field coaching / field retry).
+Provides CV_CORRECTIONS_COACHING_FORMAT (full CV quality analysis),
+SINGLE_ISSUE_RESPONSE_FORMAT (single-field coaching / field retry), and
+CV_PARSING_RESPONSE_FORMAT (structured CV parsing output).
 Shared defs (CoachingQuestion, Coaching, Issue) are defined once and reused.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Type
+
+from pydantic import BaseModel
+
+from src.schemas.ai_response_schemas import CVParsingResponseSchema
 
 # Shared $defs used by both full coaching and single-issue schemas.
 # Issue: quality_score and coaching are optional (type ["integer","null"]) so single-field
@@ -214,3 +219,55 @@ SINGLE_ISSUE_RESPONSE_FORMAT: Dict[str, Any] = {
         "required": ["issue"],
     },
 }
+
+
+def _set_additional_properties_false(schema: Dict[str, Any]) -> None:
+    """
+    Recursively normalize Pydantic-derived JSON schema for OpenAI/OpenRouter.
+
+    - Set additionalProperties: false on every object.
+    - Ensure every object with 'properties' also has a 'required' array that
+      includes *all* property keys (OpenAI/OpenRouter strict mode requirement).
+    Modifies schema in place.
+    """
+    if not isinstance(schema, dict):
+        return
+    # When properties are present, ensure "required" includes all keys.
+    props = schema.get("properties")
+    if isinstance(props, dict):
+        required = set(schema.get("required") or []) | set(props.keys())
+        schema["required"] = list(required)
+    if schema.get("type") == "object" or "properties" in schema:
+        schema["additionalProperties"] = False
+    for v in schema.values():
+        if isinstance(v, dict):
+            _set_additional_properties_false(v)
+        elif isinstance(v, list):
+            for item in v:
+                if isinstance(item, dict):
+                    _set_additional_properties_false(item)
+
+
+def _format_from_pydantic(
+    model: Type[BaseModel],
+    name: str,
+    description: str,
+) -> Dict[str, Any]:
+    """Build OpenAI/OpenRouter text format dict from a Pydantic model schema."""
+    raw_schema = model.model_json_schema()
+    _set_additional_properties_false(raw_schema)
+    return {
+        "type": "json_schema",
+        "name": name,
+        "strict": True,
+        "description": description,
+        "schema": raw_schema,
+    }
+
+
+# CV parsing: structured output attached to the API call (not embedded in prompt).
+CV_PARSING_RESPONSE_FORMAT: Dict[str, Any] = _format_from_pydantic(
+    CVParsingResponseSchema,
+    name="cv_parsing_response",
+    description="Structured CV parsing output with personal_info, work_experience, education, skills, etc.",
+)

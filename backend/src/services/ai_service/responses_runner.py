@@ -97,6 +97,7 @@ async def run_openai_call(
     with_retries_fn: Callable[..., Any],
     extract_cached_tokens_fn: Callable[[Any], int],
     text_format_schema: Optional[Dict[str, Any]] = None,
+    max_output_tokens: int = ...,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Execute an OpenAI Responses API call and return parsed data and metadata.
@@ -104,6 +105,11 @@ async def run_openai_call(
     This function contains the core branching logic used by
     ``call_openai_with_schema`` while keeping dependencies injected so it can
     live outside ``common.py``.
+
+    Note:
+        ``max_output_tokens`` is required and must be provided by callers
+        (typically via ``call_openai_with_schema``) so each operation can
+        control its own completion token limit.
     """
     start_time = time.time()
 
@@ -128,7 +134,7 @@ async def run_openai_call(
         call_kwargs_base: Dict[str, Any] = {
             "model": model,
             "prompt": prompt_payload,
-            "max_output_tokens": AIConfig.MAX_COMPLETION_TOKENS,
+            "max_output_tokens": max_output_tokens,
         }
         if text_verbosity or text_format_schema:
             text_kw: Dict[str, Any] = {}
@@ -199,7 +205,7 @@ async def run_openai_call(
                 {"role": "user", "content": user_prompt},
             ],
             "text": {"format": text_format_schema},
-            "max_output_tokens": AIConfig.MAX_COMPLETION_TOKENS,
+            "max_output_tokens": max_output_tokens,
         }
         if AIConfig.AGENT_PROCESSING_TIER:
             call_kwargs["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
@@ -261,7 +267,7 @@ async def run_openai_call(
                 {"role": "user", "content": user_prompt},
             ],
             "text_format": response_schema,
-            "max_output_tokens": AIConfig.MAX_COMPLETION_TOKENS,
+            "max_output_tokens": max_output_tokens,
         }
         if AIConfig.AGENT_PROCESSING_TIER:
             call_kwargs["service_tier"] = AIConfig.AGENT_PROCESSING_TIER
