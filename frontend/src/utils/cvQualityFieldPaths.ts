@@ -13,6 +13,7 @@ export const FIELD_PATHS = {
  * education, or generic .description). Used to decide when to clear draft history.
  */
 export function isDescriptionFieldPath(fieldPath: string): boolean {
+  if (!fieldPath) return false;
   return (
     fieldPath.endsWith('.description') ||
     fieldPath === FIELD_PATHS.EDUCATION_DESC ||
@@ -25,6 +26,7 @@ export function isDescriptionFieldPath(fieldPath: string): boolean {
  * dismissal request when backend may use different path formats).
  */
 export function bothAreDescriptionField(a: string, b: string): boolean {
+  if (!a || !b) return false;
   const desc = (p: string) =>
     p.endsWith('.description') ||
     p === FIELD_PATHS.EDUCATION_DESC ||

@@ -118,7 +118,7 @@ export function useFormHandlers<T extends { id: string }>(
       updateItem(fieldCorrection.field_name as keyof T, fieldCorrection.corrected_value);
 
       // Dismiss the entire parent WritingCorrection from store
-      await dismissWritingCorrection(parentCorrection.item_id, parentCorrection.section);
+      await dismissWritingCorrection(parentCorrection.item_id, parentCorrection.field_path);
 
       // Show success notification
       showSuccess("Writing correction applied successfully");

@@ -6,7 +6,7 @@
  *
  * Key responsibilities:
  * - Display status chips showing ready/processing/errors counts
- * - Provide action buttons (From Template, From Scratch, Upload)
+ * - Provide action buttons (From Template, Create Empty, Upload)
  * - Wrap CV grid with scrollable container
  * - Render children (CVCard components) in Grid layout
  *
@@ -163,7 +163,7 @@ const CVsCard: React.FC<CVsCardProps> = ({
                 },
               }}
             >
-              From Scratch
+              Create Empty
             </Button>
             <Button
               variant="contained"

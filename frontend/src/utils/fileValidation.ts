@@ -6,7 +6,7 @@
  * validation rules across the application.
  *
  * Key responsibilities:
- * - Validate CV file types (PDF, DOC, DOCX)
+ * - Validate CV file types (PDF, DOCX)
  * - Check file size limits (10MB max)
  * - Provide consistent error messages
  * - Support file metadata extraction
@@ -24,14 +24,13 @@ export interface FileValidationResult {
 
 export interface FileTypeInfo {
   name: string;
-  icon: "pdf" | "doc" | "docx" | "unknown";
+  icon: "pdf" | "docx" | "unknown";
   color: string;
 }
 
 // Constants
 const ALLOWED_TYPES = [
   "application/pdf",
-  "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ] as const;
 
@@ -39,7 +38,6 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const FILE_TYPE_INFO: Record<string, FileTypeInfo> = {
   "application/pdf": { name: "PDF", icon: "pdf", color: "#d32f2f" },
-  "application/msword": { name: "DOC", icon: "doc", color: "#1976d2" },
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
     name: "DOCX",
     icon: "docx",
@@ -54,7 +52,7 @@ export const validateCVFile = (file: File): FileValidationResult => {
   if (!ALLOWED_TYPES.includes(file.type as any)) {
     return {
       isValid: false,
-      error: "Please upload a PDF, DOC, or DOCX file",
+      error: "Please upload a PDF or DOCX file",
     };
   }
 
