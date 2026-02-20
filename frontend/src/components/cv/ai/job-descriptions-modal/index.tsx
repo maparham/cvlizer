@@ -18,7 +18,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -113,6 +113,9 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   const jobDescriptions = useAIStore((state) => state.jobDescriptions);
   const activeJobDescription = useActiveJobDescription(cvId || "");
 
+  // Track whether job descriptions have initially loaded to prevent race conditions
+  const hasInitiallyLoaded = useRef(false);
+
   // Use the centralized polling hook
   const { parsingJobDescriptions } = useJobDescriptionPolling(jobDescriptions, {
     onParsingComplete: () => {
@@ -123,9 +126,17 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     },
   });
 
-  // Notify parent when active job description changes
+  // Mark as loaded once job descriptions are available
   useEffect(() => {
-    if (onJobDescriptionSelect) {
+    if (jobDescriptions.length > 0 && !hasInitiallyLoaded.current) {
+      hasInitiallyLoaded.current = true;
+    }
+  }, [jobDescriptions.length]);
+
+  // Notify parent when active job description changes
+  // Only fires after initial load to prevent race conditions during data fetch
+  useEffect(() => {
+    if (onJobDescriptionSelect && hasInitiallyLoaded.current) {
       onJobDescriptionSelect(activeJobDescription || null);
     }
   }, [activeJobDescription, onJobDescriptionSelect]);

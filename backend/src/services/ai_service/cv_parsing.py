@@ -84,8 +84,7 @@ and custom_sections (for any section that does not match the above).
 
 2) Extraction rules
 - Extract ALL explicit content from the CV.
-- Correct spelling, grammar, punctuation, capitalization
-- Preserve original wording
+- CRITICAL: Preserve ALL original text exactly as written - do not correct spelling, grammar, punctuation, capitalization, or rephrase any content.
 - EXCEPTIONS:
   - work_experience.position: if completely missing/empty, infer a reasonable title from context; otherwise preserve exactly.
   - education.degree: if completely missing/empty, infer a reasonable degree from context; otherwise preserve exactly.

@@ -417,7 +417,7 @@ OUTPUT JSON:
 - CRITICAL: Only suggest changes when there's a clear, substantial benefit. Avoid cosmetic modifications, synonym swapping, or unnecessary rephrasing.
 - For professional_summary: If no changes needed, set the field to null. If changes exist, include html_diff with the diff string.
 - CRITICAL for work_experience and education: Include ALL items with their current_content_score. Use item_type="high_score" for score >= 50 (only id and score). Use item_type="low_score" for score < 50 with clear issues (all suggestion fields). The schema will reject responses that don't follow this format.
-- CRITICAL for html_diff: See HTML DIFF FORMATTING INSTRUCTIONS section above. Must show the COMPLETE suggested text with INLINE HTML change markers only. Mark ONLY changed portions, keep unchanged text plain. Use only <del> and <ins> tags. Properly escape HTML special characters.
+- CRITICAL for html_diff: See HTML DIFF FORMATTING INSTRUCTIONS section above. Must show the COMPLETE suggested text with INLINE HTML change markers only. Mark ONLY changed portions, keep unchanged text plain. Use only <del> and <ins> tags.
 """
 
 
