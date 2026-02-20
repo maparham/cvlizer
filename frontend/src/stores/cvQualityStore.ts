@@ -122,6 +122,8 @@ interface CVQualityStore {
   analysisLoading: boolean;
   analysisError: string | null;
   overallScore: number | null;
+  /** Proofread score (80+ = gate passed). Only set when analysis has correction_mode === 'proofread'. */
+  proofreadScore: number | null;
   isDismissing: boolean;
   /** Set after a successful dismiss PATCH; loadLatestQualityAnalysis skips overwriting for DISMISS_COOLDOWN_MS to avoid ghost cards. */
   lastDismissedAt: number | null;
@@ -169,6 +171,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
   analysisLoading: false,
   analysisError: null,
   overallScore: null,
+  proofreadScore: null,
   isDismissing: false,
   lastDismissedAt: null,
 
@@ -180,12 +183,14 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
       // Clear any existing analyses to ensure a fresh run
       await aiService.deleteAllQualityAnalyses(cvId);
 
-      // Clear local state so old suggestions don't linger while the new run starts
+      // Clear local state so old suggestions don't linger while the new run starts.
+      // Only reset proofreadScore when starting a proofread run; for coaching, keep it so the gate stays correct.
       set({
         qualityAnalysis: null,
         currentCvId: cvId,
         currentAnalysisId: null,
         overallScore: null,
+        ...(correctionMode === 'proofread' && { proofreadScore: null }),
       });
 
       const result = await aiService.createQualityAnalysis(cvId, correctionMode);
@@ -232,16 +237,27 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
       const analysis = await aiService.getQualityAnalysisStatus(analysisId);
 
       if (!analysis.is_generating) {
+        const qualityData = analysis.quality_data || null;
+        const isProofread = qualityData?.correction_mode === 'proofread';
+
+        // Preserve existing proofreadScore when completing non-proofread analysis
+        const currentProofreadScore = get().proofreadScore;
+        const nextProofreadScore =
+          isProofread && analysis.overall_quality_score != null
+            ? analysis.overall_quality_score
+            : currentProofreadScore;
+
         set({
-          qualityAnalysis: analysis.quality_data || null,
+          qualityAnalysis: qualityData,
           currentCvId: analysis.cv_id,
           currentAnalysisId: analysisId,
           analysisLoading: false,
           analysisError: analysis.generation_error || null,
-          overallScore: analysis.overall_quality_score || null,
+          overallScore: analysis.overall_quality_score ?? null,
+          proofreadScore: nextProofreadScore,
         });
-        if (analysis.quality_data) {
-          clearEditedFlagsForQualityAnalysis(analysis.cv_id, analysis.quality_data);
+        if (qualityData) {
+          clearEditedFlagsForQualityAnalysis(analysis.cv_id, qualityData);
         }
       }
 
@@ -293,6 +309,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           analysisLoading: true,
           analysisError: null,
           overallScore: null,
+          proofreadScore: null,
         });
         return;
       }
@@ -308,17 +325,28 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
       }
 
       // Analysis complete - load the stored data
-      if (analysis.quality_data) {
+      const qualityData = analysis.quality_data;
+      const isProofread = qualityData?.correction_mode === 'proofread';
+
+      // Preserve existing proofreadScore when loading non-proofread analysis
+      const currentProofreadScore = get().proofreadScore;
+      const nextProofreadScore =
+        isProofread && analysis.overall_quality_score != null
+          ? analysis.overall_quality_score
+          : currentProofreadScore;
+
+      if (qualityData) {
         set({
-          qualityAnalysis: analysis.quality_data,
+          qualityAnalysis: qualityData,
           currentCvId: cvId,
           currentAnalysisId: analysis.id,
           analysisLoading: false,
           analysisError: analysis.generation_error || null,
-          overallScore: analysis.overall_quality_score || null,
+          overallScore: analysis.overall_quality_score ?? null,
+          proofreadScore: nextProofreadScore,
           lastDismissedAt: null,
         });
-        clearEditedFlagsForQualityAnalysis(cvId, analysis.quality_data);
+        clearEditedFlagsForQualityAnalysis(cvId, qualityData);
       } else {
         // No quality data returned; clear local state
         set({
@@ -327,7 +355,8 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           currentAnalysisId: analysis.id,
           analysisLoading: false,
           analysisError: analysis.generation_error || null,
-          overallScore: analysis.overall_quality_score || null,
+          overallScore: analysis.overall_quality_score ?? null,
+          proofreadScore: null,
           lastDismissedAt: null,
         });
       }
@@ -345,6 +374,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           analysisLoading: false,
           qualityAnalysis: null,
           overallScore: null,
+          proofreadScore: null,
           currentAnalysisId: null,
         });
       }
@@ -602,6 +632,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
       analysisLoading: false,
       analysisError: null,
       overallScore: null,
+      proofreadScore: null,
       isDismissing: false,
       lastDismissedAt: null,
     });

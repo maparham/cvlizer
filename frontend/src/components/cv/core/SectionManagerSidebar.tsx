@@ -52,6 +52,7 @@ import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext"
 import { useActiveJobDescription, useAIStore, useCVDrafts } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useCVStore } from "../../../stores/cv";
+import { useCVQualityStore } from "../../../stores/cvQualityStore";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import { setFaviconBadge, clearFaviconBadge, isPageHidden as isFaviconPageHidden } from "../../../utils/faviconBadge";
 import { setTitleNotification, clearTitleNotification } from "../../../utils/titleNotification";
@@ -122,6 +123,16 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
 
   // Active job description from existing AI store
   const activeJobDescription = useActiveJobDescription(cvId || "");
+
+  // Gate: disable job fit and coaching until proofread score is at least 80 (file-parsed CVs only).
+  // Check currentCV?.id === cvId so we don't mix metadata from a different CV during navigation.
+  const currentCV = useCVStore((state) => state.currentCV);
+  const proofreadScore = useCVQualityStore((state) => state.proofreadScore);
+  const qualityStoreCvId = useCVQualityStore((state) => state.currentCvId);
+  const isProofreadGateActive =
+    currentCV?.id === cvId &&
+    currentCV?.is_imported === true &&
+    (qualityStoreCvId !== cvId || proofreadScore === null || proofreadScore < 80);
   const prevJobDescriptionId = useRef<string | undefined>(
     activeJobDescription?.id,
   );
@@ -833,11 +844,16 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                 suggestionsLoading={suggestionsLoading}
                 onAddToCV={onContentUpdate}
                 countdownSeconds={countdownSeconds}
+                proofreadGateActive={isProofreadGateActive}
               />
 
               {/* Suggestions Sidebar */}
               {(totalSuggestionsCount > 0 || cvId) && (
-                <SuggestionsSidebar cvData={cvData} cvId={cvId} />
+                <SuggestionsSidebar
+                  cvData={cvData}
+                  cvId={cvId}
+                  proofreadGateActive={isProofreadGateActive}
+                />
               )}
 
               {/* Discard All Suggestions Button */}

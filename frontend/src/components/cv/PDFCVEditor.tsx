@@ -142,7 +142,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     }
   }, [currentAnalysisId, analysisLoading, cvId, addTask]);
 
-  // Auto-trigger CV quality analysis on first load for AI-parsed CVs
+  // Auto-trigger "fix spelling and grammar" on first load for file-parsed CVs only
   // Use ref to track if auto-trigger has been attempted for this CV
   const autoTriggerAttemptedRef = useRef<string | null>(null);
 
@@ -152,11 +152,12 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
       autoTriggerAttemptedRef.current = null;
     }
 
-    // Only auto-trigger if CV is parsed and no analysis exists yet
+    // Only auto-trigger for file-parsed CVs (not manually created), parsed, and no analysis yet
     const shouldAutoTrigger =
       cvId &&
       !isTempCVId(cvId) &&
-      cvData?.is_parsed &&
+      currentCV?.is_parsed === true &&
+      currentCV?.is_imported === true &&
       !qualityAnalysis &&
       !analysisLoading &&
       !autoTriggerAttemptedRef.current;
@@ -170,11 +171,18 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
       // Mark as attempted to prevent multiple triggers
       autoTriggerAttemptedRef.current = cvId;
 
-      // Auto-trigger quality analysis for newly AI-parsed CVs
+      // Auto-trigger proofread analysis for file-parsed CVs (first time only)
       // Delay ensures loadLatestQualityAnalysis has time to complete first
       const triggerAnalysis = async () => {
         // Double-check conditions before triggering
-        if (!cvId || isTempCVId(cvId) || !cvData?.is_parsed || qualityAnalysis || analysisLoading) {
+        if (
+          !cvId ||
+          isTempCVId(cvId) ||
+          !currentCV?.is_parsed ||
+          !currentCV?.is_imported ||
+          qualityAnalysis ||
+          analysisLoading
+        ) {
           return;
         }
 
@@ -187,7 +195,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
         }
 
         try {
-          const analysisId = await generateQualityAnalysis(cvId);
+          const analysisId = await generateQualityAnalysis(cvId, 'proofread');
           if (analysisId) {
             addTask({
               id: analysisId,
@@ -207,7 +215,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
       const timeoutId = setTimeout(triggerAnalysis, 1000);
       return () => clearTimeout(timeoutId);
     }
-  }, [cvId, cvData?.is_parsed, qualityAnalysis, analysisLoading, generateQualityAnalysis, addTask, activeTasks, currentCV?.updated_at]);
+  }, [cvId, currentCV?.is_parsed, currentCV?.is_imported, qualityAnalysis, analysisLoading, generateQualityAnalysis, addTask, activeTasks, currentCV?.updated_at]);
 
 
   return (

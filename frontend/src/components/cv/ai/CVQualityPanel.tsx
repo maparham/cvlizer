@@ -5,7 +5,7 @@
  * Shown in the AI suggestions sidebar.
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -13,13 +13,9 @@ import {
   CircularProgress,
   Chip,
   Alert,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
+  Tooltip,
 } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
@@ -49,6 +45,8 @@ const useScopedQualityState = (cvId: string) => {
 
 interface CVQualityPanelProps {
   cvId: string;
+  /** When true, disable coaching option until proofread score is at least 80 (file-parsed CVs only). */
+  proofreadGateActive?: boolean;
 }
 
 /**
@@ -70,7 +68,10 @@ const getScoreLabel = (score: number): string => {
   return 'Needs Improvement';
 };
 
-export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
+export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
+  cvId,
+  proofreadGateActive = false,
+}) => {
   // Use scoped state that only shows data for the current CV
   const { overallScore, analysisLoading, analysisError } = useScopedQualityState(cvId);
 
@@ -83,10 +84,6 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
   const { addTask } = useAITaskPollingContext();
   const isMountedRef = useRef(true);
 
-  // Menu state for correction mode selection
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const menuOpen = Boolean(menuAnchorEl);
-
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -94,17 +91,7 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
     };
   }, []);
 
-  const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-  };
-
   const handleAnalyze = async (correctionMode: CorrectionMode) => {
-    handleMenuClose();
-
     try {
       const analysisId = await generateQualityAnalysis(cvId, correctionMode);
 
@@ -146,71 +133,60 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({ cvId }) => {
         </Box>
       )}
 
-      {/* Analyze Button */}
-      <Button
-        variant={overallScore === null ? 'contained' : 'outlined'}
-        color="primary"
-        fullWidth
-        startIcon={
-          analysisLoading ? <CircularProgress size={20} /> : <AutoAwesomeIcon />
-        }
-        onClick={handleButtonClick}
-        disabled={analysisLoading}
-        aria-controls={menuOpen ? 'correction-mode-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={menuOpen ? 'true' : undefined}
-        sx={{
-          py: 1.5,
-          textTransform: 'none',
-          fontWeight: 600,
-        }}
-      >
-        {analysisLoading
-          ? 'Improving CV...'
-          : overallScore === null
-          ? 'Improve my CV'
-          : 'Improve my CV again'}
-      </Button>
+      {/* Fix spelling and grammar button */}
+      <Tooltip title="Correct typos, grammar, and punctuation only" arrow>
+        <Button
+          variant={overallScore === null ? 'contained' : 'outlined'}
+          color="primary"
+          fullWidth
+          startIcon={
+            analysisLoading ? (
+              <CircularProgress size={20} />
+            ) : (
+              <SpellcheckIcon />
+            )
+          }
+          onClick={() => handleAnalyze('proofread')}
+          disabled={analysisLoading}
+          sx={{
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
+          {analysisLoading ? 'Improving CV...' : 'Fix spelling and grammar'}
+        </Button>
+      </Tooltip>
 
-      {/* Correction Mode Menu */}
-      <Menu
-        id="correction-mode-menu"
-        anchorEl={menuAnchorEl}
-        open={menuOpen}
-        onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'center',
-        }}
-        slotProps={{
-          paper: {
-            sx: { minWidth: 280 },
-          },
-        }}
+      {/* Improve writing style button */}
+      <Tooltip
+        title={
+          proofreadGateActive
+            ? "Fix spelling and grammar first and reach 80/100 to unlock this."
+            : "Also reword unprofessional language"
+        }
+        arrow
       >
-        <MenuItem onClick={() => handleAnalyze('proofread')}>
-          <ListItemIcon>
-            <SpellcheckIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText
-            primary="Fix spelling and grammar"
-            secondary="Correct typos, grammar, and punctuation only"
-          />
-        </MenuItem>
-        <MenuItem onClick={() => handleAnalyze('coaching')}>
-          <ListItemIcon>
-            <EditNoteIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText
-            primary="Fix writing and unprofessional content"
-            secondary="Also reword unprofessional language"
-          />
-        </MenuItem>
-      </Menu>
+        {/* span allows tooltip on disabled button */}
+        <span>
+          <Button
+            variant="outlined"
+            color="primary"
+            fullWidth
+            startIcon={<EditNoteIcon />}
+            onClick={() => handleAnalyze('coaching')}
+            disabled={proofreadGateActive || analysisLoading}
+            sx={{
+              py: 1.5,
+              textTransform: 'none',
+              fontWeight: 600,
+              mt: 1,
+            }}
+          >
+            Improve writing style
+          </Button>
+        </span>
+      </Tooltip>
 
       {/* Clear All Suggestions Button */}
       {overallScore !== null && (

@@ -54,6 +54,8 @@ interface SuggestionItem {
 interface SuggestionsSidebarProps {
   cvData?: CVData;
   cvId?: string;
+  /** When true, disable coaching option until proofread score is at least 80 (file-parsed CVs only). */
+  proofreadGateActive?: boolean;
 }
 
 interface SuggestionGroupProps {
@@ -172,7 +174,11 @@ const SuggestionGroup: React.FC<SuggestionGroupProps> = ({
   );
 };
 
-const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData, cvId }) => {
+const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({
+  cvData,
+  cvId,
+  proofreadGateActive = false,
+}) => {
   const { allSuggestions } = useAISuggestionsStore();
   const { qualityAnalysis } = useCVQualityStore();
 
@@ -487,7 +493,7 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({ cvData, cvId })
       {/* CV Quality Panel - Always shown if cvId is available */}
       {cvId && (
         <>
-          <CVQualityPanel cvId={cvId} />
+          <CVQualityPanel cvId={cvId} proofreadGateActive={proofreadGateActive} />
           {(hasJobSuggestions || hasQualitySuggestions) && <Divider sx={{ my: 2 }} />}
         </>
       )}
