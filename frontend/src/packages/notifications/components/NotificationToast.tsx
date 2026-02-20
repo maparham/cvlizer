@@ -7,8 +7,8 @@
  * Key features:
  * - Listens for new notifications (where shown: false)
  * - Displays toast for newest unshown notification
- * - Positioned below toolbar, right of CV view
- * - Same width as notification drawer (400px)
+ * - Positioned below toolbar, right side of viewport
+ * - Compact width (260px) with tight spacing to avoid overlapping CV content
  * - Auto-dismisses after 5 seconds
  * - User can manually close it
  * - Smooth slide-in/slide-out animation
@@ -125,9 +125,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
       }
 
       // Auto-dismiss after 5 seconds
-      timeoutRef.current = setTimeout(() => {
-        handleClose();
-      }, 5000);
+      timeoutRef.current = setTimeout(() => handleClose(), 5000);
     }
 
   }, [notifications, toastOnlyQueue, currentToast]);
@@ -158,7 +156,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
           position: "fixed",
           top: 64, // Below toolbar
           right: 16,
-          width: 400,
+          width: 260,
           maxWidth: "90vw",
           zIndex: 999, // Below drawer but above content
         }}
@@ -180,7 +178,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
           <Alert
             severity={currentToast.type}
             action={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0 }}>
                 <IconButton
                   aria-label="close"
                   color="inherit"
@@ -189,9 +187,9 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
                     e.stopPropagation();
                     handleClose();
                   }}
-                  sx={{ p: 0.5 }}
+                  sx={{ p: 0.25 }}
                 >
-                  <CloseIcon fontSize="inherit" />
+                  <CloseIcon sx={{ fontSize: 18 }} />
                 </IconButton>
                 <IconButton
                   aria-label="open drawer"
@@ -201,23 +199,39 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
                     e.stopPropagation();
                     handleClick();
                   }}
-                  sx={{ p: 0.5 }}
+                  sx={{ p: 0.25 }}
                 >
-                  <ChevronRightIcon fontSize="inherit" />
+                  <ChevronRightIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               </Box>
             }
             sx={{
+              py: 1,
+              px: 1.25,
+              alignItems: "flex-start",
+              "& .MuiAlert-icon": { p: 0, mr: 0.5 },
+              "& .MuiAlert-message": {
+                py: 0,
+                px: 0,
+                flex: 1,
+                minWidth: 0,
+              },
               "& .MuiAlert-action": {
                 alignSelf: "flex-start",
                 marginTop: 0,
                 marginRight: 0,
+                marginLeft: 0,
+                paddingLeft: 0,
               },
             }}
           >
-            <Box sx={{ width: "100%" }}>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
-                <Typography variant="subtitle2" component="div" sx={{ fontWeight: 600 }}>
+            <Box sx={{ width: "100%", minWidth: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 0.5, mb: 0.25 }}>
+                <Typography
+                  variant="subtitle2"
+                  component="div"
+                  sx={{ fontWeight: 600, flex: 1, minWidth: 0, wordBreak: "break-word" }}
+                >
                   {currentToast.message || currentToast.title}
                 </Typography>
                 {currentToast.count > 1 && (
@@ -242,9 +256,9 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ onOpenDrawer, cvI
                 variant="caption"
                 sx={{
                   display: "block",
-                  mt: 0.5,
+                  mt: 0.25,
                   color: "text.disabled",
-                  fontSize: "0.75rem",
+                  fontSize: "0.7rem",
                 }}
               >
                 {formatRelativeTime(currentToast.timestamp)}

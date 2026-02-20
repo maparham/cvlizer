@@ -152,18 +152,19 @@ class TestProfessionalSummaryFiltering:
         """Test that professional_summary is filtered when marked as hidden."""
         cv_data = {
             "personal_info": {"full_name": "John Doe"},
-            "professional_summary": {
-                "content": "This is my secret summary that should not be shared."
-            },
+            "custom_sections": [
+                {
+                    "id": "custom_secret",
+                    "title": "Professional Summary",
+                    "content": "This is my secret summary that should not be shared.",
+                    "type": "professional_summary",
+                }
+            ],
             "skills": {"technical": ["Python"]},
             "section_config": {
                 "sections": [
                     {"id": "personal_info", "type": "personal_info", "visible": True},
-                    {
-                        "id": "professional_summary",
-                        "type": "professional_summary",
-                        "visible": False,
-                    },
+                    {"id": "custom_secret", "type": "custom", "visible": False},
                     {"id": "skills", "type": "skills", "visible": True},
                 ]
             },
@@ -172,7 +173,7 @@ class TestProfessionalSummaryFiltering:
 
         prompt = _build_ai_suggestions_prompt(cv_data, job_description)
 
-        # professional_summary should be filtered out
+        # Hidden custom (summary) section should not be in prompt
         assert "secret summary" not in prompt
         assert "should not be shared" not in prompt
 
@@ -204,10 +205,17 @@ class TestAISuggestionsFiltering:
         assert "MIT" in prompt or "education" in prompt
 
     def test_ai_suggestions_excludes_hidden_professional_summary(self):
-        """Test that hidden professional_summary is not in AI suggestions prompt."""
+        """Test that hidden summary custom section is not in AI suggestions prompt."""
         cv_data = {
             "personal_info": {"full_name": "John Doe"},
-            "professional_summary": {"content": "Secret summary that should be hidden"},
+            "custom_sections": [
+                {
+                    "id": "custom_summary",
+                    "title": "Professional Summary",
+                    "content": "Secret summary that should be hidden",
+                    "type": "professional_summary",
+                }
+            ],
             "work_experience": [
                 {"id": "1", "company": "Tech Corp", "position": "Engineer"}
             ],
@@ -215,11 +223,7 @@ class TestAISuggestionsFiltering:
             "section_config": {
                 "sections": [
                     {"id": "personal_info", "type": "personal_info", "visible": True},
-                    {
-                        "id": "professional_summary",
-                        "type": "professional_summary",
-                        "visible": False,
-                    },
+                    {"id": "custom_summary", "type": "custom", "visible": False},
                     {"id": "work_experience", "type": "work_experience", "visible": True},
                     {"id": "skills", "type": "skills", "visible": True},
                 ]
@@ -229,11 +233,9 @@ class TestAISuggestionsFiltering:
 
         prompt = _build_ai_suggestions_prompt(cv_data, job_description)
 
-        # Hidden professional_summary should not appear
+        # Hidden summary custom section should not appear
         assert "Secret summary" not in prompt
         assert "should be hidden" not in prompt
-        assert "Current Summary:" in prompt  # The label should still be there
-        # But the summary content should be empty or not present
 
         # Other sections should be present
         assert "Tech Corp" in prompt or "work_experience" in prompt

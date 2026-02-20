@@ -35,8 +35,8 @@ export interface CV {
 // CV Data Structure
 export interface CVData {
   personal_info: PersonalInfo;
-  professional_summary: ProfessionalSummary;
-  why_good_fit?: WhyGoodFit;
+  custom_sections: CustomSection[];
+  why_good_fit_metadata?: WhyGoodFitMetadata;
   work_experience: WorkExperience[];
   education: Education[];
   skills: Skills;
@@ -46,6 +46,18 @@ export interface CVData {
   publications: Publication[];
   volunteer_experience: VolunteerExperience[];
   section_config?: SectionConfig;
+}
+
+// Immutable section type for custom sections; used for AI summary and cover letter
+export type CustomSectionType = "professional_summary" | "cover_letter";
+
+// Custom section (user-defined or AI-extracted, e.g. Professional Summary, References)
+export interface CustomSection {
+  id: string;
+  title: string;
+  content: string;
+  /** Immutable; professional_summary = CV summary, cover_letter = application letter. */
+  type?: CustomSectionType;
 }
 
 // Personal Information
@@ -64,15 +76,26 @@ export interface PersonalInfo {
   show_horizontal_line?: boolean;
 }
 
-// Professional Summary
-export interface ProfessionalSummary {
-  content: string;
-  keywords: string[];
+// Why I'm a Good Fit – metadata only (content/title live in custom_sections id "why_good_fit")
+export interface WhyGoodFitMetadata {
+  fit_analysis: string;
+  confidence_score: number;
+  key_matches: string[];
+  missing_skills?: string[];
+  suggested_improvements?: string[];
+  strengths?: string[];
+  weaknesses?: string[];
+  generated_at: string;
+  job_description_id?: string;
+  tokens_used?: number;
+  generation_time?: number;
+  model_used?: string;
 }
 
-// Why I'm a Good Fit (AI Generated)
+// Full payload for draft/API (content + title + metadata)
 export interface WhyGoodFit {
   content?: string;
+  title?: string;
   fit_analysis?: string;
   confidence_score: number;
   key_matches: string[];
@@ -82,7 +105,6 @@ export interface WhyGoodFit {
   weaknesses?: string[];
   generated_at?: string;
   job_description_id?: string;
-  title?: string; // Dynamic title from AI generation (e.g., "Hello Company Name!")
 }
 
 // Work Experience
@@ -197,8 +219,7 @@ export interface CVSection {
 
 export type CVSectionType =
   | "personal_info"
-  | "professional_summary"
-  | "why_good_fit"
+  | "custom"
   | "work_experience"
   | "education"
   | "skills"
@@ -211,7 +232,7 @@ export type CVSectionType =
 // CV Section Data Union Type
 export type CVSectionData =
   | PersonalInfo
-  | ProfessionalSummary
+  | CustomSection
   | WhyGoodFit
   | WorkExperience[]
   | Education[]

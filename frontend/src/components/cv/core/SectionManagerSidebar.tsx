@@ -67,6 +67,7 @@ interface SectionManagerSidebarProps {
   onTitleSave: (_newTitle: string) => Promise<void>;
   onToggleVisibility: (_sectionId: string) => void;
   onAddNewSection: (_sectionId: string) => void;
+  onAddCustomSection?: () => void;
   onDragStart: (_event: any) => void;
   onDragEnd: (_event: any) => void;
   onContentUpdate?: (content: string, sectionType: string) => void;
@@ -84,6 +85,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   onTitleSave,
   onToggleVisibility,
   onAddNewSection,
+  onAddCustomSection,
   onDragStart,
   onDragEnd,
   onContentUpdate,
@@ -712,6 +714,21 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             >
               Available Sections ({availableSectionsToAdd.length})
             </Typography>
+            {/* Add custom section: placed here so it stays visible when viewing predefined sections */}
+            {onAddCustomSection && (
+              <Box sx={{ mb: 2 }}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={onAddCustomSection}
+                  data-testid="add-custom-section-button"
+                  sx={{ py: 1.5 }}
+                >
+                  Add custom section
+                </Button>
+              </Box>
+            )}
             <Box
               sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 4 }}
             >

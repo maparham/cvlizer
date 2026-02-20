@@ -13,8 +13,7 @@ import { Box, Paper } from "@mui/material";
 import { CVSection } from "../../../types";
 import {
   PersonalInfo,
-  ProfessionalSummary,
-  WhyGoodFit,
+  CustomSection,
   WorkExperience,
   Education,
   Skills,
@@ -31,9 +30,24 @@ import {
   useCVEditor,
 } from "../../../contexts/CVEditorContext";
 import { useInlineDrafts } from "../../../hooks/useInlineDrafts";
+import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import InlineDraftSection from "../ai/InlineDraftSection";
+import { AISummarySuggestionCard } from "../ai/AISummarySuggestionCard";
 import { ValidationErrorBanner } from "../ValidationErrorBanner";
 import EditingIndicator from "./EditingIndicator";
+
+/**
+ * Custom section used for AI summary. Rule is defined in backend
+ * _get_summary_custom_section (ai_suggestions_service.py); frontend mirrors it:
+ * type professional_summary → title "professional summary" (case-insensitive) → first.
+ */
+function getSummaryCustomSection(cvData: { custom_sections?: CustomSection[] } | null): CustomSection | undefined {
+  const list = cvData?.custom_sections ?? [];
+  const byType = list.find((s) => s?.type === "professional_summary");
+  if (byType) return byType;
+  const byTitle = list.find((s) => (s?.title ?? "").trim().toLowerCase() === "professional summary");
+  return byTitle ?? list[0];
+}
 
 interface CVContentAreaProps {
   cvId?: string;
@@ -44,6 +58,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   const { cvData, onUpdateCV, onSave, validationErrors } = useCVEditor();
   const { sections } = useCVEditorControls();
   const { editing, changes } = useCVEditorState();
+  const { allSuggestions, dismissSummarySuggestion } = useAISuggestionsStore();
 
   // Get section title update function
   const updateSectionTitle = sections.updateTitle;
@@ -79,18 +94,23 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
       return null;
     }
 
-    const isEditing = editingSection === section.type;
+    const isEditing =
+      section.type === "custom"
+        ? editingSection === section.id
+        : editingSection === section.type;
+
+    // Section key: for custom sections use section.id (unique per section);
+    // for predefined sections section.id equals section.type.
+    const sectionKey = section.type === "custom" ? section.id : section.type;
 
     // Check if another individual item is being edited in a DIFFERENT section
     const isAnotherItemBeingEdited =
       safeEditingIndividualItem !== null &&
-      safeEditingIndividualItem.sectionId !== section.type;
+      safeEditingIndividualItem.sectionId !== sectionKey;
 
-    // Get drafts that should appear before this section
-    const draftsBefore = getDraftsBeforeSection(section.type);
-
-    // Get drafts that should appear after this section
-    const draftsAfter = getDraftsAfterSection(section.type);
+    // Get drafts that should appear before/after this section
+    const draftsBefore = getDraftsBeforeSection(sectionKey);
+    const draftsAfter = getDraftsAfterSection(sectionKey);
 
     // Create title save callback for this section
     const handleTitleSave = async (newTitle: string) => {
@@ -122,73 +142,73 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               cvId={cvId}
             />
           );
-        case "professional_summary":
-          return (
-            <SectionFactory
-              sectionType="professional_summary"
-              sectionTitle={section.title}
-              onSectionTitleSave={handleTitleSave}
-              data={cvData?.professional_summary}
-              onUpdate={(data: unknown) =>
-                onUpdateCV({
-                  ...cvData,
-                  professional_summary: data as ProfessionalSummary,
-                })
-              }
-              onSave={(data: unknown, message?: string) =>
-                onSave(
-                  {
-                    ...cvData,
-                    professional_summary: data as ProfessionalSummary,
-                  },
-                  message || "Professional summary saved",
-                )
-              }
-              isEditing={isEditing}
-              onEdit={() => handleSectionEdit("professional_summary")}
-              onClose={() => requestSectionCancel()}
-              onUnsavedChanges={onUnsavedChanges}
-              cvId={cvId}
-            />
+        case "custom": {
+          const customSectionData = cvData?.custom_sections?.find(
+            (s) => s.id === section.id,
           );
-        case "why_good_fit":
+          const summarySection = getSummaryCustomSection(cvData);
+          const isSummarySection = summarySection?.id === section.id;
+          const summarySuggestion = isSummarySection
+            ? allSuggestions?.professional_summary
+            : null;
+          const hasSummarySuggestion =
+            summarySuggestion?.suggested_text?.trim().length > 0;
+          const saveCustomSection = async (nextContent: string, message?: string) => {
+            const next = (cvData?.custom_sections ?? []).map((s) =>
+              s.id === section.id ? { ...s, content: nextContent } : s,
+            );
+            await onSave(
+              { ...cvData, custom_sections: next },
+              message || "Section saved",
+            );
+          };
           return (
-            <SectionFactory
-              sectionType="why_good_fit"
-              sectionTitle={section.title}
-              onSectionTitleSave={handleTitleSave}
-              data={cvData?.why_good_fit}
-              onUpdate={(data: unknown) =>
-                onUpdateCV({ ...cvData, why_good_fit: data as WhyGoodFit })
-              }
-              onSave={async (data: unknown, message?: string) => {
-                const whyGoodFitData = data as WhyGoodFit | null;
-                const updatedCvData = {
-                  ...cvData,
-                  why_good_fit: whyGoodFitData,
-                };
-
-                // If the section is being deleted (set to null), also remove it from section config
-                if (whyGoodFitData === null) {
-                  const updatedSections = sections.items.filter(
-                    (s) => s.id !== "why_good_fit",
+            <Box data-section={isSummarySection ? "professional_summary" : section.id}>
+              {hasSummarySuggestion && (
+                <Box sx={{ mb: 2 }}>
+                  <AISummarySuggestionCard
+                    suggestion={summarySuggestion}
+                    onApply={async (suggestedText) => {
+                      await saveCustomSection(
+                        suggestedText,
+                        "Summary suggestion applied",
+                      );
+                      await dismissSummarySuggestion();
+                    }}
+                    onDismiss={dismissSummarySuggestion}
+                  />
+                </Box>
+              )}
+              <SectionFactory
+                sectionType="custom"
+                sectionId={section.id}
+                sectionTitle={section.title}
+                onSectionTitleSave={handleTitleSave}
+                data={customSectionData}
+                onUpdate={(data: unknown) => {
+                  const next = (cvData?.custom_sections ?? []).map((s) =>
+                    s.id === section.id ? { ...s, ...(data as CustomSection) } : s,
                   );
-                  updatedCvData.section_config = {
-                    sections: updatedSections,
-                  };
-                }
-
-                await onSave(
-                  updatedCvData as any,
-                  message || "Why I'm a Good Fit section saved",
-                );
-              }}
-              isEditing={isEditing}
-              onEdit={() => handleSectionEdit("why_good_fit")}
-              onClose={() => requestSectionCancel()}
-              onUnsavedChanges={onUnsavedChanges}
-            />
+                  onUpdateCV({ ...cvData, custom_sections: next });
+                }}
+                onSave={async (data: unknown, message?: string) => {
+                  const next = (cvData?.custom_sections ?? []).map((s) =>
+                    s.id === section.id ? { ...s, ...(data as CustomSection) } : s,
+                  );
+                  await onSave(
+                    { ...cvData, custom_sections: next },
+                    message || "Section saved",
+                  );
+                }}
+                isEditing={isEditing}
+                onEdit={() => handleSectionEdit(section.id)}
+                onClose={() => requestSectionCancel()}
+                onUnsavedChanges={onUnsavedChanges}
+                cvId={cvId}
+              />
+            </Box>
           );
+        }
         case "work_experience":
           return (
             <SectionFactory
@@ -473,10 +493,12 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
 
   // Find the section title for the currently editing section
   const getEditingSectionTitle = (): string | null => {
-    const sectionType = editingSection || editingIndividualItem?.sectionId;
-    if (!sectionType) return null;
+    const sectionKey = editingSection || editingIndividualItem?.sectionId;
+    if (!sectionKey) return null;
 
-    const section = safeSections.find((s) => s.type === sectionType);
+    const section = safeSections.find(
+      (s) => s.type === sectionKey || s.id === sectionKey,
+    );
     return section?.title || null;
   };
 

@@ -284,17 +284,14 @@ class CVDataCleaner {
   clean(): any {
     const cleanedData: any = { ...this.data };
 
-    // Clean professional summary
-    this.cleanProfessionalSummary(cleanedData);
+    // Clean custom sections
+    this.cleanCustomSections(cleanedData);
 
     // Clean personal info
     this.cleanPersonalInfo(cleanedData);
 
     // Clean skills
     this.cleanSkills(cleanedData);
-
-    // Clean why_good_fit section
-    this.cleanWhyGoodFit(cleanedData);
 
     // Clean array sections
     this.cleanArraySections(cleanedData);
@@ -304,20 +301,52 @@ class CVDataCleaner {
       cleanedData.section_config = this.data.section_config;
     }
 
+    // Backend no longer accepts top-level professional_summary (extra_forbidden).
+    // Migrate legacy content into custom_sections, then strip the key.
+    this.migrateProfessionalSummaryAndStrip(cleanedData);
+
     return cleanedData;
   }
 
-  private cleanProfessionalSummary(data: any): void {
-    if (data.professional_summary) {
-      const content = this.cleanString(data.professional_summary.content);
-
-      // Backend requires min 10 characters for professional summary
-      if (!content || content.length < 10) {
-        delete data.professional_summary;
-      } else {
-        data.professional_summary.content = content;
+  /**
+   * Ensure professional_summary is not sent: migrate content into custom_sections
+   * if present, then delete the key so backend validation passes.
+   */
+  private migrateProfessionalSummaryAndStrip(data: any): void {
+    const legacy = data.professional_summary;
+    if (legacy && typeof legacy === "object") {
+      const content = this.cleanString(legacy.content) ?? "";
+      if (!Array.isArray(data.custom_sections)) {
+        data.custom_sections = [];
+      }
+      const summarySection = data.custom_sections.find(
+        (s: any) => s && (s.type === "professional_summary" || (s.title || "").toLowerCase() === "professional summary"),
+      );
+      if (summarySection) {
+        if (content) summarySection.content = content;
+      } else if (content) {
+        data.custom_sections.push({
+          id: `summary_${Date.now()}`,
+          title: "Professional Summary",
+          content,
+          type: "professional_summary",
+        });
       }
     }
+    delete data.professional_summary;
+  }
+
+  private cleanCustomSections(data: any): void {
+    if (!Array.isArray(data.custom_sections)) return;
+    data.custom_sections = data.custom_sections
+      .filter((s: any) => s && typeof s === "object" && s.id)
+      .map((s: any) => ({
+        id: this.cleanString(s.id) || s.id,
+        title: this.cleanString(s.title) || "Section",
+        content: this.cleanString(s.content) ?? "",
+        type:
+          s.type === "cover_letter" ? "cover_letter" : "professional_summary",
+      }));
   }
 
   private cleanPersonalInfo(data: any): void {
@@ -364,51 +393,6 @@ class CVDataCleaner {
           soft,
           languages,
         };
-      }
-    }
-  }
-
-  private cleanWhyGoodFit(data: any): void {
-    if (data.why_good_fit) {
-      // Store the original object to preserve all fields
-      const _original = { ...data.why_good_fit };
-
-      const content = this.cleanString(data.why_good_fit.content);
-      const fitAnalysis = this.cleanString(data.why_good_fit.fit_analysis);
-
-      // Backend requires min 10 characters for why_good_fit content
-      // Check both content and fit_analysis fields
-      const hasValidContent = content && content.length >= 10;
-      const hasValidFitAnalysis = fitAnalysis && fitAnalysis.length >= 10;
-
-      // If neither content nor fit_analysis is valid, delete the entire section
-      if (!hasValidContent && !hasValidFitAnalysis) {
-        delete data.why_good_fit;
-      } else {
-        // IMPORTANT: Keep the original object and only update specific fields
-        // This preserves ALL backend fields like confidence_score, key_matches, etc.
-
-        // Update cleaned content
-        if (!content && fitAnalysis) {
-          data.why_good_fit.content = fitAnalysis;
-        } else if (content) {
-          data.why_good_fit.content = content;
-        }
-
-        // Update cleaned fit_analysis
-        if (fitAnalysis) {
-          data.why_good_fit.fit_analysis = fitAnalysis;
-        }
-
-        // Ensure generated_at field exists (required by backend)
-        if (!data.why_good_fit.generated_at) {
-          data.why_good_fit.generated_at = new Date().toISOString();
-        }
-
-        // Add validation helper fields (these are frontend-only helpers)
-        data.why_good_fit.hasContent = !!data.why_good_fit.content;
-        data.why_good_fit.hasFitAnalysis = !!data.why_good_fit.fit_analysis;
-        data.why_good_fit.hasGeneratedAt = !!data.why_good_fit.generated_at;
       }
     }
   }
@@ -657,42 +641,6 @@ class PersonalInfoValidator extends SectionValidator {
 }
 
 /**
- * Professional Summary validator
- */
-class ProfessionalSummaryValidator extends SectionValidator {
-  validate(data: any): ValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    if (!data?.content?.trim()) {
-      return this.createResult(false, [
-        "Professional summary content is required",
-      ]);
-    }
-
-    const content = data.content.trim();
-
-    if (content.length < 10) {
-      errors.push("Professional summary must be at least 10 characters long");
-    }
-
-    if (content.length < 50) {
-      warnings.push(
-        "Professional summary is quite short, consider expanding it",
-      );
-    }
-
-    if (content.length > 500) {
-      warnings.push(
-        "Professional summary is quite long, consider condensing it",
-      );
-    }
-
-    return this.createResult(errors.length === 0, errors, warnings);
-  }
-}
-
-/**
  * Skills section validator
  */
 class SkillsValidator extends SectionValidator {
@@ -729,7 +677,6 @@ class SkillsValidator extends SectionValidator {
 class SectionValidatorFactory {
   private static validators: Map<string, SectionValidator> = new Map([
     ["personal_info", new PersonalInfoValidator()],
-    ["professional_summary", new ProfessionalSummaryValidator()],
     ["skills", new SkillsValidator()],
   ]);
 

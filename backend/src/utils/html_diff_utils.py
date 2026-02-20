@@ -138,7 +138,31 @@ def extract_original_from_cv_data_issues(
 
         elif item_type == "professional_summary":
             summary_obj = cv_data.get("professional_summary") or {}
-            issue["original"] = summary_obj.get("content", "") or ""
+            content = summary_obj.get("content", "") or ""
+            if not content:
+                custom_sections = cv_data.get("custom_sections") or []
+                summary_section = next(
+                    (
+                        s
+                        for s in custom_sections
+                        if isinstance(s, dict) and s.get("type") == "professional_summary"
+                    ),
+                    None,
+                )
+                content = (summary_section or {}).get("content", "") or ""
+            issue["original"] = content
+
+        elif item_type == "custom" and item_id:
+            custom_sections = cv_data.get("custom_sections") or []
+            section = next(
+                (
+                    s
+                    for s in custom_sections
+                    if isinstance(s, dict) and s.get("id") == item_id
+                ),
+                None,
+            )
+            issue["original"] = (section or {}).get("content", "") or ""
 
     return response
 

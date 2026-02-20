@@ -49,16 +49,15 @@ const studentTemplate: CVTemplate = {
       linkedin_url: "https://linkedin.com/in/yourprofile",
       website_url: "",
     },
-    professional_summary: {
-      content:
-        "Motivated student with strong academic background and hands-on project experience. Seeking opportunities to apply technical skills and contribute to innovative projects.",
-      keywords: [
-        "Student",
-        "Recent Graduate",
-        "Eager to Learn",
-        "Project Experience",
-      ],
-    },
+    custom_sections: [
+      {
+        id: "custom_student_summary",
+        title: "Professional Summary",
+        content:
+          "Motivated student with strong academic background and hands-on project experience. Seeking opportunities to apply technical skills and contribute to innovative projects.",
+        type: "professional_summary",
+      },
+    ],
     education: [
       {
         id: "edu-1",
@@ -107,16 +106,15 @@ const professionalTemplate: CVTemplate = {
       linkedin_url: "https://linkedin.com/in/yourprofile",
       website_url: "https://yourportfolio.com",
     },
-    professional_summary: {
-      content:
-        "Experienced professional with 5+ years in [Industry]. Proven track record of delivering results and leading cross-functional teams. Strong expertise in [Key Skills].",
-      keywords: [
-        "Experienced",
-        "Results-Driven",
-        "Team Leadership",
-        "Industry Expertise",
-      ],
-    },
+    custom_sections: [
+      {
+        id: "custom_pro_summary",
+        title: "Professional Summary",
+        content:
+          "Experienced professional with 5+ years in [Industry]. Proven track record of delivering results and leading cross-functional teams. Strong expertise in [Key Skills].",
+        type: "professional_summary",
+      },
+    ],
     work_experience: [
       {
         id: "work-1",
@@ -187,16 +185,15 @@ const executiveTemplate: CVTemplate = {
       linkedin_url: "https://linkedin.com/in/yourprofile",
       website_url: "https://yourportfolio.com",
     },
-    professional_summary: {
-      content:
-        "Visionary executive with 15+ years of experience driving organizational growth and transformation. Proven track record of building high-performing teams and delivering strategic initiatives that generate significant business value.",
-      keywords: [
-        "Strategic Leadership",
-        "Organizational Growth",
-        "Team Building",
-        "Business Transformation",
-      ],
-    },
+    custom_sections: [
+      {
+        id: "custom_exec_summary",
+        title: "Professional Summary",
+        content:
+          "Visionary executive with 15+ years of experience driving organizational growth and transformation. Proven track record of building high-performing teams and delivering strategic initiatives that generate significant business value.",
+        type: "professional_summary",
+      },
+    ],
     work_experience: [
       {
         id: "work-1",

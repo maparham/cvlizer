@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from src.schemas.cv_quality_schemas import IssueSchema, SingleIssueResponseSchema
 from src.utils.html_diff_utils import clean_html_diff_string
 from src.config import AIConfig
+from .ai_suggestions_service import _get_summary_custom_section
 from .common import call_openai_with_schema, is_ai_enabled
 from .cv_quality_prompts.single_field_coach import build_single_field_coach_system_prompt
 from .openai_schema_utils import SINGLE_ISSUE_RESPONSE_FORMAT
@@ -47,10 +48,15 @@ def get_description_field_text(
     """
     base = (field_path or "").split(".")[0] or ""
 
+    # Summary: first custom section with title "Professional Summary" or first custom
     if base == "professional_summary":
-        obj = cv_data.get("professional_summary") or {}
-        return (obj.get("content") or "") if isinstance(obj, dict) else ""
+        section = _get_summary_custom_section(cv_data)
+        return (section.get("content") or "") if section else ""
 
+    # Custom section by id
+    for s in cv_data.get("custom_sections") or []:
+        if isinstance(s, dict) and s.get("id") == base:
+            return s.get("content") or ""
     if base == "personal_info":
         obj = cv_data.get("personal_info") or {}
         return (obj.get("description") or "") if isinstance(obj, dict) else ""
@@ -73,9 +79,9 @@ def get_description_field_text(
 def _derive_item_type_from_field_path(field_path: str) -> str:
     """Derive item_type from field_path for singular sections or list sections."""
     base = (field_path or "").split(".")[0] or ""
-    if base in ("professional_summary", "personal_info", "work_experience", "education"):
+    if base in ("personal_info", "work_experience", "education"):
         return base
-    return "professional_summary"
+    return "custom"
 
 
 async def generate_single_field_correction(

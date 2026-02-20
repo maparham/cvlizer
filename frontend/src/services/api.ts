@@ -213,45 +213,11 @@ export const cvApi = {
     cvId: string,
     data: { parsed_data: Record<string, unknown> },
   ) => {
-    // Defensive guard: Clean and normalize why_good_fit data if present
-    if (data.parsed_data && data.parsed_data.why_good_fit) {
-      const raw = data.parsed_data.why_good_fit as Record<string, unknown>;
-
-      // Normalize the data to match backend schema (snake_case fields only)
-      const normalized: Record<string, unknown> = {
-        content: (raw.content as string) || (raw.fit_analysis as string) || "",
-        fit_analysis:
-          (raw.fit_analysis as string) || (raw.content as string) || "",
-        confidence_score: raw.confidence_score ?? raw.confidenceScore,
-        key_matches: raw.key_matches || [],
-        missing_skills: raw.missing_skills || [],
-        suggested_improvements: raw.suggested_improvements || [],
-        strengths: raw.strengths || [],
-        weaknesses: raw.weaknesses || [],
-        generated_at: (raw.generated_at as string) || new Date().toISOString(),
-        job_description_id: raw.job_description_id,
-      };
-
-      // Add optional fields only if they exist
-      if (raw.tokens_used !== undefined)
-        normalized.tokens_used = raw.tokens_used;
-      if (raw.generation_time !== undefined)
-        normalized.generation_time = raw.generation_time;
-      if (raw.model_used) normalized.model_used = raw.model_used;
-      if (raw.title) normalized.title = raw.title;
-
-      // Validate required fields
-      if (
-        normalized.confidence_score === undefined ||
-        normalized.confidence_score === null
-      ) {
-        throw new Error(
-          "Cannot save CV: why_good_fit section is missing confidence_score. Please refresh the page and try again.",
-        );
-      }
-
-      // Replace with normalized data
-      data.parsed_data.why_good_fit = normalized;
+    // Do not send top-level why_good_fit; content lives in custom_sections
+    if (data.parsed_data && "why_good_fit" in data.parsed_data) {
+      const { why_good_fit: _dropped, ...rest } =
+        data.parsed_data as Record<string, unknown> & { why_good_fit?: unknown };
+      data.parsed_data = rest;
     }
 
     const response = await api.put(`/api/cvs/${cvId}`, data);

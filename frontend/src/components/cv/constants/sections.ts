@@ -24,14 +24,6 @@ export const AVAILABLE_SECTIONS: SectionDefinition[] = [
     icon: "👤",
     category: "core",
   },
-  {
-    id: "professional_summary",
-    name: "Professional Summary",
-    description: "Career summary, objective, profile statement",
-    component: "ProfessionalSummarySection",
-    icon: "📝",
-    category: "core",
-  },
 
   // Experience sections
   {
@@ -124,10 +116,9 @@ export const getAvailableSectionIds = (): string[] => {
   return AVAILABLE_SECTIONS.map((section) => section.id);
 };
 
-// Section ordering for display
+// Section ordering for display (custom sections are not listed; they follow in section_config)
 export const SECTION_DISPLAY_ORDER = [
   "personal_info",
-  "professional_summary",
   "work_experience",
   "education",
   "skills",

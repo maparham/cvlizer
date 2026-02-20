@@ -44,28 +44,35 @@ def _build_full_parsed_cv() -> dict:
             "github_url": "github.com/alexandradoe",
             "academic_title": "Senior Software Engineer",
         },
-        "professional_summary": {
-            "content": (
-                "Experienced engineer specializing in scalable web platforms and AI.\n"
-                "- 8+ years across backend, frontend, and ML ops\n"
-                "- **Leadership**: led teams of 5–10 engineers\n"
-                "- *Impact*: performance +40%, costs -25%"
-            ),
-            "keywords": [
-                "Python",
-                "FastAPI",
-                "React",
-                "PostgreSQL",
-                "AWS",
-            ],
-        },
-        "why_good_fit": {
-            "title": "Why I'm a Good Fit",
-            "content": (
-                "- Domain experience in fintech and SaaS\n"
-                "- **Customer-first** delivery with measurable outcomes\n"
-                "- *Hands-on* with CI/CD, IaC, and observability"
-            ),
+        "custom_sections": [
+            {
+                "id": "professional_summary",
+                "type": "professional_summary",
+                "title": "Professional Summary",
+                "content": (
+                    "Experienced engineer specializing in scalable web platforms and AI.\n"
+                    "- 8+ years across backend, frontend, and ML ops\n"
+                    "- **Leadership**: led teams of 5–10 engineers\n"
+                    "- *Impact*: performance +40%, costs -25%"
+                ),
+            },
+            {
+                "id": "why_good_fit",
+                "type": "cover_letter",
+                "title": "Why I'm a Good Fit",
+                "content": (
+                    "- Domain experience in fintech and SaaS\n"
+                    "- **Customer-first** delivery with measurable outcomes\n"
+                    "- *Hands-on* with CI/CD, IaC, and observability"
+                ),
+            },
+        ],
+        "why_good_fit_metadata": {
+            "fit_analysis": "Domain experience in fintech and SaaS.",
+            "confidence_score": 85,
+            "key_matches": ["Python", "FastAPI", "SaaS"],
+            "job_description_id": None,
+            "generated_at": "2025-01-01T12:00:00Z",
         },
         "work_experience": [
             {
@@ -190,14 +197,14 @@ def _build_full_parsed_cv() -> dict:
             "sections": [
                 {
                     "id": "professional_summary",
-                    "type": "professional_summary",
+                    "type": "custom",
                     "title": "Professional Summary",
                     "visible": True,
                     "order": 0,
                 },
                 {
                     "id": "why_good_fit",
-                    "type": "why_good_fit",
+                    "type": "custom",
                     "title": "Why I'm a Good Fit",
                     "visible": True,
                     "order": 1,

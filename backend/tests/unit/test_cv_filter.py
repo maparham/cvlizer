@@ -19,9 +19,14 @@ def sample_cv_data():
             "phone": "555-0123",
             "location": "New York, NY",
         },
-        "professional_summary": {
-            "content": "Experienced software engineer with 5 years of experience."
-        },
+        "custom_sections": [
+            {
+                "id": "custom_summary_1",
+                "title": "Professional Summary",
+                "content": "Experienced software engineer with 5 years of experience.",
+                "type": "professional_summary",
+            }
+        ],
         "work_experience": [
             {
                 "id": "1",
@@ -100,8 +105,8 @@ def sample_cv_data():
             "sections": [
                 {"id": "personal_info", "type": "personal_info", "visible": True},
                 {
-                    "id": "professional_summary",
-                    "type": "professional_summary",
+                    "id": "custom_summary_1",
+                    "type": "custom",
                     "visible": True,
                 },
                 {"id": "work_experience", "type": "work_experience", "visible": True},
@@ -134,13 +139,14 @@ class TestFilterHiddenSections:
         assert "education" in result
         assert "skills" in result
 
-    def test_filters_hidden_professional_summary(self, sample_cv_data):
-        """Test that professional_summary is filtered when hidden."""
+    def test_filters_hidden_custom_section(self, sample_cv_data):
+        """Test that a hidden custom section is filtered from custom_sections."""
         sample_cv_data["section_config"]["sections"][1]["visible"] = False
 
         result = filter_hidden_sections(sample_cv_data)
 
-        assert "professional_summary" not in result
+        custom_ids = [s["id"] for s in result.get("custom_sections", [])]
+        assert "custom_summary_1" not in custom_ids
         assert "personal_info" in result
         assert "work_experience" in result
 
@@ -176,7 +182,7 @@ class TestFilterHiddenSections:
         result = filter_hidden_sections(sample_cv_data)
 
         assert "personal_info" in result
-        assert "professional_summary" in result
+        assert "custom_sections" in result and len(result["custom_sections"]) > 0
         assert "work_experience" in result
         assert "education" in result
         assert "skills" in result
@@ -255,18 +261,23 @@ class TestFilterHiddenSections:
         assert "education" in result
 
     def test_filters_why_good_fit_when_hidden(self, sample_cv_data):
-        """Test that why_good_fit section is filtered when hidden."""
-        sample_cv_data["why_good_fit"] = {
-            "content": "I am a good fit because...",
-            "confidence_score": 85,
-        }
+        """Test that why_good_fit custom section is filtered when hidden."""
+        sample_cv_data.setdefault("custom_sections", []).append(
+            {
+                "id": "why_good_fit",
+                "type": "cover_letter",
+                "title": "Why I'm a Good Fit",
+                "content": "I am a good fit because...",
+            }
+        )
         sample_cv_data["section_config"]["sections"].append(
-            {"id": "why_good_fit", "type": "why_good_fit", "visible": False}
+            {"id": "why_good_fit", "type": "custom", "visible": False}
         )
 
         result = filter_hidden_sections(sample_cv_data)
 
-        assert "why_good_fit" not in result
+        custom = result.get("custom_sections") or []
+        assert not any(s.get("id") == "why_good_fit" for s in custom)
 
     def test_default_visible_true_when_not_specified(self):
         """Test that sections without explicit visible field default to visible."""
@@ -294,7 +305,6 @@ class TestFilterHiddenSections:
     def test_filters_all_filterable_section_types(self):
         """Test that all filterable section types can be filtered."""
         cv_data = {
-            "professional_summary": {"content": "Summary"},
             "work_experience": [{"company": "Corp"}],
             "education": [{"institution": "MIT"}],
             "skills": {"technical": ["Python"]},
@@ -303,14 +313,16 @@ class TestFilterHiddenSections:
             "awards": [{"name": "Award"}],
             "publications": [{"title": "Paper"}],
             "volunteer_experience": [{"organization": "Charity"}],
-            "why_good_fit": {"content": "Fit"},
+            "custom_sections": [
+                {
+                    "id": "why_good_fit",
+                    "type": "cover_letter",
+                    "title": "Fit",
+                    "content": "Fit",
+                }
+            ],
             "section_config": {
                 "sections": [
-                    {
-                        "id": "professional_summary",
-                        "type": "professional_summary",
-                        "visible": False,
-                    },
                     {
                         "id": "work_experience",
                         "type": "work_experience",
@@ -327,7 +339,7 @@ class TestFilterHiddenSections:
                         "type": "volunteer_experience",
                         "visible": False,
                     },
-                    {"id": "why_good_fit", "type": "why_good_fit", "visible": False},
+                    {"id": "why_good_fit", "type": "custom", "visible": False},
                 ]
             },
         }
@@ -335,7 +347,6 @@ class TestFilterHiddenSections:
         result = filter_hidden_sections(cv_data)
 
         # All filterable sections should be removed
-        assert "professional_summary" not in result
         assert "work_experience" not in result
         assert "education" not in result
         assert "skills" not in result
@@ -344,4 +355,5 @@ class TestFilterHiddenSections:
         assert "awards" not in result
         assert "publications" not in result
         assert "volunteer_experience" not in result
-        assert "why_good_fit" not in result
+        custom = result.get("custom_sections") or []
+        assert not any(s.get("id") == "why_good_fit" for s in custom)

@@ -19,6 +19,8 @@ interface UnsavedChangesDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   pendingChanges: Map<string, any>;
+  /** Optional map of custom section id -> title for display (e.g. from cvData.custom_sections). */
+  customSectionTitles?: Record<string, string>;
 }
 
 const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
@@ -26,11 +28,11 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
   onClose,
   onConfirm,
   pendingChanges,
+  customSectionTitles,
 }) => {
   const getSectionDisplayName = (sectionId: string): string => {
     const sectionNames: Record<string, string> = {
       personal_info: "Personal Information",
-      professional_summary: "Professional Summary",
       work_experience: "Work Experience",
       education: "Education",
       skills: "Skills",
@@ -40,10 +42,9 @@ const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
       publications: "Publications",
       volunteer_experience: "Volunteer Experience",
     };
-    return (
-      sectionNames[sectionId] ||
-      sectionId.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-    );
+    if (sectionNames[sectionId]) return sectionNames[sectionId];
+    if (customSectionTitles?.[sectionId]) return customSectionTitles[sectionId];
+    return sectionId.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   const getChangedSections = (): string[] => {

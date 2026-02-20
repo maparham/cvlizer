@@ -6,6 +6,7 @@ Handles validation, loading, and parsing of CVs and quality analyses.
 """
 
 import logging
+import re
 from typing import Any, List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -100,6 +101,36 @@ def parse_quality_data(analysis: CVQualityAnalysis) -> CVQualityAnalysisResponse
         )
 
 
+# Predefined section names that use "description" for single-segment paths, not "content"
+_PREDEFINED_SECTION_NAMES = frozenset(
+    {
+        "skills",
+        "certifications",
+        "projects",
+        "awards",
+        "publications",
+        "volunteer_experience",
+    }
+)
+
+_UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I
+)
+
+
+def _is_custom_section_path(path: str) -> bool:
+    """True if path refers to a custom section (uses content field)."""
+    if not path or "." in path:
+        return False
+    if path == "why_good_fit":
+        return True
+    if path in _PREDEFINED_SECTION_NAMES:
+        return False
+    if path.startswith("custom_"):
+        return True
+    return bool(_UUID_PATTERN.match(path))
+
+
 def _synthetic_correction_from_issues(
     issues_with_html: List[Any], correction_id: str
 ) -> WritingCorrectionSchema:
@@ -114,13 +145,15 @@ def _synthetic_correction_from_issues(
     field_corrections = []
     for issue in issues_with_html:
         path = getattr(issue, "field_path", None) or ""
-        # Derive field name from path. professional_summary uses "content" in CV data.
+        # Derive field name: summary/custom sections use "content"; others use last segment or "description"
         if path == "professional_summary" or (
             path and path.startswith("professional_summary.")
         ):
             field_name = path.split(".")[-1] if "." in path else "content"
         elif path and "." in path:
             field_name = path.split(".")[-1]
+        elif _is_custom_section_path(path):
+            field_name = "content"
         else:
             field_name = "description"
         orig = getattr(issue, "original", None) or ""
@@ -221,6 +254,16 @@ def get_initial_draft_list_for_key(
                 break
         if key == "professional_summary" or key.startswith("professional_summary."):
             if fp == "professional_summary" or fp.startswith("professional_summary."):
+                current_list = [dict(i)]
+                break
+        custom_key_match = re.match(r"custom_sections\[([^\]]+)\]\.content", key)
+        if custom_key_match:
+            section_id = custom_key_match.group(1)
+            if (
+                iid == section_id
+                or fp == key
+                or (fp or "").startswith(f"custom_sections[{section_id}].")
+            ):
                 current_list = [dict(i)]
                 break
         if key.startswith("personal_info."):

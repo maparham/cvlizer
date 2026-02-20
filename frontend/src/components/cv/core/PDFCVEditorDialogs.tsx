@@ -18,6 +18,8 @@ interface PDFCVEditorDialogsProps {
   onConfirmReset: () => void;
   onCloseUnsavedChangesDialog: () => void;
   onConfirmUnsavedChanges: () => void;
+  /** Optional map of custom section id -> title for unsaved changes dialog labels. */
+  customSectionTitles?: Record<string, string>;
 }
 
 const PDFCVEditorDialogs: React.FC<PDFCVEditorDialogsProps> = ({
@@ -28,6 +30,7 @@ const PDFCVEditorDialogs: React.FC<PDFCVEditorDialogsProps> = ({
   onConfirmReset,
   onCloseUnsavedChangesDialog,
   onConfirmUnsavedChanges,
+  customSectionTitles,
 }) => {
   return (
     <>
@@ -63,6 +66,7 @@ const PDFCVEditorDialogs: React.FC<PDFCVEditorDialogsProps> = ({
         onClose={onCloseUnsavedChangesDialog}
         onConfirm={onConfirmUnsavedChanges}
         pendingChanges={pendingChanges}
+        customSectionTitles={customSectionTitles}
       />
     </>
   );

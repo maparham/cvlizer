@@ -225,6 +225,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
             onTitleSave={onTitleSave || (async () => {})}
             onToggleVisibility={sections.toggleVisibility}
             onAddNewSection={sections.add}
+            onAddCustomSection={sections.addCustomSection}
             onDragStart={dragDrop.onDragStart}
             onDragEnd={dragDrop.onDragEnd}
             activeTab={sidebarTab}
@@ -244,7 +245,6 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
                 sectionType &&
                 content &&
                 (sectionType.includes("skills") ||
-                  sectionType.includes("professional_summary") ||
                   sectionType.includes("work_experience"))
               ) {
                 // Handle adding keywords to various sections
@@ -316,88 +316,6 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
                     onUpdateCV(updatedCvData);
                     onSave(updatedCvData, `Added "${keyword}" to skills`);
                   } else if (
-                    suggestedPlacement.includes("professional_summary") ||
-                    suggestedPlacement.includes("professional summary")
-                  ) {
-                    // Handle professional summary - enhance existing content with the keyword
-                    if (!updatedCvData.professional_summary) {
-                      updatedCvData.professional_summary = {
-                        content: "",
-                        keywords: [],
-                      };
-                    }
-
-                    const currentContent =
-                      updatedCvData.professional_summary.content || "";
-
-                    if (
-                      !currentContent
-                        .toLowerCase()
-                        .includes(keyword.toLowerCase())
-                    ) {
-                      // If no content exists, create a basic summary with the keyword
-                      if (!currentContent.trim()) {
-                        updatedCvData.professional_summary.content = `Experienced professional with expertise in ${keyword}.`;
-                      } else {
-                        // For existing content, try to integrate the keyword more naturally
-                        // Look for common integration points
-                        const sentences = currentContent
-                          .split(/[.!?]+/)
-                          .filter((s) => s.trim());
-
-                        if (sentences.length === 0) {
-                          updatedCvData.professional_summary.content = `Experienced professional with expertise in ${keyword}.`;
-                        } else if (sentences.length === 1) {
-                          // Single sentence - add the keyword as a second sentence
-                          const enhancedContent = currentContent.endsWith(".")
-                            ? `${currentContent} Proficient in ${keyword}.`
-                            : `${currentContent}. Proficient in ${keyword}.`;
-                          updatedCvData.professional_summary.content =
-                            enhancedContent;
-                        } else {
-                          // Multiple sentences - try to integrate into the first sentence if it makes sense
-                          const firstSentence = sentences[0].trim();
-                          const lowerFirst = firstSentence.toLowerCase();
-
-                          if (
-                            lowerFirst.includes("experienced") ||
-                            lowerFirst.includes("professional") ||
-                            lowerFirst.includes("expertise")
-                          ) {
-                            // Insert keyword into the first sentence
-                            const insertPoint = firstSentence.includes("with")
-                              ? firstSentence.replace(
-                                  "with",
-                                  `with ${keyword} and`,
-                                )
-                              : firstSentence.replace(
-                                  /experienced|professional/,
-                                  `experienced ${keyword} professional`,
-                                );
-                            const enhancedContent = currentContent.replace(
-                              firstSentence,
-                              insertPoint,
-                            );
-                            updatedCvData.professional_summary.content =
-                              enhancedContent;
-                          } else {
-                            // Fallback to adding as a new sentence
-                            const enhancedContent = currentContent.endsWith(".")
-                              ? `${currentContent} Skilled in ${keyword}.`
-                              : `${currentContent}. Skilled in ${keyword}.`;
-                            updatedCvData.professional_summary.content =
-                              enhancedContent;
-                          }
-                        }
-                      }
-                    }
-
-                    onUpdateCV(updatedCvData);
-                    onSave(
-                      updatedCvData,
-                      `Added "${keyword}" to professional summary`,
-                    );
-                  } else if (
                     suggestedPlacement.includes("work_experience") ||
                     suggestedPlacement.includes("work experience")
                   ) {
@@ -466,6 +384,13 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
             onConfirmReset={reset.onConfirmReset}
             onCloseUnsavedChangesDialog={changes.onCloseDialog}
             onConfirmUnsavedChanges={changes.onConfirmDialog}
+            customSectionTitles={
+              cvData?.custom_sections?.length
+                ? Object.fromEntries(
+                    cvData.custom_sections.map((s) => [s.id, s.title ?? s.id]),
+                  )
+                : undefined
+            }
           />
 
           {/* History Panel */}

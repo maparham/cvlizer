@@ -80,7 +80,7 @@ async def parse_cv_with_openai(
                 "website_url": "",
                 "github_url": "",
             },
-            "professional_summary": {"content": "", "keywords": []},
+            "custom_sections": [],
             "work_experience": [],
             "education": [],
             "skills": {"technical": [], "soft": [], "languages": []},

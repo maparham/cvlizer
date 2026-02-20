@@ -2,20 +2,18 @@
 CV parsing service using OpenAI for extracting structured data from CVs.
 
 This module provides functions for parsing raw CV text (extracted from PDFs/DOCX)
-into structured data with sections like personal_info, work_experience, education, etc.
+into structured data with sections like personal_info, work_experience, education,
+custom_sections, etc.
 """
 
-import asyncio
-import json
 import logging
-from copy import deepcopy
-from typing import Any, Dict, Optional
+import uuid
+from typing import Any, Dict, List, Optional
 
-from openai.types.shared_params import Reasoning
 from sqlalchemy.orm import Session
 
 from src.config import AIConfig
-from src.constants import DEFAULT_PARSED_CV
+from src.constants import EMPTY_PARSED_CV_PAYLOAD
 from src.schemas.ai_response_schemas import CVParsingResponseSchema
 
 from .common import (
@@ -56,61 +54,27 @@ async def parse_cv_text_with_openai(
 
     Returns:
         Dictionary containing structured CV data with sections:
-        personal_info, professional_summary, work_experience, education,
+        personal_info, custom_sections, work_experience, education,
         skills, certifications, projects, awards, publications, volunteer_experience
     """
     # Check if text content is empty or too short
     if not text_content or len(text_content.strip()) < 10:
-        # Return error structure instead of fake data
         return {
             "error": "Unable to extract text from PDF. Please upload a PDF with selectable text.",
-            "personal_info": {
-                "full_name": "Your Name",
-                "email": "your.email@example.com",
-                "phone": "",
-                "location": "Your Location",
-                "linkedin_url": "",
-                "website_url": "",
-                "github_url": "",
-            },
-            "professional_summary": {"content": "", "keywords": []},
-            "work_experience": [],
-            "education": [],
-            "skills": {"technical": [], "soft": [], "languages": []},
-            "certifications": [],
-            "projects": [],
-            "awards": [],
-            "publications": [],
-            "volunteer_experience": [],
+            **EMPTY_PARSED_CV_PAYLOAD,
         }
 
     # Check if text content is too long to be a CV
     if len(text_content.strip()) > 15000:
         return {
             "error": "Document is too long to be a CV. Please upload a CV document (typically 500-10,000 characters).",
-            "personal_info": {
-                "full_name": "Your Name",
-                "email": "your.email@example.com",
-                "phone": "",
-                "location": "Your Location",
-                "linkedin_url": "",
-                "website_url": "",
-                "github_url": "",
-            },
-            "professional_summary": {"content": "", "keywords": []},
-            "work_experience": [],
-            "education": [],
-            "skills": {"technical": [], "soft": [], "languages": []},
-            "certifications": [],
-            "projects": [],
-            "awards": [],
-            "publications": [],
-            "volunteer_experience": [],
+            **EMPTY_PARSED_CV_PAYLOAD,
         }
 
     prompt = f"""Parse this document into CV sections:
-personal_info, professional_summary, work_experience, education, skills,
-certifications, projects, awards, publications, volunteer_experience.
+personal_info, work_experience, education, skills,
+certifications, projects, awards, publications, volunteer_experience,
+and custom_sections (for any section that does not match the above).
 
 1) CV validity
 - First decide if this is actually a CV/resume.
@@ -129,20 +93,36 @@ certifications, projects, awards, publications, volunteer_experience.
 3) Description formatting (markdown)
 - All long-form description fields (work_experience.description, education.description,
   certifications.description, projects.description, awards.description,
-  publications.description, volunteer_experience.description,
-  professional_summary.content) must be markdown.
+  publications.description, volunteer_experience.description, and each
+  custom_sections[].content) must be markdown.
 - If there are 2+ distinct items, format as a bullet list:
   "- Item 1\n  - Item 2".
 - If there is only 1 item, use plain text (NO bullet).
 - Short descriptions (roughly <50 characters) may remain plain text.
 
-4) Professional summary
-- If the CV has a dedicated summary/profile/objective/about section, copy its content
-  as-is into professional_summary.content.
-- If no such section exists, synthesize a brief 2–4 sentence professional summary
-  based on the CV (experience, education, skills, domains). Do not invent facts
-  beyond what the CV implies.
-- If the CV is too sparse to form a meaningful summary, leave it empty:
+4) Custom sections (custom_sections array)
+- Each item MUST include "type", and it MUST be either "professional_summary" or "cover_letter". No other values are allowed.
+- professional_summary:
+  - Sections like "Professional Summary", "Profile", "Objective", "About Me", or similar headings that introduce the candidate
+    and are NOT written as a letter to a specific employer or job.
+  - If the CV has such a section, add ONE item to custom_sections with:
+      title = the exact section heading from the CV,
+      content = the section body,
+      type = "professional_summary".
+  - If no such section exists, you MAY synthesize a brief 2-4 sentence professional summary from the CV content and add ONE item
+    with title "Professional Summary", that content, and type = "professional_summary". Do not invent facts beyond what the CV implies.
+    If the CV is too sparse, omit or leave content empty.
+- cover_letter:
+  - Sections that read like a letter or directly address a company or job (e.g. "Dear Hiring Manager", "I am applying for...", or
+    content clearly targeted to a specific role/employer) must be mapped to type = "cover_letter".
+  - Use the heading from the CV as title (e.g. "Cover Letter", "Application Letter", etc.) and the section body as content.
+- Hobbies / very personal sections (e.g. "Hobbies", "Interests", "Personal Background") that are NOT job-targeted:
+  - Do NOT create a custom_sections item for these.
+  - Instead, fold relevant short information into personal_info.description when appropriate; otherwise you may omit it.
+
+All relevant CV text must be assigned to one of the predefined fields:
+- Structured fields: personal_info, work_experience, education, skills, certifications, projects, awards, publications, volunteer_experience.
+- Narrative fields: custom_sections items with type "professional_summary" or "cover_letter".
 
 5) Skills
 - skills.technical: each item is a single atomic technology/skill
@@ -160,8 +140,8 @@ certifications, projects, awards, publications, volunteer_experience.
 - Do NOT infer publications from thesis/dissertation titles in education.
 
 7) Empty sections
-- If a section has no data, return an empty array [] (or default object for
-  personal_info / professional_summary). Do NOT use "N/A" or other placeholders.
+- If a section has no data, return an empty array [] (or default object for personal_info).
+- custom_sections: return [] if there are no summary/other custom sections. Do NOT use "N/A" or placeholders.
 
 CV text:
 {text_content}"""
@@ -189,27 +169,23 @@ CV text:
             validation_error = parsed_content.get(
                 "validation_error", "This document does not appear to be a CV."
             )
-            return {
-                "error": validation_error,
-                "personal_info": {
-                    "full_name": "Your Name",
-                    "email": "your.email@example.com",
-                    "phone": "",
-                    "location": "Your Location",
-                    "linkedin_url": "",
-                    "website_url": "",
-                    "github_url": "",
-                },
-                "professional_summary": {"content": "", "keywords": []},
-                "work_experience": [],
-                "education": [],
-                "skills": {"technical": [], "soft": [], "languages": []},
-                "certifications": [],
-                "projects": [],
-                "awards": [],
-                "publications": [],
-                "volunteer_experience": [],
-            }
+            return {"error": validation_error, **EMPTY_PARSED_CV_PAYLOAD}
+
+        # Assign UUIDs to custom_sections; preserve type from AI (professional_summary or cover_letter)
+        raw_custom = parsed_content.get("custom_sections") or []
+        parsed_content["custom_sections"] = []
+        for item in raw_custom:
+            section_type = item.get("type") or "professional_summary"
+            if section_type not in ("professional_summary", "cover_letter"):
+                section_type = "professional_summary"
+            parsed_content["custom_sections"].append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "title": (item.get("title") or "").strip() or "Section",
+                    "content": (item.get("content") or "").strip(),
+                    "type": section_type,
+                }
+            )
 
         # Add section_config to the parsed content
         parsed_content = _add_section_config(parsed_content)
@@ -233,27 +209,7 @@ CV text:
         )
 
         # Return error structure (not fallback with raw text)
-        return {
-            "error": error_message,
-            "personal_info": {
-                "full_name": "Your Name",
-                "email": "your.email@example.com",
-                "phone": "",
-                "location": "Your Location",
-                "linkedin_url": "",
-                "website_url": "",
-                "github_url": "",
-            },
-            "professional_summary": {"content": "", "keywords": []},
-            "work_experience": [],
-            "education": [],
-            "skills": {"technical": [], "soft": [], "languages": []},
-            "certifications": [],
-            "projects": [],
-            "awards": [],
-            "publications": [],
-            "volunteer_experience": [],
-        }
+        return {"error": error_message, **EMPTY_PARSED_CV_PAYLOAD}
 
 
 def _has_meaningful_array_items(section_data: list, section_type: str) -> bool:
@@ -315,7 +271,7 @@ def _add_section_config(parsed_content: dict) -> dict:
     Returns:
         CV data with section_config added
     """
-    # Define all possible sections with their metadata
+    # Predefined sections (no professional_summary; custom sections added separately)
     section_definitions = [
         {
             "id": "personal_info",
@@ -325,88 +281,76 @@ def _add_section_config(parsed_content: dict) -> dict:
             "order": 1,
         },
         {
-            "id": "professional_summary",
-            "type": "professional_summary",
-            "title": "Professional Summary",
-            "visible": True,
-            "order": 2,
-        },
-        {
             "id": "work_experience",
             "type": "work_experience",
             "title": "Work Experience",
             "visible": True,
-            "order": 3,
+            "order": 2,
         },
         {
             "id": "education",
             "type": "education",
             "title": "Education",
             "visible": True,
-            "order": 4,
+            "order": 3,
         },
         {
             "id": "skills",
             "type": "skills",
             "title": "Skills",
             "visible": True,
-            "order": 5,
+            "order": 4,
         },
         {
             "id": "certifications",
             "type": "certifications",
             "title": "Certifications",
             "visible": True,
-            "order": 6,
+            "order": 5,
         },
         {
             "id": "projects",
             "type": "projects",
             "title": "Projects",
             "visible": True,
-            "order": 7,
+            "order": 6,
         },
         {
             "id": "awards",
             "type": "awards",
             "title": "Awards",
             "visible": True,
-            "order": 8,
+            "order": 7,
         },
         {
             "id": "publications",
             "type": "publications",
             "title": "Publications",
             "visible": True,
-            "order": 9,
+            "order": 8,
         },
         {
             "id": "volunteer_experience",
             "type": "volunteer_experience",
             "title": "Volunteer Experience",
             "visible": True,
-            "order": 10,
+            "order": 9,
         },
     ]
 
-    # Helper function to check if section has data
     def has_section_data(section_type: str) -> bool:
         if section_type not in parsed_content:
             return False
-
         section_data = parsed_content[section_type]
-
         if section_type == "personal_info":
             return bool(section_data.get("full_name"))
-        elif section_type == "professional_summary":
-            return bool(section_data.get("content"))
-        elif section_type == "skills":
+        if section_type == "skills":
             return bool(
                 section_data.get("technical")
                 or section_data.get("soft")
                 or section_data.get("languages")
             )
-        elif section_type in [
+        if section_type in [
             "work_experience",
             "education",
             "certifications",
@@ -416,17 +360,28 @@ def _add_section_config(parsed_content: dict) -> dict:
             "volunteer_experience",
         ]:
             return _has_meaningful_array_items(section_data, section_type)
-
         return False
 
-    # Filter sections to only include those with data
-    sections_with_data = []
+    sections_with_data: List[Dict[str, Any]] = []
     for section_def in section_definitions:
-        section_type = str(section_def["type"])
-        if has_section_data(section_type):
+        if has_section_data(str(section_def["type"])):
             sections_with_data.append(section_def)
 
-    # Add section_config to parsed content
+    # Append custom_sections to section_config (each has id, type "custom", title, visible, order)
+    custom_sections = parsed_content.get("custom_sections") or []
+    next_order = len(sections_with_data) + 1
+    for item in custom_sections:
+        sections_with_data.append(
+            {
+                "id": item.get("id", ""),
+                "type": "custom",
+                "title": (item.get("title") or "").strip() or "Section",
+                "visible": True,
+                "order": next_order,
+            }
+        )
+        next_order += 1
+
     parsed_content["section_config"] = {"sections": sections_with_data}
 
     return parsed_content

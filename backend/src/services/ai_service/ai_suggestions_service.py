@@ -21,6 +21,26 @@ from .cv_filter import filter_hidden_sections
 logger = logging.getLogger(__name__)
 
 
+def _get_summary_custom_section(cv_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Return the custom section used for AI summary suggestions (read/write).
+
+    Rule: first section with type professional_summary; else first with title
+    "professional summary" (case-insensitive); else first custom section.
+    Frontend getSummaryCustomSection in CVContentArea.tsx must match this.
+    """
+    custom_sections = cv_data.get("custom_sections") or []
+    for item in custom_sections:
+        if isinstance(item, dict) and item.get("type") == "professional_summary":
+            return item
+    for item in custom_sections:
+        if isinstance(item, dict):
+            title = (item.get("title") or "").strip().lower()
+            if title == "professional summary":
+                return item
+    return custom_sections[0] if custom_sections else None
+
+
 def _normalize_skill_name(skill: str) -> str:
     """
     Normalize a skill name for comparison (lowercase, trim whitespace).
@@ -87,11 +107,17 @@ def _build_ai_suggestions_prompt(
     filtered_cv_data = filter_hidden_sections(cv_data)
 
     # Clean control characters from all text fields
-    # This ensures AI doesn't see formatting artifacts like \u000b
     filtered_cv_data = clean_control_characters(filtered_cv_data)
 
+    # Summary = first custom section with title "Professional Summary", or first custom section
+    summary_section = _get_summary_custom_section(filtered_cv_data)
+    if summary_section:
+        filtered_cv_data["professional_summary"] = {
+            "content": summary_section.get("content") or "",
+        }
+    has_professional_summary = bool(summary_section)
+
     # Extract current CV data for optimization (compact format)
-    # Use filtered_cv_data to ensure hidden sections are excluded
     skills_data = filtered_cv_data.get("skills") or {}
     current_technical_skills = skills_data.get("technical") or []
     current_soft_skills = skills_data.get("soft") or []
@@ -99,10 +125,6 @@ def _build_ai_suggestions_prompt(
         filtered_cv_data.get("skills")
         and (current_technical_skills or current_soft_skills)
     )
-
-    # Check if professional_summary section is visible (exists in filtered data)
-    # If visible, include it in prompt even if empty (AI should generate it)
-    has_professional_summary = "professional_summary" in filtered_cv_data
 
     work_experience = filtered_cv_data.get("work_experience", [])
     work_items = [
@@ -161,7 +183,6 @@ def _build_ai_suggestions_prompt(
         "html_diff: '<ins>New complete text here</ins>' (entire text in <ins>, no <del>). "
         'CRITICAL for html_diff: Mark at phrase/word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
         "CRITICAL: The HTML tags must be properly closed and balanced. Use only <del> and <ins> tags, no other HTML."
-        "CRITICAL: Escape special HTML characters in text content: &amp; for &, &lt; for <, &gt; for >, &quot; for \", &#39; for '"
     )
 
     # Build conditional optimization instructions
@@ -481,7 +502,7 @@ async def generate_ai_suggestions(
 
         # Check which sections are visible to filter response accordingly
         filtered_cv_data = filter_hidden_sections(cv_data)
-        has_professional_summary = "professional_summary" in filtered_cv_data
+        has_professional_summary = bool(_get_summary_custom_section(filtered_cv_data))
 
         # Split response into job_fit and optimization parts
         job_fit_data = {

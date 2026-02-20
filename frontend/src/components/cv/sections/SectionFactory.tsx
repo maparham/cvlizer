@@ -19,7 +19,6 @@ import { SectionProps } from "../../../types";
 
 // Import sections
 import PersonalInfoSection from "./PersonalInfoSection";
-import ProfessionalSummarySection from "./ProfessionalSummarySection";
 import WorkExperienceSection from "./WorkExperienceSection";
 import EducationSection from "./EducationSection";
 import SkillsSection from "./SkillsSection";
@@ -28,12 +27,12 @@ import ProjectsSection from "./ProjectsSection";
 import AwardsSection from "./AwardsSection";
 import PublicationsSection from "./PublicationsSection";
 import VolunteerExperienceSection from "./VolunteerExperienceSection";
-import WhyGoodFitSection from "./WhyGoodFitSection";
+import CustomSectionSection from "./CustomSectionSection";
 
-// Section type mapping
+// Section type mapping (why_good_fit is rendered as custom with id "why_good_fit")
 type SectionType =
   | "personal_info"
-  | "professional_summary"
+  | "custom"
   | "work_experience"
   | "education"
   | "skills"
@@ -41,20 +40,25 @@ type SectionType =
   | "projects"
   | "awards"
   | "publications"
-  | "volunteer_experience"
-  | "why_good_fit";
+  | "volunteer_experience";
 
 interface SectionFactoryProps extends SectionProps {
   sectionType: SectionType;
+  /**
+   * CV ID passed to sections that support writing corrections and edit tracking.
+   * Required for PersonalInfoSection and CustomSectionSection to enable
+   * overwrite confirmation dialogs and AI-powered writing corrections.
+   */
   cvId?: string;
   sectionTitle?: string;
   onSectionTitleSave?: (newTitle: string) => Promise<void>;
+  sectionId?: string; // For custom sections: the custom section uuid
 }
 
 // Map of sections
 const SECTIONS = {
   personal_info: PersonalInfoSection,
-  professional_summary: ProfessionalSummarySection,
+  custom: CustomSectionSection,
   work_experience: WorkExperienceSection,
   education: EducationSection,
   skills: SkillsSection,
@@ -63,13 +67,14 @@ const SECTIONS = {
   awards: AwardsSection,
   publications: PublicationsSection,
   volunteer_experience: VolunteerExperienceSection,
-  why_good_fit: WhyGoodFitSection,
 };
 
 const SectionFactory: React.FC<SectionFactoryProps> = ({
   sectionType,
   sectionTitle,
   onSectionTitleSave,
+  sectionId,
+  cvId,
   ...props
 }) => {
   const SectionComponent = SECTIONS[sectionType];
@@ -79,16 +84,21 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
     return null;
   }
 
-  return (
-    <SectionComponent
-      {...props}
-      data={props.data as any}
-      onUnsavedChanges={props.onUnsavedChanges as any}
-      title={sectionTitle}
-      onTitleSave={onSectionTitleSave}
-      sectionType={sectionType}
-    />
-  );
+  const commonProps = {
+    ...props,
+    cvId,
+    data: props.data as any,
+    onUnsavedChanges: props.onUnsavedChanges as any,
+    title: sectionTitle,
+    onTitleSave: onSectionTitleSave,
+    sectionType,
+  };
+
+  if (sectionType === "custom" && sectionId) {
+    return <SectionComponent {...commonProps} sectionId={sectionId} />;
+  }
+
+  return <SectionComponent {...commonProps} />;
 };
 
 export default SectionFactory;
@@ -96,7 +106,7 @@ export default SectionFactory;
 // Export individual components for direct use if needed
 export {
   PersonalInfoSection,
-  ProfessionalSummarySection,
+  CustomSectionSection,
   WorkExperienceSection,
   EducationSection,
   SkillsSection,
@@ -105,7 +115,6 @@ export {
   AwardsSection,
   PublicationsSection,
   VolunteerExperienceSection,
-  WhyGoodFitSection,
 };
 
 // Export types

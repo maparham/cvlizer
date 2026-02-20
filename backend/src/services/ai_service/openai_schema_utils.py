@@ -62,7 +62,7 @@ SHARED_ISSUE_DEFS: Dict[str, Any] = {
                 "type": "string",
                 "enum": [
                     "personal_info",
-                    "professional_summary",
+                    "custom",
                     "work_experience",
                     "education",
                     "skills",
@@ -79,7 +79,7 @@ SHARED_ISSUE_DEFS: Dict[str, Any] = {
             },
             "field_path": {
                 "type": "string",
-                "description": "Dot notation path to specific field, e.g., 'personal_info.description' or 'work_experience[2].position'",
+                "description": "Dot notation path to the field. Examples: personal_info.description; work_experience[0].description (numeric index OK for work_experience/education); custom_sections[section_id].content where section_id is the section's id from the CV (e.g. custom_sections[why_good_fit].content or custom_sections[uuid].content). For custom sections, always use the section id, never a numeric index.",
             },
             "issue_severity": {
                 "type": "string",
@@ -192,12 +192,12 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 100,
-                "description": "Weighted average of all CV sections. No flagged issues = 100.",
+                "description": "Start at 100; deduct per issue by severity (critical −12, major −6, minor −3); cap total deduction at 35. No flagged issues = 100.",
             },
             "issues": {
                 "type": "array",
                 "items": {"$ref": "#/$defs/Issue"},
-                "description": "Only sections/fields with quality_score <50. Issues with html_diff set must have quality_score null or >=50. Use item_type 'professional_summary' and field_path 'professional_summary' for summary feedback. Empty array if CV has no issues.",
+                "description": "Only sections/fields with quality_score <50. Issues with html_diff set must have quality_score null or >=50. Use item_type 'custom' and item_id = custom section id for custom/summary sections. Empty array if CV has no issues.",
             },
             "skills": {"$ref": "#/$defs/Skills"},
         },

@@ -16,7 +16,7 @@ from src.middleware.clerk_auth import get_effective_user
 from src.models.ai_draft import AIDraft
 from src.models.base import get_db
 from src.models.user import User
-from src.schemas.cv_schemas import WhyGoodFitSchema
+from src.schemas.cv_schemas import WhyGoodFitMetadataSchema, WhyGoodFitSchema
 from src.services.job_description_service import get_cv_owned_by
 
 from .models import (
@@ -225,61 +225,80 @@ async def approve_why_good_fit_draft(
                 detail=f"Draft data invalid for why_good_fit: {str(e)}",
             )
 
-        # Move draft to parsed_data.why_good_fit
+        # Build metadata (exclude content and title); validate for storage
+        metadata_dict = {
+            k: v for k, v in compliant_data.items() if k not in ("content", "title")
+        }
+        compliant_metadata = WhyGoodFitMetadataSchema(**metadata_dict).dict()
+
+        section_title = compliant_data.get("title") or "Why I'm a Good Fit"
+        compliant_content = (compliant_data.get("content") or "").strip()
+
         # Create a copy to ensure SQLAlchemy detects the change
         updated_parsed_data = dict(cv.parsed_data) if cv.parsed_data else {}
-        updated_parsed_data["why_good_fit"] = compliant_data
 
-        # Update section configuration to position why_good_fit after personal_info (order 2)
+        # Upsert custom section: id "why_good_fit", type "cover_letter"
+        if "custom_sections" not in updated_parsed_data:
+            updated_parsed_data["custom_sections"] = []
+        custom_list = list(updated_parsed_data["custom_sections"])
+        found = next(
+            (
+                i
+                for i, s in enumerate(custom_list)
+                if isinstance(s, dict) and s.get("id") == "why_good_fit"
+            ),
+            None,
+        )
+        section_item = {
+            "id": "why_good_fit",
+            "type": "cover_letter",
+            "title": section_title,
+            "content": compliant_content,
+        }
+        if found is not None:
+            custom_list[found] = section_item
+        else:
+            custom_list.append(section_item)
+        updated_parsed_data["custom_sections"] = custom_list
+
+        updated_parsed_data["why_good_fit_metadata"] = compliant_metadata
+
+        # Section config: one entry id "why_good_fit", type "custom"
         if "section_config" not in updated_parsed_data:
             updated_parsed_data["section_config"] = {"sections": []}
-
-        # Remove existing why_good_fit section if it exists
         sections = [
             s
             for s in updated_parsed_data["section_config"]["sections"]
-            if s.get("type") != "why_good_fit"
+            if s.get("id") != "why_good_fit" and s.get("type") != "why_good_fit"
         ]
-
-        # Add why_good_fit section with order 2 (after personal_info)
-        # Get title from draft data, fallback to default
-        section_title = raw.get("title", "Why I'm a Good Fit")
-        logger.info(
-            f"approve_why_good_fit_draft: Using section_title={section_title} from draft"
-        )
-
+        need_shift = any(s.get("order") == 2 for s in sections)
         why_good_fit_section = {
             "id": "why_good_fit",
-            "type": "why_good_fit",
+            "type": "custom",
             "title": section_title,
             "visible": True,
             "order": 2,
         }
         sections.append(why_good_fit_section)
 
-        # Reorder all sections to account for the new positioning
-        # personal_info (1), why_good_fit (2), professional_summary (3), work_experience (4), education (5), skills (6), etc.
-        section_order_map = {
-            "personal_info": 1,
-            "why_good_fit": 2,
-            "professional_summary": 3,
-            "work_experience": 4,
-            "education": 5,
-            "skills": 6,
-            "certifications": 7,
-            "projects": 8,
-            "awards": 9,
-            "publications": 10,
-            "volunteer_experience": 11,
-        }
-
-        # Update order for all sections
+        # Preserve existing section orders. Insert why_good_fit at 2; only shift others
+        # when slot 2 is occupied (first-time add). Never overwrite with fixed order map.
+        max_order = max((s.get("order") or 0 for s in sections), default=1)
+        next_custom_order = max(max_order + 1, 12)
         for section in sections:
-            section_type = section.get("type")
-            if section_type in section_order_map:
-                section["order"] = section_order_map[section_type]
-
-        # Sort sections by order
+            sid = section.get("id")
+            stype = section.get("type")
+            if sid == "why_good_fit" and stype == "custom":
+                section["order"] = 2
+            elif sid == "personal_info" or stype == "personal_info":
+                section["order"] = 1
+            elif need_shift and (section.get("order") or 0) >= 2:
+                section["order"] = (section.get("order") or 0) + 1
+            elif stype == "custom" and (
+                "order" not in section or section["order"] is None
+            ):
+                section["order"] = next_custom_order
+                next_custom_order += 1
         sections.sort(key=lambda x: x.get("order", 999))
         updated_parsed_data["section_config"]["sections"] = sections
 

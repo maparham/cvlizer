@@ -28,6 +28,7 @@ interface CVEditorContextType {
   sections: CVSection[];
   toggleSectionVisibility: (sectionId: string) => void;
   addNewSection: (sectionId: string) => void;
+  addCustomSection: () => void;
   removeSection: (sectionId: string) => void;
   resetToDefaultOrder: () => void;
   isDefaultOrder: () => boolean;
@@ -145,6 +146,7 @@ export const useCVEditorControls = () => {
       items: context.sections,
       toggleVisibility: context.toggleSectionVisibility,
       add: context.addNewSection,
+      addCustomSection: context.addCustomSection,
       remove: context.removeSection,
       resetToDefault: context.resetToDefaultOrder,
       isDefaultOrder: context.isDefaultOrder,

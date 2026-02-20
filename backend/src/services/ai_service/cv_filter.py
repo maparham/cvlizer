@@ -27,7 +27,7 @@ def filter_hidden_sections(cv_data: Dict[str, Any]) -> Dict[str, Any]:
         - Creates a deep copy to avoid mutating the original data
         - Updates section_config to only include visible sections
         - personal_info is always preserved (never filtered) as it's needed for basic context
-        - All other sections including professional_summary are filtered when hidden
+        - custom_sections are filtered by visible custom section ids; other sections when hidden
     """
     # Create a deep copy to avoid mutating the original data
     filtered_data = copy.deepcopy(cv_data)
@@ -40,21 +40,31 @@ def filter_hidden_sections(cv_data: Dict[str, Any]) -> Dict[str, Any]:
     if not sections:
         return filtered_data
 
-    # Build a set of visible section types
-    # Only sections explicitly listed in section_config with visible=True are visible
+    # Build a set of visible section types and visible custom section ids
     visible_section_types: Set[str] = set()
+    visible_custom_ids: Set[str] = set()
     for section in sections:
         if section.get("visible", True):  # Default to visible if not specified
             section_type = section.get("type") or section.get("id")
+            section_id = section.get("id")
             if section_type:
                 visible_section_types.add(section_type)
+            if section_type == "custom" and section_id:
+                visible_custom_ids.add(section_id)
 
     # personal_info is always visible (never filtered)
     visible_section_types.add("personal_info")
 
+    # Filter custom_sections to only visible custom section ids
+    custom_sections_list = filtered_data.get("custom_sections") or []
+    if custom_sections_list:
+        filtered_data["custom_sections"] = [
+            s for s in custom_sections_list if s.get("id") in visible_custom_ids
+        ]
+
     # Define all possible section types that can be filtered
+    # why_good_fit content lives in custom_sections (id why_good_fit); filtered via visible_custom_ids
     filterable_sections = [
-        "professional_summary",
         "work_experience",
         "education",
         "skills",
@@ -63,7 +73,6 @@ def filter_hidden_sections(cv_data: Dict[str, Any]) -> Dict[str, Any]:
         "awards",
         "publications",
         "volunteer_experience",
-        "why_good_fit",
     ]
 
     # Remove hidden sections from the data

@@ -43,9 +43,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
 }) => {
   // Memoize default data to prevent unnecessary re-renders
   const defaultData = useMemo(() => {
-    if (sectionId === "professional_summary") {
-      return { content: "", keywords: [] };
-    } else if (sectionId === "personal_info") {
+    if (sectionId === "personal_info") {
       return {
         full_name: "",
         email: "",
@@ -56,6 +54,10 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       };
     } else if (sectionId === "skills") {
       return { technical: [], soft: [], languages: [] };
+    }
+    // Custom sections (sectionId is the custom section uuid)
+    if (sectionId && sectionId.length > 10) {
+      return { id: sectionId, title: "", content: "" };
     }
     return {};
   }, [sectionId]);
@@ -81,11 +83,6 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       // First check basic required fields
       const basicValidation = createFormValidator(requiredFields)(data);
       if (!basicValidation) return false;
-
-      // Section-specific validation
-      if (sectionId === "professional_summary") {
-        return data.content && data.content.trim().length >= 10;
-      }
 
       return true;
     },

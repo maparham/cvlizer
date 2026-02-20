@@ -5,7 +5,7 @@ Used by the CV parsing prompt to constrain and validate structured output
 (personal_info, work_experience, education, skills, etc.).
 """
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -32,11 +32,15 @@ class PersonalInfoResponseSchema(BaseModel):
     )
 
 
-class ProfessionalSummaryResponseSchema(BaseModel):
-    """Schema for professional summary in CV parsing response."""
+class CustomSectionItemSchema(BaseModel):
+    """Schema for one custom section in CV parsing response (title + content from AI)."""
 
-    content: str = Field(default="")
-    keywords: List[str] = Field(default_factory=list)
+    title: str = Field(default="", description="Section heading from the CV")
+    content: str = Field(default="", description="Section body in markdown")
+    type: Literal["professional_summary", "cover_letter"] = Field(
+        default="professional_summary",
+        description="Section type: professional_summary or cover_letter",
+    )
 
 
 class WorkExperienceItemSchema(BaseModel):
@@ -151,8 +155,9 @@ class CVParsingResponseSchema(BaseModel):
     personal_info: PersonalInfoResponseSchema = Field(
         default_factory=PersonalInfoResponseSchema
     )
-    professional_summary: ProfessionalSummaryResponseSchema = Field(
-        default_factory=ProfessionalSummaryResponseSchema
+    custom_sections: List[CustomSectionItemSchema] = Field(
+        default_factory=list,
+        description="Sections that do not match predefined types (e.g. Summary, References, Hobbies)",
     )
     work_experience: List[WorkExperienceItemSchema] = Field(default_factory=list)
     education: List[EducationItemSchema] = Field(default_factory=list)

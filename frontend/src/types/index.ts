@@ -21,8 +21,9 @@ export type {
 export type {
   CV,
   CVData,
+  CustomSection,
+  CustomSectionType,
   PersonalInfo,
-  ProfessionalSummary,
   WorkExperience,
   Education,
   Skills,

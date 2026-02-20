@@ -1,5 +1,5 @@
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pydantic import BaseModel
@@ -96,40 +96,38 @@ class TestAIService:
         assert "error" in result
         assert "API Error" in result["error"] or "try again" in result["error"]
 
-    @patch("src.services.ai_service.common.get_openai_client")
     @pytest.mark.asyncio
-    async def test_parse_cv_text_with_openai_success(self, mock_get_client):
-        """Test successful CV text parsing with OpenAI using responses.parse()"""
-        # Setup mock client for Responses API with parse()
-        mock_client = Mock()
-        mock_get_client.return_value = mock_client
-
-        # Mock parsed response object
+    async def test_parse_cv_text_with_openai_success(self):
+        """Test successful CV text parsing: run_openai_call returns parsed_data (parse_cv uses responses.create with text_format_schema)."""
         from src.schemas.ai_response_schemas import (
             CVParsingResponseSchema,
             PersonalInfoResponseSchema,
             WorkExperienceItemSchema,
         )
 
-        mock_parsed_output = CVParsingResponseSchema(
-            personal_info=PersonalInfoResponseSchema(
-                full_name="John Doe", email="john@example.com"
-            ),
-            work_experience=[
-                WorkExperienceItemSchema(company="Tech Corp", position="Developer")
-            ],
-        )
+        expected_parsed = {
+            "personal_info": {"full_name": "John Doe", "email": "john@example.com"},
+            "work_experience": [{"company": "Tech Corp", "position": "Developer"}],
+            "custom_sections": [],
+            "education": [],
+            "skills": {"technical": [], "soft": [], "languages": []},
+            "certifications": [],
+            "projects": [],
+            "awards": [],
+            "publications": [],
+            "volunteer_experience": [],
+            "is_valid_cv": True,
+            "validation_error": None,
+        }
+        metadata = {"prompt_tokens": 100, "completion_tokens": 80}
 
-        mock_response = Mock(spec=["output_parsed", "usage"])
-        mock_response.output_parsed = mock_parsed_output
-        mock_response.usage = Mock()
-        mock_response.usage.input_tokens = 100
-        mock_response.usage.output_tokens = 80
-        mock_client.responses.parse.return_value = mock_response
-
-        text_content = "John Doe\nDeveloper at Tech Corp"
-
-        result = await parse_cv_text_with_openai(text_content)
+        with patch(
+            "src.services.ai_service.cv_parsing.call_openai_with_schema",
+            new_callable=AsyncMock,
+            return_value=(expected_parsed, metadata),
+        ):
+            text_content = "John Doe\nDeveloper at Tech Corp"
+            result = await parse_cv_text_with_openai(text_content)
 
         assert result["personal_info"]["full_name"] == "John Doe"
         assert result["personal_info"]["email"] == "john@example.com"

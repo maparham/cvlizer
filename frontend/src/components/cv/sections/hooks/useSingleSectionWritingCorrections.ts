@@ -22,12 +22,14 @@ import { useDraftHistoryNavigation } from "./useDraftHistoryNavigation";
 
 export interface UseSingleSectionWritingCorrectionsParams {
   cvId: string | undefined;
-  /** Section key(s) to filter writing corrections; sub-sections match by prefix (e.g. "professional_summary" matches "professional_summary.content"). */
+  /** Section key(s) to filter writing corrections; sub-sections match by prefix (e.g. "professional_summary" matches "professional_summary.content"). For custom sections, include both "custom_sections[sectionId].content" and sectionId. */
   sectionKeys: string[];
   /** Get the new value from the updated CV after apply (e.g. c => c.parsed_data?.personal_info?.description ?? "") */
   getValueFromCV: (cv: { parsed_data?: Record<string, unknown> }) => string;
   /** Form field name for edit-mode apply (e.g. "description" or "content") */
   formFieldName: string;
+  /** Override item_type filter (e.g. "custom" for custom sections); when omitted, derived from sectionKeys[0] */
+  expectedItemType?: string;
 }
 
 export interface UseSingleSectionWritingCorrectionsResult {
@@ -64,11 +66,15 @@ export interface UseSingleSectionWritingCorrectionsResult {
   draftTotal: number;
 }
 
-/** Match issue field_path against sectionKeys (exact or prefix e.g. "professional_summary.content" matches key "professional_summary"). */
+/** Match issue field_path against sectionKeys (exact or prefix e.g. "professional_summary.content" matches key "professional_summary"). Handles custom_sections[sectionId].content when sectionKeys includes sectionId. */
 function sectionMatchesKeys(fieldPath: string | undefined | null, sectionKeys: string[]): boolean {
   if (!fieldPath) return false;
   return sectionKeys.some(
-    (sk) => fieldPath === sk || fieldPath.startsWith(sk + ".")
+    (sk) =>
+      fieldPath === sk ||
+      fieldPath.startsWith(sk + ".") ||
+      fieldPath === `custom_sections[${sk}].content` ||
+      fieldPath.startsWith(`custom_sections[${sk}].`)
   );
 }
 
@@ -79,7 +85,7 @@ function sectionMatchesKeys(fieldPath: string | undefined | null, sectionKeys: s
 export function useSingleSectionWritingCorrections(
   params: UseSingleSectionWritingCorrectionsParams
 ): UseSingleSectionWritingCorrectionsResult {
-  const { cvId, sectionKeys, getValueFromCV, formFieldName } = params;
+  const { cvId, sectionKeys, getValueFromCV, formFieldName, expectedItemType } = params;
   const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
   const {
     dismissWritingCorrection,
@@ -97,13 +103,15 @@ export function useSingleSectionWritingCorrections(
       ? "personal_info.description"
       : (sectionKeys[0] ?? "");
 
+  const effectiveItemType =
+    expectedItemType ?? sectionKeys[0]?.split(".")[0] ?? "";
+
   const writingCorrections = React.useMemo(() => {
     const issues = qualityAnalysis?.issues ?? [];
     const out: WritingCorrection[] = [];
-    const expectedItemType = sectionKeys[0]?.split(".")[0] ?? "";
     for (const i of issues) {
       if (!sectionMatchesKeys(i.field_path, sectionKeys) || !i.html_diff) continue;
-      if (expectedItemType && i.item_type !== expectedItemType) continue;
+      if (effectiveItemType && i.item_type !== effectiveItemType) continue;
       const itemId = i.item_id ?? "";
       out.push({
         item_id: itemId,
@@ -121,7 +129,7 @@ export function useSingleSectionWritingCorrections(
       });
     }
     return out;
-  }, [qualityAnalysis?.issues, sectionKeys, formFieldName]);
+  }, [qualityAnalysis?.issues, sectionKeys, formFieldName, effectiveItemType]);
 
   const itemId =
     writingCorrections.length > 0
@@ -132,14 +140,13 @@ export function useSingleSectionWritingCorrections(
     const history = qualityAnalysis?.field_draft_histories?.[fieldPath];
     if (history && history.length > 0) return history;
     const issues = qualityAnalysis?.issues ?? [];
-    const expectedItemType = sectionKeys[0]?.split(".")[0] ?? "";
     for (const i of issues) {
       if (!sectionMatchesKeys(i.field_path, sectionKeys) || !i.html_diff) continue;
-      if (expectedItemType && i.item_type !== expectedItemType) continue;
+      if (effectiveItemType && i.item_type !== effectiveItemType) continue;
       return [i];
     }
     return [];
-  }, [qualityAnalysis?.field_draft_histories, qualityAnalysis?.issues, fieldPath, sectionKeys]);
+  }, [qualityAnalysis?.field_draft_histories, qualityAnalysis?.issues, fieldPath, sectionKeys, effectiveItemType]);
 
   React.useEffect(() => {
     if (currentGenerationIndex >= generationsList.length && generationsList.length > 0) {

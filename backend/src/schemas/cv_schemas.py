@@ -3,7 +3,7 @@ Comprehensive Pydantic schemas for CV data validation with proper type safety.
 """
 
 from datetime import date
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -35,18 +35,27 @@ class PersonalInfoSchema(BaseModel):
         extra = "forbid"  # Reject any additional fields
 
 
-class ProfessionalSummarySchema(BaseModel):
-    """Schema for professional summary section."""
+class CustomSectionSchema(BaseModel):
+    """Schema for a user-defined or AI-extracted custom section (title + content)."""
 
-    content: str = Field(..., min_length=10, description="Professional summary content")
-    keywords: List[str] = Field(default_factory=list, description="Key skills/keywords")
+    id: str = Field(..., min_length=1, description="Stable UUID for this section")
+    title: str = Field(
+        ...,
+        min_length=1,
+        description="Section title (e.g. Professional Summary, Hobbies)",
+    )
+    content: str = Field(default="", description="Section content in markdown")
+    type: Literal["professional_summary", "cover_letter"] = Field(
+        default="professional_summary",
+        description="Immutable section type; professional_summary or cover_letter",
+    )
 
     class Config:
         extra = "forbid"  # Reject any additional fields
 
 
 class WhyGoodFitSchema(BaseModel):
-    """Schema for AI-generated 'Why I'm a Good Fit' section."""
+    """Schema for validating why_good_fit draft payload (content + title + metadata)."""
 
     model_config = {"protected_namespaces": (), "extra": "forbid"}
 
@@ -79,6 +88,39 @@ class WhyGoodFitSchema(BaseModel):
     )
     title: Optional[str] = Field(
         None, description="Dynamic title from AI generation (e.g., 'Hello Company Name!')"
+    )
+
+
+class WhyGoodFitMetadataSchema(BaseModel):
+    """Metadata for the why_good_fit section (content/title live in custom_sections)."""
+
+    model_config = {"protected_namespaces": (), "extra": "forbid"}
+
+    confidence_score: int = Field(
+        ..., ge=0, le=100, description="Confidence score (0-100)"
+    )
+    fit_analysis: str = Field(..., min_length=10, description="Detailed fit analysis")
+    key_matches: List[str] = Field(
+        default_factory=list, description="Key matches with job requirements"
+    )
+    missing_skills: List[str] = Field(
+        default_factory=list, description="Missing skills from job requirements"
+    )
+    suggested_improvements: List[str] = Field(
+        default_factory=list, description="Suggested improvements"
+    )
+    strengths: List[str] = Field(default_factory=list, description="Candidate strengths")
+    weaknesses: List[str] = Field(
+        default_factory=list, description="Areas for improvement"
+    )
+    tokens_used: int = Field(0, description="Tokens used in generation")
+    generation_time: int = Field(0, description="Generation time in milliseconds")
+    model_used: str = Field(
+        default_factory=lambda: AIConfig.OPENAI_MODEL, description="AI model used"
+    )
+    generated_at: str = Field(..., description="Generation timestamp")
+    job_description_id: Optional[str] = Field(
+        None, description="Associated job description ID"
     )
 
 
@@ -277,8 +319,11 @@ class CVDataSchema(BaseModel):
     """Main schema for CV parsed data validation with proper type safety."""
 
     personal_info: PersonalInfoSchema
-    professional_summary: Optional[ProfessionalSummarySchema] = None
-    why_good_fit: Optional[WhyGoodFitSchema] = None
+    custom_sections: List[CustomSectionSchema] = Field(
+        default_factory=list,
+        description="User-defined or AI-extracted sections (e.g. Professional Summary, References)",
+    )
+    why_good_fit_metadata: Optional[WhyGoodFitMetadataSchema] = None
     work_experience: List[WorkExperienceSchema] = Field(default_factory=list)
     education: List[EducationSchema] = Field(default_factory=list)
     skills: Optional[SkillsSchema] = None

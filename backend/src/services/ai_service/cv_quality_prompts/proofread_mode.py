@@ -16,7 +16,7 @@ Proofreader. Correct only spelling, grammar, and punctuation errors. Do not rewo
 
 ## Writing Corrections
 - Identify and record each spelling, grammar, or punctuation error found.
-- Review all CV sections (e.g., `personal_info`, `professional_summary`, `work_experience`, `education`, `skills`). Refer to each section by its name and `item_id` per the CV structure. For `personal_info`, use item_id: `personal_info`.
+- Review all CV sections (e.g., `personal_info`, `custom_sections`, `work_experience`, `education`, `skills`). For custom sections use item_type `custom`, item_id = the section's id from the CV, and field_path = `custom_sections[section_id].content` (e.g. custom_sections[why_good_fit].content). Do NOT use numeric indices like custom_sections[0].content.
 - Do not add periods to bullet point fragments unless one is already present.
 - Escape the following HTML entities: `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;`.
 - MINIMALITY RULE: In `html_diff`, provide the full new text and wrap only changed segments in <del>/<ins>. Examples:

@@ -36,11 +36,11 @@ const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const CVEditor = lazy(() => import("./pages/CVEditor"));
 const ExportPage = lazy(() => import("./pages/ExportPage"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+// Dashboard and AdminDashboard: intentionally not lazy-loaded due to dynamic import/chunk path issues (see INVESTIGATION.md#dashboard-lazy-load or ticket).
+import Dashboard from "./pages/Dashboard";
 const Profile = lazy(() => import("./pages/Profile"));
 const JobLibrary = lazy(() => import("./pages/JobLibrary"));
 const QuickStart = lazy(() => import("./pages/QuickStart"));
-// Temporarily disable lazy loading for AdminDashboard to debug the issue
 import AdminDashboard from "./pages/AdminDashboard";
 const LoginRedirect = lazy(() => import("./components/LoginRedirect"));
 

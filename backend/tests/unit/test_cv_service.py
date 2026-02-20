@@ -177,7 +177,8 @@ class TestCVService:
 
         assert result == {"parsed": "data"}
         mock_extract_text.assert_called_once_with(file_content, content_type)
-        mock_parse_text.assert_called_once_with("Extracted text content")
+        mock_parse_text.assert_called_once()
+        assert mock_parse_text.call_args[0][0] == "Extracted text content"
 
     @patch("src.services.file_service.extract_text_from_file")
     @pytest.mark.asyncio

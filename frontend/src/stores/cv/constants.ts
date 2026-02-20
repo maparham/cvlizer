@@ -25,7 +25,8 @@ export const isTempCVId = (cvId: string | undefined): boolean => {
   return cvId ? cvId.startsWith(TEMP_CV_ID_PREFIX) : false;
 };
 
-// Default CV structure for new CVs - only includes sections that can be empty
+// Default CV structure for new CVs - only includes sections that can be empty.
+// Summary content lives in custom_sections (type professional_summary), not top-level professional_summary.
 export const DEFAULT_CV_DATA: CVData = {
   personal_info: {
     full_name: "",
@@ -35,10 +36,7 @@ export const DEFAULT_CV_DATA: CVData = {
     linkedin_url: "",
     website_url: "",
   },
-  professional_summary: {
-    content: "",
-    keywords: [],
-  },
+  custom_sections: [],
   work_experience: [],
   education: [],
   skills: {

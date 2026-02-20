@@ -46,7 +46,7 @@ export const usePDFCVEditor = ({
     const sections: CVSection[] = [];
     let order = 0;
 
-    // Get sections that have data in the CV
+    // Predefined sections that have data
     const sectionsWithData = getSectionsInDisplayOrder(
       AVAILABLE_SECTIONS.filter((section) => {
         const data = cvData[section.id];
@@ -63,6 +63,18 @@ export const usePDFCVEditor = ({
         id: sectionDef.id,
         type: sectionDef.id as CVSection["type"],
         title: sectionDef.name,
+        visible: true,
+        order: order++,
+      });
+    });
+
+    // Append custom sections (from cvData.custom_sections)
+    const customSections = cvData.custom_sections ?? [];
+    customSections.forEach((item: { id: string; title: string }) => {
+      sections.push({
+        id: item.id,
+        type: "custom",
+        title: item.title || "Section",
         visible: true,
         order: order++,
       });
@@ -409,15 +421,47 @@ export const usePDFCVEditor = ({
     saveSectionConfig(updatedSections, `${sectionDef.name} section added`);
   };
 
+  const addCustomSection = () => {
+    const id = `custom_${crypto.randomUUID()}`;
+    const newSection: CVSection = {
+      id,
+      type: "custom",
+      title: "New Section",
+      visible: true,
+      order: sections.length,
+    };
+    const updatedSections = [...sections, newSection];
+    // User-created sections use cover_letter so they are not treated as the summary section; backend only treats professional_summary as summary.
+    const updatedCvData = {
+      ...cvData,
+      custom_sections: [
+        ...(cvData?.custom_sections ?? []),
+        { id, title: "New Section", content: "", type: "cover_letter" },
+      ],
+      section_config: { sections: updatedSections },
+    };
+    setSections(updatedSections);
+    onUpdateCV(updatedCvData);
+    onSave(updatedCvData, "Custom section added");
+  };
+
   const removeSection = (sectionId: string) => {
+    const section = sections.find((s) => s.id === sectionId);
     const updatedSections = sections.filter((s) => s.id !== sectionId);
-    // Update order property
-    const reorderedSections = updatedSections.map((section, index) => ({
-      ...section,
-      order: index,
-    }));
+    // Preserve existing order values to maintain backend semantic ordering (gaps for reserved slots)
+    const reorderedSections = updatedSections.map((sec) => ({ ...sec }));
     setSections(reorderedSections);
-    saveSectionConfig(reorderedSections, "Section removed");
+    const updatedCvData = {
+      ...cvData,
+      section_config: { sections: reorderedSections },
+    };
+    if (section?.type === "custom") {
+      updatedCvData.custom_sections = (cvData?.custom_sections ?? []).filter(
+        (s) => s.id !== sectionId,
+      );
+    }
+    onUpdateCV(updatedCvData);
+    onSave(updatedCvData, "Section removed");
   };
 
   const getAvailableSectionsToAdd = () => {
@@ -460,6 +504,7 @@ export const usePDFCVEditor = ({
     resetToDefaultOrder,
     handleResetClick,
     addNewSection,
+    addCustomSection,
     removeSection,
     handleUnsavedChangesDialogClose,
     handleUnsavedChangesDialogConfirm,

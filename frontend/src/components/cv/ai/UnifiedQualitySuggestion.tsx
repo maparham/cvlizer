@@ -30,7 +30,7 @@ const CoachingQuestionsTooltipContent: React.FC<{ questions: CoachingQuestion[] 
 
 interface UnifiedQualitySuggestionProps {
   itemId: string;
-  section: 'work_experience' | 'education' | 'professional_summary';
+  section: 'work_experience' | 'education' | 'professional_summary' | 'custom';
   qualitySuggestion?: LowQualityItem | ProfessionalSummaryV2;
   writingCorrections?: WritingCorrection[];
   onApplyQuality?: (suggested: string) => void | Promise<void>;
@@ -120,7 +120,7 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
     }
   };
 
-  const isProfessionalSummary = section === 'professional_summary';
+  const isProfessionalSummary = section === 'professional_summary' || section === 'custom';
 
   return (
     <CompactSuggestionCard

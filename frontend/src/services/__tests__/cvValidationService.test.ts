@@ -14,10 +14,7 @@ describe("CVValidationService", () => {
       linkedin_url: "https://linkedin.com/in/johndoe",
       website_url: "https://johndoe.com",
     },
-    professional_summary: {
-      content: "Experienced software developer with 5+ years of experience",
-      keywords: ["JavaScript", "React", "Node.js"],
-    },
+    custom_sections: [],
     work_experience: [
       {
         id: "work_1",
@@ -53,33 +50,53 @@ describe("CVValidationService", () => {
   };
 
   describe("cleanForBackend", () => {
-    it("should preserve valid sections", () => {
+    it("should preserve valid sections and never send professional_summary", () => {
       const result = CVValidationService.cleanForBackend(mockCVData);
 
       expect(result.personal_info).toBeDefined();
-      expect(result.professional_summary).toBeDefined();
+      expect(result.professional_summary).toBeUndefined();
       expect(result.skills).toBeDefined();
       expect(result.work_experience).toBeDefined();
     });
 
-    it("should remove professional summary with empty content", () => {
+    it("should migrate legacy professional_summary content into custom_sections and strip key", () => {
+      const dataWithLegacySummary = {
+        ...mockCVData,
+        professional_summary: {
+          content: "Experienced software developer with 5+ years of experience",
+          keywords: ["JavaScript", "React", "Node.js"],
+        },
+      };
+
+      const result = CVValidationService.cleanForBackend(dataWithLegacySummary as any);
+
+      expect(result.professional_summary).toBeUndefined();
+      expect(Array.isArray(result.custom_sections)).toBe(true);
+      const summarySection = result.custom_sections.find(
+        (s: any) => s.type === "professional_summary" || (s.title || "").toLowerCase() === "professional summary",
+      );
+      expect(summarySection).toBeDefined();
+      expect(summarySection.content).toContain("Experienced software developer");
+    });
+
+    it("should strip professional_summary with empty content", () => {
       const invalidData = {
         ...mockCVData,
         professional_summary: { content: "", keywords: [] },
       };
 
-      const result = CVValidationService.cleanForBackend(invalidData);
+      const result = CVValidationService.cleanForBackend(invalidData as any);
 
       expect(result.professional_summary).toBeUndefined();
     });
 
-    it("should remove professional summary with short content", () => {
+    it("should strip professional_summary with short content", () => {
       const invalidData = {
         ...mockCVData,
         professional_summary: { content: "Short", keywords: [] },
       };
 
-      const result = CVValidationService.cleanForBackend(invalidData);
+      const result = CVValidationService.cleanForBackend(invalidData as any);
 
       expect(result.professional_summary).toBeUndefined();
     });
@@ -184,27 +201,29 @@ describe("CVValidationService", () => {
     });
 
     it("should validate professional_summary section correctly", () => {
+      const summaryData = {
+        content: "Experienced software developer with 5+ years of experience",
+        keywords: ["JavaScript", "React", "Node.js"],
+      };
       const result = CVValidationService.validateSection(
         "professional_summary",
-        mockCVData.professional_summary,
+        summaryData,
       );
 
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
-    it("should return errors for short professional summary", () => {
-      const invalidSummary = { content: "Short", keywords: [] };
+    it("should use default validator for professional_summary (no min-length rule)", () => {
+      const shortSummary = { content: "Short", keywords: [] };
 
       const result = CVValidationService.validateSection(
         "professional_summary",
-        invalidSummary,
+        shortSummary,
       );
 
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        "Professional summary must be at least 10 characters long",
-      );
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
   });
 

@@ -47,56 +47,71 @@ export const JobLibraryStats: React.FC<JobLibraryStatsProps> = ({
         <Stack direction="row" spacing={2} flexWrap="wrap">
           <Chip
             label={`Total: ${statusCounts.total}`}
-            color={statusFilter === "all" ? "primary" : "default"}
+            variant="outlined"
             onClick={() => onStatusFilterChange("all")}
             sx={{
               cursor: "pointer",
               fontWeight: 600,
+              borderColor: statusFilter === "all" ? "primary.main" : "divider",
+              color: statusFilter === "all" ? "primary.main" : "text.secondary",
+              backgroundColor: "transparent",
               "&:hover": {
-                backgroundColor:
-                  statusFilter === "all" ? "primary.dark" : "action.hover",
+                backgroundColor: "transparent",
+                borderColor: "primary.main",
+                color: "primary.main",
               },
             }}
           />
           <Chip
             label={`Open: ${statusCounts.open}`}
-            color={statusFilter === "open" ? "success" : "default"}
+            variant="outlined"
             onClick={() => onStatusFilterChange("open")}
             sx={{
               cursor: "pointer",
               fontWeight: 600,
+              borderColor: statusFilter === "open" ? "success.main" : "divider",
+              color: statusFilter === "open" ? "success.dark" : "text.secondary",
+              backgroundColor: "transparent",
               "&:hover": {
-                backgroundColor:
-                  statusFilter === "open" ? "success.dark" : "action.hover",
+                backgroundColor: "transparent",
+                borderColor: "success.main",
+                color: "success.dark",
               },
             }}
           />
           <Chip
             label={`Applied: ${statusCounts.applied}`}
-            color={statusFilter === "applied" ? "info" : "default"}
+            variant="outlined"
             onClick={() => onStatusFilterChange("applied")}
             sx={{
               cursor: "pointer",
               fontWeight: 600,
+              borderColor:
+                statusFilter === "applied" ? "info.main" : "divider",
+              color: statusFilter === "applied" ? "info.dark" : "text.secondary",
+              backgroundColor: "transparent",
               "&:hover": {
-                backgroundColor:
-                  statusFilter === "applied" ? "info.dark" : "action.hover",
+                backgroundColor: "transparent",
+                borderColor: "info.main",
+                color: "info.dark",
               },
             }}
           />
           <Chip
             label={`Archived: ${statusCounts.archived}`}
-            color="default"
+            variant="outlined"
             onClick={() => onStatusFilterChange("archived")}
             sx={{
               cursor: "pointer",
               fontWeight: 600,
-              backgroundColor:
-                statusFilter === "archived" ? "grey.200" : "grey.100",
-              color: statusFilter === "archived" ? "grey.800" : "grey.600",
+              borderColor:
+                statusFilter === "archived" ? "grey.600" : "divider",
+              color: statusFilter === "archived" ? "grey.800" : "text.secondary",
+              backgroundColor: "transparent",
               "&:hover": {
-                backgroundColor:
-                  statusFilter === "archived" ? "grey.300" : "grey.200",
+                backgroundColor: "transparent",
+                borderColor: "grey.600",
+                color: "grey.800",
               },
             }}
           />

@@ -132,14 +132,16 @@ class TestJobFitApprovalIntegration:
         data = response.json()
         assert data["message"] == "Draft approved and committed successfully"
 
-        # Verify CV was updated
+        # Verify CV was updated: custom section + metadata, no top-level why_good_fit
         db_session.refresh(test_cv)
-        assert "why_good_fit" in test_cv.parsed_data
-        assert test_cv.parsed_data["why_good_fit"]["confidence_score"] == 85
-        assert (
-            test_cv.parsed_data["why_good_fit"]["content"]
-            == "This is a great fit because..."
-        )
+        assert "why_good_fit" not in test_cv.parsed_data
+        assert "why_good_fit_metadata" in test_cv.parsed_data
+        assert test_cv.parsed_data["why_good_fit_metadata"]["confidence_score"] == 85
+        custom = test_cv.parsed_data.get("custom_sections") or []
+        wgf = next((s for s in custom if s.get("id") == "why_good_fit"), None)
+        assert wgf is not None
+        assert wgf.get("type") == "cover_letter"
+        assert wgf.get("content") == "This is a great fit because..."
 
         # Verify draft was deleted
         deleted_draft = db_session.query(AIDraft).filter(AIDraft.id == draft.id).first()
@@ -223,16 +225,12 @@ class TestJobFitApprovalIntegration:
         # Verify success
         assert response.status_code == 200
 
-        # Verify content was mapped from fit_analysis
+        # Verify content was mapped from fit_analysis into custom section
         db_session.refresh(test_cv)
-        assert (
-            test_cv.parsed_data["why_good_fit"]["content"]
-            == "I'm a good fit because of my Python expertise"
-        )
-        assert (
-            test_cv.parsed_data["why_good_fit"]["fit_analysis"]
-            == "I'm a good fit because of my Python expertise"
-        )
+        custom = test_cv.parsed_data.get("custom_sections") or []
+        wgf = next((s for s in custom if s.get("id") == "why_good_fit"), None)
+        assert wgf is not None
+        assert wgf.get("content") == "I'm a good fit because of my Python expertise"
 
     def test_approve_draft_updates_section_order(
         self, db_session, test_cv, test_job_description
@@ -269,18 +267,75 @@ class TestJobFitApprovalIntegration:
         # Verify success
         assert response.status_code == 200
 
-        # Verify section_config was updated
+        # Verify section_config was updated with custom why_good_fit entry
         db_session.refresh(test_cv)
         sections = test_cv.parsed_data["section_config"]["sections"]
 
-        # Find why_good_fit section
         why_good_fit_section = next(
-            (s for s in sections if s["type"] == "why_good_fit"), None
+            (s for s in sections if s.get("id") == "why_good_fit"), None
         )
         assert why_good_fit_section is not None
+        assert why_good_fit_section["type"] == "custom"
         assert why_good_fit_section["order"] == 2
         assert why_good_fit_section["visible"] is True
         assert why_good_fit_section["title"] == "Why I'm a Good Fit"
+
+    def test_approve_draft_preserves_custom_section_order(
+        self, db_session, test_cv, test_job_description
+    ):
+        """Test approval preserves relative order of custom sections without order."""
+        # CV with two custom sections that have no explicit order (should get 12, 13)
+        ref_id = "custom_ref"
+        extra_id = "custom_extra"
+        test_cv.parsed_data = dict(test_cv.parsed_data or {})
+        test_cv.parsed_data["section_config"] = {
+            "sections": [
+                {"id": ref_id, "type": "custom", "title": "References", "visible": True},
+                {"id": extra_id, "type": "custom", "title": "Extra", "visible": True},
+            ]
+        }
+        test_cv.parsed_data["custom_sections"] = [
+            {"id": ref_id, "type": "cover_letter", "title": "References", "content": ""},
+            {"id": extra_id, "type": "cover_letter", "title": "Extra", "content": ""},
+        ]
+        db_session.add(test_cv)
+        db_session.commit()
+        db_session.refresh(test_cv)
+
+        draft = AIDraft(
+            id="test-draft-id",
+            cv_id=test_cv.id,
+            job_description_id=test_job_description.id,
+            section_type="why_good_fit",
+            draft_data={
+                "confidence_score": 80,
+                "fit_analysis": "Good fit",
+                "generated_at": "2025-01-01T12:00:00Z",
+            },
+            is_generating=False,
+        )
+        db_session.add(draft)
+        db_session.commit()
+
+        with patch("src.middleware.clerk_auth.get_effective_user") as mock_auth:
+            mock_auth.return_value = Mock(id=test_cv.user_id)
+            client = TestClient(app)
+            response = client.post(
+                f"/api/cvs/{test_cv.id}/why_good_fit/approve",
+                json={"draft_id": draft.id},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 200
+        db_session.refresh(test_cv)
+        sections = test_cv.parsed_data["section_config"]["sections"]
+        orders_by_id = {s["id"]: s["order"] for s in sections}
+        # why_good_fit at 2; ref and extra should get 12, 13 preserving relative order
+        assert orders_by_id["why_good_fit"] == 2
+        assert orders_by_id[ref_id] == 12
+        assert orders_by_id[extra_id] == 13
+        sorted_ids = [s["id"] for s in sorted(sections, key=lambda s: s["order"])]
+        assert sorted_ids.index(ref_id) < sorted_ids.index(extra_id)
 
     def test_approve_nonexistent_draft(self, db_session, test_cv):
         """Test approving a non-existent draft returns 404"""

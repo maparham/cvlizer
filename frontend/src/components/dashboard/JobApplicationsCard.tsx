@@ -71,38 +71,45 @@ const JobApplicationsCard: React.FC<JobApplicationsCardProps> = ({
             <Chip
               label={`${statusCounts.open} Open`}
               size="small"
+              variant="outlined"
               sx={{
-                backgroundColor: "success.light",
+                borderColor: "success.main",
                 color: "success.dark",
                 fontWeight: 600,
+                backgroundColor: "transparent",
                 "&:hover": {
-                  backgroundColor: "success.main",
-                  color: "success.contrastText",
+                  backgroundColor: "transparent",
+                  borderColor: "success.dark",
                 },
               }}
             />
             <Chip
               label={`${statusCounts.applied} Applied`}
               size="small"
+              variant="outlined"
               sx={{
-                backgroundColor: "grey.300",
+                borderColor: "grey.400",
                 color: "grey.700",
                 fontWeight: 600,
+                backgroundColor: "transparent",
                 "&:hover": {
-                  backgroundColor: "grey.400",
-                  color: "grey.800",
+                  backgroundColor: "transparent",
+                  borderColor: "grey.600",
                 },
               }}
             />
             <Chip
               label={`${statusCounts.archived} Archived`}
               size="small"
+              variant="outlined"
               sx={{
-                backgroundColor: "grey.100",
+                borderColor: "grey.400",
                 color: "grey.600",
                 fontWeight: 600,
+                backgroundColor: "transparent",
                 "&:hover": {
-                  backgroundColor: "grey.200",
+                  backgroundColor: "transparent",
+                  borderColor: "grey.600",
                 },
               }}
             />

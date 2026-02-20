@@ -174,10 +174,10 @@ class CVDiffService:
         """Compute diff using simple comparison logic."""
         changes = []
 
-        # Compare each section
+        # Compare each section (summary content lives in custom_sections)
         sections_to_compare = [
             "personal_info",
-            "professional_summary",
+            "custom_sections",
             "work_experience",
             "education",
             "skills",
@@ -200,6 +200,7 @@ class CVDiffService:
                 "awards",
                 "publications",
                 "volunteer_experience",
+                "custom_sections",
             ]:
                 # Array sections
                 changes.extend(
@@ -210,8 +211,8 @@ class CVDiffService:
             elif section == "skills":
                 # Skills object
                 changes.extend(self._compare_skills_section(old_section, new_section))
-            elif section in ["personal_info", "professional_summary"]:
-                # Object sections
+            elif section == "personal_info":
+                # Object sections (summary lives in custom_sections)
                 changes.extend(
                     self._compare_object_section(section, old_section, new_section)
                 )
@@ -712,7 +713,7 @@ class CVDiffService:
         """Get user-friendly section name."""
         section_names = {
             "personal_info": "Personal Information",
-            "professional_summary": "Professional Summary",
+            "custom_sections": "Custom Sections",
             "work_experience": "Work Experience",
             "education": "Education",
             "skills": "Skills",

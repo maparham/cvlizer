@@ -146,7 +146,7 @@ interface CVQualityStore {
   // Dismissal actions
   dismissWritingCorrection: (itemId: string, fieldPath: string) => Promise<void>;
   dismissContentCoaching: (itemId: string) => Promise<void>;
-  dismissProfessionalSummarySuggestion: () => Promise<void>;
+  dismissProfessionalSummarySuggestion: (summarySectionId?: string) => Promise<void>;
   dismissWorkExperienceSuggestion: (itemId: string) => Promise<void>;
   dismissEducationSuggestion: (itemId: string) => Promise<void>;
   dismissSkillSuggestion: (skill: string, type: 'technical' | 'soft') => Promise<void>;
@@ -454,7 +454,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     );
   },
 
-  // Dismiss content coaching item (itemId may be 'personal_info' or 'professional_summary' for section-level with null item_id)
+  // Dismiss content coaching item (itemId may be 'personal_info', custom section id, or legacy 'professional_summary')
   dismissContentCoaching: async (itemId: string) => {
     await get()._dismissItem(
       (current) => ({
@@ -464,6 +464,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           if (itemId === 'personal_info') {
             return i.item_type !== 'personal_info';
           }
+          if (i.item_type === 'custom' && (i.item_id ?? '') === itemId) return false;
           if (itemId === 'professional_summary') {
             return i.item_type !== 'professional_summary' && (i.field_path ?? '') !== 'professional_summary' && !(i.field_path ?? '').startsWith('professional_summary.');
           }
@@ -475,13 +476,19 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     );
   },
 
-  // Dismiss professional summary suggestion (remove professional_summary issue from issues array)
-  dismissProfessionalSummarySuggestion: async () => {
+  // Dismiss summary suggestion (remove professional_summary or custom summary issues from issues array).
+  // When summarySectionId is provided, only custom issues with that item_id are removed; otherwise no custom issues are removed.
+  dismissProfessionalSummarySuggestion: async (summarySectionId?: string) => {
     await get()._dismissItem(
       (current) => ({
         ...current,
         issues: current.issues.filter((i) => {
           if (i.item_type === 'professional_summary') return false;
+          if (i.item_type === 'custom') {
+            if (summarySectionId != null && (i.item_id ?? '') === summarySectionId)
+              return false;
+            return true;
+          }
           const fp = i.field_path ?? '';
           if (fp === 'professional_summary' || fp.startsWith('professional_summary.'))
             return false;
@@ -489,7 +496,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
         }),
       }),
       'Failed to dismiss suggestion',
-      'The professional summary suggestion could not be dismissed. Please try again.'
+      'The summary suggestion could not be dismissed. Please try again.'
     );
   },
 

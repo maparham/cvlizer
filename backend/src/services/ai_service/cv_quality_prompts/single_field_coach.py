@@ -38,6 +38,5 @@ Act as a career coach. Improve the text provided. Preserve the candidate's voice
 - Wrap **ALL and ONLY** changed text in `<ins>` and `<del>` spans.
 - Each `<ins>` or `<del>` must enclose exactly the modified tokens and must not cross sentence boundaries.
 - Prefer single-token edits over sentence edits.
-- Escape HTML specials (`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;`).
 - Keep original bullet punctuation; don't add periods if missing.
 - Small local edits only; one span at most one sentence."""

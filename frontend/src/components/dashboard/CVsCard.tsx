@@ -79,26 +79,30 @@ const CVsCard: React.FC<CVsCardProps> = ({
             <Chip
               label={`${statusCounts.parsed} Ready`}
               size="small"
+              variant="outlined"
               sx={{
-                backgroundColor: "success.light",
+                borderColor: "success.main",
                 color: "success.dark",
                 fontWeight: 600,
+                backgroundColor: "transparent",
                 "&:hover": {
-                  backgroundColor: "success.main",
-                  color: "success.contrastText",
+                  backgroundColor: "transparent",
+                  borderColor: "success.dark",
                 },
               }}
             />
             <Chip
               label={`${statusCounts.parsing} Processing`}
               size="small"
+              variant="outlined"
               sx={{
-                backgroundColor: "warning.light",
+                borderColor: "warning.main",
                 color: "warning.dark",
                 fontWeight: 600,
+                backgroundColor: "transparent",
                 "&:hover": {
-                  backgroundColor: "warning.main",
-                  color: "warning.contrastText",
+                  backgroundColor: "transparent",
+                  borderColor: "warning.dark",
                 },
               }}
             />
@@ -106,13 +110,15 @@ const CVsCard: React.FC<CVsCardProps> = ({
               <Chip
                 label={`${statusCounts.error} Errors`}
                 size="small"
+                variant="outlined"
                 sx={{
-                  backgroundColor: "error.light",
+                  borderColor: "error.main",
                   color: "error.dark",
                   fontWeight: 600,
+                  backgroundColor: "transparent",
                   "&:hover": {
-                    backgroundColor: "error.main",
-                    color: "error.contrastText",
+                    backgroundColor: "transparent",
+                    borderColor: "error.dark",
                   },
                 }}
               />

@@ -776,8 +776,31 @@ def _generate_from_template(
 
     # Get all section data
     pi = parsed.get("personal_info", {}) if parsed else {}
-    summary = parsed.get("professional_summary", {}) if parsed else {}
-    why_fit = parsed.get("why_good_fit", {}) if parsed else {}
+    custom_sections = parsed.get("custom_sections") or []
+    summary_section = next(
+        (
+            s
+            for s in custom_sections
+            if isinstance(s, dict) and s.get("type") == "professional_summary"
+        ),
+        None,
+    )
+    summary = (
+        {"content": (summary_section or {}).get("content", "")} if summary_section else {}
+    )
+    why_good_fit_section = next(
+        (
+            s
+            for s in custom_sections
+            if isinstance(s, dict) and s.get("id") == "why_good_fit"
+        ),
+        None,
+    )
+    why_fit = (
+        {"content": (why_good_fit_section or {}).get("content", "")}
+        if why_good_fit_section
+        else {}
+    )
     wx = parsed.get("work_experience", []) if parsed else []
     ed = parsed.get("education", []) if parsed else []
     skills = parsed.get("skills", {}) if parsed else {}
@@ -808,26 +831,27 @@ def _generate_from_template(
                 continue
 
             section_type = section.get("type") or section.get("id")
+            section_id = section.get("id")
             section_title = section.get("title", "")
 
-            if section_type == "professional_summary":
-                content = _format_professional_summary(summary)
-                if content:
-                    content_parts.append(
-                        _section(
-                            section_title or "Professional Summary",
-                            content,
-                            template_name,
-                        )
-                    )
-            elif section_type == "why_good_fit":
-                content = _format_why_good_fit(why_fit)
-                if content:
-                    content_parts.append(
-                        _section(
-                            section_title or "Why I'm a Good Fit", content, template_name
-                        )
-                    )
+            # Professional summary is now a custom section (type "custom", id may be
+            # "professional_summary" or UUID); content comes from custom_sections.
+            if section_type == "custom":
+                # Resolve any custom section by id (why_good_fit, professional_summary, etc.)
+                custom_item = next(
+                    (
+                        s
+                        for s in custom_sections
+                        if isinstance(s, dict) and s.get("id") == section_id
+                    ),
+                    None,
+                )
+                if custom_item:
+                    raw = (custom_item.get("content") or "").strip()
+                    if raw:
+                        content = _markdown_to_latex(raw)
+                        title = section_title or (custom_item.get("title") or "Section")
+                        content_parts.append(_section(title, content, template_name))
             elif section_type == "work_experience":
                 content = _format_work_experience(wx)
                 if content:

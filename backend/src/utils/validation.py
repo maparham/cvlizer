@@ -199,10 +199,10 @@ class CVDataValidator:
             if not cls.safe_get_str(personal_info, "location"):
                 errors.append("Personal Information: Location is required")
 
-        # Validate Professional Summary
-        professional_summary = cv_data.get("professional_summary", {})
-        if professional_summary and not cls.safe_get_str(professional_summary, "content"):
-            errors.append("Professional Summary: Content is required")
+        # custom_sections: optional list; no required-field validation per item
+        custom_sections = cv_data.get("custom_sections")
+        if custom_sections is not None and not isinstance(custom_sections, list):
+            errors.append("Custom sections must be a list")
 
         # Validate Skills - at least one skill required when skills section exists
         skills = cv_data.get("skills", {})

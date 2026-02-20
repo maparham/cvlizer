@@ -232,7 +232,7 @@ export class BackendCVHistoryService {
 
     const sections = [
       "personal_info",
-      "professional_summary",
+      "custom_sections",
       "work_experience",
       "education",
       "skills",
@@ -279,7 +279,7 @@ export class BackendCVHistoryService {
   private getSectionDisplayName(section: string): string {
     const names = {
       personal_info: "Personal Information",
-      professional_summary: "Professional Summary",
+      custom_sections: "Custom sections",
       work_experience: "Work Experience",
       education: "Education",
       skills: "Skills",

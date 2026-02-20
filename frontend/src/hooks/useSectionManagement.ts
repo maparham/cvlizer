@@ -30,13 +30,14 @@ export const useSectionManagement = ({
   // Helper function to check if a section is empty
   const isSectionEmpty = useCallback(
     (sectionId: string, cvData: CVData): boolean => {
+      // Custom sections: look up by id in custom_sections
+      const customItem = cvData.custom_sections?.find((s) => s.id === sectionId);
+      if (customItem !== undefined) {
+        return !customItem.content || customItem.content.trim() === "";
+      }
+
       const data = cvData[sectionId as keyof CVData];
       if (!data) return true;
-
-      // Special case for why_good_fit - if it's null, it should be considered empty/deleted
-      if (sectionId === "why_good_fit" && data === null) {
-        return true;
-      }
 
       // Check if array is empty
       if (Array.isArray(data)) {
@@ -51,12 +52,6 @@ export const useSectionManagement = ({
           return false;
         }
 
-        // For other object sections, check if they have meaningful content
-        if (sectionId === "professional_summary") {
-          const summary = data as { content?: string; keywords?: string[] };
-          return !summary.content || summary.content.trim() === "";
-        }
-
         if (sectionId === "skills") {
           const skills = data as {
             technical?: string[];
@@ -68,18 +63,6 @@ export const useSectionManagement = ({
             (!skills.soft || skills.soft.length === 0) &&
             (!skills.languages || skills.languages.length === 0)
           );
-        }
-
-        if (sectionId === "why_good_fit") {
-          const whyGoodFit = data as {
-            content?: string;
-            fit_analysis?: string;
-          };
-          // Section is empty if neither content nor fit_analysis exists or is populated
-          const isEmpty =
-            (!whyGoodFit.content || whyGoodFit.content.trim() === "") &&
-            (!whyGoodFit.fit_analysis || whyGoodFit.fit_analysis.trim() === "");
-          return isEmpty;
         }
 
         // Generic object check (fallback)
@@ -116,17 +99,17 @@ export const useSectionManagement = ({
         });
       });
 
-      // Also include AI-generated sections that have data
-
-      if (cvData.why_good_fit && !isSectionEmpty("why_good_fit", cvData)) {
+      // Include custom sections (includes why_good_fit when present)
+      const customSections = cvData.custom_sections ?? [];
+      customSections.forEach((item) => {
         sections.push({
-          id: "why_good_fit",
-          type: "why_good_fit" as CVSectionType,
-          title: (cvData.why_good_fit as any)?.title || "Why I'm a Good Fit",
+          id: item.id,
+          type: "custom" as CVSectionType,
+          title: item.title || "Section",
           visible: true,
           order: order++,
         });
-      }
+      });
 
       return sections;
     },
@@ -155,12 +138,13 @@ export const useSectionManagement = ({
             return true;
           })
           .map((section) => {
-            // For why_good_fit, prefer the title already in section_config (set during approval)
-            // Only override if section.title is the default and we have a dynamic title
-            if (section.id === "why_good_fit" && section.title === "Why I'm a Good Fit") {
-              const dynamicTitle = (cvData.why_good_fit as any)?.title;
-              if (dynamicTitle) {
-                return { ...section, title: dynamicTitle };
+            // For why_good_fit (custom section), sync title from custom_sections
+            if (section.id === "why_good_fit" && section.type === "custom") {
+              const customSection = cvData.custom_sections?.find(
+                (s) => s.id === "why_good_fit",
+              );
+              if (customSection?.title) {
+                return { ...section, title: customSection.title };
               }
             }
             return section;
@@ -189,14 +173,19 @@ export const useSectionManagement = ({
           // Empty section: delete it entirely
           updatedSections = sections.filter((s) => s.id !== sectionId);
 
-          // Remove the section data from CV data and update section config
           updatedCvData = {
             ...cvData,
             section_config: {
               sections: updatedSections,
             },
           };
-          delete (updatedCvData as any)[sectionId];
+          if (section.type === "custom") {
+            updatedCvData.custom_sections = (cvData.custom_sections ?? []).filter(
+              (s) => s.id !== sectionId,
+            );
+          } else {
+            delete (updatedCvData as any)[sectionId];
+          }
 
           message = "Empty section deleted";
         } else {
@@ -249,12 +238,11 @@ export const useSectionManagement = ({
       // Handle AI-generated sections that are not in AVAILABLE_SECTIONS
       let sectionName = sectionDef?.name;
       if (!sectionDef) {
-        // Special handling for AI-generated sections
         if (sectionId === "why_good_fit") {
-          // Use dynamic title from CV data if available
-          sectionName = (cvData?.why_good_fit as any)?.title || "Why I'm a Good Fit";
+          sectionName =
+            cvData.custom_sections?.find((s) => s.id === "why_good_fit")
+              ?.title || "Why I'm a Good Fit";
         } else {
-          // For unknown sections, use a generic name
           sectionName = sectionId
             .replace(/_/g, " ")
             .replace(/\b\w/g, (l) => l.toUpperCase());
@@ -288,7 +276,7 @@ export const useSectionManagement = ({
 
         const newSection: CVSection = {
           id: sectionId,
-          type: sectionId as CVSectionType,
+          type: (sectionId === "why_good_fit" ? "custom" : sectionId) as CVSectionType,
           title: sectionName || sectionId,
           visible: true,
           order: maxOrder + 1,
@@ -314,8 +302,6 @@ export const useSectionManagement = ({
             soft: [],
             languages: [],
           };
-        } else if (sectionId === "professional_summary") {
-          (updatedCvData as any)[sectionId] = { content: "", keywords: [] };
         } else if (sectionId === "personal_info") {
           (updatedCvData as any)[sectionId] = {
             full_name: "",
@@ -325,10 +311,6 @@ export const useSectionManagement = ({
             linkedin_url: "",
             website_url: "",
           };
-        } else if (sectionId === "why_good_fit") {
-          // AI-generated section - don't initialize empty data, let it be null
-          // The section will only be visible if there's actual data
-          (updatedCvData as any)[sectionId] = null;
         } else {
           // All other sections are arrays (work_experience, education, etc.)
           (updatedCvData as any)[sectionId] = [];
@@ -434,20 +416,26 @@ export const useSectionManagement = ({
 
   const updateSectionTitle = useCallback(
     (sectionId: string, newTitle: string) => {
-      // Update the section title in the sections array
       const updatedSections = sections.map((section) =>
         section.id === sectionId ? { ...section, title: newTitle } : section,
       );
 
       setSections(updatedSections);
 
-      // Update the section configuration in CV data
-      const updatedCvData = {
+      const updatedCvData: CVData = {
         ...cvData,
         section_config: {
           sections: updatedSections,
         },
       };
+
+      // Keep custom_sections title in sync for custom sections
+      const customItem = cvData.custom_sections?.find((s) => s.id === sectionId);
+      if (customItem) {
+        updatedCvData.custom_sections = (cvData.custom_sections ?? []).map(
+          (s) => (s.id === sectionId ? { ...s, title: newTitle } : s),
+        );
+      }
 
       onSave(updatedCvData, "Section title updated");
     },

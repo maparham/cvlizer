@@ -149,9 +149,9 @@ async def create_blank_cv(
         # Create CV record with default parsed data structure (deep copy)
         default_parsed_data = deepcopy(DEFAULT_PARSED_CV)
 
-        # Generate a default filename
-        cv_count = db.query(CV).filter(CV.user_id == current_user.id).count()
-        default_filename = f"New CV {cv_count + 1}.pdf"
+        # Use fixed base name; get_unique_filename_for_user (in create_cv) appends
+        # (1), (2), ... only when "New CV.pdf" already exists.
+        default_filename = "New CV.pdf"
 
         cv = create_cv(
             db=db,

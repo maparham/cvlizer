@@ -9,6 +9,8 @@ import re
 import logging
 from typing import Dict, Any, List
 
+from .ai_suggestions_service import _get_summary_custom_section
+
 from src.schemas.cv_quality_schemas import (  # type: ignore
     WritingCorrectionSchema,
     FieldCorrectionSchema,
@@ -152,15 +154,23 @@ def apply_writing_correction(
     base_section = (
         re.sub(r"\[\d+\]$", "", first_segment) if first_segment else first_segment
     )
+    # Extract custom section id from custom_sections[section_id] format
+    custom_match = re.match(r"custom_sections\[([^\]]+)\]", first_segment)
+    if custom_match:
+        base_section = custom_match.group(1)
 
-    # Validate field_path: exact or prefix (work_experience.position, education.degree, etc.)
+    # Validate field_path: exact or prefix; allow work_experience, education, personal_info, professional_summary (summary custom section), or custom section id
     allowed_bases = (
         "work_experience",
         "education",
         "professional_summary",
         "personal_info",
     )
-    if base_section not in allowed_bases:
+    custom_sections = cv_data.get("custom_sections") or []
+    custom_section_ids = {
+        s.get("id") for s in custom_sections if isinstance(s, dict) and s.get("id")
+    }
+    if base_section not in allowed_bases and base_section not in custom_section_ids:
         raise ValueError(f"Invalid field_path: {field_path}")
 
     # Find the item in CV data (use base_section for list/single-object lookup)
@@ -171,17 +181,47 @@ def apply_writing_correction(
         items = cv_data.get("education", [])
         item_key = "education"
     elif base_section == "professional_summary":
-        # Professional summary is a single object, not a list
+        # Summary = first custom section with title "Professional Summary" or first custom section; apply to that item
+        summary_section = _get_summary_custom_section(cv_data)
+        if summary_section and correction.field_corrections:
+            section_id = summary_section.get("id")
+            for i, s in enumerate(custom_sections):
+                if isinstance(s, dict) and s.get("id") == section_id:
+                    # Build a dict with content for apply_field_corrections
+                    obj = {"content": s.get("content") or ""}
+                    obj, skipped_fields = apply_field_corrections(
+                        obj, correction.field_corrections
+                    )
+                    cv_data["custom_sections"] = list(custom_sections)
+                    cv_data["custom_sections"][i] = {
+                        **s,
+                        "content": obj.get("content", ""),
+                    }
+                    if skipped_fields:
+                        logger.warning(
+                            f"Skipped {len(skipped_fields)} fields for summary custom section: {skipped_fields}"
+                        )
+                    break
+        return cv_data
+    elif base_section in custom_section_ids:
+        # Custom section by id
         if correction.field_corrections:
-            if "professional_summary" not in cv_data:
-                cv_data["professional_summary"] = {}
-            cv_data["professional_summary"], skipped_fields = apply_field_corrections(
-                cv_data["professional_summary"], correction.field_corrections
-            )
-            if skipped_fields:
-                logger.warning(
-                    f"Skipped {len(skipped_fields)} fields for professional_summary: {skipped_fields}"
-                )
+            for i, s in enumerate(custom_sections):
+                if isinstance(s, dict) and s.get("id") == base_section:
+                    obj = {"content": s.get("content") or ""}
+                    obj, skipped_fields = apply_field_corrections(
+                        obj, correction.field_corrections
+                    )
+                    cv_data["custom_sections"] = list(custom_sections)
+                    cv_data["custom_sections"][i] = {
+                        **s,
+                        "content": obj.get("content", ""),
+                    }
+                    if skipped_fields:
+                        logger.warning(
+                            f"Skipped {len(skipped_fields)} fields for custom section {base_section}: {skipped_fields}"
+                        )
+                    break
         return cv_data
     elif base_section == "personal_info":
         # Personal info is a single object, not a list (similar to professional_summary)
