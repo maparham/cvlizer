@@ -21,6 +21,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAIStore } from "../stores/ai";
 import { useAISuggestionsStore } from "../stores/aiSuggestionsStore";
 import { useCVQualityStore } from "../stores/cvQualityStore";
+import {
+  setPersistedCorrectionMode,
+  clearPersistedCorrectionMode,
+} from "../stores/cvQualityPersistence";
 import { useNotifications } from "../packages/notifications";
 import { useAuth } from "../contexts/AuthContext";
 import { POLLING_CONFIG } from "../config/constants";
@@ -170,7 +174,10 @@ export const useAITaskPolling = (
         }
 
         if (!updatedTaskData.is_generating) {
-          // Task completed - check if it completed with an error
+          if (task.type === "cv_quality_analysis") {
+            clearPersistedCorrectionMode(task.id);
+          }
+          // Check if it completed with an error
           const hasError = !!updatedTaskData.generation_error;
           const completedTask = {
             ...task,
@@ -210,10 +217,17 @@ export const useAITaskPolling = (
             });
           }
         } else {
-          // Task still generating
+          // Task still generating - preserve correctionMode (polling overwrites data with API response)
+          const preservedCorrectionMode =
+            task.type === "cv_quality_analysis" && task.data?.correctionMode;
           newActiveTasks.set(task.id, {
             ...task,
-            data: updatedTaskData,
+            data: {
+              ...updatedTaskData,
+              ...(preservedCorrectionMode && {
+                correctionMode: preservedCorrectionMode,
+              }),
+            },
             generationError: updatedTaskData.generation_error,
           });
           anyTaskStillGenerating = true;
@@ -333,7 +347,23 @@ export const useAITaskPolling = (
         }
       }
 
-      newMap.set(task.id, task);
+      // When resuming (e.g. after page reload), preserve existing task data (e.g. correctionMode)
+      // so loading state survives reload
+      const existing = newMap.get(task.id);
+      const taskToAdd =
+        existing?.data && !task.data
+          ? { ...task, data: existing.data }
+          : task;
+
+      // Persist correctionMode so it survives page reload (auth may clear activeTasks)
+      if (
+        taskToAdd.type === "cv_quality_analysis" &&
+        taskToAdd.data?.correctionMode
+      ) {
+        setPersistedCorrectionMode(task.id, taskToAdd.data.correctionMode);
+      }
+
+      newMap.set(task.id, taskToAdd);
       activeTasksRef.current = newMap;
 
       // Then update state (for React re-renders)

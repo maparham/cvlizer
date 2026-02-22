@@ -7,6 +7,7 @@ Used when the user clicks "retry" on a description-field correction card.
 """
 
 import logging
+import re
 from typing import Any, Dict, Optional, Tuple
 
 from sqlalchemy.orm import Session
@@ -48,12 +49,21 @@ def get_description_field_text(
     """
     base = (field_path or "").split(".")[0] or ""
 
+    # Custom section: custom_sections[section_id].content (frontend/AI format)
+    custom_match = re.match(r"custom_sections\[([^\]]+)\]\.content", field_path or "")
+    if custom_match:
+        section_id = custom_match.group(1)
+        for s in cv_data.get("custom_sections") or []:
+            if isinstance(s, dict) and s.get("id") == section_id:
+                return s.get("content") or ""
+        return ""
+
     # Summary: first custom section with title "Professional Summary" or first custom
     if base == "professional_summary":
         section = _get_summary_custom_section(cv_data)
         return (section.get("content") or "") if section else ""
 
-    # Custom section by id
+    # Custom section by id (plain section_id as base)
     for s in cv_data.get("custom_sections") or []:
         if isinstance(s, dict) and s.get("id") == base:
             return s.get("content") or ""

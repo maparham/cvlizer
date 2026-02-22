@@ -20,21 +20,12 @@ import {
   List,
   Tabs,
   Tab,
-  Stack,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Alert,
   useTheme,
 } from "@mui/material";
 import {
   Add as AddIcon,
   AutoAwesome as AutoAwesomeIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
 import {
@@ -45,17 +36,16 @@ import { CVSection, CVData } from "../../../types";
 import SortableSectionItem from "./SortableSectionItem";
 import { AVAILABLE_SECTIONS } from "../constants";
 import { EditableTitle } from "../EditableTitle";
-import { JobDescriptionSummary } from "../ai";
-import SuggestionsSidebar from "../ai/SuggestionsSidebar";
+import { CVEditionSidebarContent } from "./CVEditionSidebarContent";
+import { SectionManagerDialogs } from "./SectionManagerDialogs";
+import { SectionManagerSaveFooter } from "./SectionManagerSaveFooter";
+import { useAIEnhancementPolling, useFaviconVisibilityCleanup } from "../../../hooks/useAIEnhancementPolling";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useAITaskPollingContext } from "../../../contexts/AITaskPollingContext";
 import { useActiveJobDescription, useAIStore, useCVDrafts } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { useCVStore } from "../../../stores/cv";
 import { useCVQualityStore } from "../../../stores/cvQualityStore";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import { setFaviconBadge, clearFaviconBadge, isPageHidden as isFaviconPageHidden } from "../../../utils/faviconBadge";
-import { setTitleNotification, clearTitleNotification } from "../../../utils/titleNotification";
 
 interface SectionManagerSidebarProps {
   sections: CVSection[];
@@ -129,10 +119,34 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const currentCV = useCVStore((state) => state.currentCV);
   const proofreadScore = useCVQualityStore((state) => state.proofreadScore);
   const qualityStoreCvId = useCVQualityStore((state) => state.currentCvId);
+  const overallScore = useCVQualityStore((state) =>
+    state.currentCvId === cvId ? state.overallScore : null
+  );
+  const analysisLoading = useCVQualityStore((state) =>
+    state.currentCvId === cvId ? state.analysisLoading : false
+  );
+  const dismissAllQualitySuggestions = useCVQualityStore(
+    (state) => state.dismissAllQualitySuggestions,
+  );
   const isProofreadGateActive =
     currentCV?.id === cvId &&
     currentCV?.is_imported === true &&
     (qualityStoreCvId !== cvId || proofreadScore === null || proofreadScore < 80);
+
+  // Derive suggestionsLoading from activeTasks so it survives page reload
+  const hasGeneratingEnhancementTask = useMemo(
+    () =>
+      cvId &&
+      Array.from(activeTasks.values()).some(
+        (t) =>
+          t.type === "ai_enhancement" &&
+          t.cvId === cvId &&
+          t.isGenerating,
+      ),
+    [activeTasks, cvId]
+  );
+  const suggestionsLoadingEffective = suggestionsLoading || !!hasGeneratingEnhancementTask;
+
   const prevJobDescriptionId = useRef<string | undefined>(
     activeJobDescription?.id,
   );
@@ -140,27 +154,18 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   // Get existing drafts for the current CV
   const existingDrafts = useCVDrafts(cvId || "");
 
-  // Use refs to prevent effect dependency loops
-  const suggestionsLoadingRef = useRef(suggestionsLoading);
-  const allSuggestionsRef = useRef(allSuggestions);
-  const showInfoRef = useRef(showInfo);
-  const getCVDraftsRef = useRef(getCVDrafts);
-  const removeTaskRef = useRef(removeTask);
-  const setSuggestionsLoadingRef = useRef(setSuggestionsLoading);
-  // Track tasks we've already shown completion toast for
-  const completedTasksRef = useRef<Set<string>>(new Set());
-  // Track tasks we've already shown error notification for
-  const errorTasksRef = useRef<Set<string>>(new Set());
-
-  // Sync refs with latest values
-  useEffect(() => {
-    suggestionsLoadingRef.current = suggestionsLoading;
-    allSuggestionsRef.current = allSuggestions;
-    showInfoRef.current = showInfo;
-    getCVDraftsRef.current = getCVDrafts;
-    removeTaskRef.current = removeTask;
-    setSuggestionsLoadingRef.current = setSuggestionsLoading;
-  }, [suggestionsLoading, allSuggestions, showInfo, getCVDrafts, removeTask, setSuggestionsLoading]);
+  useAIEnhancementPolling({
+    cvId,
+    activeTasks,
+    allSuggestions,
+    suggestionsLoading: suggestionsLoadingEffective,
+    showError,
+    showInfo,
+    setSuggestionsLoading,
+    getCVDrafts,
+    removeTask,
+  });
+  useFaviconVisibilityCleanup();
 
   // Handle job description selection
   const handleJobDescriptionSelect = useCallback(
@@ -298,113 +303,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
     }
     prevJobDescriptionId.current = currentId;
   }, [activeJobDescription?.id, clearAllSuggestions]);
-
-  // Monitor global polling tasks for AI enhancements and restore button state
-  useEffect(() => {
-    // Check if there's an active generating task for this CV and restore button state
-    const hasGeneratingTask = Array.from(activeTasks.values()).some(
-      (task) =>
-        task.type === "ai_enhancement" &&
-        task.cvId === cvId &&
-        task.isGenerating,
-    );
-
-    if (hasGeneratingTask && !suggestionsLoadingRef.current) {
-      setSuggestionsLoadingRef.current(true);
-    }
-
-    // Check for completed AI enhancement tasks
-    const tasksToRemove: string[] = [];
-    for (const [taskId, task] of activeTasks) {
-      if (
-        task.type === "ai_enhancement" &&
-        task.cvId === cvId &&
-        !task.isGenerating
-      ) {
-        if (task.generationError) {
-          // Clear loading state on error
-          setSuggestionsLoadingRef.current(false);
-          // Show error notification (only once per task)
-          if (!errorTasksRef.current.has(taskId)) {
-            showError("AI Task Failed", task.generationError);
-            errorTasksRef.current.add(taskId);
-          }
-        } else {
-          // Task completed successfully
-          // Use task.data directly since allSuggestionsRef might not be updated yet
-          const enhancementData = task?.data?.enhancement_data;
-          const suggestions = enhancementData || allSuggestionsRef.current;
-          const hasAnySuggestions =
-            suggestions &&
-            ((suggestions.skills?.technical?.length > 0) ||
-             (suggestions.skills?.soft?.length > 0) ||
-             (suggestions.professional_summary?.suggested_text?.trim().length > 0));
-
-          // Show completion toast if we haven't shown it for this task yet
-          if (!completedTasksRef.current.has(taskId)) {
-            if (!hasAnySuggestions) {
-              // Suggestions completed but are empty - inform the user
-              showInfoRef.current(
-                "No suggestions available. Please add more content to your CV (work experience, skills, professional summary) to get AI-powered enhancement suggestions."
-              );
-            } else {
-              // Show "completed" toast for successful generation
-              showInfoRef.current("AI enhancement completed", "Suggestions are ready to review");
-            }
-
-            // If page is hidden, show favicon badge and title notification
-            if (hasAnySuggestions && isFaviconPageHidden()) {
-              setFaviconBadge(1).catch(err =>
-                console.error("Failed to set favicon badge:", err)
-              );
-              setTitleNotification("AI suggestions ready");
-            }
-
-            completedTasksRef.current.add(taskId);
-          }
-
-          // Ensure loading state is cleared when task completes
-          if (suggestionsLoadingRef.current) {
-            setSuggestionsLoadingRef.current(false);
-          }
-          // If backend provided a draft_id via enhancement meta, refresh drafts
-          const draftId = task?.data?.enhancement_data?.meta?.draft_id;
-          if (cvId && draftId) {
-            getCVDraftsRef.current(cvId);
-          }
-        }
-
-        // Mark for removal after effect to avoid nested update loops
-        tasksToRemove.push(taskId);
-      }
-    }
-    if (tasksToRemove.length > 0) {
-      // Defer removals to next macrotask to prevent immediate re-entry of this effect
-      setTimeout(() => {
-        tasksToRemove.forEach((id) => {
-          removeTaskRef.current(id);
-          // Clean up completed tasks tracking
-          completedTasksRef.current.delete(id);
-        });
-      }, 0);
-    }
-  }, [activeTasks, cvId]);
-
-  // Clear favicon badge and title notification when user returns to tab
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // User returned to tab, clear badge and title
-        clearFaviconBadge();
-        clearTitleNotification();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
 
   // Subscribe to saving state and lastSavedAt reactively
   const { saving, lastSavedAt } = useCVStore((s) => ({
@@ -834,158 +732,43 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
 
         {/* AI Tools Tab */}
         {activeTab === 1 && cvId && (
-          <>
-            <Stack spacing={3}>
-              <JobDescriptionSummary
-                cvId={cvId}
-                cvData={cvData}
-                onJobDescriptionSelect={handleJobDescriptionSelect}
-                onGenerateSuggestions={handleGenerateSuggestions}
-                suggestionsLoading={suggestionsLoading}
-                onAddToCV={onContentUpdate}
-                countdownSeconds={countdownSeconds}
-                proofreadGateActive={isProofreadGateActive}
-              />
-
-              {/* Suggestions Sidebar */}
-              {(totalSuggestionsCount > 0 || cvId) && (
-                <SuggestionsSidebar
-                  cvData={cvData}
-                  cvId={cvId}
-                  proofreadGateActive={isProofreadGateActive}
-                />
-              )}
-
-              {/* Discard All Suggestions Button */}
-              {totalSuggestionsCount > 0 && (
-                <Alert
-                  severity="warning"
-                  sx={{
-                    "& .MuiAlert-icon": {
-                      alignItems: "flex-start",
-                      pt: 0.5,
-                    },
-                  }}
-                >
-                  <Box>
-                    <Typography variant="body2" sx={{ mb: 1.5 }}>
-                      {countdownSeconds !== null && countdownSeconds > 0 ? (
-                        <>Please review the suggestions. You can generate new suggestions again in {countdownSeconds}s</>
-                      ) : (
-                        <>You have {totalSuggestionsCount} AI suggestion{totalSuggestionsCount !== 1 ? "s" : ""} available.</>
-                      )}
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      color="error"
-                      startIcon={<DeleteIcon />}
-                      onClick={() => setDiscardAllDialogOpen(true)}
-                      fullWidth
-                      sx={{
-                        textTransform: "none",
-                        borderColor: "#f44336",
-                        color: "#f44336",
-                        "&:hover": {
-                          borderColor: "#d32f2f",
-                          backgroundColor: "#ffebee",
-                        },
-                      }}
-                    >
-                      Discard All Suggestions
-                    </Button>
-                  </Box>
-                </Alert>
-              )}
-            </Stack>
-          </>
+          <CVEditionSidebarContent
+            cvId={cvId}
+            cvData={cvData}
+            proofreadGateActive={isProofreadGateActive}
+            step3Props={{
+              onGenerateSuggestions: handleGenerateSuggestions,
+              suggestionsLoading: suggestionsLoadingEffective,
+              activeJobDescription: activeJobDescription ?? null,
+              countdownSeconds: countdownSeconds ?? null,
+              cvData,
+            }}
+            onJobDescriptionSelect={handleJobDescriptionSelect}
+            onContentUpdate={onContentUpdate}
+            overallScore={overallScore}
+            analysisLoading={analysisLoading}
+            dismissAllQualitySuggestions={dismissAllQualitySuggestions}
+            totalSuggestionsCount={totalSuggestionsCount}
+            onOpenDiscardAllDialog={() => setDiscardAllDialogOpen(true)}
+          />
         )}
       </Box>
 
-      {/* Discard All Suggestions Confirmation Dialog */}
-      <Dialog
-        open={discardAllDialogOpen}
-        onClose={() => setDiscardAllDialogOpen(false)}
-      >
-        <DialogTitle>Discard All Suggestions?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Discard all {totalSuggestionsCount} AI suggestion{totalSuggestionsCount !== 1 ? "s" : ""}? This cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDiscardAllDialogOpen(false)} color="inherit">
-            Cancel
-          </Button>
-          <Button onClick={handleDiscardAllSuggestions} color="error" variant="contained">
-            Discard All
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <SectionManagerDialogs
+        discardAllDialogOpen={discardAllDialogOpen}
+        onCloseDiscardAll={() => setDiscardAllDialogOpen(false)}
+        onConfirmDiscardAll={handleDiscardAllSuggestions}
+        draftConfirmationDialogOpen={draftConfirmationDialogOpen}
+        onCloseDraftConfirmation={() => setDraftConfirmationDialogOpen(false)}
+        onConfirmDiscardAndRegenerate={handleConfirmDiscardAndRegenerate}
+        totalSuggestionsCount={totalSuggestionsCount}
+      />
 
-      {/* Draft Confirmation Dialog - Ask to discard existing drafts before regenerating */}
-      <Dialog
-        open={draftConfirmationDialogOpen}
-        onClose={() => setDraftConfirmationDialogOpen(false)}
-        aria-labelledby="draft-confirmation-dialog-title"
-        aria-describedby="draft-confirmation-dialog-description"
-      >
-        <DialogTitle id="draft-confirmation-dialog-title">
-          Discard Draft Suggestions?
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="draft-confirmation-dialog-description">
-            Discard existing drafts and generate new ones?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setDraftConfirmationDialogOpen(false)}
-            color="inherit"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmDiscardAndRegenerate}
-            color="primary"
-            variant="contained"
-          >
-            Discard & Regenerate
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Inline Save Status Footer */}
-      <Box
-        sx={{
-          flexShrink: 0,
-          borderTop: "1px solid #e0e0e0",
-          p: 1.5,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          gap: 1,
-          bgcolor: "#fafafa",
-        }}
-      >
-        {saving ? (
-          <>
-            <CircularProgress size={14} sx={{ color: "#616161" }} />
-            <Typography variant="caption" sx={{ color: "#616161" }}>
-              Saving...
-            </Typography>
-          </>
-        ) : lastSavedAt ? (
-          <>
-            <CheckCircleOutlineIcon fontSize="small" sx={{ color: "#2e7d32" }} />
-            <Typography variant="caption" sx={{ color: "#2e7d32" }}>
-              Saved {relativeSavedText}
-            </Typography>
-          </>
-        ) : (
-          <></>
-        )}
-      </Box>
+      <SectionManagerSaveFooter
+        saving={saving}
+        lastSavedAt={lastSavedAt}
+        relativeSavedText={relativeSavedText}
+      />
     </Paper>
   );
 };

@@ -1,27 +1,48 @@
 /**
  * CV Quality Panel Component
  *
- * Displays quality score badge and "Improve my CV" button.
+ * Displays quality score badge and step buttons (1–3). Steps run in order:
+ * Step 1 (proofread) → Step 2 (coaching) → Step 3 (job-fit suggestions).
  * Shown in the AI suggestions sidebar.
  */
 
-import React, { useRef, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Typography,
-  CircularProgress,
-  Chip,
-  Alert,
-  Tooltip,
-} from '@mui/material';
+import React, { useRef, useEffect, useMemo } from 'react';
+import { Box, Typography, Chip, Alert, Stack } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import EditNoteIcon from '@mui/icons-material/EditNote';
-import ClearAllIcon from '@mui/icons-material/ClearAll';
 import { useCVQualityStore } from '../../../stores/cvQualityStore';
 import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
+import { calculateCVCompleteness } from '../../../utils/cvCompleteness';
+import { StepButton } from './StepButton';
+import { Step3Button } from './Step3Button';
+import { useTypewriterMessages } from '../../../hooks/useTypewriterMessages';
+import { useLoadingStep } from '../../../hooks/useLoadingStep';
 import type { CorrectionMode } from '../../../services/ai';
+
+/** Suffix-only messages; prefix "Step i: " stays fixed during loading. */
+const STEP1_LOADING_SUFFIXES = [
+  'Checking spelling',
+  'Checking grammar',
+  'Checking punctuation',
+  'Almost done...',
+];
+
+const STEP2_LOADING_SUFFIXES = [
+  'Analyzing style',
+  'Improving clarity',
+  'Enhancing impact',
+  'Almost done...',
+];
+
+const STEP1_PREFIX = 'Step 1: ';
+const STEP2_PREFIX = 'Step 2: ';
+
+/** minWidth = prefix + longest suffix to prevent button flicker during rotation. */
+const STEP1_LOADING_MIN_WIDTH_CH =
+  STEP1_PREFIX.length + Math.max(...STEP1_LOADING_SUFFIXES.map((m) => m.length));
+const STEP2_LOADING_MIN_WIDTH_CH =
+  STEP2_PREFIX.length + Math.max(...STEP2_LOADING_SUFFIXES.map((m) => m.length));
 
 // Scoped selector: Only return values if they belong to the current CV
 const useScopedQualityState = (cvId: string) => {
@@ -32,6 +53,8 @@ const useScopedQualityState = (cvId: string) => {
         overallScore: state.overallScore,
         analysisLoading: state.analysisLoading,
         analysisError: state.analysisError,
+        proofreadScore: state.proofreadScore,
+        currentCorrectionMode: state.currentCorrectionMode,
       };
     }
     // Return null/empty state if CV doesn't match
@@ -39,6 +62,8 @@ const useScopedQualityState = (cvId: string) => {
       overallScore: null,
       analysisLoading: false,
       analysisError: null,
+      proofreadScore: null,
+      currentCorrectionMode: null,
     };
   });
 };
@@ -47,6 +72,14 @@ interface CVQualityPanelProps {
   cvId: string;
   /** When true, disable coaching option until proofread score is at least 80 (file-parsed CVs only). */
   proofreadGateActive?: boolean;
+  /** Props for Step 3 (Enhance CV for this Job). When provided and activeJobDescription exists, Step 3 is rendered. */
+  step3Props?: {
+    onGenerateSuggestions: () => void;
+    suggestionsLoading: boolean;
+    activeJobDescription: { is_parsing?: boolean } | null;
+    countdownSeconds: number | null;
+    cvData?: unknown;
+  };
 }
 
 /**
@@ -71,18 +104,41 @@ const getScoreLabel = (score: number): string => {
 export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
   cvId,
   proofreadGateActive = false,
+  step3Props,
 }) => {
   // Use scoped state that only shows data for the current CV
-  const { overallScore, analysisLoading, analysisError } = useScopedQualityState(cvId);
+  const { overallScore, analysisLoading, analysisError, proofreadScore, currentCorrectionMode } =
+    useScopedQualityState(cvId);
 
-  const {
-    generateQualityAnalysis,
-    clearAnalysisError,
-    dismissAllQualitySuggestions,
-  } = useCVQualityStore();
+  const { generateQualityAnalysis, clearAnalysisError } = useCVQualityStore();
 
-  const { addTask } = useAITaskPollingContext();
+  // Show info icon when gate is active and Step 1 not yet done (score < 80)
+  const showGateInfoIcon =
+    proofreadGateActive && (proofreadScore === null || proofreadScore < 80);
+
+  const { addTask, activeTasks } = useAITaskPollingContext();
   const isMountedRef = useRef(true);
+
+  const loadingStep = useLoadingStep(cvId, activeTasks, analysisLoading, currentCorrectionMode);
+
+  const completeness = useMemo(
+    () => (step3Props?.cvData ? calculateCVCompleteness(step3Props.cvData) : null),
+    [step3Props?.cvData],
+  );
+  const showStep3 = !!step3Props;
+  const hasActiveJob = step3Props?.activeJobDescription != null;
+  const suggestionsLoading = step3Props?.suggestionsLoading ?? false;
+  // Disable Step 1 and 2 while any analysis or Step 3 is in progress
+  const anyStepLoading = analysisLoading || suggestionsLoading;
+
+  const step1LoadingSuffix = useTypewriterMessages(STEP1_LOADING_SUFFIXES, {
+    isActive: analysisLoading && loadingStep === 1,
+    pauseAfterCompleteMs: 6000,
+  });
+  const step2LoadingSuffix = useTypewriterMessages(STEP2_LOADING_SUFFIXES, {
+    isActive: analysisLoading && loadingStep === 2,
+    pauseAfterCompleteMs: 6000,
+  });
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -91,6 +147,7 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
     };
   }, []);
 
+  /** Starts quality analysis, adds task to polling for completion. */
   const handleAnalyze = async (correctionMode: CorrectionMode) => {
     try {
       const analysisId = await generateQualityAnalysis(cvId, correctionMode);
@@ -101,12 +158,12 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
       }
 
       if (analysisId) {
-        // Add to polling only after successful API response
         addTask({
           id: analysisId,
           type: 'cv_quality_analysis',
           cvId,
           isGenerating: true,
+          data: { correctionMode },
         });
       }
     } catch (error) {
@@ -117,99 +174,80 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
 
   return (
     <Box sx={{ mb: 3 }}>
-      {/* Quality Score Badge */}
-      {overallScore !== null && (
-        <Box sx={{ mb: 2, textAlign: 'center' }}>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-            CV Quality Score
-          </Typography>
-          <Chip
-            icon={<AssessmentIcon />}
-            label={`${overallScore}/100 - ${getScoreLabel(overallScore)}`}
-            color={getScoreColor(overallScore)}
-            size="medium"
-            sx={{ fontWeight: 600 }}
-          />
-        </Box>
-      )}
-
-      {/* Fix spelling and grammar button */}
-      <Tooltip title="Correct typos, grammar, and punctuation only" arrow>
-        <Button
-          variant={overallScore === null ? 'contained' : 'outlined'}
-          color="primary"
-          fullWidth
-          startIcon={
-            analysisLoading ? (
-              <CircularProgress size={20} />
-            ) : (
-              <SpellcheckIcon />
-            )
+      {/* Quality Score Badge - always shown to prevent layout shift */}
+      <Box sx={{ mb: 2, textAlign: 'center' }}>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+          CV Quality Score
+        </Typography>
+        <Chip
+          icon={<AssessmentIcon />}
+          label={
+            overallScore !== null
+              ? `${overallScore}/100 - ${getScoreLabel(overallScore)}`
+              : 'Run Step 1 to get your score'
           }
+          color={overallScore !== null ? getScoreColor(overallScore) : 'default'}
+          variant="outlined"
+          size="medium"
+          sx={{
+            fontWeight: 500,
+            ...(overallScore === null && {
+              borderColor: 'action.disabled',
+              color: 'text.secondary',
+            }),
+          }}
+        />
+      </Box>
+
+      <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+        Complete steps in order for best results.
+      </Typography>
+
+      {/* Steps 2–3 disabled when no score (overallScore === null) or proofreadGateActive or anyStepLoading */}
+      <Stack spacing={1}>
+        <StepButton
+          label="Step 1: Fix spelling and grammar"
+          stepPrefix={STEP1_PREFIX}
+          loadingSuffix={step1LoadingSuffix}
+          tooltipTitle="Correct typos, grammar, and punctuation only."
+          isLoading={analysisLoading && loadingStep === 1}
+          disabled={anyStepLoading}
           onClick={() => handleAnalyze('proofread')}
-          disabled={analysisLoading}
-          sx={{
-            py: 1.5,
-            textTransform: 'none',
-            fontWeight: 600,
-          }}
-        >
-          {analysisLoading ? 'Improving CV...' : 'Fix spelling and grammar'}
-        </Button>
-      </Tooltip>
+          icon={<SpellcheckIcon />}
+          minWidthCh={STEP1_LOADING_MIN_WIDTH_CH}
+          extraSx={overallScore === null && !anyStepLoading ? { backgroundColor: 'grey.200' } : undefined}
+        />
+        <StepButton
+          label="Step 2: Improve writing style"
+          stepPrefix={STEP2_PREFIX}
+          loadingSuffix={step2LoadingSuffix}
+          tooltipTitle={
+            showGateInfoIcon
+              ? 'Rewords unprofessional language and improves clarity and impact. Run Step 1 to activate this.'
+              : 'Rewords unprofessional language and improves clarity and impact.'
+          }
+          isLoading={analysisLoading && loadingStep === 2}
+          disabled={proofreadGateActive || overallScore === null || anyStepLoading}
+          onClick={() => handleAnalyze('coaching')}
+          icon={<EditNoteIcon />}
+          minWidthCh={STEP2_LOADING_MIN_WIDTH_CH}
+        />
 
-      {/* Improve writing style button */}
-      <Tooltip
-        title={
-          proofreadGateActive
-            ? "Fix spelling and grammar first and reach 80/100 to unlock this."
-            : "Also reword unprofessional language"
-        }
-        arrow
-      >
-        {/* span allows tooltip on disabled button */}
-        <span>
-          <Button
-            variant="outlined"
-            color="primary"
-            fullWidth
-            startIcon={<EditNoteIcon />}
-            onClick={() => handleAnalyze('coaching')}
-            disabled={proofreadGateActive || analysisLoading}
-            sx={{
-              py: 1.5,
-              textTransform: 'none',
-              fontWeight: 600,
-              mt: 1,
-            }}
-          >
-            Improve writing style
-          </Button>
-        </span>
-      </Tooltip>
-
-      {/* Clear All Suggestions Button */}
-      {overallScore !== null && (
-        <Button
-          variant="text"
-          color="inherit"
-          fullWidth
-          size="small"
-          startIcon={<ClearAllIcon />}
-          onClick={dismissAllQualitySuggestions}
-          disabled={analysisLoading}
-          sx={{
-            mt: 1,
-            textTransform: 'none',
-            color: 'text.secondary',
-            '&:hover': {
-              color: 'text.primary',
-            },
-          }}
-        >
-          Clear all suggestions
-        </Button>
-      )}
+        {/* Step 3: Enhance CV for this Job */}
+        {showStep3 && step3Props && (
+          <Step3Button
+            proofreadGateActive={proofreadGateActive}
+            overallScore={overallScore}
+            hasActiveJob={hasActiveJob}
+            completeness={completeness}
+            anyStepLoading={anyStepLoading}
+            isParsing={step3Props.activeJobDescription?.is_parsing}
+            countdownSeconds={step3Props.countdownSeconds}
+            suggestionsLoading={step3Props.suggestionsLoading}
+            onGenerate={step3Props.onGenerateSuggestions}
+          />
+        )}
+      </Stack>
 
       {/* Error Display */}
       {analysisError && (
@@ -222,12 +260,6 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
         </Alert>
       )}
 
-      {/* Info Message */}
-      {!analysisLoading && overallScore === null && !analysisError && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Get AI-powered coaching to improve your CV's clarity, professionalism, and impact.
-        </Typography>
-      )}
     </Box>
   );
 };

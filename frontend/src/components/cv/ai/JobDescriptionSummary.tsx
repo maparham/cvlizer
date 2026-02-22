@@ -30,13 +30,8 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
-  Tooltip,
 } from "@mui/material";
-import {
-  AutoAwesome as AutoAwesomeIcon,
-  Work as WorkIcon,
-  Check as CheckIcon,
-} from "@mui/icons-material";
+import { Work as WorkIcon, Check as CheckIcon } from "@mui/icons-material";
 import {
   useAIStore,
   useVisibleJobDescriptions,
@@ -50,7 +45,6 @@ import JobDescriptionsModal from "./job-descriptions-modal";
 import JobDescriptionCard from "./JobDescriptionCard";
 import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
 import CVCompletenessIndicator from "../../CVCompleteness/CVCompletenessIndicator";
-import AIEnhancementLoadingState from "./AIEnhancementLoadingState";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import RotatingTips from "./RotatingTips";
 
@@ -58,23 +52,16 @@ interface JobDescriptionSummaryProps {
   cvId: string;
   cvData?: any; // Parsed CV data for completeness checking
   onJobDescriptionSelect?: (jobDescription: JobDescription | null) => void;
-  onGenerateSuggestions?: () => void;
   suggestionsLoading?: boolean;
   onAddToCV?: (content: string, sectionType: string) => void;
-  countdownSeconds?: number | null;
-  /** When true, disable Generate AI suggestions until proofread score is at least 80 (file-parsed CVs only). */
-  proofreadGateActive?: boolean;
 }
 
 const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   cvId,
   cvData,
   onJobDescriptionSelect,
-  onGenerateSuggestions,
   suggestionsLoading = false,
   onAddToCV: _onAddToCV,
-  countdownSeconds = null,
-  proofreadGateActive = false,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -201,31 +188,6 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   return (
     <>
       <Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 2,
-          }}
-        >
-          <Typography
-            variant="h6"
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
-            <WorkIcon />
-            Job Description
-          </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setModalOpen(true)}
-            sx={{ textTransform: "none" }}
-          >
-            Manage ({allJobDescriptions.length})
-          </Button>
-        </Box>
-
         {jobDescriptions.length === 0 ? (
           <Card
             variant="outlined"
@@ -286,7 +248,9 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
               </Button>
             </CardContent>
           </Card>
-        ) : (
+        ) : null}
+
+        {jobDescriptions.length > 0 ? (
           <Stack spacing={2}>
             {/* Active Job Description */}
             {activeJobDescription ? (
@@ -314,135 +278,6 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                     mt: 2,
                   }}
                 >
-                  {onGenerateSuggestions && (
-                    <>
-                      {suggestionsLoading ? (
-                        <AIEnhancementLoadingState />
-                      ) : (
-                        <Tooltip
-                          title={
-                            proofreadGateActive
-                              ? "Fix spelling and grammar first and reach 80/100 to unlock job fit suggestions."
-                              : !completeness.isComplete
-                                ? `CV needs more content: ${completeness.missing.join(", ")}`
-                                : ""
-                          }
-                          arrow
-                        >
-                          <Box
-                            sx={{
-                              width: "100%",
-                              position: "relative",
-                              padding: "2px",
-                              borderRadius: "28px",
-                              "--linear-aura-gradient":
-                                "linear-gradient(to right in oklch,#f63b35 0%,#f63b35 3%,#1265f0 7%,#477dff 17%,#2caf4f 20%,#72bb44 25%,#ffe523 27%,#ffcc25 30%,#ea4335 33%,#ea4335 45%,#1265f0 49%,#477dff 68%,#34a853 72%,#2caf4f 79%,#ffe523 82%,#ffcc25 87%,#f63b35 90%,#f63b35 100%)",
-                              "--emphasized-curve":
-                                "linear(0,0.00245 1.753%,0.004 2.29%,0.00994 3.55%,0.01966 4.916%,0.03415 6.402%,0.05334 7.836%,0.07441 9.061%,0.07376 9.061%,0.10031 10.32%,0.12808 11.414%,0.15979 12.444%,0.19399 13.366%,0.23105 14.21%,0.27138 14.974%,0.34474 16.052%,0.34403 16.052%,0.47679 17.475%,0.54434 18.338%,0.60689 19.389%,0.66036 20.609%,0.68967 21.461%,0.71671 22.4%,0.74193 23.444%,0.76532 24.589%,0.78755 25.874%,0.80828 27.285%,0.82719 28.791%,0.84475 30.42%,0.86492 32.632%,0.86558 32.713%,0.8645 32.713%,0.86561 32.715%,0.86856 33.078%,0.88332 35.056%,0.88876 35.862%,0.88763 35.862%,0.88881 35.871%,0.9002 37.721%,0.90085 37.833%,0.90007 37.833%,0.9039 38.373%,0.91554 40.622%,0.9295 43.795%,0.94208 47.239%,0.95333 50.97%,0.96327 54.986%,0.97199 59.335%,0.9795 64.011%,0.9858 69.036%,0.99095 74.434%,0.99492 80.205%,0.99774 86.373%,1)",
-                              background:
-                                proofreadGateActive ||
-                                !completeness.isComplete ||
-                                suggestionsLoading ||
-                                activeJobDescription?.is_parsing ||
-                                (countdownSeconds !== null && countdownSeconds > 0)
-                                  ? "transparent"
-                                  : "var(--linear-aura-gradient)",
-                              backgroundSize: "200% 100%",
-                              "@keyframes gradientLoop": {
-                                "0%": {
-                                  backgroundPosition: "0% 50%",
-                                },
-                                "100%": {
-                                  backgroundPosition: "200% 50%",
-                                },
-                              },
-                              animation:
-                                proofreadGateActive ||
-                                !completeness.isComplete ||
-                                suggestionsLoading ||
-                                activeJobDescription?.is_parsing ||
-                                (countdownSeconds !== null && countdownSeconds > 0)
-                                  ? "none"
-                                  : "gradientLoop 6s linear infinite",
-                              "&::before": {
-                                content: '""',
-                                position: "absolute",
-                                top: "2px",
-                                left: "2px",
-                                right: "2px",
-                                bottom: "2px",
-                                borderRadius: "26px",
-                                backgroundColor: "background.paper",
-                                zIndex: 0,
-                                pointerEvents: "none",
-                              },
-                            }}
-                          >
-                            <Button
-                              variant="contained"
-                              startIcon={
-                                <AutoAwesomeIcon
-                                  sx={{
-                                    "@keyframes pulse": {
-                                      "0%": { transform: "scale(1)" },
-                                      "50%": { transform: "scale(1.1)" },
-                                      "100%": { transform: "scale(1)" },
-                                    },
-                                  }}
-                                />
-                              }
-                              onClick={onGenerateSuggestions}
-                              disabled={
-                                proofreadGateActive ||
-                                !completeness.isComplete ||
-                                suggestionsLoading ||
-                                activeJobDescription?.is_parsing ||
-                                (countdownSeconds !== null && countdownSeconds > 0)
-                              }
-                              fullWidth
-                              sx={{
-                                position: "relative",
-                                zIndex: 1,
-                                textTransform: "none",
-                                backgroundColor: "transparent",
-                                color: "#1976d2",
-                                border: "none",
-                                fontWeight: 600,
-                                py: 1.5,
-                                px: 2,
-                                height: 48,
-                                borderRadius: "26px",
-                                "&:hover": {
-                                  backgroundColor: "rgba(25, 118, 210, 0.08)",
-                                  transform: "translateY(-1px)",
-                                  boxShadow: 2,
-                                },
-                                "&.Mui-disabled": {
-                                  backgroundColor: "rgba(0, 0, 0, 0.02)",
-                                  color: "rgba(0, 0, 0, 0.4)",
-                                  opacity: 1,
-                                  border: "1px solid rgba(0, 0, 0, 0.12)",
-                                  transform: "none",
-                                  cursor: "not-allowed",
-                                  "&:hover": {
-                                    backgroundColor: "rgba(0, 0, 0, 0.02)",
-                                    transform: "none",
-                                    boxShadow: "none",
-                                  },
-                                },
-                                transition: "all 0.2s ease-in-out",
-                              }}
-                            >
-                              Enhance CV for this Job
-                            </Button>
-                          </Box>
-                        </Tooltip>
-                      )}
-                    </>
-                  )}
-
-                  {/* Removed secondary icon-only job fit trigger to avoid duplicate button */}
-
                   {/* Show rotating tips when suggestions exist and not loading */}
                   {!suggestionsLoading && totalSuggestionsCount > 0 && (
                     <RotatingTips variant="sidebar" />
@@ -511,7 +346,18 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
               </Card>
             )}
           </Stack>
-        )}
+        ) : null}
+
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setModalOpen(true)}
+            sx={{ textTransform: "none" }}
+          >
+            Manage Job Descriptions ({allJobDescriptions.length})
+          </Button>
+        </Box>
       </Box>
 
       <JobDescriptionsModal

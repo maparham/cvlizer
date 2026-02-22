@@ -28,6 +28,7 @@ import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from "./index";
 import { useAIStore } from "../../stores/ai";
 import { useAISuggestionsStore } from "../../stores/aiSuggestionsStore";
 import { useCVQualityStore } from "../../stores/cvQualityStore";
+import { getPersistedCorrectionMode } from "../../stores/cvQualityPersistence";
 import { isTempCVId, useCVStore } from "../../stores/cv";
 import { CVData } from "../../types/cv";
 import { useUIStore } from "../../stores/uiStore";
@@ -52,7 +53,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   const { loadJobDescriptions, getCVDrafts } = useAIStore();
   const { loadLatestAIEnhancement, clearAllSuggestions } =
     useAISuggestionsStore();
-  const { loadLatestQualityAnalysis, generateQualityAnalysis, qualityAnalysis, analysisLoading, currentAnalysisId } =
+  const { loadLatestQualityAnalysis, generateQualityAnalysis, qualityAnalysis, analysisLoading, currentAnalysisId, currentCorrectionMode } =
     useCVQualityStore();
   const { addTask, activeTasks } = useAITaskPollingContext();
   const currentCV = useCVStore((state) => state.currentCV);
@@ -130,17 +131,19 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   }, [cvId, currentCV?.updated_at, loadLatestQualityAnalysis]);
 
   // Resume polling for in-progress quality analyses after page refresh
+  // Use persisted correctionMode when store has none (e.g. auth cleared activeTasks before restore)
   useEffect(() => {
     if (currentAnalysisId && analysisLoading && cvId && !isTempCVId(cvId)) {
-      // Analysis is generating - resume polling
+      const mode = currentCorrectionMode ?? getPersistedCorrectionMode(currentAnalysisId);
       addTask({
         id: currentAnalysisId,
         type: 'cv_quality_analysis',
         cvId,
         isGenerating: true,
+        ...(mode && { data: { correctionMode: mode } }),
       });
     }
-  }, [currentAnalysisId, analysisLoading, cvId, addTask]);
+  }, [currentAnalysisId, analysisLoading, cvId, currentCorrectionMode, addTask]);
 
   // Auto-trigger "fix spelling and grammar" on first load for file-parsed CVs only
   // Use ref to track if auto-trigger has been attempted for this CV
@@ -202,6 +205,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
               type: 'cv_quality_analysis',
               cvId,
               isGenerating: true,
+              data: { correctionMode: 'proofread' as const },
             });
           }
         } catch (error) {
