@@ -25,14 +25,14 @@ const STEP1_LOADING_SUFFIXES = [
   'Checking spelling',
   'Checking grammar',
   'Checking punctuation',
-  'Almost done...',
+  'May take a minute...',
 ];
 
 const STEP2_LOADING_SUFFIXES = [
   'Analyzing style',
   'Improving clarity',
   'Enhancing impact',
-  'Almost done...',
+  'May take a minute...',
 ];
 
 const STEP1_PREFIX = 'Step 1: ';

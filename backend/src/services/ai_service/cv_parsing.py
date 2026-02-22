@@ -85,6 +85,7 @@ and custom_sections (for any section that does not match the above).
 2) Extraction rules
 - Extract ALL explicit content from the CV.
 - CRITICAL: Preserve ALL original text exactly as written - do not correct spelling, grammar, punctuation, capitalization, or rephrase any content.
+- Correct formatting so that it is valid markdown.
 - EXCEPTIONS:
   - work_experience.position: if completely missing/empty, infer a reasonable title from context; otherwise preserve exactly.
   - education.degree: if completely missing/empty, infer a reasonable degree from context; otherwise preserve exactly.
@@ -94,9 +95,7 @@ and custom_sections (for any section that does not match the above).
   certifications.description, projects.description, awards.description,
   publications.description, volunteer_experience.description, and each
   custom_sections[].content) must be markdown.
-- If there are 2+ distinct items, format as a bullet list:
-  "- Item 1\n  - Item 2".
-- If there is only 1 item, use plain text (NO bullet).
+- If there are 2+ distinct items, format as a bullet list with "-". If only 1 item, plain text (no bullet).
 - Short descriptions (roughly <50 characters) may remain plain text.
 
 4) Custom sections (custom_sections array)
