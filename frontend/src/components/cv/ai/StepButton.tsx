@@ -69,7 +69,13 @@ export const StepButton: React.FC<StepButtonProps> = ({
     variant="outlined"
     color="inherit"
     fullWidth
-    startIcon={isLoading ? <CircularProgress size={20} /> : icon}
+    startIcon={
+      isLoading ? (
+        <CircularProgress size={20} color="primary" />
+      ) : (
+        icon
+      )
+    }
     endIcon={
       <Tooltip title={tooltipTitle} arrow>
         <span
@@ -82,7 +88,17 @@ export const StepButton: React.FC<StepButtonProps> = ({
     }
     onClick={onClick}
     disabled={disabled}
-    sx={{ ...SHARED_STEP_BUTTON_SX, ...extraSx }}
+    sx={{
+      ...SHARED_STEP_BUTTON_SX,
+      ...(isLoading && {
+        '&.Mui-disabled': {
+          backgroundColor: 'grey.100',
+          color: 'text.primary',
+          borderColor: 'divider',
+        },
+      }),
+      ...extraSx,
+    }}
   >
     <Box
       component="span"
