@@ -1,50 +1,36 @@
 /**
  * Step Button Component
  *
- * Reusable button for Step 1 and Step 2 (proofread/coaching) in CVQualityPanel.
+ * Reusable button for proofread and coaching actions in CVQualityPanel.
  * Exports SHARED_STEP_BUTTON_SX used by Step3Button for consistent styling.
  */
 
 import React from 'react';
-import { Box, Button, CircularProgress, Tooltip } from '@mui/material';
+import { Box, Button, CircularProgress } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
-/** Shared button styling for all Step buttons (Steps 1–3) in CVQualityPanel. */
+/** Shared button styling for all AI action buttons in CVQualityPanel (primary, prominent). */
 export const SHARED_STEP_BUTTON_SX = {
-  py: 1.5,
-  px: 2,
-  minHeight: 44,
+  py: 1.75,
+  px: 2.5,
+  minHeight: 48,
   textTransform: 'none' as const,
-  fontWeight: 500,
-  justifyContent: 'flex-start' as const,
+  fontWeight: 600,
+  justifyContent: 'center' as const,
   borderRadius: '9999px',
-  backgroundColor: 'background.paper',
-  border: '1px solid',
-  borderColor: 'divider',
-  color: 'text.primary',
   boxShadow: 'none',
   '&:hover:not(.Mui-disabled)': {
-    backgroundColor: 'action.hover',
-    borderColor: 'divider',
+    backgroundColor: 'primary.dark',
   },
-  '&.Mui-disabled': {
-    backgroundColor: 'action.disabledBackground',
-    borderColor: 'divider',
-    color: 'action.disabled',
-  },
-  '& .MuiButton-endIcon': {
-    marginLeft: 'auto',
+  '& .MuiButton-startIcon .MuiSvgIcon-root': {
+    fontSize: 28,
   },
 };
 
 export interface StepButtonProps {
   label: string;
-  /** Fixed prefix shown during loading (e.g. "Step 1: ") */
-  stepPrefix: string;
-  /** Animated suffix from useTypewriterMessages (only the part after the prefix) */
-  loadingSuffix: string;
-  tooltipTitle: string;
+  /** Animated text from useTypewriterMessages shown during loading */
+  loadingText: string;
   isLoading: boolean;
   disabled: boolean;
   onClick: () => void;
@@ -55,9 +41,7 @@ export interface StepButtonProps {
 
 export const StepButton: React.FC<StepButtonProps> = ({
   label,
-  stepPrefix,
-  loadingSuffix,
-  tooltipTitle,
+  loadingText,
   isLoading,
   disabled,
   onClick,
@@ -66,37 +50,19 @@ export const StepButton: React.FC<StepButtonProps> = ({
   extraSx,
 }) => (
   <Button
-    variant="outlined"
-    color="inherit"
-    fullWidth
+    variant="contained"
+    color="primary"
     startIcon={
       isLoading ? (
-        <CircularProgress size={20} color="primary" />
+        <CircularProgress size={22} sx={{ color: 'inherit' }} />
       ) : (
         icon
       )
-    }
-    endIcon={
-      <Tooltip title={tooltipTitle} arrow>
-        <span
-          style={{ pointerEvents: 'auto', display: 'inline-flex', cursor: 'help' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <HelpOutlineIcon fontSize="small" />
-        </span>
-      </Tooltip>
     }
     onClick={onClick}
     disabled={disabled}
     sx={{
       ...SHARED_STEP_BUTTON_SX,
-      ...(isLoading && {
-        '&.Mui-disabled': {
-          backgroundColor: 'grey.100',
-          color: 'text.primary',
-          borderColor: 'divider',
-        },
-      }),
       ...extraSx,
     }}
   >
@@ -109,7 +75,7 @@ export const StepButton: React.FC<StepButtonProps> = ({
         textAlign: 'left',
       }}
     >
-      {isLoading ? stepPrefix + (loadingSuffix || '\u00A0') : label}
+      {isLoading ? loadingText || '\u00A0' : label}
     </Box>
   </Button>
 );

@@ -1,27 +1,22 @@
 /**
- * Step 3 Button Component
- *
- * "Enhance CV for this Job" button with loading state (AIEnhancementLoadingState)
- * and tooltip/disabled logic. Extracted from CVQualityPanel for consistency with Steps 1–2.
+ * Enhance CV for this Job button with loading state (AIEnhancementLoadingState)
+ * and tooltip/disabled logic.
  */
 
 import React from 'react';
-import { Button, Tooltip } from '@mui/material';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { Button } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import AIEnhancementLoadingState from './AIEnhancementLoadingState';
 import { SHARED_STEP_BUTTON_SX } from './StepButton';
 
+const LABEL_ENHANCE = 'Enhance CV for this Job';
+
 export function getStep3TooltipTitle(
-  proofreadGateActive: boolean,
   hasActiveJob: boolean,
   completeness: { isComplete: boolean; missing: string[] } | null
 ): string {
-  if (proofreadGateActive) {
-    return 'Generates personalized suggestions to tailor your CV for the selected job. Run Step 1 to activate this.';
-  }
   if (!hasActiveJob) {
-    return 'Select a job description to enable this step';
+    return 'Select a job description to enable this.';
   }
   if (completeness && !completeness.isComplete) {
     return `CV needs more content: ${completeness.missing.join(', ')}`;
@@ -30,8 +25,6 @@ export function getStep3TooltipTitle(
 }
 
 export function isStep3Disabled(
-  proofreadGateActive: boolean,
-  overallScore: number | null,
   hasActiveJob: boolean,
   completeness: { isComplete: boolean; missing: string[] } | null,
   anyStepLoading: boolean,
@@ -39,8 +32,6 @@ export function isStep3Disabled(
   countdownSeconds: number | null
 ): boolean {
   return (
-    proofreadGateActive ||
-    overallScore === null ||
     !hasActiveJob ||
     (completeness !== null && !completeness.isComplete) ||
     anyStepLoading ||
@@ -50,8 +41,6 @@ export function isStep3Disabled(
 }
 
 export interface Step3ButtonProps {
-  proofreadGateActive: boolean;
-  overallScore: number | null;
   hasActiveJob: boolean;
   completeness: { isComplete: boolean; missing: string[] } | null;
   anyStepLoading: boolean;
@@ -62,8 +51,6 @@ export interface Step3ButtonProps {
 }
 
 export const Step3Button: React.FC<Step3ButtonProps> = ({
-  proofreadGateActive,
-  overallScore,
   hasActiveJob,
   completeness,
   anyStepLoading,
@@ -76,14 +63,7 @@ export const Step3Button: React.FC<Step3ButtonProps> = ({
     return <AIEnhancementLoadingState />;
   }
 
-  const tooltipTitle = getStep3TooltipTitle(
-    proofreadGateActive,
-    hasActiveJob,
-    completeness
-  );
   const disabled = isStep3Disabled(
-    proofreadGateActive,
-    overallScore,
     hasActiveJob,
     completeness,
     anyStepLoading,
@@ -93,29 +73,14 @@ export const Step3Button: React.FC<Step3ButtonProps> = ({
 
   return (
     <Button
-      variant="outlined"
-      color="inherit"
-      fullWidth
-      startIcon={<AutoAwesomeIcon />}
-      endIcon={
-        <Tooltip title={tooltipTitle} arrow>
-          <span
-            style={{
-              pointerEvents: 'auto',
-              display: 'inline-flex',
-              cursor: 'help',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <HelpOutlineIcon fontSize="small" />
-          </span>
-        </Tooltip>
-      }
+      variant="contained"
+      color="primary"
+      startIcon={<AutoAwesomeIcon sx={{ fontSize: 28 }} />}
       onClick={onGenerate}
       disabled={disabled}
       sx={SHARED_STEP_BUTTON_SX}
     >
-      Step 3: Enhance CV for this Job
+      {LABEL_ENHANCE}
     </Button>
   );
 };

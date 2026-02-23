@@ -214,6 +214,7 @@ export interface UnsavedChangesHook {
  * @property {number} [order] - Section order (falls back to section.order)
  * @property {CVSection} [section] - Complete section object (alternative to individual props)
  * @property {(sectionId: string) => void} [onToggleVisibility] - Callback to toggle section visibility
+ * @property {(sectionId: string) => void} [onNavigateToSection] - Callback when row is clicked to scroll CV editor to that section
  * @property {boolean} [isOverlay] - Whether this is a drag overlay item
  */
 export interface SortableSectionItemProps {
@@ -224,6 +225,7 @@ export interface SortableSectionItemProps {
   order?: number;
   section?: CVSection;
   onToggleVisibility?: (sectionId: string) => void;
+  onNavigateToSection?: (sectionId: string) => void;
   isOverlay?: boolean;
 }
 

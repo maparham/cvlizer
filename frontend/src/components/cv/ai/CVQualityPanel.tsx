@@ -1,13 +1,12 @@
 /**
  * CV Quality Panel Component
  *
- * Displays quality score badge and step buttons (1–3). Steps run in order:
- * Step 1 (proofread) → Step 2 (coaching) → Step 3 (job-fit suggestions).
- * Shown in the AI suggestions sidebar.
+ * Displays one of three AI actions per sub-tab: Fix spelling and grammar (with quality score),
+ * Improve writing style, or Enhance CV for this Job. Shown in the AI Tools sidebar.
  */
 
 import React, { useRef, useEffect, useMemo } from 'react';
-import { Box, Typography, Chip, Alert, Stack } from '@mui/material';
+import { Box, Typography, Chip, Alert } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import EditNoteIcon from '@mui/icons-material/EditNote';
@@ -15,54 +14,54 @@ import { useCVQualityStore } from '../../../stores/cvQualityStore';
 import { useAITaskPollingContext } from '../../../contexts/AITaskPollingContext';
 import { calculateCVCompleteness } from '../../../utils/cvCompleteness';
 import { StepButton } from './StepButton';
-import { Step3Button } from './Step3Button';
+import { Step3Button, getStep3TooltipTitle } from './Step3Button';
 import { useTypewriterMessages } from '../../../hooks/useTypewriterMessages';
 import { useLoadingStep } from '../../../hooks/useLoadingStep';
 import type { CorrectionMode } from '../../../services/ai';
 
-/** Suffix-only messages; prefix "Step i: " stays fixed during loading. */
-const STEP1_LOADING_SUFFIXES = [
+const PROOFREAD_LOADING_MESSAGES = [
   'Checking spelling',
   'Checking grammar',
   'Checking punctuation',
   'May take a minute...',
 ];
 
-const STEP2_LOADING_SUFFIXES = [
+const COACHING_LOADING_MESSAGES = [
   'Analyzing style',
   'Improving clarity',
   'Enhancing impact',
   'May take a minute...',
 ];
 
-const STEP1_PREFIX = 'Step 1: ';
-const STEP2_PREFIX = 'Step 2: ';
+const LABEL_PROOFREAD = 'Fix spelling and grammar';
+const LABEL_COACHING = 'Improve writing style';
 
-/** minWidth = prefix + longest suffix to prevent button flicker during rotation. */
-const STEP1_LOADING_MIN_WIDTH_CH =
-  STEP1_PREFIX.length + Math.max(...STEP1_LOADING_SUFFIXES.map((m) => m.length));
-const STEP2_LOADING_MIN_WIDTH_CH =
-  STEP2_PREFIX.length + Math.max(...STEP2_LOADING_SUFFIXES.map((m) => m.length));
+const DESC_PROOFREAD = 'Correct typos, grammar, and punctuation only.';
+const DESC_COACHING = 'Rewords unprofessional language and improves clarity and impact.';
 
-// Scoped selector: Only return values if they belong to the current CV
+const PROOFREAD_MIN_WIDTH_CH = Math.max(
+  LABEL_PROOFREAD.length,
+  ...PROOFREAD_LOADING_MESSAGES.map((m) => m.length),
+);
+const COACHING_MIN_WIDTH_CH = Math.max(
+  LABEL_COACHING.length,
+  ...COACHING_LOADING_MESSAGES.map((m) => m.length),
+);
+
 const useScopedQualityState = (cvId: string) => {
   return useCVQualityStore((state) => {
-    // Only return state if it belongs to the current CV
     if (state.currentCvId === cvId) {
       return {
         overallScore: state.overallScore,
         analysisLoading: state.analysisLoading,
         analysisError: state.analysisError,
-        proofreadScore: state.proofreadScore,
         currentCorrectionMode: state.currentCorrectionMode,
       };
     }
-    // Return null/empty state if CV doesn't match
     return {
       overallScore: null,
       analysisLoading: false,
       analysisError: null,
-      proofreadScore: null,
       currentCorrectionMode: null,
     };
   });
@@ -70,9 +69,9 @@ const useScopedQualityState = (cvId: string) => {
 
 interface CVQualityPanelProps {
   cvId: string;
-  /** When true, disable coaching option until proofread score is at least 80 (file-parsed CVs only). */
-  proofreadGateActive?: boolean;
-  /** Props for Step 3 (Enhance CV for this Job). When provided and activeJobDescription exists, Step 3 is rendered. */
+  /** Which sub-tab is active: 0 = proofread, 1 = coaching, 2 = enhance for job */
+  subTabIndex: 0 | 1 | 2;
+  /** Props for Enhance CV for this Job. When provided, that action is available in sub-tab 2. */
   step3Props?: {
     onGenerateSuggestions: () => void;
     suggestionsLoading: boolean;
@@ -103,19 +102,13 @@ const getScoreLabel = (score: number): string => {
 
 export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
   cvId,
-  proofreadGateActive = false,
+  subTabIndex,
   step3Props,
 }) => {
-  // Use scoped state that only shows data for the current CV
-  const { overallScore, analysisLoading, analysisError, proofreadScore, currentCorrectionMode } =
+  const { overallScore, analysisLoading, analysisError, currentCorrectionMode } =
     useScopedQualityState(cvId);
 
   const { generateQualityAnalysis, clearAnalysisError } = useCVQualityStore();
-
-  // Show info icon when gate is active and Step 1 not yet done (score < 80)
-  const showGateInfoIcon =
-    proofreadGateActive && (proofreadScore === null || proofreadScore < 80);
-
   const { addTask, activeTasks } = useAITaskPollingContext();
   const isMountedRef = useRef(true);
 
@@ -128,14 +121,13 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
   const showStep3 = !!step3Props;
   const hasActiveJob = step3Props?.activeJobDescription != null;
   const suggestionsLoading = step3Props?.suggestionsLoading ?? false;
-  // Disable Step 1 and 2 while any analysis or Step 3 is in progress
   const anyStepLoading = analysisLoading || suggestionsLoading;
 
-  const step1LoadingSuffix = useTypewriterMessages(STEP1_LOADING_SUFFIXES, {
+  const proofreadLoadingText = useTypewriterMessages(PROOFREAD_LOADING_MESSAGES, {
     isActive: analysisLoading && loadingStep === 1,
     pauseAfterCompleteMs: 6000,
   });
-  const step2LoadingSuffix = useTypewriterMessages(STEP2_LOADING_SUFFIXES, {
+  const coachingLoadingText = useTypewriterMessages(COACHING_LOADING_MESSAGES, {
     isActive: analysisLoading && loadingStep === 2,
     pauseAfterCompleteMs: 6000,
   });
@@ -147,16 +139,10 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
     };
   }, []);
 
-  /** Starts quality analysis, adds task to polling for completion. */
   const handleAnalyze = async (correctionMode: CorrectionMode) => {
     try {
       const analysisId = await generateQualityAnalysis(cvId, correctionMode);
-
-      // Only proceed if component is still mounted
-      if (!isMountedRef.current) {
-        return;
-      }
-
+      if (!isMountedRef.current) return;
       if (analysisId) {
         addTask({
           id: analysisId,
@@ -166,78 +152,77 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
           data: { correctionMode },
         });
       }
-    } catch (error) {
-      // Error already handled in store with proper UI feedback
-      // No need to add task to polling if creation failed
+    } catch {
+      // Error handled in store
     }
+  };
+
+  const subTabDescriptions: Record<0 | 1 | 2, string> = {
+    0: DESC_PROOFREAD,
+    1: DESC_COACHING,
+    2: getStep3TooltipTitle(hasActiveJob, completeness),
   };
 
   return (
     <Box sx={{ mb: 3 }}>
-      {/* Quality Score Badge - always shown to prevent layout shift */}
-      <Box sx={{ mb: 2, textAlign: 'center' }}>
-        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-          CV Quality Score
-        </Typography>
-        <Chip
-          icon={<AssessmentIcon />}
-          label={
-            overallScore !== null
-              ? `${overallScore}/100 - ${getScoreLabel(overallScore)}`
-              : 'Run Step 1 to get your score'
-          }
-          color={overallScore !== null ? getScoreColor(overallScore) : 'default'}
-          variant="outlined"
-          size="medium"
-          sx={{
-            fontWeight: 500,
-            ...(overallScore === null && {
-              borderColor: 'action.disabled',
-              color: 'text.secondary',
-            }),
-          }}
-        />
-      </Box>
-
-      <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-        Complete steps in order for best results.
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center', display: 'block' }}>
+        {subTabDescriptions[subTabIndex]}
       </Typography>
 
-      {/* Steps 2–3 disabled when no score (overallScore === null) or proofreadGateActive or anyStepLoading */}
-      <Stack spacing={1}>
-        <StepButton
-          label="Step 1: Fix spelling and grammar"
-          stepPrefix={STEP1_PREFIX}
-          loadingSuffix={step1LoadingSuffix}
-          tooltipTitle="Correct typos, grammar, and punctuation only."
-          isLoading={analysisLoading && loadingStep === 1}
-          disabled={anyStepLoading}
-          onClick={() => handleAnalyze('proofread')}
-          icon={<SpellcheckIcon />}
-          minWidthCh={STEP1_LOADING_MIN_WIDTH_CH}
-          extraSx={overallScore === null && !anyStepLoading ? { backgroundColor: 'grey.200' } : undefined}
-        />
-        <StepButton
-          label="Step 2: Improve writing style"
-          stepPrefix={STEP2_PREFIX}
-          loadingSuffix={step2LoadingSuffix}
-          tooltipTitle={
-            showGateInfoIcon
-              ? 'Rewords unprofessional language and improves clarity and impact. Run Step 1 to activate this.'
-              : 'Rewords unprofessional language and improves clarity and impact.'
-          }
-          isLoading={analysisLoading && loadingStep === 2}
-          disabled={proofreadGateActive || overallScore === null || anyStepLoading}
-          onClick={() => handleAnalyze('coaching')}
-          icon={<EditNoteIcon />}
-          minWidthCh={STEP2_LOADING_MIN_WIDTH_CH}
-        />
+      {subTabIndex === 0 && (
+        <>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <StepButton
+              label={LABEL_PROOFREAD}
+              loadingText={proofreadLoadingText}
+              isLoading={analysisLoading && loadingStep === 1}
+              disabled={anyStepLoading}
+              onClick={() => handleAnalyze('proofread')}
+              icon={<SpellcheckIcon />}
+              minWidthCh={PROOFREAD_MIN_WIDTH_CH}
+            />
+          </Box>
 
-        {/* Step 3: Enhance CV for this Job */}
-        {showStep3 && step3Props && (
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Chip
+              icon={<AssessmentIcon />}
+              label={
+                overallScore !== null
+                  ? `${overallScore}/100 - ${getScoreLabel(overallScore)}`
+                  : 'Run to get your score'
+              }
+              color={overallScore !== null ? getScoreColor(overallScore) : 'default'}
+              variant="outlined"
+              size="medium"
+              sx={{
+                fontWeight: 500,
+                ...(overallScore === null && {
+                  borderColor: 'action.disabled',
+                  color: 'text.secondary',
+                }),
+              }}
+            />
+          </Box>
+        </>
+      )}
+
+      {subTabIndex === 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <StepButton
+            label={LABEL_COACHING}
+            loadingText={coachingLoadingText}
+            isLoading={analysisLoading && loadingStep === 2}
+            disabled={anyStepLoading}
+            onClick={() => handleAnalyze('coaching')}
+            icon={<EditNoteIcon />}
+            minWidthCh={COACHING_MIN_WIDTH_CH}
+          />
+        </Box>
+      )}
+
+      {subTabIndex === 2 && showStep3 && step3Props && (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <Step3Button
-            proofreadGateActive={proofreadGateActive}
-            overallScore={overallScore}
             hasActiveJob={hasActiveJob}
             completeness={completeness}
             anyStepLoading={anyStepLoading}
@@ -246,20 +231,14 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
             suggestionsLoading={step3Props.suggestionsLoading}
             onGenerate={step3Props.onGenerateSuggestions}
           />
-        )}
-      </Stack>
+        </Box>
+      )}
 
-      {/* Error Display */}
-      {analysisError && (
-        <Alert
-          severity="error"
-          onClose={clearAnalysisError}
-          sx={{ mt: 2 }}
-        >
+      {analysisError && (subTabIndex === 0 || subTabIndex === 1) && (
+        <Alert severity="error" onClose={clearAnalysisError} sx={{ mt: 2 }}>
           {analysisError}
         </Alert>
       )}
-
     </Box>
   );
 };

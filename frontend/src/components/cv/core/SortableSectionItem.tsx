@@ -29,6 +29,7 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
   visible,
   section,
   onToggleVisibility,
+  onNavigateToSection,
   isOverlay = false,
 }) => {
   const { validationErrors } = useCVEditor();
@@ -64,16 +65,24 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    if (isOverlay || !sectionId || !onNavigateToSection) return;
+    // Don't navigate when clicking the visibility button (it has its own action)
+    if ((e.target as HTMLElement).closest?.("[data-visibility-toggle]")) return;
+    onNavigateToSection(sectionId);
+  };
+
   return (
     <ListItem
       ref={setNodeRef}
       style={style}
+      onClick={handleRowClick}
       sx={{
         border: "1px solid #e0e0e0",
         borderRadius: 1,
         mb: 1,
         bgcolor: sectionVisible ? "white" : "#f5f5f5",
-        cursor: isOverlay ? "grabbing" : "grab",
+        cursor: isOverlay ? "grabbing" : onNavigateToSection ? "pointer" : "grab",
         transition: "all 0.2s ease",
         "&:hover": {
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -139,9 +148,12 @@ const SortableSectionItem: React.FC<SortableSectionItemProps> = ({
                 : "Show this section"
           }
         >
-          <span>
+          <span data-visibility-toggle>
             <IconButton
-              onClick={() => sectionId && onToggleVisibility?.(sectionId)}
+              onClick={(e) => {
+                e.stopPropagation();
+                sectionId && onToggleVisibility?.(sectionId);
+              }}
               color={sectionVisible ? "primary" : "default"}
               size="small"
               disabled={isPersonalInfo}

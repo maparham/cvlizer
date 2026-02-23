@@ -17,6 +17,11 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
+/** Clamp a numeric value to a valid AI Tools sub-tab index (0, 1, or 2). */
+export function clampAIToolsSubTab(value: number): 0 | 1 | 2 {
+  return Math.min(2, Math.max(0, Math.floor(value))) as 0 | 1 | 2;
+}
+
 interface UIState {
   // Theme and appearance
   theme: "light" | "dark" | "auto";
@@ -34,6 +39,8 @@ interface UIState {
 
   // CV Editor tab state (per CV)
   cvEditorTabs: Record<string, number>;
+  // AI Tools sub-tab index (0/1/2) per CV
+  cvEditorAIToolsSubTab: Record<string, number>;
 
   // Actions
   setTheme: (theme: "light" | "dark" | "auto") => void;
@@ -51,6 +58,8 @@ interface UIState {
   // CV Editor tab actions
   setCVEditorTab: (cvId: string, tabIndex: number) => void;
   getCVEditorTab: (cvId: string) => number;
+  setCVEditorAIToolsSubTab: (cvId: string, subTabIndex: number) => void;
+  getCVEditorAIToolsSubTab: (cvId: string) => number;
 
   // Reset function for testing
   reset: () => void;
@@ -70,6 +79,7 @@ export const useUIStore = create<UIState>()(
           cvUpload: false,
         },
         cvEditorTabs: {},
+        cvEditorAIToolsSubTab: {},
 
         // Theme actions
         setTheme: (theme) => {
@@ -135,6 +145,20 @@ export const useUIStore = create<UIState>()(
           return state.cvEditorTabs[cvId] ?? 0;
         },
 
+        setCVEditorAIToolsSubTab: (cvId: string, subTabIndex: number) => {
+          set((state) => ({
+            cvEditorAIToolsSubTab: {
+              ...state.cvEditorAIToolsSubTab,
+              [cvId]: subTabIndex,
+            },
+          }));
+        },
+
+        getCVEditorAIToolsSubTab: (cvId: string) => {
+          const state = get();
+          return state.cvEditorAIToolsSubTab[cvId] ?? 0;
+        },
+
         // Reset function for testing
         reset: () => {
           set({
@@ -147,6 +171,7 @@ export const useUIStore = create<UIState>()(
               cvUpload: false,
             },
             cvEditorTabs: {},
+            cvEditorAIToolsSubTab: {},
           });
         },
       }),
@@ -157,6 +182,7 @@ export const useUIStore = create<UIState>()(
           theme: state.theme,
           sidebarOpen: state.sidebarOpen,
           cvEditorTabs: state.cvEditorTabs,
+          cvEditorAIToolsSubTab: state.cvEditorAIToolsSubTab,
         }),
       },
     ),

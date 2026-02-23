@@ -115,10 +115,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const activeJobDescription = useActiveJobDescription(cvId || "");
 
   // Gate: disable job fit and coaching until proofread score is at least 80 (file-parsed CVs only).
-  // Check currentCV?.id === cvId so we don't mix metadata from a different CV during navigation.
-  const currentCV = useCVStore((state) => state.currentCV);
-  const proofreadScore = useCVQualityStore((state) => state.proofreadScore);
-  const qualityStoreCvId = useCVQualityStore((state) => state.currentCvId);
   const overallScore = useCVQualityStore((state) =>
     state.currentCvId === cvId ? state.overallScore : null
   );
@@ -128,10 +124,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const dismissAllQualitySuggestions = useCVQualityStore(
     (state) => state.dismissAllQualitySuggestions,
   );
-  const isProofreadGateActive =
-    currentCV?.id === cvId &&
-    currentCV?.is_imported === true &&
-    (qualityStoreCvId !== cvId || proofreadScore === null || proofreadScore < 80);
 
   // Derive suggestionsLoading from activeTasks so it survives page reload
   const hasGeneratingEnhancementTask = useMemo(
@@ -401,6 +393,35 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   const toolbarHeight =
     (theme.mixins.toolbar as { minHeight?: number })?.minHeight ?? 64;
 
+  // Scroll the CV editor to the given section (same pattern as ValidationErrorBanner / EditingIndicator)
+  const handleNavigateToSection = useCallback((sectionId: string) => {
+    const sectionElement = document.querySelector(
+      `[data-section="${sectionId}"]`,
+    ) as HTMLElement;
+
+    if (!sectionElement) return;
+
+    const scrollableContainer = document.querySelector(
+      "[data-scrollable-container]",
+    ) as HTMLElement;
+
+    if (scrollableContainer) {
+      const containerRect = scrollableContainer.getBoundingClientRect();
+      const elementRect = sectionElement.getBoundingClientRect();
+      const scrollTop =
+        scrollableContainer.scrollTop +
+        elementRect.top -
+        containerRect.top -
+        100;
+      scrollableContainer.scrollTo({
+        top: Math.max(0, scrollTop),
+        behavior: "smooth",
+      });
+    } else {
+      sectionElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
   return (
     <Paper
       sx={{
@@ -506,6 +527,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                         key={section.id}
                         section={section}
                         onToggleVisibility={onToggleVisibility}
+                        onNavigateToSection={handleNavigateToSection}
                       />
                     ))}
                 </List>
@@ -515,6 +537,7 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                   <SortableSectionItem
                     section={sections.find((s) => s.id === activeId)!}
                     onToggleVisibility={() => {}}
+                    onNavigateToSection={handleNavigateToSection}
                     isOverlay
                   />
                 ) : null}
@@ -735,7 +758,6 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
           <CVEditionSidebarContent
             cvId={cvId}
             cvData={cvData}
-            proofreadGateActive={isProofreadGateActive}
             step3Props={{
               onGenerateSuggestions: handleGenerateSuggestions,
               suggestionsLoading: suggestionsLoadingEffective,

@@ -43,6 +43,7 @@ import {
   ItemDescriptionSuggestion,
 } from "../../../types/ai";
 import { CVQualityPanel } from "./CVQualityPanel";
+import { useUIStore, clampAIToolsSubTab } from "../../../stores/uiStore";
 
 interface SuggestionItem {
   id: string;
@@ -54,8 +55,6 @@ interface SuggestionItem {
 interface SuggestionsSidebarProps {
   cvData?: CVData;
   cvId?: string;
-  /** When true, disable coaching option until proofread score is at least 80 (file-parsed CVs only). */
-  proofreadGateActive?: boolean;
   /** When true, hide the CVQualityPanel (e.g. when it is rendered elsewhere above). */
   hideCVQualityPanel?: boolean;
 }
@@ -179,10 +178,11 @@ const SuggestionGroup: React.FC<SuggestionGroupProps> = ({
 const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({
   cvData,
   cvId,
-  proofreadGateActive = false,
   hideCVQualityPanel = false,
 }) => {
   const { allSuggestions } = useAISuggestionsStore();
+  const aiToolsSubTab = useUIStore((s) => s.getCVEditorAIToolsSubTab(cvId ?? ""));
+  const subTabIndex = clampAIToolsSubTab(aiToolsSubTab);
   const { qualityAnalysis } = useCVQualityStore();
 
   // Ref to store timeout IDs for cleanup
@@ -496,7 +496,11 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({
       {/* CV Quality Panel - Shown if cvId available and not hidden (e.g. when rendered above by parent) */}
       {cvId && !hideCVQualityPanel && (
         <>
-          <CVQualityPanel cvId={cvId} proofreadGateActive={proofreadGateActive} />
+          {/* Sub-tab 2 requires step3Props (Enhance for job); we don't have them here, so clamp to 0 or 1. */}
+          <CVQualityPanel
+            cvId={cvId}
+            subTabIndex={(Math.min(subTabIndex, 1) as 0 | 1 | 2)}
+          />
           {(hasJobSuggestions || hasQualitySuggestions) && <Divider sx={{ my: 2 }} />}
         </>
       )}
