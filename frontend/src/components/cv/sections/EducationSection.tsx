@@ -33,6 +33,7 @@ import { useSectionSuggestions } from "./hooks/useSectionSuggestions";
 import { useSectionHandlers } from "./hooks/useSectionHandlers";
 import { useFormHandlers } from "./hooks/useFormHandlers";
 import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
+import { buildQualitySuggestionId } from "../../../utils/qualitySuggestionIds";
 import { ScoreChip } from "./common/ScoreChip";
 import { DiscardAllDialog } from "./common/DiscardAllDialog";
 
@@ -470,6 +471,7 @@ const EducationDisplay: React.FC<{
             reasoning={fieldCorrectionProps.degree.correctionReasoning}
             onApply={() => fieldCorrectionProps.degree.onApplyCorrection(fieldCorrectionProps.degree.fieldCorrection!)}
             onDismiss={fieldCorrectionProps.degree.onDismissCorrection}
+            suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].degree`)}
           />
         </Box>
       )}
@@ -482,6 +484,7 @@ const EducationDisplay: React.FC<{
               reasoning={fieldCorrectionProps.start_date.correctionReasoning}
               onApply={() => fieldCorrectionProps.start_date.onApplyCorrection(fieldCorrectionProps.start_date.fieldCorrection!)}
               onDismiss={fieldCorrectionProps.start_date.onDismissCorrection}
+              suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].start_date`)}
             />
           )}
           {fieldCorrectionProps.end_date.correctionImportance !== undefined && fieldCorrectionProps.end_date.fieldCorrection && (
@@ -491,6 +494,7 @@ const EducationDisplay: React.FC<{
               reasoning={fieldCorrectionProps.end_date.correctionReasoning}
               onApply={() => fieldCorrectionProps.end_date.onApplyCorrection(fieldCorrectionProps.end_date.fieldCorrection!)}
               onDismiss={fieldCorrectionProps.end_date.onDismissCorrection}
+              suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].end_date`)}
             />
           )}
         </Box>
@@ -515,6 +519,7 @@ const EducationDisplay: React.FC<{
                 reasoning={fieldCorrectionProps.institution.correctionReasoning}
                 onApply={() => fieldCorrectionProps.institution.onApplyCorrection(fieldCorrectionProps.institution.fieldCorrection!)}
                 onDismiss={fieldCorrectionProps.institution.onDismissCorrection}
+                suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].institution`)}
               />
             )}
             {fieldCorrectionProps.location.correctionImportance !== undefined && fieldCorrectionProps.location.fieldCorrection && (
@@ -524,6 +529,7 @@ const EducationDisplay: React.FC<{
                 reasoning={fieldCorrectionProps.location.correctionReasoning}
                 onApply={() => fieldCorrectionProps.location.onApplyCorrection(fieldCorrectionProps.location.fieldCorrection!)}
                 onDismiss={fieldCorrectionProps.location.onDismissCorrection}
+                suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].location`)}
               />
             )}
           </Box>
@@ -557,6 +563,7 @@ const EducationDisplay: React.FC<{
               draftIndex={draftHistory.draftIndex}
               draftTotal={draftHistory.draftTotal}
               isRetrying={draftHistory.isRetrying}
+              suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].description`)}
             />
           )}
         </Box>

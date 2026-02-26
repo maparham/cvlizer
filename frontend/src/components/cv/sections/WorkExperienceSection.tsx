@@ -34,6 +34,7 @@ import { useSectionSuggestions } from "./hooks/useSectionSuggestions";
 import { useSectionHandlers } from "./hooks/useSectionHandlers";
 import { useFormHandlers } from "./hooks/useFormHandlers";
 import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
+import { buildQualitySuggestionId } from "../../../utils/qualitySuggestionIds";
 import { ScoreChip } from "./common/ScoreChip";
 import { DiscardAllDialog } from "./common/DiscardAllDialog";
 
@@ -298,6 +299,7 @@ const WorkExperienceDisplay: React.FC<{
             reasoning={fieldCorrectionProps.position.correctionReasoning}
             onApply={() => fieldCorrectionProps.position.onApplyCorrection(fieldCorrectionProps.position.fieldCorrection!)}
             onDismiss={fieldCorrectionProps.position.onDismissCorrection}
+            suggestionCardId={buildQualitySuggestionId("work_experience", exp.id, `work_experience[${exp.id}].position`)}
           />
         </Box>
       )}
@@ -310,6 +312,7 @@ const WorkExperienceDisplay: React.FC<{
               reasoning={fieldCorrectionProps.start_date.correctionReasoning}
               onApply={() => fieldCorrectionProps.start_date.onApplyCorrection(fieldCorrectionProps.start_date.fieldCorrection!)}
               onDismiss={fieldCorrectionProps.start_date.onDismissCorrection}
+              suggestionCardId={buildQualitySuggestionId("work_experience", exp.id, `work_experience[${exp.id}].start_date`)}
             />
           )}
           {fieldCorrectionProps.end_date.correctionImportance !== undefined && fieldCorrectionProps.end_date.fieldCorrection && (
@@ -319,6 +322,7 @@ const WorkExperienceDisplay: React.FC<{
               reasoning={fieldCorrectionProps.end_date.correctionReasoning}
               onApply={() => fieldCorrectionProps.end_date.onApplyCorrection(fieldCorrectionProps.end_date.fieldCorrection!)}
               onDismiss={fieldCorrectionProps.end_date.onDismissCorrection}
+              suggestionCardId={buildQualitySuggestionId("work_experience", exp.id, `work_experience[${exp.id}].end_date`)}
             />
           )}
         </Box>
@@ -343,6 +347,7 @@ const WorkExperienceDisplay: React.FC<{
                 reasoning={fieldCorrectionProps.company.correctionReasoning}
                 onApply={() => fieldCorrectionProps.company.onApplyCorrection(fieldCorrectionProps.company.fieldCorrection!)}
                 onDismiss={fieldCorrectionProps.company.onDismissCorrection}
+                suggestionCardId={buildQualitySuggestionId("work_experience", exp.id, `work_experience[${exp.id}].company`)}
               />
             )}
             {fieldCorrectionProps.location.correctionImportance !== undefined && fieldCorrectionProps.location.fieldCorrection && (
@@ -352,6 +357,7 @@ const WorkExperienceDisplay: React.FC<{
                 reasoning={fieldCorrectionProps.location.correctionReasoning}
                 onApply={() => fieldCorrectionProps.location.onApplyCorrection(fieldCorrectionProps.location.fieldCorrection!)}
                 onDismiss={fieldCorrectionProps.location.onDismissCorrection}
+                suggestionCardId={buildQualitySuggestionId("work_experience", exp.id, `work_experience[${exp.id}].location`)}
               />
             )}
           </Box>
@@ -380,6 +386,7 @@ const WorkExperienceDisplay: React.FC<{
               draftIndex={draftHistory.draftIndex}
               draftTotal={draftHistory.draftTotal}
               isRetrying={draftHistory.isRetrying}
+              suggestionCardId={buildQualitySuggestionId("work_experience", exp.id, `work_experience[${exp.id}].description`)}
             />
           )}
         </Box>

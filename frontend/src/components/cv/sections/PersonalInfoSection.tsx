@@ -37,6 +37,7 @@ import { useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
 import { useEditedSinceAIStore } from "../../../stores/editedSinceAIStore";
 import { useOverwriteConfirm, OVERWRITE_MSG } from "../../../contexts/OverwriteConfirmContext";
 import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
+import { buildQualitySuggestionId } from "../../../utils/qualitySuggestionIds";
 
 const ACADEMIC_TITLES = [
   // English
@@ -527,6 +528,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         draftIndex={draftIndex}
         draftTotal={draftTotal}
         isRetrying={isRetrying}
+        suggestionCardId={buildQualitySuggestionId("personal_info", "single", "personal_info.about_me")}
       />
       {personalInfoCoaching && (
         <CoachingQuestionsPanel coachingItem={personalInfoCoaching} />

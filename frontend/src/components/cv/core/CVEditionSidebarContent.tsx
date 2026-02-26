@@ -2,12 +2,20 @@
  * CV Edition Sidebar Content
  *
  * Renders the AI Tools tab content: sub-tabs (Fix spelling / Improve style / Enhance for job),
- * CVQualityPanel per sub-tab. "Clear all suggestions" is shown on all tabs when there is a score.
- * JobDescriptionSummary, SuggestionsSidebar, and Discard-all Alert are shown only on the Enhance-for-job sub-tab.
+ * CVQualityPanel per sub-tab. SuggestionsSidebar (navigation list) is shown on all three sub-tabs.
+ * "Clear all suggestions" is shown on all tabs when overallScore !== null. JobDescriptionSummary and Discard-all Alert are shown only on the Enhance-for-job sub-tab.
  */
 
 import React from "react";
-import { Box, Button, Typography, Stack, Alert, Tabs, Tab } from "@mui/material";
+import {
+  Box,
+  Button,
+  Typography,
+  Stack,
+  Alert,
+  Tabs,
+  Tab,
+} from "@mui/material";
 import {
   ClearAll as ClearAllIcon,
   Delete as DeleteIcon,
@@ -18,7 +26,10 @@ import {
 import { JobDescriptionSummary } from "../ai";
 import { CVQualityPanel } from "../ai/CVQualityPanel";
 import SuggestionsSidebar from "../ai/SuggestionsSidebar";
+import { TabWithBadge } from "./TabWithBadge";
 import { useUIStore, clampAIToolsSubTab } from "../../../stores/uiStore";
+import { useCVQualityStore } from "../../../stores/cvQualityStore";
+import { getTotalQualityIssueCount } from "../../../hooks/useQualityNavigation";
 import type { CVData } from "../../../types";
 import type { JobDescription } from "../../../types/ai";
 
@@ -56,6 +67,21 @@ export const CVEditionSidebarContent: React.FC<CVEditionSidebarContentProps> = (
   const subTabRaw = useUIStore((s) => s.getCVEditorAIToolsSubTab(cvId));
   const subTabIndex = clampAIToolsSubTab(subTabRaw);
   const setSubTabIndex = useUIStore((s) => s.setCVEditorAIToolsSubTab);
+  const qualityAnalysis = useCVQualityStore((s) =>
+    s.currentCvId === cvId ? s.qualityAnalysis : null
+  );
+  const currentCorrectionMode = useCVQualityStore((s) =>
+    s.currentCvId === cvId ? s.currentCorrectionMode : null
+  );
+  const totalQualityIssueCount = getTotalQualityIssueCount(qualityAnalysis, cvData);
+  const isProofread = qualityAnalysis?.correction_mode === "proofread";
+  const isCoaching = qualityAnalysis?.correction_mode === "coaching";
+  const qualityCountTab0 = isProofread ? totalQualityIssueCount : 0;
+  const qualityCountTab1 = isCoaching ? totalQualityIssueCount : 0;
+
+  const loadingTab0 = analysisLoading && currentCorrectionMode === "proofread";
+  const loadingTab1 = analysisLoading && currentCorrectionMode === "coaching";
+  const loadingTab2 = step3Props.suggestionsLoading;
 
   return (
     <Stack spacing={3}>
@@ -72,19 +98,61 @@ export const CVEditionSidebarContent: React.FC<CVEditionSidebarContentProps> = (
           }}
         >
           <Tab
-            icon={<SpellcheckIcon />}
+            icon={
+              <TabWithBadge
+                tooltipTitle={
+                  loadingTab0
+                    ? "Analyzing spelling and grammar..."
+                    : qualityCountTab0 > 0
+                      ? `${qualityCountTab0} spelling and grammar correction${qualityCountTab0 !== 1 ? "s" : ""}`
+                      : "Fix spelling and grammar"
+                }
+                loading={loadingTab0}
+                count={qualityCountTab0}
+                icon={<SpellcheckIcon />}
+              />
+            }
+            iconPosition="start"
             aria-label="Fix spelling and grammar"
             id="ai-subtab-0"
             aria-controls="ai-subtabpanel-0"
           />
           <Tab
-            icon={<EditNoteIcon />}
+            icon={
+              <TabWithBadge
+                tooltipTitle={
+                  loadingTab1
+                    ? "Analyzing writing style..."
+                    : qualityCountTab1 > 0
+                      ? `${qualityCountTab1} writing style issue${qualityCountTab1 !== 1 ? "s" : ""}`
+                      : "Improve writing style"
+                }
+                loading={loadingTab1}
+                count={qualityCountTab1}
+                icon={<EditNoteIcon />}
+              />
+            }
+            iconPosition="start"
             aria-label="Improve writing style"
             id="ai-subtab-1"
             aria-controls="ai-subtabpanel-1"
           />
           <Tab
-            icon={<WorkOutlineIcon />}
+            icon={
+              <TabWithBadge
+                tooltipTitle={
+                  loadingTab2
+                    ? "Generating job-fit suggestions..."
+                    : totalSuggestionsCount > 0
+                      ? `${totalSuggestionsCount} job-fit issue${totalSuggestionsCount !== 1 ? "s" : ""}`
+                      : "Enhance CV for this Job"
+                }
+                loading={loadingTab2}
+                count={totalSuggestionsCount}
+                icon={<WorkOutlineIcon />}
+              />
+            }
+            iconPosition="start"
             aria-label="Enhance CV for this Job"
             id="ai-subtab-2"
             aria-controls="ai-subtabpanel-2"
@@ -110,6 +178,22 @@ export const CVEditionSidebarContent: React.FC<CVEditionSidebarContentProps> = (
         )}
       </Box>
 
+      {/* Intentional: SuggestionsSidebar shows on all tabs for navigation (quality on tabs 0/1, job-fit on tab 2) */}
+      <Box
+        sx={{
+          backgroundColor: "action.hover",
+          borderRadius: 2,
+          p: 2,
+          mt: 1,
+        }}
+      >
+        <SuggestionsSidebar
+          cvData={cvData}
+          cvId={cvId}
+          hideCVQualityPanel
+        />
+      </Box>
+
       {overallScore !== null && (
         <Button
           variant="text"
@@ -133,14 +217,6 @@ export const CVEditionSidebarContent: React.FC<CVEditionSidebarContentProps> = (
 
       {subTabIndex === 2 && (
         <>
-          {(totalSuggestionsCount > 0 || cvId) && (
-            <SuggestionsSidebar
-              cvData={cvData}
-              cvId={cvId}
-              hideCVQualityPanel
-            />
-          )}
-
           {totalSuggestionsCount > 0 && (
             <Alert
               severity="warning"

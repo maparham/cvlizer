@@ -646,23 +646,8 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
             >
               Available Sections ({availableSectionsToAdd.length})
             </Typography>
-            {/* Add custom section: placed here so it stays visible when viewing predefined sections */}
-            {onAddCustomSection && (
-              <Box sx={{ mb: 2 }}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={onAddCustomSection}
-                  data-testid="add-custom-section-button"
-                  sx={{ py: 1.5 }}
-                >
-                  Add custom section
-                </Button>
-              </Box>
-            )}
             <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 4 }}
+              sx={{ display: "flex", flexDirection: "column", gap: 1, mb: onAddCustomSection ? 2 : 4 }}
             >
               {availableSectionsToAdd.length > 0 ? (
                 availableSectionsToAdd.map((section) => (
@@ -750,6 +735,21 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
                 </Typography>
               )}
             </Box>
+            {/* Add custom section: below the list of available sections */}
+            {onAddCustomSection && (
+              <Box sx={{ mb: 4 }}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={onAddCustomSection}
+                  data-testid="add-custom-section-button"
+                  sx={{ py: 1.5 }}
+                >
+                  Add custom section
+                </Button>
+              </Box>
+            )}
           </>
         )}
 

@@ -26,9 +26,15 @@ Browser Automation Integration:
 - Enables dynamic content loading with intelligent waiting
 - Handles complex sites like jobs.wien.gv.at
 - Maintains existing functionality for standard sites
+
+ChromeDriver version must match your installed Chrome (e.g. Chrome 145 needs ChromeDriver 145).
+- To use a specific driver: set CHROMEDRIVER_PATH to the chromedriver binary (e.g. from
+  Chrome for Testing or after installing chromedriver 145).
+- If unset, Selenium uses the driver on PATH (ensure it matches your Chrome version).
 """
 
 import logging
+import os
 import time
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
@@ -191,8 +197,13 @@ def _extract_with_browser_automation(url: str) -> str:
             "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
 
-        # Initialize the Chrome driver
-        driver = webdriver.Chrome(options=chrome_options)
+        # Initialize the Chrome driver (use CHROMEDRIVER_PATH if set to match Chrome version)
+        chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
+        if chromedriver_path:
+            service = Service(executable_path=chromedriver_path)
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        else:
+            driver = webdriver.Chrome(options=chrome_options)
         driver.set_page_load_timeout(60)  # 60 seconds timeout
 
         # Navigate to the URL

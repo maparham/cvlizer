@@ -15,6 +15,7 @@ import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
 import { useOverwriteConfirm, OVERWRITE_MSG } from "../../../contexts/OverwriteConfirmContext";
 import { useEditedSinceAIStore } from "../../../stores/editedSinceAIStore";
 import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
+import { buildCustomSectionSuggestionId } from "../../../utils/qualitySuggestionIds";
 
 interface CustomSectionSectionProps extends SectionProps<CustomSection> {
   cvId?: string;
@@ -155,6 +156,7 @@ const CustomSectionSection: React.FC<CustomSectionSectionProps> = ({
         draftIndex={draftIndex}
         draftTotal={draftTotal}
         isRetrying={isRetrying}
+        suggestionCardId={buildCustomSectionSuggestionId(sectionId)}
       />
     </Box>
   );

@@ -24,6 +24,7 @@ import {
   CardContent,
   CardActions,
   Typography,
+  Link,
   Box,
   Chip,
   IconButton,
@@ -647,24 +648,46 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
       >
         <DialogTitle>
           <Box>
-            <Typography
-              variant="h5"
-              component="div"
-              sx={{
-                fontWeight: 600,
-                mb: 1,
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {jobDescription.title || "Untitled Job Description"}
-            </Typography>
+            {jobDescription.source_url ? (
+              <Link
+                href={jobDescription.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="h5"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  color: "text.primary",
+                  "&:hover": { color: "primary.main", textDecoration: "underline" },
+                }}
+              >
+                {jobDescription.title || "Untitled Job Description"}
+              </Link>
+            ) : (
+              <Typography
+                variant="h5"
+                component="div"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {jobDescription.title || "Untitled Job Description"}
+              </Typography>
+            )}
             {/* Metadata chips */}
             {(jobDescription.company || jobDescription.location) && (
-              <Box sx={{ display: "flex", gap: 1, flexWrap: "nowrap", overflow: "hidden" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "nowrap", overflow: "hidden" }}>
                 {jobDescription.company && (
                   <Chip
                     icon={<WorkIcon />}
@@ -685,6 +708,24 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                       },
                     }}
                   />
+                )}
+                {jobDescription.source_url && (
+                  <Tooltip title="Open original job posting">
+                    <IconButton
+                      component="a"
+                      href={jobDescription.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="small"
+                      sx={{
+                        flexShrink: 0,
+                        color: "text.secondary",
+                        "&:hover": { color: "primary.main" },
+                      }}
+                    >
+                      <LinkIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 )}
                 {jobDescription.location && (
                   <Chip

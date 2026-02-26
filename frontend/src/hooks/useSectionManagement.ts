@@ -10,6 +10,7 @@ interface SectionManagementState {
   setSections: (sections: CVSection[]) => void;
   toggleSectionVisibility: (sectionId: string) => void;
   addNewSection: (sectionId: string) => void;
+  addCustomSection: () => void;
   removeSection: (sectionId: string) => void;
   reorderSections: (sections: CVSection[]) => void;
   resetToDefaultOrder: () => void;
@@ -328,6 +329,28 @@ export const useSectionManagement = ({
     [sections, cvData, onSave],
   );
 
+  const addCustomSection = useCallback(() => {
+    const id = `custom_${crypto.randomUUID()}`;
+    const newSection: CVSection = {
+      id,
+      type: "custom",
+      title: "New Section",
+      visible: true,
+      order: sections.length,
+    };
+    const updatedSections = [...sections, newSection];
+    const updatedCvData: CVData = {
+      ...cvData,
+      custom_sections: [
+        ...(cvData?.custom_sections ?? []),
+        { id, title: "New Section", content: "", type: "cover_letter" },
+      ],
+      section_config: { sections: updatedSections },
+    };
+    setSections(updatedSections);
+    onSave(updatedCvData, "Custom section added");
+  }, [sections, cvData, onSave]);
+
   const removeSection = useCallback(
     (sectionId: string) => {
       // Soft remove: just hide the section, don't delete data
@@ -447,6 +470,7 @@ export const useSectionManagement = ({
     setSections,
     toggleSectionVisibility,
     addNewSection,
+    addCustomSection,
     removeSection,
     reorderSections,
     resetToDefaultOrder,

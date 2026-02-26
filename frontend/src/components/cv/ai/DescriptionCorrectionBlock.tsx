@@ -50,6 +50,8 @@ export interface DescriptionCorrectionBlockProps {
   draftTotal?: number;
   /** When true, retry button is disabled and shows loading (pass through to InlineFieldCorrection) */
   isRetrying?: boolean;
+  /** Pass-through for scroll-to-card navigation; forwarded to InlineFieldCorrection. */
+  suggestionCardId?: string;
 }
 
 export const DescriptionCorrectionBlock: React.FC<DescriptionCorrectionBlockProps> = ({
@@ -65,6 +67,7 @@ export const DescriptionCorrectionBlock: React.FC<DescriptionCorrectionBlockProp
   draftIndex,
   draftTotal,
   isRetrying = false,
+  suggestionCardId,
 }) => {
   if (!descriptionCorrection) return null;
 
@@ -99,6 +102,7 @@ export const DescriptionCorrectionBlock: React.FC<DescriptionCorrectionBlockProp
         draftIndex={draftIndex}
         draftTotal={draftTotal}
         isRetrying={isRetrying}
+        suggestionCardId={suggestionCardId}
       />
     </Box>
   );

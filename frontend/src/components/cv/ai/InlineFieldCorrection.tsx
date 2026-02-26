@@ -40,6 +40,8 @@ interface InlineFieldCorrectionProps {
   draftTotal?: number;
   /** When true, retry button is disabled and shows loading (pass through to CompactSuggestionCard) */
   isRetrying?: boolean;
+  /** Pass-through for scroll-to-card navigation; forwarded to CompactSuggestionCard. */
+  suggestionCardId?: string;
 }
 
 export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
@@ -57,6 +59,7 @@ export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
   draftIndex,
   draftTotal,
   isRetrying = false,
+  suggestionCardId,
 }) => {
   // Determine which type of correction we have
   const hasFieldCorrection = !!fieldCorrection;
@@ -96,6 +99,7 @@ export const InlineFieldCorrection: React.FC<InlineFieldCorrectionProps> = ({
       draftIndex={draftIndex}
       draftTotal={draftTotal}
       isRetrying={isRetrying}
+      suggestionCardId={suggestionCardId}
     />
   );
 };

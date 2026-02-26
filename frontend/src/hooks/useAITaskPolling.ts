@@ -25,12 +25,13 @@ import {
   setPersistedCorrectionMode,
   clearPersistedCorrectionMode,
 } from "../stores/cvQualityPersistence";
-import { useNotifications } from "../packages/notifications";
+import { useNotificationStore } from "../packages/notifications/store";
 import { useAuth } from "../contexts/AuthContext";
 import { POLLING_CONFIG } from "../config/constants";
 import { Logger } from "../utils/logger";
 import { playAudioNotification } from "../utils/audioNotification";
 import { setTitleNotification, isPageHidden } from "../utils/titleNotification";
+import { getCompletionNotification } from "../utils/aiTaskCompletionNotifications";
 
 export interface AITask {
   id: string;
@@ -93,19 +94,21 @@ export const useAITaskPolling = (
   const { updateDraftStatus } = useAIStore();
   const { updateAIEnhancementStatus } = useAISuggestionsStore();
   const { updateQualityAnalysisStatus } = useCVQualityStore();
-  const { showError } = useNotifications();
+  const { showError, showInfo } = useNotificationStore();
   const { isAuthenticated } = useAuth();
 
   // Use refs for callbacks to avoid re-creating interval
   const onTaskCompleteRef = useRef(onTaskComplete);
   const onTaskErrorRef = useRef(onTaskError);
   const showErrorRef = useRef(showError);
+  const showInfoRef = useRef(showInfo);
 
   useEffect(() => {
     onTaskCompleteRef.current = onTaskComplete;
     onTaskErrorRef.current = onTaskError;
     showErrorRef.current = showError;
-  }, [onTaskComplete, onTaskError, showError]);
+    showInfoRef.current = showInfo;
+  }, [onTaskComplete, onTaskError, showError, showInfo]);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -197,17 +200,17 @@ export const useAITaskPolling = (
             // Task completed successfully
             onTaskCompleteRef.current?.(completedTask);
 
+            const { toast, tabMessage } = getCompletionNotification(
+              task,
+              updatedTaskData
+            );
+            if (toast) {
+              showInfoRef.current(toast.title, toast.message, toast.cvId);
+            }
+
             // Show browser tab notification if page is hidden
             if (isPageHidden()) {
-              let notificationMessage = "Task completed";
-              if (task.type === "cv_quality_analysis") {
-                notificationMessage = "CV Quality Analysis Ready";
-              } else if (task.type === "draft") {
-                notificationMessage = "AI Draft Ready";
-              } else if (task.type === "ai_enhancement") {
-                notificationMessage = "AI Enhancement Ready";
-              }
-              setTitleNotification(notificationMessage);
+              setTitleNotification(tabMessage);
             }
 
             // Play audio notification

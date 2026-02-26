@@ -82,6 +82,11 @@ export interface CompactSuggestionCardProps {
   draftTotal?: number;
   /** When true, retry button is disabled and shows a loading indicator */
   isRetrying?: boolean;
+  /**
+   * Final consumer of scroll-to-card id. Set as data-quality-suggestion-id on root for
+   * document.querySelector() in sidebar nav. Passed from CustomSectionSection etc.
+   */
+  suggestionCardId?: string;
 }
 
 /**
@@ -113,6 +118,7 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
   draftIndex,
   draftTotal,
   isRetrying = false,
+  suggestionCardId,
 }) => {
   const [dismissDialogOpen, setDismissDialogOpen] = useState(false);
 
@@ -362,6 +368,7 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
     return (
       <Paper
         elevation={0}
+        {...(suggestionCardId && { 'data-quality-suggestion-id': suggestionCardId })}
         sx={{
           mt: 1,
           p: 1,
@@ -393,7 +400,9 @@ export const CompactSuggestionCard: React.FC<CompactSuggestionCardProps> = ({
 
   // Default variant uses SuggestionPaper
   return (
-    <SuggestionPaper>
+    <SuggestionPaper
+      {...(suggestionCardId && { 'data-quality-suggestion-id': suggestionCardId })}
+    >
       <Box
         sx={{ position: 'relative', outline: 'none' }}
         tabIndex={onBack || onForward ? 0 : undefined}

@@ -20,6 +20,7 @@ import { CoachingQuestionsPanel } from "../ai/CoachingQuestionsPanel";
 import { AISummarySuggestionCard } from "../ai/AISummarySuggestionCard";
 import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
 import { ContentCoachingItem } from "../../../types/ai";
+import { PROFESSIONAL_SUMMARY_QUALITY_ID } from "../../../utils/qualitySuggestionIds";
 
 interface ProfessionalSummarySectionProps extends SectionProps {
   cvId?: string;
@@ -411,6 +412,7 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
         draftIndex={draftIndex}
         draftTotal={draftTotal}
         isRetrying={isRetrying}
+        suggestionCardId={PROFESSIONAL_SUMMARY_QUALITY_ID}
       />
 
       {/* Coaching card when issue has coaching (reasoning in tooltip) */}

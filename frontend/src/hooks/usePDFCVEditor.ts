@@ -11,6 +11,7 @@ interface PDFCVEditorHook {
   sections: CVSection[];
   toggleSectionVisibility: (sectionId: string) => void;
   addNewSection: (sectionId: string) => void;
+  addCustomSection: () => void;
   removeSection: (sectionId: string) => void;
   resetToDefaultOrder: () => void;
   isDefaultOrder: () => boolean;
@@ -152,6 +153,7 @@ export const usePDFCVEditor = ({
     sections: sectionManagement.sections,
     toggleSectionVisibility: sectionManagement.toggleSectionVisibility,
     addNewSection: sectionManagement.addNewSection,
+    addCustomSection: sectionManagement.addCustomSection,
     removeSection: sectionManagement.removeSection,
     resetToDefaultOrder: handleResetConfirm,
     isDefaultOrder: sectionManagement.isDefaultOrder,

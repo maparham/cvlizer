@@ -107,7 +107,16 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
 
   // Generate ALL suggestions from AI using background task (new approach)
   generateAllSuggestions: async (cvId: string, jobDescId: string) => {
-    set({ suggestionsLoading: true, suggestionsError: null });
+    // Keep previous allSuggestions during loading to avoid UI flash; replace when new data arrives.
+    // Set currentCvId immediately so useValidatedSuggestions selector works correctly during loading.
+    // If user triggers generate again before the first completes, polling will eventually set
+    // allSuggestions from the latest task; the in-flight task's result may be overwritten.
+    set({
+      currentCvId: cvId,
+      suggestionsLoading: true,
+      suggestionsError: null,
+      currentEnhancementId: null,
+    });
 
     try {
       // Create combined AI suggestions task (includes Why Good Fit draft)
