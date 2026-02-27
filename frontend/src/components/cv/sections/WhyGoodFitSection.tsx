@@ -17,7 +17,7 @@
  */
 
 import React, { useState } from "react";
-import ReactMarkdown from "react-markdown";
+import MarkdownRenderer from "../../common/MarkdownRenderer";
 import {
   Box,
   Typography,
@@ -271,7 +271,10 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
                 },
               }}
             >
-              <ReactMarkdown>{data.content || data.fit_analysis}</ReactMarkdown>
+              <MarkdownRenderer
+                content={data.content || data.fit_analysis || ""}
+                variant="body1"
+              />
             </Box>
 
             {/* Key Matches */}

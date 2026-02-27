@@ -60,6 +60,29 @@ def _clean_extracted_text(text: str) -> str:
     return "".join(cleaned_chars)
 
 
+# Compiled regex for page-number line detection (full-line match only)
+_PAGE_NUMBER_PATTERNS = re.compile(
+    r"^(?:\d{1,3}|page\s*\d+|\d+\s+of\s+\d+|\d+\s*/\s*\d+)$",
+    re.IGNORECASE,
+)
+
+
+def _remove_page_number_lines(text: str) -> str:
+    """
+    Remove lines that look like page numbers (e.g. standalone digits, "Page N",
+    "N of M", "N/M"). Only drops lines that match entirely after strip.
+    Preserves paragraph breaks (\\n\\n). May rarely remove list numerals
+    that are a single 1-3 digit line.
+    """
+    lines = text.split("\n")
+    kept = [
+        line
+        for line in lines
+        if not (line.strip() and _PAGE_NUMBER_PATTERNS.match(line.strip()))
+    ]
+    return "\n".join(kept)
+
+
 async def validate_file(file: UploadFile) -> Tuple[bool, str]:
     """Validate uploaded file"""
     # Check file type
@@ -248,6 +271,7 @@ def extract_text_from_pdf(file_content: bytes) -> str:
             text = _merge_adjacent_formatting(text)
             # Clean extracted text
             cleaned_text = _clean_extracted_text(text)
+            cleaned_text = _remove_page_number_lines(cleaned_text)
             return cleaned_text.strip()
         else:
             raise HTTPException(

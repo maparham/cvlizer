@@ -7,6 +7,7 @@ import pytest
 from fastapi import HTTPException, UploadFile
 
 from src.services.file_service import (
+    _remove_page_number_lines,
     delete_file,
     extract_text_from_docx,
     extract_text_from_file,
@@ -171,3 +172,33 @@ class TestFileService:
         with pytest.raises(HTTPException) as exc_info:
             extract_text_from_file(file_content, "text/plain")
         assert "Unsupported file type" in exc_info.value.detail
+
+    def test_remove_page_number_lines_removes_standalone_digits(self):
+        """Lines that are only 1-3 digits are removed"""
+        text = "Name\n1\nExperience\n2\nSkills"
+        assert _remove_page_number_lines(text) == "Name\nExperience\nSkills"
+
+    def test_remove_page_number_lines_removes_page_n_pattern(self):
+        """Lines like 'Page 1' or 'page 2' are removed"""
+        text = "Summary\nPage 1\nContent\npage 3"
+        assert _remove_page_number_lines(text) == "Summary\nContent"
+
+    def test_remove_page_number_lines_removes_n_of_m_and_n_slash_m(self):
+        """Lines like '1 of 5' and '2/10' are removed"""
+        text = "Intro\n1 of 5\nBody\n3/10\nEnd"
+        assert _remove_page_number_lines(text) == "Intro\nBody\nEnd"
+
+    def test_remove_page_number_lines_keeps_non_matching_lines(self):
+        """Content lines and 4+ digit numbers are kept"""
+        text = "5 years experience\n2020\nPage 1 of 10\nNormal line"
+        result = _remove_page_number_lines(text)
+        assert "5 years experience" in result
+        assert "2020" in result
+        assert "Page 1 of 10" in result
+        assert "Normal line" in result
+
+    def test_remove_page_number_lines_preserves_paragraph_breaks(self):
+        """Double newlines (paragraph breaks) are preserved"""
+        text = "Para one\n\n2\n\nPara two"
+        result = _remove_page_number_lines(text)
+        assert result == "Para one\n\n\n\nPara two"

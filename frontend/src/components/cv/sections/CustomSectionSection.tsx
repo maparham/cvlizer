@@ -4,8 +4,8 @@
  */
 
 import React from "react";
-import ReactMarkdown from "react-markdown";
 import { Box } from "@mui/material";
+import MarkdownRenderer from "../../common/MarkdownRenderer";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import { FormField } from "../core/formUtils";
@@ -140,9 +140,10 @@ const CustomSectionSection: React.FC<CustomSectionSectionProps> = ({
           "& li": { marginBottom: 0.25 },
         }}
       >
-        <ReactMarkdown>
-          {(typeof displayData === "string" ? displayData : displayData?.content) || ""}
-        </ReactMarkdown>
+        <MarkdownRenderer
+          content={(typeof displayData === "string" ? displayData : displayData?.content) || ""}
+          variant="body1"
+        />
       </Box>
       <DescriptionCorrectionBlock
         descriptionCorrection={descriptionCorrection}

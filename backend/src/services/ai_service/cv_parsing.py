@@ -71,7 +71,9 @@ async def parse_cv_text_with_openai(
             **EMPTY_PARSED_CV_PAYLOAD,
         }
 
-    prompt = f"""Parse this document into CV sections:
+    cv_parsing_system_prompt = """You are an expert CV parser. Extract structured information from CVs and return valid JSON.
+
+Parse the user-provided document into CV sections:
 personal_info, work_experience, education, skills,
 certifications, projects, awards, publications, volunteer_experience,
 and custom_sections (for any section that does not match the above).
@@ -131,7 +133,7 @@ All relevant CV text must be assigned to one of the predefined fields:
 - skills.soft: each item is a single atomic soft skill
   (e.g. "Problem Solving", "Team Leadership").
 - skills.languages: each item is an object with "language" and "proficiency"
-  (e.g. {{"language": "English", "proficiency": "Fluent"}}).
+  (e.g. {"language": "English", "proficiency": "Fluent"}).
 
 6) Publications
 - Only include items that appear in an explicit “Publications” section.
@@ -139,10 +141,9 @@ All relevant CV text must be assigned to one of the predefined fields:
 
 7) Empty sections
 - If a section has no data, return an empty array [] (or default object for personal_info).
-- custom_sections: return [] if there are no summary/other custom sections. Do NOT use "N/A" or placeholders.
+- custom_sections: return [] if there are no summary/other custom sections. Do NOT use "N/A" or placeholders."""
 
-CV text:
-{text_content}"""
+    user_prompt = text_content
 
     try:
         if not is_ai_enabled():
@@ -150,8 +151,8 @@ CV text:
 
         # Use unified OpenAI call builder (schema attached to API call, not in prompt)
         parsed_content, metadata = await call_openai_with_schema(
-            system_prompt="You are an expert CV parser. Extract structured information from CVs and return valid JSON.",
-            user_prompt=prompt,
+            system_prompt=cv_parsing_system_prompt,
+            user_prompt=user_prompt,
             response_schema=CVParsingResponseSchema,
             model=AIConfig.OPENAI_PARSING_MODEL,
             reasoning_effort=AIConfig.OPENAI_PARSING_EFFORT,

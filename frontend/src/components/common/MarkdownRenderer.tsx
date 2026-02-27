@@ -14,12 +14,14 @@
  *
  * Usage:
  * - Use for displaying any markdown content (job descriptions, AI-generated content, etc.)
+ * - Single newlines are converted to <br /> and rendered as line breaks (rehype-raw) so CV description line structure is preserved.
  * - Supports line clamp for truncated previews
  * - Integrates seamlessly with Material-UI theme
  */
 
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { Typography, Link, Box } from "@mui/material";
 import { SxProps, Theme } from "@mui/material/styles";
@@ -45,6 +47,10 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     return null;
   }
 
+  // Convert single newlines to an HTML block "<br />" on its own line so it parses and renders as a line break.
+  // Inline <br /> can be stripped by parsers; block-level is reliable. Double newlines preserved.
+  const contentWithBreaks = content.replace(/([^\n])\n([^\n])/g, "$1\n<br />\n$2");
+
   // Wrapper styles for line clamping
   const wrapperSx: SxProps<Theme> = lineClamp
     ? {
@@ -61,7 +67,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     <Box sx={wrapperSx}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
         components={{
+          br: () => <br />,
           // Headings
           h1: ({ children }) => (
             <Typography
@@ -280,7 +288,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           ),
         }}
       >
-        {content}
+        {contentWithBreaks}
       </ReactMarkdown>
     </Box>
   );

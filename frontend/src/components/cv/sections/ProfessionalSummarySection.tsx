@@ -1,6 +1,6 @@
 import React from "react";
-import ReactMarkdown from "react-markdown";
 import { Box } from "@mui/material";
+import MarkdownRenderer from "../../common/MarkdownRenderer";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import { FormField } from "../core/formUtils";
@@ -361,10 +361,13 @@ const ProfessionalSummarySection: React.FC<ProfessionalSummarySectionProps> = ({
           },
         }}
       >
-        <ReactMarkdown>
-          {(typeof data === "string" ? data : data.content) ||
-            "Your professional summary goes here..."}
-        </ReactMarkdown>
+        <MarkdownRenderer
+          content={
+            (typeof data === "string" ? data : data.content) ||
+            "Your professional summary goes here..."
+          }
+          variant="body1"
+        />
       </Box>
 
       {/* AI Summary Suggestion - Show in display mode too */}
