@@ -34,6 +34,9 @@ const CustomSectionSection: React.FC<CustomSectionSectionProps> = ({
   onTitleSave,
   sectionId,
   cvId,
+  onHide,
+  onDelete,
+  isCustomSection = true,
 }) => {
   const safeData = data ?? { id: sectionId, title: "", content: "" };
   const { confirm: overwriteConfirm } = useOverwriteConfirm();
@@ -177,6 +180,9 @@ const CustomSectionSection: React.FC<CustomSectionSectionProps> = ({
       renderForm={renderForm}
       renderDisplay={renderDisplay}
       autoSaveMessage="Section saved"
+      onHide={onHide}
+      onDelete={onDelete}
+      isCustomSection={isCustomSection}
     />
   );
 };

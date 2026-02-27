@@ -136,7 +136,7 @@ const AwardDisplay: React.FC<{
   );
 };
 
-const AwardsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Awards & Recognition', onTitleSave, cvId, sectionType }) => {
+const AwardsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Awards & Recognition', onTitleSave, cvId, sectionType, sectionId, onHide, onDelete }) => {
   const createNewAward = (): Award => ({
     id: generateSectionId('awards'),
     name: '',
@@ -170,6 +170,9 @@ const AwardsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data
   return (
     <IndividualItemSection
       sectionType={sectionType || 'awards'}
+      sectionId={sectionId}
+      onHide={onHide}
+      onDelete={onDelete}
       data={data as Award[]}
       onUpdate={onUpdate}
       onSave={onSave}

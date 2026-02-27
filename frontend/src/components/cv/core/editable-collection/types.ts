@@ -34,6 +34,10 @@ export interface IndividualItemSectionProps<T> {
   additionalHeaderActions?: React.ReactNode
   sectionType?: string
   getItemTitle?: (item: T) => string
+  sectionId?: string
+  onHide?: () => void
+  onDelete?: () => void
+  isCustomSection?: boolean
 }
 
 export interface ItemControlsProps<T> {

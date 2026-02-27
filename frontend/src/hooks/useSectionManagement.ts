@@ -12,6 +12,7 @@ interface SectionManagementState {
   addNewSection: (sectionId: string) => void;
   addCustomSection: () => void;
   removeSection: (sectionId: string) => void;
+  deleteSectionPermanently: (sectionId: string) => void;
   reorderSections: (sections: CVSection[]) => void;
   resetToDefaultOrder: () => void;
   isDefaultOrder: () => boolean;
@@ -373,6 +374,36 @@ export const useSectionManagement = ({
     [sections, cvData, onSave],
   );
 
+  const deleteSectionPermanently = useCallback(
+    (sectionId: string) => {
+      if (sectionId === "personal_info") return;
+
+      const section = sections.find((s) => s.id === sectionId);
+      if (!section) return;
+
+      const updatedSections = sections.filter((s) => s.id !== sectionId);
+      const reorderedSections = updatedSections.map((sec) => ({ ...sec }));
+
+      setSections(reorderedSections);
+
+      const updatedCvData: CVData = {
+        ...cvData,
+        section_config: { sections: reorderedSections },
+      };
+
+      if (section.type === "custom") {
+        updatedCvData.custom_sections = (cvData?.custom_sections ?? []).filter(
+          (s) => s.id !== sectionId,
+        );
+      } else {
+        delete (updatedCvData as unknown as Record<string, unknown>)[sectionId];
+      }
+
+      onSave(updatedCvData, "Section deleted");
+    },
+    [sections, cvData, onSave],
+  );
+
   const reorderSections = useCallback(
     (newSections: CVSection[]) => {
       // Update order property
@@ -472,6 +503,7 @@ export const useSectionManagement = ({
     addNewSection,
     addCustomSection,
     removeSection,
+    deleteSectionPermanently,
     reorderSections,
     resetToDefaultOrder,
     isDefaultOrder,

@@ -79,6 +79,8 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
   cvId,
   title = "Skills",
   onTitleSave,
+  onHide,
+  onDelete,
 }) => {
   const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
   const [newSoftSkill, setNewSoftSkill] = useState("");
@@ -490,6 +492,8 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       autoSaveMessage="Skills auto-saved"
       autoSaveMode={true} // Hide save/cancel buttons for Skills section
       onTitleSave={onTitleSave}
+      onHide={onHide}
+      onDelete={onDelete}
     />
   );
 };

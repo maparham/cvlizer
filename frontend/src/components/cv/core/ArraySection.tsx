@@ -19,6 +19,10 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
   createNewItem,
   autoSaveMessage,
   onUnsavedChanges,
+  sectionId,
+  onHide,
+  onDelete,
+  isCustomSection,
 }) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editData, setEditData] = useState<Record<string, unknown>>({});
@@ -79,6 +83,10 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
         isEditing={isEditing}
         onEdit={onEdit}
         onClose={onClose}
+        sectionId={sectionId}
+        onHide={onHide}
+        onDelete={onDelete}
+        isCustomSection={isCustomSection}
         editButton={
           <Tooltip title={`Add new ${(title || "item").toLowerCase()}`}>
             <IconButton
@@ -116,6 +124,10 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
       onSave={isEditing && editingIndex !== null ? handleSave : undefined}
       onCancel={isEditing && editingIndex !== null ? handleCancel : undefined}
       isValid={true}
+      sectionId={sectionId}
+      onHide={onHide}
+      onDelete={onDelete}
+      isCustomSection={isCustomSection}
       editButton={
         <Tooltip title={`Add new ${(title || "item").toLowerCase()}`}>
           <IconButton

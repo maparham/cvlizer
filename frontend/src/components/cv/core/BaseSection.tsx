@@ -1,12 +1,15 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Box, Typography, IconButton, Divider, Tooltip, Button } from "@mui/material";
 import {
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
+  VisibilityOff as HideIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { BaseSectionProps } from "../../../types";
 import { EditableTitle } from "../EditableTitle";
+import ConfirmDialog from "../../common/ConfirmDialog";
 
 const BaseSection: React.FC<BaseSectionProps> = ({
   title,
@@ -23,8 +26,13 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   onTitleSave,
   sectionId,
   showDivider = true,
+  onHide,
+  onDelete,
+  isCustomSection = false,
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const isPersonalInfo = sectionId === "personal_info";
 
   // Auto-focus first input when entering edit mode
   useEffect(() => {
@@ -158,6 +166,10 @@ const BaseSection: React.FC<BaseSectionProps> = ({
           alignItems: "center",
           justifyContent: "space-between",
           mb: 2,
+          // Reserve space for absolute edit button when default edit + hide/delete are shown so they don't overlap
+          ...(editButton === null &&
+            onHide !== undefined &&
+            onDelete !== undefined && { paddingRight: 5 }),
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -183,8 +195,88 @@ const BaseSection: React.FC<BaseSectionProps> = ({
           )}
           {headerActionsLeft}
         </Box>
-        {headerActions}
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+          {onHide !== undefined && onDelete !== undefined && (
+            <>
+              <Tooltip
+                title={
+                  isPersonalInfo
+                    ? "Personal information cannot be hidden"
+                    : "Hide section"
+                }
+              >
+                <span>
+                  <IconButton
+                    onClick={isPersonalInfo ? undefined : onHide}
+                    disabled={isPersonalInfo}
+                    size="small"
+                    sx={{
+                      color: "text.secondary",
+                      "&:hover": {
+                        bgcolor: isPersonalInfo ? "transparent" : "action.hover",
+                      },
+                    }}
+                    data-testid={
+                      sectionId ? `hide-section-${sectionId}-button` : undefined
+                    }
+                  >
+                    <HideIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              {isCustomSection && (
+                <Tooltip
+                  title={isPersonalInfo ? "Cannot delete" : "Delete section"}
+                >
+                  <span>
+                    <IconButton
+                      onClick={
+                        isPersonalInfo
+                          ? undefined
+                          : () => setDeleteDialogOpen(true)
+                      }
+                      disabled={isPersonalInfo}
+                      size="small"
+                      sx={{
+                        color: "text.secondary",
+                        "&:hover": {
+                          bgcolor: isPersonalInfo
+                            ? "transparent"
+                            : "error.light",
+                          color: isPersonalInfo ? undefined : "error.main",
+                        },
+                      }}
+                      data-testid={
+                        sectionId
+                          ? `delete-section-${sectionId}-button`
+                          : undefined
+                      }
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )}
+            </>
+          )}
+          {headerActions}
+        </Box>
       </Box>
+      {isCustomSection && onDelete && !isPersonalInfo && (
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={() => {
+            onDelete();
+            setDeleteDialogOpen(false);
+          }}
+          title="Delete section?"
+          message="This will permanently remove this section and its content. This cannot be undone."
+          confirmButtonText="Delete"
+          confirmButtonColor="error"
+          severity="error"
+        />
+      )}
 
       {children}
       {isEditing && (onSave || onCancel) && (

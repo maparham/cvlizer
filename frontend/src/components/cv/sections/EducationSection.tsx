@@ -643,6 +643,9 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
   onTitleSave,
   cvId,
   sectionType,
+  sectionId,
+  onHide,
+  onDelete,
 }) => {
   // Get quality analysis from store (independent of jobs)
   const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
@@ -798,6 +801,9 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
     <>
       <IndividualItemSection
         sectionType={sectionType || 'education'}
+        sectionId={sectionId}
+        onHide={onHide}
+        onDelete={onDelete}
         data={data as Education[]}
         onUpdate={onUpdate}
         onSave={onSave}

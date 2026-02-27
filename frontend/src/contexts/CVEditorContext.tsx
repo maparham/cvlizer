@@ -30,6 +30,7 @@ interface CVEditorContextType {
   addNewSection: (sectionId: string) => void;
   addCustomSection: () => void;
   removeSection: (sectionId: string) => void;
+  deleteSectionPermanently: (sectionId: string) => void;
   resetToDefaultOrder: () => void;
   isDefaultOrder: () => boolean;
   getAvailableSectionsToAdd: () => Array<{ id: string; name: string }>;
@@ -148,6 +149,7 @@ export const useCVEditorControls = () => {
       add: context.addNewSection,
       addCustomSection: context.addCustomSection,
       remove: context.removeSection,
+      deletePermanently: context.deleteSectionPermanently,
       resetToDefault: context.resetToDefaultOrder,
       isDefaultOrder: context.isDefaultOrder,
       availableToAdd: context.getAvailableSectionsToAdd(),

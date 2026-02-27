@@ -55,7 +55,14 @@ interface CVContentAreaProps {
 
 const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   // Get data from context instead of props
-  const { cvData, onUpdateCV, onSave, validationErrors } = useCVEditor();
+  const {
+    cvData,
+    onUpdateCV,
+    onSave,
+    validationErrors,
+    toggleSectionVisibility,
+    deleteSectionPermanently,
+  } = useCVEditor();
   const { sections } = useCVEditorControls();
   const { editing, changes } = useCVEditorState();
   const { allSuggestions, dismissSummarySuggestion } = useAISuggestionsStore();
@@ -123,6 +130,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
           return (
             <SectionFactory
               sectionType="personal_info"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.personal_info}
@@ -140,6 +148,9 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               onClose={() => requestSectionCancel()}
               onUnsavedChanges={onUnsavedChanges}
               cvId={cvId}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={section.type === "custom"}
             />
           );
         case "custom": {
@@ -205,6 +216,9 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
                 onClose={() => requestSectionCancel()}
                 onUnsavedChanges={onUnsavedChanges}
                 cvId={cvId}
+                onHide={() => toggleSectionVisibility(section.id)}
+                onDelete={() => deleteSectionPermanently(section.id)}
+                isCustomSection={true}
               />
             </Box>
           );
@@ -213,6 +227,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
           return (
             <SectionFactory
               sectionType="work_experience"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.work_experience}
@@ -241,12 +256,16 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
               cvId={cvId}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={false}
             />
           );
         case "education":
           return (
             <SectionFactory
               sectionType="education"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.education}
@@ -272,12 +291,16 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
               cvId={cvId}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={false}
             />
           );
         case "skills":
           return (
             <SectionFactory
               sectionType="skills"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.skills}
@@ -295,12 +318,16 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               onClose={() => handleSectionClose()}
               onUnsavedChanges={onUnsavedChanges}
               cvId={cvId}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={false}
             />
           );
         case "certifications":
           return (
             <SectionFactory
               sectionType="certifications"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.certifications || []}
@@ -328,12 +355,16 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               }
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={false}
             />
           );
         case "projects":
           return (
             <SectionFactory
               sectionType="projects"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.projects || []}
@@ -358,12 +389,16 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               }
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={false}
             />
           );
         case "awards":
           return (
             <SectionFactory
               sectionType="awards"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.awards || []}
@@ -388,12 +423,16 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               }
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={false}
             />
           );
         case "publications":
           return (
             <SectionFactory
               sectionType="publications"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.publications || []}
@@ -418,12 +457,16 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               }
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={false}
             />
           );
         case "volunteer_experience":
           return (
             <SectionFactory
               sectionType="volunteer_experience"
+              sectionId={section.id}
               sectionTitle={section.title}
               onSectionTitleSave={handleTitleSave}
               data={cvData?.volunteer_experience || []}
@@ -454,6 +497,9 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               }
               requestIndividualItemCancel={requestIndividualItemCancel}
               isAnotherItemBeingEdited={isAnotherItemBeingEdited}
+              onHide={() => toggleSectionVisibility(section.id)}
+              onDelete={() => deleteSectionPermanently(section.id)}
+              isCustomSection={false}
             />
           );
         default:

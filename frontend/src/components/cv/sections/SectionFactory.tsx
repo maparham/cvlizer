@@ -75,6 +75,9 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
   onSectionTitleSave,
   sectionId,
   cvId,
+  onHide,
+  onDelete,
+  isCustomSection,
   ...props
 }) => {
   const SectionComponent = SECTIONS[sectionType];
@@ -92,6 +95,10 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
     title: sectionTitle,
     onTitleSave: onSectionTitleSave,
     sectionType,
+    sectionId,
+    onHide,
+    onDelete,
+    isCustomSection,
   };
 
   if (sectionType === "custom" && sectionId) {

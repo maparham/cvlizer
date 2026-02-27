@@ -85,6 +85,10 @@ function IndividualItemSection<T>({
   cvId: _cvId,
   additionalHeaderActions,
   getItemTitle,
+  sectionId: sectionIdProp,
+  onHide,
+  onDelete,
+  isCustomSection,
 }: IndividualItemSectionProps<T>) {
   // Custom hooks for state management
   const {
@@ -129,7 +133,8 @@ function IndividualItemSection<T>({
 
   // Use sectionType prop directly instead of calculating from title
   // This ensures data-section attribute matches validation errors even when title is customized
-  const sectionId = sectionType || useMemo(() => getSectionId(title), [title]);
+  const sectionIdFromTitle = useMemo(() => getSectionId(title), [title]);
+  const sectionId = sectionIdProp ?? sectionType ?? sectionIdFromTitle;
 
   // Event handlers
   const handleEditItem = useCallback(
@@ -466,6 +471,9 @@ function IndividualItemSection<T>({
         isValid={true}
         onTitleSave={onTitleSave}
         sectionId={sectionId}
+        onHide={onHide}
+        onDelete={onDelete}
+        isCustomSection={isCustomSection}
         headerActionsLeft={additionalHeaderActions}
         headerActions={
           <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>

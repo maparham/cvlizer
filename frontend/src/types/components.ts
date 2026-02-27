@@ -46,6 +46,10 @@ export interface BaseSectionProps {
   onTitleSave?: (newTitle: string) => Promise<void>;
   sectionId?: string;
   showDivider?: boolean;
+  onHide?: () => void;
+  onDelete?: () => void;
+  /** If true, show delete icon (only custom sections can be deleted). */
+  isCustomSection?: boolean;
 }
 
 /**
@@ -92,6 +96,10 @@ export interface SectionProps<T = unknown> {
   isAnotherItemBeingEdited?: boolean;
   title?: string;
   onTitleSave?: (newTitle: string) => Promise<void>;
+  sectionId?: string;
+  onHide?: () => void;
+  onDelete?: () => void;
+  isCustomSection?: boolean;
 }
 
 /**
@@ -146,6 +154,10 @@ export interface ArraySectionProps<T> {
   renderItem?: (item: T, index: number) => React.ReactNode;
   createNewItem?: () => T;
   autoSaveMessage?: string;
+  sectionId?: string;
+  onHide?: () => void;
+  onDelete?: () => void;
+  isCustomSection?: boolean;
 }
 
 /**

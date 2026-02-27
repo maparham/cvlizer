@@ -81,6 +81,8 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   title = "Personal Information",
   onTitleSave,
   cvId,
+  onHide,
+  onDelete,
 }) => {
   // Get validation errors for required fields (hooks must be called at component level)
   const fullNameValidation = useFieldValidation("personal_info", undefined, "full_name");
@@ -552,6 +554,8 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
       renderDisplay={renderDisplay}
       autoSaveMessage="Personal information auto-saved"
       onTitleSave={onTitleSave}
+      onHide={onHide}
+      onDelete={onDelete}
     />
   );
 };

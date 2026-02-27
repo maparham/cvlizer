@@ -13,6 +13,7 @@ interface PDFCVEditorHook {
   addNewSection: (sectionId: string) => void;
   addCustomSection: () => void;
   removeSection: (sectionId: string) => void;
+  deleteSectionPermanently: (sectionId: string) => void;
   resetToDefaultOrder: () => void;
   isDefaultOrder: () => boolean;
   getAvailableSectionsToAdd: () => Array<{ id: string; name: string }>;
@@ -155,6 +156,7 @@ export const usePDFCVEditor = ({
     addNewSection: sectionManagement.addNewSection,
     addCustomSection: sectionManagement.addCustomSection,
     removeSection: sectionManagement.removeSection,
+    deleteSectionPermanently: sectionManagement.deleteSectionPermanently,
     resetToDefaultOrder: handleResetConfirm,
     isDefaultOrder: sectionManagement.isDefaultOrder,
     getAvailableSectionsToAdd: sectionManagement.getAvailableSectionsToAdd,

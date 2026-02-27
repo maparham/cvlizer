@@ -41,6 +41,10 @@ const ArrayFormSection = <T extends ArrayItem>({
   renderItemDisplay,
   autoSaveMessage,
   onTitleSave,
+  sectionId,
+  onHide,
+  onDelete,
+  isCustomSection,
 }: ArrayFormSectionProps<T>) => {
   const [editData, setEditData] = useState<T[]>((data as T[]) || []);
 
@@ -134,6 +138,10 @@ const ArrayFormSection = <T extends ArrayItem>({
       onCancel={handleCancel}
       isValid={isFormValid()}
       onTitleSave={onTitleSave}
+      sectionId={sectionId}
+      onHide={onHide}
+      onDelete={onDelete}
+      isCustomSection={isCustomSection}
     >
       {isEditing ? (
         <Box>
