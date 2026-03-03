@@ -35,12 +35,14 @@ import {
   JobApplicationsCard,
   CVsCard,
   CVCard,
+  CVPlaceholderCard,
   DashboardDialogs,
   EmptyState,
 } from "../components/dashboard";
 
 const Dashboard: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -252,6 +254,16 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handlePlaceholderFileSelected = (file: File) => {
+    setPendingUploadFile(file);
+    setUploadOpen(true);
+  };
+
+  const handleUploadClose = () => {
+    setUploadOpen(false);
+    setPendingUploadFile(null);
+  };
+
   const handleEdit = (cvId: string) => {
     navigate(`/cv/${cvId}`);
   };
@@ -299,7 +311,7 @@ const Dashboard: React.FC = () => {
       />
 
       <Container maxWidth="lg" sx={{ mt: 6, mb: 6, px: 3 }}>
-        {/* CVs Section */}
+        {/* CVs Section: empty state when no CVs, otherwise CV grid with placeholder card */}
         {cvs.length === 0 ? (
           <EmptyState
             creating={creating}
@@ -328,6 +340,10 @@ const Dashboard: React.FC = () => {
                 onDownload={handleDownload}
               />
             ))}
+            <CVPlaceholderCard
+              onFileSelected={handlePlaceholderFileSelected}
+              onValidationError={(error) => showError("Invalid file", error)}
+            />
           </CVsCard>
         )}
 
@@ -344,13 +360,14 @@ const Dashboard: React.FC = () => {
         {/* Dialogs */}
         <DashboardDialogs
           uploadOpen={uploadOpen}
-          onUploadClose={() => setUploadOpen(false)}
+          onUploadClose={handleUploadClose}
           onUploadSuccess={(cvId: string) => {
-            setUploadOpen(false);
+            handleUploadClose();
             showSuccess("Success", "CV uploaded successfully and is being parsed");
             // Wait for parsing to complete before opening the editor
             setPendingEditorCvId(cvId);
           }}
+          initialFile={pendingUploadFile}
           templateSelectorOpen={templateSelectorOpen}
           onTemplateSelectorClose={() => setTemplateSelectorOpen(false)}
           onTemplateSelect={handleTemplateSelect}

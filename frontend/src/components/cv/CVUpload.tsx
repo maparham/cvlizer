@@ -9,7 +9,7 @@
  * - Integration with CV store for state management
  * - Error handling and user feedback
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -34,9 +34,16 @@ interface CVUploadProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (cvId: string) => void;
+  /** When provided, dialog opens with this file pre-selected (e.g. from placeholder card). */
+  initialFile?: File | null;
 }
 
-const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
+const CVUpload: React.FC<CVUploadProps> = ({
+  open,
+  onClose,
+  onSuccess,
+  initialFile = null,
+}) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -46,6 +53,15 @@ const CVUpload: React.FC<CVUploadProps> = ({ open, onClose, onSuccess }) => {
 
   // Use the CV store's upload function
   const { uploadCV: uploadCVToStore } = useCVStore();
+
+  // When dialog opens with a pre-selected file (e.g. from placeholder card),
+  // populate selectedFile. Caller is responsible for validation before passing.
+  useEffect(() => {
+    if (!open || !initialFile) return;
+    setError("");
+    setSuccess(false);
+    setSelectedFile(initialFile);
+  }, [open, initialFile]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();

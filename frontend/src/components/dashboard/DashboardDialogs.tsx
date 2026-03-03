@@ -40,6 +40,8 @@ interface DashboardDialogsProps {
   uploadOpen: boolean;
   onUploadClose: () => void;
   onUploadSuccess: (cvId: string) => void;
+  /** Pre-selected file when opening from placeholder card (click or drop). */
+  initialFile?: File | null;
 
   // Template selector
   templateSelectorOpen: boolean;
@@ -69,6 +71,7 @@ const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
   uploadOpen,
   onUploadClose,
   onUploadSuccess,
+  initialFile = null,
   templateSelectorOpen,
   onTemplateSelectorClose,
   onTemplateSelect,
@@ -91,6 +94,7 @@ const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
         open={uploadOpen}
         onClose={onUploadClose}
         onSuccess={onUploadSuccess}
+        initialFile={initialFile}
       />
 
       {/* Template Selector */}

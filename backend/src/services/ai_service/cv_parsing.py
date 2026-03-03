@@ -88,6 +88,8 @@ and custom_sections (for any section that does not match the above).
 - Extract ALL explicit content from the CV.
 - CRITICAL: Preserve ALL original text exactly as written - do not correct spelling, grammar, punctuation, capitalization, or rephrase any content.
 - Correct formatting so that it is valid markdown.
+- Remove redundant linebreaks. E.g., linebreaks in the middle of a sentence or phrase.
+- Preserve formatting linebreaks. E.g., linebreaks between paragraphs, bullet points, between text blocks that are semantically separated, etc.
 - EXCEPTIONS:
   - work_experience.position: if completely missing/empty, infer a reasonable title from context; otherwise preserve exactly.
   - education.degree: if completely missing/empty, infer a reasonable degree from context; otherwise preserve exactly.
@@ -260,96 +262,65 @@ def _has_meaningful_array_items(section_data: list, section_type: str) -> bool:
     return False
 
 
+# Keys that are not section data (skip when iterating parsed_content)
+_NON_SECTION_KEYS = frozenset({"is_valid_cv", "validation_error"})
+
+
+# Metadata for predefined sections (used when iterating in response order)
+_PREDEFINED_SECTION_META: Dict[str, Dict[str, Any]] = {
+    "personal_info": {
+        "id": "personal_info",
+        "type": "personal_info",
+        "title": "Personal Information",
+    },
+    "work_experience": {
+        "id": "work_experience",
+        "type": "work_experience",
+        "title": "Work Experience",
+    },
+    "education": {"id": "education", "type": "education", "title": "Education"},
+    "skills": {"id": "skills", "type": "skills", "title": "Skills"},
+    "certifications": {
+        "id": "certifications",
+        "type": "certifications",
+        "title": "Certifications",
+    },
+    "projects": {"id": "projects", "type": "projects", "title": "Projects"},
+    "awards": {"id": "awards", "type": "awards", "title": "Awards"},
+    "publications": {
+        "id": "publications",
+        "type": "publications",
+        "title": "Publications",
+    },
+    "volunteer_experience": {
+        "id": "volunteer_experience",
+        "type": "volunteer_experience",
+        "title": "Volunteer Experience",
+    },
+}
+
+
 def _add_section_config(parsed_content: dict) -> dict:
     """
-    Add section_config to parsed CV content based on available sections.
+    Add section_config to parsed CV content, preserving the order of sections
+    as returned by the AI (insertion order in parsed_content).
 
-    Args:
-        parsed_content: Parsed CV data dictionary
-
-    Returns:
-        CV data with section_config added
+    Section order follows the AI response's key order so custom sections (e.g.
+    cover letter) can appear in their natural position; standard sections remain
+    stable in practice because the model follows the schema field order.
     """
-    # Predefined sections (no professional_summary; custom sections added separately)
-    section_definitions = [
-        {
-            "id": "personal_info",
-            "type": "personal_info",
-            "title": "Personal Information",
-            "visible": True,
-            "order": 1,
-        },
-        {
-            "id": "work_experience",
-            "type": "work_experience",
-            "title": "Work Experience",
-            "visible": True,
-            "order": 2,
-        },
-        {
-            "id": "education",
-            "type": "education",
-            "title": "Education",
-            "visible": True,
-            "order": 3,
-        },
-        {
-            "id": "skills",
-            "type": "skills",
-            "title": "Skills",
-            "visible": True,
-            "order": 4,
-        },
-        {
-            "id": "certifications",
-            "type": "certifications",
-            "title": "Certifications",
-            "visible": True,
-            "order": 5,
-        },
-        {
-            "id": "projects",
-            "type": "projects",
-            "title": "Projects",
-            "visible": True,
-            "order": 6,
-        },
-        {
-            "id": "awards",
-            "type": "awards",
-            "title": "Awards",
-            "visible": True,
-            "order": 7,
-        },
-        {
-            "id": "publications",
-            "type": "publications",
-            "title": "Publications",
-            "visible": True,
-            "order": 8,
-        },
-        {
-            "id": "volunteer_experience",
-            "type": "volunteer_experience",
-            "title": "Volunteer Experience",
-            "visible": True,
-            "order": 9,
-        },
-    ]
 
-    def has_section_data(section_type: str) -> bool:
-        if section_type not in parsed_content:
+    def has_section_data(key: str) -> bool:
+        if key not in parsed_content:
             return False
-        section_data = parsed_content[section_type]
-        if section_type == "personal_info":
-            return bool(section_data.get("full_name"))
-        if section_type == "skills":
+        data = parsed_content[key]
+        if key == "personal_info":
+            return bool(data.get("full_name"))
+        if key == "skills":
             return bool(
-                section_data.get("technical")
-                or section_data.get("soft")
-                or section_data.get("languages")
+                data.get("technical") or data.get("soft") or data.get("languages")
             )
-        if section_type in [
+        if key in (
             "work_experience",
             "education",
             "certifications",
@@ -357,30 +328,41 @@ def _add_section_config(parsed_content: dict) -> dict:
             "awards",
             "publications",
             "volunteer_experience",
-        ]:
-            return _has_meaningful_array_items(section_data, section_type)
+        ):
+            return _has_meaningful_array_items(data, key)
         return False
 
     sections_with_data: List[Dict[str, Any]] = []
-    for section_def in section_definitions:
-        if has_section_data(str(section_def["type"])):
-            sections_with_data.append(section_def)
+    order = 1
 
-    # Append custom_sections to section_config (each has id, type "custom", title, visible, order)
-    custom_sections = parsed_content.get("custom_sections") or []
-    next_order = len(sections_with_data) + 1
-    for item in custom_sections:
-        sections_with_data.append(
-            {
-                "id": item.get("id", ""),
-                "type": "custom",
-                "title": (item.get("title") or "").strip() or "Section",
-                "visible": True,
-                "order": next_order,
-            }
-        )
-        next_order += 1
+    # Iterate in insertion order (Python 3.7+ dict preserves order)
+    for key in parsed_content:
+        if key in _NON_SECTION_KEYS:
+            continue
+        if key == "custom_sections":
+            for item in parsed_content.get("custom_sections") or []:
+                sections_with_data.append(
+                    {
+                        "id": item.get("id", ""),
+                        "type": "custom",
+                        "title": (item.get("title") or "").strip() or "Section",
+                        "visible": True,
+                        "order": order,
+                    }
+                )
+                order += 1
+        elif key in _PREDEFINED_SECTION_META and has_section_data(key):
+            meta = _PREDEFINED_SECTION_META[key]
+            sections_with_data.append(
+                {
+                    "id": meta["id"],
+                    "type": meta["type"],
+                    "title": meta["title"],
+                    "visible": True,
+                    "order": order,
+                }
+            )
+            order += 1
 
     parsed_content["section_config"] = {"sections": sections_with_data}
-
     return parsed_content
