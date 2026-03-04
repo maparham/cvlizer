@@ -4,7 +4,9 @@ import tempfile
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
+
+from src.exceptions import InvalidFileException
 
 from src.services.file_service import (
     _remove_page_number_lines,
@@ -169,9 +171,9 @@ class TestFileService:
         """Test text extraction from file with unsupported content type"""
         file_content = b"Some content"
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(InvalidFileException) as exc_info:
             extract_text_from_file(file_content, "text/plain")
-        assert "Unsupported file type" in exc_info.value.detail
+        assert "Unsupported file type" in str(exc_info.value)
 
     def test_remove_page_number_lines_removes_standalone_digits(self):
         """Lines that are only 1-3 digits are removed"""

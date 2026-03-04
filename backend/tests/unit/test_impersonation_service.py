@@ -5,7 +5,7 @@ This module provides comprehensive tests for the impersonation service functiona
 including session management, validation, and security checks.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -207,7 +207,7 @@ class TestImpersonationService:
         active_session.admin_id = admin_user.id
         active_session.status = "active"
         active_session.ended_at = None
-        active_session.started_at = datetime.utcnow() - timedelta(minutes=10)
+        active_session.started_at = datetime.now(timezone.utc) - timedelta(minutes=10)
         active_session.admin = admin_user
         active_session.target_user = Mock()
         active_session.target_user.email = "target@example.com"
@@ -218,7 +218,7 @@ class TestImpersonationService:
 
         # Mock the end_session method to set ended_at
         def mock_end_session(reason):
-            active_session.ended_at = datetime.utcnow()
+            active_session.ended_at = datetime.now(timezone.utc)
             active_session.status = "ended"
 
         active_session.end_session = mock_end_session
@@ -322,7 +322,7 @@ class TestImpersonationService:
         session = Mock(spec=ImpersonationSession)
         session.id = "session-123"
         session.status = "active"
-        session.expires_at = datetime.utcnow() + timedelta(hours=1)
+        session.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         session.is_active = True
 
         # Mock the query chain: query().options().filter().first()
@@ -345,7 +345,7 @@ class TestImpersonationService:
         session = Mock(spec=ImpersonationSession)
         session.id = "session-123"
         session.status = "active"
-        session.expires_at = datetime.utcnow() - timedelta(hours=1)
+        session.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
         session.is_active = False
         session.is_expired = True
         session.ended_at = None
@@ -370,7 +370,7 @@ class TestImpersonationService:
         session = Mock(spec=ImpersonationSession)
         session.id = "session-123"
         session.status = "ended"
-        session.expires_at = datetime.utcnow() + timedelta(hours=1)
+        session.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         session.is_active = False
 
         # Mock the query chain: query().options().filter().first()
@@ -394,12 +394,12 @@ class TestImpersonationService:
         expired_session1 = Mock(spec=ImpersonationSession)
         expired_session1.id = "expired-1"
         expired_session1.status = "active"
-        expired_session1.expires_at = datetime.utcnow() - timedelta(hours=1)
+        expired_session1.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
 
         expired_session2 = Mock(spec=ImpersonationSession)
         expired_session2.id = "expired-2"
         expired_session2.status = "active"
-        expired_session2.expires_at = datetime.utcnow() - timedelta(hours=2)
+        expired_session2.expires_at = datetime.now(timezone.utc) - timedelta(hours=2)
 
         mock_expired_sessions = [expired_session1, expired_session2]
         mock_db.query.return_value.filter.return_value.all.return_value = (

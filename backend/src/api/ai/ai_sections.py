@@ -14,8 +14,8 @@ from src.models.base import get_db
 from src.models.cv import CV
 from src.models.user import User
 from src.services.ai_service import generate_cv_section, is_ai_enabled
+from src.services.cv_service import get_cv_by_id
 from src.services.job_description_service import (
-    get_cv_owned_by,
     get_job_description_by_id,
 )
 
@@ -33,7 +33,7 @@ async def generate_ai_section(
 ):
     """Generate AI-enhanced section for CV based on job description"""
     # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
 
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")

@@ -7,7 +7,7 @@ and recent activity.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -37,7 +37,7 @@ async def get_dashboard_data(
     """
     try:
         # Calculate date ranges
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         seven_days_ago = now - timedelta(days=7)
         thirty_days_ago = now - timedelta(days=30)
 
@@ -154,7 +154,7 @@ async def get_system_stats(
     Get system statistics.
     """
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         seven_days_ago = now - timedelta(days=7)
         thirty_days_ago = now - timedelta(days=30)
 

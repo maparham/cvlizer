@@ -17,28 +17,9 @@ from src.utils.cv_data_optimizer import clean_control_characters
 
 from .common import call_openai_with_schema, is_ai_enabled
 from .cv_filter import filter_hidden_sections
+from .cv_section_utils import get_summary_custom_section
 
 logger = logging.getLogger(__name__)
-
-
-def _get_summary_custom_section(cv_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """
-    Return the custom section used for AI summary suggestions (read/write).
-
-    Rule: first section with type professional_summary; else first with title
-    "professional summary" (case-insensitive); else first custom section.
-    Frontend getSummaryCustomSection in CVContentArea.tsx must match this.
-    """
-    custom_sections = cv_data.get("custom_sections") or []
-    for item in custom_sections:
-        if isinstance(item, dict) and item.get("type") == "professional_summary":
-            return item
-    for item in custom_sections:
-        if isinstance(item, dict):
-            title = (item.get("title") or "").strip().lower()
-            if title == "professional summary":
-                return item
-    return custom_sections[0] if custom_sections else None
 
 
 def _normalize_skill_name(skill: str) -> str:
@@ -110,7 +91,7 @@ def _build_ai_suggestions_prompt(
     filtered_cv_data = clean_control_characters(filtered_cv_data)
 
     # Summary = first custom section with title "Professional Summary", or first custom section
-    summary_section = _get_summary_custom_section(filtered_cv_data)
+    summary_section = get_summary_custom_section(filtered_cv_data)
     if summary_section:
         filtered_cv_data["professional_summary"] = {
             "content": summary_section.get("content") or "",
@@ -502,7 +483,7 @@ async def generate_ai_suggestions(
 
         # Check which sections are visible to filter response accordingly
         filtered_cv_data = filter_hidden_sections(cv_data)
-        has_professional_summary = bool(_get_summary_custom_section(filtered_cv_data))
+        has_professional_summary = bool(get_summary_custom_section(filtered_cv_data))
 
         # Split response into job_fit and optimization parts
         job_fit_data = {

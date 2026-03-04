@@ -7,13 +7,18 @@ This module provides functions for CRUD operations on CV records:
 - Database transaction management
 """
 
+import json
 import re
+from copy import deepcopy
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
+from src.constants import DEFAULT_PARSED_CV
 from src.models.cv import CV
+from src.models.cv_history import CVHistory
 from src.models.user import User
+from src.utils.feature_flags import is_cv_history_enabled
 
 
 def get_unique_filename_for_user(
@@ -122,3 +127,68 @@ def delete_cv(db: Session, cv_id: str, user_id: str) -> bool:
     db.delete(cv)
     db.commit()
     return True
+
+
+def rename_cv(db: Session, cv_id: str, user_id: str, new_title: str) -> Optional[CV]:
+    """
+    Update a CV's display name (original_filename). Returns the updated CV or None if not found.
+    """
+    cv = get_cv_by_id(db, cv_id, user_id)
+    if not cv:
+        return None
+    cv.original_filename = new_title.strip()
+    db.commit()
+    db.refresh(cv)
+    return cv
+
+
+def duplicate_cv_for_user(db: Session, cv_id: str, user_id: str) -> Optional[CV]:
+    """
+    Duplicate a CV for the user. Copies parsed data and optionally creates an initial
+    history entry. Returns the new CV or None if the original is not found.
+    """
+    original = get_cv_by_id(db, cv_id, user_id)
+    if not original:
+        return None
+
+    duplicated_parsed_data = (
+        deepcopy(original.parsed_data)
+        if original.parsed_data
+        else deepcopy(DEFAULT_PARSED_CV)
+    )
+
+    original_name = original.original_filename
+    if original_name.endswith(".pdf"):
+        base_name = original_name[:-4]
+        new_filename = f"{base_name} - Copy.pdf"
+    else:
+        new_filename = f"{original_name} - Copy"
+
+    new_cv = create_cv(
+        db=db,
+        user_id=user_id,
+        original_filename=new_filename,
+        file_path="",
+        file_size=0,
+        file_type=original.file_type,
+        parsed_data=duplicated_parsed_data,
+        is_parsed=True,
+    )
+
+    if is_cv_history_enabled():
+        data_size = len(json.dumps(duplicated_parsed_data).encode("utf-8"))
+        initial_entry = CVHistory(
+            cv_id=str(new_cv.id),
+            user_id=user_id,
+            cv_data=duplicated_parsed_data,
+            change_type="initial_load",
+            description="Duplicated from original CV",
+            label="Initial CV (Copy)",
+            is_automatic=True,
+            is_initial=True,
+            data_size=data_size,
+        )
+        db.add(initial_entry)
+        db.commit()
+
+    return new_cv

@@ -5,7 +5,7 @@ This module tests user activity tracking, session management,
 and activity data retrieval functionality.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -50,7 +50,7 @@ class TestUserActivityService:
             description="User viewed dashboard",
             page_url="http://localhost:3000/dashboard",
             session_id="session-123",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
         self.mock_db.add.return_value = None
@@ -137,7 +137,7 @@ class TestUserActivityService:
                 activity_type="page_view",
                 action="dashboard_view",
                 description="User viewed dashboard",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             ),
             UserActivity(
                 id="activity-2",
@@ -145,7 +145,7 @@ class TestUserActivityService:
                 activity_type="user_action",
                 action="cv_edit",
                 description="User edited CV",
-                timestamp=datetime.utcnow() - timedelta(minutes=1),
+                timestamp=datetime.now(timezone.utc) - timedelta(minutes=1),
             ),
         ]
 
@@ -178,7 +178,7 @@ class TestUserActivityService:
                 activity_type="page_view",
                 action="dashboard_view",
                 description="User viewed dashboard",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
         ]
 
@@ -247,7 +247,7 @@ class TestUserActivityService:
             id="session-123",
             user_id=self.test_user.id,
             session_id="sess_123",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
             user_agent="Mozilla/5.0",
             ip_address="192.168.1.1",
         )
@@ -279,7 +279,7 @@ class TestUserActivityService:
             id="session-123",
             user_id=self.test_user.id,
             session_id="sess_123",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
             ended_at=None,
         )
 
@@ -363,7 +363,7 @@ class TestUserActivityService:
             id="session-123",
             user_id=self.test_user.id,
             session_id="sess_123",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
         )
 
         self.mock_db.add.return_value = None
@@ -442,7 +442,7 @@ class TestUserActivityService:
                 user_id=self.test_user.id,
                 activity_type="page_view",
                 action="dashboard_view",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
             for i in range(1000)
         ]

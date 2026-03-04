@@ -6,7 +6,7 @@ including token counting, cost calculation, and usage statistics for admin monit
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import and_, desc, func, or_
@@ -185,7 +185,7 @@ def get_usage_stats(
     try:
         # Default to last 30 days if no dates provided
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
         if not start_date:
             start_date = end_date - timedelta(days=30)
 
@@ -303,7 +303,7 @@ def get_usage_by_user(
     try:
         # Default to last 30 days if no dates provided
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
         if not start_date:
             start_date = end_date - timedelta(days=30)
 
@@ -368,7 +368,7 @@ def get_usage_by_operation(
     try:
         # Default to last 30 days if no dates provided
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
         if not start_date:
             start_date = end_date - timedelta(days=30)
 
@@ -443,7 +443,7 @@ def get_usage_timeline(
     try:
         # Default to last 30 days if no dates provided
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
         if not start_date:
             start_date = end_date - timedelta(days=30)
 
@@ -524,7 +524,7 @@ def get_usage_logs(
     try:
         # Default to last 30 days if no dates provided
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
         if not start_date:
             start_date = end_date - timedelta(days=30)
 

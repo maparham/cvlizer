@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from src.config import AIConfig
-from src.constants import EMPTY_PARSED_CV_PAYLOAD
+from src.constants import EMPTY_PARSED_CV_PAYLOAD, ERROR_EXTRACT_PDF
 from src.schemas.ai_response_schemas import CVParsingResponseSchema
 
 from .common import (
@@ -59,10 +59,7 @@ async def parse_cv_text_with_openai(
     """
     # Check if text content is empty or too short
     if not text_content or len(text_content.strip()) < 10:
-        return {
-            "error": "Unable to extract text from PDF. Please upload a PDF with selectable text.",
-            **EMPTY_PARSED_CV_PAYLOAD,
-        }
+        return {"error": ERROR_EXTRACT_PDF, **EMPTY_PARSED_CV_PAYLOAD}
 
     # Check if text content is too long to be a CV
     if len(text_content.strip()) > 15000:

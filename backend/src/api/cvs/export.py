@@ -6,7 +6,7 @@ This module handles PDF and LaTeX export functionality for CVs.
 
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -147,7 +147,7 @@ async def export_cv_pdf(
 
         # Generate safe filename
         safe_name = _generate_safe_filename(cv)
-        date_str = datetime.utcnow().strftime("%Y%m%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         filename = f"{safe_name}_{date_str}.pdf"
 
         headers = {
@@ -208,7 +208,7 @@ async def export_cv_latex(
 
         # Generate safe filename
         safe_name = _generate_safe_filename(cv)
-        date_str = datetime.utcnow().strftime("%Y%m%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         filename = f"{safe_name}_{date_str}.tex"
 
         headers = {
@@ -324,7 +324,7 @@ async def export_cv_pdf_public(
 
         # Generate safe filename
         safe_name = _generate_safe_filename(cv)
-        date_str = datetime.utcnow().strftime("%Y%m%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         filename = f"{safe_name}_{date_str}.pdf"
 
         headers = {

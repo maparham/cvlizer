@@ -6,7 +6,7 @@ including creating snapshots, retrieving history, and restoring versions.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -120,9 +120,9 @@ async def create_history_entry(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
     # Rate limiting: Check for recent history entries to prevent spam
-    from datetime import datetime, timedelta
+    from datetime import timedelta
 
-    recent_cutoff = datetime.utcnow() - timedelta(minutes=1)
+    recent_cutoff = datetime.now(timezone.utc) - timedelta(minutes=1)
     recent_entries = (
         db.query(CVHistory)
         .filter(
@@ -373,7 +373,7 @@ async def restore_cv_version(
 
     # Restore the CV data
     cv.parsed_data = history_entry.cv_data
-    cv.updated_at = datetime.utcnow()
+    cv.updated_at = datetime.now(timezone.utc)
 
     # Create restore snapshot (if feature is enabled)
     if is_cv_history_enabled():

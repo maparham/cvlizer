@@ -4,7 +4,7 @@ AI suggestions and enhancement endpoints.
 This module provides endpoints for generating AI suggestions and managing AI enhancements.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 import asyncio
 import logging
 import uuid
@@ -19,11 +19,10 @@ from src.middleware.clerk_auth import get_effective_user
 from src.models.ai_enhancement import AIEnhancement
 from src.models.base import get_db
 from src.models.user import User
-from src.services.job_description_service import (
-    get_cv_owned_by,
-    get_job_description_by_id,
-)
+from src.services.cv_service import get_cv_by_id
+from src.services.job_description_service import get_job_description_by_id
 from src.utils.rate_limit import create_combined_limiter
+from src.utils.task_logging import make_task_exception_logger
 
 from .background_tasks import ai_suggestions_background
 from .models import (
@@ -52,7 +51,7 @@ async def create_ai_suggestion(
     """Create a new AI suggestion"""
     try:
         # Verify CV exists and belongs to user
-        cv = get_cv_owned_by(db, suggestion.cv_id, str(current_user.id))
+        cv = get_cv_by_id(db, suggestion.cv_id, str(current_user.id))
         if not cv:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="CV not found"
@@ -114,7 +113,7 @@ async def accept_ai_suggestion(
             )
 
         # Verify CV belongs to user
-        cv = get_cv_owned_by(db, suggestion.cv_id, str(current_user.id))
+        cv = get_cv_by_id(db, suggestion.cv_id, str(current_user.id))
         if not cv:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="CV not found"
@@ -157,7 +156,7 @@ async def create_ai_suggestions(
     polling and embeds the created draft_id under enhancement_data.meta.draft_id.
     """
     # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
@@ -183,7 +182,7 @@ async def create_ai_suggestions(
         db.add(enhancement)
         db.commit()
 
-        asyncio.create_task(
+        task = asyncio.create_task(
             ai_suggestions_background(
                 enhancement_id,
                 cv.parsed_data or {},
@@ -192,6 +191,13 @@ async def create_ai_suggestions(
                 cv_id,
                 enhancement_request.job_description_id,
                 job_description.company,
+            )
+        )
+        task.add_done_callback(
+            make_task_exception_logger(
+                logger,
+                "AI suggestions background task failed: enhancement_id=%s, error=%s",
+                enhancement_id,
             )
         )
 
@@ -251,7 +257,7 @@ async def get_latest_ai_enhancement(
 ):
     """Get the latest AI enhancement for a CV (returns null if none exists)"""
     # Verify CV belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
@@ -310,7 +316,7 @@ async def update_ai_enhancement(
         # Update enhancement_data field with new suggestions
         if "enhancement_data" in update_data:
             enhancement.enhancement_data = update_data["enhancement_data"]
-            enhancement.updated_at = datetime.utcnow()
+            enhancement.updated_at = datetime.now(timezone.utc)
 
         db.commit()
         db.refresh(enhancement)
@@ -366,7 +372,7 @@ async def delete_all_ai_enhancements_for_cv(
 ):
     """Delete all AI enhancement records for a CV"""
     # Verify CV belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 

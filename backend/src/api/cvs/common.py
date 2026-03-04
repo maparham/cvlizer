@@ -7,9 +7,10 @@ including background task execution, logging, rate limiting, and preview job sto
 
 import asyncio
 import logging
-import os
-from concurrent.futures import ThreadPoolExecutor
 
+from src.constants import ERROR_INVALID_FILE_OR_EXTRACTION
+from src.exceptions import ExtractionError, InvalidFileException
+from src.utils.background_tasks import cv_parse_executor
 from src.utils.rate_limit import create_combined_limiter
 from src.utils.feature_flags import is_cv_history_enabled
 from src.models.base import SessionLocal
@@ -20,16 +21,30 @@ from src.services.cv_parsing_service import parse_cv_with_openai
 # Rate limiter for CV operations
 limiter = create_combined_limiter()
 
-# Thread pool for background parsing (configurable)
-_workers = int(os.getenv("CV_PARSE_WORKERS", "2"))
-executor = ThreadPoolExecutor(max_workers=max(1, _workers))
-
 # Logger for background task monitoring
 logger = logging.getLogger(__name__)
 
 # In-memory job storage for preview generation (simple dict for MVP)
 # TODO: Replace with Redis or proper queue for production
 _preview_jobs: dict[str, dict] = {}
+
+
+def _handle_parse_error(
+    db, cv_id: str, log: logging.Logger, parse_error_message: str
+) -> None:
+    """Update CV record with parse error; log if update fails."""
+    try:
+        cv = db.query(CV).filter(CV.id == cv_id).first()
+        if cv:
+            cv.is_parsed = False
+            cv.parse_error = parse_error_message
+            db.commit()
+    except Exception as update_error:
+        log.error(
+            "Failed to update CV error status for CV %s: %s",
+            cv_id,
+            update_error,
+        )
 
 
 def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: str):
@@ -103,22 +118,17 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
                     db.add(initial_entry)
                     db.commit()
 
-    except Exception as e:
-        # Rollback failed transaction to prevent connection issues
+    except (InvalidFileException, ExtractionError):
         db.rollback()
-        logger.error(f"Background parsing failed for CV {cv_id}: {str(e)}")
-
-        # Try to update CV with error message (using same session after rollback)
-        try:
-            cv = db.query(CV).filter(CV.id == cv_id).first()
-            if cv:
-                cv.is_parsed = False
-                cv.parse_error = f"Background parsing failed: {str(e)}"
-                db.commit()
-        except Exception as update_error:
-            logger.error(
-                f"Failed to update CV error status for CV {cv_id}: {update_error}"
-            )
+        logger.error(
+            "Background parsing failed for CV %s: invalid file or extraction error",
+            cv_id,
+        )
+        _handle_parse_error(db, cv_id, logger, ERROR_INVALID_FILE_OR_EXTRACTION)
+    except Exception as e:
+        db.rollback()
+        logger.error("Background parsing failed for CV %s: %s", cv_id, e)
+        _handle_parse_error(db, cv_id, logger, f"Background parsing failed: {str(e)}")
 
     finally:
         # Always close the session to return connection to pool
@@ -137,7 +147,7 @@ async def parse_cv_background(
     """Parse CV in background using thread pool executor"""
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
-        executor, parse_cv_sync, cv_id, file_content, filename, content_type
+        cv_parse_executor, parse_cv_sync, cv_id, file_content, filename, content_type
     )
 
 

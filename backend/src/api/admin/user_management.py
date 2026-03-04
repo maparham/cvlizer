@@ -11,7 +11,7 @@ This module provides administrative endpoints for managing users:
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -224,7 +224,7 @@ async def toggle_user_active(
             )
 
         user.is_active = not user.is_active
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         db.commit()
 
         return {

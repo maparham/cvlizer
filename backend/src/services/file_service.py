@@ -14,13 +14,11 @@ from typing import Optional, Tuple
 
 import aiofiles
 import docx
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 
-ALLOWED_FILE_TYPES = {
-    "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+from src.config import FileConfig
+from src.constants import ERROR_EXTRACT_DOCX, ERROR_EXTRACT_PDF
+from src.exceptions import ExtractionError, InvalidFileException
 
 
 def _clean_extracted_text(text: str) -> str:
@@ -86,10 +84,10 @@ def _remove_page_number_lines(text: str) -> str:
 async def validate_file(file: UploadFile) -> Tuple[bool, str]:
     """Validate uploaded file"""
     # Check file type
-    if file.content_type not in ALLOWED_FILE_TYPES:
+    if file.content_type not in FileConfig.ALLOWED_CV_TYPES:
         return (
             False,
-            f"File type {file.content_type} not allowed. Allowed types: {', '.join(ALLOWED_FILE_TYPES)}",
+            f"File type {file.content_type} not allowed. Allowed types: {', '.join(FileConfig.ALLOWED_CV_TYPES)}",
         )
 
     # Check file size by reading the file content
@@ -101,10 +99,10 @@ async def validate_file(file: UploadFile) -> Tuple[bool, str]:
         # Reset file pointer to beginning for subsequent reads
         await file.seek(0)
 
-        if file_size > MAX_FILE_SIZE:
+        if file_size > FileConfig.MAX_FILE_SIZE:
             return (
                 False,
-                f"File size {file_size} exceeds maximum allowed size of {MAX_FILE_SIZE} bytes",
+                f"File size {file_size} exceeds maximum allowed size of {FileConfig.MAX_FILE_SIZE} bytes",
             )
     except Exception as e:
         return False, f"Error reading file: {str(e)}"
@@ -225,7 +223,7 @@ def extract_text_from_pdf(file_content: bytes) -> str:
     try:
         # Magic sniff for PDF header
         if not file_content.startswith(b"%PDF"):
-            raise HTTPException(status_code=400, detail="Invalid PDF file signature")
+            raise InvalidFileException("Invalid PDF file signature")
         import fitz  # PyMuPDF
 
         with fitz.open(stream=file_content, filetype="pdf") as doc:
@@ -274,22 +272,14 @@ def extract_text_from_pdf(file_content: bytes) -> str:
             cleaned_text = _remove_page_number_lines(cleaned_text)
             return cleaned_text.strip()
         else:
-            raise HTTPException(
-                status_code=400,
-                detail="Unable to extract text from PDF. Please upload a PDF with selectable text.",
-            )
+            raise ExtractionError(ERROR_EXTRACT_PDF)
 
     except ImportError:
-        raise HTTPException(
-            status_code=500, detail="PDF processing library not available."
-        )
-    except HTTPException:
+        raise ExtractionError("PDF processing library not available.")
+    except (InvalidFileException, ExtractionError):
         raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail="Unable to extract text from PDF. Please upload a PDF with selectable text.",
-        )
+    except Exception:
+        raise ExtractionError(ERROR_EXTRACT_PDF)
 
 
 def extract_text_from_docx(file_content: bytes) -> str:
@@ -300,7 +290,7 @@ def extract_text_from_docx(file_content: bytes) -> str:
     try:
         # DOCX is a ZIP: must begin with PK\x03\x04
         if not file_content.startswith(b"PK\x03\x04"):
-            raise HTTPException(status_code=400, detail="Invalid DOCX file signature")
+            raise InvalidFileException("Invalid DOCX file signature")
         doc = docx.Document(BytesIO(file_content))
         paragraphs = []
 
@@ -331,14 +321,11 @@ def extract_text_from_docx(file_content: bytes) -> str:
             cleaned_text = _clean_extracted_text(text)
             return cleaned_text.strip()
 
-        raise HTTPException(
-            status_code=400,
-            detail="Unable to extract text from DOCX. Please upload a DOCX with text content.",
-        )
-    except HTTPException:
+        raise ExtractionError(ERROR_EXTRACT_DOCX)
+    except (InvalidFileException, ExtractionError):
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error reading DOCX file: {str(e)}")
+    except Exception:
+        raise ExtractionError("Error reading DOCX file.")
 
 
 def extract_text_from_file(file_content: bytes, content_type: str) -> str:
@@ -351,6 +338,4 @@ def extract_text_from_file(file_content: bytes, content_type: str) -> str:
     ):
         return extract_text_from_docx(file_content)
     else:
-        raise HTTPException(
-            status_code=400, detail="Unsupported file type: " + content_type
-        )
+        raise InvalidFileException("Unsupported file type: " + content_type)

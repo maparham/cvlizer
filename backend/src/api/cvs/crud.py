@@ -2,6 +2,10 @@
 CV CRUD API Endpoints
 
 This module handles all CRUD operations for CVs including:
+
+API error conventions: use HTTPException with detail as a string for simple errors,
+or detail as a dict with key "detail" (summary message) and optional "errors" (list)
+for validation/compound errors.
 - Listing CVs with pagination
 - Getting template metadata
 - Getting individual CVs
@@ -30,13 +34,14 @@ from src.schemas.cv_schemas import CVUpdateRequestSchema
 from src.services.cv_service import (
     create_cv,
     delete_cv,
+    duplicate_cv_for_user,
     get_cv_by_id,
     get_cvs_by_user,
+    rename_cv,
     update_cv,
 )
 from src.services.file_service import delete_file
 from src.services.template_loader import get_template_metadata
-from src.utils.feature_flags import is_cv_history_enabled
 from src.utils.validation import CVDataValidator
 
 from .models import CVListResponse, CVResponse, CVTitleUpdateRequest
@@ -118,7 +123,7 @@ async def update_cv_data(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
-                    "message": "CV data validation failed",
+                    "detail": "CV data validation failed",
                     "errors": validation_errors,
                 },
             )
@@ -134,7 +139,7 @@ async def update_cv_data(
     except ValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={"message": "Invalid CV data format", "errors": e.errors()},
+            detail={"detail": "Invalid CV data format", "errors": e.errors()},
         )
 
 
@@ -182,16 +187,16 @@ async def update_cv_title(
     current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Update CV title (original_filename)"""
-    # Get CV to verify ownership
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
-
-    # Update the original_filename
-    cv.original_filename = title_request.title.strip()
-    db.commit()
-    db.refresh(cv)
-
+    try:
+        cv = rename_cv(db, cv_id, str(current_user.id), title_request.title)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error updating CV title",
+        )
     return CVResponse(**cv.to_response_dict())
 
 
@@ -238,71 +243,18 @@ async def duplicate_cv(
     current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Duplicate a CV - copies content but not version history"""
-    import json
-
-    from src.models.cv_history import CVHistory
-
-    # Get the original CV
-    original_cv = get_cv_by_id(db, cv_id, str(current_user.id))
-    if not original_cv:
+    if not get_cv_by_id(db, cv_id, str(current_user.id)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
-
     try:
-        # Create a deep copy of the parsed data (excluding history)
-        duplicated_parsed_data = (
-            deepcopy(original_cv.parsed_data)
-            if original_cv.parsed_data
-            else deepcopy(DEFAULT_PARSED_CV)
-        )
-
-        # Generate a new filename with "Copy" suffix
-        original_name = original_cv.original_filename
-        if original_name.endswith(".pdf"):
-            base_name = original_name[:-4]  # Remove .pdf extension
-            new_filename = f"{base_name} - Copy.pdf"
-        else:
-            new_filename = f"{original_name} - Copy"
-
-        # Create the new CV with duplicated content
-        new_cv = create_cv(
-            db=db,
-            user_id=str(current_user.id),
-            original_filename=new_filename,
-            file_path="",  # No file path for duplicated CVs (they're not file-based)
-            file_size=0,  # No file size for duplicated CVs
-            file_type=original_cv.file_type,
-            parsed_data=duplicated_parsed_data,
-            is_parsed=True,  # Already "parsed" since we're copying existing data
-        )
-
-        # Create initial history entry for the duplicated CV (if feature is enabled)
-        if is_cv_history_enabled():
-            # Calculate data size
-            data_size = len(json.dumps(duplicated_parsed_data).encode("utf-8"))
-
-            # Create initial history entry
-            initial_entry = CVHistory(
-                cv_id=str(new_cv.id),
-                user_id=str(current_user.id),
-                cv_data=duplicated_parsed_data,
-                change_type="initial_load",
-                description="Duplicated from original CV",
-                label="Initial CV (Copy)",
-                is_automatic=True,
-                is_initial=True,
-                data_size=data_size,
-            )
-
-            db.add(initial_entry)
-            db.commit()
-
-        return CVResponse(**new_cv.to_response_dict())
-
-    except Exception as e:
+        new_cv = duplicate_cv_for_user(db, cv_id, str(current_user.id))
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error duplicating CV: {str(e)}",
+            detail="Error duplicating CV",
         )
+    if not new_cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    return CVResponse(**new_cv.to_response_dict())
 
 
 @router.delete("/{cv_id}")

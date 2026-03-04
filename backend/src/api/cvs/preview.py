@@ -24,7 +24,9 @@ from src.services.latex_export_service import generate_cv_latex
 from src.services.preview_service import generate_blurred_preview, is_preview_available
 from src.services.template_loader import is_template_available
 
-from .common import executor, get_preview_jobs, logger
+from src.utils.background_tasks import executor
+
+from .common import get_preview_jobs, logger
 
 router = APIRouter()
 

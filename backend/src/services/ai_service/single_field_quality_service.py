@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from src.schemas.cv_quality_schemas import IssueSchema, SingleIssueResponseSchema
 from src.utils.html_diff_utils import clean_html_diff_string
 from src.config import AIConfig
-from .ai_suggestions_service import _get_summary_custom_section
+from .cv_section_utils import get_summary_custom_section
 from .common import call_openai_with_schema, is_ai_enabled
 from .cv_quality_prompts.single_field_coach import build_single_field_coach_system_prompt
 from .openai_schema_utils import SINGLE_ISSUE_RESPONSE_FORMAT
@@ -60,7 +60,7 @@ def get_description_field_text(
 
     # Summary: first custom section with title "Professional Summary" or first custom
     if base == "professional_summary":
-        section = _get_summary_custom_section(cv_data)
+        section = get_summary_custom_section(cv_data)
         return (section.get("content") or "") if section else ""
 
     # Custom section by id (plain section_id as base)

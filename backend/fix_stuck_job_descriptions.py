@@ -10,7 +10,7 @@ Usage:
 
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Add the backend directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -30,7 +30,7 @@ def fix_stuck_job_descriptions(auto_confirm=False):
     db = SessionLocal()
     try:
         # Find job descriptions stuck in parsing state for more than 10 minutes
-        ten_minutes_ago = datetime.utcnow() - timedelta(minutes=10)
+        ten_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=10)
 
         stuck_jds = (
             db.query(JobDescription)

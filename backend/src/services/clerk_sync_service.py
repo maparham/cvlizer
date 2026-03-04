@@ -7,7 +7,7 @@ in the local database for CV and data relationships.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
@@ -128,7 +128,7 @@ def sync_clerk_user_to_local_db(
                                 updated = True
 
             if updated:
-                user.updated_at = datetime.utcnow()
+                user.updated_at = datetime.now(timezone.utc)
                 db.commit()
                 db.refresh(user)
                 logger.debug(f"Updated existing user {clerk_user_id} in local database")
@@ -146,7 +146,7 @@ def sync_clerk_user_to_local_db(
                     existing_user_by_email.email_verified = additional_data[
                         "email_verified"
                     ]
-                existing_user_by_email.updated_at = datetime.utcnow()
+                existing_user_by_email.updated_at = datetime.now(timezone.utc)
                 db.commit()
                 db.refresh(existing_user_by_email)
                 logger.info(f"Linked existing user {email} to Clerk ID {clerk_user_id}")
@@ -162,7 +162,7 @@ def sync_clerk_user_to_local_db(
                     existing_user_by_email.email_verified = additional_data[
                         "email_verified"
                     ]
-                existing_user_by_email.updated_at = datetime.utcnow()
+                existing_user_by_email.updated_at = datetime.now(timezone.utc)
                 db.commit()
                 db.refresh(existing_user_by_email)
                 logger.info(
@@ -293,7 +293,7 @@ def migrate_existing_users_to_clerk(db: Session) -> int:
         for user in users_without_clerk:
             # Just ensure they're ready for Clerk linking
             # The actual linking happens when they sign in with Clerk
-            user.updated_at = datetime.utcnow()
+            user.updated_at = datetime.now(timezone.utc)
             count += 1
 
         if count > 0:

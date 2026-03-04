@@ -23,6 +23,11 @@ async def parse_cv_with_openai(
     """
     Parse CV content using OpenAI.
 
+    Returns a dict (never raises) so callers can update DB state consistently:
+    on invalid file or extraction failure we return a structure with an "error"
+    key and a valid parsed-data shape, allowing the caller to set is_parsed=False
+    and parse_error in one place without exception handling.
+
     Args:
         file_content: CV file content bytes
         filename: Original filename
@@ -32,9 +37,16 @@ async def parse_cv_with_openai(
         db_session: Database session for AI usage logging (optional)
 
     Returns:
-        Dictionary containing parsed CV data or error information
+        Dictionary containing parsed CV data, or same shape with "error" key set.
     """
     import uuid
+
+    from src.constants import (
+        EMPTY_PARSED_CV_PAYLOAD,
+        ERROR_EXTRACT_PDF,
+        ERROR_INVALID_FILE_OR_EXTRACTION,
+    )
+    from src.exceptions import ExtractionError, InvalidFileException
 
     from .file_service import extract_text_from_file
 
@@ -62,34 +74,12 @@ async def parse_cv_with_openai(
         # Date normalization removed - only YYYY-MM-DD format is supported
 
         return parsed_data
+    except (InvalidFileException, ExtractionError):
+        return {"error": ERROR_INVALID_FILE_OR_EXTRACTION, **EMPTY_PARSED_CV_PAYLOAD}
     except Exception as e:
         # Return error structure if parsing fails
-        error_message = (
-            str(e)
-            if str(e)
-            else "Unable to extract text from PDF. Please upload a PDF with selectable text."
-        )
-        return {
-            "error": error_message,
-            "personal_info": {
-                "full_name": "Your Name",
-                "email": "your.email@example.com",
-                "phone": "",
-                "location": "Your Location",
-                "linkedin_url": "",
-                "website_url": "",
-                "github_url": "",
-            },
-            "custom_sections": [],
-            "work_experience": [],
-            "education": [],
-            "skills": {"technical": [], "soft": [], "languages": []},
-            "certifications": [],
-            "projects": [],
-            "awards": [],
-            "publications": [],
-            "volunteer_experience": [],
-        }
+        error_message = str(e) if str(e) else ERROR_EXTRACT_PDF
+        return {"error": error_message, **EMPTY_PARSED_CV_PAYLOAD}
 
 
 def _add_uuids_to_cv_data(cv_data: dict) -> dict:
@@ -148,50 +138,5 @@ def _normalize_present_strings(cv_data: dict) -> dict:
                         and end_date.strip().lower() == "present"
                     ):
                         item["end_date"] = None
-
-    return cv_data
-
-
-def _normalize_dates_in_cv_data(cv_data: dict) -> dict:
-    """Normalize dates to include default day when missing (e.g., '2023-11' → '2023-11-01')"""
-    import re
-
-    def normalize_date_value(date_str):
-        """Normalize a single date string"""
-        if not date_str or not isinstance(date_str, str):
-            return date_str
-
-        date_str = date_str.strip()
-
-        # Pattern: YYYY-MM (missing day) → YYYY-MM-01
-        if re.match(r"^\d{4}-\d{1,2}$", date_str):
-            return f"{date_str}-01"
-
-        # Pattern: YYYY (missing month and day) → YYYY-01-01
-        if re.match(r"^\d{4}$", date_str):
-            return f"{date_str}-01-01"
-
-        # Return as-is if already complete or unrecognized format
-        return date_str
-
-    # Define sections that contain date fields
-    date_sections = {
-        "work_experience": ["start_date", "end_date"],
-        "education": ["start_date", "end_date"],
-        "projects": ["start_date", "end_date"],
-        "certifications": ["date", "issue_date", "expiry_date"],
-        "awards": ["date"],
-        "publications": ["date", "publication_date"],
-        "volunteer_experience": ["start_date", "end_date"],
-    }
-
-    # Normalize dates in array sections
-    for section, date_fields in date_sections.items():
-        if section in cv_data and isinstance(cv_data[section], list):
-            for item in cv_data[section]:
-                if isinstance(item, dict):
-                    for date_field in date_fields:
-                        if date_field in item:
-                            item[date_field] = normalize_date_value(item[date_field])
 
     return cv_data

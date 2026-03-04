@@ -33,10 +33,7 @@ from sqlalchemy.orm import Session, joinedload
 from src.models.cv import CV
 from src.models.cv_job_description import CVJobDescription
 from src.models.job_description import JobDescription
-
-
-def get_cv_owned_by(db: Session, cv_id: str, user_id: str) -> Optional[CV]:
-    return db.query(CV).filter(CV.id == cv_id, CV.user_id == user_id).first()
+from src.services.cv_service import get_cv_by_id
 
 
 def create_job_description_for_cv(
@@ -286,7 +283,7 @@ def create_job_description_for_user_with_cvs(
     if cv_ids:
         for cv_id in cv_ids:
             # Verify CV belongs to user before creating association
-            cv = get_cv_owned_by(db, cv_id, user_id)
+            cv = get_cv_by_id(db, cv_id, user_id)
             if cv:
                 association = CVJobDescription(cv_id=cv_id, job_description_id=jd.id)
                 db.add(association)
@@ -315,7 +312,7 @@ def associate_jd_with_cv(db: Session, jd_id: str, cv_id: str, user_id: str) -> b
         return False
 
     # Verify CV belongs to user
-    cv = get_cv_owned_by(db, cv_id, user_id)
+    cv = get_cv_by_id(db, cv_id, user_id)
     if not cv:
         return False
 
@@ -357,7 +354,7 @@ def disassociate_jd_from_cv(db: Session, jd_id: str, cv_id: str, user_id: str) -
         return False
 
     # Verify CV belongs to user
-    cv = get_cv_owned_by(db, cv_id, user_id)
+    cv = get_cv_by_id(db, cv_id, user_id)
     if not cv:
         return False
 
@@ -420,7 +417,7 @@ def get_job_descriptions_for_cv_with_associations(
         List of job descriptions associated with the CV
     """
     # Verify CV belongs to user
-    cv = get_cv_owned_by(db, cv_id, user_id)
+    cv = get_cv_by_id(db, cv_id, user_id)
     if not cv:
         return []
 

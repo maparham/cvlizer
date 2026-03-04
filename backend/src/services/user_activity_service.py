@@ -59,7 +59,7 @@ def log_user_activity(
             session_id=session_id,
             ip_address=ip_address,
             user_agent=user_agent,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
         db.add(activity)
@@ -213,7 +213,7 @@ def create_user_session(
             browser_info=browser_info,
             ip_address=ip_address,
             user_agent=user_agent,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
         )
 
         db.add(session)
@@ -337,7 +337,7 @@ def cleanup_old_activities(db: Session, days_to_keep: int = 90) -> int:
         int: Number of activities deleted
     """
     try:
-        cutoff_date = datetime.utcnow() - timedelta(days=days_to_keep)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
 
         # Delete old activities
         deleted_count = (
@@ -420,7 +420,7 @@ def get_activity_stats(db: Session) -> Dict[str, Any]:
         )
 
         # Recent activity count (last 24 hours)
-        recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+        recent_cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
         recent_activities = (
             db.query(UserActivity).filter(UserActivity.timestamp >= recent_cutoff).count()
         )

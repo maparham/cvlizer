@@ -3,17 +3,16 @@ Database configuration and initialization module.
 
 This module handles database connection setup, table creation,
 and imports all models to ensure proper relationship definitions.
+
+When run as a script, run from the backend directory with PYTHONPATH set
+(e.g. python -m src.database or PYTHONPATH=. python src/database.py).
 """
 
 import logging
 import os
-import sys
 
 from dotenv import load_dotenv
 from sqlalchemy import text
-
-# Ensure src is importable
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from src.models.ai_draft import AIDraft  # noqa: F401, E402
 from src.models.ai_enhancement import AIEnhancement  # noqa: F401, E402

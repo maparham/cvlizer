@@ -17,7 +17,7 @@ from src.models.ai_draft import AIDraft
 from src.models.base import get_db
 from src.models.user import User
 from src.schemas.cv_schemas import WhyGoodFitMetadataSchema, WhyGoodFitSchema
-from src.services.job_description_service import get_cv_owned_by
+from src.services.cv_service import get_cv_by_id
 
 from .models import (
     DraftApproveRequest,
@@ -45,7 +45,7 @@ async def get_draft_status(
         )
 
     # Verify CV belongs to user
-    cv = get_cv_owned_by(db, draft.cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, draft.cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found"
@@ -74,7 +74,7 @@ async def get_cv_drafts(
 ):
     """Get all drafts for a CV"""
     # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
 
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
@@ -111,7 +111,7 @@ async def approve_why_good_fit_draft(
 ):
     """Approve a why_good_fit draft and move it to parsed_data"""
     # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
 
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
@@ -334,7 +334,7 @@ async def delete_why_good_fit_draft(
 ):
     """Delete the why_good_fit draft for a CV"""
     # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
 
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")

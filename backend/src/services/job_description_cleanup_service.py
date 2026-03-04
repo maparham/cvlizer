@@ -7,7 +7,7 @@ and fix job descriptions that are stuck in the parsing state.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Tuple
 
 from sqlalchemy.orm import Session
@@ -30,7 +30,7 @@ def find_stuck_job_descriptions(
     Returns:
         List of stuck JobDescription records
     """
-    cutoff_time = datetime.utcnow() - timedelta(minutes=timeout_minutes)
+    cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=timeout_minutes)
 
     stuck_jds = (
         db.query(JobDescription)
@@ -148,7 +148,10 @@ def get_parsing_statistics(db: Session) -> dict:
                 "cv_id": jd.cv_id,
                 "source_url": jd.source_url,
                 "created_at": jd.created_at.isoformat(),
-                "age_minutes": (datetime.utcnow() - jd.created_at).total_seconds() / 60,
+                "age_minutes": (
+                    datetime.now(timezone.utc) - jd.created_at
+                ).total_seconds()
+                / 60,
             }
             for jd in stuck_jds
         ],

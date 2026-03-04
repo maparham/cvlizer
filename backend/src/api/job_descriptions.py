@@ -6,8 +6,11 @@ job descriptions associated with CVs for AI-powered optimization.
 """
 
 import asyncio
+import logging
 import uuid
 from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
@@ -20,6 +23,7 @@ from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
 from src.models.job_description import JobDescription
 from src.models.user import User
+from src.services.cv_service import get_cv_by_id
 from src.services.job_description_service import (
     associate_jd_with_cv,
     create_job_description_for_cv,
@@ -28,7 +32,6 @@ from src.services.job_description_service import (
     delete_job_description_owned_by,
     disassociate_jd_from_cv,
     get_cv_ids_for_job_description,
-    get_cv_owned_by,
     get_job_description_by_id,
     get_job_descriptions_for_cv_with_associations,
     hide_job_description_owned_by,
@@ -39,6 +42,7 @@ from src.services.job_description_service import (
 )
 from src.services.url_parsing_service import _is_search_results_page, parse_job_url
 from src.utils.background_tasks import run_task_in_background
+from src.utils.task_logging import make_task_exception_logger
 
 router = APIRouter(prefix="/api", tags=["job-descriptions"])
 limiter = create_combined_limiter()
@@ -237,7 +241,7 @@ async def create_job_description(
 ):
     """Add a job description for a specific CV"""
     # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
@@ -273,7 +277,7 @@ async def get_job_descriptions(
     This allows job descriptions to be shared across all CVs.
     """
     # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
@@ -348,7 +352,7 @@ async def parse_job_description_url(
 ):
     """Parse a job description from a URL using background processing"""
     # Verify CV exists and belongs to user
-    cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
 
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
@@ -387,9 +391,15 @@ async def parse_job_description_url(
     # Add small delay to ensure DB commit before starting background task
     await asyncio.sleep(0.1)
 
-    # Start background parsing task
-    asyncio.create_task(
+    task = asyncio.create_task(
         parse_job_url_background(str(jd.id), parse_request.url, str(current_user.id))
+    )
+    task.add_done_callback(
+        make_task_exception_logger(
+            logger,
+            "Job description URL parsing task failed: jd_id=%s, error=%s",
+            str(jd.id),
+        )
     )
 
     return JobDescriptionParseResponse(
@@ -518,7 +528,7 @@ async def parse_user_job_description_url(
         from src.models.cv_job_description import CVJobDescription
 
         # Verify CV ownership
-        cv = get_cv_owned_by(db, cv_id, str(current_user.id))
+        cv = get_cv_by_id(db, cv_id, str(current_user.id))
         if not cv:
             db.rollback()
             raise HTTPException(
@@ -534,9 +544,15 @@ async def parse_user_job_description_url(
     # Add small delay to ensure DB commit before starting background task
     await asyncio.sleep(0.1)
 
-    # Start background parsing task
-    asyncio.create_task(
+    task = asyncio.create_task(
         parse_job_url_background(str(jd.id), parse_request.url, str(current_user.id))
+    )
+    task.add_done_callback(
+        make_task_exception_logger(
+            logger,
+            "Job description URL parsing task failed: jd_id=%s, error=%s",
+            str(jd.id),
+        )
     )
 
     return JobDescriptionParseResponse(

@@ -236,7 +236,13 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     logger.warning(
         f"HTTP {exc.status_code} {request.method} {request.url.path}: {exc.detail}"
     )
-    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
+    # For simple errors, detail is a string; for validation/compound errors,
+    # detail may be a dict with keys like "detail" and optional "errors".
+    if isinstance(exc.detail, dict):
+        content = exc.detail
+    else:
+        content = {"message": exc.detail}
+    return JSONResponse(status_code=exc.status_code, content=content)
 
 
 @app.exception_handler(Exception)

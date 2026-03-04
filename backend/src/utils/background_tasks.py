@@ -18,6 +18,11 @@ from src.models.base import SessionLocal
 # Thread pool for background tasks (configurable via environment)
 executor = ThreadPoolExecutor(max_workers=max(1, BackgroundTaskConfig.WORKERS))
 
+# Dedicated executor for CV parsing (avoids blocking other background work)
+cv_parse_executor = ThreadPoolExecutor(
+    max_workers=max(1, BackgroundTaskConfig.CV_PARSE_WORKERS)
+)
+
 
 async def run_task_in_background(
     task_id: str, task_type: str, processing_function: Callable, *args, **kwargs

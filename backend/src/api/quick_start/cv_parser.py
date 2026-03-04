@@ -11,6 +11,8 @@ from typing import Any, Dict
 
 from fastapi import Request, UploadFile
 
+from src.constants import ERROR_INVALID_FILE_OR_EXTRACTION
+from src.exceptions import ExtractionError, InvalidFileException
 from src.services.cv_preview_service import (
     generate_cv_preview_image,
     is_preview_generation_available,
@@ -49,6 +51,10 @@ async def parse_cv_for_preview(
 
         try:
             text_content = extract_text_from_file(file_content, cv_file.content_type)
+        except (InvalidFileException, ExtractionError):
+            logger.warning("Invalid file or extraction failed for quick start preview")
+            cv_preview["error"] = ERROR_INVALID_FILE_OR_EXTRACTION
+            return cv_preview
         except Exception as e:
             logger.warning(f"Text extraction failed, proceeding with AI: {e}")
             text_content = ""

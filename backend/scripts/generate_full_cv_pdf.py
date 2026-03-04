@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import argparse
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from src.services.latex_export_service import (
@@ -291,7 +291,7 @@ def main() -> None:
 
     parsed = _build_full_parsed_cv()
     title = parsed.get("personal_info", {}).get("full_name", "CV") or "CV"
-    date_str = datetime.utcnow().strftime("%Y%m%d")
+    date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
     base_name = f"{title.replace(' ', '_')}_{date_str}"
 
     # Generate LaTeX

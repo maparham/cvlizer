@@ -9,7 +9,7 @@ import re
 import logging
 from typing import Dict, Any, List
 
-from .ai_suggestions_service import _get_summary_custom_section
+from .cv_section_utils import get_summary_custom_section
 
 from src.schemas.cv_quality_schemas import (  # type: ignore
     WritingCorrectionSchema,
@@ -182,7 +182,7 @@ def apply_writing_correction(
         item_key = "education"
     elif base_section == "professional_summary":
         # Summary = first custom section with title "Professional Summary" or first custom section; apply to that item
-        summary_section = _get_summary_custom_section(cv_data)
+        summary_section = get_summary_custom_section(cv_data)
         if summary_section and correction.field_corrections:
             section_id = summary_section.get("id")
             for i, s in enumerate(custom_sections):

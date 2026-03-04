@@ -12,7 +12,7 @@ import pytest
 import json
 from fastapi.testclient import TestClient
 from unittest.mock import patch, Mock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from main import app
 from src.models.ai_usage_log import AIUsageLog
@@ -306,7 +306,7 @@ class TestCostAnalysisWithCachedTokens:
     ):
         """Test that monthly cost report shows savings from cached tokens."""
         # Arrange: Create logs for the month
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Week 1: No caching (baseline)
         for i in range(10):

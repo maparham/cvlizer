@@ -5,6 +5,7 @@ This module handles CV file upload and background parsing.
 """
 
 import asyncio
+import logging
 from copy import deepcopy
 from typing import List
 
@@ -19,9 +20,12 @@ from src.models.user import User
 from src.services.cv_service import create_cv
 from src.services.file_service import save_uploaded_file, validate_file
 
+from src.utils.task_logging import make_task_exception_logger
+
 from .common import limiter, parse_cv_background
 from .models import CVResponse
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -65,9 +69,17 @@ async def upload_cv(
         # Start background parsing
         # Small delay to ensure CV is committed to database
         await asyncio.sleep(0.1)
-        asyncio.create_task(
+
+        task = asyncio.create_task(
             parse_cv_background(
                 str(cv.id), file_content, file.filename, file.content_type
+            )
+        )
+        task.add_done_callback(
+            make_task_exception_logger(
+                logger,
+                "CV background parsing task failed: cv_id=%s, error=%s",
+                str(cv.id),
             )
         )
 

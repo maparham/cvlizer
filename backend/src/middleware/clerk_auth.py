@@ -450,7 +450,7 @@ def fix_placeholder_emails(db: Session) -> int:
                                 )
                                 if not existing_user:
                                     user.email = new_email
-                                    user.updated_at = datetime.utcnow()
+                                    user.updated_at = datetime.now(timezone.utc)
                                     updated_count += 1
                                     logger.info(
                                         f"Updated user {user.clerk_id} email from {user.email} to {new_email}"
