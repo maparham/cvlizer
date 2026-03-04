@@ -42,6 +42,16 @@ interface UIState {
   // AI Tools sub-tab index (0/1/2) per CV
   cvEditorAIToolsSubTab: Record<string, number>;
 
+  // Dashboard CV list: view mode and table sort
+  cvViewMode: "card" | "list";
+  cvTableSortBy: string;
+  cvTableSortDirection: "asc" | "desc";
+
+  // Dashboard Job Applications list: view mode and table sort
+  jobViewMode: "card" | "list";
+  jobTableSortBy: string;
+  jobTableSortDirection: "asc" | "desc";
+
   // Actions
   setTheme: (theme: "light" | "dark" | "auto") => void;
   toggleSidebar: () => void;
@@ -60,6 +70,14 @@ interface UIState {
   getCVEditorTab: (cvId: string) => number;
   setCVEditorAIToolsSubTab: (cvId: string, subTabIndex: number) => void;
   getCVEditorAIToolsSubTab: (cvId: string) => number;
+
+  // Dashboard CV list view and table sort
+  setCVViewMode: (mode: "card" | "list") => void;
+  setCVTableSort: (sortBy: string, sortDirection: "asc" | "desc") => void;
+
+  // Dashboard Job Applications list view and table sort
+  setJobViewMode: (mode: "card" | "list") => void;
+  setJobTableSort: (sortBy: string, sortDirection: "asc" | "desc") => void;
 
   // Reset function for testing
   reset: () => void;
@@ -80,6 +98,12 @@ export const useUIStore = create<UIState>()(
         },
         cvEditorTabs: {},
         cvEditorAIToolsSubTab: {},
+        cvViewMode: "card",
+        cvTableSortBy: "created_at",
+        cvTableSortDirection: "desc",
+        jobViewMode: "card",
+        jobTableSortBy: "created_at",
+        jobTableSortDirection: "desc",
 
         // Theme actions
         setTheme: (theme) => {
@@ -159,6 +183,14 @@ export const useUIStore = create<UIState>()(
           return state.cvEditorAIToolsSubTab[cvId] ?? 0;
         },
 
+        setCVViewMode: (mode) => set({ cvViewMode: mode }),
+        setCVTableSort: (sortBy, sortDirection) =>
+          set({ cvTableSortBy: sortBy, cvTableSortDirection: sortDirection }),
+
+        setJobViewMode: (mode) => set({ jobViewMode: mode }),
+        setJobTableSort: (sortBy, sortDirection) =>
+          set({ jobTableSortBy: sortBy, jobTableSortDirection: sortDirection }),
+
         // Reset function for testing
         reset: () => {
           set({
@@ -172,17 +204,29 @@ export const useUIStore = create<UIState>()(
             },
             cvEditorTabs: {},
             cvEditorAIToolsSubTab: {},
+            cvViewMode: "card",
+            cvTableSortBy: "created_at",
+            cvTableSortDirection: "desc",
+            jobViewMode: "card",
+            jobTableSortBy: "created_at",
+            jobTableSortDirection: "desc",
           });
         },
       }),
       {
         name: "ui-store",
-        // Only persist theme and sidebar state
+        // Only persist theme, sidebar, and dashboard CV list preferences
         partialize: (state) => ({
           theme: state.theme,
           sidebarOpen: state.sidebarOpen,
           cvEditorTabs: state.cvEditorTabs,
           cvEditorAIToolsSubTab: state.cvEditorAIToolsSubTab,
+          cvViewMode: state.cvViewMode,
+          cvTableSortBy: state.cvTableSortBy,
+          cvTableSortDirection: state.cvTableSortDirection,
+          jobViewMode: state.jobViewMode,
+          jobTableSortBy: state.jobTableSortBy,
+          jobTableSortDirection: state.jobTableSortDirection,
         }),
       },
     ),

@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useCVStore } from "../stores/cv";
 import { useAIStore } from "../stores/ai";
+import { useUIStore } from "../stores/uiStore";
 import { useNotifications } from "../packages/notifications";
 import { cvApi } from "../services/api";
 import { useActivityLogger } from "../hooks/useActivityLogger";
@@ -39,6 +40,8 @@ import {
   DashboardDialogs,
   EmptyState,
 } from "../components/dashboard";
+import type { CVTableSortColumn } from "../components/dashboard/CVsTable";
+import type { JobTableSortColumn } from "../components/dashboard/JobApplicationsTable";
 
 const Dashboard: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -77,6 +80,55 @@ const Dashboard: React.FC = () => {
 
   // Get job descriptions for the applications card
   const { jobDescriptions, loadJobDescriptions } = useAIStore();
+
+  // Dashboard CV list view and table sort (persisted)
+  const cvViewMode = useUIStore((s) => s.cvViewMode);
+  const setCVViewMode = useUIStore((s) => s.setCVViewMode);
+  const cvTableSortBy = useUIStore((s) => s.cvTableSortBy);
+  const cvTableSortDirection = useUIStore((s) => s.cvTableSortDirection);
+  const setCVTableSort = useUIStore((s) => s.setCVTableSort);
+
+  // Dashboard Job Applications list view and table sort (persisted)
+  const jobViewMode = useUIStore((s) => s.jobViewMode);
+  const setJobViewMode = useUIStore((s) => s.setJobViewMode);
+  const jobTableSortBy = useUIStore((s) => s.jobTableSortBy);
+  const jobTableSortDirection = useUIStore((s) => s.jobTableSortDirection);
+  const setJobTableSort = useUIStore((s) => s.setJobTableSort);
+
+  const validSortColumns: CVTableSortColumn[] = [
+    "original_filename",
+    "status",
+    "file_type",
+    "created_at",
+    "updated_at",
+    "sections",
+  ];
+  const tableSortBy: CVTableSortColumn = validSortColumns.includes(
+    cvTableSortBy as CVTableSortColumn
+  )
+    ? (cvTableSortBy as CVTableSortColumn)
+    : "created_at";
+  const tableSortDirection = cvTableSortDirection;
+  const handleTableSortChange = (sortBy: CVTableSortColumn, sortDirection: "asc" | "desc") => {
+    setCVTableSort(sortBy, sortDirection);
+  };
+
+  const validJobSortColumns: JobTableSortColumn[] = [
+    "title",
+    "company",
+    "location",
+    "status",
+    "created_at",
+    "application_date",
+  ];
+  const jobTableSortByValid: JobTableSortColumn = validJobSortColumns.includes(
+    jobTableSortBy as JobTableSortColumn
+  )
+    ? (jobTableSortBy as JobTableSortColumn)
+    : "created_at";
+  const handleJobTableSortChange = (sortBy: JobTableSortColumn, sortDirection: "asc" | "desc") => {
+    setJobTableSort(sortBy, sortDirection);
+  };
 
   // Track CV to open editor after parsing completes
   const [pendingEditorCvId, setPendingEditorCvId] = useState<string | null>(null);
@@ -325,9 +377,21 @@ const Dashboard: React.FC = () => {
             cvs={cvs}
             statusCounts={cvStatusCounts}
             creating={creating}
+            viewMode={cvViewMode}
+            onViewModeChange={setCVViewMode}
+            tableSortBy={tableSortBy}
+            tableSortDirection={tableSortDirection}
+            onTableSortChange={handleTableSortChange}
             onCreateFromTemplate={() => setTemplateSelectorOpen(true)}
             onStartFromScratch={handleStartFromScratch}
             onUpload={() => setUploadOpen(true)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onTitleSave={handleTitleSave}
+            onDownload={handleDownload}
+            onFileSelected={handlePlaceholderFileSelected}
+            onValidationError={(error) => showError("Invalid file", error)}
           >
             {cvs.map((cv) => (
               <CVCard
@@ -351,6 +415,11 @@ const Dashboard: React.FC = () => {
         <JobApplicationsCard
           jobDescriptions={jobDescriptions}
           statusCounts={jdStatusCounts}
+          viewMode={jobViewMode}
+          onViewModeChange={setJobViewMode}
+          tableSortBy={jobTableSortByValid}
+          tableSortDirection={jobTableSortDirection}
+          onTableSortChange={handleJobTableSortChange}
           onEditJobDescription={handleEditJobDescription}
           onUpdateStatus={handleUpdateStatus}
           onAddJob={() => setJobDescriptionModalOpen(true)}

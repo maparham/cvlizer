@@ -2,18 +2,18 @@
  * CVs Card Component
  *
  * This module displays the "My CVs" section on the Dashboard,
- * providing a card wrapper for the CV grid with status indicators and action buttons.
+ * providing a card wrapper for the CV grid or table with status indicators and action buttons.
  *
  * Key responsibilities:
  * - Display status chips showing ready/processing/errors counts
  * - Provide action buttons (From Template, Create Empty, Upload)
- * - Wrap CV grid with scrollable container
- * - Render children (CVCard components) in Grid layout
+ * - View toggle (card / list) with persisted preference
+ * - Wrap CV grid (card view) or sortable table (list view) in scrollable container
  *
  * Usage:
  * - Used in Dashboard component to display user's CV collection
- * - Accepts CV cards as children to render in Grid
- * - Connects to CV creation and management handlers
+ * - Card view: accepts CV cards as children in Grid
+ * - List view: renders CVsTable with cvs and handlers
  */
 
 import React from "react";
@@ -26,26 +26,61 @@ import {
   Chip,
   Box,
   Grid,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
 } from "@mui/material";
-import { Add as AddIcon, Upload as UploadIcon, Article as TemplateIcon } from "@mui/icons-material";
+import {
+  Add as AddIcon,
+  Upload as UploadIcon,
+  Article as TemplateIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
+} from "@mui/icons-material";
 import { CV } from "../../types";
+import CVsTable, { CVTableSortColumn } from "./CVsTable";
 
 interface CVsCardProps {
   cvs: CV[];
   statusCounts: { parsed: number; parsing: number; error: number };
   creating: boolean;
+  viewMode: "card" | "list";
+  onViewModeChange: (mode: "card" | "list") => void;
+  tableSortBy: CVTableSortColumn;
+  tableSortDirection: "asc" | "desc";
+  onTableSortChange: (sortBy: CVTableSortColumn, sortDirection: "asc" | "desc") => void;
   onCreateFromTemplate: () => void;
   onStartFromScratch: () => void;
   onUpload: () => void;
+  onEdit: (cvId: string) => void;
+  onDelete: (cv: CV) => void;
+  onDuplicate: (cv: CV) => void;
+  onTitleSave: (cv: CV, newTitle: string) => Promise<void>;
+  onDownload: (cv: CV) => void;
+  onFileSelected: (file: File) => void;
+  onValidationError?: (error: string) => void;
   children: React.ReactNode;
 }
 
 const CVsCard: React.FC<CVsCardProps> = ({
+  cvs,
   statusCounts,
   creating,
+  viewMode,
+  onViewModeChange,
+  tableSortBy,
+  tableSortDirection,
+  onTableSortChange,
   onCreateFromTemplate,
   onStartFromScratch,
   onUpload,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onTitleSave,
+  onDownload,
+  onFileSelected,
+  onValidationError,
   children,
 }) => {
   return (
@@ -124,7 +159,27 @@ const CVsCard: React.FC<CVsCardProps> = ({
               />
             )}
           </Stack>
-          <Stack direction="row" spacing={2} sx={{ flex: 1, justifyContent: "flex-end" }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, justifyContent: "flex-end" }}>
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(_e, mode: "card" | "list" | null) => {
+                if (mode !== null) onViewModeChange(mode);
+              }}
+              size="small"
+              sx={{ mr: 1 }}
+            >
+              <Tooltip title="Card view">
+                <ToggleButton value="card" aria-label="Card view">
+                  <ViewModuleIcon fontSize="small" />
+                </ToggleButton>
+              </Tooltip>
+              <Tooltip title="List view">
+                <ToggleButton value="list" aria-label="List view">
+                  <ViewListIcon fontSize="small" />
+                </ToggleButton>
+              </Tooltip>
+            </ToggleButtonGroup>
             <Button
               variant="outlined"
               startIcon={<TemplateIcon />}
@@ -188,7 +243,7 @@ const CVsCard: React.FC<CVsCardProps> = ({
           </Stack>
         </Stack>
 
-        {/* Full CV Cards Grid - Scrollable */}
+        {/* CV content: grid (card view) or table (list view) */}
         <Box
           sx={{
             maxHeight: 600,
@@ -211,9 +266,25 @@ const CVsCard: React.FC<CVsCardProps> = ({
             },
           }}
         >
-          <Grid container spacing={3}>
-            {children}
-          </Grid>
+          {viewMode === "card" ? (
+            <Grid container spacing={3}>
+              {children}
+            </Grid>
+          ) : (
+            <CVsTable
+              cvs={cvs}
+              sortBy={tableSortBy}
+              sortDirection={tableSortDirection}
+              onSortChange={onTableSortChange}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onDuplicate={onDuplicate}
+              onTitleSave={onTitleSave}
+              onDownload={onDownload}
+              onFileSelected={onFileSelected}
+              onValidationError={onValidationError}
+            />
+          )}
         </Box>
       </CardContent>
     </Card>
