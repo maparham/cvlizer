@@ -196,7 +196,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
           {headerActionsLeft}
         </Box>
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-          {onHide !== undefined && onDelete !== undefined && (
+          {onHide !== undefined && onDelete !== undefined && !isEditing && (
             <>
               <Tooltip
                 title={

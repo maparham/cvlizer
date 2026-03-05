@@ -463,7 +463,7 @@ function IndividualItemSection<T>({
     <ErrorBoundary fallback={CompactErrorFallback}>
       <BaseSection
         title={title}
-        isEditing={isEditing}
+        isEditing={isEditing || editingItemIndex !== null}
         onEdit={onEdit}
         onClose={onClose}
         onSave={undefined}
