@@ -6,7 +6,8 @@
  */
 
 import React from 'react';
-import { Box, Button, CircularProgress } from '@mui/material';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 
 /** Shared button styling for all AI action buttons in CVQualityPanel (primary, prominent). */
@@ -61,9 +62,32 @@ export const StepButton: React.FC<StepButtonProps> = ({
     }
     onClick={onClick}
     disabled={disabled}
-    sx={{
-      ...SHARED_STEP_BUTTON_SX,
-      ...extraSx,
+    sx={(theme) => {
+      const primaryMain = theme.palette.primary.main;
+      return {
+        ...SHARED_STEP_BUTTON_SX,
+        // Keyframes defined unconditionally so the animation name is always in the stylesheet
+        // and reliably applies when animation is set during loading (avoids CSS-in-JS ordering issues).
+        '@keyframes loadingPulse': {
+          '0%, 100%': {
+            boxShadow: 'none',
+            opacity: 1,
+          },
+          '50%': {
+            boxShadow: `0 0 20px 4px ${alpha(primaryMain, 0.4)}`,
+            opacity: 0.92,
+          },
+        },
+        ...(isLoading && {
+          animation: 'loadingPulse 2s ease-in-out infinite',
+          '&.Mui-disabled': {
+            backgroundColor: 'primary.main',
+            color: 'primary.contrastText',
+            opacity: 1,
+          },
+        }),
+        ...extraSx,
+      };
     }}
   >
     <Box
@@ -71,11 +95,29 @@ export const StepButton: React.FC<StepButtonProps> = ({
       sx={{
         minWidth: `${minWidthCh}ch`,
         minHeight: '1.5em',
-        display: 'inline-block',
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
         textAlign: 'left',
       }}
     >
-      {isLoading ? loadingText || '\u00A0' : label}
+      {isLoading ? (
+        <>
+          <Typography component="span" variant="body2" fontWeight={600}>
+            {label}
+          </Typography>
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ opacity: 0.9, fontWeight: 500, mt: 0.25 }}
+          >
+            {loadingText || '\u00A0'}
+          </Typography>
+        </>
+      ) : (
+        label
+      )}
     </Box>
   </Button>
 );
