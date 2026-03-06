@@ -16,12 +16,32 @@ import { useOverwriteConfirm, OVERWRITE_MSG } from '../../../../contexts/Overwri
 import { WritingCorrection } from '../../../../types/ai';
 import { CV, WorkExperience, Education } from '../../../../types/cv';
 
+/** Turn API error detail (string, array of validation errors, or object) into a string for display. */
+function apiDetailToString(detail: unknown): string {
+  if (detail == null) return '';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0];
+    if (first && typeof first === 'object' && 'msg' in first) {
+      const msg = (first as { msg?: string }).msg;
+      if (msg != null && msg !== '') return String(msg);
+      return '';
+    }
+  }
+  if (typeof detail === 'object' && detail !== null && 'msg' in detail) {
+    const msg = (detail as { msg?: string }).msg;
+    if (msg != null && msg !== '') return String(msg);
+    return '';
+  }
+  return JSON.stringify(detail);
+}
+
 export interface SectionHandlers<T extends { id: string; description?: string }> {
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => Promise<void>;
   handleDiscardSuggestion: (itemId: string) => void;
   handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => Promise<void>;
   handleDismissQualitySuggestion: (itemId: string) => void;
-  handleApplyWritingCorrection: (correction: WritingCorrection) => Promise<void>;
+  handleApplyWritingCorrection: (correction: WritingCorrection, draftIndex: number) => Promise<void>;
   handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => Promise<void>;
 }
 
@@ -176,9 +196,9 @@ export function useSectionHandlers<T extends { id: string; description?: string 
     [dismissSuggestionItem, dismissQualitySuggestion]
   );
 
-  // Handle applying a writing correction
+  // Handle applying a writing correction (draftIndex is 0-based).
   const handleApplyWritingCorrection = useCallback(
-    async (correction: WritingCorrection) => {
+    async (correction: WritingCorrection, draftIndex: number) => {
       if (!cvId || !currentAnalysisId) {
         showError("Cannot apply correction: CV ID or analysis ID missing");
         return;
@@ -191,11 +211,12 @@ export function useSectionHandlers<T extends { id: string; description?: string 
       }
 
       try {
-        // Apply correction via backend
+        // Apply correction via backend (selected draft index).
         const updatedCV = await aiService.applyWritingCorrection(
           cvId,
           currentAnalysisId,
-          correction.item_id
+          correction.item_id,
+          draftIndex
         );
 
         // Update CV store
@@ -212,8 +233,11 @@ export function useSectionHandlers<T extends { id: string; description?: string 
         clearEdited(cvId, fieldKey);
         showSuccess("Writing correction applied successfully");
       } catch (error: any) {
-        const errorMessage = error?.response?.data?.detail || error?.message || "Failed to apply writing correction";
-        showError(errorMessage);
+        const message =
+          apiDetailToString(error?.response?.data?.detail) ||
+          error?.message ||
+          'Failed to apply writing correction';
+        showError('Writing correction failed', message);
       }
     },
     [cvId, currentAnalysisId, setCurrentCV, updateCVInList, onUpdate, onSave, dismissWritingCorrection, showSuccess, showError, getSectionDataFromCV, getFieldKey, isEdited, clearEdited, overwriteConfirm]
@@ -351,11 +375,11 @@ export function useSectionHandlers<T extends { id: string; description?: string 
           }
         }
       } catch (error: any) {
-        const errorMessage =
-          error?.response?.data?.detail ||
+        const message =
+          apiDetailToString(error?.response?.data?.detail) ||
           error?.message ||
-          "Failed to apply corrections";
-        showError(errorMessage);
+          'Failed to apply corrections';
+        showError('Apply corrections failed', message);
       }
     },
     [

@@ -16,6 +16,7 @@ from src.models.cv_quality_analysis import CVQualityAnalysis
 from src.schemas.cv_quality_schemas import (
     CVQualityAnalysisResponseSchemaV2,
     FieldCorrectionSchema,
+    IssueSchema,
     WritingCorrectionSchema,
 )
 from src.services.cv_service import get_cv_by_id, update_cv
@@ -314,6 +315,46 @@ def find_correction_by_id(
             detail=f"Writing correction with item_id '{correction_id}' not found in analysis",
         )
     return _synthetic_correction_from_issues(issues_with_html, correction_id)
+
+
+def find_correction_by_id_and_draft_index(
+    quality_data: CVQualityAnalysisResponseSchemaV2,
+    correction_id: str,
+    draft_index: int,
+) -> WritingCorrectionSchema:
+    """
+    Find the writing correction for the given item and draft index.
+    Uses field_draft_histories when available so the selected draft is applied.
+    """
+    resolved_id = _normalize_correction_id(correction_id)
+    issues_matching = [
+        i
+        for i in quality_data.issues
+        if i.html_diff
+        and (
+            (i.item_id or "") == correction_id
+            or (i.item_id or "") == resolved_id
+            or (i.field_path or "").startswith(correction_id + ".")
+            or (i.field_path or "") == correction_id
+        )
+    ]
+    if not issues_matching:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Writing correction with item_id '{correction_id}' not found in analysis",
+        )
+    field_path = issues_matching[0].field_path or ""
+    key = get_draft_history_key(field_path, resolved_id)
+    histories = quality_data.field_draft_histories or {}
+    draft_list = histories.get(key)
+    if draft_list is None:
+        raw_list = get_initial_draft_list_for_key(
+            quality_data.model_dump(by_alias=True), key, resolved_id
+        )
+        draft_list = [IssueSchema(**d) for d in raw_list]
+    if 0 <= draft_index < len(draft_list):
+        return _synthetic_correction_from_issues([draft_list[draft_index]], correction_id)
+    return find_correction_by_id(quality_data, correction_id)
 
 
 def find_corrections_batch(

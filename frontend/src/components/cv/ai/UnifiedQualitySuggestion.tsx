@@ -35,7 +35,7 @@ interface UnifiedQualitySuggestionProps {
   writingCorrections?: WritingCorrection[];
   onApplyQuality?: (suggested: string) => void | Promise<void>;
   onDismissQuality?: () => void | Promise<void>;
-  onApplyWritingCorrection?: (correction: WritingCorrection) => void | Promise<void>;
+  onApplyWritingCorrection?: (correction: WritingCorrection, draftIndex: number) => void | Promise<void>;
   onDismissWritingCorrection?: (correction: WritingCorrection) => void | Promise<void>;
   onApplyAll?: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void | Promise<void>;
 }
@@ -97,7 +97,7 @@ export const UnifiedQualitySuggestion: React.FC<UnifiedQualitySuggestionProps> =
     if (writingCorrections.length > 0 && onApplyWritingCorrection) {
       await Promise.all(
         writingCorrections.map((correction) =>
-          onApplyWritingCorrection(correction)
+          onApplyWritingCorrection(correction, 0)
         )
       );
     }

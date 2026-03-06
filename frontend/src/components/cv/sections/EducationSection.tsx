@@ -371,7 +371,7 @@ const EducationDisplay: React.FC<{
   handleDiscardSuggestion: (itemId: string) => void;
   handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => void | Promise<void>;
   handleDismissQualitySuggestion: (itemId: string) => void;
-  handleApplyWritingCorrection: (correction: WritingCorrection) => void | Promise<void>;
+  handleApplyWritingCorrection: (correction: WritingCorrection, draftIndex: number) => void | Promise<void>;
   handleDismissWritingCorrection: (correction: WritingCorrection) => void;
   handleApplyAll: (itemId: string, qualitySuggested?: string, writingCorrections?: WritingCorrection[]) => void | Promise<void>;
   cvId?: string;
@@ -408,7 +408,7 @@ const EducationDisplay: React.FC<{
       { fieldName: 'start_date' },
       { fieldName: 'end_date' },
     ],
-    (_, parent) => handleApplyWritingCorrection(parent),
+    (_, parent) => handleApplyWritingCorrection(parent, 0),
     handleDismissWritingCorrection
   );
 
@@ -553,7 +553,7 @@ const EducationDisplay: React.FC<{
                 );
                 return descFieldCorrection?.reasoning;
               })()}
-              onApply={() => handleApplyWritingCorrection(descriptionCorrection.correction)}
+              onApply={() => handleApplyWritingCorrection(descriptionCorrection.correction, (draftHistory.draftIndex ?? 1) - 1)}
               onDismiss={() => handleDismissWritingCorrection(descriptionCorrection.correction)}
               onRetry={draftHistory.onRetry}
               onBack={draftHistory.onBack}

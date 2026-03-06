@@ -302,6 +302,9 @@ class WritingCorrectionApplyRequest(BaseModel):
 
     cv_id: str = Field(description="CV ID to apply correction to")
     analysis_id: str = Field(description="Quality analysis ID containing the correction")
+    draft_index: int = Field(
+        description="0-based index into the draft list for this item (0 when only one draft)"
+    )
 
 
 class WritingCorrectionBatchApplyRequest(BaseModel):

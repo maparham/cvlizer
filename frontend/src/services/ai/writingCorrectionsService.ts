@@ -10,6 +10,7 @@ import { CV } from '../../types/cv';
 export interface ApplyWritingCorrectionRequest {
   cv_id: string;
   analysis_id: string;
+  draft_index: number;
 }
 
 export interface ApplyWritingCorrectionsBatchRequest {
@@ -20,12 +21,13 @@ export interface ApplyWritingCorrectionsBatchRequest {
 
 export const writingCorrectionsService = {
   /**
-   * Apply a single writing correction to CV data
+   * Apply a single writing correction to CV data (0-based draft index).
    */
   async applyWritingCorrection(
     cvId: string,
     analysisId: string,
-    correctionId: string
+    correctionId: string,
+    draftIndex: number
   ): Promise<CV> {
     try {
       const response = await api.post<CV>(
@@ -33,6 +35,7 @@ export const writingCorrectionsService = {
         {
           cv_id: cvId,
           analysis_id: analysisId,
+          draft_index: draftIndex,
         } as ApplyWritingCorrectionRequest
       );
       return response.data;

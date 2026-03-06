@@ -22,7 +22,7 @@ from .quality_analysis_helpers import (
     validate_and_load_cv,
     load_quality_analysis,
     parse_quality_data,
-    find_correction_by_id,
+    find_correction_by_id_and_draft_index,
     find_corrections_batch,
     update_cv_with_corrections,
     update_analysis_after_applying_corrections,
@@ -44,7 +44,7 @@ async def apply_writing_correction_endpoint(
 
     Args:
         correction_id: The correction ID (item_id from the correction)
-        request: Request containing cv_id and analysis_id
+        request: Request containing cv_id, analysis_id, and draft_index
         user: Authenticated user
         db: Database session
 
@@ -60,8 +60,10 @@ async def apply_writing_correction_endpoint(
     analysis = load_quality_analysis(db, request.analysis_id, request.cv_id, user.id)
     quality_data = parse_quality_data(analysis)
 
-    # Find the correction
-    correction = find_correction_by_id(quality_data, correction_id)
+    # Find the correction for the selected draft index
+    correction = find_correction_by_id_and_draft_index(
+        quality_data, correction_id, request.draft_index
+    )
 
     # Apply the correction
     try:
