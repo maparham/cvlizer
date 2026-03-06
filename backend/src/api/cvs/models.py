@@ -24,6 +24,7 @@ class CVResponse(BaseModel):
     updated_at: str
     is_imported: bool
     has_been_edited: bool
+    section_count: Optional[int] = None  # Set by backend on all CV responses
 
     class Config:
         from_attributes = True

@@ -727,13 +727,14 @@ def _format_personal_info_header(pi: Dict[str, Any]) -> str:
     if description:
         desc_latex = _markdown_to_latex(description)
         description_center_align = pi.get("description_center_align", False)
+        # Use {\itshape ...} so paragraph breaks (\par) in desc_latex are valid
         if description_center_align:
             description_block = (
                 f"\\vspace{{0.5\\baselineskip}}\n"
                 f"\\begin{{center}}\n"
                 f"\\begin{{minipage}}{{0.9\\textwidth}}\n"
                 f"\\centering\n"
-                f"\\textit{{{desc_latex}}}\n"
+                f"{{\\itshape {desc_latex}}}\n"
                 f"\\end{{minipage}}\n"
                 f"\\end{{center}}\n"
             )
@@ -741,7 +742,7 @@ def _format_personal_info_header(pi: Dict[str, Any]) -> str:
             description_block = (
                 f"\\vspace{{0.5\\baselineskip}}\n"
                 f"\\begin{{minipage}}{{0.9\\textwidth}}\n"
-                f"\\textit{{{desc_latex}}}\n"
+                f"{{\\itshape {desc_latex}}}\n"
                 f"\\end{{minipage}}\n"
             )
 

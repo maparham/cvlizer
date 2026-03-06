@@ -144,7 +144,7 @@ const CVCard: React.FC<CVCardProps> = ({
           {/* File Type and Metadata */}
           <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
             {isUploadedCV(cv) && (
-              <Tooltip title="Download original file">
+              <Tooltip title="Download PDF">
                 <Chip
                   label={cv.file_type.split("/")[1].toUpperCase()}
                   size="small"

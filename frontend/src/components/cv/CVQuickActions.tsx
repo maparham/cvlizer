@@ -2,7 +2,7 @@
  * CV Quick Actions Component
  *
  * This module provides a context menu and 3-dot menu for CV cards with quick actions
- * including Duplicate, Rename, Delete, and Download. It supports both
+ * including Duplicate, Rename, Delete, and Export PDF. It supports both
  * right-click context menus and 3-dot button menus for better accessibility.
  *
  * Key responsibilities:
@@ -135,7 +135,7 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
       testId: `rename-cv-button-${cv.id}`,
     },
     {
-      label: "Download",
+      label: "Export PDF",
       icon: <DownloadIcon />,
       onClick: handleDownload,
       disabled: isError || downloading,

@@ -30,6 +30,8 @@ export interface CV {
   parsed_data?: CVData;
   is_imported: boolean;
   has_been_edited: boolean;
+  /** Section count (visible sections with data); set by API on all CV responses */
+  section_count?: number;
 }
 
 // CV Data Structure

@@ -45,7 +45,7 @@ import { useUIStore, clampAIToolsSubTab } from "../../../stores/uiStore";
 
 interface SuggestionsSidebarProps {
   cvData?: CVData;
-  cvId?: string;
+  cvId: string;
   /** When true, hide the CVQualityPanel (e.g. when it is rendered elsewhere above). */
   hideCVQualityPanel?: boolean;
 }
@@ -62,15 +62,50 @@ const EXPANDED_SECTION_KEYS = [
   "quality-professionalSummary",
 ];
 
+function getEmptyStateMessage(params: {
+  nothingToShowOnThisTab: boolean;
+  subTabIndex: number;
+  allSuggestions: unknown;
+  totalCount: number;
+  qualityAnalysis: { correction_mode?: string } | null;
+  qualityTotalCount: number;
+}): string {
+  const {
+    nothingToShowOnThisTab,
+    subTabIndex,
+    allSuggestions,
+    totalCount,
+    qualityAnalysis,
+    qualityTotalCount,
+  } = params;
+  if (!nothingToShowOnThisTab) return "";
+  if (subTabIndex === 2) {
+    if (allSuggestions != null && totalCount === 0) {
+      return "No suggestions for this job.";
+    }
+    return "No suggestions available. Add a job description and generate suggestions to get started.";
+  }
+  const ranProofread = qualityAnalysis?.correction_mode === "proofread";
+  const ranCoaching = qualityAnalysis?.correction_mode === "coaching";
+  const ranThisTab =
+    (subTabIndex === 0 && ranProofread) || (subTabIndex === 1 && ranCoaching);
+  if (ranThisTab && qualityTotalCount === 0) {
+    return "No issues found.";
+  }
+  return "No suggestions available. Analyze your CV quality to get started.";
+}
+
 const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({
   cvData,
   cvId,
   hideCVQualityPanel = false,
 }) => {
   const { allSuggestions } = useAISuggestionsStore();
-  const aiToolsSubTab = useUIStore((s) => s.getCVEditorAIToolsSubTab(cvId ?? ""));
+  const aiToolsSubTab = useUIStore((s) => s.getCVEditorAIToolsSubTab(cvId));
   const subTabIndex = clampAIToolsSubTab(aiToolsSubTab);
-  const { qualityAnalysis } = useCVQualityStore();
+  const qualityAnalysis = useCVQualityStore((s) =>
+    s.currentCvId === cvId ? s.qualityAnalysis : null
+  );
 
   // Ref to store timeout IDs for cleanup
   const timeoutRefs = useRef<Array<ReturnType<typeof setTimeout>>>([]);
@@ -130,12 +165,25 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({
   );
 
   const hasJobSuggestions = totalCount > 0;
-  const showQualityList = qualityTotalCount > 0;
+  const tabMatchesQualityAnalysis =
+    (subTabIndex === 0 && qualityAnalysis?.correction_mode === "proofread") ||
+    (subTabIndex === 1 && qualityAnalysis?.correction_mode === "coaching");
+  const showQualityList =
+    qualityTotalCount > 0 && tabMatchesQualityAnalysis;
   const showJobFitList = subTabIndex === 2 && hasJobSuggestions;
   const showQualityListForTab =
     (subTabIndex === 0 || subTabIndex === 1) && showQualityList;
   const nothingToShowOnThisTab =
     subTabIndex === 2 ? !hasJobSuggestions : !showQualityList;
+
+  const emptyStateMessage = getEmptyStateMessage({
+    nothingToShowOnThisTab,
+    subTabIndex,
+    allSuggestions,
+    totalCount,
+    qualityAnalysis,
+    qualityTotalCount,
+  });
 
   if (nothingToShowOnThisTab) {
     return (
@@ -147,7 +195,7 @@ const SuggestionsSidebar: React.FC<SuggestionsSidebarProps> = ({
           </>
         )}
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
-          No suggestions available. Analyze your CV quality or add a job description to get started.
+          {emptyStateMessage}
         </Typography>
       </Box>
     );

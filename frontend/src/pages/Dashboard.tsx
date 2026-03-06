@@ -322,7 +322,8 @@ const Dashboard: React.FC = () => {
 
   const handleDownload = async (cv: CV) => {
     try {
-      await cvApi.downloadCV(cv.id, cv.original_filename);
+      await cvApi.exportCVAsPDF(cv.id);
+      showSuccess("Success", "CV exported successfully");
     } catch (e) {
       showError("Download failed", "Unable to download CV file");
     }

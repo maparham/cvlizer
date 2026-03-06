@@ -24,6 +24,7 @@ from src.utils.task_logging import make_task_exception_logger
 
 from .common import limiter, parse_cv_background
 from .models import CVResponse
+from .responses import build_cv_response
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -83,7 +84,7 @@ async def upload_cv(
             )
         )
 
-        return CVResponse(**cv.to_response_dict())
+        return build_cv_response(cv)
 
     except Exception as e:
         raise HTTPException(

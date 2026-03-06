@@ -45,6 +45,7 @@ from src.services.template_loader import get_template_metadata
 from src.utils.validation import CVDataValidator
 
 from .models import CVListResponse, CVResponse, CVTitleUpdateRequest
+from .responses import build_cv_response
 
 router = APIRouter()
 
@@ -65,10 +66,8 @@ async def list_cvs(
     total = db.query(CV).filter(CV.user_id == current_user.id).count()
     pages = (total + limit - 1) // limit
 
-    # Don't include parsed_data in list view for performance
-    cv_responses = [
-        CVResponse(**cv.to_response_dict(include_parsed_data=False)) for cv in cvs
-    ]
+    # Omit parsed_data from response for payload size; we still load it to compute section_count
+    cv_responses = [build_cv_response(cv, include_parsed_data=False) for cv in cvs]
 
     return CVListResponse(
         cvs=cv_responses, total=total, page=page, limit=limit, pages=pages
@@ -98,7 +97,7 @@ async def get_cv(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    return CVResponse(**cv.to_response_dict())
+    return build_cv_response(cv)
 
 
 @router.put("/{cv_id}", response_model=CVResponse)
@@ -134,7 +133,7 @@ async def update_cv_data(
                 status_code=status.HTTP_404_NOT_FOUND, detail="CV not found"
             )
 
-        return CVResponse(**cv.to_response_dict())
+        return build_cv_response(cv)
 
     except ValidationError as e:
         raise HTTPException(
@@ -169,7 +168,7 @@ async def create_blank_cv(
             is_parsed=True,  # Already "parsed" since we're creating from scratch
         )
 
-        return CVResponse(**cv.to_response_dict())
+        return build_cv_response(cv)
 
     except Exception as e:
         raise HTTPException(
@@ -197,7 +196,7 @@ async def update_cv_title(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error updating CV title",
         )
-    return CVResponse(**cv.to_response_dict())
+    return build_cv_response(cv)
 
 
 @router.get("/{cv_id}/download")
@@ -254,7 +253,7 @@ async def duplicate_cv(
         )
     if not new_cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
-    return CVResponse(**new_cv.to_response_dict())
+    return build_cv_response(new_cv)
 
 
 @router.delete("/{cv_id}")
