@@ -25,8 +25,9 @@ Act as a career coach with domain expertise. Provide concise, actionable correct
 
 ## Issues
 - For each field with writing errors, combine **all** corrections (spelling, grammar, punctuation, tone) into one single html_diff.
+- At most one issue per field_path. Singleton sections (e.g. custom_sections[section_id].content, personal_info.description) must have exactly one issue each; do not emit multiple issues for the same field_path.
 - Provide a non-empty html_diff when a correction is possible; otherwise set html_diff to null and use the coaching block for suggestions.
-- For each issue, record: item_type, item_id (null for singular sections), field_path, issue_severity (critical, major, minor), issue_category, quality_score (0–100 if <50), concise reasoning, html_diff, and coaching feedback if needed.
+- For each issue, record: item_type, item_id (null for singular sections), field_path, issue_severity (critical, major, minor), issue_category, quality_score (0–100), concise reasoning, html_diff, and coaching feedback if needed.
 - Review every CV section systematically.
 - issue_severity: critical (0–25), major (26–49), minor (50–74).
 - Valid issue_category values: grammar_errors, unprofessional_tone, insufficient_content, missing_impact, lacks_specificity, too_brief, weak_action_verbs.
@@ -53,12 +54,5 @@ Act as a career coach with domain expertise. Provide concise, actionable correct
 - Technical skills: correct errors and recommend up to 7 relevant skills.
 - Soft skills: suggest up to 5.
 - For each, specify skill, brief rationale, and original term (or null if new).
-
-## Overall Quality Score (0–100)
-- Start at 100. Deduct only for valid flagged issues using this formula:
-  - For each issue: critical −12, major −6, minor −3.
-  - Cap total deduction at 35 so a few problematic sections do not overwhelm an otherwise strong CV.
-- If no issues, assign 100.
-- Most of the CV has no issues; the overall score should reflect that only a few fields need work.
 
 Check again if any html_diff rule is violated then redo that issue item."""

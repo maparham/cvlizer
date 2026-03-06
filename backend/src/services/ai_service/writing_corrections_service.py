@@ -257,9 +257,6 @@ def apply_writing_correction(
     # Apply field_corrections if present (includes description field)
     if correction.field_corrections:
         item, skipped_fields = apply_field_corrections(item, correction.field_corrections)
-        logger.debug(
-            f"Applied {len(correction.field_corrections)} field corrections to {base_section} item {item_id}"
-        )
         if skipped_fields:
             logger.warning(
                 f"Skipped {len(skipped_fields)} fields for item {item_id}: {skipped_fields}"

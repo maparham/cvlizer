@@ -11,6 +11,7 @@ from typing import Any, Dict, Type
 
 from pydantic import BaseModel
 
+from src.config import AIConfig
 from src.schemas.ai_response_schemas import CVParsingResponseSchema
 
 # Shared $defs used by both full coaching and single-issue schemas.
@@ -106,7 +107,7 @@ SHARED_ISSUE_DEFS: Dict[str, Any] = {
                 "type": ["integer", "null"],
                 "minimum": 0,
                 "maximum": 100,
-                "description": "Score for this specific field. Must be <50 to be included as issue. Must align with severity: critical=0-25, major=26-49, minor=50-74.",
+                "description": "Score for this specific field (0–100). Align with severity: critical=0-25, major=26-49, minor=50-74.",
             },
             "reasoning": {
                 "type": "string",
@@ -116,7 +117,7 @@ SHARED_ISSUE_DEFS: Dict[str, Any] = {
             },
             "html_diff": {
                 "type": ["string", "null"],
-                "maxLength": 2000,
+                "maxLength": AIConfig.CV_QUALITY_HTML_DIFF_MAX_LENGTH,
                 "description": "HTML diff showing corrections using <del> and <ins>.",
             },
             "coaching": {"$ref": "#/$defs/Coaching"},
@@ -192,12 +193,12 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 100,
-                "description": "Start at 100; deduct per issue by severity (critical −12, major −6, minor −3); cap total deduction at 35. No flagged issues = 100.",
+                "description": "Start at 100; deduct per issue by severity (critical −12, major −6, minor −3); cap each section's deduction at 15; total deduction = sum of capped section deductions. No issues = 100.",
             },
             "issues": {
                 "type": "array",
                 "items": {"$ref": "#/$defs/Issue"},
-                "description": "Only sections/fields with quality_score <50. Issues with html_diff set must have quality_score null or >=50. Use item_type 'custom' and item_id = custom section id for custom/summary sections. Empty array if CV has no issues.",
+                "description": "At most one issue per (field_path, item_id). Combine all corrections for a field into one issue. Use item_type 'custom' and item_id = custom section id for custom/summary sections. Empty array if CV has no issues.",
             },
             "skills": {"$ref": "#/$defs/Skills"},
         },

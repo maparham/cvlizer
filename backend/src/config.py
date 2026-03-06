@@ -134,6 +134,11 @@ class AIConfig:
         os.getenv("CV_QUALITY_MAX_DRAFT_HISTORY", "3")
     )
 
+    # Max length (characters) for html_diff in CV quality issues. Long sections (e.g. cover letters) need a higher limit.
+    CV_QUALITY_HTML_DIFF_MAX_LENGTH: int = int(
+        os.getenv("CV_QUALITY_HTML_DIFF_MAX_LENGTH", "10000")
+    )
+
     # Temperature for all AI reasoning calls (where AI_REASONING_EFFORT is used).
     # Lower values (e.g. 0) give more consistent output.
     AI_REASONING_TEMPERATURE: float = float(os.getenv("AI_REASONING_TEMPERATURE", "0"))
