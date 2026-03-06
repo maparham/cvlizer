@@ -69,6 +69,21 @@ def _tex_escape(text: str | None) -> str:
     return "".join(out)
 
 
+def _href_url_safe(url: str) -> str:
+    """Escape only TeX-special chars that would break \\href{url}{...} parsing.
+
+    Used for URL content in \\href{} so links with _, #, &, etc. still work.
+    Escapes \\ { } % to prevent injection; leaves URL-valid chars intact.
+    """
+    if not url:
+        return ""
+    replacements = {"\\": r"\textbackslash{}", "{": r"\{", "}": r"\}", "%": r"\%"}
+    out = []
+    for ch in url:
+        out.append(replacements.get(ch, ch))
+    return "".join(out)
+
+
 # Template-to-macro mapping for LaTeX section commands.
 # Only maps supported templates; deprecated templates and their aliases have been removed.
 # Each template name must have a corresponding .tex file with matching macro definition.
@@ -76,6 +91,7 @@ SECTION_CMD_BY_TEMPLATE: Dict[str, str] = {
     "standard": "standardsection",
     "traditional": "traditionalsection",
     "spacious": "spacioussection",
+    "jake": "jakesection",
 }
 
 
@@ -146,13 +162,12 @@ def _format_projects(projects: List[Dict[str, Any]]) -> str:
     for proj in projects:
         name = _tex_escape(proj.get("name", ""))
         desc = proj.get("description", "")
-        url = _tex_escape(proj.get("url", ""))
+        url_raw = proj.get("url", "")
         tech = proj.get("technologies", []) or []
 
         line1 = f"\\textcolor{{boldgray}}{{\\textbf{{{name}}}}}"
-        if url:
-            # Escape URL in href target to avoid TeX compilation errors
-            line1 += f" (\\href{{{url}}}{{{url}}})"
+        if url_raw:
+            line1 += f" (\\href{{{_href_url_safe(url_raw)}}}{{{_tex_escape(url_raw)}}})"
 
         block_lines = [line1]
         if desc:
@@ -202,7 +217,7 @@ def _format_publications(pubs: List[Dict[str, Any]]) -> str:
         authors = _tex_escape(pub.get("authors", ""))
         journal = _tex_escape(pub.get("journal", ""))
         date = _tex_escape(pub.get("date", ""))
-        url = _tex_escape(pub.get("url", ""))
+        url_raw = pub.get("url", "")
 
         line1 = f"\\textbf{{{title}}}"
         block_lines = [line1]
@@ -210,8 +225,10 @@ def _format_publications(pubs: List[Dict[str, Any]]) -> str:
         block_lines.append(f"{journal}")
         if date:
             block_lines.append(f"\\textit{{Published: {date}}}")
-        if url:
-            block_lines.append(f"\\href{{{url}}}{{{url}}}")
+        if url_raw:
+            block_lines.append(
+                f"\\href{{{_href_url_safe(url_raw)}}}{{{_tex_escape(url_raw)}}}"
+            )
 
         blocks.append("\\\\\n".join(block_lines))
     return "\n\n".join(blocks)
@@ -286,24 +303,24 @@ def _format_contact_info(pi: Dict[str, Any]) -> str:
 
     if email:
         contact_lines.append(
-            f"\\faEnvelope\\, \\href{{mailto:{_tex_escape(email)}}}{{{_tex_escape(email)}}}"
+            f"\\faEnvelope\\, \\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
         )
     if phone:
         contact_lines.append(f"\\faPhone\\, {phone}")
     if location:
         contact_lines.append(f"\\faMapMarker*\\, {location}")
     if linkedin:
-        linkedin_url = _tex_escape(ensure_protocol(linkedin))
+        linkedin_url = _href_url_safe(ensure_protocol(linkedin))
         contact_lines.append(
             f"\\faLinkedin\\, \\href{{{linkedin_url}}}{{{_tex_escape(linkedin)}}}"
         )
     if website:
-        website_url = _tex_escape(ensure_protocol(website))
+        website_url = _href_url_safe(ensure_protocol(website))
         contact_lines.append(
             f"\\faGlobe\\, \\href{{{website_url}}}{{{_tex_escape(website)}}}"
         )
     if github:
-        github_url = _tex_escape(ensure_protocol(github))
+        github_url = _href_url_safe(ensure_protocol(github))
         contact_lines.append(
             f"\\faGithub\\, \\href{{{github_url}}}{{{_tex_escape(github)}}}"
         )
@@ -361,8 +378,8 @@ def _markdown_to_latex(text: str) -> str:
             # Links: [text](url) -> \href{url}{text}
             def _link_repl_heading(m: "re.Match[str]") -> str:
                 label = _tex_escape(m.group(1))
-                url_escaped = _tex_escape(m.group(2))  # escape URL target too
-                return f"\\href{{{url_escaped}}}{{{label}}}"
+                url_safe = _href_url_safe(m.group(2))
+                return f"\\href{{{url_safe}}}{{{label}}}"
 
             processed = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", _link_repl_heading, processed)
             # Bold
@@ -401,8 +418,8 @@ def _markdown_to_latex(text: str) -> str:
             # Links inside list items
             def _link_repl_list(m: "re.Match[str]") -> str:
                 label = _tex_escape(m.group(1))
-                url_escaped = _tex_escape(m.group(2))
-                return f"\\href{{{url_escaped}}}{{{label}}}"
+                url_safe = _href_url_safe(m.group(2))
+                return f"\\href{{{url_safe}}}{{{label}}}"
 
             item_text = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", _link_repl_list, item_text)
 
@@ -432,8 +449,8 @@ def _markdown_to_latex(text: str) -> str:
                 # Links: [text](url) -> \href{url}{text}
                 def _link_repl_para(m: "re.Match[str]") -> str:
                     label = _tex_escape(m.group(1))
-                    url_escaped = _tex_escape(m.group(2))
-                    return f"\\href{{{url_escaped}}}{{{label}}}"
+                    url_safe = _href_url_safe(m.group(2))
+                    return f"\\href{{{url_safe}}}{{{label}}}"
 
                 processed = re.sub(
                     r"\[([^\]]+)\]\(([^\)]+)\)", _link_repl_para, processed
@@ -623,11 +640,11 @@ def _format_skills(skills: Dict[str, Any]) -> str:
     return "\\\\[0.3ex]\n".join(blocks)
 
 
-def _format_personal_info_header(pi: Dict[str, Any]) -> str:
-    """Format personal info header with name/title and a 2-row contact grid.
+def _format_personal_info_header(pi: Dict[str, Any], template_name: str = "") -> str:
+    """Format personal info header with name/title and contact.
 
-    Contact items are arranged into two rows and as many left-aligned columns
-    as needed, using icons instead of text labels.
+    For template "jake": compact one-line contact (phone | email | links).
+    Otherwise: 2-row contact grid with Font Awesome icons.
     """
     full_name = pi.get("full_name", "")
     academic_title = pi.get("academic_title", "")
@@ -635,11 +652,15 @@ def _format_personal_info_header(pi: Dict[str, Any]) -> str:
     if not full_name:
         return ""
 
-    # Build contact items (icon + text), hyperlinks where relevant
     def ensure_protocol(url: str) -> str:
         if url and not url.startswith(("http://", "https://")):
             return f"https://{url}"
         return url
+
+    def contact_link(url: str, label: str) -> str:
+        """Build \\href with protocol and underlined escaped label (for jake template)."""
+        u = _href_url_safe(ensure_protocol(url))
+        return f"\\href{{{u}}}{{\\underline{{{_tex_escape(label)}}}}}"
 
     email = pi.get("email", "")
     phone = _tex_escape(pi.get("phone", ""))
@@ -648,6 +669,41 @@ def _format_personal_info_header(pi: Dict[str, Any]) -> str:
     website = pi.get("website_url", "")
     github = pi.get("github_url", "")
 
+    # Jake-style: compact one-line header, no icons (template does not load fontawesome)
+    if template_name == "jake":
+        name_line = (
+            f"\\textbf{{\\Huge \\scshape {_tex_escape(full_name)}}}"
+            if not academic_title
+            else (
+                f"\\textbf{{\\Huge \\scshape {_tex_escape(full_name)}}}\\\\\n"
+                f"\\normalsize{{\\textnormal{{{_tex_escape(academic_title)}}}}}"
+            )
+        )
+        contact_parts: list[str] = []
+        if phone:
+            contact_parts.append(phone)
+        if email:
+            contact_parts.append(
+                f"\\href{{mailto:{_href_url_safe(email)}}}{{\\underline{{{_tex_escape(email)}}}}}"
+            )
+        for url_val, label in [
+            (linkedin, linkedin),
+            (website, website),
+            (github, github),
+        ]:
+            if url_val:
+                contact_parts.append(contact_link(url_val, label))
+        contact_line = " $|$ ".join(contact_parts) if contact_parts else ""
+        if contact_line:
+            return (
+                f"\\begin{{center}}\n"
+                f"{name_line} \\\\ \\vspace{{1pt}}\n"
+                f"\\small {contact_line}\n"
+                f"\\end{{center}}\n"
+            )
+        return f"\\begin{{center}}\n{name_line}\n\\end{{center}}\n"
+
+    # Default: build contact items (icon + text), hyperlinks where relevant
     contact_items: list[str] = []
     # Use fixed-width boxes for icons to ensure perfect vertical alignment
     # All icons are placed in a 1.2em wide box, left-aligned
@@ -657,21 +713,21 @@ def _format_personal_info_header(pi: Dict[str, Any]) -> str:
     if phone:
         contact_items.append(f"\\makebox[1.2em][l]{{\\faPhone}}\\, {phone}")
     if linkedin:
-        lurl = ensure_protocol(linkedin)
+        lurl = _href_url_safe(ensure_protocol(linkedin))
         contact_items.append(
             f"\\makebox[1.2em][l]{{\\faLinkedin}}\\, \\href{{{lurl}}}{{{_tex_escape(linkedin)}}}"
         )
     if email:
         contact_items.append(
-            f"\\makebox[1.2em][l]{{\\faEnvelope}}\\, \\href{{mailto:{email}}}{{{_tex_escape(email)}}}"
+            f"\\makebox[1.2em][l]{{\\faEnvelope}}\\, \\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
         )
     if website:
-        wurl = ensure_protocol(website)
+        wurl = _href_url_safe(ensure_protocol(website))
         contact_items.append(
             f"\\makebox[1.2em][l]{{\\faGlobe}}\\, \\href{{{wurl}}}{{{_tex_escape(website)}}}"
         )
     if github:
-        gurl = ensure_protocol(github)
+        gurl = _href_url_safe(ensure_protocol(github))
         contact_items.append(
             f"\\makebox[1.2em][l]{{\\faGithub}}\\, \\href{{{gurl}}}{{{_tex_escape(github)}}}"
         )
@@ -812,7 +868,7 @@ def _generate_from_template(
     volunteer = parsed.get("volunteer_experience", []) if parsed else []
 
     # Format personal info header
-    personal_info_header = _format_personal_info_header(pi)
+    personal_info_header = _format_personal_info_header(pi, template_name)
 
     # Dedicated contact section removed in favor of inline header details
     contact_info_section = ""

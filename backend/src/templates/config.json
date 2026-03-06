@@ -3,18 +3,23 @@
   "templates": [
     {
       "name": "standard",
-      "displayName": "Standard",
-      "description": "Sans-serif font with generous spacing for a clean, contemporary look"
+      "displayName": "Modern",
+      "description": "Clean sans-serif styling for a modern professional look."
     },
     {
       "name": "traditional",
-      "displayName": "Traditional",
-      "description": "Serif font with moderate spacing for a classic academic appearance"
+      "displayName": "Classic Serif",
+      "description": "Traditional serif styling for a more classic, formal presentation."
     },
     {
       "name": "spacious",
-      "displayName": "Spacious",
-      "description": "Elegant Garamond font for formal, professional documents"
+      "displayName": "Elegant Serif",
+      "description": "Refined Garamond serif styling for a polished, elegant presentation."
+    },
+    {
+      "name": "jake",
+      "displayName": "ATS",
+      "description": "Compact single-column format optimized for applicant tracking systems."
     }
   ]
 }

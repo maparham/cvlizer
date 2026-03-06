@@ -7,7 +7,6 @@ This module handles PDF and LaTeX export functionality for CVs.
 import os
 import re
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -34,60 +33,64 @@ from .common import logger
 router = APIRouter()
 
 
-def _generate_safe_filename(cv) -> str:
+def _resolve_export_template(template: Optional[str]) -> str:
     """
-    Generate a safe filename from CV data.
-    Tries multiple sources for the name: personal_info.full_name, original_filename, etc.
-    Returns a sanitized filename safe for filesystem use.
+    Resolve to a valid template name for export.
+    Uses query param if valid, else default from config, else "standard" if available.
+    Raises HTTPException 503 if no template is available.
     """
-    personal_info = (cv.parsed_data or {}).get("personal_info") or {}
-    full_name = personal_info.get("full_name", "").strip()
+    if template and is_template_available(template):
+        return template
+    default = get_default_template()
+    if default and is_template_available(default):
+        return default
+    if is_template_available("standard"):
+        return "standard"
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="No export template available. Please configure defaultTemplate in templates config.",
+    )
 
-    # Check if personal_info exists but full_name is empty
-    if personal_info and not full_name:
-        # Try alternative field names
-        for field in ["name", "fullName", "fullname", "first_name", "last_name"]:
-            if field in personal_info and personal_info[field]:
-                full_name = str(personal_info[field]).strip()
-                break
 
-    # If full_name is empty, try to get a meaningful name from other sources
-    if not full_name:
-        # Try to get name from original filename if it's meaningful
-        original_stem = (
-            Path(cv.original_filename or "").stem if cv.original_filename else ""
-        )
-        if original_stem and original_stem.lower() not in [
-            "cv",
-            "resume",
-            "document",
-            "new cv",
-        ]:
-            full_name = original_stem
-        else:
-            # Try to extract name from CV title if it contains a name
-            cv_title = getattr(cv, "title", "") or cv.original_filename or ""
-            if cv_title and cv_title.lower() not in [
-                "cv",
-                "resume",
-                "document",
-                "new cv",
-            ]:
-                # Try to extract first word as potential name
-                first_word = cv_title.split()[0] if cv_title.split() else ""
-                if first_word and len(first_word) > 2:
-                    full_name = first_word
-                else:
-                    full_name = "CV"
-            else:
-                # Last resort - use a generic name
-                full_name = "CV"
+# Stem of original_filename is considered generic; use parsed full_name for filename.
+_GENERIC_TITLE_STEMS = ("cv", "resume", "document", "new cv")
 
-    # Sanitize the name
-    raw_name = full_name
-    safe_name = re.sub(r"[^A-Za-z0-9\-\s]+", " ", raw_name).strip()
-    safe_name = re.sub(r"[\s\-]+", "_", safe_name).strip("_") or "CV"
-    return safe_name
+
+def _cv_title_for_filename(cv) -> str:
+    """
+    Build a safe filename base from the CV's title (original_filename).
+    Uses the stem only (extension is never included). When the stem is generic
+    (e.g. resume, document), falls back to parsed personal_info.full_name so
+    exports get a meaningful name (e.g. Jane_Doe). When no meaningful name is
+    available, returns "CV".
+    """
+    raw = (cv.original_filename or "CV").strip()
+    stem = raw.rsplit(".", 1)[0].strip() if "." in raw else raw
+    stem_lower = stem.lower()
+
+    if stem_lower in _GENERIC_TITLE_STEMS:
+        personal_info = (cv.parsed_data or {}).get("personal_info") or {}
+        full_name = (personal_info.get("full_name") or "").strip()
+        if not full_name:
+            for field in ("name", "fullName", "fullname", "first_name", "last_name"):
+                if field in personal_info and personal_info[field]:
+                    full_name = str(personal_info[field]).strip()
+                    break
+        base = full_name if full_name else "CV"
+    else:
+        base = stem
+
+    with_underscores = base.replace(".", "_")
+    safe = re.sub(r"[^A-Za-z0-9_\-\s]+", " ", with_underscores).strip()
+    safe = re.sub(r"[\s\-]+", "_", safe).strip("_") or "CV"
+    return safe
+
+
+def _export_filename(cv, template_name: str, ext: str) -> str:
+    """Build export filename: title_base_YYYYMMDD_template.ext."""
+    base = _cv_title_for_filename(cv)
+    date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+    return f"{base}_{date_str}_{template_name}.{ext}"
 
 
 @router.get("/{cv_id}/export/pdf")
@@ -103,15 +106,10 @@ async def export_cv_pdf(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    # Log PDF export
-    template_name = (
-        template if (template and is_template_available(template)) else "default"
-    )
+    template_name = _resolve_export_template(template)
     logger.info(
         f"User {current_user.email} exporting CV {cv_id} ({cv.original_filename}) as PDF with template '{template_name}'"
     )
-
-    # Log user activity
     try:
         log_user_activity(
             db=db,
@@ -128,27 +126,20 @@ async def export_cv_pdf(
         )
     except Exception as e:
         logger.warning(f"Failed to log user activity for PDF export: {str(e)}")
+
     if not is_latex_available():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LaTeX toolchain (pdflatex) not available on server",
         )
     try:
-        # Use specified template or default (None = inline generation)
-        template_name = (
-            template if (template and is_template_available(template)) else None
-        )
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
             template_name=template_name,
         )
         pdf_bytes = compile_pdf_from_latex(tex_source)
-
-        # Generate safe filename
-        safe_name = _generate_safe_filename(cv)
-        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
-        filename = f"{safe_name}_{date_str}.pdf"
+        filename = _export_filename(cv, template_name, "pdf")
 
         headers = {
             "Content-Disposition": f'attachment; filename="{filename}"',
@@ -191,26 +182,14 @@ async def export_cv_latex(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    # Resolve template name; default to an available default template
     try:
-        # Always resolve to a concrete template name string
-        template_name: str
-        if template and is_template_available(template):
-            template_name = template
-        else:
-            template_name = get_default_template()
-
+        template_name = _resolve_export_template(template)
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
-            template_name=template_name,  # ensure a valid template is always passed
+            template_name=template_name,
         )
-
-        # Generate safe filename
-        safe_name = _generate_safe_filename(cv)
-        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
-        filename = f"{safe_name}_{date_str}.tex"
-
+        filename = _export_filename(cv, template_name, "tex")
         headers = {
             "Content-Disposition": f'attachment; filename="{filename}"',
             "Content-Type": "text/plain; charset=utf-8",
@@ -281,12 +260,10 @@ async def export_cv_pdf_public(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    # Log PDF export
+    default_template = _resolve_export_template(None)
     logger.info(
         f"User {local_user.email} exporting CV {cv_id} ({cv.original_filename}) as PDF via public endpoint"
     )
-
-    # Log user activity
     try:
         log_user_activity(
             db=db,
@@ -297,7 +274,7 @@ async def export_cv_pdf_public(
             details={
                 "cv_id": cv_id,
                 "cv_filename": cv.original_filename,
-                "template_name": "default",
+                "template_name": default_template,
                 "export_type": "pdf",
                 "endpoint_type": "public",
             },
@@ -312,20 +289,13 @@ async def export_cv_pdf_public(
         )
 
     try:
-        # Use default template for quick export
-        default_template = get_default_template()
-
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
             template_name=default_template,
         )
         pdf_bytes = compile_pdf_from_latex(tex_source)
-
-        # Generate safe filename
-        safe_name = _generate_safe_filename(cv)
-        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
-        filename = f"{safe_name}_{date_str}.pdf"
+        filename = _export_filename(cv, default_template, "pdf")
 
         headers = {
             "Content-Disposition": f'attachment; filename="{filename}"',
