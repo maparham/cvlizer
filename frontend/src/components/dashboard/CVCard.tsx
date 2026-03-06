@@ -338,7 +338,6 @@ const CVCard: React.FC<CVCardProps> = ({
               onDuplicate={onDuplicate}
               onRename={(cv, newTitle) => onTitleSave(cv, newTitle)}
               onDownload={onDownload}
-              onCreateSimilar={() => {}}
             />
           </Stack>
         </CardActions>

@@ -2,7 +2,7 @@
  * CV Quick Actions Component
  *
  * This module provides a context menu and 3-dot menu for CV cards with quick actions
- * including Duplicate, Rename, Delete, Download, and Create Similar. It supports both
+ * including Duplicate, Rename, Delete, and Download. It supports both
  * right-click context menus and 3-dot button menus for better accessibility.
  *
  * Key responsibilities:
@@ -34,7 +34,6 @@ import {
   ContentCopy as DuplicateIcon,
   Edit as RenameIcon,
   Download as DownloadIcon,
-  Create as CreateSimilarIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { CV } from "../../types";
@@ -47,10 +46,8 @@ export interface CVQuickActionsProps {
   onDuplicate: (_cv: CV) => void;
   onRename: (_cv: CV, _newName: string) => void;
   onDownload: (_cv: CV) => void;
-  onCreateSimilar: (_cv: CV) => void;
   duplicating?: boolean;
   downloading?: boolean;
-  creatingSimilar?: boolean;
 }
 
 const CVQuickActions: React.FC<CVQuickActionsProps> = ({
@@ -58,10 +55,8 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
   onDuplicate,
   onRename,
   onDownload,
-  onCreateSimilar,
   duplicating = false,
   downloading = false,
-  creatingSimilar = false,
 }) => {
   const { anchorEl, openMenu, closeMenu, isOpen } = useMenuState();
   const {
@@ -108,11 +103,6 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
     handleMenuClose();
   };
 
-  const handleCreateSimilar = () => {
-    onCreateSimilar(cv);
-    handleMenuClose();
-  };
-
   const handleRenameConfirm = () => {
     if (newName.trim() && newName !== cv.original_filename) {
       onRename(cv, newName.trim());
@@ -151,14 +141,6 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
       disabled: isError || downloading,
       loading: downloading,
       testId: `download-cv-button-${cv.id}`,
-    },
-    {
-      label: "Create Similar",
-      icon: <CreateSimilarIcon />,
-      onClick: handleCreateSimilar,
-      disabled: true, // TODO: Enable when create-similar is implemented in store/service
-      loading: creatingSimilar,
-      testId: `create-similar-cv-button-${cv.id}`,
     },
   ];
 
