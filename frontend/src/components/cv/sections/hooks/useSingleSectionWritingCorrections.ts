@@ -183,7 +183,8 @@ export function useSingleSectionWritingCorrections(
           const updatedCV = await aiService.applyWritingCorrection(
             cvId,
             currentAnalysisId,
-            correctionId
+            correctionId,
+            currentGenerationIndex
           );
           setCurrentCV(updatedCV);
           updateCVInList(updatedCV);
@@ -223,6 +224,7 @@ export function useSingleSectionWritingCorrections(
     [
       cvId,
       currentAnalysisId,
+      currentGenerationIndex,
       sectionKeys,
       getValueFromCV,
       formFieldName,
