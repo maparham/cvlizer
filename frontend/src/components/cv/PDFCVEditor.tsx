@@ -420,12 +420,10 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
             sx={{
               flex: 1,
               minWidth: 0,
-              ...(isMobile && {
-                minHeight: 0,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }),
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
             }}
           >
             <CVContentArea cvId={cvId} />
