@@ -7,8 +7,8 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-# Prod: use relative /api (same origin). Dev sets VITE_API_BASE_URL=http://localhost:8000 in .env.local
-ARG VITE_API_BASE_URL=
+# Prod: use relative /api (same origin) so admin and other API requests hit backend via nginx /api/ proxy
+ARG VITE_API_BASE_URL=/api
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 # Clerk key must be set at build time (Vite inlines VITE_* env into the bundle)
 ARG VITE_CLERK_PUBLISHABLE_KEY=

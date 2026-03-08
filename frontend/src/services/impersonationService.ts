@@ -72,7 +72,7 @@ class ImpersonationService {
   ): Promise<ImpersonationSession> {
     try {
       const response = await apiClient.post(
-        "/api/admin/impersonations/start",
+        "/admin/impersonations/start",
         request,
       );
       return response.data;
@@ -104,7 +104,7 @@ class ImpersonationService {
    */
   async endImpersonation(): Promise<void> {
     try {
-      await apiClient.post("/api/admin/impersonations/end");
+      await apiClient.post("/admin/impersonations/end");
     } catch (error: any) {
       if (error.response?.status === 404) {
         // Session not found - this is okay, might already be ended
@@ -124,7 +124,7 @@ class ImpersonationService {
    */
   async getImpersonationStatus(): Promise<ImpersonationStatus> {
     try {
-      const response = await apiClient.get("/api/auth/impersonation/status");
+      const response = await apiClient.get("/auth/impersonation/status");
       return response.data;
     } catch (error: any) {
       // Return inactive status on error to avoid breaking the UI
@@ -137,7 +137,7 @@ class ImpersonationService {
    */
   async getActiveSessions(limit = 100, offset = 0): Promise<ActiveSession[]> {
     try {
-      const response = await apiClient.get("/api/admin/impersonations/active", {
+      const response = await apiClient.get("/admin/impersonations/active", {
         params: { limit, offset },
       });
       return response.data;
@@ -157,7 +157,7 @@ class ImpersonationService {
    */
   async revokeSession(sessionId: string): Promise<void> {
     try {
-      await apiClient.post(`/api/admin/impersonations/revoke/${sessionId}`);
+      await apiClient.post(`/admin/impersonations/revoke/${sessionId}`);
     } catch (error: any) {
       if (error.response?.status === 404) {
         throw new ImpersonationError(

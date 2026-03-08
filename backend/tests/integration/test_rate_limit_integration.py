@@ -51,14 +51,14 @@ class TestRateLimitIntegration:
         # Admin endpoints require authentication, so we expect 403 errors
         # Rate limiting only applies after authentication passes
         for i in range(10):
-            response = client.get("/admin/users")
+            response = client.get("/api/admin/users")
             # Should get 403 for auth errors (rate limiting doesn't apply before auth)
             assert (
                 response.status_code == 403
             ), f"Request {i+1} failed with status {response.status_code}"
 
         # 11th request should still be 403 (auth error, not rate limited)
-        response = client.get("/admin/users")
+        response = client.get("/api/admin/users")
         assert (
             response.status_code == 403
         ), f"Expected 403 (auth required), got {response.status_code}: {response.text}"

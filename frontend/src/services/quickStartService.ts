@@ -58,7 +58,7 @@ export const submitQuickStartPreview = async (
 
   try {
     const response = await axios.post<QuickStartPreviewResponse>(
-      `${API_BASE_URL}/api/quick-start/preview`,
+      `${API_BASE_URL}/quick-start/preview`,
       formData,
       {
         headers: {
@@ -122,7 +122,7 @@ export const claimQuickStartFromSession = async (
 
   try {
     const response = await apiClient.post<QuickStartClaimResponse>(
-      `/api/quick-start/claim`,
+      `/quick-start/claim`,
       formData,
       {
         headers: {

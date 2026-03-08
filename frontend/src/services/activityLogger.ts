@@ -375,7 +375,7 @@ class ActivityLogger {
       // Use navigator.sendBeacon if available, otherwise fall back to regular flush
       if (navigator.sendBeacon) {
         const success = navigator.sendBeacon(
-          "/api/user-activities/batch",
+          "/user-activities/batch",
           blob,
         );
         if (success) {
@@ -436,7 +436,7 @@ class ActivityLogger {
       const { default: api } = await import("./api");
 
       // Send activities to backend
-      await api.post("/api/user-activities/batch", { activities });
+      await api.post("/user-activities/batch", { activities });
     } catch (error) {
       // Re-queue activities if sending failed
       this.activityQueue.unshift(...activities);

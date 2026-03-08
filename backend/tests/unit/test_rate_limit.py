@@ -242,7 +242,7 @@ class TestRateLimitIntegration:
         """Test rate limiting for unauthenticated admin requests."""
         # Test that we can make requests up to the limit
         for i in range(10):
-            response = client.get("/admin/users")
+            response = client.get("/api/admin/users")
             # Should get 403 for auth errors (not rate limited yet)
             assert (
                 response.status_code == 403
@@ -250,7 +250,7 @@ class TestRateLimitIntegration:
 
         # 11th request should still be 403 (auth error, not rate limited)
         # because admin endpoints require authentication before rate limiting applies
-        response = client.get("/admin/users")
+        response = client.get("/api/admin/users")
         assert (
             response.status_code == 403
         ), f"Expected 403 (auth required), got {response.status_code}: {response.text}"

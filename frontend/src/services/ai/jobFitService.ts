@@ -26,7 +26,7 @@ class JobFitService {
   async getDraftStatus(draftId: string): Promise<DraftResponse> {
     try {
       const response = await api.get<DraftResponse>(
-        `/api/drafts/${draftId}/status`,
+        `/drafts/${draftId}/status`,
       );
 
       return response.data;
@@ -59,7 +59,7 @@ class JobFitService {
    */
   async getCVDrafts(cvId: string): Promise<any[]> {
     try {
-      const response = await api.get(`/api/cvs/${cvId}/drafts`);
+      const response = await api.get(`/cvs/${cvId}/drafts`);
       return response.data.drafts || [];
     } catch (error: any) {
       const aiError: AIServiceError = {
@@ -76,7 +76,7 @@ class JobFitService {
    */
   async approveWhyGoodFitDraft(cvId: string, draftId: string): Promise<any> {
     try {
-      const response = await api.post(`/api/cvs/${cvId}/why_good_fit/approve`, {
+      const response = await api.post(`/cvs/${cvId}/why_good_fit/approve`, {
         draft_id: draftId,
       });
 
@@ -99,7 +99,7 @@ class JobFitService {
    */
   async deleteWhyGoodFitDraft(cvId: string): Promise<void> {
     try {
-      await api.delete(`/api/cvs/${cvId}/why_good_fit/draft`);
+      await api.delete(`/cvs/${cvId}/why_good_fit/draft`);
 
       // Clear cache for this CV since we've deleted content
       cacheManager.clearCacheForCV(cvId);

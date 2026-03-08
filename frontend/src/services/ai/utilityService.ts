@@ -64,7 +64,7 @@ class UtilityService {
   ): Promise<AllSuggestionsResponse> {
     try {
       const response = await api.post<AllSuggestionsResponse>(
-        `/api/cvs/${cvId}/ai-suggestions/generate`,
+        `/cvs/${cvId}/ai-suggestions/generate`,
         { job_description_id: jobDescriptionId },
       );
 

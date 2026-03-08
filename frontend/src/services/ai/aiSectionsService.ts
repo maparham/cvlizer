@@ -33,7 +33,7 @@ class AISectionsService {
   ): Promise<AISectionResponse> {
     try {
       const response = await api.post<AISectionResponse>(
-        `/api/cvs/${cvId}/generate-section`,
+        `/cvs/${cvId}/generate-section`,
         {
           job_description_id: jobDescriptionId,
           section_type: sectionType,
@@ -66,7 +66,7 @@ class AISectionsService {
 
     try {
       const response = await api.get<AISectionListResponse>(
-        `/api/cvs/${cvId}/ai-sections`,
+        `/cvs/${cvId}/ai-sections`,
       );
 
       cacheManager.setCachedData(cacheKey, response.data.ai_sections);
@@ -91,7 +91,7 @@ class AISectionsService {
   ): Promise<AIEnhancementCreateResponse> {
     try {
       const response = await api.post<AIEnhancementCreateResponse>(
-        `/api/cvs/${cvId}/ai-suggestions`,
+        `/cvs/${cvId}/ai-suggestions`,
         { job_description_id: jobDescriptionId },
       );
       return response.data;
@@ -113,7 +113,7 @@ class AISectionsService {
   ): Promise<AIEnhancementResponse> {
     try {
       const response = await api.get<AIEnhancementResponse>(
-        `/api/ai-enhancements/${enhancementId}/status`,
+        `/ai-enhancements/${enhancementId}/status`,
       );
 
       return response.data;
@@ -135,7 +135,7 @@ class AISectionsService {
   ): Promise<AIEnhancementResponse | null> {
     try {
       const response = await api.get<AIEnhancementResponse | null>(
-        `/api/cvs/${cvId}/ai-enhancements/latest`,
+        `/cvs/${cvId}/ai-enhancements/latest`,
       );
 
       // Backend returns null when no enhancement exists (expected case)
@@ -157,7 +157,7 @@ class AISectionsService {
     enhancementData: any,
   ): Promise<void> {
     try {
-      await api.put(`/api/ai-enhancements/${enhancementId}`, {
+      await api.put(`/ai-enhancements/${enhancementId}`, {
         enhancement_data: enhancementData,
       });
     } catch (error: any) {
@@ -180,7 +180,7 @@ class AISectionsService {
    */
   async deleteAIEnhancement(enhancementId: string): Promise<void> {
     try {
-      await api.delete(`/api/ai-enhancements/${enhancementId}`);
+      await api.delete(`/ai-enhancements/${enhancementId}`);
     } catch (error: any) {
       const aiError: AIServiceError = {
         error:
@@ -194,7 +194,7 @@ class AISectionsService {
 
   async deleteAllAIEnhancementsForCV(cvId: string): Promise<{ deleted_count: number }> {
     try {
-      const response = await api.delete(`/api/cvs/${cvId}/ai-enhancements/all`);
+      const response = await api.delete(`/cvs/${cvId}/ai-enhancements/all`);
       return response.data;
     } catch (error: any) {
       const aiError: AIServiceError = {

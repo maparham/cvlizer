@@ -30,7 +30,7 @@ class JobDescriptionService {
     try {
       const params = cvId ? { cv_id: cvId } : {};
       const response = await api.post<JobDescription>(
-        `/api/job-descriptions`,
+        `/job-descriptions`,
         request,
         { params },
       );
@@ -57,7 +57,7 @@ class JobDescriptionService {
     try {
       const params = cvId ? { cv_id: cvId } : {};
       const response = await api.post<any>(
-        `/api/job-descriptions/parse-url`,
+        `/job-descriptions/parse-url`,
         { url },
         { params },
       );
@@ -85,7 +85,7 @@ class JobDescriptionService {
   ): Promise<JobDescription> {
     try {
       const response = await api.get<JobDescription>(
-        `/api/job-descriptions/${jobDescriptionId}/status`,
+        `/job-descriptions/${jobDescriptionId}/status`,
       );
 
       return response.data;
@@ -113,7 +113,7 @@ class JobDescriptionService {
 
     try {
       const response = await api.get<{ job_descriptions: JobDescription[] }>(
-        `/api/job-descriptions`,
+        `/job-descriptions`,
       );
 
       cacheManager.setCachedData(cacheKey, response.data.job_descriptions);
@@ -137,7 +137,7 @@ class JobDescriptionService {
   ): Promise<JobDescription> {
     try {
       const response = await api.put<JobDescription>(
-        `/api/job-descriptions/${jobDescriptionId}`,
+        `/job-descriptions/${jobDescriptionId}`,
         request,
       );
 
@@ -161,7 +161,7 @@ class JobDescriptionService {
    */
   async deleteJobDescription(jobDescriptionId: string): Promise<void> {
     try {
-      await api.delete(`/api/job-descriptions/${jobDescriptionId}`);
+      await api.delete(`/job-descriptions/${jobDescriptionId}`);
 
       // Clear job descriptions cache since we've deleted one
       cacheManager.clearAllCache();
@@ -185,7 +185,7 @@ class JobDescriptionService {
   ): Promise<void> {
     try {
       await api.post(
-        `/api/job-descriptions/${jobDescriptionId}/cvs/${cvId}`,
+        `/job-descriptions/${jobDescriptionId}/cvs/${cvId}`,
       );
 
       // Clear cache since associations changed
@@ -211,7 +211,7 @@ class JobDescriptionService {
   ): Promise<void> {
     try {
       await api.delete(
-        `/api/job-descriptions/${jobDescriptionId}/cvs/${cvId}`,
+        `/job-descriptions/${jobDescriptionId}/cvs/${cvId}`,
       );
 
       // Clear cache since associations changed

@@ -68,7 +68,7 @@ export const useAdminUsers = (): UseAdminUsersReturn => {
         );
 
       const response = await api.get(`/admin/users?${params}`);
-      setUsers(response.data);
+      setUsers(Array.isArray(response?.data) ? response.data : []);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to load users");

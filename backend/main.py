@@ -114,13 +114,13 @@ os.makedirs("uploads", exist_ok=True)
 # Do NOT mount uploads publicly; serve via authenticated endpoints only
 
 # Include API routers
-app.include_router(auth_router)
+app.include_router(auth_router, prefix="/api")
 app.include_router(cvs_router)
 app.include_router(job_descriptions_router)
 app.include_router(ai_router)
 app.include_router(cv_history_router)
-app.include_router(admin_router)
-app.include_router(admin_ai_usage_router)
+app.include_router(admin_router, prefix="/api")
+app.include_router(admin_ai_usage_router, prefix="/api")
 app.include_router(user_activities_router)
 app.include_router(impersonation_router)
 app.include_router(impersonation_auth_router)

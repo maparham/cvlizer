@@ -76,8 +76,8 @@ api.interceptors.response.use(
       // Don't redirect for impersonation status checks - these can fail benignly
       // Don't redirect for Quick Start preview - it's meant to work without auth
       if (
-        error.config?.url?.includes('/api/auth/impersonation/status') ||
-        error.config?.url?.includes('/api/quick-start/preview')
+        error.config?.url?.includes('auth/impersonation/status') ||
+        error.config?.url?.includes('quick-start/preview')
       ) {
         return Promise.reject(error);
       }
@@ -190,7 +190,7 @@ export const normalizeApiError = (error: unknown): string => {
 export const cvApi = {
   // Get all CVs for the current user with pagination support
   getCVs: async (page: number = 1, limit: number = 100) => {
-    const response = await api.get("/api/cvs/", {
+    const response = await api.get("/cvs/", {
       params: { page, limit },
     });
     return response.data;
@@ -198,13 +198,13 @@ export const cvApi = {
 
   // Get a specific CV by ID
   getCV: async (cvId: string) => {
-    const response = await api.get(`/api/cvs/${cvId}`);
+    const response = await api.get(`/cvs/${cvId}`);
     return response.data;
   },
 
   // Delete a CV
   deleteCV: async (cvId: string) => {
-    const response = await api.delete(`/api/cvs/${cvId}`);
+    const response = await api.delete(`/cvs/${cvId}`);
     return response.data;
   },
 
@@ -220,7 +220,7 @@ export const cvApi = {
       data.parsed_data = rest;
     }
 
-    const response = await api.put(`/api/cvs/${cvId}`, data);
+    const response = await api.put(`/cvs/${cvId}`, data);
     return response.data;
   },
 
@@ -229,7 +229,7 @@ export const cvApi = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await api.post("/api/cvs/", formData, {
+    const response = await api.post("/cvs/", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -239,19 +239,19 @@ export const cvApi = {
 
   // Create blank CV from scratch
   createBlankCV: async () => {
-    const response = await api.post("/api/cvs/create-blank");
+    const response = await api.post("/cvs/create-blank");
     return response.data;
   },
 
   // Update CV title
   updateCVTitle: async (cvId: string, title: string) => {
-    const response = await api.put(`/api/cvs/${cvId}/title`, { title });
+    const response = await api.put(`/cvs/${cvId}/title`, { title });
     return response.data;
   },
 
   // Download CV file
   downloadCV: async (cvId: string, filename: string) => {
-    const response = await api.get(`/api/cvs/${cvId}/download`, {
+    const response = await api.get(`/cvs/${cvId}/download`, {
       responseType: "blob",
     });
 
@@ -268,7 +268,7 @@ export const cvApi = {
 
   // Duplicate CV
   duplicateCV: async (cvId: string) => {
-    const response = await api.post(`/api/cvs/${cvId}/duplicate`);
+    const response = await api.post(`/cvs/${cvId}/duplicate`);
     return response.data;
   },
 
@@ -284,7 +284,7 @@ export const cvApi = {
 
     // If template is specified, use template-based export endpoint
     if (template) {
-      const path = `/api/cvs/${cvId}/export/pdf?template=${encodeURIComponent(template)}`;
+      const path = `/cvs/${cvId}/export/pdf?template=${encodeURIComponent(template)}`;
       // For template-based export, we need to get the PDF via blob download
       try {
         const response = await api.get(path, {
@@ -328,7 +328,7 @@ export const cvApi = {
       }
     } else {
       // Use public endpoint for default (quick) export
-    const path = `/api/cvs/${cvId}/export/pdf/public`;
+    const path = `/cvs/${cvId}/export/pdf/public`;
     const base = api.getUri({ url: path });
     const url = `${base}?token=${encodeURIComponent(token)}`;
     window.open(url, "_blank");
@@ -337,25 +337,25 @@ export const cvApi = {
 
   // Get available templates
   getAvailableTemplates: async () => {
-    const response = await api.get("/api/cvs/templates");
+    const response = await api.get("/cvs/templates");
     return response.data.templates;
   },
 
   // Start preview generation
   startPreviewGeneration: async (cvId: string, templateName: string) => {
-    const response = await api.post(`/api/cvs/${cvId}/export/preview/start?template=${encodeURIComponent(templateName)}`);
+    const response = await api.post(`/cvs/${cvId}/export/preview/start?template=${encodeURIComponent(templateName)}`);
     return response.data;
   },
 
   // Check preview status
   checkPreviewStatus: async (cvId: string, jobId: string) => {
-    const response = await api.get(`/api/cvs/${cvId}/export/preview/status?job_id=${encodeURIComponent(jobId)}`);
+    const response = await api.get(`/cvs/${cvId}/export/preview/status?job_id=${encodeURIComponent(jobId)}`);
     return response.data;
   },
 
     // Fetch preview image (specific page)
     fetchPreviewImage: async (cvId: string, jobId: string, page: number = 1) => {
-      const response = await api.get(`/api/cvs/${cvId}/export/preview/image?job_id=${encodeURIComponent(jobId)}&page=${page}`, {
+      const response = await api.get(`/cvs/${cvId}/export/preview/image?job_id=${encodeURIComponent(jobId)}&page=${page}`, {
         responseType: "blob",
       });
       return window.URL.createObjectURL(new Blob([response.data]));
@@ -373,7 +373,7 @@ export const cvApi = {
 
     // Fetch LaTeX source for CV (as plain text)
     getLatexSource: async (cvId: string, template?: string): Promise<string> => {
-      const path = `/api/cvs/${cvId}/export/latex${template ? `?template=${encodeURIComponent(template)}` : ''}`;
+      const path = `/cvs/${cvId}/export/latex${template ? `?template=${encodeURIComponent(template)}` : ''}`;
       try {
         const response = await api.get(path, {
           responseType: "text",

@@ -112,7 +112,7 @@ const AIUsageTimelineChart: React.FC<AIUsageTimelineChartProps> = ({
     );
   }
 
-  if (!data || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     return (
       <Card>
         <CardContent>

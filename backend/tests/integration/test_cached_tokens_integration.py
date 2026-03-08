@@ -43,7 +43,7 @@ class TestAIUsageAPIWithCachedTokens:
         db_session.commit()
 
         # Act: Get usage logs
-        response = client.get("/api/admin/ai-usage", headers=admin_headers)
+        response = client.get("/api/admin/ai-usage/logs", headers=admin_headers)
 
         # Assert
         assert response.status_code == 200
@@ -78,7 +78,7 @@ class TestAIUsageAPIWithCachedTokens:
         db_session.add(usage_log)
         db_session.commit()
 
-        response = client.get("/admin/ai-usage/logs", headers=admin_headers)
+        response = client.get("/api/admin/ai-usage/logs", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert "logs" in data
@@ -109,7 +109,7 @@ class TestAIUsageAPIWithCachedTokens:
         db_session.commit()
 
         # Act: Export logs
-        response = client.get("/api/admin/ai-usage/export", headers=admin_headers)
+        response = client.get("/api/admin/ai-usage/logs/export", headers=admin_headers)
 
         # Assert
         assert response.status_code == 200
@@ -279,7 +279,7 @@ class TestAdminDashboardWithCachedTokens:
         db_session.commit()
 
         # Act: Get AI usage logs
-        response = client.get("/api/admin/ai-usage", headers=admin_headers)
+        response = client.get("/api/admin/ai-usage/logs", headers=admin_headers)
 
         # Assert
         assert response.status_code == 200

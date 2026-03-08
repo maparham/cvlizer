@@ -31,7 +31,7 @@ export const writingCorrectionsService = {
   ): Promise<CV> {
     try {
       const response = await api.post<CV>(
-        `/api/writing-corrections/${correctionId}/apply`,
+        `/writing-corrections/${correctionId}/apply`,
         {
           cv_id: cvId,
           analysis_id: analysisId,
@@ -54,7 +54,7 @@ export const writingCorrectionsService = {
   ): Promise<CV> {
     try {
       const response = await api.post<CV>(
-        `/api/writing-corrections/apply-batch`,
+        `/writing-corrections/apply-batch`,
         {
           cv_id: cvId,
           analysis_id: analysisId,

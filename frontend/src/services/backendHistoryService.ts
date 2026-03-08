@@ -63,7 +63,7 @@ export class BackendCVHistoryService {
     options: CreateSnapshotOptions,
   ): Promise<CVHistoryEntry> {
     try {
-      const response = await api.post(`/api/cvs/${cvId}/history`, {
+      const response = await api.post(`/cvs/${cvId}/history`, {
         cv_data: cvData,
         change_type: options.changeType,
         description: options.description,
@@ -110,7 +110,7 @@ export class BackendCVHistoryService {
    */
   async getHistoryEntries(cvId: string): Promise<CVHistoryEntry[]> {
     try {
-      const response = await api.get(`/api/cvs/${cvId}/history`);
+      const response = await api.get(`/cvs/${cvId}/history`);
       return response.data || [];
     } catch (error: any) {
       // If the endpoint doesn't exist yet (404), return empty array
@@ -129,7 +129,7 @@ export class BackendCVHistoryService {
     entryId: string,
   ): Promise<CVHistoryEntry | null> {
     try {
-      const response = await api.get(`/api/cvs/${cvId}/history/${entryId}`);
+      const response = await api.get(`/cvs/${cvId}/history/${entryId}`);
       return response.data;
     } catch (error) {
       return null;
@@ -141,7 +141,7 @@ export class BackendCVHistoryService {
    */
   async deleteHistoryEntry(cvId: string, entryId: string): Promise<boolean> {
     try {
-      await api.delete(`/api/cvs/${cvId}/history/${entryId}`);
+      await api.delete(`/cvs/${cvId}/history/${entryId}`);
       return true;
     } catch (error) {
       return false;
@@ -192,7 +192,7 @@ export class BackendCVHistoryService {
    */
   async getHistoryStats(cvId: string): Promise<HistoryStats> {
     try {
-      const response = await api.get(`/api/cvs/${cvId}/history-stats`);
+      const response = await api.get(`/cvs/${cvId}/history-stats`);
       return response.data;
     } catch (error) {
       return {
@@ -210,7 +210,7 @@ export class BackendCVHistoryService {
    * Restore CV to a previous version
    */
   async restoreVersion(cvId: string, entryId: string): Promise<any> {
-    const response = await api.post(`/api/cvs/${cvId}/restore/${entryId}`, {});
+    const response = await api.post(`/cvs/${cvId}/restore/${entryId}`, {});
 
     return response.data;
   }
@@ -362,7 +362,7 @@ export class BackendCVHistoryService {
       }
 
       const queryString = params.toString();
-      const url = `/api/cvs/${cvId}/history/${entryId}/diff${queryString ? `?${queryString}` : ""}`;
+      const url = `/cvs/${cvId}/history/${entryId}/diff${queryString ? `?${queryString}` : ""}`;
 
       const response = await api.get(url);
       return response.data;

@@ -50,7 +50,7 @@ describe("ImpersonationService", () => {
       const result = await impersonationService.startImpersonation(request);
 
       expect(mockApiClient.post).toHaveBeenCalledWith(
-        "/api/admin/impersonations/start",
+        "/admin/impersonations/start",
         request,
       );
       expect(result).toEqual(mockResponse);
@@ -176,7 +176,7 @@ describe("ImpersonationService", () => {
       await impersonationService.endImpersonation();
 
       expect(mockApiClient.post).toHaveBeenCalledWith(
-        "/api/admin/impersonations/end",
+        "/admin/impersonations/end",
       );
     });
 
@@ -256,7 +256,7 @@ describe("ImpersonationService", () => {
       const result = await impersonationService.getImpersonationStatus();
 
       expect(mockApiClient.get).toHaveBeenCalledWith(
-        "/api/auth/impersonation/status",
+        "/auth/impersonation/status",
       );
       expect(result).toEqual(mockResponse);
     });
@@ -301,7 +301,7 @@ describe("ImpersonationService", () => {
       const result = await impersonationService.getActiveSessions(10, 0);
 
       expect(mockApiClient.get).toHaveBeenCalledWith(
-        "/api/admin/impersonations/active",
+        "/admin/impersonations/active",
         {
           params: { limit: 10, offset: 0 },
         },
@@ -359,7 +359,7 @@ describe("ImpersonationService", () => {
       await impersonationService.revokeSession("session-123");
 
       expect(mockApiClient.post).toHaveBeenCalledWith(
-        "/api/admin/impersonations/revoke/session-123",
+        "/admin/impersonations/revoke/session-123",
       );
     });
 

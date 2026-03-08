@@ -109,7 +109,7 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
         20,
         0,
       );
-      setAiUserUsage(users);
+      setAiUserUsage(Array.isArray(users) ? users : []);
     } catch (err) {
       console.error("Failed to load AI user usage:", err);
     }
@@ -121,7 +121,7 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
         dateRange.start,
         dateRange.end,
       );
-      setAiOperationUsage(operations);
+      setAiOperationUsage(Array.isArray(operations) ? operations : []);
     } catch (err) {
       console.error("Failed to load AI operation usage:", err);
     }
@@ -135,7 +135,7 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
         dateRange.end,
         granularity,
       );
-      setAiTimeline(timeline);
+      setAiTimeline(Array.isArray(timeline) ? timeline : []);
     } catch (err) {
       console.error("Failed to load AI timeline:", err);
     }
@@ -153,7 +153,8 @@ export const useAIUsageData = (): UseAIUsageDataReturn => {
         logsLimit,
         logsPage * logsLimit,
       );
-      setAiLogs(logs);
+      const logsList = logs && Array.isArray(logs.logs) ? logs.logs : [];
+      setAiLogs(logs ? { ...logs, logs: logsList } : null);
     } catch (err) {
       console.error("Failed to load AI logs:", err);
     }

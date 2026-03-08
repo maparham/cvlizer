@@ -109,6 +109,8 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
     );
   }
 
+  const aiUserList = Array.isArray(aiUserUsage) ? aiUserUsage : [];
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box>
@@ -224,7 +226,7 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
             Top AI Users
           </Typography>
           <AITopUsersTable
-            users={aiUserUsage}
+            users={aiUserList}
             loading={loading}
             onUserClick={onUserClick}
           />
@@ -251,7 +253,7 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
               }
             >
               Showing logs for user:{" "}
-              {aiUserUsage.find((u) => u.user_id === filters.user_id)?.email ||
+              {aiUserList.find((u) => u.user_id === filters.user_id)?.email ||
                 filters.user_id}
             </Alert>
           )}
@@ -265,7 +267,7 @@ const AIUsageTab: React.FC<AIUsageTabProps> = ({
             onRefresh={onRefresh}
             onClearAllFilters={onClearAllFilters}
             onExport={onExportLogs}
-            availableUsers={aiUserUsage.map((user) => ({
+            availableUsers={aiUserList.map((user) => ({
               user_id: user.user_id,
               email: user.email,
             }))}

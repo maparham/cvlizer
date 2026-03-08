@@ -35,7 +35,7 @@ class ATSService {
 
     try {
       const response = await api.post<ATSOptimizationResponse>(
-        `/api/cvs/${cvId}/optimize-ats`,
+        `/cvs/${cvId}/optimize-ats`,
         request,
       );
 

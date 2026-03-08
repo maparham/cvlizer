@@ -32,7 +32,7 @@ export const cvQualityService = {
     correctionMode: CorrectionMode = 'proofread'
   ): Promise<CVQualityAnalysisCreateResponse> {
     try {
-      const response = await api.post(`/api/cvs/${cvId}/quality-analysis`, {
+      const response = await api.post(`/cvs/${cvId}/quality-analysis`, {
         correction_mode: correctionMode,
       });
 
@@ -52,7 +52,7 @@ export const cvQualityService = {
   async getQualityAnalysisStatus(
     analysisId: string
   ): Promise<CVQualityAnalysisResponse> {
-    const response = await api.get(`/api/quality-analysis/${analysisId}`);
+    const response = await api.get(`/quality-analysis/${analysisId}`);
     return response.data;
   },
 
@@ -62,7 +62,7 @@ export const cvQualityService = {
   async getLatestQualityAnalysis(
     cvId: string
   ): Promise<CVQualityAnalysisResponse | null> {
-    const response = await api.get(`/api/cvs/${cvId}/quality-analysis/latest`);
+    const response = await api.get(`/cvs/${cvId}/quality-analysis/latest`);
     return response.data;
   },
 
@@ -74,7 +74,7 @@ export const cvQualityService = {
     qualityData: CVQualityAnalysisData
   ): Promise<void> {
     // Wrap in schema format expected by backend
-    await api.patch(`/api/quality-analysis/${analysisId}`, {
+    await api.patch(`/quality-analysis/${analysisId}`, {
       quality_data: qualityData,
     });
   },
@@ -83,14 +83,14 @@ export const cvQualityService = {
    * Delete quality analysis
    */
   async deleteQualityAnalysis(analysisId: string): Promise<void> {
-    await api.delete(`/api/quality-analysis/${analysisId}`);
+    await api.delete(`/quality-analysis/${analysisId}`);
   },
 
   /**
    * Delete all quality analyses for a CV
    */
   async deleteAllQualityAnalyses(cvId: string): Promise<void> {
-    await api.delete(`/api/cvs/${cvId}/quality-analysis/all`);
+    await api.delete(`/cvs/${cvId}/quality-analysis/all`);
   },
 
   /**
@@ -103,7 +103,7 @@ export const cvQualityService = {
     itemId?: string
   ): Promise<FieldRetryResponse> {
     const response = await api.post(
-      `/api/cvs/${cvId}/quality-analysis/field-retry`,
+      `/cvs/${cvId}/quality-analysis/field-retry`,
       { analysis_id: analysisId, field_path: fieldPath, item_id: itemId ?? null }
     );
     return response.data;

@@ -59,7 +59,7 @@ const AITopUsersTable: React.FC<AITopUsersTableProps> = ({
     );
   }
 
-  if (!users || users.length === 0) {
+  if (!Array.isArray(users) || users.length === 0) {
     return (
       <Card>
         <CardContent>

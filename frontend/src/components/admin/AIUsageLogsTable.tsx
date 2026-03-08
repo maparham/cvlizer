@@ -71,6 +71,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
   onClearAllFilters,
   availableUsers = [],
 }) => {
+  const usersList = Array.isArray(availableUsers) ? availableUsers : [];
   const handlePageChange = (_event: unknown, newPage: number) => {
     onPaginationChange(newPage, data?.limit || 50);
   };
@@ -98,7 +99,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
     );
   }
 
-  if (!data || data.logs.length === 0) {
+  if (!data || !Array.isArray(data.logs) || data.logs.length === 0) {
     return (
       <Card>
         <CardContent>
@@ -114,6 +115,8 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
       </Card>
     );
   }
+
+  const logsList = data.logs;
 
   return (
     <Card>
@@ -159,14 +162,14 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
                 }
               >
                 <MenuItem value="">All Users</MenuItem>
-                {availableUsers.map((user) => (
+                {usersList.map((user) => (
                   <MenuItem key={user.user_id} value={user.user_id}>
                     {user.email}
                   </MenuItem>
                 ))}
                 {/* Show current user if they're not in the available users list */}
                 {filters.user_id &&
-                  !availableUsers.find(
+                  !usersList.find(
                     (u) => u.user_id === filters.user_id,
                   ) && (
                     <MenuItem value={filters.user_id}>
@@ -291,7 +294,7 @@ const AIUsageLogsTable: React.FC<AIUsageLogsTableProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.logs.map((log) => {
+              {logsList.map((log) => {
                 const status = formatSuccessStatus(log.success);
 
                 return (

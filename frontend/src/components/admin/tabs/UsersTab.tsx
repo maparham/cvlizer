@@ -163,6 +163,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
   onConfirmImpersonation,
   onDeleteUser,
 }) => {
+  const usersList = Array.isArray(users) ? users : [];
   // State for delete user dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; email: string } | null>(null);
@@ -279,7 +280,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => (
+            {usersList.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
                   <Box display="flex" alignItems="center">

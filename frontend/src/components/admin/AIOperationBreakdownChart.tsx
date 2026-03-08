@@ -111,7 +111,7 @@ const AIOperationBreakdownChart: React.FC<AIOperationBreakdownChartProps> = ({
     );
   }
 
-  if (!data || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     return (
       <Card>
         <CardContent>

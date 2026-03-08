@@ -35,7 +35,7 @@ class RateLimitTester:
 
     def make_admin_request(self) -> requests.Response:
         """Make an admin request."""
-        return self.session.get(f"{self.base_url}/admin/users")
+        return self.session.get(f"{self.base_url}/api/admin/users")
 
     def test_basic_rate_limiting(self, endpoint_name: str, make_request, limit: int = 5):
         """Test basic rate limiting behavior."""
