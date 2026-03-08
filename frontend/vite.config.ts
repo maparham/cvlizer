@@ -8,6 +8,7 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    allowedHosts: ['demo.maparham.eu'],
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
