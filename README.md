@@ -84,13 +84,20 @@ npm run dev
 
 ### 4. Docker Setup (Alternative)
 
-```bash
-# Start all services
-docker-compose up --build
+**Development** (frontend http://localhost:3000, backend http://localhost:8000, hot reload):
 
-# Or run in background
-docker-compose up -d --build
+```bash
+docker compose up --build
 ```
+
+**Production on the same machine** (app on http://localhost:80; HTTPS on 443 if you add certs in `ssl/` — see `ssl/README`):
+
+```bash
+# Edit .env.prod with real secrets, then:
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Dev and prod use separate Compose projects (`cvlator-dev` / `cvlator-prod`) and separate env files (`.env.dev` / `.env.prod`) and data (prod uses Docker volumes).
 
 ## 🔧 Configuration
 

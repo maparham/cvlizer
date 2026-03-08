@@ -7,8 +7,8 @@
 
 // API Configuration
 export const API_CONFIG = {
-  /** Base URL for backend API (from environment variable) */
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  /** Base URL for backend API (from environment variable). Empty = same origin (prod); dev sets VITE_API_BASE_URL=http://localhost:8000 */
+  BASE_URL: import.meta.env.VITE_API_BASE_URL ?? '',
 
   /** Request timeout in milliseconds */
   TIMEOUT: 30000,

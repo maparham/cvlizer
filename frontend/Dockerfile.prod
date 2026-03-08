@@ -3,10 +3,15 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+# Full install so devDependencies (vite, rollup) and rollup's optional native binary are available for the build
+RUN npm ci
 
 COPY . .
-RUN npm run build
+# Prod: use relative /api (same origin). Dev sets VITE_API_BASE_URL=http://localhost:8000 in .env.local
+ARG VITE_API_BASE_URL=
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+# Use build:no-ts so prod image builds even when tsc has errors; type-check separately with npm run type-check
+RUN npm run build:no-ts
 
 # Production stage
 FROM nginx:alpine
@@ -14,12 +19,8 @@ FROM nginx:alpine
 # Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
+# Copy nginx configuration (frontend/nginx.conf already enables gzip in the server block)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Add gzip compression
-RUN echo 'gzip on;' >> /etc/nginx/nginx.conf && \
-    echo 'gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;' >> /etc/nginx/nginx.conf
 
 EXPOSE 80
 

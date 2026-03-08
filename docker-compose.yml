@@ -1,14 +1,14 @@
+# Development stack: frontend 3000, backend 8000, hot reload. Prod uses docker-compose.prod.yml on 80/443.
+# Run: docker compose up
+name: cvlator-dev
 version: '3.8'
+
 services:
   backend:
     build: ./backend
+    env_file: .env.dev
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=sqlite:///./cv_optimizer.db
-      - JWT_SECRET_KEY=your-secret-key-here
-      - OPENAI_API_KEY=your-openai-key-here
-      - DEBUG=true
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads

@@ -183,6 +183,10 @@ frontend/vite.config.ts.timestamp-*.mjs
 # dotenv environment variables file
 .env
 .env.test
+.env.dev
+.env.prod
+# Local TLS certs for prod HTTPS (see ssl/README)
+ssl/*.pem
 .env.local
 .env.development.local
 .env.test.local

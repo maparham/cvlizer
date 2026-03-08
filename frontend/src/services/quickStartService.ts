@@ -15,8 +15,9 @@ import {
   JobPreview
 } from "../types/quickStart";
 
+// Empty = same origin (prod). Dev sets VITE_API_BASE_URL=http://localhost:8000 in .env.local
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL ?? "";
 
 /**
  * Submit CV file and job description for preview parsing

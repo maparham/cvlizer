@@ -1,3 +1,7 @@
+# Production stack: nginx on 80/443, frontend (SPA + /api proxy), backend. Dev stays on 3000/8000.
+# Run: docker compose -f docker-compose.prod.yml up -d
+# App: http://localhost (and https://localhost if ssl/ certs are set; see ssl/README).
+name: cvlator-prod
 version: '3.8'
 
 services:
@@ -5,12 +9,11 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      - CORS_ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173
+    env_file: .env.prod
+    ports: []   # no host exposure; reached via frontend -> backend internally
     volumes:
-      - ./backend/uploads:/app/uploads
+      - prod_data:/app/data
+      - prod_uploads:/app/uploads
     restart: unless-stopped
     command: python run_production.py
 
@@ -18,8 +21,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-    ports:
-      - "3000:80"
+    ports: []   # no host exposure; reached via nginx only (80/443)
     depends_on:
       - backend
     restart: unless-stopped
@@ -34,5 +36,8 @@ services:
       - ./ssl:/etc/nginx/ssl
     depends_on:
       - frontend
-      - backend
     restart: unless-stopped
+
+volumes:
+  prod_data:
+  prod_uploads:
