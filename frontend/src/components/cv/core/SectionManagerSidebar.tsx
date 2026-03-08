@@ -425,16 +425,17 @@ const SectionManagerSidebar: React.FC<SectionManagerSidebarProps> = ({
   return (
     <Paper
       sx={{
-        width: 350,
+        width: { xs: "100%", md: 350 },
+        flexShrink: 0,
         p: 0,
         overflow: "hidden",
         border: "none",
         boxShadow: "none",
-        borderRight: "1px solid #e0e0e0",
+        borderRight: { xs: "none", md: "1px solid #e0e0e0" },
         display: "flex",
         flexDirection: "column",
-        height: `calc(100vh - ${toolbarHeight}px)`,
-        maxHeight: `calc(100vh - ${toolbarHeight}px)`,
+        height: { xs: "100%", md: `calc(100vh - ${toolbarHeight}px)` },
+        maxHeight: { xs: "100%", md: `calc(100vh - ${toolbarHeight}px)` },
       }}
     >
       {/* CV Title - At the top */}

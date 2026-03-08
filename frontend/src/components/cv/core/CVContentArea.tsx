@@ -551,7 +551,13 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
   return (
     <Box
       data-scrollable-container
-      sx={{ flex: 1, overflow: "auto", bgcolor: "#f5f5f5", p: 2 }}
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        overflow: "auto",
+        bgcolor: "#f5f5f5",
+        p: { xs: 1, md: 2 },
+      }}
     >
       {/* Editing Indicator */}
       <EditingIndicator
@@ -562,7 +568,13 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
 
       {/* Validation Error Banner */}
       {validationErrors.length > 0 && (
-        <Box sx={{ maxWidth: "210mm", margin: "0 auto", mb: 2 }}>
+        <Box
+          sx={{
+            maxWidth: { xs: "100%", md: "210mm" },
+            margin: "0 auto",
+            mb: 2,
+          }}
+        >
           <ValidationErrorBanner validationErrors={validationErrors} />
         </Box>
       )}
@@ -570,12 +582,12 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
       <Paper
         id="cv-print-page"
         sx={{
-          width: "210mm",
+          width: { xs: "100%", md: "210mm" },
           minHeight: "297mm",
           margin: "0 auto",
           bgcolor: "white",
           boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-          p: 4,
+          p: { xs: 2, md: 4 },
           position: "relative",
         }}
       >

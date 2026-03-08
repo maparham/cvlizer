@@ -8,12 +8,13 @@
  * - Unsaved changes detection and confirmation dialogs
  * - Integration with CV editor context for state management
  */
-import React, { useEffect, useCallback, useRef } from "react";
-import { Box } from "@mui/material";
+import React, { useEffect, useCallback, useRef, useState } from "react";
+import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 // Import extracted components and contexts
+import { CVEditorMobileBar } from "./CVEditorMobileBar";
 import {
   SectionManagerSidebar,
   CVContentArea,
@@ -60,6 +61,10 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
 
 
   const setCVEditorTab = useUIStore((state) => state.setCVEditorTab);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const [mobilePanel, setMobilePanel] = useState<"sidebar" | "content">("content");
 
   // Debug wrapper for onUpdateCV
   const debugOnUpdateCV = useCallback(
@@ -224,9 +229,33 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-          {/* Section Manager Sidebar */}
-          <SectionManagerSidebar
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
+        {/* Mobile: toggle bar to switch between sidebar and CV content */}
+        {isMobile && (
+          <CVEditorMobileBar
+            mobilePanel={mobilePanel}
+            onToggle={() =>
+              setMobilePanel((p) => (p === "sidebar" ? "content" : "sidebar"))
+            }
+          />
+        )}
+
+        {/* Mobile: show one panel; desktop: show both */}
+        {(!isMobile || mobilePanel === "sidebar") && (
+          <Box
+            sx={{
+              ...(isMobile && { flex: 1, minHeight: 0, display: "flex" }),
+              ...(!isMobile && { flexShrink: 0 }),
+            }}
+          >
+            <SectionManagerSidebar
             sections={sections.items}
             activeId={dragDrop.activeId}
             isDefaultOrder={sections.isDefaultOrder()}
@@ -383,9 +412,25 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
               }
             }}
           />
+          </Box>
+        )}
 
-          {/* PDF-like CV Content */}
-          <CVContentArea cvId={cvId} />
+        {(!isMobile || mobilePanel === "content") && (
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              ...(isMobile && {
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }),
+            }}
+          >
+            <CVContentArea cvId={cvId} />
+          </Box>
+        )}
 
           {/* Dialogs */}
           <PDFCVEditorDialogs
