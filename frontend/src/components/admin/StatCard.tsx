@@ -42,8 +42,9 @@ const StatCard: React.FC<StatCardProps> = ({
           <Typography color="textSecondary" gutterBottom variant="h6">
             {title}
           </Typography>
+          {/* Guard against undefined value (e.g. incomplete API response in prod/mobile). */}
           <Typography variant="h4" component="h2">
-            {value.toLocaleString()}
+            {value != null ? value.toLocaleString() : "—"}
           </Typography>
           {trend && (
             <Box display="flex" alignItems="center" mt={1}>

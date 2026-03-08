@@ -334,8 +334,13 @@ const NotificationDrawer = forwardRef<NotificationDrawerRef, NotificationDrawerP
                           }}
                         >
                           <Box sx={{ width: "100%" }}>
+                            {/* Coerce to string so Typography always receives a valid ReactNode; callers may pass objects (e.g. from API or showError(error)). */}
                             <Typography variant="subtitle2" component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
-                              {notification.message || notification.title}
+                              {typeof notification.message === "string"
+                                ? notification.message
+                                : typeof notification.title === "string"
+                                  ? notification.title
+                                  : String(notification.message ?? notification.title ?? "")}
                             </Typography>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
                               <Typography

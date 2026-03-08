@@ -73,11 +73,11 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Total Users"
-            value={stats.total_users}
+            value={stats.total_users ?? 0}
             icon={<People />}
             trend={{
               value: Math.round(
-                (stats.users_last_7_days / stats.total_users) * 100,
+                ((stats.users_last_7_days ?? 0) / (stats.total_users || 1)) * 100,
               ),
               label: "new this week",
             }}
@@ -86,7 +86,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Active Users"
-            value={stats.active_users}
+            value={stats.active_users ?? 0}
             icon={<CheckCircle />}
             color="success"
           />
@@ -94,11 +94,11 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Total CVs"
-            value={stats.total_cvs}
+            value={stats.total_cvs ?? 0}
             icon={<Description />}
             trend={{
               value: Math.round(
-                (stats.cvs_last_7_days / stats.total_cvs) * 100,
+                ((stats.cvs_last_7_days ?? 0) / (stats.total_cvs || 1)) * 100,
               ),
               label: "new this week",
             }}
@@ -107,7 +107,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats, loading, error }) => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="AI Sections"
-            value={stats.total_ai_sections}
+            value={stats.total_ai_sections ?? 0}
             icon={<SmartToy />}
             color="secondary"
           />
