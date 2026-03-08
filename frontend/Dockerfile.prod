@@ -10,6 +10,9 @@ COPY . .
 # Prod: use relative /api (same origin). Dev sets VITE_API_BASE_URL=http://localhost:8000 in .env.local
 ARG VITE_API_BASE_URL=
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+# Clerk key must be set at build time (Vite inlines VITE_* env into the bundle)
+ARG VITE_CLERK_PUBLISHABLE_KEY=
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
 # Use build:no-ts so prod image builds even when tsc has errors; type-check separately with npm run type-check
 RUN npm run build:no-ts
 
