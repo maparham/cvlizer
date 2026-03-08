@@ -289,8 +289,7 @@ Thumbs.db
 uploads/*
 !uploads/.gitkeep
 
-# Docker
-.dockerignore
+# Docker (we track frontend/.dockerignore and backend/.dockerignore for build context)
 
 # Project specific
 backend/cv_optimizer.db
