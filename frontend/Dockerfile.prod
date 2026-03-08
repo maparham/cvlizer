@@ -13,6 +13,9 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 # Clerk key must be set at build time (Vite inlines VITE_* env into the bundle)
 ARG VITE_CLERK_PUBLISHABLE_KEY=
 ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+# Admin email for showing Admin dashboard (must match backend ADMIN_EMAIL)
+ARG VITE_ADMIN_EMAIL=
+ENV VITE_ADMIN_EMAIL=$VITE_ADMIN_EMAIL
 # Use build:no-ts so prod image builds even when tsc has errors; type-check separately with npm run type-check
 RUN npm run build:no-ts
 

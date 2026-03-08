@@ -23,6 +23,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
+        VITE_ADMIN_EMAIL: ${VITE_ADMIN_EMAIL}
     ports: []   # no host exposure; reached via nginx only (80/443)
     depends_on:
       - backend
