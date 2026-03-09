@@ -7,6 +7,7 @@ extracting text content, parsing with AI, and generating preview images.
 
 import asyncio
 import logging
+import os
 from typing import Any, Dict
 
 from fastapi import Request, UploadFile
@@ -21,8 +22,8 @@ from src.services.cv_parsing_service import parse_cv_with_openai
 
 logger = logging.getLogger(__name__)
 
-# Timeout for AI parsing operations (in seconds)
-QUICK_START_TIMEOUT = 30
+# Timeout for AI parsing operations (in seconds). Set QUICK_START_CV_TIMEOUT to override.
+QUICK_START_TIMEOUT = int(os.getenv("QUICK_START_CV_TIMEOUT", "30"))
 
 
 async def parse_cv_for_preview(
