@@ -3,11 +3,12 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # System deps: pdflatex for LaTeX/PDF export and CV preview; poppler for pdf2image.
-# Minimal set (no texlive-latex-extra/fonts-extra) to avoid large image and I/O during build.
+# Templates use enumitem and xcolor; texlive-latex-extra provides enumitem.sty.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-latex-base \
     texlive-fonts-recommended \
     texlive-latex-recommended \
+    texlive-latex-extra \
     lmodern \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
