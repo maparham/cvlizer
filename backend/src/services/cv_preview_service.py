@@ -29,6 +29,7 @@ from .latex_export_service import (
     compile_pdf_from_latex,
     is_latex_available,
 )
+from .template_loader import get_default_template, is_template_available
 
 logger = logging.getLogger(__name__)
 
@@ -197,10 +198,17 @@ async def generate_cv_preview_image(
     if not is_latex_available():
         raise RuntimeError("LaTeX (pdflatex) is not available on the server")
 
+    # Resolve template: default from config, else "standard" if available
+    template_name = get_default_template()
+    if not template_name or not is_template_available(template_name):
+        template_name = "standard" if is_template_available("standard") else None
+    if not template_name:
+        raise RuntimeError("No LaTeX template available for preview")
+
     try:
         # Generate LaTeX from parsed data
         logger.info("Generating LaTeX from CV data for preview")
-        latex_source = generate_cv_latex(parsed_cv_data, title)
+        latex_source = generate_cv_latex(parsed_cv_data, title, template_name)
 
         # Compile LaTeX to PDF
         logger.info("Compiling LaTeX to PDF for preview")

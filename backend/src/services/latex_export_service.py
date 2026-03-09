@@ -303,27 +303,25 @@ def _format_contact_info(pi: Dict[str, Any]) -> str:
 
     if email:
         contact_lines.append(
-            f"\\faEnvelope\\, \\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
+            f"Email: \\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
         )
     if phone:
-        contact_lines.append(f"\\faPhone\\, {phone}")
+        contact_lines.append(f"Phone: {phone}")
     if location:
-        contact_lines.append(f"\\faMapMarker*\\, {location}")
+        contact_lines.append(f"Location: {location}")
     if linkedin:
         linkedin_url = _href_url_safe(ensure_protocol(linkedin))
         contact_lines.append(
-            f"\\faLinkedin\\, \\href{{{linkedin_url}}}{{{_tex_escape(linkedin)}}}"
+            f"LinkedIn: \\href{{{linkedin_url}}}{{{_tex_escape(linkedin)}}}"
         )
     if website:
         website_url = _href_url_safe(ensure_protocol(website))
         contact_lines.append(
-            f"\\faGlobe\\, \\href{{{website_url}}}{{{_tex_escape(website)}}}"
+            f"Website: \\href{{{website_url}}}{{{_tex_escape(website)}}}"
         )
     if github:
         github_url = _href_url_safe(ensure_protocol(github))
-        contact_lines.append(
-            f"\\faGithub\\, \\href{{{github_url}}}{{{_tex_escape(github)}}}"
-        )
+        contact_lines.append(f"GitHub: \\href{{{github_url}}}{{{_tex_escape(github)}}}")
 
     if not contact_lines:
         return ""
@@ -703,34 +701,25 @@ def _format_personal_info_header(pi: Dict[str, Any], template_name: str = "") ->
             )
         return f"\\begin{{center}}\n{name_line}\n\\end{{center}}\n"
 
-    # Default: build contact items (icon + text), hyperlinks where relevant
+    # Default: build contact items (label + text), hyperlinks where relevant
     contact_items: list[str] = []
-    # Use fixed-width boxes for icons to ensure perfect vertical alignment
-    # All icons are placed in a 1.2em wide box, left-aligned
-    # Order: location first (row1, col1), then email (row2, col1), then others
     if location:
-        contact_items.append(f"\\makebox[1.2em][l]{{\\faMapMarker*}}\\, {location}")
+        contact_items.append(f"Location: {location}")
     if phone:
-        contact_items.append(f"\\makebox[1.2em][l]{{\\faPhone}}\\, {phone}")
+        contact_items.append(f"Phone: {phone}")
     if linkedin:
         lurl = _href_url_safe(ensure_protocol(linkedin))
-        contact_items.append(
-            f"\\makebox[1.2em][l]{{\\faLinkedin}}\\, \\href{{{lurl}}}{{{_tex_escape(linkedin)}}}"
-        )
+        contact_items.append(f"LinkedIn: \\href{{{lurl}}}{{{_tex_escape(linkedin)}}}")
     if email:
         contact_items.append(
-            f"\\makebox[1.2em][l]{{\\faEnvelope}}\\, \\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
+            f"Email: \\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
         )
     if website:
         wurl = _href_url_safe(ensure_protocol(website))
-        contact_items.append(
-            f"\\makebox[1.2em][l]{{\\faGlobe}}\\, \\href{{{wurl}}}{{{_tex_escape(website)}}}"
-        )
+        contact_items.append(f"Website: \\href{{{wurl}}}{{{_tex_escape(website)}}}")
     if github:
         gurl = _href_url_safe(ensure_protocol(github))
-        contact_items.append(
-            f"\\makebox[1.2em][l]{{\\faGithub}}\\, \\href{{{gurl}}}{{{_tex_escape(github)}}}"
-        )
+        contact_items.append(f"GitHub: \\href{{{gurl}}}{{{_tex_escape(github)}}}")
 
     # Arrange into two rows and as many columns as needed
     contact_block = ""

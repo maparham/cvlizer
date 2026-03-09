@@ -2,7 +2,6 @@
 # Run: docker compose -f docker-compose.prod.yml up -d
 # App: http://localhost (and https://localhost if ssl/ certs are set; see ssl/README).
 name: cvlator-prod
-version: '3.8'
 
 services:
   backend:

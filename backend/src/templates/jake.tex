@@ -5,29 +5,24 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[left=0.5in,right=0.5in,top=0.5in,bottom=0.5in]{geometry}
-\usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
 \usepackage{parskip}
-\usepackage{microtype}
-\usepackage{needspace}
 
 % Colors used by the export service for body content
 \definecolor{sectiongray}{gray}{0.40}
 \definecolor{companygray}{gray}{0.30}
 \definecolor{boldgray}{gray}{0.25}
 
-% Section styling: compact, small caps, rule (Jake-style)
-\titleformat{\section}{%
-  \vspace{-4pt}\scshape\raggedright\large
-}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
-
 % Ensure PDF is machine readable / ATS parsable
 \pdfgentounicode=1
 
-% Jake-style section macro: use \section so titleformat applies
-\newcommand{\jakesection}[1]{\section{#1}}
+% Jake-style section macro: compact, small caps, rule (no titlesec)
+\newcommand{\jakesection}[1]{%
+  \vspace{-4pt}\noindent\scshape\raggedright\large #1\\[-1ex]%
+  \rule{\textwidth}{0.4pt}\vspace{-5pt}%
+}
 
 \setlength{\parskip}{0.4\baselineskip}
 \setlength{\parindent}{0pt}

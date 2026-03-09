@@ -2,14 +2,11 @@
 \usepackage[margin=1in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{microtype}
 \usepackage{hyperref}
-\usepackage{fontawesome5}
 \usepackage{enumitem}
 \usepackage{xcolor}
 \usepackage{fancyhdr}
 \usepackage{parskip}
-\usepackage{needspace}
 
 % Grayscale accent colors for visual hierarchy
 \definecolor{sectiongray}{gray}{0.40}     % 40% black for section titles
@@ -21,12 +18,8 @@
 \renewcommand{\sfdefault}{lmss}
 \renewcommand{\ttdefault}{lmtt}
 
-% Microtype for better typography
-\microtypesetup{protrusion=true, expansion=true}
-
 % Traditional section styling - bold with thin black rule
 \newcommand{\traditionalsection}[1]{%
-  \needspace{4\baselineskip}%
   \noindent{\Large\textbf{\textcolor{sectiongray}{#1}}}\\[-1ex]%
   \rule{\textwidth}{0.3pt}\\[0.6ex]%
 }

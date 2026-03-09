@@ -240,14 +240,14 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
                         size="large"
                         onClick={() => openSignUp()}
                       >
-                        Fit your CV to job
+                        Create Account
                       </Button>
                       <Button
                         variant="outlined"
                         size="large"
                         onClick={() => openSignIn()}
                       >
-                        Already have an account?
+                        Existing User? Sign In
                       </Button>
                     </Box>
                   </>
