@@ -92,19 +92,32 @@ const JobApplicationsCard: React.FC<JobApplicationsCardProps> = ({
       }}
     >
       <CardContent sx={{ p: 4 }}>
-        <Stack direction="row" alignItems="center" sx={{ mb: 4 }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          alignItems={{ xs: "stretch", sm: "center" }}
+          spacing={{ xs: 2, sm: 0 }}
+          sx={{ mb: 4 }}
+        >
           <Typography
             variant="h5"
             sx={{
               fontWeight: 700,
               color: "text.primary",
-              flex: 1,
+              flex: { xs: "none", sm: 1 },
               letterSpacing: "-0.025em",
             }}
           >
             Job Applications
           </Typography>
-          <Stack direction="row" spacing={1.5} sx={{ flex: 1, justifyContent: "center" }}>
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            sx={{
+              flex: { xs: "none", sm: 1 },
+              justifyContent: { xs: "flex-start", sm: "center" },
+              gap: 1.5,
+            }}
+          >
             <Chip
               label={`${statusCounts.open} Open`}
               size="small"
@@ -151,7 +164,16 @@ const JobApplicationsCard: React.FC<JobApplicationsCardProps> = ({
               }}
             />
           </Stack>
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, justifyContent: "flex-end" }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            flexWrap="wrap"
+            sx={{
+              flex: { xs: "none", sm: 1 },
+              justifyContent: { xs: "flex-start", sm: "flex-end" },
+              gap: 1.5,
+            }}
+          >
             <ToggleButtonGroup
               value={viewMode}
               exclusive

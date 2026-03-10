@@ -266,6 +266,63 @@ def verify_clerk_token(token: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def _resolve_email_for_sync(
+    clerk_user_id: str,
+    token_email: Optional[str],
+    db: Session,
+) -> Optional[str]:
+    """
+    Resolve email for syncing a Clerk user to the local database.
+
+    Tries, in order: token email, dev shortcut for known admin, Clerk API,
+    existing DB user email, placeholder. Used by both full and lightweight
+    auth paths when user must be created or looked up.
+    """
+    if token_email:
+        return token_email
+    # Dev-only shortcut for a known admin user (unchanged behavior)
+    if clerk_user_id == "user_331BlH2Mot9pY0CpTAA5uktAIxk":
+        return "mahmoud.shahrud@gmail.com"
+    # Only attempt Clerk API call if backend secret is configured
+    if CLERK_SECRET_KEY:
+        try:
+            clerk_user_info = get_clerk_user_info(clerk_user_id)
+            if clerk_user_info and clerk_user_info.get("email_addresses"):
+                email_addresses = clerk_user_info.get("email_addresses", [])
+                primary_email_id = clerk_user_info.get("primary_email_address_id")
+                for email_addr in email_addresses:
+                    if email_addr.get("id") == primary_email_id:
+                        return email_addr.get("email_address")
+            else:
+                logger.warning(
+                    f"No email addresses found in Clerk API response for user {clerk_user_id}"
+                )
+        except Exception as e:
+            logger.error(
+                f"Failed to fetch user info from Clerk API for {clerk_user_id}: {str(e)}"
+            )
+    # Check if user already exists in database with a real email
+    existing_user = db.query(User).filter(User.clerk_id == clerk_user_id).first()
+    if existing_user and not existing_user.email.endswith("@clerk.placeholder"):
+        logger.info(
+            f"Using existing email {existing_user.email} from database for Clerk user {clerk_user_id}"
+        )
+        return existing_user.email
+    # Fallback placeholder (development convenience) - but log this as an error
+    try:
+        suffix = clerk_user_id.split("_")[1]
+        placeholder = f"user_{suffix}@clerk.placeholder"
+        logger.error(
+            f"Using placeholder email {placeholder} for Clerk user {clerk_user_id} - this indicates a configuration issue"
+        )
+        return placeholder
+    except Exception:
+        logger.error(
+            f"Failed to generate even placeholder email for Clerk user {clerk_user_id}"
+        )
+        return None
+
+
 def get_current_user_from_clerk(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
@@ -301,59 +358,7 @@ def get_current_user_from_clerk(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # If email not present (typical for Clerk tokens), fetch via Clerk API
-    if not email:
-        email = None
-        # Dev-only shortcut for a known admin user (unchanged behavior)
-        if clerk_user_id == "user_331BlH2Mot9pY0CpTAA5uktAIxk":
-            email = "mahmoud.shahrud@gmail.com"
-        else:
-            # Only attempt Clerk API call if backend secret is configured
-            if CLERK_SECRET_KEY:
-                try:
-                    clerk_user_info = get_clerk_user_info(clerk_user_id)
-                    if clerk_user_info and clerk_user_info.get("email_addresses"):
-                        email_addresses = clerk_user_info.get("email_addresses", [])
-                        primary_email_id = clerk_user_info.get("primary_email_address_id")
-                        for email_addr in email_addresses:
-                            if email_addr.get("id") == primary_email_id:
-                                email = email_addr.get("email_address")
-                                break
-                    else:
-                        logger.warning(
-                            f"No email addresses found in Clerk API response for user {clerk_user_id}"
-                        )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to fetch user info from Clerk API for {clerk_user_id}: {str(e)}"
-                    )
-
-            if not email:
-                # Check if user already exists in database with a real email
-                existing_user = (
-                    db.query(User).filter(User.clerk_id == clerk_user_id).first()
-                )
-                if existing_user and not existing_user.email.endswith(
-                    "@clerk.placeholder"
-                ):
-                    email = existing_user.email
-                    logger.info(
-                        f"Using existing email {email} from database for Clerk user {clerk_user_id}"
-                    )
-                else:
-                    # Fallback placeholder (development convenience) - but log this as an error
-                    try:
-                        suffix = clerk_user_id.split("_")[1]
-                        email = f"user_{suffix}@clerk.placeholder"
-                        logger.error(
-                            f"Using placeholder email {email} for Clerk user {clerk_user_id} - this indicates a configuration issue"
-                        )
-                    except Exception:
-                        email = None
-                        logger.error(
-                            f"Failed to generate even placeholder email for Clerk user {clerk_user_id}"
-                        )
-
+    email = _resolve_email_for_sync(clerk_user_id, email, db)
     if not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -658,13 +663,11 @@ def get_current_user_lightweight(
     """
     Lightweight user authentication for endpoints that don't need full user sync.
 
-    This function:
-    1. Validates the Clerk JWT token
-    2. Extracts user information
-    3. Gets existing user from database (no Clerk API calls)
-    4. Returns the local User object
-
-    Use this for high-frequency endpoints like impersonation status checks.
+    Validates the Clerk JWT token, gets existing user from database, and returns
+    the local User object. If the user is not yet in the local database (e.g.
+    first request after sign-up), syncs them from Clerk so dashboard and
+    high-frequency endpoints (impersonation status, CV list, job descriptions)
+    work without redirect loops.
     """
     token = credentials.credentials
 
@@ -679,7 +682,7 @@ def get_current_user_lightweight(
 
     # Extract user information from token
     clerk_user_id = payload.get("sub")
-    email = payload.get("email")
+    token_email = payload.get("email")
 
     if not clerk_user_id:
         raise HTTPException(
@@ -688,14 +691,23 @@ def get_current_user_lightweight(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Get existing user from database (no Clerk API calls)
+    # Get existing user from database (no Clerk API calls when user exists)
     user = db.query(User).filter(User.clerk_id == clerk_user_id).first()
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found in local database",
-            headers={"WWW-Authenticate": "Bearer"},
+        # First request: sync user to local DB so we don't 401 and trigger redirect loop
+        email = _resolve_email_for_sync(clerk_user_id, token_email, db)
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unable to determine user email",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        user = sync_clerk_user_to_local_db(
+            clerk_user_id=clerk_user_id,
+            email=email,
+            db=db,
+            additional_data={},
         )
 
     if not user.is_active:
