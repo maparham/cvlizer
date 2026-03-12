@@ -38,40 +38,20 @@ def sync_clerk_user_to_local_db(
         User: The local user record
     """
     try:
-        # First, verify the user actually exists in Clerk before syncing
-        import requests
-        import os
 
-        clerk_secret_key = os.getenv("CLERK_SECRET_KEY")
-        if clerk_secret_key:
+        def _commit() -> None:
             try:
-                headers = {
-                    "Authorization": f"Bearer {clerk_secret_key}",
-                    "Content-Type": "application/json",
-                }
-
-                # Check if user exists in Clerk
-                clerk_response = requests.get(
-                    f"https://api.clerk.com/v1/users/{clerk_user_id}", headers=headers
+                db.commit()
+            except Exception as e:
+                logger.error(
+                    "Failed to persist Clerk user sync: %s (%s)",
+                    type(e).__name__,
+                    str(e),
                 )
+                db.rollback()
+                raise RuntimeError("Failed to persist Clerk user sync") from e
 
-                if clerk_response.status_code == 404:
-                    logger.warning(
-                        f"User {clerk_user_id} ({email}) does not exist in Clerk - preventing sync"
-                    )
-                    raise Exception(
-                        f"User {clerk_user_id} was deleted from Clerk and should not be synced"
-                    )
-                elif clerk_response.status_code != 200:
-                    logger.warning(
-                        f"Clerk API returned {clerk_response.status_code} for user {clerk_user_id} - proceeding with sync"
-                    )
-
-            except requests.RequestException as e:
-                logger.warning(
-                    f"Could not verify user existence in Clerk: {e} - proceeding with sync"
-                )
-
+        # Caller (clerk_auth) has already validated Clerk user existence when needed.
         # First, try to find user by Clerk ID
         user = db.query(User).filter(User.clerk_id == clerk_user_id).first()
 
@@ -129,7 +109,7 @@ def sync_clerk_user_to_local_db(
 
             if updated:
                 user.updated_at = datetime.now(timezone.utc)
-                db.commit()
+                _commit()
                 db.refresh(user)
                 logger.debug(f"Updated existing user {clerk_user_id} in local database")
 
@@ -147,7 +127,7 @@ def sync_clerk_user_to_local_db(
                         "email_verified"
                     ]
                 existing_user_by_email.updated_at = datetime.now(timezone.utc)
-                db.commit()
+                _commit()
                 db.refresh(existing_user_by_email)
                 logger.info(f"Linked existing user {email} to Clerk ID {clerk_user_id}")
                 return existing_user_by_email
@@ -163,7 +143,7 @@ def sync_clerk_user_to_local_db(
                         "email_verified"
                     ]
                 existing_user_by_email.updated_at = datetime.now(timezone.utc)
-                db.commit()
+                _commit()
                 db.refresh(existing_user_by_email)
                 logger.info(
                     f"Updated existing user {email} to new Clerk ID {clerk_user_id}"
@@ -202,7 +182,7 @@ def sync_clerk_user_to_local_db(
 
         new_user = User(**user_data)
         db.add(new_user)
-        db.commit()
+        _commit()
         db.refresh(new_user)
 
         logger.info(f"Created new user {clerk_user_id} in local database")

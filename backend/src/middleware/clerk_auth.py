@@ -36,6 +36,14 @@ logger = logging.getLogger(__name__)
 CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
 
 
+class UserNotFoundInClerkError(Exception):
+    """Raised when Clerk API returns 404 for a user (e.g. user deleted in Clerk)."""
+
+    def __init__(self, clerk_user_id: str) -> None:
+        self.clerk_user_id = clerk_user_id
+        super().__init__(f"User {clerk_user_id} not found in Clerk")
+
+
 # Auth mode configuration
 def _is_truthy(val: Optional[str]) -> bool:
     return str(val).lower() in {"1", "true", "yes", "on"}
@@ -136,6 +144,7 @@ def get_clerk_user_info(clerk_user_id: str) -> Optional[Dict[str, Any]]:
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             logger.warning(f"User {clerk_user_id} not found in Clerk API")
+            raise UserNotFoundInClerkError(clerk_user_id) from e
         elif e.response.status_code == 401:
             logger.error(f"Unauthorized access to Clerk API - check CLERK_SECRET_KEY")
         else:
@@ -366,54 +375,75 @@ def get_current_user_from_clerk(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Fetch Clerk user info once; used to detect deleted users and to build sync data
+    clerk_user_info = None
     try:
-        # Regular Clerk token handling
-        # Get additional user data from Clerk API to include last sign-in
-        additional_data = {}
         clerk_user_info = get_clerk_user_info(clerk_user_id) if CLERK_SECRET_KEY else None
+    except UserNotFoundInClerkError:
+        # User was deleted in Clerk; do not sync. Reject so frontend can log out.
+        existing_local = db.query(User).filter(User.clerk_id == clerk_user_id).first()
+        if existing_local:
+            logger.warning(
+                f"User {clerk_user_id} exists locally but was deleted in Clerk - rejecting auth"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User no longer exists in Clerk",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
-        if clerk_user_info:
-            # Extract last sign-in time
-            if "last_sign_in_at" in clerk_user_info:
-                additional_data["last_sign_in_at"] = clerk_user_info["last_sign_in_at"]
+    existing_local = db.query(User).filter(User.clerk_id == clerk_user_id).first()
+    if clerk_user_info is None and existing_local:
+        # Clerk unreachable (timeout/error) but we have a local user; allow login without syncing
+        if not existing_local.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive"
+            )
+        return existing_local
 
-            # Extract email verification status
-            if (
-                "email_addresses" in clerk_user_info
-                and clerk_user_info["email_addresses"]
-            ):
-                primary_email_id = clerk_user_info.get("primary_email_address_id")
-                for email_addr in clerk_user_info["email_addresses"]:
-                    if (
-                        email_addr.get("id") == primary_email_id
-                        and "verification" in email_addr
-                    ):
-                        additional_data["email_verified"] = (
-                            email_addr["verification"].get("status") == "verified"
-                        )
-                        break
+    # Build additional data when we have Clerk info; then sync (create or update)
+    additional_data = {}
+    if clerk_user_info:
+        if "last_sign_in_at" in clerk_user_info:
+            additional_data["last_sign_in_at"] = clerk_user_info["last_sign_in_at"]
+        if "email_addresses" in clerk_user_info and clerk_user_info["email_addresses"]:
+            primary_email_id = clerk_user_info.get("primary_email_address_id")
+            for email_addr in clerk_user_info["email_addresses"]:
+                if (
+                    email_addr.get("id") == primary_email_id
+                    and "verification" in email_addr
+                ):
+                    additional_data["email_verified"] = (
+                        email_addr["verification"].get("status") == "verified"
+                    )
+                    break
 
-        # Get or create user in local database with additional data
+    try:
         user = sync_clerk_user_to_local_db(
             clerk_user_id=clerk_user_id,
             email=email,
             db=db,
             additional_data=additional_data,
         )
-
-        if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive"
-            )
-
-        return user
-
+    except RuntimeError as e:
+        logger.error(f"Error syncing user with authentication provider: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error syncing user with authentication provider",
+        ) from e
     except Exception as e:
         logger.error(f"Error getting/creating user from Clerk: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error processing authentication",
+        ) from e
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive"
         )
+
+    return user
 
 
 def fix_placeholder_emails(db: Session) -> int:
