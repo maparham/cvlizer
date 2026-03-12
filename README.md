@@ -93,8 +93,8 @@ docker compose up --build
 **Production on the same machine** (app on http://localhost:80; HTTPS on 443 if you add certs in `ssl/` — see `ssl/README`):
 
 ```bash
-# Edit .env.prod with real secrets, then:
-docker compose -f docker-compose.prod.yml up -d --build
+# Edit .env.prod with real secrets, then run with --env-file so build args (e.g. VITE_PUBLIC_URL) are set:
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 ```
 
 Dev and prod use separate Compose projects (`cvlator-dev` / `cvlator-prod`) and separate env files (`.env.dev` / `.env.prod`) and data (prod uses Docker volumes).
@@ -249,7 +249,7 @@ frontend/
 
 3. **Docker Deployment**:
    ```bash
-   docker-compose -f docker-compose.prod.yml up -d
+   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
    ```
 
 ## 🔒 Security Features

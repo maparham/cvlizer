@@ -1,5 +1,6 @@
 # Production stack: nginx on 80/443, frontend (SPA + /api proxy), backend. Dev stays on 3000/8000.
-# Run: docker compose -f docker-compose.prod.yml up -d
+# Run with --env-file so build args (VITE_PUBLIC_URL, etc.) are set from .env.prod:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 # App: http://localhost (and https://localhost if ssl/ certs are set; see ssl/README).
 name: cvlator-prod
 
@@ -23,6 +24,7 @@ services:
       args:
         VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
         VITE_ADMIN_EMAIL: ${VITE_ADMIN_EMAIL}
+        VITE_PUBLIC_URL: ${VITE_PUBLIC_URL}
     ports: []   # no host exposure; reached via nginx only (80/443)
     depends_on:
       - backend

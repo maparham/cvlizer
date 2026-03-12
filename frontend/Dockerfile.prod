@@ -16,6 +16,9 @@ ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
 # Admin email for showing Admin dashboard (must match backend ADMIN_EMAIL)
 ARG VITE_ADMIN_EMAIL=
 ENV VITE_ADMIN_EMAIL=$VITE_ADMIN_EMAIL
+# Public URL for Open Graph / SEO (og:url); set per deployment when building for another domain
+ARG VITE_PUBLIC_URL=
+ENV VITE_PUBLIC_URL=$VITE_PUBLIC_URL
 # Use build:no-ts so prod image builds even when tsc has errors; type-check separately with npm run type-check
 RUN npm run build:no-ts
 
