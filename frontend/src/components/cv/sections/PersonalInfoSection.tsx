@@ -39,6 +39,14 @@ import { useOverwriteConfirm, OVERWRITE_MSG } from "../../../contexts/OverwriteC
 import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { buildQualitySuggestionId } from "../../../utils/qualitySuggestionIds";
 
+/** Ensures a URL has a protocol so it is treated as absolute, not relative. */
+function ensureProtocol(url: string | undefined): string {
+  const t = url?.trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t}`;
+}
+
 const ACADEMIC_TITLES = [
   // English
   "Dr.",
@@ -458,7 +466,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           <Typography variant="body1" sx={{ color: "#1976d2" }}>
             <LinkedInIcon sx={{ mr: 0.5, verticalAlign: "middle" }} />{" "}
             <a
-              href={data.linkedin_url}
+              href={ensureProtocol(data.linkedin_url)}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "inherit", textDecoration: "none" }}
@@ -471,7 +479,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           <Typography variant="body1" sx={{ color: "#1976d2" }}>
             <GitHubIcon sx={{ mr: 0.5, verticalAlign: "middle" }} />{" "}
             <a
-              href={data.github_url}
+              href={ensureProtocol(data.github_url)}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "inherit", textDecoration: "none" }}
@@ -484,7 +492,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           <Typography variant="body1" sx={{ color: "#1976d2" }}>
             <WebsiteIcon sx={{ mr: 0.5, verticalAlign: "middle" }} />{" "}
             <a
-              href={data.website_url}
+              href={ensureProtocol(data.website_url)}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "inherit", textDecoration: "none" }}
