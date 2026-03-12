@@ -8,7 +8,7 @@
  * - Unsaved changes detection and confirmation dialogs
  * - Integration with CV editor context for state management
  */
-import React, { useEffect, useCallback, useRef, useState } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -29,7 +29,12 @@ import { ConnectedHistoryPanel, ConnectedHistoryPanelHandle } from "./index";
 import { useAIStore } from "../../stores/ai";
 import { useAISuggestionsStore } from "../../stores/aiSuggestionsStore";
 import { useCVQualityStore } from "../../stores/cvQualityStore";
-import { getPersistedCorrectionMode } from "../../stores/cvQualityPersistence";
+import {
+  getPersistedCorrectionMode,
+  getAutoProofreadDone,
+  setAutoProofreadDone,
+  clearAutoProofreadDone,
+} from "../../stores/cvQualityPersistence";
 import { isTempCVId, useCVStore } from "../../stores/cv";
 import { CVData } from "../../types/cv";
 import { useUIStore } from "../../stores/uiStore";
@@ -54,9 +59,15 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   const { loadJobDescriptions, getCVDrafts } = useAIStore();
   const { loadLatestAIEnhancement, clearAllSuggestions } =
     useAISuggestionsStore();
-  const { loadLatestQualityAnalysis, generateQualityAnalysis, qualityAnalysis, analysisLoading, currentAnalysisId, currentCorrectionMode } =
-    useCVQualityStore();
-  const { addTask, activeTasks } = useAITaskPollingContext();
+  const {
+    loadLatestQualityAnalysis,
+    generateQualityAnalysis,
+    currentCvId,
+    currentAnalysisId,
+    currentCorrectionMode,
+    analysisLoading,
+  } = useCVQualityStore();
+  const { addTask } = useAITaskPollingContext();
   const currentCV = useCVStore((state) => state.currentCV);
 
 
@@ -135,8 +146,9 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     }
   }, [cvId, currentCV?.updated_at, loadLatestQualityAnalysis]);
 
-  // Resume polling for in-progress quality analyses after page refresh
-  // Use persisted correctionMode when store has none (e.g. auth cleared activeTasks before restore)
+  // Resume polling for in-progress quality analyses after page refresh.
+  // When the page reloads mid-run, we restore the polling task here so progress
+  // indicators and completion handlers behave the same as a continuous session.
   useEffect(() => {
     if (currentAnalysisId && analysisLoading && cvId && !isTempCVId(cvId)) {
       const mode = currentCorrectionMode ?? getPersistedCorrectionMode(currentAnalysisId);
@@ -150,85 +162,48 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     }
   }, [currentAnalysisId, analysisLoading, cvId, currentCorrectionMode, addTask]);
 
-  // Auto-trigger "fix spelling and grammar" on first load for file-parsed CVs only
-  // Use ref to track if auto-trigger has been attempted for this CV
-  const autoTriggerAttemptedRef = useRef<string | null>(null);
-
+  // Auto-trigger proofread once per CV for file-parsed CVs.
+  // Wait until loadLatestQualityAnalysis has completed for this CV so we don't
+  // create a duplicate analysis; the localStorage flag is the source of truth
+  // for "have we already run the one-time proofread?"
   useEffect(() => {
-    // Reset ref when CV changes
-    if (cvId !== autoTriggerAttemptedRef.current) {
-      autoTriggerAttemptedRef.current = null;
+    if (
+      !cvId ||
+      isTempCVId(cvId) ||
+      currentCV?.is_parsed !== true ||
+      currentCV?.is_imported !== true ||
+      getAutoProofreadDone(cvId)
+    ) {
+      return;
     }
-
-    // Only auto-trigger for file-parsed CVs (not manually created), parsed, and no analysis yet
-    const shouldAutoTrigger =
-      cvId &&
-      !isTempCVId(cvId) &&
-      currentCV?.is_parsed === true &&
-      currentCV?.is_imported === true &&
-      !qualityAnalysis &&
-      !analysisLoading &&
-      !autoTriggerAttemptedRef.current;
-
-    // Check if analysis is already being polled for this CV
-    const hasActivePolling = Array.from(activeTasks.values()).some(
-      (task) => task.type === 'cv_quality_analysis' && task.cvId === cvId && task.isGenerating
-    );
-
-    if (shouldAutoTrigger && !hasActivePolling) {
-      // Mark as attempted when scheduling to prevent multiple timeouts for the same CV
-      autoTriggerAttemptedRef.current = cvId ?? null;
-
-      // Auto-trigger proofread analysis for file-parsed CVs (first time only)
-      // Delay ensures loadLatestQualityAnalysis has time to complete and currentCV may load
-      const triggerAnalysis = async () => {
-        // Bail out if CV changed before timeout fired
-        if (!cvId || autoTriggerAttemptedRef.current !== cvId) {
-          return;
-        }
-
-        // Double-check conditions before triggering
-        if (
-          isTempCVId(cvId) ||
-          !currentCV?.is_parsed ||
-          !currentCV?.is_imported ||
-          qualityAnalysis ||
-          analysisLoading
-        ) {
-          return;
-        }
-
-        // Check again if already polling
-        const stillHasActivePolling = Array.from(activeTasks.values()).some(
-          (task) => task.type === 'cv_quality_analysis' && task.cvId === cvId && task.isGenerating
-        );
-        if (stillHasActivePolling) {
-          return;
-        }
-
-        try {
-          const analysisId = await generateQualityAnalysis(cvId, 'proofread');
-          if (analysisId) {
-            addTask({
-              id: analysisId,
-              type: 'cv_quality_analysis',
-              cvId,
-              isGenerating: true,
-              data: { correctionMode: 'proofread' as const },
-            });
-          }
-        } catch (error) {
-          // Reset ref on error so it can retry
-          autoTriggerAttemptedRef.current = null;
-        }
-      };
-
-      // Delay to allow loadLatestQualityAnalysis to complete and update state
-      // This prevents race condition where auto-trigger fires before existing analysis loads
-      const timeoutId = setTimeout(triggerAnalysis, 1000);
-      return () => clearTimeout(timeoutId);
+    // Don't trigger until load has finished for this CV and we know there's no existing analysis
+    if (currentCvId !== cvId || analysisLoading || currentAnalysisId) {
+      return;
     }
-  }, [cvId, currentCV?.is_parsed, currentCV?.is_imported, qualityAnalysis, analysisLoading, generateQualityAnalysis, addTask, activeTasks, currentCV?.updated_at]);
+    generateQualityAnalysis(cvId, 'proofread')
+      .then((analysisId) => {
+        setAutoProofreadDone(cvId);
+        if (analysisId) {
+          addTask({
+            id: analysisId,
+            type: 'cv_quality_analysis',
+            cvId,
+            isGenerating: true,
+            data: { correctionMode: 'proofread' as const },
+          });
+        }
+      })
+      .catch(() => clearAutoProofreadDone(cvId));
+  }, [
+    cvId,
+    currentCV?.is_parsed,
+    currentCV?.is_imported,
+    currentCvId,
+    analysisLoading,
+    currentAnalysisId,
+    generateQualityAnalysis,
+    addTask,
+  ]);
 
 
   return (
