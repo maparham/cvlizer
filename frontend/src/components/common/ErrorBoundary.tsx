@@ -23,6 +23,19 @@ import {
   BugReport as BugIcon,
 } from "@mui/icons-material";
 
+const CHUNK_RELOAD_FLAG = "cv_lator_chunk_reload_attempted";
+
+const isDynamicImportError = (error: Error): boolean => {
+  const message = error?.message || "";
+
+  return (
+    error?.name === "ChunkLoadError" ||
+    message.includes("Loading chunk") ||
+    message.includes("Failed to fetch dynamically imported module") ||
+    message.includes("Importing a module script failed")
+  );
+};
+
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
@@ -39,7 +52,7 @@ interface ErrorBoundaryProps {
 
 export interface ErrorFallbackProps {
   error: Error;
-  errorInfo: React.ErrorInfo;
+  errorInfo: React.ErrorInfo | null;
   resetError: () => void;
   errorId: string;
 }
@@ -75,6 +88,27 @@ export class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("ErrorBoundary caught an error:", error, errorInfo);
+
+    // Special handling for failed dynamic imports / chunk load errors.
+    // These typically happen when a new deployment changes chunk hashes
+    // while the user still has an older version of the app loaded.
+    if (isDynamicImportError(error)) {
+      try {
+        const hasReloaded = sessionStorage.getItem(CHUNK_RELOAD_FLAG) === "true";
+
+        if (!hasReloaded) {
+          sessionStorage.setItem(CHUNK_RELOAD_FLAG, "true");
+          window.location.reload();
+          return;
+        }
+
+        // We already tried a reload and still hit a chunk error.
+        // Clear the flag so subsequent errors follow the normal path.
+        sessionStorage.removeItem(CHUNK_RELOAD_FLAG);
+      } catch {
+        // Swallow storage errors and fall through to normal handling.
+      }
+    }
 
     this.setState({
       errorInfo,
@@ -126,7 +160,7 @@ export class ErrorBoundary extends React.Component<
         return (
           <FallbackComponent
             error={error!}
-            errorInfo={errorInfo!}
+            errorInfo={errorInfo}
             resetError={this.handleReset}
             errorId={errorId}
           />
@@ -137,7 +171,7 @@ export class ErrorBoundary extends React.Component<
       return (
         <DefaultErrorFallback
           error={error!}
-          errorInfo={errorInfo!}
+          errorInfo={errorInfo}
           resetError={this.handleReset}
           errorId={errorId}
         />
@@ -166,7 +200,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
 Error ID: ${errorId}
 Error: ${error.message}
 Stack: ${error.stack}
-Component Stack: ${errorInfo.componentStack}
+Component Stack: ${errorInfo?.componentStack ?? "N/A"}
 Timestamp: ${new Date().toISOString()}
 User Agent: ${navigator.userAgent}
 URL: ${window.location.href}
