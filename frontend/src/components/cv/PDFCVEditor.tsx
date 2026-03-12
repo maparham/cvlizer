@@ -176,15 +176,19 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     );
 
     if (shouldAutoTrigger && !hasActivePolling) {
-      // Mark as attempted to prevent multiple triggers
-      autoTriggerAttemptedRef.current = cvId;
+      // Mark as attempted when scheduling to prevent multiple timeouts for the same CV
+      autoTriggerAttemptedRef.current = cvId ?? null;
 
       // Auto-trigger proofread analysis for file-parsed CVs (first time only)
-      // Delay ensures loadLatestQualityAnalysis has time to complete first
+      // Delay ensures loadLatestQualityAnalysis has time to complete and currentCV may load
       const triggerAnalysis = async () => {
+        // Bail out if CV changed before timeout fired
+        if (!cvId || autoTriggerAttemptedRef.current !== cvId) {
+          return;
+        }
+
         // Double-check conditions before triggering
         if (
-          !cvId ||
           isTempCVId(cvId) ||
           !currentCV?.is_parsed ||
           !currentCV?.is_imported ||

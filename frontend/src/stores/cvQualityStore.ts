@@ -321,6 +321,26 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
       const analysis = await aiService.getLatestQualityAnalysis(cvId);
 
       if (!analysis || analysis.cv_id !== cvId) {
+        // No analysis for this CV: set store to "viewing this CV, no analysis" so
+        // PDFCVEditor auto-trigger sees !qualityAnalysis and can start proofread.
+        const keptProofreadScore = getPersistedProofreadScore(cvId);
+        const state = get();
+        const preservedLastDismissedAt =
+          state.currentCvId === cvId && state.lastDismissedAt != null
+            ? state.lastDismissedAt
+            : null;
+        set({
+          currentCvId: cvId,
+          qualityAnalysis: null,
+          currentAnalysisId: null,
+          currentCorrectionMode: null,
+          analysisLoading: false,
+          analysisError: null,
+          overallScore: null,
+          proofreadScore: keptProofreadScore,
+          isDismissing: false,
+          lastDismissedAt: preservedLastDismissedAt,
+        });
         return;
       }
 

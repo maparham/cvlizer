@@ -75,7 +75,6 @@ const Dashboard: React.FC = () => {
     updateCVTitle,
     deleteCV: deleteCVFromStore,
     duplicateCV: duplicateCVFromStore,
-    uploadCV,
   } = useCVStore();
 
   // Get job descriptions for the applications card
@@ -295,17 +294,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleFileDrop = async (file: File) => {
-    try {
-      const cv = await uploadCV(file);
-      showSuccess("Success", "CV uploaded successfully and is being parsed");
-      setPendingEditorCvId(cv.id);
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.detail || error?.message || "Upload failed. Please try again.";
-      showError("Upload failed", errorMessage);
-    }
-  };
-
   const handlePlaceholderFileSelected = (file: File) => {
     setPendingUploadFile(file);
     setUploadOpen(true);
@@ -370,7 +358,7 @@ const Dashboard: React.FC = () => {
             creating={creating}
             onCreateFromTemplate={() => setTemplateSelectorOpen(true)}
             onStartFromScratch={handleStartFromScratch}
-            onFileDrop={handleFileDrop}
+            onFileDrop={handlePlaceholderFileSelected}
             onValidationError={(error) => showError("Invalid file", error)}
           />
         ) : (

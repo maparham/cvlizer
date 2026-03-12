@@ -175,7 +175,7 @@ const CVsCard: React.FC<CVsCardProps> = ({
           <Stack
             direction="row"
             alignItems="center"
-            flexWrap="wrap"
+            flexWrap={{ xs: "wrap", sm: "nowrap" }}
             sx={{
               flex: { xs: "none", sm: 1 },
               justifyContent: { xs: "flex-start", sm: "flex-end" },
