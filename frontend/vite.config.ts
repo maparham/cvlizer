@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 
-/** Build-time replacement for public URL in index.html (og:url). Set VITE_PUBLIC_URL per deployment. When unset, the og:url meta tag is omitted so no invalid placeholder or wrong domain is output. */
+/** Build-time replacement for public URL in index.html (og:url) and sitemap.xml. Set VITE_PUBLIC_URL per deployment. When unset, the og:url meta tag and sitemap are omitted. */
 function replacePublicUrl() {
   const publicUrl = process.env.VITE_PUBLIC_URL
   const safeUrl = publicUrl ? publicUrl.replace(/\$/g, '$$') : null
@@ -14,6 +15,20 @@ function replacePublicUrl() {
     transformIndexHtml(html: string) {
       if (safeUrl == null) return html.replace(ogUrlTagRegex, '')
       return html.replace(/__PUBLIC_URL__/g, safeUrl)
+    },
+    writeBundle: {
+      order: 'post',
+      handler() {
+        const publicSitemap = resolve(process.cwd(), 'public', 'sitemap.xml')
+        const distSitemap = resolve(process.cwd(), 'dist', 'sitemap.xml')
+        if (!existsSync(publicSitemap)) return
+        if (publicUrl == null || publicUrl === '') {
+          if (existsSync(distSitemap)) unlinkSync(distSitemap)
+          return
+        }
+        const content = readFileSync(publicSitemap, 'utf8').split('__PUBLIC_URL__').join(publicUrl)
+        writeFileSync(distSitemap, content)
+      },
     },
   }
 }
