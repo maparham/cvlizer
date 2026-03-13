@@ -431,36 +431,62 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     );
   };
 
-  const renderDisplay = (data: any) => (
-    <Box>
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: "bold", mb: 2, color: "#1976d2" }}
-      >
-        {data.full_name || "Your Name"}
-      </Typography>
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
-        {data.academic_title && (
-          <Typography variant="body1" sx={{ color: "#666" }}>
-            🎓 {data.academic_title}
+  const renderDisplay = (data: any) => {
+    const fullNameMissingOrInvalid =
+      !data.full_name?.trim() || fullNameValidation.hasError;
+    const fullNameMessage =
+      fullNameValidation.errorMessage || "Full name is required";
+
+    const emailMissingOrInvalid =
+      !data.email?.trim() || emailValidation.hasError;
+    const emailMessage =
+      emailValidation.errorMessage || "Email is required";
+
+    const locationMissingOrInvalid =
+      !data.location?.trim() || locationValidation.hasError;
+    const locationMessage =
+      locationValidation.errorMessage || "Location is required";
+
+    return (
+      <Box>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: "bold",
+            mb: 2,
+            color: fullNameMissingOrInvalid ? "error.main" : "#1976d2",
+          }}
+        >
+          {fullNameMissingOrInvalid ? fullNameMessage : data.full_name}
+        </Typography>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
+          {data.academic_title && (
+            <Typography variant="body1" sx={{ color: "#666" }}>
+              🎓 {data.academic_title}
+            </Typography>
+          )}
+          <Typography
+            variant="body1"
+            sx={{
+              color: emailMissingOrInvalid ? "error.main" : "#666",
+            }}
+          >
+            📧 {emailMissingOrInvalid ? emailMessage : data.email}
           </Typography>
-        )}
-        {data.email && (
-          <Typography variant="body1" sx={{ color: "#666" }}>
-            📧 {data.email}
+          {data.phone && (
+            <Typography variant="body1" sx={{ color: "#666" }}>
+              📞 {data.phone}
+            </Typography>
+          )}
+          <Typography
+            variant="body1"
+            sx={{
+              color: locationMissingOrInvalid ? "error.main" : "#666",
+            }}
+          >
+            📍 {locationMissingOrInvalid ? locationMessage : data.location}
           </Typography>
-        )}
-        {data.phone && (
-          <Typography variant="body1" sx={{ color: "#666" }}>
-            📞 {data.phone}
-          </Typography>
-        )}
-        {data.location && (
-          <Typography variant="body1" sx={{ color: "#666" }}>
-            📍 {data.location}
-          </Typography>
-        )}
-      </Box>
+        </Box>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
         {data.linkedin_url && (
           <Typography variant="body1" sx={{ color: "#1976d2" }}>
@@ -540,11 +566,12 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         isRetrying={isRetrying}
         suggestionCardId={buildQualitySuggestionId("personal_info", "single", "personal_info.about_me")}
       />
-      {personalInfoCoaching && (
-        <CoachingQuestionsPanel coachingItem={personalInfoCoaching} />
-      )}
-    </Box>
-  );
+        {personalInfoCoaching && (
+          <CoachingQuestionsPanel coachingItem={personalInfoCoaching} />
+        )}
+      </Box>
+    );
+  };
 
   return (
     <SimpleFormSection
