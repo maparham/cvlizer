@@ -32,6 +32,8 @@ export interface CV {
   has_been_edited: boolean;
   /** Section count (visible sections with data); set by API on all CV responses */
   section_count?: number;
+  /** Advisory validation warnings after save; set by API on PUT response */
+  validation_warnings?: string[];
 }
 
 // CV Data Structure

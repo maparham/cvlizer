@@ -195,6 +195,7 @@ export interface IndividualItemSectionProps<T> {
  */
 export interface PDFCVEditorProps {
   cvData: CVData;
+  cvId?: string;
   onUpdateCV: (data: CVData) => void;
   onSave: (data: CVData, message?: string) => Promise<void>;
 }

@@ -94,6 +94,11 @@ const CVEditorContext = createContext<CVEditorContextType | undefined>(
 interface CVEditorProviderProps {
   children: ReactNode;
   cvData: CVData;
+  /**
+   * CV ID for real-time validation. When provided, useCVValidation calls
+   * POST /cvs/:id/validate to show advisory errors. Omit for new/temp CVs.
+   */
+  cvId?: string;
   onUpdateCV: (data: CVData) => void;
   onSave: (data?: CVData, message?: string) => Promise<void>;
 }
@@ -102,11 +107,13 @@ interface CVEditorProviderProps {
 export const CVEditorProvider: React.FC<CVEditorProviderProps> = ({
   children,
   cvData,
+  cvId,
   onUpdateCV,
   onSave,
 }) => {
   const editorState = usePDFCVEditor({
     cvData,
+    cvId,
     onUpdateCV,
     onSave,
   });

@@ -22,7 +22,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { CVEditorProvider } from "../../contexts/CVEditorContext";
 import { SaveWithValidationErrors } from "../cv/SaveWithValidationErrors";
-import { InitialValidation } from "../cv/InitialValidation";
+import { ValidationCleanup } from "../cv/ValidationCleanup";
 import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../../packages/notifications";
 import { ErrorBoundary } from "../common";
 import { CVProvider } from "../../contexts/CVContext";
@@ -441,11 +441,12 @@ const CVEditor: React.FC = () => {
             <OverwriteConfirmProvider>
               <CVEditorProvider
                 cvData={cvData}
+                cvId={cvId}
                 onUpdateCV={handleUpdateCV}
                 onSave={handleSave}
               >
                 <SaveWithValidationErrors onSaveError={() => {}}>
-                  <InitialValidation cvId={cvId}>
+                  <ValidationCleanup cvId={cvId}>
                     <CVEditorContent
                       cvId={cvId}
                       activeCV={activeCV}
@@ -458,7 +459,7 @@ const CVEditor: React.FC = () => {
                       isAdmin={isAdmin}
                       isNewCV={isNewCV}
                     />
-                  </InitialValidation>
+                  </ValidationCleanup>
                 </SaveWithValidationErrors>
               </CVEditorProvider>
             </OverwriteConfirmProvider>

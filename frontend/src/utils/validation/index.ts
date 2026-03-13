@@ -30,8 +30,10 @@ export {
 // Helper function exports
 export {
   createErrorKey,
-  hasFieldError,
+  filterHiddenSectionErrors,
   getFieldError,
-  hasSectionErrors,
   getSectionErrorCount,
+  getVisibleSectionIds,
+  hasFieldError,
+  hasSectionErrors,
 } from "./helpers";

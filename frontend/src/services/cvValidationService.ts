@@ -1,11 +1,13 @@
 /**
  * CV Validation Service
  *
- * Centralized validation logic for CV data processing, cleaning, and validation.
- * This service handles data transformation between frontend and backend formats,
- * ensuring data integrity and proper validation before API calls.
+ * API and local utilities only. For validation:
+ * - validateCV(): calls backend POST /cvs/:id/validate and returns raw error strings.
+ * - Orchestration (debouncing, parsing, filtering by hidden sections) lives in useCVValidation.
+ * Also handles data cleaning (cleanForBackend) and local validateCVData for legacy use.
  */
 
+import api from "./api";
 import { CVData } from "../types";
 
 export interface ValidationResult {
@@ -42,7 +44,27 @@ export class CVValidationService {
   }
 
   /**
-   * Validate complete CV data and return list of validation errors
+   * Call backend to validate CV data. Returns list of validation error strings.
+   * When parsedData is provided, validates that (e.g. current editor state);
+   * otherwise backend validates the stored CV data.
+   */
+  static async validateCV(
+    cvId: string,
+    parsedData?: CVData,
+  ): Promise<string[]> {
+    const response = await api.post<{
+      cv_id: string;
+      validation_errors: string[];
+      validated_at: string;
+    }>(
+      `/cvs/${cvId}/validate`,
+      parsedData != null ? { parsed_data: parsedData } : {},
+    );
+    return response.data?.validation_errors ?? [];
+  }
+
+  /**
+   * Validate complete CV data and return list of validation errors (local only)
    */
   static validateCVData(cvData: CVData): string[] {
     const errors: string[] = [];
@@ -352,27 +374,23 @@ class CVDataCleaner {
   private cleanPersonalInfo(data: any): void {
     if (data.personal_info) {
       const { full_name, email, location } = data.personal_info;
-
-      // Clean strings
       const cleanedFullName = this.cleanString(full_name);
       const cleanedEmail = this.cleanString(email);
       const cleanedLocation = this.cleanString(location);
-
-      // Backend requires these fields to be non-empty
-      if (!cleanedFullName || !cleanedEmail || !cleanedLocation) {
-        delete data.personal_info;
-      } else {
-        data.personal_info = {
-          ...data.personal_info,
-          full_name: cleanedFullName,
-          academic_title: this.cleanString(data.personal_info.academic_title) || "",
-          email: cleanedEmail,
-          location: cleanedLocation,
-          phone: this.cleanString(data.personal_info.phone) || "",
-          linkedin_url: this.cleanString(data.personal_info.linkedin_url) || "",
-          website_url: this.cleanString(data.personal_info.website_url) || "",
-        };
-      }
+      // Backend uses relaxed CV update schema and accepts empty required fields;
+      // we always keep personal_info (no longer delete when name/email/location empty).
+      // Advisory validation is shown via validation_warnings; save never blocks.
+      data.personal_info = {
+        ...data.personal_info,
+        full_name: cleanedFullName ?? "",
+        academic_title:
+          this.cleanString(data.personal_info.academic_title) ?? "",
+        email: cleanedEmail ?? "",
+        location: cleanedLocation ?? "",
+        phone: this.cleanString(data.personal_info.phone) ?? "",
+        linkedin_url: this.cleanString(data.personal_info.linkedin_url) ?? "",
+        website_url: this.cleanString(data.personal_info.website_url) ?? "",
+      };
     }
   }
 

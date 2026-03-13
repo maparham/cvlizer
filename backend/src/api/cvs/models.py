@@ -25,6 +25,7 @@ class CVResponse(BaseModel):
     is_imported: bool
     has_been_edited: bool
     section_count: Optional[int] = None  # Set by backend on all CV responses
+    validation_warnings: Optional[List[str]] = None  # Advisory errors after save
 
     class Config:
         from_attributes = True
@@ -44,3 +45,17 @@ class CVTitleUpdateRequest(BaseModel):
     """Request model for updating CV title."""
 
     title: str = Field(..., min_length=1, max_length=255, description="New CV title")
+
+
+class CVValidateRequest(BaseModel):
+    """Optional body for validate endpoint; when present, validate this data."""
+
+    parsed_data: Optional[dict] = None
+
+
+class CVValidateResponse(BaseModel):
+    """Response model for CV validate endpoint."""
+
+    cv_id: str
+    validation_errors: List[str]
+    validated_at: str

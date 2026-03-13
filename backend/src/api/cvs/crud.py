@@ -18,7 +18,8 @@ for validation/compound errors.
 """
 
 from copy import deepcopy
-from typing import List
+from datetime import datetime, timezone
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
@@ -30,7 +31,9 @@ from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import get_db
 from src.models.cv import CV
 from src.models.user import User
-from src.schemas.cv_schemas import CVUpdateRequestSchema
+from src.schemas.cv_update_schemas import CVUpdateRequestSchema
+from src.utils.validate_cache import get_cached, set_cached
+from src.utils.validation import get_validation_errors
 from src.services.cv_service import (
     create_cv,
     delete_cv,
@@ -44,7 +47,13 @@ from src.services.file_service import delete_file
 from src.services.template_loader import get_template_metadata
 from src.utils.validation import CVDataValidator
 
-from .models import CVListResponse, CVResponse, CVTitleUpdateRequest
+from .models import (
+    CVListResponse,
+    CVResponse,
+    CVTitleUpdateRequest,
+    CVValidateRequest,
+    CVValidateResponse,
+)
 from .responses import build_cv_response
 
 router = APIRouter()
@@ -108,24 +117,11 @@ async def update_cv_data(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
 ):
-    """Update CV parsed data with comprehensive validation"""
+    """Update CV parsed data; uses relaxed schema so save always passes."""
     try:
-        # Validate the data using our schema
-        validated_data = cv_update.parsed_data.dict()
+        validated_data = cv_update.parsed_data.model_dump()
 
-        # Clean empty entries before validation
         cleaned_data = CVDataValidator.clean_empty_entries(validated_data)
-
-        # Additional business logic validation
-        validation_errors = CVDataValidator.validate_business_rules(cleaned_data)
-        if validation_errors:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "detail": "CV data validation failed",
-                    "errors": validation_errors,
-                },
-            )
 
         cv = update_cv(db, cv_id, str(current_user.id), cleaned_data)
         if not cv:
@@ -133,13 +129,53 @@ async def update_cv_data(
                 status_code=status.HTTP_404_NOT_FOUND, detail="CV not found"
             )
 
-        return build_cv_response(cv)
+        validation_warnings = get_validation_errors(cv.parsed_data or {})
+        response = build_cv_response(cv)
+        return response.model_copy(update={"validation_warnings": validation_warnings})
 
     except ValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"detail": "Invalid CV data format", "errors": e.errors()},
         )
+
+
+@router.post("/{cv_id}/validate", response_model=CVValidateResponse)
+async def validate_cv_data(
+    cv_id: str,
+    body: Optional[CVValidateRequest] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+):
+    """
+    Validate CV data without saving. Returns validation errors for advisory display.
+    If body.parsed_data is provided, validate that (e.g. current editor state);
+    otherwise validate the CV's stored parsed_data. Used for real-time validation.
+    Results cached 5s per (cv_id, user_id, data_hash) to reduce load during edits.
+    """
+    cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    data_to_validate = (
+        (body.parsed_data)
+        if body and body.parsed_data is not None
+        else (cv.parsed_data or {})
+    )
+    user_id = str(current_user.id)
+    cached = get_cached(cv_id, user_id, data_to_validate)
+    if cached is not None:
+        return CVValidateResponse(
+            cv_id=cv_id,
+            validation_errors=cached,
+            validated_at=datetime.now(timezone.utc).isoformat(),
+        )
+    validation_errors = get_validation_errors(data_to_validate)
+    set_cached(cv_id, user_id, data_to_validate, validation_errors)
+    return CVValidateResponse(
+        cv_id=cv_id,
+        validation_errors=validation_errors,
+        validated_at=datetime.now(timezone.utc).isoformat(),
+    )
 
 
 @router.post("/create-blank", response_model=CVResponse)

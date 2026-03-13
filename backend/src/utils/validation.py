@@ -8,6 +8,11 @@ and business rule validation.
 
 from typing import Any, Dict, List
 
+from pydantic import ValidationError
+
+from src.schemas.cv_schemas import CVDataSchema
+from src.utils.validation_formatters import format_validation_errors
+
 
 class CVDataValidator:
     """Centralized validation utilities for CV data."""
@@ -61,42 +66,13 @@ class CVDataValidator:
         """
         cleaned_data = cv_data.copy()
 
-        # Ensure personal_info always exists
-        if "personal_info" not in cleaned_data or not cleaned_data["personal_info"]:
-            # Create default structure if missing
-            cleaned_data["personal_info"] = {
-                "full_name": "Your Name",
-                "email": "your.email@example.com",
-                "location": "Your Location",
-            }
-        else:
-            # Validate that required fields are non-empty
-            personal_info = cleaned_data["personal_info"]
-            if not isinstance(personal_info, dict):
-                cleaned_data["personal_info"] = {
-                    "full_name": "Your Name",
-                    "email": "your.email@example.com",
-                    "location": "Your Location",
-                }
-            else:
-                # Ensure required fields exist and are non-empty
-                full_name = cls.safe_get_str(personal_info, "full_name")
-                email = cls.safe_get_str(personal_info, "email")
-                location = cls.safe_get_str(personal_info, "location")
-
-                if not full_name or not email or not location:
-                    # If any required field is empty, use placeholders
-                    # This ensures validation passes, but the data should be replaced before saving
-                    cleaned_data["personal_info"] = {
-                        "full_name": full_name or "Your Name",
-                        "email": email or "your.email@example.com",
-                        "location": location or "Your Location",
-                        "phone": personal_info.get("phone", ""),
-                        "linkedin_url": personal_info.get("linkedin_url", ""),
-                        "website_url": personal_info.get("website_url", ""),
-                        "github_url": personal_info.get("github_url", ""),
-                        "academic_title": personal_info.get("academic_title"),
-                    }
+        # Ensure personal_info exists as a dictionary (can be empty)
+        # Relaxed schema accepts empty required fields; validation_warnings show errors
+        if "personal_info" not in cleaned_data or cleaned_data["personal_info"] is None:
+            cleaned_data["personal_info"] = {}
+        elif not isinstance(cleaned_data["personal_info"], dict):
+            # If not a dict, replace with empty dict (malformed data)
+            cleaned_data["personal_info"] = {}
 
         # Clean work experience entries - only keep entries that have all required fields
         if "work_experience" in cleaned_data:
@@ -365,3 +341,20 @@ class CVDataValidator:
                     errors.append(date_error)
 
         return errors
+
+
+def get_validation_errors(parsed_data: Dict[str, Any]) -> List[str]:
+    """
+    Validate parsed_data against the strict CVDataSchema and return a list of
+    user-facing error strings for advisory display. Used after save; does not
+    block persistence.
+
+    Returns:
+        List of strings like "Personal Info: Full name is required" or
+        "Work Experience #1: Position is required", empty if valid.
+    """
+    try:
+        CVDataSchema.model_validate(parsed_data)
+        return []
+    except ValidationError as e:
+        return format_validation_errors(e)

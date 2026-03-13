@@ -272,14 +272,6 @@ export const createCVCrudSlice: StateCreator<
       // Hidden sections are managed by section_config.visible flag
       // filterVisibleSections is only for AI/display operations, not for saving
       const cleanedData = CVValidationService.cleanForBackend(data.parsed_data);
-      const validationErrors =
-        CVValidationService.validateCVData(cleanedData);
-      if (validationErrors.length > 0) {
-        set({ saving: false });
-        throw new Error(
-          `CV validation failed:\n• ${validationErrors.join("\n• ")}`,
-        );
-      }
       const cleanedRequest = { parsed_data: cleanedData };
       const updatedCV = await cvApi.updateCV(cvId, cleanedRequest);
       set({

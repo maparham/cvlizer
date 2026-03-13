@@ -339,8 +339,8 @@ class CVDataSchema(BaseModel):
         extra = "forbid"  # Reject any additional fields for data integrity
 
 
-class CVUpdateRequestSchema(BaseModel):
-    """Schema for CV update requests"""
+class CVValidationRequestSchema(BaseModel):
+    """Schema for validating CV data (advisory only). Not used for PUT body."""
 
     parsed_data: CVDataSchema
 

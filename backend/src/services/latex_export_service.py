@@ -643,6 +643,9 @@ def _format_personal_info_header(pi: Dict[str, Any], template_name: str = "") ->
 
     For template "jake": compact one-line contact (phone | email | links).
     Otherwise: 2-row contact grid with Font Awesome icons.
+
+    Empty personal_info (e.g. full_name="") is handled: returns "" so PDF
+    still generates; AI and display use parsed.get("personal_info", {}) safely.
     """
     full_name = pi.get("full_name", "")
     academic_title = pi.get("academic_title", "")

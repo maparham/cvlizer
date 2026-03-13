@@ -5,6 +5,7 @@
  * error formatting, field checking, and summary generation.
  */
 
+import { SectionConfig } from "../../types";
 import { ValidationError } from "./types";
 
 /**
@@ -77,4 +78,40 @@ export const getSectionErrorCount = (
   section: string,
 ): number => {
   return errors.filter((error) => error.section === section).length;
+};
+
+/**
+ * Get visible section IDs from section config (memoizable).
+ * Returns null when no filtering needed (all sections visible).
+ */
+export const getVisibleSectionIds = (
+  sectionConfig?: SectionConfig | null,
+): Set<string> | null => {
+  if (!sectionConfig?.sections?.length) return null;
+  return new Set(
+    sectionConfig.sections
+      .filter((s) => s.visible !== false)
+      .map((s) => s.id),
+  );
+};
+
+/**
+ * Filter out validation errors for sections that are hidden (visible: false).
+ * Keeps "general" errors and errors for visible sections only.
+ * Accepts precomputed visibleSectionIds for memoization at call site.
+ */
+export const filterHiddenSectionErrors = (
+  errors: ValidationError[],
+  sectionConfigOrIds?: SectionConfig | Set<string> | null,
+): ValidationError[] => {
+  const visibleSectionIds =
+    sectionConfigOrIds instanceof Set
+      ? sectionConfigOrIds
+      : getVisibleSectionIds(sectionConfigOrIds ?? undefined);
+  if (!visibleSectionIds) return errors;
+
+  return errors.filter(
+    (error) =>
+      error.section === "general" || visibleSectionIds.has(error.section),
+  );
 };

@@ -1,9 +1,10 @@
-import { useState, useCallback } from "react";
-import { PDFCVEditorProps, CVSection, CVData } from "../types";
-import { useSectionManagement } from "./useSectionManagement";
-import { useEditingState } from "./useEditingState";
+import { useCallback, useState } from "react";
+import { CVData, CVSection, PDFCVEditorProps } from "../types";
+import { useCVValidation } from "./useCVValidation";
 import { useDragAndDrop } from "./useDragAndDrop";
+import { useEditingState } from "./useEditingState";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import { useSectionManagement } from "./useSectionManagement";
 import { ValidationError } from "../utils/validation";
 
 interface PDFCVEditorHook {
@@ -72,24 +73,23 @@ interface PDFCVEditorHook {
 
 export const usePDFCVEditor = ({
   cvData,
+  cvId,
   onUpdateCV,
   onSave,
 }: PDFCVEditorProps): PDFCVEditorHook => {
   // Reset dialog state (not managed by other hooks)
   const [showResetDialog, setShowResetDialog] = useState(false);
 
-  // Validation errors state
-  const [validationErrors, setValidationErrorsState] = useState<ValidationError[]>(
-    [],
-  );
-
-  const setValidationErrors = useCallback((errors: ValidationError[]) => {
-    setValidationErrorsState(errors);
-  }, []);
-
-  const clearValidationErrors = useCallback(() => {
-    setValidationErrorsState([]);
-  }, []);
+  // Real-time validation via backend (debounced, filters hidden sections)
+  const {
+    validationErrors,
+    setValidationErrors,
+    clearValidationErrors,
+  } = useCVValidation({
+    cvId,
+    cvData,
+    enabled: true,
+  });
 
   // Wrap onSave to update CV data as well
   const handleSave = useCallback(

@@ -212,7 +212,7 @@ async def approve_why_good_fit_draft(
         # Validate and strip extras strictly via Pydantic
         try:
             validated = WhyGoodFitSchema(**normalized)
-            compliant_data = validated.dict()
+            compliant_data = validated.model_dump()
             logger.info(
                 f"approve_why_good_fit_draft: Validation succeeded for draft {request.draft_id}, title={compliant_data.get('title')}"
             )
@@ -229,7 +229,7 @@ async def approve_why_good_fit_draft(
         metadata_dict = {
             k: v for k, v in compliant_data.items() if k not in ("content", "title")
         }
-        compliant_metadata = WhyGoodFitMetadataSchema(**metadata_dict).dict()
+        compliant_metadata = WhyGoodFitMetadataSchema(**metadata_dict).model_dump()
 
         section_title = compliant_data.get("title") or "Why I'm a Good Fit"
         compliant_content = (compliant_data.get("content") or "").strip()
