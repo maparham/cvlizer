@@ -159,3 +159,15 @@ export const getDefaultDateRange = (): { start: string; end: string } => {
     end: end.toISOString().split("T")[0],
   };
 };
+
+/**
+ * Reset AI usage for a specific user (delete all their usage logs).
+ */
+export const resetUserAIUsage = async (userId: string): Promise<{
+  message: string;
+  deleted_count: number;
+  user_email: string;
+}> => {
+  const response = await api.delete(`/admin/ai-usage/users/${userId}/logs`);
+  return response.data;
+};

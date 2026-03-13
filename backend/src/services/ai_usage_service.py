@@ -596,3 +596,28 @@ def delete_all_usage_logs(db: Session) -> int:
         logger.error(f"Failed to delete all usage logs: {str(e)}")
         db.rollback()
         raise
+
+
+def delete_user_usage_logs(db: Session, user_id: str) -> int:
+    """
+    Delete all AI usage logs for a specific user.
+
+    Args:
+        db: Database session
+        user_id: User ID to delete logs for
+
+    Returns:
+        Number of deleted records
+    """
+    try:
+        deleted_count = (
+            db.query(AIUsageLog)
+            .filter(AIUsageLog.user_id == user_id)
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+        return deleted_count
+    except Exception as e:
+        logger.error(f"Failed to delete user usage logs: {str(e)}")
+        db.rollback()
+        raise

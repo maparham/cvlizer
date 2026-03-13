@@ -20,6 +20,7 @@ from src.models.base import get_db
 from src.models.user import User
 from src.services.ai_usage_service import (
     delete_all_usage_logs,
+    delete_user_usage_logs,
     get_usage_by_operation,
     get_usage_by_user,
     get_usage_logs,
@@ -413,6 +414,49 @@ async def delete_all_ai_usage_logs(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error deleting AI usage logs",
+        )
+
+
+@router.delete("/users/{user_id}/logs")
+async def delete_user_ai_usage_logs(
+    user_id: str,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin_allow_impersonating),
+):
+    """
+    Delete all AI usage logs for a specific user.
+
+    This resets the user's AI usage quota by removing all their usage history.
+    Use this for testing, quota resets, or support cases.
+    """
+    try:
+        user = db.query(User).filter_by(id=user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        deleted_count = delete_user_usage_logs(db, user_id)
+
+        logger.info(
+            f"Admin {admin_user.email} reset AI usage for user {user.email} "
+            f"({deleted_count} records deleted)"
+        )
+
+        return {
+            "message": f"Successfully reset AI usage for {user.email}",
+            "deleted_count": deleted_count,
+            "user_email": user.email,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting user AI usage logs: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error deleting user AI usage logs",
         )
 
 

@@ -56,6 +56,7 @@ import UserErrorsDialog from "../UserErrorsDialog";
 import UserCVsDialog from "../UserCVsDialog";
 import ImpersonationDialog from "../ImpersonationDialog";
 import DeleteUserDialog from "../DeleteUserDialog";
+import { ConfirmDialog } from "../../common";
 
 interface UsersTabProps {
   users: UserSummary[];
@@ -116,6 +117,7 @@ interface UsersTabProps {
   onImpersonationJustificationChange: (justification: string) => void;
   onConfirmImpersonation: () => Promise<void>;
   onDeleteUser: (userId: string) => Promise<void>;
+  onResetUserUsage: (userId: string) => Promise<void>;
 }
 
 const UsersTab: React.FC<UsersTabProps> = ({
@@ -162,11 +164,19 @@ const UsersTab: React.FC<UsersTabProps> = ({
   onImpersonationJustificationChange,
   onConfirmImpersonation,
   onDeleteUser,
+  onResetUserUsage,
 }) => {
   const usersList = Array.isArray(users) ? users : [];
   // State for delete user dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; email: string } | null>(null);
+  // State for reset usage dialog
+  const [resetUsageDialogOpen, setResetUsageDialogOpen] = useState(false);
+  const [userToResetUsage, setUserToResetUsage] = useState<{
+    id: string;
+    name: string;
+    email: string;
+  } | null>(null);
 
   const handleDeleteUserClick = (userId: string, userName: string) => {
     setUserToDelete({ id: userId, name: userName, email: userName });
@@ -184,6 +194,24 @@ const UsersTab: React.FC<UsersTabProps> = ({
   const handleDeleteDialogClose = () => {
     setDeleteDialogOpen(false);
     setUserToDelete(null);
+  };
+
+  const handleResetUsageClick = (userId: string, userName: string) => {
+    setUserToResetUsage({ id: userId, name: userName, email: userName });
+    setResetUsageDialogOpen(true);
+  };
+
+  const handleResetUsageConfirm = async () => {
+    if (userToResetUsage) {
+      await onResetUserUsage(userToResetUsage.id);
+      setResetUsageDialogOpen(false);
+      setUserToResetUsage(null);
+    }
+  };
+
+  const handleResetUsageDialogClose = () => {
+    setResetUsageDialogOpen(false);
+    setUserToResetUsage(null);
   };
 
   if (loading) {
@@ -335,6 +363,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
                       onViewErrors={onLoadUserErrors}
                       onContactUser={onContactUser}
                       onDeleteUser={handleDeleteUserClick}
+                      onResetUsage={handleResetUsageClick}
                     />
                   </Box>
                 </TableCell>
@@ -398,6 +427,16 @@ const UsersTab: React.FC<UsersTabProps> = ({
         onConfirm={handleDeleteUserConfirm}
         userName={userToDelete?.name || ""}
         userEmail={userToDelete?.email || ""}
+      />
+
+      <ConfirmDialog
+        open={resetUsageDialogOpen}
+        onClose={handleResetUsageDialogClose}
+        onConfirm={handleResetUsageConfirm}
+        title="Reset AI Usage"
+        message={`Are you sure you want to reset AI usage for ${userToResetUsage?.email ?? ""}? This will delete all their usage logs and reset their quota.`}
+        confirmButtonText="Reset Usage"
+        confirmButtonColor="warning"
       />
     </Box>
   );

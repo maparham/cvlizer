@@ -65,6 +65,7 @@ interface UseUserActionsReturn {
   setImpersonationDialogOpen: (open: boolean) => void;
   setImpersonationJustification: (justification: string) => void;
   setActivityTypeFilter: (filter: string) => void;
+  setActionLoading: (userId: string | null) => void;
 }
 
 export const useUserActions = (): UseUserActionsReturn => {
@@ -260,5 +261,6 @@ export const useUserActions = (): UseUserActionsReturn => {
     setImpersonationDialogOpen,
     setImpersonationJustification,
     setActivityTypeFilter,
+    setActionLoading,
   };
 };

@@ -35,6 +35,7 @@ import {
   Email,
   ErrorOutline,
   DeleteForever,
+  RestartAlt,
 } from "@mui/icons-material";
 import { UserSummary } from "../../types/admin";
 
@@ -48,6 +49,7 @@ interface UserActionsMenuProps {
   onViewErrors: (userId: string) => void;
   onContactUser: (email: string) => void;
   onDeleteUser: (userId: string, userName: string) => void;
+  onResetUsage: (userId: string, userName: string) => void;
 }
 
 const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
@@ -60,6 +62,7 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
   onViewErrors,
   onContactUser,
   onDeleteUser,
+  onResetUsage,
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -165,6 +168,19 @@ const UserActionsMenu: React.FC<UserActionsMenuProps> = ({
             <ErrorOutline fontSize="small" color="error" />
           </ListItemIcon>
           <ListItemText>View Errors</ListItemText>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            onResetUsage(user.id, user.email);
+            handleClose();
+          }}
+          sx={{ color: "warning.main" }}
+        >
+          <ListItemIcon>
+            <RestartAlt fontSize="small" color="warning" />
+          </ListItemIcon>
+          <ListItemText>Reset AI Usage</ListItemText>
         </MenuItem>
 
         <MenuItem

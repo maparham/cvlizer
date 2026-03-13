@@ -48,6 +48,7 @@ import { useAdminUsers } from "../hooks/useAdminUsers";
 import { useAIUsageData } from "../hooks/useAIUsageData";
 import { useUserActions } from "../hooks/useUserActions";
 import { adminApi, normalizeApiError } from "../services/api";
+import { resetUserAIUsage } from "../services/adminAIUsageService";
 import OverviewTab from "../components/admin/tabs/OverviewTab";
 import UsersTab from "../components/admin/tabs/UsersTab";
 import AIUsageTab from "../components/admin/tabs/AIUsageTab";
@@ -126,6 +127,19 @@ const AdminDashboard: React.FC = () => {
       // Error handling is done in the hook
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleResetUserUsage = async (userId: string) => {
+    try {
+      userActions.setActionLoading(userId);
+      await resetUserAIUsage(userId);
+      adminUsers.loadUsers();
+    } catch (error: unknown) {
+      const errorMessage = normalizeApiError(error);
+      throw new Error(errorMessage);
+    } finally {
+      userActions.setActionLoading(null);
     }
   };
 
@@ -369,6 +383,7 @@ const AdminDashboard: React.FC = () => {
           }
           onConfirmImpersonation={userActions.confirmImpersonation}
           onDeleteUser={handleDeleteUser}
+          onResetUserUsage={handleResetUserUsage}
         />
       )}
 
