@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from src.dependencies.ai_quota import require_ai_quota
 from src.middleware.clerk_auth import get_effective_user
 from src.models.base import get_db
 from src.models.user import User
@@ -46,6 +47,7 @@ async def create_cv_quality_analysis(
     request: CVQualityAnalysisCreateRequestSchema = CVQualityAnalysisCreateRequestSchema(),
     user: User = Depends(get_effective_user),
     db: Session = Depends(get_db),
+    _quota: None = Depends(require_ai_quota),
 ) -> CVQualityAnalysisCreateResponseSchema:
     """
     Trigger CV quality analysis in background.

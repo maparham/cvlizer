@@ -1,15 +1,24 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Container, Typography, Box } from "@mui/material";
 import { useUser } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ProfileHeader } from "./ProfileHeader";
 import { ProfileInformationCards } from "./ProfileInformationCards";
+import { ProfileUsageCard } from "./ProfileUsageCard";
 import { ProfileUserProfile } from "./ProfileUserProfile";
 import { DeleteAccountSection } from "./DeleteAccountSection";
 
 const Profile: React.FC = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
+  const usageSectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (location.hash === "#usage" && usageSectionRef.current) {
+      usageSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [location.hash]);
 
   if (!isLoaded) {
     return (
@@ -46,6 +55,10 @@ const Profile: React.FC = () => {
         <ProfileHeader user={user} navigate={navigate} />
 
         <ProfileInformationCards user={user} />
+
+        <Box id="usage" ref={usageSectionRef} sx={{ mb: 6 }}>
+          <ProfileUsageCard />
+        </Box>
 
         {/* Visual Separator */}
         <Box

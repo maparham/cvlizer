@@ -17,9 +17,10 @@
  */
 
 import React from "react";
-import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography } from "@mui/material";
+import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography, Box } from "@mui/material";
 import { AccountCircle as AccountCircleIcon } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
+import { UsageChip } from "../common";
 
 interface DashboardHeaderProps {
   anchorEl: null | HTMLElement;
@@ -64,6 +65,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             CV Optimizer
           </Typography>
         </RouterLink>
+        <UsageChip
+          size="small"
+          showLabel
+          onClick={() => onNavigate("/profile#usage")}
+          sx={{ mr: 2 }}
+        />
         <IconButton
           size="large"
           edge="end"

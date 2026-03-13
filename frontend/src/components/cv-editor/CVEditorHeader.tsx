@@ -33,6 +33,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useCVEditor } from "../../contexts/CVEditorContext";
+import { UsageChip } from "../common";
 import { CVEditorHeaderProps } from "./types";
 
 export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
@@ -199,6 +200,12 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
               Advanced Export
             </MenuItem>
           </Menu>
+          <UsageChip
+            size="small"
+            showLabel
+            onClick={() => navigate("/profile#usage")}
+            sx={{ mr: 2 }}
+          />
           <IconButton
             size="medium"
             edge="end"

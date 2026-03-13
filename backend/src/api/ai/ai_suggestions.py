@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 logger = logging.getLogger(__name__)
 
 from src.config import APIConfig, AIConfig
+from src.dependencies.ai_quota import require_ai_quota
 from src.middleware.clerk_auth import get_effective_user
 from src.models.ai_enhancement import AIEnhancement
 from src.models.base import get_db
@@ -47,6 +48,7 @@ async def create_ai_suggestion(
     suggestion: AISuggestionCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
+    _quota: None = Depends(require_ai_quota),
 ):
     """Create a new AI suggestion"""
     try:
@@ -149,6 +151,7 @@ async def create_ai_suggestions(
     enhancement_request: AIEnhancementRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
+    _quota: None = Depends(require_ai_quota),
 ):
     """
     Create a background task that generates AI suggestions including job fit

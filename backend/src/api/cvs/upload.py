@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from src.constants import DEFAULT_PARSED_CV
 from src.config import APIConfig
+from src.dependencies.ai_quota import require_ai_quota
 from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import get_db
 from src.models.user import User
@@ -37,6 +38,7 @@ async def upload_cv(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
+    _quota: None = Depends(require_ai_quota),
 ):
     """Upload a CV file and start background parsing"""
     # Validate file

@@ -574,6 +574,17 @@ class AIUsageConfig:
     )
     MAX_TOKENS_PER_USER_PER_DAY: int = int(os.getenv("MAX_TOKENS_PER_USER_DAY", "100000"))
 
+    # Free-tier quota (rolling 30 days)
+    FREE_TIER_COST_PER_30_DAYS: float = float(
+        os.getenv("FREE_TIER_COST_PER_30_DAYS", "0.25")
+    )
+    FREE_TIER_DISPLAY_TOKEN_CAP: int = int(
+        os.getenv("FREE_TIER_DISPLAY_TOKEN_CAP", "50000")
+    )
+    FREE_TIER_QUOTA_ENABLED: bool = (
+        os.getenv("FREE_TIER_QUOTA_ENABLED", "true").lower() == "true"
+    )
+
 
 # ============================================================================
 # OpenAI Pricing Helper

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from src.config import AIConfig
+from src.dependencies.ai_quota import require_ai_quota
 from src.middleware.clerk_auth import get_effective_user
 from src.models.ai_section import AISection
 from src.models.base import get_db
@@ -30,6 +31,7 @@ async def generate_ai_section(
     request: AIGenerationRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user),
+    _quota: None = Depends(require_ai_quota),
 ):
     """Generate AI-enhanced section for CV based on job description"""
     # Verify CV exists and belongs to user

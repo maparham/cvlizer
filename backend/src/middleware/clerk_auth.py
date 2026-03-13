@@ -524,9 +524,9 @@ class AuthContext(NamedTuple):
 
 
 def get_current_user_with_impersonation(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
-    request: Optional[Any] = None,
 ) -> AuthContext:
     """
     Get the current authenticated user with impersonation support.
@@ -549,14 +549,6 @@ def get_current_user_with_impersonation(
     """
     # Get the original authenticated user
     original_user = get_current_user_from_clerk(credentials, db)
-
-    # If no request object, return normal auth context
-    if not request:
-        return AuthContext(
-            effective_user=original_user,
-            original_user=original_user,
-            is_impersonating=False,
-        )
 
     # Check for impersonation session cookie
     impersonation_cookie = getattr(request, "cookies", {}).get("impersonation_session")
@@ -632,7 +624,7 @@ def get_effective_user(
     This is a convenience function that returns just the effective user
     from the authentication context. Use this for most authorization checks.
     """
-    auth_context = get_current_user_with_impersonation(credentials, db, request)
+    auth_context = get_current_user_with_impersonation(request, credentials, db)
     return auth_context.effective_user
 
 
@@ -648,7 +640,7 @@ def require_admin_not_impersonating(
     not be available during impersonation (like starting new impersonation
     sessions or accessing sensitive admin functions).
     """
-    auth_context = get_current_user_with_impersonation(credentials, db, request)
+    auth_context = get_current_user_with_impersonation(request, credentials, db)
 
     if not is_admin_user(auth_context.original_user):
         raise HTTPException(
@@ -675,7 +667,7 @@ def require_admin_allow_impersonating(
     This function should be used for admin-only operations that need to
     be available during impersonation (like ending impersonation sessions).
     """
-    auth_context = get_current_user_with_impersonation(credentials, db, request)
+    auth_context = get_current_user_with_impersonation(request, credentials, db)
 
     if not is_admin_user(auth_context.original_user):
         raise HTTPException(

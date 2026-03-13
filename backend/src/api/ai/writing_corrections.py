@@ -9,6 +9,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from src.dependencies.ai_quota import require_ai_quota
 from src.middleware.clerk_auth import get_effective_user
 from src.models.base import get_db
 from src.models.user import User
@@ -38,6 +39,7 @@ async def apply_writing_correction_endpoint(
     request: WritingCorrectionApplyRequest,
     user: User = Depends(get_effective_user),
     db: Session = Depends(get_db),
+    _quota: None = Depends(require_ai_quota),
 ) -> CVResponse:
     """
     Apply a single writing correction to CV data.
@@ -96,6 +98,7 @@ async def apply_writing_corrections_batch_endpoint(
     request: WritingCorrectionBatchApplyRequest,
     user: User = Depends(get_effective_user),
     db: Session = Depends(get_db),
+    _quota: None = Depends(require_ai_quota),
 ) -> CVResponse:
     """
     Apply multiple writing corrections to CV data in a single operation.

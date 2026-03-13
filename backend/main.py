@@ -31,6 +31,7 @@ from src.api.impersonation import auth_router as impersonation_auth_router
 from src.api.impersonation import router as impersonation_router
 from src.api.job_descriptions import router as job_descriptions_router
 from src.api.quick_start import router as quick_start_router
+from src.api.usage import router as usage_router
 from src.api.user_activities import router as user_activities_router
 
 # Import middleware
@@ -115,6 +116,7 @@ os.makedirs("uploads", exist_ok=True)
 
 # Include API routers
 app.include_router(auth_router, prefix="/api")
+app.include_router(usage_router, prefix="/api")
 app.include_router(cvs_router)
 app.include_router(job_descriptions_router)
 app.include_router(ai_router)

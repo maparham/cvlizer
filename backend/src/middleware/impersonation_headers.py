@@ -68,7 +68,7 @@ class ImpersonationHeadersMiddleware(BaseHTTPMiddleware):
                         db = next(get_db())
                         try:
                             auth_context = get_current_user_with_impersonation(
-                                credentials=credentials, db=db, request=request
+                                request, credentials, db
                             )
 
                             if auth_context.is_impersonating:

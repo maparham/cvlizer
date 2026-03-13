@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.config import BackgroundTaskConfig, APIConfig
+from src.dependencies.ai_quota import require_ai_quota
 from src.utils.rate_limit import create_combined_limiter
 from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import SessionLocal, get_db
@@ -349,6 +350,7 @@ async def parse_job_description_url(
     parse_request: JobDescriptionParseRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
+    _quota: None = Depends(require_ai_quota),
 ):
     """Parse a job description from a URL using background processing"""
     # Verify CV exists and belongs to user
@@ -496,6 +498,7 @@ async def parse_user_job_description_url(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
     cv_id: Optional[str] = None,
+    _quota: None = Depends(require_ai_quota),
 ):
     """
     Parse a job description from a URL using background processing.
