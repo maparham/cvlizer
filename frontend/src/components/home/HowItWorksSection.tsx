@@ -52,6 +52,7 @@ const HowItWorksSection: React.FC = () => {
   return (
     <Box
       component="section"
+      id="how-it-works"
       role="region"
       aria-label="How CV Optimizer works"
       sx={{
@@ -66,7 +67,7 @@ const HowItWorksSection: React.FC = () => {
       <Container maxWidth="lg">
         <Box sx={{ textAlign: "center", mb: 5 }}>
           <Typography
-            variant="h4"
+            variant="h5"
             component="h2"
             sx={{
               fontWeight: 700,
@@ -75,14 +76,14 @@ const HowItWorksSection: React.FC = () => {
               mb: 1,
             }}
           >
-            Your perfect CV in minutes
+            How CV Optimizer works
           </Typography>
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ maxWidth: 520, mx: "auto", lineHeight: 1.6 }}
           >
-            Import, polish, tailor, and export your CV — all in one smooth AI-powered flow.
+            See the three key steps from upload to AI-powered tailoring and export, all inside one focused workspace.
           </Typography>
         </Box>
 
