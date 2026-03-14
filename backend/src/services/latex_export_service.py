@@ -136,6 +136,7 @@ def _section(title: str, body: str, template_name: str) -> str:
     section_cmd = SECTION_CMD_BY_TEMPLATE.get(template_name)
     if section_cmd:
         return (
+            f"\\needspace{{5\\baselineskip}}\n"
             f"\\{section_cmd}{{{escaped_title}}}\n{body}\\vspace{{0.5\\baselineskip}}\n"
         )
     # Fallback legacy styling
