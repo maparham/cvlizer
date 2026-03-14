@@ -837,7 +837,15 @@ def _format_personal_info_header(
         radius = "1.25cm"
         img_dim = "2.5cm"
 
-    # Two minipages: left ~73% text, right ~22% profile picture
+    # Layout: Center content as if picture doesn't exist, position picture absolutely on right
+    # Offsets are size-aware so small pics aren't too far from edge and large pics don't overlap.
+    SIZE_TO_POSITION = {
+        "small": {"xshift": "-1.2cm", "yshift": "-2.8cm"},
+        "standard": {"xshift": "-1.6cm", "yshift": "-3.0cm"},
+        "large": {"xshift": "-2.0cm", "yshift": "-3.3cm"},
+    }
+    pos = SIZE_TO_POSITION.get(profile_picture_size, SIZE_TO_POSITION["standard"])
+
     if profile_picture_shape == "circle":
         pic_latex = (
             "\\begin{tikzpicture}[baseline=(current bounding box.center)]\n"
@@ -848,11 +856,13 @@ def _format_personal_info_header(
         )
     else:
         pic_latex = f"\\includegraphics[width={pic_size},height={pic_size},keepaspectratio]{{profilepic}}"
+
+    # Use tikz to position picture absolutely at top right
     return (
         "\\noindent\n"
-        "\\begin{minipage}[t]{0.73\\textwidth}\n" + body + "\n\\end{minipage}\\hfill\n"
-        "\\begin{minipage}[t]{0.22\\textwidth}\n"
-        "\\raggedleft\n" + pic_latex + "\n\\end{minipage}\n"
+        "\\begin{tikzpicture}[remember picture,overlay]\n"
+        f"  \\node[anchor=north east,inner sep=0] at ([xshift={pos['xshift']},yshift={pos['yshift']}]current page.north east) {{{pic_latex}}};\n"
+        "\\end{tikzpicture}\n" + body
     )
 
 
