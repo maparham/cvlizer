@@ -43,6 +43,7 @@ const JobLibrary = lazy(() => import("./pages/JobLibrary"));
 const QuickStart = lazy(() => import("./pages/QuickStart"));
 import AdminDashboard from "./pages/AdminDashboard";
 const LoginRedirect = lazy(() => import("./components/LoginRedirect"));
+const Legal = lazy(() => import("./pages/Legal"));
 
 // Loading component
 const PageLoader = () => (
@@ -116,6 +117,7 @@ const AppContent = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/quick-start" element={<QuickStart />} />
+          <Route path="/legal" element={<Legal />} />
           {/* Clerk email verification routes */}
           <Route path="/register/verify" element={<LoginRedirect />} />
           <Route path="/sign-in/verify" element={<LoginRedirect />} />

@@ -9,8 +9,8 @@
  * openSignIn). Responsive, Material-UI, single column top to bottom.
  */
 import React from "react";
-import { Container, Button, Box, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Container, Button, Box, Typography, Link } from "@mui/material";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import {
   SignedIn,
   SignedOut,
@@ -290,6 +290,29 @@ const Home: React.FC = () => {
       </Box>
 
       <HowItWorksSection />
+
+      <Box
+        component="footer"
+        sx={{
+          py: 3,
+          px: 2,
+          borderTop: 1,
+          borderColor: "divider",
+          bgcolor: "background.paper",
+        }}
+      >
+        <Container maxWidth="lg">
+          <Link
+            component={RouterLink}
+            to="/legal"
+            variant="body2"
+            color="text.secondary"
+            sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+          >
+            Privacy & Terms
+          </Link>
+        </Container>
+      </Box>
     </Box>
   );
 };

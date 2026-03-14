@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Container, Typography, Box } from "@mui/material";
+import { Container, Typography, Box, Link } from "@mui/material";
 import { useUser } from "@clerk/clerk-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import { ProfileHeader } from "./ProfileHeader";
 import { ProfileInformationCards } from "./ProfileInformationCards";
 import { ProfileUsageCard } from "./ProfileUsageCard";
@@ -58,6 +58,18 @@ const Profile: React.FC = () => {
 
         <Box id="usage" ref={usageSectionRef} sx={{ mb: 6 }}>
           <ProfileUsageCard />
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <Link
+            component={RouterLink}
+            to="/legal"
+            variant="body2"
+            color="primary"
+            sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+          >
+            Privacy & Terms
+          </Link>
         </Box>
 
         {/* Visual Separator */}
