@@ -840,9 +840,9 @@ def _format_personal_info_header(
     # Layout: Center content as if picture doesn't exist, position picture absolutely on right
     # Offsets are size-aware so small pics aren't too far from edge and large pics don't overlap.
     SIZE_TO_POSITION = {
-        "small": {"xshift": "-1.2cm", "yshift": "-2.8cm"},
-        "standard": {"xshift": "-1.6cm", "yshift": "-3.0cm"},
-        "large": {"xshift": "-2.0cm", "yshift": "-3.3cm"},
+        "small": {"xshift": "-2cm", "yshift": "-2.8cm"},
+        "standard": {"xshift": "-2cm", "yshift": "-3.0cm"},
+        "large": {"xshift": "-1.9cm", "yshift": "-3.2cm"},
     }
     pos = SIZE_TO_POSITION.get(profile_picture_size, SIZE_TO_POSITION["standard"])
 
