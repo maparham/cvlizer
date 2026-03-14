@@ -49,6 +49,39 @@ def is_latex_available() -> bool:
     return shutil.which(LATEX_REQUIRED_BIN) is not None
 
 
+def _optimize_profile_picture(source_path: str, dest_path: str) -> None:
+    """
+    Resize and optimize profile picture for PDF embedding.
+    Target: max 600px on longest side, JPEG quality 85.
+    Keeps aspect ratio and converts PNG to JPEG for smaller size.
+    """
+    from PIL import Image
+
+    img = Image.open(source_path)
+    img.load()
+
+    # Convert to RGB if necessary (handles PNG with transparency)
+    if img.mode in ("RGBA", "LA", "P"):
+        if img.mode == "P":
+            img = img.convert("RGBA")
+        rgb_img = Image.new("RGB", img.size, (255, 255, 255))
+        rgb_img.paste(
+            img,
+            mask=img.split()[-1] if img.mode in ("RGBA", "LA") else None,
+        )
+        img = rgb_img
+    elif img.mode != "RGB":
+        img = img.convert("RGB")
+
+    # Resize if larger than 600px on any side
+    max_dimension = 600
+    if img.width > max_dimension or img.height > max_dimension:
+        img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
+
+    # Save as optimized JPEG
+    img.save(dest_path, "JPEG", quality=85, optimize=True)
+
+
 def _tex_escape(text: str | None) -> str:
     if not text:
         return ""
@@ -1115,9 +1148,9 @@ def compile_pdf_from_latex(
 ) -> bytes:
     """Compile LaTeX source to PDF using pdflatex and return the PDF bytes.
 
-    If profile_pic_path is set and the file exists, it is copied into the
-    compilation directory as "profilepic" + original extension so LaTeX can
-    reference it. If path is set but file is missing, compilation proceeds
+    If profile_pic_path is set and the file exists, it is optimized (resized,
+    JPEG quality 85) and written as "profilepic.jpg" in the compilation
+    directory. If path is set but file is missing, compilation proceeds
     without the image (no failure).
     """
     if not is_latex_available():
@@ -1130,24 +1163,20 @@ def compile_pdf_from_latex(
             f.write(tex_source)
 
         if profile_pic_path and os.path.exists(profile_pic_path):
-            ext = os.path.splitext(profile_pic_path)[1].lower()
-            if ext not in (".jpg", ".jpeg", ".png"):
-                ext = ".jpg"
-            dest_name = "profilepic" + ext
+            dest_name = "profilepic.jpg"
             dest_path = os.path.join(tmpdir, dest_name)
             try:
-                shutil.copy2(profile_pic_path, dest_path)
+                _optimize_profile_picture(profile_pic_path, dest_path)
             except Exception as e:
-                logger.warning("Failed to copy profile picture for LaTeX: %s", e)
+                logger.warning("Failed to optimize profile picture for LaTeX: %s", e)
 
-        # Run pdflatex with high quality settings (twice to settle references if needed)
+        # Run pdflatex (twice to settle references); no SyncTeX for smaller export size
         cmd = [
             LATEX_REQUIRED_BIN,
             "-interaction=nonstopmode",
             "-halt-on-error",
             "-output-format=pdf",
             "-output-directory=.",
-            "-synctex=1",
             tex_path,
         ]
 
