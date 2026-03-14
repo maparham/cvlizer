@@ -399,6 +399,28 @@ class FileConfig:
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./uploads")
 
 
+class ProfilePictureConfig:
+    """Profile picture upload configuration (CV personal info)."""
+
+    ALLOWED_MIME_TYPES: list = ["image/jpeg", "image/png"]
+    ALLOWED_EXTENSIONS: list = [".jpg", ".jpeg", ".png"]
+    MAX_SIZE_BYTES: int = int(
+        os.getenv("PROFILE_PICTURE_MAX_SIZE", str(1 * 1024 * 1024))
+    )  # 1 MB default
+    MIN_WIDTH: int = 50
+    MIN_HEIGHT: int = 50
+    MAX_WIDTH: int = 2000
+    MAX_HEIGHT: int = 2000
+    # Subdirectory under UPLOAD_DIR for profile pictures only
+    SUBDIR: str = "profile_pictures"
+
+    @classmethod
+    def directory(cls) -> str:
+        """Absolute profile picture directory (created on demand)."""
+        base = os.path.abspath(FileConfig.UPLOAD_DIR)
+        return os.path.join(base, cls.SUBDIR)
+
+
 # ============================================================================
 # Authentication Configuration
 # ============================================================================

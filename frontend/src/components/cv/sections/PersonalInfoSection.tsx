@@ -8,7 +8,7 @@
  * - Form validation and editing states
  * - Inline writing corrections for description (CV quality analysis)
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import {
   Box,
   TextField,
@@ -17,11 +17,16 @@ import {
   Autocomplete,
   FormControlLabel,
   Checkbox,
+  IconButton,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import {
   GitHub as GitHubIcon,
   LinkedIn as LinkedInIcon,
   Language as WebsiteIcon,
+  MoreVert as MoreVertIcon,
+  AddPhotoAlternate as AddPhotoIcon,
 } from "@mui/icons-material";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
@@ -38,6 +43,8 @@ import { useEditedSinceAIStore } from "../../../stores/editedSinceAIStore";
 import { useOverwriteConfirm, OVERWRITE_MSG } from "../../../contexts/OverwriteConfirmContext";
 import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { buildQualitySuggestionId } from "../../../utils/qualitySuggestionIds";
+import { ProfilePictureUpload } from "./ProfilePictureUpload";
+import { cvApi } from "../../../services/api";
 
 /** Ensures a URL has a protocol so it is treated as absolute, not relative. */
 function ensureProtocol(url: string | undefined): string {
@@ -140,6 +147,161 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   const { confirm: overwriteConfirm } = useOverwriteConfirm();
   const DESCRIPTION_FIELD_KEY = "personal_info.description" as const;
 
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [profilePictureUploading, setProfilePictureUploading] = useState(false);
+  const [profilePictureDeleting, setProfilePictureDeleting] = useState(false);
+
+  const profilePictureUrlRef = React.useRef<string | null>(null);
+  const [profilePictureMenuAnchor, setProfilePictureMenuAnchor] =
+    useState<HTMLElement | null>(null);
+  const viewModeFileInputRef = useRef<HTMLInputElement>(null);
+  const viewModeShapeRef = useRef<"circle" | "square">("circle");
+  const viewModeSizeRef = useRef<"small" | "standard" | "large">("standard");
+
+  useEffect(() => {
+    if (!cvId || !data?.profile_picture) {
+      if (profilePictureUrlRef.current) {
+        window.URL.revokeObjectURL(profilePictureUrlRef.current);
+        profilePictureUrlRef.current = null;
+        setProfilePictureUrl(null);
+      }
+      return;
+    }
+    let cancelled = false;
+    cvApi.getProfilePicture(cvId).then((url) => {
+      if (cancelled || !url) return;
+      if (profilePictureUrlRef.current) {
+        window.URL.revokeObjectURL(profilePictureUrlRef.current);
+      }
+      profilePictureUrlRef.current = url;
+      setProfilePictureUrl(url);
+    });
+    return () => {
+      cancelled = true;
+      if (profilePictureUrlRef.current) {
+        window.URL.revokeObjectURL(profilePictureUrlRef.current);
+        profilePictureUrlRef.current = null;
+      }
+    };
+  }, [cvId, data?.profile_picture]);
+
+  const handleProfileUpload = useCallback(
+    async (file: File, shape: "circle" | "square", size: "small" | "standard" | "large") => {
+      if (!cvId) return;
+      setProfilePictureUploading(true);
+      try {
+        const response = await cvApi.uploadProfilePicture(cvId, file, shape, size);
+        const personal = response?.parsed_data?.personal_info;
+        if (personal) {
+          onUpdate(personal);
+          await onSave(personal);
+        }
+        if (profilePictureUrlRef.current) {
+          window.URL.revokeObjectURL(profilePictureUrlRef.current);
+          profilePictureUrlRef.current = null;
+        }
+        const url = window.URL.createObjectURL(file);
+        profilePictureUrlRef.current = url;
+        setProfilePictureUrl(url);
+      } finally {
+        setProfilePictureUploading(false);
+      }
+    },
+    [cvId, onUpdate, onSave]
+  );
+
+  const handleProfileDelete = useCallback(async () => {
+    if (!cvId) return;
+    setProfilePictureDeleting(true);
+    try {
+      await cvApi.deleteProfilePicture(cvId);
+      if (profilePictureUrlRef.current) {
+        window.URL.revokeObjectURL(profilePictureUrlRef.current);
+        profilePictureUrlRef.current = null;
+      }
+      setProfilePictureUrl(null);
+      const cleared = { ...data, profile_picture: undefined, profile_picture_shape: undefined, profile_picture_size: undefined };
+      onUpdate(cleared);
+      await onSave(cleared);
+    } catch (error) {
+      console.error("Failed to delete profile picture:", error);
+      // Leave UI state unchanged so it stays in sync with backend
+    } finally {
+      setProfilePictureDeleting(false);
+    }
+  }, [cvId, data, onUpdate, onSave]);
+
+  const handleProfileShapeChange = useCallback(
+    (shape: "circle" | "square") => {
+      const next = { ...data, profile_picture_shape: shape };
+      onUpdate(next);
+      void onSave(next);
+    },
+    [data, onUpdate, onSave]
+  );
+
+  const handleProfileSizeChange = useCallback(
+    (size: "small" | "standard" | "large") => {
+      const next = { ...data, profile_picture_size: size };
+      onUpdate(next);
+      void onSave(next);
+    },
+    [data, onUpdate, onSave]
+  );
+
+  const handleProfilePictureMenuOpen = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      setProfilePictureMenuAnchor(e.currentTarget);
+    },
+    []
+  );
+
+  const handleProfilePictureMenuClose = useCallback(() => {
+    setProfilePictureMenuAnchor(null);
+  }, []);
+
+  const handleViewModeAddOrReplacePhoto = useCallback(
+    (shape: "circle" | "square") => {
+      viewModeShapeRef.current = shape;
+      handleProfilePictureMenuClose();
+      viewModeFileInputRef.current?.click();
+    },
+    [handleProfilePictureMenuClose]
+  );
+
+  const handleViewModeChangeSize = useCallback(
+    (size: "small" | "standard" | "large") => {
+      handleProfilePictureMenuClose();
+      handleProfileSizeChange(size);
+    },
+    [handleProfilePictureMenuClose, handleProfileSizeChange]
+  );
+
+  const handleViewModeRemovePhoto = useCallback(() => {
+    handleProfilePictureMenuClose();
+    void handleProfileDelete();
+  }, [handleProfilePictureMenuClose, handleProfileDelete]);
+
+  const handleViewModeFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const shape = viewModeShapeRef.current || "circle";
+        const size = viewModeSizeRef.current || "standard";
+        void handleProfileUpload(file, shape, size);
+      }
+      e.target.value = "";
+    },
+    [handleProfileUpload]
+  );
+
+  const PICTURE_SIZES = {
+    small: 80,
+    standard: 96,
+    large: 128,
+  } as const;
+
+
   const renderForm = (
     editData: any,
     updateData: (field: string, value: any) => void,
@@ -158,6 +320,19 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     );
     return (
       <Box>
+        {cvId && (
+          <ProfilePictureUpload
+            currentImageUrl={profilePictureUrl}
+            currentShape={(editData.profile_picture_shape as "circle" | "square") || "circle"}
+            currentSize={(editData.profile_picture_size as "small" | "standard" | "large") || "standard"}
+            onUpload={handleProfileUpload}
+            onDelete={handleProfileDelete}
+            onShapeChange={handleProfileShapeChange}
+            onSizeChange={handleProfileSizeChange}
+            uploading={profilePictureUploading}
+            deleting={profilePictureDeleting}
+          />
+        )}
         <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "baseline" }}>
           <TextField
             fullWidth
@@ -447,8 +622,13 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     const locationMessage =
       locationValidation.errorMessage || "Location is required";
 
+    const shape = (data.profile_picture_shape as "circle" | "square") || "circle";
+    const size = (data.profile_picture_size as "small" | "standard" | "large") || "standard";
+    const pictureSize = PICTURE_SIZES[size];
+
     return (
-      <Box>
+      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography
           variant="h4"
           sx={{
@@ -568,6 +748,134 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
       />
         {personalInfoCoaching && (
           <CoachingQuestionsPanel coachingItem={personalInfoCoaching} />
+        )}
+        </Box>
+        {cvId && (
+          <Box sx={{ flexShrink: 0, position: "relative" }}>
+            <Box
+              onClick={
+                !profilePictureUrl &&
+                !profilePictureUploading &&
+                !profilePictureDeleting
+                  ? () => handleViewModeAddOrReplacePhoto(shape)
+                  : undefined
+              }
+              role={!profilePictureUrl ? "button" : undefined}
+              aria-label={!profilePictureUrl ? "Add profile photo" : undefined}
+              sx={{
+                width: pictureSize,
+                height: pictureSize,
+                borderRadius: shape === "circle" ? "50%" : 1,
+                overflow: "hidden",
+                border: "2px dashed",
+                borderColor: "divider",
+                bgcolor: profilePictureUrl ? "transparent" : "action.selected",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor:
+                  !profilePictureUrl &&
+                  !profilePictureUploading &&
+                  !profilePictureDeleting
+                    ? "pointer"
+                    : "default",
+                "&:hover":
+                  !profilePictureUrl &&
+                  !profilePictureUploading &&
+                  !profilePictureDeleting
+                    ? { borderColor: "primary.main", bgcolor: "action.hover" }
+                    : undefined,
+              }}
+            >
+              {profilePictureUrl ? (
+                <Box
+                  component="img"
+                  src={profilePictureUrl}
+                  alt="Profile"
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <AddPhotoIcon
+                  sx={{ fontSize: 36, color: "text.disabled" }}
+                  aria-hidden
+                />
+              )}
+            </Box>
+            <IconButton
+              size="small"
+              onClick={handleProfilePictureMenuOpen}
+              disabled={profilePictureUploading || profilePictureDeleting}
+              aria-label="Profile picture menu"
+              sx={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bgcolor: "background.paper",
+                "&:hover": { bgcolor: "action.hover" },
+                boxShadow: 1,
+              }}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+            <Menu
+              anchorEl={profilePictureMenuAnchor}
+              open={Boolean(profilePictureMenuAnchor)}
+              onClose={handleProfilePictureMenuClose}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+              {!profilePictureUrl && (
+                <MenuItem
+                  onClick={() =>
+                    handleViewModeAddOrReplacePhoto(shape)
+                  }
+                >
+                  Add photo
+                </MenuItem>
+              )}
+              {profilePictureUrl && (
+                <>
+                  <MenuItem
+                    onClick={() =>
+                      handleViewModeAddOrReplacePhoto(shape)
+                    }
+                  >
+                    Replace photo
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => handleViewModeChangeSize("small")}
+                  >
+                    Small size
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => handleViewModeChangeSize("standard")}
+                  >
+                    Standard size
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => handleViewModeChangeSize("large")}
+                  >
+                    Large size
+                  </MenuItem>
+                  <MenuItem onClick={handleViewModeRemovePhoto}>
+                    Remove photo
+                  </MenuItem>
+                </>
+              )}
+            </Menu>
+            <input
+              ref={viewModeFileInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png"
+              style={{ display: "none" }}
+              onChange={handleViewModeFileChange}
+              aria-hidden
+            />
+          </Box>
         )}
       </Box>
     );

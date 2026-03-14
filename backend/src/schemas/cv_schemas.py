@@ -30,6 +30,18 @@ class PersonalInfoSchema(BaseModel):
     show_horizontal_line: Optional[bool] = Field(
         False, description="Show horizontal line separator"
     )
+    profile_picture: Optional[str] = Field(
+        None,
+        description="Stored profile picture filename (set via upload endpoint)",
+    )
+    profile_picture_shape: Optional[Literal["circle", "square"]] = Field(
+        default="circle",
+        description="Profile picture display shape",
+    )
+    profile_picture_size: Optional[Literal["small", "standard", "large"]] = Field(
+        default="standard",
+        description="Display size for profile picture: small (80px), standard (96px), large (128px)",
+    )
 
     class Config:
         extra = "forbid"  # Reject any additional fields

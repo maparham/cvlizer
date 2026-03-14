@@ -17,6 +17,7 @@ for validation/compound errors.
 - Deleting CVs
 """
 
+import os
 from copy import deepcopy
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -43,7 +44,7 @@ from src.services.cv_service import (
     rename_cv,
     update_cv,
 )
-from src.services.file_service import delete_file
+from src.services.file_service import delete_file, resolve_profile_picture_path
 from src.services.template_loader import get_template_metadata
 from src.utils.validation import CVDataValidator
 
@@ -122,6 +123,15 @@ async def update_cv_data(
         validated_data = cv_update.parsed_data.model_dump()
 
         cleaned_data = CVDataValidator.clean_empty_entries(validated_data)
+
+        # Normalize personal_info: do not persist profile_picture_url; derive profile_picture from it if needed
+        pi = cleaned_data.get("personal_info")
+        if isinstance(pi, dict) and "profile_picture_url" in pi:
+            pi = dict(pi)
+            pic_url = pi.pop("profile_picture_url", None)
+            if pic_url and not pi.get("profile_picture"):
+                pi["profile_picture"] = os.path.basename(pic_url)
+            cleaned_data["personal_info"] = pi
 
         cv = update_cv(db, cv_id, str(current_user.id), cleaned_data)
         if not cv:
@@ -304,6 +314,14 @@ async def delete_cv_data(
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+
+    # Delete profile picture file if present
+    parsed = cv.parsed_data or {}
+    profile_stored = (parsed.get("personal_info") or {}).get("profile_picture")
+    if profile_stored:
+        profile_path = resolve_profile_picture_path(profile_stored)
+        if profile_path:
+            delete_file(profile_path)
 
     # Delete file from disk
     delete_file(cv.file_path)

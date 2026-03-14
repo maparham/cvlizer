@@ -31,6 +31,7 @@ Dependencies:
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import subprocess
@@ -39,6 +40,7 @@ from typing import Any, Dict, List, Optional
 
 from src.services.template_loader import load_template, is_template_available
 
+logger = logging.getLogger(__name__)
 LATEX_REQUIRED_BIN = os.getenv("PDFLATEX_BIN", "pdflatex")
 
 
@@ -638,11 +640,22 @@ def _format_skills(skills: Dict[str, Any]) -> str:
     return "\\\\[0.3ex]\n".join(blocks)
 
 
-def _format_personal_info_header(pi: Dict[str, Any], template_name: str = "") -> str:
+def _format_personal_info_header(
+    pi: Dict[str, Any],
+    template_name: str = "",
+    include_profile_picture: bool = False,
+    profile_picture_shape: str = "circle",
+    profile_picture_size: str = "standard",
+) -> str:
     """Format personal info header with name/title and contact.
 
     For template "jake": compact one-line contact (phone | email | links).
     Otherwise: 2-row contact grid with Font Awesome icons.
+
+    If include_profile_picture is True, wrap content in left minipage and add
+    right minipage with image (fixed name "profilepic"). Shape: circle (TikZ clip)
+    or square (includegraphics with keepaspectratio). Size determines dimensions:
+    small (2.0cm), standard (2.5cm), large (3.5cm).
 
     Empty personal_info (e.g. full_name="") is handled: returns "" so PDF
     still generates; AI and display use parsed.get("personal_info", {}) safely.
@@ -804,11 +817,52 @@ def _format_personal_info_header(pi: Dict[str, Any], template_name: str = "") ->
             "\\vspace{0.5\\baselineskip}\n"
         )
 
-    return header + contact_block + description_block + separator
+    body = header + contact_block + description_block + separator
+    if not include_profile_picture:
+        return body
+
+    # Define size mapping
+    SIZE_MAP = {"small": "2.0cm", "standard": "2.5cm", "large": "3.5cm"}
+    pic_size = SIZE_MAP.get(profile_picture_size, "2.5cm")
+
+    # Calculate radius for circle (half the width for TikZ clip)
+    # and double width for includegraphics to ensure full coverage
+    if profile_picture_size == "small":
+        radius = "1.0cm"
+        img_dim = "2.0cm"
+    elif profile_picture_size == "large":
+        radius = "1.75cm"
+        img_dim = "3.5cm"
+    else:  # standard
+        radius = "1.25cm"
+        img_dim = "2.5cm"
+
+    # Two minipages: left ~73% text, right ~22% profile picture
+    if profile_picture_shape == "circle":
+        pic_latex = (
+            "\\begin{tikzpicture}[baseline=(current bounding box.center)]\n"
+            f"  \\clip (0,0) circle ({radius});\n"
+            "  \\node[anchor=center,inner sep=0] at (0,0) "
+            f"{{\\includegraphics[width={img_dim},height={img_dim},keepaspectratio]{{profilepic}}}};\n"
+            "\\end{tikzpicture}"
+        )
+    else:
+        pic_latex = f"\\includegraphics[width={pic_size},height={pic_size},keepaspectratio]{{profilepic}}"
+    return (
+        "\\noindent\n"
+        "\\begin{minipage}[t]{0.73\\textwidth}\n" + body + "\n\\end{minipage}\\hfill\n"
+        "\\begin{minipage}[t]{0.22\\textwidth}\n"
+        "\\raggedleft\n" + pic_latex + "\n\\end{minipage}\n"
+    )
 
 
 def _generate_from_template(
-    parsed: Dict[str, Any], title: str, template_name: str
+    parsed: Dict[str, Any],
+    title: str,
+    template_name: str,
+    profile_pic_path: Optional[str] = None,
+    profile_pic_shape: str = "circle",
+    profile_pic_size: str = "standard",
 ) -> str:
     """Generate LaTeX from a template by injecting formatted sections.
 
@@ -816,6 +870,9 @@ def _generate_from_template(
         parsed: Parsed CV data dictionary
         title: Document title (filename)
         template_name: Name of the template to use
+        profile_pic_path: If set, include profile picture in header (file must exist at compile time)
+        profile_pic_shape: "circle" or "square" for image display
+        profile_pic_size: "small", "standard", or "large" for image dimensions
 
     Returns:
         Complete LaTeX document with sections injected
@@ -859,8 +916,14 @@ def _generate_from_template(
     pubs = parsed.get("publications", []) if parsed else []
     volunteer = parsed.get("volunteer_experience", []) if parsed else []
 
-    # Format personal info header
-    personal_info_header = _format_personal_info_header(pi, template_name)
+    # Format personal info header (optionally with profile picture)
+    personal_info_header = _format_personal_info_header(
+        pi,
+        template_name,
+        include_profile_picture=bool(profile_pic_path),
+        profile_picture_shape=profile_pic_shape or "circle",
+        profile_picture_size=profile_pic_size or "standard",
+    )
 
     # Dedicated contact section removed in favor of inline header details
     contact_info_section = ""
@@ -996,7 +1059,14 @@ def _generate_from_template(
     return result
 
 
-def generate_cv_latex(parsed: Dict[str, Any], title: str, template_name: str) -> str:
+def generate_cv_latex(
+    parsed: Dict[str, Any],
+    title: str,
+    template_name: str,
+    profile_pic_path: Optional[str] = None,
+    profile_pic_shape: str = "circle",
+    profile_pic_size: str = "standard",
+) -> str:
     """Generate LaTeX source code for CV document.
 
     Respects section_config for custom ordering and visibility filtering.
@@ -1005,6 +1075,9 @@ def generate_cv_latex(parsed: Dict[str, Any], title: str, template_name: str) ->
         parsed: Parsed CV data dictionary
         title: Document title (filename)
         template_name: Template name to use for generation. Must be available.
+        profile_pic_path: If set, include profile picture in header (file copied at compile time)
+        profile_pic_shape: "circle" or "square" for image display
+        profile_pic_size: "small", "standard", or "large" for image dimensions
 
     Raises:
         ValueError: If template_name is not available
@@ -1017,13 +1090,25 @@ def generate_cv_latex(parsed: Dict[str, Any], title: str, template_name: str) ->
         raise ValueError(f"Template '{template_name}' is not available")
 
     # Load template and inject content
-    return _generate_from_template(parsed, title, template_name)
+    return _generate_from_template(
+        parsed,
+        title,
+        template_name,
+        profile_pic_path=profile_pic_path,
+        profile_pic_shape=profile_pic_shape,
+        profile_pic_size=profile_pic_size,
+    )
 
 
-def compile_pdf_from_latex(tex_source: str) -> bytes:
+def compile_pdf_from_latex(
+    tex_source: str, profile_pic_path: Optional[str] = None
+) -> bytes:
     """Compile LaTeX source to PDF using pdflatex and return the PDF bytes.
 
-    Raises RuntimeError on compilation failure.
+    If profile_pic_path is set and the file exists, it is copied into the
+    compilation directory as "profilepic" + original extension so LaTeX can
+    reference it. If path is set but file is missing, compilation proceeds
+    without the image (no failure).
     """
     if not is_latex_available():
         raise RuntimeError("pdflatex is not available on the server")
@@ -1033,6 +1118,17 @@ def compile_pdf_from_latex(tex_source: str) -> bytes:
         pdf_path = os.path.join(tmpdir, "cv.pdf")
         with open(tex_path, "w", encoding="utf-8") as f:
             f.write(tex_source)
+
+        if profile_pic_path and os.path.exists(profile_pic_path):
+            ext = os.path.splitext(profile_pic_path)[1].lower()
+            if ext not in (".jpg", ".jpeg", ".png"):
+                ext = ".jpg"
+            dest_name = "profilepic" + ext
+            dest_path = os.path.join(tmpdir, dest_name)
+            try:
+                shutil.copy2(profile_pic_path, dest_path)
+            except Exception as e:
+                logger.warning("Failed to copy profile picture for LaTeX: %s", e)
 
         # Run pdflatex with high quality settings (twice to settle references if needed)
         cmd = [

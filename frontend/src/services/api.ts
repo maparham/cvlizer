@@ -272,6 +272,45 @@ export const cvApi = {
     return response.data;
   },
 
+  // Profile picture: upload
+  uploadProfilePicture: async (
+    cvId: string,
+    file: File,
+    shape: "circle" | "square",
+    size: "small" | "standard" | "large"
+  ) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("profile_picture_shape", shape);
+    formData.append("profile_picture_size", size);
+    const response = await api.post(`/cvs/${cvId}/profile-picture`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+
+  // Profile picture: delete
+  deleteProfilePicture: async (cvId: string) => {
+    const response = await api.delete(`/cvs/${cvId}/profile-picture`);
+    return response.data;
+  },
+
+  // Profile picture: get for display. Returns object URL or null on 404. Caller must revoke the URL.
+  getProfilePicture: async (cvId: string): Promise<string | null> => {
+    try {
+      const response = await api.get(`/cvs/${cvId}/profile-picture`, {
+        responseType: "blob",
+      });
+      const blob = response.data as Blob;
+      return window.URL.createObjectURL(blob);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        return null;
+      }
+      throw err;
+    }
+  },
+
   // Export CV as PDF (LaTeX compiled) in a new tab using server filename
   exportCVAsPDF: async (cvId: string, template?: string) => {
     // Get Clerk token to authorize the public export endpoint

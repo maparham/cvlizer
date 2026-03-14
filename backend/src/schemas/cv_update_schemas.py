@@ -6,7 +6,7 @@ with permissive defaults so saves always pass.
 The strict schema in cv_schemas.py is used only for advisory validation errors.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -32,6 +32,14 @@ class PersonalInfoSchemaRelaxed(PersonalInfoSchema):
     full_name: str = Field(default="")
     email: str = Field(default="")
     location: str = Field(default="")
+    profile_picture_url: Optional[str] = Field(
+        None,
+        description="Accepted for compatibility; not persisted. Canonical field is profile_picture (filename only).",
+    )
+    profile_picture_size: Optional[Literal["small", "standard", "large"]] = Field(
+        default="standard",
+        description="Display size for profile picture: small (80px), standard (96px), large (128px)",
+    )
 
 
 class CustomSectionSchemaRelaxed(CustomSectionSchema):

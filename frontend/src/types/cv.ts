@@ -78,6 +78,9 @@ export interface PersonalInfo {
   description?: string;
   description_center_align?: boolean;
   show_horizontal_line?: boolean;
+  profile_picture?: string;
+  profile_picture_shape?: 'circle' | 'square';
+  profile_picture_size?: 'small' | 'standard' | 'large';
 }
 
 // Why I'm a Good Fit – metadata only (content/title live in custom_sections id "why_good_fit")

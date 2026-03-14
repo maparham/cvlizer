@@ -4,7 +4,6 @@ CV Export API Endpoints
 This module handles PDF and LaTeX export functionality for CVs.
 """
 
-import os
 import re
 from datetime import datetime, timezone
 from typing import Optional
@@ -17,6 +16,7 @@ from src.middleware.clerk_auth import get_effective_user_lightweight, verify_cle
 from src.models.base import get_db
 from src.models.user import User
 from src.services.cv_service import get_cv_by_id
+from src.services.file_service import get_profile_picture_settings
 from src.services.latex_export_service import (
     compile_pdf_from_latex,
     generate_cv_latex,
@@ -132,13 +132,19 @@ async def export_cv_pdf(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="LaTeX toolchain (pdflatex) not available on server",
         )
+    profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
+        cv.parsed_data
+    )
     try:
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
             template_name=template_name,
+            profile_pic_path=profile_pic_path,
+            profile_pic_shape=profile_pic_shape,
+            profile_pic_size=profile_pic_size,
         )
-        pdf_bytes = compile_pdf_from_latex(tex_source)
+        pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
         filename = _export_filename(cv, template_name, "pdf")
 
         headers = {
@@ -182,12 +188,18 @@ async def export_cv_latex(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
+    profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
+        cv.parsed_data
+    )
     try:
         template_name = _resolve_export_template(template)
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
             template_name=template_name,
+            profile_pic_path=profile_pic_path,
+            profile_pic_shape=profile_pic_shape,
+            profile_pic_size=profile_pic_size,
         )
         filename = _export_filename(cv, template_name, "tex")
         headers = {
@@ -288,13 +300,20 @@ async def export_cv_pdf_public(
             detail="LaTeX toolchain (pdflatex) not available on server",
         )
 
+    profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
+        cv.parsed_data
+    )
+
     try:
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
             template_name=default_template,
+            profile_pic_path=profile_pic_path,
+            profile_pic_shape=profile_pic_shape,
+            profile_pic_size=profile_pic_size,
         )
-        pdf_bytes = compile_pdf_from_latex(tex_source)
+        pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
         filename = _export_filename(cv, default_template, "pdf")
 
         headers = {

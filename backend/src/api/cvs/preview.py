@@ -19,6 +19,7 @@ from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import SessionLocal, get_db
 from src.models.user import User
 from src.services.cv_service import get_cv_by_id
+from src.services.file_service import get_profile_picture_settings
 from src.services.latex_export_service import compile_pdf_from_latex, is_latex_available
 from src.services.latex_export_service import generate_cv_latex
 from src.services.preview_service import generate_blurred_preview, is_preview_available
@@ -43,15 +44,24 @@ def generate_preview_sync(cv_id: str, template_name: str, user_id: str):
             _preview_jobs[cv_id + "_" + template_name]["error"] = "CV not found"
             return
 
+        (
+            profile_pic_path,
+            profile_pic_shape,
+            profile_pic_size,
+        ) = get_profile_picture_settings(cv.parsed_data)
+
         # Generate LaTeX with selected template
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
             template_name=template_name,
+            profile_pic_path=profile_pic_path,
+            profile_pic_shape=profile_pic_shape,
+            profile_pic_size=profile_pic_size,
         )
 
         # Compile LaTeX to PDF
-        pdf_bytes = compile_pdf_from_latex(tex_source)
+        pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
 
         # Generate blurred preview
         _preview_jobs = get_preview_jobs()

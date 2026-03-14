@@ -17,6 +17,7 @@ from .upload import router as upload_router
 from .crud import router as crud_router
 from .export import router as export_router
 from .preview import router as preview_router
+from .profile_picture import router as profile_picture_router
 
 # Create unified router with same prefix as original
 router = APIRouter(prefix="/api/cvs", tags=["cvs"])
@@ -26,3 +27,4 @@ router.include_router(upload_router)
 router.include_router(crud_router)
 router.include_router(export_router)
 router.include_router(preview_router)
+router.include_router(profile_picture_router)

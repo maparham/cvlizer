@@ -24,6 +24,7 @@ import logging
 from typing import Dict, Any
 from PIL import Image
 
+from .file_service import get_profile_picture_settings
 from .latex_export_service import (
     generate_cv_latex,
     compile_pdf_from_latex,
@@ -205,14 +206,27 @@ async def generate_cv_preview_image(
     if not template_name:
         raise RuntimeError("No LaTeX template available for preview")
 
+    profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
+        parsed_cv_data
+    )
+
     try:
         # Generate LaTeX from parsed data
         logger.info("Generating LaTeX from CV data for preview")
-        latex_source = generate_cv_latex(parsed_cv_data, title, template_name)
+        latex_source = generate_cv_latex(
+            parsed_cv_data,
+            title,
+            template_name,
+            profile_pic_path=profile_pic_path,
+            profile_pic_shape=profile_pic_shape,
+            profile_pic_size=profile_pic_size,
+        )
 
         # Compile LaTeX to PDF
         logger.info("Compiling LaTeX to PDF for preview")
-        pdf_bytes = compile_pdf_from_latex(latex_source)
+        pdf_bytes = compile_pdf_from_latex(
+            latex_source, profile_pic_path=profile_pic_path
+        )
 
         # Convert PDF to image using extracted function
         logger.info("Converting PDF to preview image")
