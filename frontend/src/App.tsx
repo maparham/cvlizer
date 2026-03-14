@@ -44,6 +44,7 @@ const QuickStart = lazy(() => import("./pages/QuickStart"));
 import AdminDashboard from "./pages/AdminDashboard";
 const LoginRedirect = lazy(() => import("./components/LoginRedirect"));
 const Legal = lazy(() => import("./pages/Legal"));
+const Feedback = lazy(() => import("./pages/Feedback"));
 
 // Loading component
 const PageLoader = () => (
@@ -118,6 +119,14 @@ const AppContent = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/quick-start" element={<QuickStart />} />
           <Route path="/legal" element={<Legal />} />
+          <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <Feedback />
+              </ProtectedRoute>
+            }
+          />
           {/* Clerk email verification routes */}
           <Route path="/register/verify" element={<LoginRedirect />} />
           <Route path="/sign-in/verify" element={<LoginRedirect />} />

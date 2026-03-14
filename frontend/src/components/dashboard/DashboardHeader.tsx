@@ -114,6 +114,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           >
             Profile
           </MenuItem>
+          <MenuItem
+            onClick={() => {
+              onNavigate("/feedback");
+              onMenuClose();
+            }}
+            data-testid="feedback-menu-item"
+          >
+            Feedback
+          </MenuItem>
           {isAdmin && (
             <MenuItem
               onClick={() => {

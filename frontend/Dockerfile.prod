@@ -20,6 +20,8 @@ ENV VITE_ADMIN_EMAIL=$VITE_ADMIN_EMAIL
 ARG VITE_PUBLIC_URL=
 ENV VITE_PUBLIC_URL=$VITE_PUBLIC_URL
 # Use build:no-ts so prod image builds even when tsc has errors; type-check separately with npm run type-check
+# Node heap 2 GB; fits within limited Docker memory (e.g. 2.5 GB)
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 RUN npm run build:no-ts
 
 # Production stage

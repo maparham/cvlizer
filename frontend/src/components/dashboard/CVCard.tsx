@@ -215,7 +215,7 @@ const CVCard: React.FC<CVCardProps> = ({
           {!cv.is_parsed && !cv.parse_error && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Processing your CV...
+                Importing your CV...
               </Typography>
               <LinearProgress
                 sx={{

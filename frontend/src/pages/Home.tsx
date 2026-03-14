@@ -302,15 +302,26 @@ const Home: React.FC = () => {
         }}
       >
         <Container maxWidth="lg">
-          <Link
-            component={RouterLink}
-            to="/legal"
-            variant="body2"
-            color="text.secondary"
-            sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
-          >
-            Privacy & Terms
-          </Link>
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            <Link
+              component={RouterLink}
+              to="/legal"
+              variant="body2"
+              color="text.secondary"
+              sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+            >
+              Privacy & Terms
+            </Link>
+            <Link
+              component={RouterLink}
+              to="/feedback"
+              variant="body2"
+              color="text.secondary"
+              sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+            >
+              Feedback
+            </Link>
+          </Box>
         </Container>
       </Box>
     </Box>

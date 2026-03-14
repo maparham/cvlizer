@@ -32,6 +32,7 @@ from src.api.impersonation import router as impersonation_router
 from src.api.job_descriptions import router as job_descriptions_router
 from src.api.quick_start import router as quick_start_router
 from src.api.usage import router as usage_router
+from src.api.feedback import router as feedback_router
 from src.api.user_activities import router as user_activities_router
 
 # Import middleware
@@ -123,6 +124,7 @@ app.include_router(ai_router)
 app.include_router(cv_history_router)
 app.include_router(admin_router, prefix="/api")
 app.include_router(admin_ai_usage_router, prefix="/api")
+app.include_router(feedback_router)
 app.include_router(user_activities_router)
 app.include_router(impersonation_router)
 app.include_router(impersonation_auth_router)

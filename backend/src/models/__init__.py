@@ -15,6 +15,7 @@ from .cv import CV
 from .cv_history import CVHistory
 from .cv_job_description import CVJobDescription
 from .cv_quality_analysis import CVQualityAnalysis
+from .feedback import Feedback
 from .impersonation_session import ImpersonationSession
 from .job_description import JobDescription
 from .optimization_history import OptimizationHistory
@@ -41,4 +42,5 @@ __all__ = [
     "AIUsageLog",
     "AIEnhancement",
     "CVQualityAnalysis",
+    "Feedback",
 ]

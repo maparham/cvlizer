@@ -39,6 +39,7 @@ import {
   ArrowBack,
   Refresh,
   Analytics,
+  Feedback as FeedbackIcon,
 } from "@mui/icons-material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -52,6 +53,22 @@ import { resetUserAIUsage } from "../services/adminAIUsageService";
 import OverviewTab from "../components/admin/tabs/OverviewTab";
 import UsersTab from "../components/admin/tabs/UsersTab";
 import AIUsageTab from "../components/admin/tabs/AIUsageTab";
+import FeedbackTab from "../components/admin/tabs/FeedbackTab";
+
+/** Centralized admin tab configuration: single source of truth for indices and URL params. */
+const ADMIN_TABS = {
+  OVERVIEW: { index: 0, param: "overview", label: "Overview" },
+  USERS: { index: 1, param: "users", label: "Users" },
+  AI_USAGE: { index: 2, param: "ai-usage", label: "AI Usage" },
+  FEEDBACK: { index: 3, param: "feedback", label: "Feedback" },
+} as const;
+
+const TAB_BY_PARAM: Record<string, (typeof ADMIN_TABS)[keyof typeof ADMIN_TABS]> =
+  Object.fromEntries(
+    Object.values(ADMIN_TABS).map((tab) => [tab.param, tab])
+  );
+
+const TAB_ICONS = [Dashboard, People, Analytics, FeedbackIcon];
 
 const AdminDashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -72,37 +89,32 @@ const AdminDashboard: React.FC = () => {
   // Initialize tab from URL parameter
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam === "users") {
-      setCurrentTab(1);
-    } else if (tabParam === "ai-usage") {
-      setCurrentTab(2);
-    } else if (tabParam === "overview") {
-      setCurrentTab(0);
+    const tab = tabParam ? TAB_BY_PARAM[tabParam] : ADMIN_TABS.OVERVIEW;
+    if (tab) {
+      setCurrentTab(tab.index);
     }
   }, [searchParams]);
 
   // Handle tab changes and data loading
   const handleTabChange = (newValue: number) => {
     setCurrentTab(newValue);
-    // Update URL parameter
+    const tab = Object.values(ADMIN_TABS).find((t) => t.index === newValue);
     const newSearchParams = new URLSearchParams(searchParams);
-    if (newValue === 1) {
-      newSearchParams.set("tab", "users");
-    } else if (newValue === 2) {
-      newSearchParams.set("tab", "ai-usage");
-    } else {
-      newSearchParams.set("tab", "overview");
-    }
+    newSearchParams.set("tab", tab?.param ?? "overview");
     setSearchParams(newSearchParams);
   };
 
+  const [feedbackRefreshTrigger, setFeedbackRefreshTrigger] = useState(0);
+
   const handleRefresh = () => {
-    if (currentTab === 0) {
+    if (currentTab === ADMIN_TABS.OVERVIEW.index) {
       adminStats.loadStats();
-    } else if (currentTab === 1) {
+    } else if (currentTab === ADMIN_TABS.USERS.index) {
       adminUsers.loadUsers();
-    } else if (currentTab === 2) {
+    } else if (currentTab === ADMIN_TABS.AI_USAGE.index) {
       aiUsageData.loadAIUsageData();
+    } else if (currentTab === ADMIN_TABS.FEEDBACK.index) {
+      setFeedbackRefreshTrigger((t) => t + 1);
     }
   };
 
@@ -289,14 +301,21 @@ const AdminDashboard: React.FC = () => {
             }
           }}
         >
-          <Tab icon={<Dashboard />} label="Overview" />
-          <Tab icon={<People />} label="Users" />
-          <Tab icon={<Analytics />} label="AI Usage" />
+          {Object.values(ADMIN_TABS).map((tab, i) => {
+            const Icon = TAB_ICONS[i];
+            return (
+              <Tab
+                key={tab.param}
+                icon={Icon ? <Icon /> : undefined}
+                label={tab.label}
+              />
+            );
+          })}
         </Tabs>
       </Paper>
 
       {/* Tab Content */}
-      {currentTab === 0 && (
+      {currentTab === ADMIN_TABS.OVERVIEW.index && (
         <OverviewTab
           stats={adminStats.stats}
           loading={adminStats.loading}
@@ -304,7 +323,7 @@ const AdminDashboard: React.FC = () => {
         />
       )}
 
-      {currentTab === 1 && (
+      {currentTab === ADMIN_TABS.USERS.index && (
         <UsersTab
           users={adminUsers.users}
           loading={adminUsers.loading}
@@ -387,7 +406,7 @@ const AdminDashboard: React.FC = () => {
         />
       )}
 
-      {currentTab === 2 && (
+      {currentTab === ADMIN_TABS.AI_USAGE.index && (
         <AIUsageTab
           aiStats={aiUsageData.aiStats}
           aiUserUsage={aiUsageData.aiUserUsage}
@@ -416,6 +435,10 @@ const AdminDashboard: React.FC = () => {
           onDeleteAllDialogOpen={() => setDeleteAllDialogOpen(true)}
           isDeleting={isDeleting}
         />
+      )}
+
+      {currentTab === ADMIN_TABS.FEEDBACK.index && (
+        <FeedbackTab refreshTrigger={feedbackRefreshTrigger} />
       )}
     </Container>
   );

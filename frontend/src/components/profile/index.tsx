@@ -60,7 +60,7 @@ const Profile: React.FC = () => {
           <ProfileUsageCard />
         </Box>
 
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
           <Link
             component={RouterLink}
             to="/legal"
@@ -69,6 +69,15 @@ const Profile: React.FC = () => {
             sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
           >
             Privacy & Terms
+          </Link>
+          <Link
+            component={RouterLink}
+            to="/feedback"
+            variant="body2"
+            color="primary"
+            sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+          >
+            Feedback
           </Link>
         </Box>
 
