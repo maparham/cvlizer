@@ -26,7 +26,7 @@ import {
   LinkedIn as LinkedInIcon,
   Language as WebsiteIcon,
   MoreVert as MoreVertIcon,
-  AddPhotoAlternate as AddPhotoIcon,
+  AccountCircle as AddPhotoIcon,
 } from "@mui/icons-material";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";

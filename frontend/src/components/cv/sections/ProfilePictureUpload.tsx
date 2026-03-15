@@ -14,7 +14,7 @@ import {
   RadioGroup,
   Typography,
 } from "@mui/material";
-import { AddPhotoAlternate as UploadIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { AccountCircle as UploadIcon, Delete as DeleteIcon } from "@mui/icons-material";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png"];
