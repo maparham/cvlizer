@@ -68,6 +68,9 @@ async def parse_cv_with_openai(
         # Add UUIDs to all array items immediately after parsing (only if no error)
         parsed_data = _add_uuids_to_cv_data(parsed_data)
 
+        # Language proficiency is already normalized by CVParsingResponseSchema
+        # (LanguageItemSchema.coerce_proficiency) during validation.
+
         # Normalize "PRESENT" strings to None for end_date fields
         parsed_data = _normalize_present_strings(parsed_data)
 

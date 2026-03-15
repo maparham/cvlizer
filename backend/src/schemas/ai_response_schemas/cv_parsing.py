@@ -9,6 +9,8 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.constants import LANGUAGE_PROFICIENCY_MAP, LANGUAGE_PROFICIENCY_VALUES
+
 
 class PersonalInfoResponseSchema(BaseModel):
     """Schema for personal information in CV parsing response."""
@@ -84,11 +86,28 @@ class EducationItemSchema(BaseModel):
     honors: List[str] = Field(default_factory=list)
 
 
+# Allowed proficiency values (must match frontend Language type and cv_parsing_service)
+LanguageProficiencyLiteral = Literal[
+    "Basic", "Intermediate", "Advanced", "Fluent", "Native"
+]
+
+
 class LanguageItemSchema(BaseModel):
     """Schema for language proficiency entry."""
 
     language: str = Field(default="")
-    proficiency: str = Field(default="")
+    proficiency: LanguageProficiencyLiteral = Field(default="Intermediate")
+
+    @field_validator("proficiency", mode="before")
+    @classmethod
+    def coerce_proficiency(cls, v: object) -> LanguageProficiencyLiteral:
+        """Coerce raw strings to allowed enum; unknown values fall back to Intermediate."""
+        if v in LANGUAGE_PROFICIENCY_VALUES:
+            return v  # type: ignore[return-value]
+        if not isinstance(v, str) or not v.strip():
+            return "Intermediate"
+        key = v.strip().lower()
+        return LANGUAGE_PROFICIENCY_MAP.get(key, "Intermediate")  # type: ignore[return-value]
 
 
 class SkillsResponseSchema(BaseModel):

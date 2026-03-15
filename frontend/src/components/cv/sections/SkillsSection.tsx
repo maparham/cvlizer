@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Box, Typography, Chip } from "@mui/material";
+import { Box, Typography, Chip, TextField, Select, MenuItem, FormControl, InputLabel, Button } from "@mui/material";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import SkillsAutocomplete from "../ui/SkillsAutocomplete";
@@ -24,6 +24,7 @@ import {
 } from "./hooks/useSkillsQualitySuggestions";
 import type { SkillsSuggestions } from "../../../types/ai";
 import type { Language } from "../../../types/cv";
+import { generateId } from "../../../utils/idGenerator";
 
 /** Section data shape for skills (technical + soft + languages). */
 export interface SkillsSectionData {
@@ -86,6 +87,10 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
 }) => {
   const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
   const [newSoftSkill, setNewSoftSkill] = useState("");
+  const [newLanguageName, setNewLanguageName] = useState("");
+  const [newLanguageProficiency, setNewLanguageProficiency] = useState<
+    Language["proficiency"]
+  >("Intermediate");
 
   // Get unified AI suggestions store with CV validation
   const {
@@ -145,7 +150,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
     editData: any,
     updateData: (field: string, value: any) => void,
   ) => {
-    const wrappedUpdateData = createTrackedFieldUpdater(cvId, SKILLS_FIELD_KEY, updateData, ["technical", "soft"]);
+    const wrappedUpdateData = createTrackedFieldUpdater(cvId, SKILLS_FIELD_KEY, updateData, ["technical", "soft", "languages"]);
 
     const addTechnicalSkill = () => {
       if (newTechnicalSkill.trim()) {
@@ -207,6 +212,31 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       };
       wrappedUpdateData("soft", updatedData.soft);
       saveDataImmediately(updatedData, "Soft skill removed");
+    };
+
+    const addLanguage = () => {
+      const trimmed = newLanguageName.trim();
+      if (!trimmed) return;
+      const newLang: Language = {
+        id: generateId(),
+        language: trimmed,
+        proficiency: newLanguageProficiency,
+      };
+      const languages = [...(editData.languages || []), newLang];
+      const updatedData = { ...editData, languages };
+      wrappedUpdateData("languages", languages);
+      saveDataImmediately(updatedData, "Language added");
+      setNewLanguageName("");
+      setNewLanguageProficiency("Intermediate");
+    };
+
+    const removeLanguage = (index: number) => {
+      const languages = (editData.languages || []).filter(
+        (_: Language, i: number) => i !== index,
+      );
+      const updatedData = { ...editData, languages };
+      wrappedUpdateData("languages", languages);
+      saveDataImmediately(updatedData, "Language removed");
     };
 
     // AI Suggestions handlers
@@ -278,6 +308,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
     ) => {
       updateData("technical", updatedData.technical);
       updateData("soft", updatedData.soft);
+      updateData("languages", updatedData.languages);
       await saveDataImmediately(updatedData, message);
     };
 
@@ -337,6 +368,53 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
             skillType="soft"
             existingSkills={editData.soft || []}
           />
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
+            Languages
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+            {(editData.languages || []).map((lang: Language, index: number) => (
+              <Chip
+                key={lang.id}
+                label={lang.proficiency ? `${lang.language} (${lang.proficiency})` : lang.language}
+                onDelete={() => removeLanguage(index)}
+                sx={{
+                  bgcolor: "#e8f5e9",
+                  color: "#2e7d32",
+                }}
+              />
+            ))}
+          </Box>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+            <TextField
+              size="small"
+              placeholder="Language name"
+              value={newLanguageName}
+              onChange={(e) => setNewLanguageName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
+              sx={{ minWidth: 160 }}
+            />
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel id="skills-language-proficiency-label">Proficiency</InputLabel>
+              <Select
+                labelId="skills-language-proficiency-label"
+                value={newLanguageProficiency}
+                label="Proficiency"
+                onChange={(e) => setNewLanguageProficiency(e.target.value as Language["proficiency"])}
+              >
+                <MenuItem value="Basic">Basic</MenuItem>
+                <MenuItem value="Intermediate">Intermediate</MenuItem>
+                <MenuItem value="Advanced">Advanced</MenuItem>
+                <MenuItem value="Fluent">Fluent</MenuItem>
+                <MenuItem value="Native">Native</MenuItem>
+              </Select>
+            </FormControl>
+            <Button variant="outlined" size="small" onClick={addLanguage} disabled={!newLanguageName.trim()}>
+              Add
+            </Button>
+          </Box>
         </Box>
 
         {/* CV Quality Skill Corrections - shared component for edit and display */}

@@ -31,4 +31,6 @@ Proofreader. Correct only spelling, grammar, and punctuation errors. Do not rewo
 - For non-description fields (`location`, `company`, `position`, `institution`, `degree`), correct only spelling, grammar, or punctuation, including removing unnecessary punctuation when needed. Do not remove wording.
 
 ## Skills
-- Correct only the spelling of existing skills. When correcting, set `original` to the exact string from the CV. Otherwise, omit `original`. Do not suggest new skills."""
+- Include only the skills that have spelling errors.
+- For each corrected skill, set `original` to the exact string from the CV and `skill` to the corrected version.
+- Do not suggest new skills."""

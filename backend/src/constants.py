@@ -46,3 +46,37 @@ DEFAULT_PARSED_CV = {
     **_EMPTY_PARSED_CV_BASE,
     "section_config": {"sections": []},
 }
+
+# Language proficiency: allowed values (must match frontend Language type) and
+# map from common phrases (lowercase) to canonical value. Used by cv_parsing
+# schema coercion and cv_parsing_service normalization.
+LANGUAGE_PROFICIENCY_VALUES = ("Basic", "Intermediate", "Advanced", "Fluent", "Native")
+LANGUAGE_PROFICIENCY_MAP = {
+    "native": "Native",
+    "mother tongue": "Native",
+    "first language": "Native",
+    "bilingual": "Native",
+    "l1": "Native",
+    "native speaker": "Native",
+    "fluent": "Fluent",
+    "full professional": "Fluent",
+    "proficient": "Fluent",
+    "c2": "Fluent",
+    "advanced": "Advanced",
+    "good": "Advanced",
+    "professional": "Advanced",
+    "c1": "Advanced",
+    "business": "Advanced",
+    "intermediate": "Intermediate",
+    "conversational": "Intermediate",
+    "working knowledge": "Intermediate",
+    "working": "Intermediate",
+    "b1": "Intermediate",
+    "b2": "Intermediate",
+    "basic": "Basic",
+    "elementary": "Basic",
+    "beginner": "Basic",
+    "a1": "Basic",
+    "a2": "Basic",
+    "limited": "Basic",
+}

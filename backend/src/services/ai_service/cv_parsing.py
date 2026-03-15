@@ -112,7 +112,7 @@ Omit any content that cannot fit an allowed field.
   - Do not include labels (e.g., "Programming Languages:").
   - Split grouped skills; one per entry.
 - skills.soft: Each entry is an individual soft skill (e.g., "Team Leadership").
-- skills.languages: Each entry is {"language": string, "proficiency": string}.
+- skills.languages: Extract all spoken languages from anywhere in the CV.
 
 6. Publications
 - Only include from an explicit "Publications" section.
