@@ -34,8 +34,9 @@ import LocationAutocomplete from "../ui/LocationAutocomplete";
 import { useFieldValidation } from "../../../hooks/useFieldValidation";
 import { FormField } from "../core/formUtils";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
-import { useSingleSectionWritingCorrections } from "./hooks/useSingleSectionWritingCorrections";
-import { FieldCorrection, ContentCoachingItem } from "../../../types/ai";
+import { usePersonalInfoWritingCorrections } from "./hooks/usePersonalInfoWritingCorrections";
+import { usePersonalInfoInlineCorrection } from "./hooks/usePersonalInfoInlineCorrection";
+import { FieldCorrection, ContentCoachingItem, WritingCorrection } from "../../../types/ai";
 import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
 import { CoachingQuestionsPanel } from "../ai/CoachingQuestionsPanel";
 import { useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
@@ -81,6 +82,14 @@ const ACADEMIC_TITLES = [
   "Mag.rer.nat.",
 ];
 
+/** Field config for personal info inline corrections (email, location). fieldKey is used for both edited-tracking and suggestion id. */
+const PERSONAL_INFO_FIELDS = [
+  { fieldKey: "personal_info.email" as const, fieldName: "email" },
+  { fieldKey: "personal_info.location" as const, fieldName: "location" },
+] as const;
+
+export type PersonalInfoFieldConfig = (typeof PERSONAL_INFO_FIELDS)[number];
+
 interface PersonalInfoSectionProps extends SectionProps {
   cvId?: string;
 }
@@ -106,6 +115,8 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
 
   const {
     descriptionCorrection,
+    emailCorrection,
+    locationCorrection,
     handleApplyFieldCorrection,
     handleDismissWritingCorrection,
     createWritingCorrectionHandler,
@@ -117,13 +128,15 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     isRetrying,
     draftIndex,
     draftTotal,
-  } = useSingleSectionWritingCorrections({
+  } = usePersonalInfoWritingCorrections({
     cvId,
-    sectionKeys: ["personal_info", "personal_info.description"],
     getValueFromCV: (c) =>
       (c.parsed_data?.personal_info as { description?: string } | undefined)
         ?.description ?? "",
-    formFieldName: "description",
+    getValueFromCVByField: (c, fieldName) =>
+      (c.parsed_data?.personal_info as Record<string, unknown> | undefined)?.[
+        fieldName
+      ] ?? "",
   });
 
   const qualityAnalysis = useValidatedQualityAnalysis(cvId ?? "");
@@ -146,6 +159,17 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   const { isEdited, clearEdited } = useEditedSinceAIStore();
   const { confirm: overwriteConfirm } = useOverwriteConfirm();
   const DESCRIPTION_FIELD_KEY = "personal_info.description" as const;
+  const EMAIL_FIELD_KEY = "personal_info.email" as const;
+  const LOCATION_FIELD_KEY = "personal_info.location" as const;
+
+  const renderInlineCorrection = usePersonalInfoInlineCorrection({
+    cvId,
+    isEdited,
+    overwriteConfirm,
+    clearEdited,
+    handleApplyFieldCorrection,
+    handleDismissWritingCorrection,
+  });
 
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [profilePictureUploading, setProfilePictureUploading] = useState(false);
@@ -309,6 +333,8 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     onCancel: () => void,
   ) => {
     const wrappedUpdateData = createTrackedFieldUpdater(cvId, DESCRIPTION_FIELD_KEY, updateData, ["description"]);
+    const wrappedUpdateDataEmail = createTrackedFieldUpdater(cvId, EMAIL_FIELD_KEY, updateData, ["email"]);
+    const wrappedUpdateDataLocation = createTrackedFieldUpdater(cvId, LOCATION_FIELD_KEY, updateData, ["location"]);
     const saveWithData: (data: Record<string, unknown>) => Promise<void> = (
       data
     ) => onSave(data, undefined);
@@ -401,7 +427,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         <TextField
           variant="standard"
           value={editData.email || ""}
-          onChange={(e) => updateData("email", e.target.value)}
+          onChange={(e) => wrappedUpdateDataEmail("email", e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -427,6 +453,12 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             ),
           }}
         />
+        {renderInlineCorrection(
+          PERSONAL_INFO_FIELDS[0],
+          emailCorrection,
+          "edit",
+          handleApplyWritingCorrectionInEdit
+        )}
         <TextField
           variant="standard"
           value={editData.phone || ""}
@@ -456,7 +488,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         />
         <LocationAutocomplete
           value={editData.location || ""}
-          onChange={(value) => updateData("location", value)}
+          onChange={(value) => wrappedUpdateDataLocation("location", value)}
           onSave={onSave}
           onCancel={onCancel}
           error={!editData.location?.trim() || locationValidation.hasError}
@@ -465,6 +497,12 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           fullWidth={false}
           sx={{ minWidth: 200 }}
         />
+        {renderInlineCorrection(
+          PERSONAL_INFO_FIELDS[1],
+          locationCorrection,
+          "edit",
+          handleApplyWritingCorrectionInEdit
+        )}
       </Box>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
         <TextField
@@ -667,6 +705,16 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             📍 {locationMissingOrInvalid ? locationMessage : data.location}
           </Typography>
         </Box>
+        {renderInlineCorrection(
+          PERSONAL_INFO_FIELDS[0],
+          emailCorrection,
+          "display"
+        )}
+        {renderInlineCorrection(
+          PERSONAL_INFO_FIELDS[1],
+          locationCorrection,
+          "display"
+        )}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
         {data.linkedin_url && (
           <Typography variant="body1" sx={{ color: "#1976d2" }}>

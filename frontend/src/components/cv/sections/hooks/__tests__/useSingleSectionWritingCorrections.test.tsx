@@ -228,7 +228,8 @@ describe("useSingleSectionWritingCorrections", () => {
       expect(mockApplyWritingCorrection).toHaveBeenCalledWith(
         "cv-1",
         "analysis-1",
-        "professional_summary"
+        "professional_summary",
+        0
       );
       expect(dismissWritingCorrection).toHaveBeenCalledWith(
         parentCorrection.item_id,

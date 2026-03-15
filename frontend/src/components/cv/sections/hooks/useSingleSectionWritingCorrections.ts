@@ -30,10 +30,19 @@ export interface UseSingleSectionWritingCorrectionsParams {
   formFieldName: string;
   /** Override item_type filter (e.g. "custom" for custom sections); when omitted, derived from sectionKeys[0] */
   expectedItemType?: string;
+  /** When section is personal_info, get value by field name for edit-mode apply (email, location, description). */
+  getValueFromCVByField?: (
+    cv: { parsed_data?: Record<string, unknown> },
+    fieldName: string
+  ) => string;
 }
 
 export interface UseSingleSectionWritingCorrectionsResult {
   descriptionCorrection: { html_diff: string; correction: WritingCorrection } | null;
+  /** When section is personal_info, correction for email field; otherwise null */
+  emailCorrection: { html_diff: string; correction: WritingCorrection } | null;
+  /** When section is personal_info, correction for location field; otherwise null */
+  locationCorrection: { html_diff: string; correction: WritingCorrection } | null;
   handleApplyFieldCorrection: (
     fieldCorrection: FieldCorrection,
     parentCorrection: WritingCorrection
@@ -85,7 +94,15 @@ function sectionMatchesKeys(fieldPath: string | undefined | null, sectionKeys: s
 export function useSingleSectionWritingCorrections(
   params: UseSingleSectionWritingCorrectionsParams
 ): UseSingleSectionWritingCorrectionsResult {
-  const { cvId, sectionKeys, getValueFromCV, formFieldName, expectedItemType } = params;
+  const {
+    cvId,
+    sectionKeys,
+    getValueFromCV,
+    formFieldName,
+    expectedItemType,
+    getValueFromCVByField,
+  } = params;
+  const isPersonalInfo = sectionKeys[0] === "personal_info";
   const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
   const {
     dismissWritingCorrection,
@@ -112,6 +129,10 @@ export function useSingleSectionWritingCorrections(
     for (const i of issues) {
       if (!sectionMatchesKeys(i.field_path, sectionKeys) || !i.html_diff) continue;
       if (effectiveItemType && i.item_type !== effectiveItemType) continue;
+      const fieldName =
+        isPersonalInfo && i.field_path
+          ? (i.field_path.split(".").pop() ?? formFieldName)
+          : formFieldName;
       const itemId = i.item_id ?? "";
       out.push({
         item_id: itemId,
@@ -119,7 +140,7 @@ export function useSingleSectionWritingCorrections(
         importance: i.issue_severity === "critical" ? "highly_recommended" : "standard",
         field_corrections: [
           {
-            field_name: formFieldName,
+            field_name: fieldName,
             html_diff: i.html_diff,
             reasoning: i.reasoning,
             original_value: i.original ?? "",
@@ -129,7 +150,7 @@ export function useSingleSectionWritingCorrections(
       });
     }
     return out;
-  }, [qualityAnalysis?.issues, sectionKeys, formFieldName, effectiveItemType]);
+  }, [qualityAnalysis?.issues, sectionKeys, formFieldName, effectiveItemType, isPersonalInfo]);
 
   const itemId =
     writingCorrections.length > 0
@@ -140,19 +161,62 @@ export function useSingleSectionWritingCorrections(
     const history = qualityAnalysis?.field_draft_histories?.[fieldPath];
     if (history && history.length > 0) return history;
     const issues = qualityAnalysis?.issues ?? [];
+    if (isPersonalInfo) {
+      const descIssue = issues.find(
+        (i) =>
+          i.field_path === "personal_info.description" &&
+          i.html_diff &&
+          (!effectiveItemType || i.item_type === effectiveItemType)
+      );
+      return descIssue ? [descIssue] : [];
+    }
     for (const i of issues) {
       if (!sectionMatchesKeys(i.field_path, sectionKeys) || !i.html_diff) continue;
       if (effectiveItemType && i.item_type !== effectiveItemType) continue;
       return [i];
     }
     return [];
-  }, [qualityAnalysis?.field_draft_histories, qualityAnalysis?.issues, fieldPath, sectionKeys, effectiveItemType]);
+  }, [
+    qualityAnalysis?.field_draft_histories,
+    qualityAnalysis?.issues,
+    fieldPath,
+    sectionKeys,
+    effectiveItemType,
+    isPersonalInfo,
+  ]);
 
   React.useEffect(() => {
     if (currentGenerationIndex >= generationsList.length && generationsList.length > 0) {
       setCurrentGenerationIndex(0);
     }
   }, [generationsList.length, currentGenerationIndex]);
+
+  /** Resolve the new field value after apply: from updated CV (by field for personal_info, else section getter) or fallback to current edit data. */
+  const resolveFieldValue = React.useCallback(
+    (
+      updatedCV: { parsed_data?: Record<string, unknown> },
+      fieldName: string,
+      editData: Record<string, unknown>
+    ): string => {
+      const fromCV =
+        isPersonalInfo && getValueFromCVByField
+          ? getValueFromCVByField(
+              {
+                parsed_data: updatedCV.parsed_data as
+                  | Record<string, unknown>
+                  | undefined,
+              },
+              fieldName
+            )
+          : getValueFromCV({
+              parsed_data: updatedCV.parsed_data as
+                | Record<string, unknown>
+                | undefined,
+            });
+      return fromCV ?? (editData[fieldName] as string) ?? "";
+    },
+    [isPersonalInfo, getValueFromCVByField, getValueFromCV]
+  );
 
   const createWritingCorrectionHandler = React.useCallback(
     (
@@ -169,12 +233,13 @@ export function useSingleSectionWritingCorrections(
           showError("Cannot apply correction: CV ID or analysis ID missing");
           return;
         }
-        // Use item_id when present; for single-section (e.g. personal_info) backend may omit it, so fall back to section from field_path or sectionKeys
-        const correctionId =
-          parentCorrection.item_id ||
-          (parentCorrection.field_path?.split(".")[0]) ||
-          sectionKeys[0] ||
-          "";
+        // ID sent to API: personal_info needs full path (e.g. "personal_info.email"); other sections use item_id, else first segment of field_path, else section key.
+        const correctionId = isPersonalInfo && parentCorrection.field_path
+          ? parentCorrection.field_path
+          : parentCorrection.item_id ||
+            (parentCorrection.field_path?.split(".")[0]) ||
+            sectionKeys[0] ||
+            "";
         if (!correctionId) {
           showError("Cannot apply correction: correction ID missing");
           return;
@@ -194,16 +259,13 @@ export function useSingleSectionWritingCorrections(
             onSaveCallback &&
             editData !== undefined
           ) {
-            const newValue =
-              getValueFromCV({
-                parsed_data: updatedCV.parsed_data as
-                  | Record<string, unknown>
-                  | undefined,
-              }) ??
-              (editData[formFieldName] as string) ??
-              "";
-            updateData(formFieldName, newValue);
-            const updatedEditData = { ...editData, [formFieldName]: newValue };
+            const fieldName =
+              isPersonalInfo && parentCorrection.field_path
+                ? (parentCorrection.field_path.split(".").pop() ?? formFieldName)
+                : formFieldName;
+            const newValue = resolveFieldValue(updatedCV, fieldName, editData);
+            updateData(fieldName, newValue);
+            const updatedEditData = { ...editData, [fieldName]: newValue };
             await onSaveCallback(updatedEditData);
           }
           await dismissWritingCorrection(
@@ -226,8 +288,9 @@ export function useSingleSectionWritingCorrections(
       currentAnalysisId,
       currentGenerationIndex,
       sectionKeys,
-      getValueFromCV,
       formFieldName,
+      isPersonalInfo,
+      resolveFieldValue,
       setCurrentCV,
       updateCVInList,
       dismissWritingCorrection,
@@ -319,6 +382,8 @@ export function useSingleSectionWritingCorrections(
 
   return {
     descriptionCorrection,
+    emailCorrection: null,
+    locationCorrection: null,
     handleApplyFieldCorrection,
     handleDismissWritingCorrection,
     createWritingCorrectionHandler,
