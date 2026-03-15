@@ -91,9 +91,12 @@ const EducationForm: React.FC<{
     [
       { fieldName: 'institution' },
       { fieldName: 'degree' },
+      { fieldName: 'field_of_study' },
       { fieldName: 'location' },
       { fieldName: 'start_date' },
       { fieldName: 'end_date' },
+      { fieldName: 'achievements' },
+      { fieldName: 'honors' },
     ],
     onApplySingleFieldCorrection!,
     onDismissWritingCorrection!
@@ -167,6 +170,7 @@ const EducationForm: React.FC<{
         onSave={onSave}
         placeholder="e.g., Computer Science"
         label="Field of Study"
+        {...fieldCorrectionProps.field_of_study}
       />
       <AcademicDegreeAutocomplete
         value={edu.academic_title || ""}
@@ -404,9 +408,12 @@ const EducationDisplay: React.FC<{
     [
       { fieldName: 'institution' },
       { fieldName: 'degree' },
+      { fieldName: 'field_of_study' },
       { fieldName: 'location' },
       { fieldName: 'start_date' },
       { fieldName: 'end_date' },
+      { fieldName: 'achievements' },
+      { fieldName: 'honors' },
     ],
     (_, parent) => handleApplyWritingCorrection(parent, 0),
     handleDismissWritingCorrection
@@ -472,6 +479,18 @@ const EducationDisplay: React.FC<{
             onApply={() => fieldCorrectionProps.degree.onApplyCorrection(fieldCorrectionProps.degree.fieldCorrection!)}
             onDismiss={fieldCorrectionProps.degree.onDismissCorrection}
             suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].degree`)}
+          />
+        </Box>
+      )}
+      {fieldCorrectionProps.field_of_study?.correctionImportance !== undefined && fieldCorrectionProps.field_of_study?.fieldCorrection && (
+        <Box sx={{ mb: 1 }}>
+          <InlineFieldCorrection
+            fieldCorrection={fieldCorrectionProps.field_of_study.fieldCorrection}
+            importance={fieldCorrectionProps.field_of_study.correctionImportance!}
+            reasoning={fieldCorrectionProps.field_of_study.correctionReasoning}
+            onApply={() => fieldCorrectionProps.field_of_study!.onApplyCorrection(fieldCorrectionProps.field_of_study!.fieldCorrection!)}
+            onDismiss={fieldCorrectionProps.field_of_study.onDismissCorrection}
+            suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].field_of_study`)}
           />
         </Box>
       )}
@@ -582,6 +601,18 @@ const EducationDisplay: React.FC<{
           </ul>
         </Box>
       )}
+      {fieldCorrectionProps.achievements?.correctionImportance !== undefined && fieldCorrectionProps.achievements?.fieldCorrection && (
+        <Box sx={{ mb: 1 }}>
+          <InlineFieldCorrection
+            fieldCorrection={fieldCorrectionProps.achievements.fieldCorrection}
+            importance={fieldCorrectionProps.achievements.correctionImportance!}
+            reasoning={fieldCorrectionProps.achievements.correctionReasoning}
+            onApply={() => fieldCorrectionProps.achievements!.onApplyCorrection(fieldCorrectionProps.achievements!.fieldCorrection!)}
+            onDismiss={fieldCorrectionProps.achievements.onDismissCorrection}
+            suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].achievements`)}
+          />
+        </Box>
+      )}
       {edu.honors && edu.honors.length > 0 && (
         <Box sx={{ mb: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
@@ -594,6 +625,18 @@ const EducationDisplay: React.FC<{
               </li>
             ))}
           </ul>
+        </Box>
+      )}
+      {fieldCorrectionProps.honors?.correctionImportance !== undefined && fieldCorrectionProps.honors?.fieldCorrection && (
+        <Box sx={{ mb: 1 }}>
+          <InlineFieldCorrection
+            fieldCorrection={fieldCorrectionProps.honors.fieldCorrection}
+            importance={fieldCorrectionProps.honors.correctionImportance!}
+            reasoning={fieldCorrectionProps.honors.correctionReasoning}
+            onApply={() => fieldCorrectionProps.honors!.onApplyCorrection(fieldCorrectionProps.honors!.fieldCorrection!)}
+            onDismiss={fieldCorrectionProps.honors.onDismissCorrection}
+            suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].honors`)}
+          />
         </Box>
       )}
       {/* AI Suggestion - only show full suggestion UI if suggested text exists */}

@@ -5,6 +5,7 @@ Service for applying writing corrections to CV data.
 Handles html_diff parsing and field corrections application.
 """
 
+import json
 import re
 import logging
 from typing import Dict, Any, List
@@ -25,12 +26,15 @@ ALLOWED_FIELD_NAMES = {
     "position",
     "institution",
     "degree",
+    "field_of_study",
     "location",
     "description",
     "start_date",
     "end_date",
     "content",
     "current",
+    "achievements",
+    "honors",
     # Personal info (proofread corrections)
     "email",
     "full_name",
@@ -125,6 +129,19 @@ def apply_field_corrections(
             corrected_value = apply_html_diff(
                 field_correction.original_value, field_correction.html_diff
             )
+
+        # Array fields (achievements, honors) may arrive as JSON strings; parse to list
+        if field_name in ("achievements", "honors") and isinstance(corrected_value, str):
+            try:
+                parsed = json.loads(corrected_value)
+                if isinstance(parsed, list):
+                    corrected_value = parsed
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    f"Failed to parse {field_name} JSON, keeping existing value: {e}"
+                )
+                skipped_fields.append(field_name)
+                continue
 
         # Update the field if it exists in the item
         if field_name in updated_item:

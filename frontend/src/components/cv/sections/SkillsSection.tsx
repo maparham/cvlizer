@@ -23,11 +23,13 @@ import {
   type UpdateAndSaveSkills,
 } from "./hooks/useSkillsQualitySuggestions";
 import type { SkillsSuggestions } from "../../../types/ai";
+import type { Language } from "../../../types/cv";
 
-/** Section data shape for skills (technical + soft arrays). */
+/** Section data shape for skills (technical + soft + languages). */
 export interface SkillsSectionData {
   technical?: string[];
   soft?: string[];
+  languages?: Language[];
 }
 
 /** Wrapper that wires CV quality skill suggestions to context-specific sectionData and updateAndSave. */
@@ -449,6 +451,26 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
             />
           ))}
         </Box>
+
+        {data.languages && data.languages.length > 0 && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
+              Languages
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {data.languages.map((lang) => (
+                <Chip
+                  key={lang.id}
+                  label={lang.proficiency ? `${lang.language} (${lang.proficiency})` : lang.language}
+                  sx={{
+                    bgcolor: "#e8f5e9",
+                    color: "#2e7d32",
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
 
         {/* CV Quality Skill Corrections - shared component (display mode) */}
         {qualityHasSuggestions && qualitySkills && (

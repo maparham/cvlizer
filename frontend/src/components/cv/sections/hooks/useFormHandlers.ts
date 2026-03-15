@@ -11,6 +11,26 @@ import { useCVQualityStore } from '../../../../stores/cvQualityStore';
 import { WritingCorrection, FieldCorrection } from '../../../../types/ai';
 import { parseHtmlDiff } from '../../../../utils/htmlDiffParser';
 
+const ARRAY_FIELD_NAMES = ['achievements', 'honors'] as const;
+
+/**
+ * Normalize corrected_value for array fields (achievements, honors) that may
+ * arrive as JSON strings from the API. Returns parsed array or value as-is.
+ */
+function normalizeCorrectedValue(
+  fieldName: string,
+  value: unknown
+): unknown {
+  if (!ARRAY_FIELD_NAMES.includes(fieldName as any)) return value;
+  if (typeof value !== 'string') return value;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : value;
+  } catch {
+    return value;
+  }
+}
+
 export interface FormHandlers {
   handleApplyQualitySuggestionForm: (suggested: string) => void;
   handleDismissQualitySuggestionForm: () => void;
@@ -80,7 +100,11 @@ export function useFormHandlers<T extends { id: string }>(
       // Apply field corrections directly to form fields (like user typing manually)
       if (correction.field_corrections) {
         correction.field_corrections.forEach(fieldCorrection => {
-          updateItem(fieldCorrection.field_name as keyof T, fieldCorrection.corrected_value);
+          const value = normalizeCorrectedValue(
+            fieldCorrection.field_name,
+            fieldCorrection.corrected_value
+          );
+          updateItem(fieldCorrection.field_name as keyof T, value);
         });
       }
 
@@ -114,8 +138,11 @@ export function useFormHandlers<T extends { id: string }>(
   // Handle applying single field correction in form
   const handleApplySingleFieldCorrectionForm = useCallback(
     async (fieldCorrection: FieldCorrection, parentCorrection: WritingCorrection) => {
-      // Apply ONLY the specific field correction that was clicked
-      updateItem(fieldCorrection.field_name as keyof T, fieldCorrection.corrected_value);
+      const value = normalizeCorrectedValue(
+        fieldCorrection.field_name,
+        fieldCorrection.corrected_value
+      );
+      updateItem(fieldCorrection.field_name as keyof T, value);
 
       // Dismiss the entire parent WritingCorrection from store
       await dismissWritingCorrection(parentCorrection.item_id, parentCorrection.field_path);
@@ -141,7 +168,11 @@ export function useFormHandlers<T extends { id: string }>(
           // Apply field corrections
           if (correction.field_corrections) {
             correction.field_corrections.forEach(fieldCorrection => {
-              updateItem(fieldCorrection.field_name as keyof T, fieldCorrection.corrected_value);
+              const value = normalizeCorrectedValue(
+                fieldCorrection.field_name,
+                fieldCorrection.corrected_value
+              );
+              updateItem(fieldCorrection.field_name as keyof T, value);
             });
           }
 
