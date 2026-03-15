@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Whitelist of allowed field names for security and data integrity
 ALLOWED_FIELD_NAMES = {
+    # Work experience / education / summary
     "company",
     "position",
     "institution",
@@ -30,6 +31,14 @@ ALLOWED_FIELD_NAMES = {
     "end_date",
     "content",
     "current",
+    # Personal info (proofread corrections)
+    "email",
+    "full_name",
+    "phone",
+    "linkedin_url",
+    "github_url",
+    "website_url",
+    "academic_title",
 }
 
 
