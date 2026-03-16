@@ -14,32 +14,47 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import PauseIcon from "@mui/icons-material/Pause";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import IconButton from "@mui/material/IconButton";
 import { HOME_SHOWCASE_STEPS } from "../../pages/homeShowcaseConfig";
 
-const AUTO_ADVANCE_MS = 7000;
+const AUTO_ADVANCE_MS = 6000;
+const SMOOTH_SCROLL_DURATION_MS = 500;
 
 const HowItWorksSection: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [isPointerInside, setIsPointerInside] = useState(false);
   const activeIndexRef = useRef(0);
   activeIndexRef.current = activeIndex;
+  const isScrollingProgrammaticallyRef = useRef(false);
+
+  const shouldAutoAdvance = !paused && !isPointerInside;
 
   useEffect(() => {
+    if (!shouldAutoAdvance) return;
     const id = setInterval(() => {
       const el = scrollRef.current;
       if (!el) return;
       const next =
         (activeIndexRef.current + 1) % HOME_SHOWCASE_STEPS.length;
+      isScrollingProgrammaticallyRef.current = true;
       el.scrollTo({
         left: next * el.clientWidth,
         behavior: "smooth",
       });
       setActiveIndex(next);
+      setTimeout(() => {
+        isScrollingProgrammaticallyRef.current = false;
+      }, SMOOTH_SCROLL_DURATION_MS);
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(id);
-  }, []);
+  }, [shouldAutoAdvance]);
 
   const updateActiveFromScroll = useCallback(() => {
+    if (isScrollingProgrammaticallyRef.current) return;
     const el = scrollRef.current;
     if (!el) return;
     const { scrollLeft, clientWidth } = el;
@@ -61,11 +76,15 @@ const HowItWorksSection: React.FC = () => {
     const el = scrollRef.current;
     if (!el) return;
     const slideWidth = el.clientWidth;
+    isScrollingProgrammaticallyRef.current = true;
     el.scrollTo({
       left: index * slideWidth,
       behavior: "smooth",
     });
     setActiveIndex(index);
+    setTimeout(() => {
+      isScrollingProgrammaticallyRef.current = false;
+    }, SMOOTH_SCROLL_DURATION_MS);
   };
 
   return (
@@ -146,17 +165,27 @@ const HowItWorksSection: React.FC = () => {
                       px: 1.75,
                       py: 0.75,
                       borderRadius: 999,
-                      bgcolor: "background.paper",
-                      border: "1px solid",
-                      borderColor: activeIndex === index ? "primary.main" : "grey.300",
-                      boxShadow: activeIndex === index ? 3 : 1,
+                      bgcolor:
+                        activeIndex === index
+                          ? "primary.main"
+                          : "background.paper",
+                      border: "2px solid",
+                      borderColor:
+                        activeIndex === index ? "primary.main" : "grey.300",
+                      boxShadow:
+                        activeIndex === index
+                          ? "0 2px 8px rgba(0,0,0,0.12), 0 0 0 1px rgba(76,175,80,0.2)"
+                          : 1,
                       whiteSpace: "nowrap",
                       transition:
-                        "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
+                        "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease",
                       display: "flex",
                       alignItems: "center",
                       gap: 0.75,
                       cursor: "pointer",
+                      ...(activeIndex === index && {
+                        transform: "translateY(-1px)",
+                      }),
                       "&:hover": {
                         transform: "translateY(-1px)",
                         boxShadow: 3,
@@ -164,10 +193,25 @@ const HowItWorksSection: React.FC = () => {
                       },
                     }}
                   >
-                    <Icon sx={{ fontSize: 18, color: "primary.main" }} />
+                    <Icon
+                      sx={{
+                        fontSize: 18,
+                        color:
+                          activeIndex === index
+                            ? "primary.contrastText"
+                            : "primary.main",
+                      }}
+                    />
                     <Box
                       component="span"
-                      sx={{ fontSize: 14, fontWeight: 500, color: "text.primary" }}
+                      sx={{
+                        fontSize: 14,
+                        fontWeight: activeIndex === index ? 600 : 500,
+                        color:
+                          activeIndex === index
+                            ? "primary.contrastText"
+                            : "text.primary",
+                      }}
                     >
                       {label}
                     </Box>
@@ -195,6 +239,8 @@ const HowItWorksSection: React.FC = () => {
           <Box
             ref={scrollRef}
             onScroll={handleScroll}
+            onMouseEnter={() => setIsPointerInside(true)}
+            onMouseLeave={() => setIsPointerInside(false)}
             tabIndex={0}
             sx={{
               display: "flex",
@@ -412,10 +458,26 @@ const HowItWorksSection: React.FC = () => {
           sx={{
             display: "flex",
             justifyContent: "center",
+            alignItems: "center",
             gap: 1.5,
             mt: 3,
           }}
         >
+          <IconButton
+            size="small"
+            onClick={() => setPaused((p) => !p)}
+            aria-label={shouldAutoAdvance ? "Pause slideshow" : "Play slideshow"}
+            sx={{
+              p: 0.5,
+              "& .MuiSvgIcon-root": { fontSize: 18 },
+            }}
+          >
+            {shouldAutoAdvance ? (
+              <PauseIcon />
+            ) : (
+              <PlayArrowIcon />
+            )}
+          </IconButton>
           {HOME_SHOWCASE_STEPS.map((_, index) => (
             <Box
               key={index}

@@ -49,10 +49,10 @@ export const HOME_SHOWCASE_STEPS: HomeShowcaseStep[] = [
     label: "STEP 03",
     title: "Job-tailored Enhancements",
     body:
-      "Paste in a job description and let the AI tailor your CV to match what hiring managers and ATS filters are looking for.",
+      "Paste in a job description and the AI will tailor your CV to what hiring managers look for.",
     bullets: [
-      "Job-specific rewrites: adapts your bullets and summary for each role.",
-      "ATS alignment: surfaces missing keywords and optimizes phrasing for screening tools.",
+      "Coaching, not just rewrites: suggests stronger wording and ideas so you can expand your content.",
+      "Adapt to the job: picks up key terms from the job description and tightens your phrasing so the match is obvious.",
       "Match insights: highlights strengths, gaps, and sections that deserve stronger emphasis.",
     ],
     component: CoachingDiffMock,
