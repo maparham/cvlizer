@@ -1,6 +1,6 @@
 /**
  * Home showcase step configuration.
- * Step copy and asset paths for the "How CV Optimizer Works" section.
+ * Step copy and asset paths for the home page "How it works" section.
  * Used only by home page components.
  */
 
@@ -48,5 +48,17 @@ export const HOME_SHOWCASE_STEPS: HomeShowcaseStep[] = [
       "Match insights: highlights strengths, gaps, and sections that deserve stronger emphasis.",
     ],
     imagePath: "/home-showcase/slide-3-enhancement.png",
+  },
+  {
+    label: "STEP 04",
+    title: "Export your CV as PDF",
+    body:
+      "Download your tailored CV as a polished PDF ready to send. One click and you’re done.",
+    bullets: [
+      "Single PDF: one clean file with your chosen layout and content.",
+      "Print-ready: formatted for A4/Letter and professional appearance.",
+      "Re-export anytime: update content and download again whenever you need.",
+    ],
+    imagePath: "/home-showcase/michael-peterson-cv.pdf",
   },
 ];

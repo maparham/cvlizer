@@ -62,7 +62,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               letterSpacing: "-0.025em",
             }}
           >
-            CV Optimizer
+            Resume Coach
           </Typography>
         </RouterLink>
         <UsageChip

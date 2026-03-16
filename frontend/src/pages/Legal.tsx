@@ -87,14 +87,14 @@ const Legal: React.FC = () => {
           Acceptance
         </Typography>
         <Typography variant="body1" paragraph>
-          By using CV Optimizer you agree to these terms. If you do not agree, do not use the service.
+          By using Resume Coach (Rahkar) you agree to these terms. If you do not agree, do not use the service.
         </Typography>
 
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
           Description of service
         </Typography>
         <Typography variant="body1" paragraph>
-          CV Optimizer provides AI-assisted CV editing, job-description integration, and export tools. We may
+          Resume Coach (Rahkar) provides AI-assisted CV and resume editing, job-description integration, and export tools. We may
           change or discontinue features with reasonable notice.
         </Typography>
 

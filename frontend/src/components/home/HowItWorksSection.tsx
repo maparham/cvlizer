@@ -1,7 +1,7 @@
 /**
  * How It Works section for the home page.
- * Horizontal scroll strip of three slides with screenshots, dot indicators,
- * and accessibility attributes.
+ * Horizontal scroll strip of four slides with screenshots, workflow pill
+ * navigation, dot indicators, and accessibility attributes.
  */
 import React, { useRef, useState, useCallback } from "react";
 import {
@@ -54,7 +54,7 @@ const HowItWorksSection: React.FC = () => {
       component="section"
       id="how-it-works"
       role="region"
-      aria-label="How CV Optimizer works"
+      aria-label="How Resume Coach works"
       sx={{
         width: "100%",
         bgcolor: "grey.100",
@@ -76,14 +76,7 @@ const HowItWorksSection: React.FC = () => {
               mb: 1,
             }}
           >
-            How CV Optimizer works
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ maxWidth: 520, mx: "auto", lineHeight: 1.6 }}
-          >
-            See the three key steps from upload to AI-powered tailoring and export, all inside one focused workspace.
+            How it works
           </Typography>
         </Box>
 
@@ -117,20 +110,34 @@ const HowItWorksSection: React.FC = () => {
               ].map(({ label, Icon }, index, arr) => (
                 <React.Fragment key={label}>
                   <Box
+                    component="button"
+                    type="button"
+                    onClick={() => handleDotClick(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleDotClick(index);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Go to step: ${label}`}
+                    aria-current={activeIndex === index ? "step" : undefined}
                     sx={{
                       px: 1.75,
                       py: 0.75,
                       borderRadius: 999,
                       bgcolor: "background.paper",
                       border: "1px solid",
-                      borderColor: "grey.300",
-                      boxShadow: 1,
+                      borderColor: activeIndex === index ? "primary.main" : "grey.300",
+                      boxShadow: activeIndex === index ? 3 : 1,
                       whiteSpace: "nowrap",
                       transition:
                         "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
                       display: "flex",
                       alignItems: "center",
                       gap: 0.75,
+                      cursor: "pointer",
                       "&:hover": {
                         transform: "translateY(-1px)",
                         boxShadow: 3,
@@ -334,17 +341,32 @@ const HowItWorksSection: React.FC = () => {
                       p: 2,
                     }}
                   >
-                    <Box
-                      component="img"
-                      src={step.imagePath}
-                      alt=""
-                      sx={{
-                        width: "100%",
-                        height: "auto",
-                        maxHeight: "100%",
-                        objectFit: "contain",
-                      }}
-                    />
+                    {step.imagePath.toLowerCase().endsWith(".pdf") ? (
+                      <Box
+                        component="iframe"
+                        src={`${step.imagePath}#toolbar=0`}
+                        title="Exported CV preview"
+                        sx={{
+                          width: "100%",
+                          height: { xs: 320, md: 360 },
+                          minHeight: 320,
+                          border: 0,
+                          borderRadius: 1,
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        component="img"
+                        src={step.imagePath}
+                        alt=""
+                        sx={{
+                          width: "100%",
+                          height: "auto",
+                          maxHeight: "100%",
+                          objectFit: "contain",
+                        }}
+                      />
+                    )}
                   </Box>
                 </Box>
               </Card>
