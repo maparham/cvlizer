@@ -230,7 +230,7 @@ const Home: React.FC = () => {
                   letterSpacing: "-0.04em",
                 }}
               >
-                Resume Coach
+                Rahkar Resume Studio
               </Typography>
             </Box>
             <Box
@@ -322,7 +322,7 @@ const Home: React.FC = () => {
           >
             <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 45%" } }}>
               <Typography
-                variant="h3"
+                variant="h4"
                 component="h1"
                 sx={{
                   fontWeight: 800,
@@ -330,19 +330,32 @@ const Home: React.FC = () => {
                   mb: 0.5,
                 }}
               >
-                Your personal resume coach
+                A resume that{" "}
+                <Box
+                  component="span"
+                  sx={{ whiteSpace: "nowrap" }}
+                >
+                  reflects{" "}
+                  <Box
+                    component="span"
+                    sx={{ color: "primary.main", fontWeight: 800 }}
+                  >
+                    you
+                  </Box>
+                  .
+                </Box>
               </Typography>
               <Typography
                 variant="subtitle1"
                 component="p"
                 sx={{
                   fontWeight: 600,
-                  color: "primary.main",
+                  color: "text.secondary",
                   mb: 2.5,
                   letterSpacing: "-0.035em",
                 }}
               >
-                Practical advice, focused edits, fast results.
+                Your voice, powered by GPT, so real people read it.
               </Typography>
               <Typography
                 variant="body1"
@@ -350,8 +363,7 @@ const Home: React.FC = () => {
                 sx={{ mb: 3, maxWidth: 460, lineHeight: 1.6 }}
               >
                 Import your CV or resume, polish every section with AI, and export
-                a job-tailored version that hiring managers and ATS systems
-                actually read.
+                a job-tailored version that hiring managers actually read.
               </Typography>
               <Box
                 sx={{

@@ -1,15 +1,23 @@
 /**
  * Home showcase step configuration.
  * Step copy and asset paths for the home page "How it works" section.
- * Used only by home page components.
+ * Steps may use either a React component (interactive mock) or imagePath (image/PDF).
  */
+
+import type { ComponentType } from "react";
+import { CVParsingMock } from "../components/home/showcase/CVParsingMock";
+import { ProofreadDiffMock } from "../components/home/showcase/ProofreadDiffMock";
+import { CoachingDiffMock } from "../components/home/showcase/CoachingDiffMock";
 
 export interface HomeShowcaseStep {
   label: string;
   title: string;
   body: string;
   bullets?: string[];
-  imagePath: string;
+  /** Optional: path to image or PDF when not using a component */
+  imagePath?: string;
+  /** Optional: interactive mock component for slides 1–3 */
+  component?: ComponentType;
 }
 
 export const HOME_SHOWCASE_STEPS: HomeShowcaseStep[] = [
@@ -23,7 +31,7 @@ export const HOME_SHOWCASE_STEPS: HomeShowcaseStep[] = [
       "Clean structure: turns messy layouts into tidy, editable blocks.",
       "Safe uploads: files are processed securely and stay private to your account.",
     ],
-    imagePath: "/home-showcase/slide-1-import.png",
+    component: CVParsingMock,
   },
   {
     label: "STEP 02",
@@ -35,7 +43,7 @@ export const HOME_SHOWCASE_STEPS: HomeShowcaseStep[] = [
       "Inline suggestions: apply improvements per sentence or per section, not all at once.",
       "Stronger storytelling: helps split long paragraphs and highlight impact with focused bullets.",
     ],
-    imagePath: "/home-showcase/slide-2-editing.png",
+    component: ProofreadDiffMock,
   },
   {
     label: "STEP 03",
@@ -47,7 +55,7 @@ export const HOME_SHOWCASE_STEPS: HomeShowcaseStep[] = [
       "ATS alignment: surfaces missing keywords and optimizes phrasing for screening tools.",
       "Match insights: highlights strengths, gaps, and sections that deserve stronger emphasis.",
     ],
-    imagePath: "/home-showcase/slide-3-enhancement.png",
+    component: CoachingDiffMock,
   },
   {
     label: "STEP 04",

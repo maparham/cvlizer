@@ -62,7 +62,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               letterSpacing: "-0.025em",
             }}
           >
-            Resume Coach
+            Rahkar Resume Studio
           </Typography>
         </RouterLink>
         <UsageChip

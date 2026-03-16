@@ -3,7 +3,7 @@
  * Horizontal scroll strip of four slides with screenshots, workflow pill
  * navigation, dot indicators, and accessibility attributes.
  */
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import {
   Box,
   Container,
@@ -16,9 +16,28 @@ import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { HOME_SHOWCASE_STEPS } from "../../pages/homeShowcaseConfig";
 
+const AUTO_ADVANCE_MS = 7000;
+
 const HowItWorksSection: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const activeIndexRef = useRef(0);
+  activeIndexRef.current = activeIndex;
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const next =
+        (activeIndexRef.current + 1) % HOME_SHOWCASE_STEPS.length;
+      el.scrollTo({
+        left: next * el.clientWidth,
+        behavior: "smooth",
+      });
+      setActiveIndex(next);
+    }, AUTO_ADVANCE_MS);
+    return () => clearInterval(id);
+  }, []);
 
   const updateActiveFromScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -318,6 +337,7 @@ const HowItWorksSection: React.FC = () => {
                 <Box
                   sx={{
                     flex: { xs: "1 1 auto", md: "1 1 68%" },
+                    minWidth: 0,
                     minHeight: 0,
                     bgcolor: "grey.200",
                     p: { xs: 2, md: 2.5 },
@@ -333,15 +353,17 @@ const HowItWorksSection: React.FC = () => {
                       maxHeight: { xs: 320, md: 360 },
                       borderRadius: 2,
                       boxShadow: 1,
-                      overflow: "hidden",
+                      overflow: step.component ? "auto" : "hidden",
                       bgcolor: "background.paper",
                       display: "flex",
-                      alignItems: "center",
+                      alignItems: step.component ? "flex-start" : "center",
                       justifyContent: "center",
                       p: 2,
                     }}
                   >
-                    {step.imagePath.toLowerCase().endsWith(".pdf") ? (
+                    {step.component ? (
+                      React.createElement(step.component)
+                    ) : step.imagePath?.toLowerCase().endsWith(".pdf") ? (
                       <Box
                         component="iframe"
                         src={`${step.imagePath}#toolbar=0`}
@@ -354,7 +376,7 @@ const HowItWorksSection: React.FC = () => {
                           borderRadius: 1,
                         }}
                       />
-                    ) : (
+                    ) : step.imagePath ? (
                       <Box
                         component="img"
                         src={step.imagePath}
@@ -366,7 +388,7 @@ const HowItWorksSection: React.FC = () => {
                           objectFit: "contain",
                         }}
                       />
-                    )}
+                    ) : null}
                   </Box>
                 </Box>
               </Card>
