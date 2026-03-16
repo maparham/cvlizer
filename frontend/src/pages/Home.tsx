@@ -216,11 +216,13 @@ const Home: React.FC = () => {
               }}
             >
               <Box
+                component="img"
+                src="/logo.png"
+                alt="RAHKAR"
                 sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 1.5,
-                  bgcolor: "primary.main",
+                  height: 36,
+                  width: "auto",
+                  display: "block",
                 }}
               />
               <Typography

@@ -17,7 +17,7 @@
  */
 
 import React from "react";
-import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography, Box } from "@mui/material";
+import { AppBar, Toolbar, IconButton, Menu, MenuItem, Box } from "@mui/material";
 import { AccountCircle as AccountCircleIcon } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import { UsageChip } from "../common";
@@ -51,19 +51,26 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       }}
     >
       <Toolbar sx={{ minHeight: "64px !important", px: 3 }}>
-        <RouterLink to="/" style={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}>
-          <Typography
-            variant="h5"
-            component="div"
+        <RouterLink
+          to="/"
+          style={{
+            textDecoration: "none",
+            color: "inherit",
+            flexGrow: 1,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="RAHKAR"
             sx={{
-              color: "text.primary",
-              cursor: "pointer",
-              fontWeight: 700,
-              letterSpacing: "-0.025em",
+              height: 40,
+              width: "auto",
+              display: "block",
             }}
-          >
-            Rahkar Resume Studio
-          </Typography>
+          />
         </RouterLink>
         <UsageChip
           size="small"
