@@ -400,9 +400,6 @@ const Home: React.FC = () => {
                       >
                         {row.rahkar}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-                        Others: {row.others}
-                      </Typography>
                     </Box>
                   </Box>
                 ))}
@@ -520,7 +517,7 @@ const Home: React.FC = () => {
 
       <HowItWorksSection />
 
-      <ComparisonSection variant="cardsB" />
+      <ComparisonSection />
 
       <Box
         component="footer"
