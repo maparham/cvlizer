@@ -337,19 +337,18 @@ const Home: React.FC = () => {
                   mb: 0.5,
                 }}
               >
-                A resume that{" "}
+                A Resume That{" "}
                 <Box
                   component="span"
                   sx={{ whiteSpace: "nowrap" }}
                 >
-                  reflects{" "}
+                  Reflects{" "}
                   <Box
                     component="span"
                     sx={{ color: "primary.main", fontWeight: 800 }}
                   >
-                    you
+                    You
                   </Box>
-                  .
                 </Box>
               </Typography>
               <Typography
