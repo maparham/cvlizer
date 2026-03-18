@@ -15,6 +15,7 @@ import {
   Box,
   Typography,
   Link,
+  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -35,7 +36,11 @@ import {
   UserButton,
   useClerk,
 } from "@clerk/clerk-react";
-import { HowItWorksSection } from "../components/home";
+import {
+  HowItWorksSection,
+  ComparisonSection,
+  COMPARISON_ROWS,
+} from "../components/home";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -359,14 +364,49 @@ const Home: React.FC = () => {
               >
                 Your voice, powered by GPT, so real people read it.
               </Typography>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ mb: 3, maxWidth: 460, lineHeight: 1.6 }}
-              >
-                Import your CV or resume, polish every section with AI, and export
-                a job-tailored version that hiring managers actually read.
-              </Typography>
+              <Stack spacing={2} sx={{ mb: 3, maxWidth: 460 }}>
+                {COMPARISON_ROWS.map((row) => (
+                  <Box key={row.feature} sx={{ display: "flex", alignItems: "flex-start", gap: 1.25 }}>
+                    <Box
+                      sx={{
+                        color: "primary.main",
+                        mt: 0.25,
+                        flexShrink: 0,
+                        "& .MuiSvgIcon-root": { fontSize: 20 },
+                      }}
+                    >
+                      {row.icon}
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="subtitle2"
+                        component="h3"
+                        sx={{
+                          fontWeight: 700,
+                          letterSpacing: "-0.02em",
+                          mb: 0.25,
+                          color: "text.primary",
+                        }}
+                      >
+                        {row.feature}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "primary.main",
+                          fontWeight: 600,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {row.rahkar}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
+                        Others: {row.others}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
               <Box
                 sx={{
                   display: "flex",
@@ -479,6 +519,8 @@ const Home: React.FC = () => {
       </Box>
 
       <HowItWorksSection />
+
+      <ComparisonSection variant="cardsB" />
 
       <Box
         component="footer"
