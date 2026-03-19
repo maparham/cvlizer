@@ -2,7 +2,11 @@
 CV Preview Generation API Endpoints
 
 This module handles async preview generation for CV templates.
+Job state is stored in the database and preview bytes on disk so all HTTP
+workers share the same preview jobs.
 """
+
+from datetime import datetime, timedelta, timezone
 
 from fastapi import (
     APIRouter,
@@ -15,8 +19,10 @@ from fastapi import (
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from src.config import PreviewJobConfig
 from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import SessionLocal, get_db
+from src.models.preview_job import PreviewJob
 from src.models.user import User
 from src.services.cv_service import get_cv_by_id
 from src.services.file_service import get_profile_picture_settings
@@ -24,24 +30,89 @@ from src.services.latex_export_service import compile_pdf_from_latex, is_latex_a
 from src.services.latex_export_service import generate_cv_latex
 from src.services.preview_service import generate_blurred_preview, is_preview_available
 from src.services.template_loader import is_template_available
-
 from src.utils.background_tasks import executor
+from src.utils.preview_storage import (
+    delete_preview_files,
+    read_preview_page,
+    read_preview_pdf_fallback,
+    write_preview_pages,
+    write_preview_pdf_fallback,
+)
 
-from .common import get_preview_jobs, logger
+from .common import logger
 
 router = APIRouter()
 
 
-def generate_preview_sync(cv_id: str, template_name: str, user_id: str):
-    """Synchronous preview generation function to run in thread pool."""
+def _fail_preview_job(job_id: str, error: str) -> None:
     db = SessionLocal()
     try:
-        cv = get_cv_by_id(db, cv_id, user_id)
+        job = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
+        if job:
+            job.status = "failed"
+            job.error = error
+            db.commit()
+    finally:
+        db.close()
+
+
+def _complete_preview_images(job_id: str, page_count: int) -> None:
+    db = SessionLocal()
+    try:
+        job = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
+        if not job:
+            raise RuntimeError("Preview job not found for completion")
+        job.status = "completed"
+        job.page_count = page_count
+        job.has_pdf_fallback = False
+        job.error = None
+        db.commit()
+    finally:
+        db.close()
+
+
+def _complete_preview_pdf(job_id: str) -> None:
+    db = SessionLocal()
+    try:
+        job = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
+        if not job:
+            raise RuntimeError("Preview job not found for completion")
+        job.status = "completed"
+        job.page_count = 1
+        job.has_pdf_fallback = True
+        job.error = None
+        db.commit()
+    finally:
+        db.close()
+
+
+def generate_preview_sync(cv_id: str, template_name: str, user_id: str) -> None:
+    """Synchronous preview generation function to run in thread pool."""
+    job_id = f"{cv_id}_{template_name}"
+
+    db = SessionLocal()
+    try:
+        job = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
+        if not job or str(job.user_id) != user_id:
+            logger.error(
+                "Preview job %s missing or user mismatch for %s", job_id, user_id
+            )
+            return
+        job.status = "processing"
+        db.commit()
+    finally:
+        db.close()
+
+    try:
+        db = SessionLocal()
+        try:
+            cv = get_cv_by_id(db, cv_id, user_id)
+        finally:
+            db.close()
+
         if not cv:
-            logger.error(f"CV {cv_id} not found for user {user_id}")
-            _preview_jobs = get_preview_jobs()
-            _preview_jobs[cv_id + "_" + template_name]["status"] = "failed"
-            _preview_jobs[cv_id + "_" + template_name]["error"] = "CV not found"
+            logger.error("CV %s not found for user %s", cv_id, user_id)
+            _fail_preview_job(job_id, "CV not found")
             return
 
         (
@@ -50,7 +121,6 @@ def generate_preview_sync(cv_id: str, template_name: str, user_id: str):
             profile_pic_size,
         ) = get_profile_picture_settings(cv.parsed_data)
 
-        # Generate LaTeX with selected template
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
@@ -60,42 +130,31 @@ def generate_preview_sync(cv_id: str, template_name: str, user_id: str):
             profile_pic_size=profile_pic_size,
         )
 
-        # Compile LaTeX to PDF
         pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
 
-        # Generate blurred preview
-        _preview_jobs = get_preview_jobs()
         if is_preview_available():
             preview_pages = generate_blurred_preview(pdf_bytes, blur_radius=0)
             if preview_pages:
-                _preview_jobs[cv_id + "_" + template_name]["status"] = "completed"
-                _preview_jobs[cv_id + "_" + template_name][
-                    "preview_images"
-                ] = preview_pages  # Store list of images
-                _preview_jobs[cv_id + "_" + template_name]["page_count"] = len(
-                    preview_pages
-                )
+                write_preview_pages(job_id, preview_pages)
+                _complete_preview_images(job_id, len(preview_pages))
             else:
                 logger.error("Failed to generate blurred preview - returned None")
-                _preview_jobs[cv_id + "_" + template_name]["status"] = "failed"
-                _preview_jobs[cv_id + "_" + template_name][
-                    "error"
-                ] = "Failed to generate preview"
+                _fail_preview_job(job_id, "Failed to generate preview")
         else:
             logger.warning("Preview service not available, falling back to PDF")
-            # Fallback: return PDF if preview service not available
-            _preview_jobs[cv_id + "_" + template_name]["status"] = "completed"
-            _preview_jobs[cv_id + "_" + template_name]["preview_pdf"] = pdf_bytes
+            write_preview_pdf_fallback(job_id, pdf_bytes)
+            _complete_preview_pdf(job_id)
     except Exception as e:
         logger.error(
-            f"Preview generation failed for CV {cv_id} template {template_name}: {str(e)}",
+            "Preview generation failed for CV %s template %s: %s",
+            cv_id,
+            template_name,
+            str(e),
             exc_info=True,
         )
-        _preview_jobs = get_preview_jobs()
-        _preview_jobs[cv_id + "_" + template_name]["status"] = "failed"
-        _preview_jobs[cv_id + "_" + template_name]["error"] = str(e)
-    finally:
-        db.close()
+        # Remove any preview files written before the failure so disk matches DB.
+        delete_preview_files(job_id)
+        _fail_preview_job(job_id, str(e))
 
 
 @router.post("/{cv_id}/export/preview/start")
@@ -108,23 +167,19 @@ async def start_preview_generation(
 ):
     """Start async preview generation for a template."""
 
-    # Verify CV ownership
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
-        logger.error(f"CV {cv_id} not found for user {current_user.id}")
+        logger.error("CV %s not found for user %s", cv_id, current_user.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    # Verify template exists
     if not is_template_available(template):
-        logger.error(f"Template {template} not found")
+        logger.error("Template %s not found", template)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Template not found"
         )
 
-    # Create job ID
     job_id = f"{cv_id}_{template}"
 
-    # Check if LaTeX is available
     if not is_latex_available():
         logger.error("LaTeX toolchain not available")
         raise HTTPException(
@@ -132,11 +187,24 @@ async def start_preview_generation(
             detail="LaTeX toolchain not available",
         )
 
-    # Initialize job status
-    _preview_jobs = get_preview_jobs()
-    _preview_jobs[job_id] = {"status": "pending"}
+    existing = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
+    if existing:
+        delete_preview_files(job_id)
+        db.delete(existing)
+        db.commit()
 
-    # Submit to thread pool
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=PreviewJobConfig.TTL_HOURS)
+    row = PreviewJob(
+        job_id=job_id,
+        cv_id=cv_id,
+        user_id=str(current_user.id),
+        template_name=template,
+        status="pending",
+        expires_at=expires_at,
+    )
+    db.add(row)
+    db.commit()
+
     executor.submit(generate_preview_sync, cv_id, template, str(current_user.id))
 
     return {"job_id": job_id, "status": "pending"}
@@ -152,34 +220,33 @@ async def get_preview_status(
 ):
     """Get status of preview generation job."""
 
-    # Verify CV ownership
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
-        logger.error(f"CV {cv_id} not found for user {current_user.id}")
+        logger.error("CV %s not found for user %s", cv_id, current_user.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    # Check job status
-    _preview_jobs = get_preview_jobs()
-    if job_id not in _preview_jobs:
-        logger.error(f"Job {job_id} not found in _preview_jobs")
+    job = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
+    if not job or job.cv_id != cv_id:
+        logger.error("Job %s not found or wrong CV", job_id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
 
-    job = _preview_jobs[job_id]
+    if str(job.user_id) != str(current_user.id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
 
-    if job["status"] == "completed":
-        has_preview = "preview_images" in job or "preview_pdf" in job
-        page_count = job.get("page_count", 1)
+    if job.status == "completed":
+        has_preview = True
+        page_count = job.page_count or 1
         return {
             "status": "completed",
             "has_preview": has_preview,
             "page_count": page_count,
         }
-    elif job["status"] == "failed":
-        error = job.get("error", "Unknown error")
-        logger.error(f"Job {job_id} failed: {error}")
+    if job.status == "failed":
+        error = job.error or "Unknown error"
+        logger.error("Job %s failed: %s", job_id, error)
         return {"status": "failed", "error": error}
-    else:
-        return {"status": "pending"}
+    # pending or processing — client polls until completed/failed
+    return {"status": "pending"}
 
 
 @router.get("/{cv_id}/export/preview/image")
@@ -193,43 +260,51 @@ async def get_preview_image(
 ):
     """Get the blurred preview image for a completed job (specific page)."""
 
-    # Verify CV ownership
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
-        logger.error(f"CV {cv_id} not found for user {current_user.id}")
+        logger.error("CV %s not found for user %s", cv_id, current_user.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    # Check job status
-    _preview_jobs = get_preview_jobs()
-    if job_id not in _preview_jobs:
-        logger.error(f"Job {job_id} not found in _preview_jobs")
+    job = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
+    if not job or job.cv_id != cv_id:
+        logger.error("Job %s not found or wrong CV", job_id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
 
-    job = _preview_jobs[job_id]
+    if str(job.user_id) != str(current_user.id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
 
-    if job["status"] != "completed":
-        logger.error(f"Job {job_id} not completed, status: {job['status']}")
+    if job.status != "completed":
+        logger.error("Job %s not completed, status: %s", job_id, job.status)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Job not completed"
         )
 
-    # Return preview image if available
-    if "preview_images" in job:
-        page_count = len(job["preview_images"])
-        if page < 1 or page > page_count:
-            logger.error(f"Invalid page number {page}, valid range: 1-{page_count}")
+    if job.has_pdf_fallback:
+        try:
+            pdf_body = read_preview_pdf_fallback(job_id)
+        except OSError as e:
+            logger.error("Missing preview PDF for %s: %s", job_id, e)
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid page number, must be 1-{page_count}",
-            )
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="No preview available",
+            ) from e
+        return Response(content=pdf_body, media_type="application/pdf")
 
-        return Response(content=job["preview_images"][page - 1], media_type="image/png")
-    elif "preview_pdf" in job:
-        # Fallback to PDF if preview image not available
-        return Response(content=job["preview_pdf"], media_type="application/pdf")
-    else:
-        logger.error(f"No preview available for job {job_id}")
+    page_count = job.page_count or 1
+    if page < 1 or page > page_count:
+        logger.error("Invalid page number %s, valid range: 1-%s", page, page_count)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid page number, must be 1-{page_count}",
+        )
+
+    try:
+        body = read_preview_page(job_id, page)
+    except OSError as e:
+        logger.error("Missing preview file for %s page %s: %s", job_id, page, e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No preview available",
-        )
+        ) from e
+
+    return Response(content=body, media_type="image/png")

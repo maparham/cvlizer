@@ -421,6 +421,13 @@ class ProfilePictureConfig:
         return os.path.join(base, cls.SUBDIR)
 
 
+class PreviewJobConfig:
+    """Export preview job persistence (DB + disk) TTL and stale detection."""
+
+    TTL_HOURS: int = int(os.getenv("PREVIEW_JOB_TTL_HOURS", "6"))
+    STALE_MINUTES: int = int(os.getenv("PREVIEW_JOB_STALE_MINUTES", "90"))
+
+
 # ============================================================================
 # Authentication Configuration
 # ============================================================================

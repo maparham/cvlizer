@@ -28,6 +28,7 @@ from src.services.ai_enhancement_cleanup_service import (
     cleanup_stuck_ai_enhancements,
 )
 from src.services.impersonation_service import cleanup_expired_sessions
+from src.services.preview_cleanup_service import run_preview_job_cleanup
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,14 @@ class CleanupService:
                 if stuck_enhancements > 0:
                     logger.info(
                         f"Cleaned up {stuck_enhancements} stuck AI enhancement(s)"
+                    )
+
+                expired_previews, stale_previews = run_preview_job_cleanup(db)
+                if expired_previews > 0 or stale_previews > 0:
+                    logger.info(
+                        "Cleaned up %s expired and %s stale export preview job(s)",
+                        expired_previews,
+                        stale_previews,
                     )
 
             finally:
@@ -243,8 +252,12 @@ def run_cleanup_once():
             old_audit_logs = service._cleanup_old_audit_logs(db)
             stuck_enhancements = service._cleanup_stuck_ai_enhancements(db)
 
+            expired_previews, stale_previews = run_preview_job_cleanup(db)
+
             logger.info(
-                f"Manual cleanup completed: {old_sessions} old sessions, {old_audit_logs} old audit logs, {stuck_enhancements} stuck AI enhancements"
+                f"Manual cleanup completed: {old_sessions} old sessions, "
+                f"{old_audit_logs} old audit logs, {stuck_enhancements} stuck AI enhancements, "
+                f"{expired_previews} expired preview jobs, {stale_previews} stale preview jobs"
             )
 
         finally:

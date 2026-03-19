@@ -19,6 +19,7 @@ from .feedback import Feedback
 from .impersonation_session import ImpersonationSession
 from .job_description import JobDescription
 from .optimization_history import OptimizationHistory
+from .preview_job import PreviewJob
 from .user import User
 from .user_activity import UserActivity, UserSession
 
@@ -43,4 +44,5 @@ __all__ = [
     "AIEnhancement",
     "CVQualityAnalysis",
     "Feedback",
+    "PreviewJob",
 ]

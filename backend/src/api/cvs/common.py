@@ -24,10 +24,6 @@ limiter = create_combined_limiter()
 # Logger for background task monitoring
 logger = logging.getLogger(__name__)
 
-# In-memory job storage for preview generation (simple dict for MVP)
-# TODO: Replace with Redis or proper queue for production
-_preview_jobs: dict[str, dict] = {}
-
 
 def _handle_parse_error(
     db, cv_id: str, log: logging.Logger, parse_error_message: str
@@ -149,8 +145,3 @@ async def parse_cv_background(
     await loop.run_in_executor(
         cv_parse_executor, parse_cv_sync, cv_id, file_content, filename, content_type
     )
-
-
-def get_preview_jobs():
-    """Get the preview jobs dictionary (for internal use in preview module)."""
-    return _preview_jobs
