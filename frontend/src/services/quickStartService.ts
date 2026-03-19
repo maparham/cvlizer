@@ -7,6 +7,7 @@
  */
 
 import axios from "axios";
+import { API_CONFIG } from "../config/constants";
 import { apiClient } from "./api";
 import {
   QuickStartPreviewResponse,
@@ -64,6 +65,7 @@ export const submitQuickStartPreview = async (
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        timeout: API_CONFIG.QUICK_START_PREVIEW_TIMEOUT_MS,
       }
     );
 
@@ -81,6 +83,10 @@ export const submitQuickStartPreview = async (
       }
 
       throw new Error(errorMessage || "Failed to process quick start preview");
+    } else if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+      throw new Error(
+        "Parsing is taking longer than expected. Please try again or use a smaller CV."
+      );
     } else if (error.request) {
       // Request made but no response
       throw new Error(

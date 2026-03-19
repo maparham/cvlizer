@@ -98,8 +98,8 @@ class AIConfig:
     MAX_RETRIES: int = int(os.getenv("AI_MAX_RETRIES", "3"))
     RETRY_DELAY_SECONDS: float = float(os.getenv("AI_RETRY_DELAY", "1.0"))
 
-    # Timeouts
-    REQUEST_TIMEOUT_SECONDS: int = int(os.getenv("AI_TIMEOUT", "60"))
+    # Timeouts (quick-start parsing can take up to ~2 min; set AI_TIMEOUT >= 120 if needed)
+    REQUEST_TIMEOUT_SECONDS: int = int(os.getenv("AI_TIMEOUT", "120"))
 
     # Temperature and creativity settings
     DEFAULT_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.7"))

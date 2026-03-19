@@ -648,8 +648,8 @@ const QuickStartWizard: React.FC<QuickStartWizardProps> = ({ onComplete }) => {
                 color="text.secondary"
                 sx={{ mt: 1, textAlign: "center" }}
               >
-                Parsing your CV and job description... This may take a few
-                seconds.
+                Parsing your CV and job description... This may take up to a
+                minute.
               </Typography>
             </Box>
           )}

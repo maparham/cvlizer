@@ -347,7 +347,7 @@ const Home: React.FC = () => {
                     component="span"
                     sx={{ color: "primary.main", fontWeight: 800 }}
                   >
-                    You
+                  YOU
                   </Box>
                 </Box>
               </Typography>
@@ -361,7 +361,7 @@ const Home: React.FC = () => {
                   letterSpacing: "-0.035em",
                 }}
               >
-                Your voice, powered by GPT and ChatGPT (GPT-5), so real people read it.
+                Your voice, powered by GPT, so real people read it.
               </Typography>
               <Stack spacing={2} sx={{ mb: 3, maxWidth: 460 }}>
                 {COMPARISON_ROWS.map((row) => (

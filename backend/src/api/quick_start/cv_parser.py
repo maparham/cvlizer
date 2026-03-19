@@ -22,8 +22,9 @@ from src.services.cv_parsing_service import parse_cv_with_openai
 
 logger = logging.getLogger(__name__)
 
-# Timeout for AI parsing operations (in seconds). Set QUICK_START_CV_TIMEOUT to override.
-QUICK_START_TIMEOUT = int(os.getenv("QUICK_START_CV_TIMEOUT", "30"))
+# Timeout for AI parsing operations (in seconds). Parsing can take up to ~2 min for complex CVs.
+# Set QUICK_START_CV_TIMEOUT to override (e.g. 120 for 2 minutes).
+QUICK_START_TIMEOUT = int(os.getenv("QUICK_START_CV_TIMEOUT", "120"))
 
 
 async def parse_cv_for_preview(

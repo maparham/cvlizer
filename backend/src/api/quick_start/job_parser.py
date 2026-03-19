@@ -7,6 +7,7 @@ supporting both URL extraction and text input with AI parsing.
 
 import asyncio
 import logging
+import os
 from typing import Any, Dict, Optional
 
 from fastapi import Request
@@ -20,8 +21,9 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
-# Timeout for AI parsing operations (in seconds)
-QUICK_START_TIMEOUT = 30
+# Timeout for AI parsing operations (in seconds). Job URL extraction + AI can take up to ~2 min.
+# Set QUICK_START_JOB_TIMEOUT to override (e.g. 120 for 2 minutes).
+QUICK_START_TIMEOUT = int(os.getenv("QUICK_START_JOB_TIMEOUT", "120"))
 
 
 async def parse_job_for_preview(

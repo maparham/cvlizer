@@ -12,6 +12,9 @@ export const API_CONFIG = {
 
   /** Request timeout in milliseconds */
   TIMEOUT: 30000,
+
+  /** Timeout for quick-start preview (CV + job parsing can take up to ~2 min). Prevents client/proxy from closing the connection. */
+  QUICK_START_PREVIEW_TIMEOUT_MS: 180000,
 } as const;
 
 // Polling Configuration

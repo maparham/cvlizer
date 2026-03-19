@@ -80,18 +80,17 @@ const QuickStart: React.FC = () => {
       retryCountRef.current = 0;
       clearQuickStartSession();
 
-      // Navigate based on what was claimed
-      if (cvId && jobDescriptionId) {
-        // Both - go to CV editor with AI Tools
-        navigate(`/cv/${cvId}`, { state: { openAITools: true, jobDescriptionId, autoTriggerEnhancements: true } });
-      } else if (cvId) {
-        // Only CV - go to dashboard
-        navigate('/dashboard');
+      // Navigate based on what was claimed.
+      // IMPORTANT: Quick Start must always send users with a claimed CV to the CV editor, not the dashboard.
+      // This is intentional product behavior and should be preserved when refactoring this file or the redirect flow.
+      if (cvId) {
+        const state = jobDescriptionId
+          ? { openAITools: true, jobDescriptionId, autoTriggerEnhancements: true }
+          : undefined;
+        navigate(`/cv/${cvId}`, state ? { state } : {});
       } else if (jobDescriptionId) {
-        // Only job - go to dashboard
         navigate('/dashboard');
       } else {
-        // Nothing created (shouldn't happen)
         showError("Failed to save data");
         navigate('/dashboard');
       }
