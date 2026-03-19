@@ -124,6 +124,45 @@ def test_cleanup_stale_pending_job(db_session, user_and_cv):
     assert removed == 1
 
 
+def test_generate_preview_sync_marks_failed_when_processing_commit_fails(monkeypatch):
+    """Commit failure while setting status to processing must call _fail_preview_job."""
+    from src.api.cvs import preview as preview_api
+
+    fail_calls = []
+
+    def capture_fail(job_id, error):
+        fail_calls.append((job_id, error))
+
+    monkeypatch.setattr(preview_api, "_fail_preview_job", capture_fail)
+
+    class CommitFailsSession:
+        def query(self, _model):
+            return self
+
+        def filter(self, *_a, **_k):
+            return self
+
+        def first(self):
+            class _Job:
+                user_id = "user-1"
+
+            return _Job()
+
+        def commit(self):
+            raise RuntimeError("database is closed")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(preview_api, "SessionLocal", lambda: CommitFailsSession())
+
+    preview_api.generate_preview_sync("cv-uuid", "standard", "user-1")
+
+    assert len(fail_calls) == 1
+    assert fail_calls[0][0] == "cv-uuid_standard"
+    assert "database is closed" in fail_calls[0][1]
+
+
 def test_preview_storage_write_read(monkeypatch, tmp_path):
     monkeypatch.setattr(FileConfig, "UPLOAD_DIR", str(tmp_path))
     jid = "00000000-0000-0000-0000-000000000001_standard"

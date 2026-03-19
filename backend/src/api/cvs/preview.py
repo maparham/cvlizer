@@ -90,20 +90,20 @@ def generate_preview_sync(cv_id: str, template_name: str, user_id: str) -> None:
     """Synchronous preview generation function to run in thread pool."""
     job_id = f"{cv_id}_{template_name}"
 
-    db = SessionLocal()
     try:
-        job = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
-        if not job or str(job.user_id) != user_id:
-            logger.error(
-                "Preview job %s missing or user mismatch for %s", job_id, user_id
-            )
-            return
-        job.status = "processing"
-        db.commit()
-    finally:
-        db.close()
+        db = SessionLocal()
+        try:
+            job = db.query(PreviewJob).filter(PreviewJob.job_id == job_id).first()
+            if not job or str(job.user_id) != user_id:
+                logger.error(
+                    "Preview job %s missing or user mismatch for %s", job_id, user_id
+                )
+                return
+            job.status = "processing"
+            db.commit()
+        finally:
+            db.close()
 
-    try:
         db = SessionLocal()
         try:
             cv = get_cv_by_id(db, cv_id, user_id)
