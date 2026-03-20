@@ -35,17 +35,19 @@ import {
   Stack,
   CircularProgress,
 } from "@mui/material";
-import { JobDescription } from "../../../types/ai";
+import { JobDescription, JobDescriptionStatusUpdate } from "../../../types/ai";
+
+const getTodayLocalDate = (): string => {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return localDate.toISOString().split("T")[0];
+};
 
 interface JobDescriptionStatusDialogProps {
   open: boolean;
   onClose: () => void;
   jobDescription: JobDescription | null;
-  onSave: (updates: {
-    status?: string;
-    application_date?: string;
-    notes?: string;
-  }) => Promise<void>;
+  onSave: (updates: JobDescriptionStatusUpdate) => Promise<void>;
 }
 
 const JobDescriptionStatusDialog: React.FC<
@@ -59,12 +61,14 @@ const JobDescriptionStatusDialog: React.FC<
   // Initialize form with current values when dialog opens
   useEffect(() => {
     if (open && jobDescription) {
-      setStatus(jobDescription.status || "open");
-      setApplicationDate(
-        jobDescription.application_date
-          ? jobDescription.application_date.split("T")[0]
-          : ""
-      );
+      const nextStatus = jobDescription.status || "open";
+      setStatus(nextStatus);
+      // Only initialize with existing date, don't auto-fill
+      // Auto-fill only happens when user actively changes status
+      const nextApplicationDate = jobDescription.application_date
+        ? jobDescription.application_date.split("T")[0]
+        : "";
+      setApplicationDate(nextApplicationDate);
       setNotes(jobDescription.notes || "");
     }
   }, [open, jobDescription]);
@@ -74,11 +78,7 @@ const JobDescriptionStatusDialog: React.FC<
 
     setIsSaving(true);
     try {
-      const updates: {
-        status?: string;
-        application_date?: string;
-        notes?: string;
-      } = {
+      const updates: JobDescriptionStatusUpdate = {
         status,
         notes,
       };
@@ -87,10 +87,13 @@ const JobDescriptionStatusDialog: React.FC<
       if (status === "applied" || status === "archived") {
         if (applicationDate) {
           updates.application_date = new Date(applicationDate).toISOString();
+        } else {
+          // Explicitly clear date when user removes it but keeps status
+          updates.application_date = null;
         }
       } else {
         // Clear application_date if status is open
-        updates.application_date = undefined;
+        updates.application_date = null;
       }
 
       await onSave(updates);
@@ -121,7 +124,16 @@ const JobDescriptionStatusDialog: React.FC<
             <Select
               value={status}
               label="Status"
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e) => {
+                const nextStatus = e.target.value;
+                setStatus(nextStatus);
+                if (
+                  (nextStatus === "applied" || nextStatus === "archived") &&
+                  !applicationDate
+                ) {
+                  setApplicationDate(getTodayLocalDate());
+                }
+              }}
               disabled={isSaving}
             >
               <MenuItem value="open">Open</MenuItem>

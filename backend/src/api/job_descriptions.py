@@ -6,9 +6,10 @@ job descriptions associated with CVs for AI-powered optimization.
 """
 
 import asyncio
+from datetime import datetime
 import logging
 import uuid
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +150,7 @@ class JobDescriptionCreate(BaseModel):
     company: Optional[str] = None
     location: Optional[str] = None
     status: Optional[str] = "open"
-    application_date: Optional[str] = None
+    application_date: Optional[datetime] = None
     notes: Optional[str] = None
 
 
@@ -159,7 +160,7 @@ class JobDescriptionUpdate(BaseModel):
     company: Optional[str] = None
     location: Optional[str] = None
     status: Optional[str] = None
-    application_date: Optional[str] = None
+    application_date: Optional[datetime] = None
     notes: Optional[str] = None
 
 
@@ -204,6 +205,31 @@ class JobDescriptionParseResponse(BaseModel):
     source_url: Optional[str] = None
     source: Optional[str] = None
     error: Optional[str] = None
+
+
+def _prepare_update_kwargs(job_description: JobDescriptionUpdate) -> Dict[str, Any]:
+    """
+    Prepare update kwargs from request payload.
+
+    Includes `application_date` only when explicitly provided so the service
+    can distinguish omitted fields (no-op) from explicit null (clear value).
+    """
+    model_fields_set: set[str] = getattr(
+        job_description,
+        "model_fields_set",
+        getattr(job_description, "__fields_set__", set()),
+    )
+    update_kwargs: Dict[str, Any] = {
+        "content": job_description.content,
+        "title": job_description.title,
+        "company": job_description.company,
+        "location": job_description.location,
+        "status": job_description.status,
+        "notes": job_description.notes,
+    }
+    if "application_date" in model_fields_set:
+        update_kwargs["application_date"] = job_description.application_date
+    return update_kwargs
 
 
 # Helper function to convert JobDescription to response with cv_ids
@@ -301,17 +327,13 @@ async def update_job_description(
     current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Update a job description"""
+    update_kwargs = _prepare_update_kwargs(job_description)
+
     updated_jd = update_job_description_owned_by(
         db,
         jd_id,
         str(current_user.id),
-        content=job_description.content,
-        title=job_description.title,
-        company=job_description.company,
-        location=job_description.location,
-        status=job_description.status,
-        application_date=job_description.application_date,
-        notes=job_description.notes,
+        **update_kwargs,
     )
 
     if not updated_jd:

@@ -13,7 +13,7 @@
  */
 
 import React from "react";
-import { JobDescription } from "../../types/ai";
+import { JobDescription, JobDescriptionStatusUpdate } from "../../types/ai";
 import JobDescriptionsModal from "../cv/ai/job-descriptions-modal/index";
 import JobDescriptionStatusDialog from "../cv/ai/JobDescriptionStatusDialog";
 
@@ -24,11 +24,7 @@ interface JobLibraryDialogsProps {
   statusEditingJobDescription: JobDescription | null;
   onModalClose: () => void;
   onStatusDialogClose: () => void;
-  onStatusSave: (updates: {
-    status?: string;
-    application_date?: string;
-    notes?: string;
-  }) => Promise<void>;
+  onStatusSave: (updates: JobDescriptionStatusUpdate) => Promise<void>;
 }
 
 export const JobLibraryDialogs: React.FC<JobLibraryDialogsProps> = ({

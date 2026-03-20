@@ -26,7 +26,8 @@ Dependencies:
 - UUID handling for proper database type management
 """
 
-from typing import List, Optional
+from datetime import datetime
+from typing import List, Optional, cast
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -34,6 +35,8 @@ from src.models.cv import CV
 from src.models.cv_job_description import CVJobDescription
 from src.models.job_description import JobDescription
 from src.services.cv_service import get_cv_by_id
+
+_UNSET = object()
 
 
 def create_job_description_for_cv(
@@ -171,7 +174,7 @@ def update_job_description_owned_by(
     company: Optional[str] = None,
     location: Optional[str] = None,
     status: Optional[str] = None,
-    application_date: Optional[str] = None,
+    application_date: Optional[datetime] | object = _UNSET,
     notes: Optional[str] = None,
 ) -> Optional[JobDescription]:
     """Update a job description owned by a specific user"""
@@ -190,8 +193,8 @@ def update_job_description_owned_by(
         jd.location = location
     if status is not None:
         jd.status = status
-    if application_date is not None:
-        jd.application_date = application_date
+    if application_date is not _UNSET:
+        jd.application_date = cast(Optional[datetime], application_date)
     if notes is not None:
         jd.notes = notes
 
@@ -239,7 +242,7 @@ def create_job_description_for_user_with_cvs(
     company: Optional[str] = None,
     location: Optional[str] = None,
     status: Optional[str] = "open",
-    application_date: Optional[str] = None,
+    application_date: Optional[datetime] = None,
     notes: Optional[str] = None,
 ) -> JobDescription:
     """

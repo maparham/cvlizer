@@ -30,7 +30,7 @@ import { cvApi } from "../services/api";
 import { useActivityLogger } from "../hooks/useActivityLogger";
 import { NotificationDrawer, NotificationToast, NotificationDrawerRef } from "../packages/notifications";
 import { CV } from "../types";
-import { JobDescription } from "../types/ai";
+import { JobDescription, JobDescriptionStatusUpdate } from "../types/ai";
 import {
   DashboardHeader,
   JobApplicationsCard,
@@ -242,11 +242,7 @@ const Dashboard: React.FC = () => {
     setStatusEditingJobDescription(null);
   };
 
-  const handleStatusSave = async (updates: {
-    status?: string;
-    application_date?: string;
-    notes?: string;
-  }) => {
+  const handleStatusSave = async (updates: JobDescriptionStatusUpdate) => {
     if (!statusEditingJobDescription) return;
 
     try {

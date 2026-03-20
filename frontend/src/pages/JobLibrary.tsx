@@ -24,7 +24,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Box } from "@mui/material";
 import { useAIStore } from "../stores/ai";
-import { JobDescription } from "../types/ai";
+import { JobDescription, JobDescriptionStatusUpdate } from "../types/ai";
 import { useNotifications } from "../packages/notifications";
 import {
   JobLibraryHeader,
@@ -148,11 +148,7 @@ const JobLibrary: React.FC = () => {
   }, []);
 
   const handleStatusSave = useCallback(
-    async (updates: {
-      status?: string;
-      application_date?: string;
-      notes?: string;
-    }) => {
+    async (updates: JobDescriptionStatusUpdate) => {
       if (!statusEditingJobDescription) return;
 
       try {

@@ -109,7 +109,13 @@ export interface JobDescription {
   is_parsing?: boolean;
   parse_error?: string;
   status?: string;  // "open" | "applied" | "archived"
-  application_date?: string;
+  application_date?: string | null;
+  notes?: string;
+}
+
+export interface JobDescriptionStatusUpdate {
+  status?: string;
+  application_date?: string | null;
   notes?: string;
 }
 

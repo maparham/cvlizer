@@ -26,7 +26,7 @@ import { useNotifications } from "../../packages/notifications";
 import { useActivityLogger } from "../../hooks/useActivityLogger";
 import { cvApi } from "../../services/api";
 import { CV } from "../../types";
-import { JobDescription } from "../../types/ai";
+import { JobDescription, JobDescriptionStatusUpdate } from "../../types/ai";
 
 /**
  * Hook that provides all dashboard action handlers
@@ -110,7 +110,7 @@ export const useDashboardActions = () => {
     // This will be managed by parent component
   };
 
-  const handleStatusSave = async (updates: { status?: string; application_date?: string; notes?: string }, statusEditingJobDescription: JobDescription | null) => {
+  const handleStatusSave = async (updates: JobDescriptionStatusUpdate, statusEditingJobDescription: JobDescription | null) => {
     if (!statusEditingJobDescription) return;
 
     try {
