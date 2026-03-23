@@ -1,0 +1,3 @@
+- Plan the solution before implementing.
+- Do not make non-trivial decisions without asking me first.
+- Be explicit about assumptions, trade-offs, and important decisions.
