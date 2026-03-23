@@ -30,6 +30,8 @@ const initialState = {
   },
   suggestions: {},
   jobDescriptions: [],
+  isJobDescriptionsLoading: false,
+  hasLoadedJobDescriptions: false,
   activeJobDescriptionIdPerCV:
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("activeJobDescriptionIdPerCV") || "{}")

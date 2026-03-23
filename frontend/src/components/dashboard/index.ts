@@ -9,4 +9,6 @@ export { default as JobApplicationsTable } from './JobApplicationsTable';
 export type { JobTableSortColumn } from './JobApplicationsTable';
 export { default as DashboardDialogs } from './DashboardDialogs';
 export { default as EmptyState } from './EmptyState';
+export { default as CVsSectionSkeleton } from './CVsSectionSkeleton';
+export { default as JobApplicationsSectionSkeleton } from './JobApplicationsSectionSkeleton';
 export { useDashboardActions } from './useDashboardActions';

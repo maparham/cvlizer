@@ -15,6 +15,9 @@ import { ErrorHandler } from "../../utils/errorHandler";
 
 export interface JobDescriptionsSliceState {
   jobDescriptions: JobDescription[];
+  // Dedicated loading state for dashboard job applications skeleton.
+  isJobDescriptionsLoading: boolean;
+  hasLoadedJobDescriptions: boolean;
   activeJobDescriptionIdPerCV: Record<string, string>;
   hiddenJobDescriptionIds: string[];
 }
@@ -73,6 +76,8 @@ export const createJobDescriptionsSlice: StateCreator<
 
   return {
     jobDescriptions: [],
+    isJobDescriptionsLoading: false,
+    hasLoadedJobDescriptions: false,
     activeJobDescriptionIdPerCV: stored.activeJobDescriptionIdPerCV,
     hiddenJobDescriptionIds: stored.hiddenJobDescriptionIds,
 
@@ -82,14 +87,25 @@ export const createJobDescriptionsSlice: StateCreator<
         return;
       }
 
+      set({
+        isJobDescriptionsLoading: true,
+        // Keep existing data visible during reload to prevent flicker/data loss.
+      });
+
       try {
         // Load ALL user job descriptions (user-scoped, not CV-specific)
         const jobDescriptions = await aiService.getJobDescriptions();
 
         set(() => ({
           jobDescriptions,
+          isJobDescriptionsLoading: false,
+          hasLoadedJobDescriptions: true,
         }));
       } catch (error) {
+        set(() => ({
+          isJobDescriptionsLoading: false,
+          hasLoadedJobDescriptions: true,
+        }));
         ErrorHandler.handleSilent(error, {
           feature: "job-descriptions",
           action: "load",

@@ -39,6 +39,8 @@ import {
   CVPlaceholderCard,
   DashboardDialogs,
   EmptyState,
+  CVsSectionSkeleton,
+  JobApplicationsSectionSkeleton,
 } from "../components/dashboard";
 import type { CVTableSortColumn } from "../components/dashboard/CVsTable";
 import type { JobTableSortColumn } from "../components/dashboard/JobApplicationsTable";
@@ -70,6 +72,7 @@ const Dashboard: React.FC = () => {
   // Use CV store instead of local state
   const {
     cvs,
+    isCVsLoading,
     fetchCVs,
     createTemporaryCV,
     updateCVTitle,
@@ -78,7 +81,11 @@ const Dashboard: React.FC = () => {
   } = useCVStore();
 
   // Get job descriptions for the applications card
-  const { jobDescriptions, loadJobDescriptions } = useAIStore();
+  const {
+    jobDescriptions,
+    isJobDescriptionsLoading,
+    loadJobDescriptions,
+  } = useAIStore();
 
   // Dashboard CV list view and table sort (persisted)
   const cvViewMode = useUIStore((s) => s.cvViewMode);
@@ -331,6 +338,10 @@ const Dashboard: React.FC = () => {
     setAnchorEl(null);
   };
 
+  const showCVsSkeleton = isCVsLoading;
+  const showCVEmptyState = !isCVsLoading && cvs.length === 0;
+  const showJobsSkeleton = isJobDescriptionsLoading;
+
   const handleLogoutClick = () => {
     handleLogout();
     handleMenuClose();
@@ -349,7 +360,9 @@ const Dashboard: React.FC = () => {
 
       <Container maxWidth="lg" sx={{ mt: 6, mb: 6, px: 3 }}>
         {/* CVs Section: empty state when no CVs, otherwise CV grid with placeholder card */}
-        {cvs.length === 0 ? (
+        {showCVsSkeleton ? (
+          <CVsSectionSkeleton />
+        ) : showCVEmptyState ? (
           <EmptyState
             creating={creating}
             onCreateFromTemplate={() => setTemplateSelectorOpen(true)}
@@ -397,19 +410,23 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Job Applications Card */}
-        <JobApplicationsCard
-          jobDescriptions={jobDescriptions}
-          statusCounts={jdStatusCounts}
-          viewMode={jobViewMode}
-          onViewModeChange={setJobViewMode}
-          tableSortBy={jobTableSortByValid}
-          tableSortDirection={jobTableSortDirection}
-          onTableSortChange={handleJobTableSortChange}
-          onEditJobDescription={handleEditJobDescription}
-          onUpdateStatus={handleUpdateStatus}
-          onAddJob={() => setJobDescriptionModalOpen(true)}
-          onViewAll={() => navigate("/applications")}
-        />
+        {showJobsSkeleton ? (
+          <JobApplicationsSectionSkeleton />
+        ) : (
+          <JobApplicationsCard
+            jobDescriptions={jobDescriptions}
+            statusCounts={jdStatusCounts}
+            viewMode={jobViewMode}
+            onViewModeChange={setJobViewMode}
+            tableSortBy={jobTableSortByValid}
+            tableSortDirection={jobTableSortDirection}
+            onTableSortChange={handleJobTableSortChange}
+            onEditJobDescription={handleEditJobDescription}
+            onUpdateStatus={handleUpdateStatus}
+            onAddJob={() => setJobDescriptionModalOpen(true)}
+            onViewAll={() => navigate("/applications")}
+          />
+        )}
 
         {/* Dialogs */}
         <DashboardDialogs

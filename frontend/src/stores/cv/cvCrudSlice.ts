@@ -22,7 +22,11 @@ export interface CVCrudSliceState {
   cvs: CV[];
   currentCV: CV | null;
   temporaryCV: CV | null;
+  // General operation loading (single CV actions, delete, duplicate, etc.)
   loading: boolean;
+  // Dedicated list loading state for dashboard CV section skeleton.
+  isCVsLoading: boolean;
+  hasLoadedCVs: boolean;
   uploading: boolean;
   error: string | null;
   saving: boolean;
@@ -76,6 +80,8 @@ export const createCVCrudSlice: StateCreator<
   currentCV: null,
   temporaryCV: null,
   loading: false,
+  isCVsLoading: false,
+  hasLoadedCVs: false,
   uploading: false,
   error: null,
   saving: false,
@@ -88,9 +94,14 @@ export const createCVCrudSlice: StateCreator<
   // Actions
   fetchCVs: async (page: number = 1, limit: number = 100) => {
     const state = get();
-    if (state.loading) return; // Prevent concurrent fetches
+    if (state.isCVsLoading) return; // Prevent concurrent CV list fetches
 
-    set({ loading: true, error: null });
+    set({
+      loading: true,
+      isCVsLoading: true,
+      error: null,
+      // Keep existing data visible during reload to prevent flicker/data loss.
+    });
 
     try {
       const response = await cvApi.getCVs(page, limit);
@@ -104,6 +115,8 @@ export const createCVCrudSlice: StateCreator<
       set({
         cvs,
         loading: false,
+        isCVsLoading: false,
+        hasLoadedCVs: true,
         hasUnparsedCVs,
         error: null,
         currentPage: response.page || page,
@@ -125,7 +138,10 @@ export const createCVCrudSlice: StateCreator<
       set({
         error: errorMessage,
         loading: false,
-        cvs: [],
+        isCVsLoading: false,
+        hasLoadedCVs: true,
+        // Preserve previously loaded data on reload failures.
+        cvs: state.cvs,
       });
     }
   },
