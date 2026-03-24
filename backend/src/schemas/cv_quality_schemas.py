@@ -63,7 +63,9 @@ class CoachingQuestionSchema(BaseModel):
     model_config = {"extra": "forbid"}
 
     question: str = Field(
-        min_length=10, description="Specific, actionable coaching question"
+        min_length=10,
+        max_length=100,
+        description="Specific, concise coaching question",
     )
 
 
@@ -109,7 +111,7 @@ class SkillQualitySuggestionSchema(BaseModel):
     model_config = {"extra": "forbid"}
 
     skill: str
-    reasoning: str = Field(max_length=100)
+    reasoning: str = Field(min_length=10, max_length=80)
     original: Optional[str] = Field(
         default=None,
         description="Exact string as it appears in the CV when correcting; null for new suggestions.",
@@ -119,8 +121,10 @@ class SkillQualitySuggestionSchema(BaseModel):
 class SkillsSuggestionsSchema(BaseModel):
     """Skills suggestions structure."""
 
-    technical: List[SkillQualitySuggestionSchema] = Field(default_factory=list)
-    soft: List[SkillQualitySuggestionSchema] = Field(default_factory=list)
+    technical: List[SkillQualitySuggestionSchema] = Field(
+        default_factory=list, max_length=5
+    )
+    soft: List[SkillQualitySuggestionSchema] = Field(default_factory=list, max_length=3)
 
     class Config:
         extra = "forbid"  # Prevent additional properties
@@ -136,8 +140,17 @@ class CoachingSchema(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-    coaching_questions: List[CoachingQuestionSchema] = Field(min_length=1, max_length=3)
-    direct_prompts: List[str] = Field(max_length=2, default_factory=list)
+    coaching_questions: List[CoachingQuestionSchema] = Field(min_length=1, max_length=2)
+    direct_prompts: List[str] = Field(max_length=1, default_factory=list)
+
+    @field_validator("direct_prompts")
+    @classmethod
+    def validate_direct_prompt_lengths(cls, v: List[str]) -> List[str]:
+        """Each direct prompt must be at most 150 characters (aligned with API schema)."""
+        for prompt in v:
+            if len(prompt) > 150:
+                raise ValueError("direct_prompts must be max 150 chars each")
+        return v
 
 
 ISSUE_ITEM_TYPES = (
@@ -185,7 +198,7 @@ class IssueSchema(BaseModel):
     issue_severity: str = Field(description="critical, major, minor")
     issue_category: str = Field(description="Issue category enum")
     quality_score: Optional[int] = Field(default=None, ge=0, le=100)
-    reasoning: str = Field(max_length=200)
+    reasoning: str = Field(max_length=60, min_length=15)
     html_diff: Optional[str] = Field(default=None)
     coaching: Optional[CoachingSchema] = Field(default=None)
     # Post-processing: populated by extract_original_from_cv_data_issues / clean

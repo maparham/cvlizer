@@ -129,7 +129,7 @@ class TestExtractOriginalFromCvDataIssues:
                     "item_id": None,
                     "field_path": "professional_summary",
                     "issue_severity": "minor",
-                    "reasoning": "Grammar fix",
+                    "reasoning": "Grammar fix for summary text",
                     "html_diff": "<del>sumary</del><ins>summary</ins>",
                 }
             ]
@@ -151,7 +151,7 @@ class TestCleanQualityResponseIssuesProfessionalSummary:
                     "field_path": "professional_summary",
                     "original": "My sumary.",
                     "html_diff": "<del>sumary</del><ins>summary</ins>",
-                    "reasoning": "Spelling.",
+                    "reasoning": "Spelling correction in CV.",
                 }
             ],
             "skills": {"technical": [], "soft": []},
@@ -239,7 +239,11 @@ class TestFillSkillOriginalsFromCvData:
         response = {
             "skills": {
                 "technical": [
-                    {"skill": "Python", "reasoning": "Fix.", "original": "pyhton"},
+                    {
+                        "skill": "Python",
+                        "reasoning": "Fix spelling to match CV.",
+                        "original": "pyhton",
+                    },
                 ],
                 "soft": [],
             }
@@ -252,7 +256,9 @@ class TestFillSkillOriginalsFromCvData:
         """When cv_data is None or has no skills, response is unchanged."""
         response = {
             "skills": {
-                "technical": [{"skill": "Python", "reasoning": "New."}],
+                "technical": [
+                    {"skill": "Python", "reasoning": "New skill from analysis."}
+                ],
                 "soft": [],
             }
         }

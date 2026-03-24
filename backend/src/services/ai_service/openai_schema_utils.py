@@ -26,7 +26,7 @@ SHARED_ISSUE_DEFS: Dict[str, Any] = {
             "question": {
                 "type": "string",
                 "minLength": 10,
-                "maxLength": 200,
+                "maxLength": 100,
             },
         },
         "required": ["question"],
@@ -41,14 +41,14 @@ SHARED_ISSUE_DEFS: Dict[str, Any] = {
                     "coaching_questions": {
                         "type": "array",
                         "minItems": 1,
-                        "maxItems": 3,
+                        "maxItems": 2,
                         "items": {"$ref": "#/$defs/CoachingQuestion"},
                     },
                     "direct_prompts": {
                         "type": "array",
                         "minItems": 0,
-                        "maxItems": 2,
-                        "items": {"type": "string", "maxLength": 300},
+                        "maxItems": 1,
+                        "items": {"type": "string", "maxLength": 150},
                     },
                 },
                 "required": ["coaching_questions", "direct_prompts"],
@@ -112,8 +112,8 @@ SHARED_ISSUE_DEFS: Dict[str, Any] = {
             "reasoning": {
                 "type": "string",
                 "minLength": 15,
-                "maxLength": 80,
-                "description": "Complete sentence explaining the issue within 80 chars. Format: 'Contains/Missing [X]; [impact]'",
+                "maxLength": 60,
+                "description": "Complete sentence explaining the issue within 60 chars. Format: 'Issue: [X]; Impact: [Y]' or 'Contains/Missing [X]; [impact]'",
             },
             "html_diff": {
                 "type": ["string", "null"],
@@ -156,7 +156,7 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                     "reasoning": {
                         "type": "string",
                         "minLength": 10,
-                        "maxLength": 150,
+                        "maxLength": 80,
                         "description": "Why this skill is included (correction reason or relevance to experience)",
                     },
                     "original": {
@@ -172,15 +172,15 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
                 "properties": {
                     "technical": {
                         "type": "array",
-                        "maxItems": 50,
+                        "maxItems": 5,
                         "items": {"$ref": "#/$defs/Skill"},
-                        "description": "Corrected skills and/or new skill suggestions",
+                        "description": "Corrected skills and/or new skill suggestions (max 5)",
                     },
                     "soft": {
                         "type": "array",
-                        "maxItems": 20,
+                        "maxItems": 3,
                         "items": {"$ref": "#/$defs/Skill"},
-                        "description": "Corrected soft skills and/or new suggestions",
+                        "description": "Corrected soft skills and/or new suggestions (max 3)",
                     },
                 },
                 "required": ["technical", "soft"],
