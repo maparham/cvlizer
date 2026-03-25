@@ -1137,6 +1137,11 @@ def _generate_from_template(
 
     content_sections = "\n\n".join(content_parts)
 
+    # Keep a consistent visual gap between the personal header block
+    # and the first rendered section in exported PDFs.
+    if personal_info_header and content_sections:
+        content_sections = "\\vspace{0.5\\baselineskip}\n" + content_sections
+
     # Replace placeholders in template
     result = template.replace("{PERSONAL_INFO_HEADER}", personal_info_header)
     result = result.replace("{CONTACT_INFO_SECTION}", contact_info_section)
