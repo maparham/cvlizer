@@ -26,6 +26,10 @@ from src.services.template_loader import (
     get_default_template,
     is_template_available,
 )
+from src.services.job_description_service import (
+    get_cv_ids_for_job_description,
+    get_job_description_owned_by,
+)
 from src.services.user_activity_service import log_api_call, log_user_activity
 
 from .common import logger
@@ -86,22 +90,66 @@ def _cv_title_for_filename(cv) -> str:
     return safe
 
 
-def _export_filename(cv, template_name: str, ext: str) -> str:
-    """Build export filename: title_base_YYYYMMDD_template.ext."""
+def _employer_suffix_for_filename(
+    db: Session, user_id: str, cv_id: str, job_description_id: Optional[str]
+) -> Optional[str]:
+    """Resolve a safe employer suffix when selected job belongs to this CV/user."""
+    if not job_description_id:
+        return None
+
+    jd = get_job_description_owned_by(db, job_description_id, user_id)
+    if not jd:
+        return None
+
+    is_direct_cv_match = str(jd.cv_id or "") == cv_id
+    if not is_direct_cv_match:
+        associated_cv_ids = get_cv_ids_for_job_description(
+            db, job_description_id, user_id
+        )
+        if cv_id not in associated_cv_ids:
+            return None
+
+    employer = str(jd.company or "").strip()
+    if not employer:
+        return None
+
+    safe = re.sub(r"[^A-Za-z0-9_\-\s]+", " ", employer).strip()
+    safe = re.sub(r"[\s\-]+", "_", safe).strip("_")
+    return safe or None
+
+
+def _export_filename(cv, ext: str, employer_suffix: Optional[str] = None) -> str:
+    """Build export filename: title_base_YYYYMMDD[_employer].ext.
+
+    Naming contract:
+    - Template choice affects rendering only.
+    - Filename suffix is employer name when available, otherwise omitted.
+    """
     base = _cv_title_for_filename(cv)
     date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
-    return f"{base}_{date_str}_{template_name}.{ext}"
+    if employer_suffix:
+        return f"{base}_{date_str}_{employer_suffix}.{ext}"
+    return f"{base}_{date_str}.{ext}"
 
 
 @router.get("/{cv_id}/export/pdf")
 async def export_cv_pdf(
     cv_id: str,
-    template: Optional[str] = Query(None, description="Optional template name"),
+    template: Optional[str] = Query(
+        None, description="Optional template name for PDF rendering"
+    ),
+    job_description_id: Optional[str] = Query(
+        None,
+        description="Optional selected job description ID for filename employer suffix",
+    ),
     request: Request = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
 ):
-    """Export CV as PDF via LaTeX (pdflatex)."""
+    """Export CV as PDF via LaTeX (pdflatex).
+
+    Template controls rendering style; filename uses employer suffix when available.
+    """
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
@@ -145,7 +193,10 @@ async def export_cv_pdf(
             profile_pic_size=profile_pic_size,
         )
         pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
-        filename = _export_filename(cv, template_name, "pdf")
+        employer_suffix = _employer_suffix_for_filename(
+            db, str(current_user.id), cv_id, job_description_id
+        )
+        filename = _export_filename(cv, "pdf", employer_suffix)
 
         headers = {
             "Content-Disposition": f'attachment; filename="{filename}"',
@@ -178,12 +229,21 @@ async def export_cv_pdf(
 @router.get("/{cv_id}/export/latex")
 async def export_cv_latex(
     cv_id: str,
-    template: Optional[str] = Query(None, description="Optional template name"),
+    template: Optional[str] = Query(
+        None, description="Optional template name for LaTeX rendering"
+    ),
+    job_description_id: Optional[str] = Query(
+        None,
+        description="Optional selected job description ID for filename employer suffix",
+    ),
     request: Request = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
 ):
-    """Export CV as raw LaTeX source code for the selected template."""
+    """Export CV as raw LaTeX source code for the selected template.
+
+    Template controls rendering style; filename uses employer suffix when available.
+    """
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
@@ -201,7 +261,10 @@ async def export_cv_latex(
             profile_pic_shape=profile_pic_shape,
             profile_pic_size=profile_pic_size,
         )
-        filename = _export_filename(cv, template_name, "tex")
+        employer_suffix = _employer_suffix_for_filename(
+            db, str(current_user.id), cv_id, job_description_id
+        )
+        filename = _export_filename(cv, "tex", employer_suffix)
         headers = {
             "Content-Disposition": f'attachment; filename="{filename}"',
             "Content-Type": "text/plain; charset=utf-8",
@@ -243,6 +306,10 @@ async def export_cv_pdf_public(
     request: Request,
     token: str = Query(
         ..., description="Clerk JWT token for auth when opening in new tab"
+    ),
+    job_description_id: Optional[str] = Query(
+        None,
+        description="Optional selected job description ID for filename employer suffix",
     ),
     db: Session = Depends(get_db),
 ):
@@ -314,7 +381,10 @@ async def export_cv_pdf_public(
             profile_pic_size=profile_pic_size,
         )
         pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
-        filename = _export_filename(cv, default_template, "pdf")
+        employer_suffix = _employer_suffix_for_filename(
+            db, str(local_user.id), cv_id, job_description_id
+        )
+        filename = _export_filename(cv, "pdf", employer_suffix)
 
         headers = {
             "Content-Disposition": f'attachment; filename="{filename}"',

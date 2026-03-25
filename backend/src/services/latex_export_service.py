@@ -85,8 +85,34 @@ def _optimize_profile_picture(source_path: str, dest_path: str) -> None:
 def _tex_escape(text: str | None) -> str:
     if not text:
         return ""
-    # Basic LaTeX escaping
-    replacements = {
+
+    # Preserve LaTeX non-breaking spaces from Unicode NBSP while still escaping
+    # literal '~' characters from user content.
+    nbsp_placeholder = "\uE000"
+
+    # First, normalize Unicode characters that LaTeX can't handle directly
+    # Replace various Unicode spaces with regular space or LaTeX equivalents
+    unicode_replacements = {
+        "\u2013": "--",  # en-dash
+        "\u2014": "---",  # em-dash
+        "\u2212": "-",  # minus sign
+        "\u202F": " ",  # narrow no-break space (CRITICAL: causes LaTeX errors)
+        "\u00A0": nbsp_placeholder,  # non-breaking space (converted after escaping)
+        "\u201C": "``",  # left double quotation mark
+        "\u201D": "''",  # right double quotation mark
+        "\u2018": "`",  # left single quotation mark
+        "\u2019": "'",  # right single quotation mark
+        "\u2026": "...",  # horizontal ellipsis
+        "\u00AB": "<<",  # left-pointing double angle quotation mark
+        "\u00BB": ">>",  # right-pointing double angle quotation mark
+    }
+
+    # Apply Unicode replacements first
+    for unicode_char, replacement in unicode_replacements.items():
+        text = text.replace(unicode_char, replacement)
+
+    # Now apply standard LaTeX escaping for special characters
+    latex_replacements = {
         "\\": r"\textbackslash{}",
         "{": r"\{",
         "}": r"\}",
@@ -98,10 +124,26 @@ def _tex_escape(text: str | None) -> str:
         "~": r"\~{}",
         "%": r"\%",
     }
+
     out = []
     for ch in text:
-        out.append(replacements.get(ch, ch))
+        if ch == nbsp_placeholder:
+            out.append("~")
+            continue
+        out.append(latex_replacements.get(ch, ch))
     return "".join(out)
+
+
+def _run_pdflatex(cmd: list[str], cwd: str) -> subprocess.CompletedProcess[str]:
+    """Run a single pdflatex pass with robust output decoding."""
+    return subprocess.run(
+        cmd,
+        cwd=cwd,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=30,
+    )
 
 
 def _href_url_safe(url: str) -> str:
@@ -1183,26 +1225,14 @@ def compile_pdf_from_latex(
 
         try:
             # First pass
-            result = subprocess.run(
-                cmd,
-                cwd=tmpdir,
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
+            result = _run_pdflatex(cmd, tmpdir)
 
             if result.returncode != 0:
                 error_msg = result.stderr or result.stdout or "Unknown error"
                 raise RuntimeError(f"LaTeX compilation failed (first pass): {error_msg}")
 
             # Second pass to settle references
-            result = subprocess.run(
-                cmd,
-                cwd=tmpdir,
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
+            result = _run_pdflatex(cmd, tmpdir)
 
             if result.returncode != 0:
                 error_msg = result.stderr or result.stdout or "Unknown error"

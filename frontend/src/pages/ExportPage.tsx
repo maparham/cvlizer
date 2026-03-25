@@ -13,7 +13,7 @@
  * - Export with selected template functionality
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Container,
@@ -40,6 +40,7 @@ import {
 } from "@mui/icons-material";
 import { cvApi } from "../services/api";
 import { useNotifications, NotificationToast } from "../packages/notifications";
+import { useDefaultTemplate } from "../hooks/useDefaultTemplate";
 
 interface Template {
   name: string;
@@ -68,6 +69,12 @@ export const ExportPage: React.FC = () => {
     previewUrls: string[];
     pageCount: number;
   } | null>(null);
+  const templateNames = useMemo(
+    () => templates.map((template) => template.name),
+    [templates],
+  );
+  const { defaultTemplateName, saveDefaultTemplate } =
+    useDefaultTemplate(templateNames);
 
   // Load templates on mount
   useEffect(() => {
@@ -223,6 +230,19 @@ export const ExportPage: React.FC = () => {
     setSelectedPreview({ template, previewUrls, pageCount });
   };
 
+  const handleSetDefaultTemplate = (templateName: string, displayName: string) => {
+    const success = saveDefaultTemplate(templateName);
+    if (!success) {
+      showError("Default not updated", "Unable to save template preference", true);
+      return;
+    }
+    showSuccess(
+      "Default updated",
+      `${displayName} set as Quick Export default`,
+      true,
+    );
+  };
+
   const handleClosePreview = () => {
     setSelectedPreview(null);
   };
@@ -260,7 +280,7 @@ export const ExportPage: React.FC = () => {
         <Grid container spacing={3}>
           {templates.map((template) => {
             const preview = previews[template.name];
-            const isDefault = template.name === "standard";
+            const isDefault = template.name === defaultTemplateName;
 
 
             return (
@@ -379,15 +399,26 @@ export const ExportPage: React.FC = () => {
 
                   {/* Card Actions */}
                   <CardActions>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<PictureAsPdfIcon />}
-                      onClick={() => handleExport(template.name)}
-                      disabled={preview?.status === "loading"}
-                    >
-                      {preview?.status === "loading" ? "Generating..." : "Download PDF"}
-                    </Button>
+                    <Box sx={{ display: "flex", gap: 1, width: "100%" }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<PictureAsPdfIcon />}
+                        onClick={() => handleExport(template.name)}
+                        disabled={preview?.status === "loading"}
+                        sx={{ flex: 1 }}
+                      >
+                        {preview?.status === "loading" ? "Generating..." : "Download PDF"}
+                      </Button>
+                      <Button
+                        variant={isDefault ? "contained" : "text"}
+                        onClick={() =>
+                          handleSetDefaultTemplate(template.name, template.displayName)
+                        }
+                        disabled={preview?.status === "loading" || isDefault}
+                      >
+                        {isDefault ? "Default" : "Set as Default"}
+                      </Button>
+                    </Box>
                   </CardActions>
                 </Card>
               </Grid>

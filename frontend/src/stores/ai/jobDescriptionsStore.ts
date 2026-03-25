@@ -257,6 +257,8 @@ export const createJobDescriptionsSlice: StateCreator<
         }
 
         localStorage.setItem(
+          // Source of truth for active job selection per CV.
+          // Reader helpers live in `utils/activeJobDescriptionPreference.ts`.
           "activeJobDescriptionIdPerCV",
           JSON.stringify(newMap),
         );

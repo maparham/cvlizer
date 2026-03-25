@@ -10,6 +10,10 @@
  */
 import axios from "axios";
 import { ClerkWindow, isClerkAvailable } from "../types/clerk";
+import { getActiveJobDescriptionIdForCV } from "../utils/activeJobDescriptionPreference";
+import {
+  getQuickExportDefaultTemplate,
+} from "../utils/exportTemplatePreference";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(
   /\/$/,
@@ -321,10 +325,18 @@ export const cvApi = {
     const token = await clerk.session?.getToken();
     if (!token) throw new Error("No authentication token available");
 
-    // If template is specified, use template-based export endpoint
-    if (template) {
-      const path = `/cvs/${cvId}/export/pdf?template=${encodeURIComponent(template)}`;
-      // For template-based export, we need to get the PDF via blob download
+    // Resolve explicit template first, then client-side quick export default.
+    const resolvedTemplate = template || getQuickExportDefaultTemplate();
+    const jobDescriptionId = getActiveJobDescriptionIdForCV(cvId);
+
+    // Template controls rendering only; filename suffix is employer-or-none on backend.
+    if (resolvedTemplate) {
+      const queryParts = [`template=${encodeURIComponent(resolvedTemplate)}`];
+      if (jobDescriptionId) {
+        queryParts.push(`job_description_id=${encodeURIComponent(jobDescriptionId)}`);
+      }
+      const path = `/cvs/${cvId}/export/pdf?${queryParts.join("&")}`;
+      // Use blob download path for explicit template rendering selection.
       try {
         const response = await api.get(path, {
           responseType: "blob",
@@ -366,10 +378,14 @@ export const cvApi = {
         throw error;
       }
     } else {
-      // Use public endpoint for default (quick) export
+      // Use public endpoint when no template override is selected.
     const path = `/cvs/${cvId}/export/pdf/public`;
     const base = api.getUri({ url: path });
-    const url = `${base}?token=${encodeURIComponent(token)}`;
+    const queryParts = [`token=${encodeURIComponent(token)}`];
+    if (jobDescriptionId) {
+      queryParts.push(`job_description_id=${encodeURIComponent(jobDescriptionId)}`);
+    }
+    const url = `${base}?${queryParts.join("&")}`;
     window.open(url, "_blank");
     }
   },
