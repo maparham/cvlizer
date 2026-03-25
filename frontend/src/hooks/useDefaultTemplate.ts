@@ -13,6 +13,10 @@ export const useDefaultTemplate = (availableTemplateNames: string[]) => {
   );
 
   useEffect(() => {
+    // Avoid clearing a valid stored default before templates finish loading.
+    if (availableTemplateNames.length === 0) {
+      return;
+    }
     setDefaultTemplateName(
       getValidQuickExportDefaultTemplate(availableTemplateNames),
     );
