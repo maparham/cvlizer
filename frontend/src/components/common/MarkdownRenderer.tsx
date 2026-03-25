@@ -22,7 +22,9 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import { Typography, Link, Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
 import { SxProps, Theme } from "@mui/material/styles";
 
 interface MarkdownRendererProps {

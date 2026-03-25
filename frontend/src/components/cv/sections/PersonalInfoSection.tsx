@@ -9,25 +9,21 @@
  * - Inline writing corrections for description (CV quality analysis)
  */
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import {
-  Box,
-  TextField,
-  InputAdornment,
-  Typography,
-  Autocomplete,
-  FormControlLabel,
-  Checkbox,
-  IconButton,
-  Menu,
-  MenuItem,
-} from "@mui/material";
-import {
-  GitHub as GitHubIcon,
-  LinkedIn as LinkedInIcon,
-  Language as WebsiteIcon,
-  MoreVert as MoreVertIcon,
-  AccountCircle as AddPhotoIcon,
-} from "@mui/icons-material";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import WebsiteIcon from "@mui/icons-material/Language";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import AddPhotoIcon from "@mui/icons-material/AccountCircle";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import LocationAutocomplete from "../ui/LocationAutocomplete";

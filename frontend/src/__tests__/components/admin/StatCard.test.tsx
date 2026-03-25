@@ -8,9 +8,7 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import StatCard from '../../../components/admin/StatCard'
-import { People as PeopleIcon } from '@mui/icons-material'
-
-describe('StatCard', () => {
+import PeopleIcon from '@mui/icons-material/People';describe('StatCard', () => {
   const defaultProps = {
     title: 'Total Users',
     value: 1234,

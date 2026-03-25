@@ -1,16 +1,12 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
-import {
-  Typography,
-  TextField,
-  Box,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
-import {
-  Edit as EditIcon,
-  Check as CheckIcon,
-  Close as CloseIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import EditIcon from "@mui/icons-material/Edit";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
 
 // Constants for title editor sizing
 const TITLE_EDITOR_MIN_WIDTH = 200;

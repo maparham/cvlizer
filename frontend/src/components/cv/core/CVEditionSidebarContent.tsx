@@ -7,22 +7,18 @@
  */
 
 import React from "react";
-import {
-  Box,
-  Button,
-  Typography,
-  Stack,
-  Alert,
-  Tabs,
-  Tab,
-} from "@mui/material";
-import {
-  ClearAll as ClearAllIcon,
-  Delete as DeleteIcon,
-  Spellcheck as SpellcheckIcon,
-  EditNote as EditNoteIcon,
-  WorkOutline as WorkOutlineIcon,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
+import ClearAllIcon from "@mui/icons-material/ClearAll";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SpellcheckIcon from "@mui/icons-material/Spellcheck";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import { JobDescriptionSummary } from "../ai";
 import { CVQualityPanel } from "../ai/CVQualityPanel";
 import SuggestionsSidebar from "../ai/SuggestionsSidebar";

@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
 import { CompactSuggestionCard } from "../ai/CompactSuggestionCard";
 import { SuggestionActionButtons } from "../ai/SuggestionActionButtons";
 import type {

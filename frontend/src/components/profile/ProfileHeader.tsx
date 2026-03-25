@@ -1,17 +1,18 @@
 import React from "react";
-import {
-  Paper,
-  Typography,
-  Box,
-  Button,
-  Avatar,
-  Chip,
-  Stack,
-  IconButton,
-  Tooltip,
-  Badge,
-} from "@mui/material";
-import { Edit, Verified, CheckCircle, Warning } from "@mui/icons-material";
+import Avatar from "@mui/material/Avatar";
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import Edit from "@mui/icons-material/Edit";
+import Verified from "@mui/icons-material/Verified";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Warning from "@mui/icons-material/Warning";
 import { UserResource } from "@clerk/clerk-react";
 import { NavigateFunction } from "react-router-dom";
 import { formatDate } from "../../utils/dateFormat";

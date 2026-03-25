@@ -6,8 +6,11 @@
  * the active edit mode and cancel it, even when scrolled away from the section.
  */
 import React, { useCallback } from "react";
-import { Box, Chip, Tooltip, Typography } from "@mui/material";
-import { Edit as EditIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import EditIcon from "@mui/icons-material/Edit";
 import { EditingIndividualItem } from "../../../types";
 
 interface EditingIndicatorProps {

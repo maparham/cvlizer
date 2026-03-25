@@ -6,7 +6,8 @@
  */
 
 import React from 'react';
-import { Paper, PaperProps } from '@mui/material';
+import Paper from '@mui/material/Paper';
+import type { PaperProps } from '@mui/material/Paper';
 
 interface SuggestionPaperProps extends Omit<PaperProps, 'elevation'> {
   elevation?: number;

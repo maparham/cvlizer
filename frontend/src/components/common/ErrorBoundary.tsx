@@ -5,23 +5,19 @@
  * a fallback UI instead of the component tree that crashed.
  */
 import React from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Alert,
-  AlertTitle,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Paper,
-} from "@mui/material";
-import {
-  ErrorOutline as ErrorIcon,
-  ExpandMore as ExpandMoreIcon,
-  Refresh as RefreshIcon,
-  BugReport as BugIcon,
-} from "@mui/icons-material";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import ErrorIcon from "@mui/icons-material/ErrorOutline";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import BugIcon from "@mui/icons-material/BugReport";
 
 const CHUNK_RELOAD_FLAG = "cv_lator_chunk_reload_attempted";
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
 import { SectionProps } from "../../../types";
 import { useSectionAutoSave } from "./hooks";
 import BaseSection from "./BaseSection";

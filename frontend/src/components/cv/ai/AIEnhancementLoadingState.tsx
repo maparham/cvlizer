@@ -12,13 +12,11 @@
  */
 
 import React, { useEffect, useState, useRef } from "react";
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  LinearProgress,
-  Fade,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Fade from "@mui/material/Fade";
+import LinearProgress from "@mui/material/LinearProgress";
+import Typography from "@mui/material/Typography";
 import RotatingTips from "./RotatingTips";
 
 const messages = [

@@ -17,19 +17,19 @@
  */
 
 import React from "react";
-import {
-  Box,
-  Paper,
-  Grid,
-  Typography,
-  Button,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Refresh, Delete, GetApp } from "@mui/icons-material";
+import Refresh from "@mui/icons-material/Refresh";
+import Delete from "@mui/icons-material/Delete";
+import GetApp from "@mui/icons-material/GetApp";
 import dayjs from "dayjs";
 import {
   SystemAIStats,

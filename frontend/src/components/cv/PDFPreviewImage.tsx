@@ -18,8 +18,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
-import { Description as DocumentIcon } from '@mui/icons-material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import DocumentIcon from '@mui/icons-material/Description';
 
 interface PDFPreviewImageProps {
   file: File;

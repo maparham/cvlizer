@@ -4,17 +4,15 @@
  * Shows tokens used/limit, cost used/limit, rolling period, and at-limit state.
  */
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  LinearProgress,
-  Skeleton,
-  Alert,
-  Button,
-} from "@mui/material";
-import { MonetizationOn } from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import LinearProgress from "@mui/material/LinearProgress";
+import Skeleton from "@mui/material/Skeleton";
+import Typography from "@mui/material/Typography";
+import MonetizationOn from "@mui/icons-material/MonetizationOn";
 import { useUsage } from "../../hooks/useUsage";
 import {
   formatTokens,

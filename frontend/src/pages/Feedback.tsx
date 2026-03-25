@@ -3,20 +3,18 @@
  * Authenticated users only; after submit shows a thank-you message.
  */
 import React, { useState } from "react";
-import {
-  Container,
-  Paper,
-  Typography,
-  Box,
-  TextField,
-  Button,
-  MenuItem,
-  Alert,
-  InputLabel,
-  FormControl,
-  Select,
-  SelectChangeEvent,
-} from "@mui/material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import type { SelectChangeEvent } from "@mui/material/Select";
 import { feedbackService } from "../services/feedbackService";
 import type { FeedbackType } from "../types/feedback";
 import { normalizeApiError } from "../services/api";

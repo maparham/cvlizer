@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { Autocomplete, TextField, Box } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
 import { FieldCorrection } from '../../../types/ai';
 import { InlineFieldCorrection } from '../ai/InlineFieldCorrection';
 

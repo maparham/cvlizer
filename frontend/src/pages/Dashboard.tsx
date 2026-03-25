@@ -19,7 +19,8 @@
  * - Provides responsive grid layout for CV cards
  */
 import React, { useState, useEffect, useRef } from "react";
-import { Container, Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useCVStore } from "../stores/cv";

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Box, Button } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
 import { SectionProps } from "../../../types";
 import { useSectionAutoSave } from "./hooks";
 import BaseSection from "./BaseSection";

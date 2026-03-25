@@ -17,28 +17,24 @@
  * - Maintains compatibility with existing CV data schema
  */
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Chip,
-  Stack,
-  IconButton,
-} from "@mui/material";
-import {
-  School as SchoolIcon,
-  Work as WorkIcon,
-  Business as BusinessIcon,
-  Close as CloseIcon,
-  Check as CheckIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import SchoolIcon from "@mui/icons-material/School";
+import WorkIcon from "@mui/icons-material/Work";
+import BusinessIcon from "@mui/icons-material/Business";
+import CloseIcon from "@mui/icons-material/Close";
+import CheckIcon from "@mui/icons-material/Check";
 import { commonStyles } from "../../styles/commonStyles";
 import { CV_TEMPLATES, CVTemplate } from "../../data/cvTemplates";
 

@@ -5,17 +5,15 @@
  * showing stacked Input/Output tokens and cost in a time-series format.
  */
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Typography from "@mui/material/Typography";
 import {
   ComposedChart,
   Bar,

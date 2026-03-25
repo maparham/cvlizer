@@ -20,27 +20,23 @@
  */
 
 import React from "react";
-import {
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  Stack,
-  Tooltip,
-  IconButton,
-  Chip,
-  Typography,
-  LinearProgress,
-  Grid,
-} from "@mui/material";
-import {
-  Edit as EditIcon,
-  Download as DownloadIcon,
-  Delete as DeleteIcon,
-  FileCopy as DuplicateIcon,
-  Schedule as ScheduleIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import EditIcon from "@mui/icons-material/Edit";
+import DownloadIcon from "@mui/icons-material/Download";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DuplicateIcon from "@mui/icons-material/FileCopy";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import { EditableTitle } from "../cv";
 import CVQuickActions from "../cv/CVQuickActions";
 import { CV } from "../../types";

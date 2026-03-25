@@ -18,24 +18,20 @@
  * - Maintains compatibility with existing upload validation
  */
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Chip,
-  Stack,
-  IconButton,
-  Grid,
-} from "@mui/material";
-import {
-  Description as DocumentIcon,
-  PictureAsPdf as PdfIcon,
-  Description as DocIcon,
-  Close as CloseIcon,
-  CheckCircle as CheckIcon,
-  Error as ErrorIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import DocumentIcon from "@mui/icons-material/Description";
+import PdfIcon from "@mui/icons-material/PictureAsPdf";
+import DocIcon from "@mui/icons-material/Description";
+import CloseIcon from "@mui/icons-material/Close";
+import CheckIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
 import {
   validateCVFile,
   getFileTypeInfo,

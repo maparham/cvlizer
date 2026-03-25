@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { IconButton, Typography, Tooltip } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
 import { ArraySectionProps } from "../../../types";
 import { useArraySectionAutoSave } from "./hooks";
 import BaseSection from "./BaseSection";

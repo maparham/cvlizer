@@ -19,23 +19,19 @@
  * - Maintains compatibility with existing CV operations
  */
 import React, { useState } from "react";
-import {
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Box,
-} from "@mui/material";
-import {
-  MoreVert as MoreVertIcon,
-  ContentCopy as DuplicateIcon,
-  Edit as RenameIcon,
-  Download as DownloadIcon,
-  Close as CloseIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import DuplicateIcon from "@mui/icons-material/ContentCopy";
+import RenameIcon from "@mui/icons-material/Edit";
+import DownloadIcon from "@mui/icons-material/Download";
+import CloseIcon from "@mui/icons-material/Close";
 import { CV } from "../../types";
 import { commonStyles } from "../../styles/commonStyles";
 import MenuItems, { MenuItemData } from "../common/MenuItems";

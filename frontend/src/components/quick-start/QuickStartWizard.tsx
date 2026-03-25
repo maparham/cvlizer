@@ -14,38 +14,34 @@
  */
 
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Paper,
-  LinearProgress,
-  Alert,
-  Grid,
-  Divider,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
-import {
-  CloudUpload as CloudUploadIcon,
-  Error as ErrorIcon,
-  Description as DocumentIcon,
-  Work as WorkIcon,
-  Link as LinkIcon,
-  TextFields as TextIcon,
-  Refresh as RefreshIcon,
-  Close as CloseIcon,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import ErrorIcon from "@mui/icons-material/Error";
+import DocumentIcon from "@mui/icons-material/Description";
+import WorkIcon from "@mui/icons-material/Work";
+import LinkIcon from "@mui/icons-material/Link";
+import TextIcon from "@mui/icons-material/TextFields";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import CloseIcon from "@mui/icons-material/Close";
 import { useClerk } from "@clerk/clerk-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { submitQuickStartPreview } from "../../services/quickStartService";

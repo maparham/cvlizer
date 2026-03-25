@@ -9,7 +9,8 @@
  * - Context integration for CV data updates and saving
  */
 import React from "react";
-import { Box, Paper } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
 import { CVSection } from "../../../types";
 import {
   PersonalInfo,

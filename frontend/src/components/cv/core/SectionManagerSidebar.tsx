@@ -9,24 +9,20 @@
  * - Visual indicators for section states and order changes
  */
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import {
-  Paper,
-  Typography,
-  Button,
-  Tooltip,
-  Card,
-  CardContent,
-  Box,
-  List,
-  Tabs,
-  Tab,
-  useTheme,
-} from "@mui/material";
-import {
-  Add as AddIcon,
-  AutoAwesome as AutoAwesomeIcon,
-  Edit as EditIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import List from "@mui/material/List";
+import Paper from "@mui/material/Paper";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
+import AddIcon from "@mui/icons-material/Add";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import EditIcon from "@mui/icons-material/Edit";
 import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
 import {
   SortableContext,

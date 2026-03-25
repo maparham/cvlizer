@@ -20,7 +20,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import MDEditor from "@uiw/react-md-editor";
-import { Box, FormHelperText, useTheme } from "@mui/material";
+import Box from "@mui/material/Box";
+import FormHelperText from "@mui/material/FormHelperText";
+import { useTheme } from "@mui/material/styles";
 import "@uiw/react-md-editor/markdown-editor.css";
 
 export interface MarkdownEditorProps {

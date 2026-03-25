@@ -13,24 +13,20 @@
  */
 
 import React, { useMemo, useCallback, useState, useEffect, useRef } from "react";
-import {
-  Box,
-  Typography,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Chip,
-  Divider,
-} from "@mui/material";
-import {
-  AutoAwesome as AutoAwesomeIcon,
-  Work as WorkIcon,
-  School as SchoolIcon,
-  Person as PersonIcon,
-  Code as CodeIcon,
-  CheckCircle as CheckCircleIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import WorkIcon from "@mui/icons-material/Work";
+import SchoolIcon from "@mui/icons-material/School";
+import PersonIcon from "@mui/icons-material/Person";
+import CodeIcon from "@mui/icons-material/Code";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useCVQualityStore } from "../../../stores/cvQualityStore";
 import type { CVData } from "../../../types/cv";

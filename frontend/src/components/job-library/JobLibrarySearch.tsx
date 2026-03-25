@@ -13,18 +13,16 @@
  */
 
 import React from "react";
-import {
-  Container,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  InputAdornment,
-  Paper,
-  Stack,
-} from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
+import Container from "@mui/material/Container";
+import FormControl from "@mui/material/FormControl";
+import InputAdornment from "@mui/material/InputAdornment";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import SearchIcon from "@mui/icons-material/Search";
 
 interface JobLibrarySearchProps {
   searchQuery: string;

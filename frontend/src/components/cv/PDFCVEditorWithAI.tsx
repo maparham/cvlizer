@@ -19,8 +19,13 @@
  */
 
 import React, { useState, useCallback } from "react";
-import { Box, Fab, Tooltip, Alert, Snackbar } from "@mui/material";
-import { AutoFixHigh, Close } from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Fab from "@mui/material/Fab";
+import Snackbar from "@mui/material/Snackbar";
+import Tooltip from "@mui/material/Tooltip";
+import AutoFixHigh from "@mui/icons-material/AutoFixHigh";
+import Close from "@mui/icons-material/Close";
 import { InlineDiffProvider } from "../../contexts/InlineDiffContext";
 import { FloatingSuggestionsPanel } from "./ai/FloatingSuggestionsPanel";
 import { useAIStore, useActiveJobDescription } from "../../stores/ai";

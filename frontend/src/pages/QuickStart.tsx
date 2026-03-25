@@ -14,13 +14,11 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Container,
-  Box,
-  Button,
-  Typography,
-  CircularProgress,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../packages/notifications";

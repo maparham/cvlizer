@@ -1,6 +1,5 @@
 import React from 'react'
-import { Box } from '@mui/material'
-import { SectionProps } from '../../../types'
+import Box from '@mui/material/Box';import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
 import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'

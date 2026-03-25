@@ -1,5 +1,13 @@
 import React, { useState, useCallback } from "react";
-import { Box, Typography, Chip, TextField, Select, MenuItem, FormControl, InputLabel, Button } from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
 import SkillsAutocomplete from "../ui/SkillsAutocomplete";

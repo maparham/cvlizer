@@ -3,8 +3,11 @@
  *
  * Renders the edit and delete controls for an individual item.
  */
-import { Box, IconButton, Tooltip } from "@mui/material";
-import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { getSingularTitle } from "./utils";
 import type { ItemControlsProps } from "./types";
 

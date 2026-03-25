@@ -6,7 +6,9 @@
  */
 
 import React from 'react';
-import { Box, Typography, Chip } from '@mui/material';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Typography from '@mui/material/Typography';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import { TimelineGap } from '../../../types/ai';
 

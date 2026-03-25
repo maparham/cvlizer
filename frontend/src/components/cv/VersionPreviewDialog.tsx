@@ -6,24 +6,20 @@
  */
 
 import React, { useMemo, useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Box,
-  Typography,
-  IconButton,
-  Tabs,
-  Tab,
-} from "@mui/material";
-import {
-  Close as CloseIcon,
-  Restore as RestoreIcon,
-  History as HistoryIcon,
-  CompareArrows as CompareArrowsIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
+import RestoreIcon from "@mui/icons-material/Restore";
+import HistoryIcon from "@mui/icons-material/History";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 
 import { CVHistoryEntry } from "../../types";
 import SimpleCVDiffViewer from "./SimpleCVDiffViewer";

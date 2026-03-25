@@ -5,8 +5,13 @@
  * with full details; click navigates to Profile.
  */
 import React from "react";
-import { Chip, Tooltip, Typography, Box, Skeleton } from "@mui/material";
-import { MonetizationOn, Error as ErrorIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Skeleton from "@mui/material/Skeleton";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import MonetizationOn from "@mui/icons-material/MonetizationOn";
+import ErrorIcon from "@mui/icons-material/Error";
 import { useUsage } from "../../hooks/useUsage";
 import {
   getUsagePercent,

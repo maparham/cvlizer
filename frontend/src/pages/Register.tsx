@@ -1,5 +1,9 @@
 import React from "react";
-import { Container, Paper, Typography, Box, Link } from "@mui/material";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Link from "@mui/material/Link";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import { Link as RouterLink } from "react-router-dom";
 import { SignUp } from "@clerk/clerk-react";
 

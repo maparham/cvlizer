@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Typography, IconButton, Divider, Tooltip, Button } from "@mui/material";
-import {
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  VisibilityOff as HideIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
+import HideIcon from "@mui/icons-material/VisibilityOff";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { BaseSectionProps } from "../../../types";
 import { EditableTitle } from "../EditableTitle";
 import ConfirmDialog from "../../common/ConfirmDialog";

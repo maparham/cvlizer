@@ -19,32 +19,28 @@
 
 import React, { useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  Chip,
-  Stack,
-  CircularProgress,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Fade,
-  IconButton,
-  Tooltip,
-  Alert,
-} from "@mui/material";
-import {
-  Check as CheckIcon,
-  Close as CloseIcon,
-  ExpandMore as ExpandMoreIcon,
-  AutoAwesome as AutoAwesomeIcon,
-  Schedule as ScheduleIcon,
-  Psychology as PsychologyIcon,
-  ContentCopy as ContentCopyIcon,
-} from "@mui/icons-material";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
+import Fade from "@mui/material/Fade";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAIStore } from "../../../stores/ai";
 import { useAISuggestionsStore } from "../../../stores/aiSuggestionsStore";
 import { useNotifications } from "../../../packages/notifications";

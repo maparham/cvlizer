@@ -5,17 +5,15 @@
  */
 
 import React, { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Stack,
-  CircularProgress,
-} from "@mui/material";
-import { Check as CheckIcon } from "@mui/icons-material";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import CheckIcon from "@mui/icons-material/Check";
 import { EditDialogProps } from "./types";
 
 const EditDialog: React.FC<EditDialogProps> = ({

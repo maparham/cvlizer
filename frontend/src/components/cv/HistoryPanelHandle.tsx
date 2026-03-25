@@ -6,11 +6,11 @@
  */
 
 import React from "react";
-import { Box, Tooltip, Chip } from "@mui/material";
-import {
-  History as HistoryIcon,
-  ChevronLeft as ChevronLeftIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import HistoryIcon from "@mui/icons-material/History";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
 interface HistoryPanelHandleProps {
   /** Whether the history panel is currently open */

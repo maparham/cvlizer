@@ -1,19 +1,15 @@
 import React from "react";
-import {
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  IconButton,
-  Box,
-  Tooltip,
-  Badge,
-} from "@mui/material";
-import {
-  DragIndicator as DragIcon,
-  Visibility as ViewIcon,
-  VisibilityOff as HideIcon,
-  Warning as WarningIcon,
-} from "@mui/icons-material";
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import ListItem from "@mui/material/ListItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Tooltip from "@mui/material/Tooltip";
+import DragIcon from "@mui/icons-material/DragIndicator";
+import ViewIcon from "@mui/icons-material/Visibility";
+import HideIcon from "@mui/icons-material/VisibilityOff";
+import WarningIcon from "@mui/icons-material/Warning";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { SortableSectionItemProps } from "../../../types";

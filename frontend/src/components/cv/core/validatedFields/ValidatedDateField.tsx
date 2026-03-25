@@ -42,7 +42,7 @@
  * @module ValidatedDateField
  */
 import React from 'react';
-import { Box } from '@mui/material';
+import Box from '@mui/material/Box';
 import { DateFieldComponent, DateFieldConfig } from '../formUtils';
 import { useFieldValidation } from '../../../../hooks/useFieldValidation';
 import { FieldCorrection } from '../../../../types/ai';

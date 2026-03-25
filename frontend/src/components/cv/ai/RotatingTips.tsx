@@ -7,7 +7,9 @@
  */
 
 import React, { useEffect, useState, useRef } from "react";
-import { Box, Typography, Fade } from "@mui/material";
+import Box from "@mui/material/Box";
+import Fade from "@mui/material/Fade";
+import Typography from "@mui/material/Typography";
 
 const practicalTips = [
   "AI suggestions need human review. Use them as a starting point, but ensure your CV reflects your own voice. You are the master of your CV.",

@@ -17,7 +17,9 @@
  * - Provides responsive editing interface with Material-UI
  */
 import React, { useEffect, useMemo, useCallback, useRef } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { CVEditorProvider } from "../../contexts/CVEditorContext";

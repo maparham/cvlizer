@@ -5,13 +5,11 @@
  * showing token consumption and costs for each operation in a bar chart format.
  */
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  CircularProgress,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
 import {
   BarChart,
   Bar,

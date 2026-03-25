@@ -57,8 +57,9 @@
  * @module ValidatedDisplay
  */
 import React from 'react';
-import { Box, Typography } from '@mui/material';
-import { Warning as WarningIcon } from '@mui/icons-material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import WarningIcon from '@mui/icons-material/Warning';
 
 export interface ValidatedDisplayProps {
   children: React.ReactNode;

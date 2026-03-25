@@ -4,12 +4,10 @@
  * navigation, dot indicators, and accessibility attributes.
  */
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";

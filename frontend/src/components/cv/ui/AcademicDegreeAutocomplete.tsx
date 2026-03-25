@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { Autocomplete, TextField, SxProps, Theme } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
+import type { SxProps, Theme } from "@mui/material/styles";
 
 // Academic titles/degrees
 const ACADEMIC_TITLES = [

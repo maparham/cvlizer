@@ -1,5 +1,7 @@
 import React from "react";
-import { Paper, Typography, Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import { DeleteAccountButton } from "../common/DeleteAccountButton";
 
 export const DeleteAccountSection: React.FC = () => {

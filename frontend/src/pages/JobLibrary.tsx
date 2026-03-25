@@ -22,7 +22,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
 import { useAIStore } from "../stores/ai";
 import { JobDescription, JobDescriptionStatusUpdate } from "../types/ai";
 import { useNotifications } from "../packages/notifications";

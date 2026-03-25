@@ -24,20 +24,16 @@
  * - Works alongside NotificationDrawer component
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Box,
-  Typography,
-  IconButton,
-  Paper,
-  Slide,
-  Alert,
-  ClickAwayListener,
-  Badge,
-} from "@mui/material";
-import {
-  Close as CloseIcon,
-  ChevronRight as ChevronRightIcon,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import ClickAwayListener from "@mui/material/ClickAwayListener";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Slide from "@mui/material/Slide";
+import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useNotificationStore } from "../store";
 import { formatRelativeTime } from "../utils";
 import { NotificationToastProps } from "../types";

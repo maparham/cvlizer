@@ -5,16 +5,14 @@
  */
 
 import React from "react";
-import {
-  Stack,
-  Alert,
-  TextField,
-  Button,
-  CircularProgress,
-  Typography,
-  Box,
-} from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
 import { ManualTabProps } from "./types";
 
 const ManualTab: React.FC<ManualTabProps> = ({

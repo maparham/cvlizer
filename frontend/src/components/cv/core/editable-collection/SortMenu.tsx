@@ -5,11 +5,13 @@
  * and date-based sorting (newest/oldest first).
  */
 import { useState } from "react";
-import { Box, IconButton, Tooltip, MenuItem, Menu } from "@mui/material";
-import {
-  DragIndicator as DragIcon,
-  Sort as SortIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
+import DragIcon from "@mui/icons-material/DragIndicator";
+import SortIcon from "@mui/icons-material/Sort";
 import type { SortMenuProps } from "./types";
 
 function SortMenu<T>({

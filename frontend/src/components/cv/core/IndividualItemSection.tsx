@@ -22,8 +22,12 @@
  * @template T - The type of items this section manages
  */
 import { useCallback, useMemo, useState } from "react";
-import { Box, Typography, IconButton, Tooltip } from "@mui/material";
-import { Add as AddIcon, Cancel as CancelIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import CancelIcon from "@mui/icons-material/Cancel";
 import {
   DragDropContext,
   Droppable,

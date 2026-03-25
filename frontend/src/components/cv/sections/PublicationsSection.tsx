@@ -1,6 +1,6 @@
 import React from 'react'
-import { Box, Typography } from '@mui/material'
-import { SectionProps } from '../../../types'
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'

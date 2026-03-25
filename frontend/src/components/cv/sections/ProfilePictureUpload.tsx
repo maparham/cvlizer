@@ -6,15 +6,14 @@
  */
 
 import React, { useCallback, useRef, useState } from "react";
-import {
-  Box,
-  Button,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  Typography,
-} from "@mui/material";
-import { AccountCircle as UploadIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Typography from "@mui/material/Typography";
+import UploadIcon from "@mui/icons-material/AccountCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png"];

@@ -17,8 +17,13 @@
  */
 
 import React from "react";
-import { AppBar, Toolbar, IconButton, Menu, MenuItem, Box } from "@mui/material";
-import { AccountCircle as AccountCircleIcon } from "@mui/icons-material";
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Toolbar from "@mui/material/Toolbar";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Link as RouterLink } from "react-router-dom";
 import { UsageChip } from "../common";
 

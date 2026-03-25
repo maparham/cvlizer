@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
 import { WritingCorrection, FieldCorrection } from "../../../types/ai";
 import { InlineFieldCorrection } from "./InlineFieldCorrection";
 

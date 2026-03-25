@@ -9,26 +9,22 @@
  * openSignIn). Responsive, Material-UI, single column top to bottom.
  */
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Container,
-  Button,
-  Box,
-  Typography,
-  Link,
-  Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
-import {
-  OpenInFull,
-  Fullscreen,
-  FullscreenExit,
-  Close,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import OpenInFull from "@mui/icons-material/OpenInFull";
+import Fullscreen from "@mui/icons-material/Fullscreen";
+import FullscreenExit from "@mui/icons-material/FullscreenExit";
+import Close from "@mui/icons-material/Close";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import {
   SignedIn,

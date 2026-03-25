@@ -10,20 +10,19 @@
  * - Receives handlers for Edit and Update Status from the Dashboard
  */
 import React, { useMemo } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  Tooltip,
-  IconButton,
-  Typography,
-  Chip,
-} from "@mui/material";
-import { Edit as EditIcon, SwapHoriz as StatusIcon } from "@mui/icons-material";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import EditIcon from "@mui/icons-material/Edit";
+import StatusIcon from "@mui/icons-material/SwapHoriz";
 import { JobDescription } from "../../types/ai";
 import { formatDateTime } from "../../utils/dateFormat";
 

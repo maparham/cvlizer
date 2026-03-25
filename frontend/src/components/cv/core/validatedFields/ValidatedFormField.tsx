@@ -36,7 +36,7 @@
  * @module ValidatedFormField
  */
 import React from 'react';
-import { Box } from '@mui/material';
+import Box from '@mui/material/Box';
 import { FormField, FormFieldConfig } from '../formUtils';
 import { useFieldValidation } from '../../../../hooks/useFieldValidation';
 import { FieldCorrection } from '../../../../types/ai';

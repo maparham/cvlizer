@@ -19,17 +19,17 @@
  */
 
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Alert,
-  CircularProgress,
-  Stack,
-} from "@mui/material";
-import { AutoFixHigh, ExitToApp, Save } from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import AutoFixHigh from "@mui/icons-material/AutoFixHigh";
+import ExitToApp from "@mui/icons-material/ExitToApp";
+import Save from "@mui/icons-material/Save";
 import {
   InlineDiffProvider,
   useInlineDiffContext,

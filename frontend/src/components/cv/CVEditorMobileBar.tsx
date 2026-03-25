@@ -5,8 +5,10 @@
  * and the CV content view. Used inside PDFCVEditor when viewport is below md breakpoint.
  */
 import React from "react";
-import { Box, Button } from "@mui/material";
-import { Visibility as ViewCVIcon, Edit as SectionsIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import ViewCVIcon from "@mui/icons-material/Visibility";
+import SectionsIcon from "@mui/icons-material/Edit";
 
 export type MobilePanel = "sidebar" | "content";
 

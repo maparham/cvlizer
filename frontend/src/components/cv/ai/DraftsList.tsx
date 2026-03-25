@@ -17,18 +17,14 @@
  */
 
 import React, { useEffect, useCallback } from "react";
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Alert,
-  Button,
-  Stack,
-} from "@mui/material";
-import {
-  Refresh as RefreshIcon,
-  AutoAwesome as AutoAwesomeIcon,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { useAIStore, useCVDrafts } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { aiService } from "../../../services/ai";

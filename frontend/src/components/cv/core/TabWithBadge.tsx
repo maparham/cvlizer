@@ -4,12 +4,10 @@
  */
 
 import React from "react";
-import {
-  Box,
-  Badge,
-  Tooltip,
-  CircularProgress,
-} from "@mui/material";
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Tooltip from "@mui/material/Tooltip";
 
 export interface TabWithBadgeProps {
   tooltipTitle: string;

@@ -1,13 +1,11 @@
 import React from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-} from "@mui/material";
-import { RestartAlt as ResetIcon } from "@mui/icons-material";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Typography from "@mui/material/Typography";
+import ResetIcon from "@mui/icons-material/RestartAlt";
 import { UnsavedChangesDialog } from "./";
 
 interface PDFCVEditorDialogsProps {

@@ -3,12 +3,11 @@
  *
  * Provides drag handle and up/down arrow controls for reordering items.
  */
-import { Box, IconButton } from "@mui/material";
-import {
-  KeyboardArrowUp as ArrowUpIcon,
-  KeyboardArrowDown as ArrowDownIcon,
-  DragIndicator as DragIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import ArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import ArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import DragIcon from "@mui/icons-material/DragIndicator";
 import type { ReorderControlsProps } from "./types";
 
 function ReorderControls({

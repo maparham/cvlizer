@@ -5,31 +5,25 @@
  * Created, Modified, Sections, Actions. Last row is an "Add CV" drop zone.
  */
 import React, { useMemo, useRef } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  Tooltip,
-  IconButton,
-  Typography,
-  Box,
-} from "@mui/material";
-import {
-  Edit as EditIcon,
-  Download as DownloadIcon,
-  Delete as DeleteIcon,
-  FileCopy as DuplicateIcon,
-  Upload as UploadIcon,
-} from "@mui/icons-material";
-import {
-  Error as ErrorIcon,
-  CheckCircle as CheckCircleIcon,
-  HourglassEmpty as ProcessingIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import EditIcon from "@mui/icons-material/Edit";
+import DownloadIcon from "@mui/icons-material/Download";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DuplicateIcon from "@mui/icons-material/FileCopy";
+import UploadIcon from "@mui/icons-material/Upload";
+import ErrorIcon from "@mui/icons-material/Error";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ProcessingIcon from "@mui/icons-material/HourglassEmpty";
 import { EditableTitle } from "../cv";
 import { CV } from "../../types";
 import { getSectionCount, isUploadedCV } from "../../utils/dashboardUtils";

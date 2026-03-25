@@ -5,24 +5,20 @@
  * including total tokens, costs, success rates, and operation counts.
  */
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  CircularProgress,
-  Grid,
-} from "@mui/material";
-import {
-  TrendingUp,
-  TrendingDown,
-  AttachMoney,
-  Speed,
-  CheckCircle,
-  Error,
-  Cached,
-  Savings,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import TrendingUp from "@mui/icons-material/TrendingUp";
+import TrendingDown from "@mui/icons-material/TrendingDown";
+import AttachMoney from "@mui/icons-material/AttachMoney";
+import Speed from "@mui/icons-material/Speed";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Error from "@mui/icons-material/Error";
+import Cached from "@mui/icons-material/Cached";
+import Savings from "@mui/icons-material/Savings";
 import { SystemAIStats } from "../../types/admin";
 import {
   formatCost,

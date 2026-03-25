@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
 
 // Common fields of study/majors
 const COMMON_FIELDS_OF_STUDY = [

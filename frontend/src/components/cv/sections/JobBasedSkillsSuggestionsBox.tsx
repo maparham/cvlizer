@@ -5,8 +5,14 @@
  */
 
 import React from "react";
-import { Box, Typography, Chip, Tooltip, Button } from "@mui/material";
-import { Add as AddIcon, InfoOutlined as InfoIcon, Close as CloseIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import InfoIcon from "@mui/icons-material/InfoOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import type { SkillsSuggestions, SkillSuggestion } from "../../../types/ai";
 
 export interface JobBasedSkillsSuggestionsBoxProps {

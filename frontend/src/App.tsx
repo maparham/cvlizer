@@ -18,7 +18,8 @@ import {
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Suspense, lazy, useCallback, useEffect } from "react";
-import { Box, CircularProgress } from "@mui/material";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ImpersonationProvider } from "./contexts/ImpersonationContext";
 import { AITaskPollingProvider } from "./contexts/AITaskPollingContext";
@@ -36,12 +37,11 @@ const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const CVEditor = lazy(() => import("./pages/CVEditor"));
 const ExportPage = lazy(() => import("./pages/ExportPage"));
-// Dashboard and AdminDashboard: intentionally not lazy-loaded due to dynamic import/chunk path issues (see INVESTIGATION.md#dashboard-lazy-load or ticket).
-import Dashboard from "./pages/Dashboard";
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Profile = lazy(() => import("./pages/Profile"));
 const JobLibrary = lazy(() => import("./pages/JobLibrary"));
 const QuickStart = lazy(() => import("./pages/QuickStart"));
-import AdminDashboard from "./pages/AdminDashboard";
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const LoginRedirect = lazy(() => import("./components/LoginRedirect"));
 const Legal = lazy(() => import("./pages/Legal"));
 const Feedback = lazy(() => import("./pages/Feedback"));

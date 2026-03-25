@@ -1,5 +1,5 @@
 import React from "react";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";

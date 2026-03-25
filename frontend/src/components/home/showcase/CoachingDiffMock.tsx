@@ -4,13 +4,11 @@
  * No app logic; demo-only. Buttons are visual only, no handlers.
  */
 import React from "react";
-import {
-  Box,
-  Typography,
-  Alert,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";

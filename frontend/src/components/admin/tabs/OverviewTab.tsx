@@ -17,21 +17,17 @@
  */
 
 import React from "react";
-import {
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  CircularProgress,
-  Alert,
-} from "@mui/material";
-import {
-  People,
-  Description,
-  SmartToy,
-  CheckCircle,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import People from "@mui/icons-material/People";
+import Description from "@mui/icons-material/Description";
+import SmartToy from "@mui/icons-material/SmartToy";
+import CheckCircle from "@mui/icons-material/CheckCircle";
 import { SystemStats } from "../../../types/admin";
 import StatCard from "../StatCard";
 

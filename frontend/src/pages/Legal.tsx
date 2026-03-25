@@ -5,7 +5,10 @@
  * Content is placeholder/skeleton; replace with final copy before production.
  */
 import React from "react";
-import { Container, Typography, Box, Link } from "@mui/material";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
 import { Link as RouterLink } from "react-router-dom";
 
 const Legal: React.FC = () => {

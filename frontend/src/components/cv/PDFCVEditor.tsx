@@ -9,7 +9,9 @@
  * - Integration with CV editor context for state management
  */
 import React, { useEffect, useCallback, useState } from "react";
-import { Box, useTheme, useMediaQuery } from "@mui/material";
+import Box from "@mui/material/Box";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 

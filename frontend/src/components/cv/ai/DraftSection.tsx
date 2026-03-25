@@ -18,32 +18,28 @@
 
 import React, { useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import {
-  Box,
-  Card,
-  CardContent,
-  CardActions,
-  Typography,
-  Button,
-  Chip,
-  Stack,
-  CircularProgress,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
-import {
-  Check as CheckIcon,
-  Close as CloseIcon,
-  ExpandMore as ExpandMoreIcon,
-  AutoAwesome as AutoAwesomeIcon,
-  Schedule as ScheduleIcon,
-  Psychology as PsychologyIcon,
-  ContentCopy as ContentCopyIcon,
-} from "@mui/icons-material";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAIStore } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
 import { DraftResponse } from "../../../types/ai";

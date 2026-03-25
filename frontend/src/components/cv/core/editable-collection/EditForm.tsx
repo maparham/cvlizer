@@ -3,8 +3,12 @@
  *
  * Renders the editing form for an item with save/cancel controls.
  */
-import { Box, IconButton, Tooltip, Button } from "@mui/material";
-import { Save as SaveIcon, Cancel as CancelIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
 import type { EditFormProps } from "./types";
 
 function EditForm<T>({

@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback } from "react";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
 import { FieldCorrection, WritingCorrection } from "../../../../types/ai";
 import { InlineFieldCorrection } from "../../ai/InlineFieldCorrection";
 import { OVERWRITE_MSG } from "../../../../contexts/OverwriteConfirmContext";

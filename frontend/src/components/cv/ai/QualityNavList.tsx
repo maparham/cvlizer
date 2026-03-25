@@ -5,14 +5,13 @@
  */
 
 import React from "react";
-import { List, Divider } from "@mui/material";
-import {
-  Person as PersonIcon,
-  Work as WorkIcon,
-  School as SchoolIcon,
-  Code as CodeIcon,
-  Article as ArticleIcon,
-} from "@mui/icons-material";
+import Divider from "@mui/material/Divider";
+import List from "@mui/material/List";
+import PersonIcon from "@mui/icons-material/Person";
+import WorkIcon from "@mui/icons-material/Work";
+import SchoolIcon from "@mui/icons-material/School";
+import CodeIcon from "@mui/icons-material/Code";
+import ArticleIcon from "@mui/icons-material/Article";
 import { NavGroup, CustomSectionNavItem } from "./NavGroup";
 import { hasNonEmptyGroupsAfter } from "./suggestionListUtils";
 import type { GroupedQualitySuggestions, QualityNavItem } from "../../../hooks/useQualityNavigation";

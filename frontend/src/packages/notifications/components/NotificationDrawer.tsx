@@ -24,30 +24,26 @@
  * - Automatically updates when notifications change
  */
 import React, { useState, useImperativeHandle, forwardRef } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Stack,
-  Alert,
-  IconButton,
-  Divider,
-  Paper,
-  Drawer,
-  Fab,
-  Badge,
-  Tooltip,
-} from "@mui/material";
-import {
-  Notifications as NotificationsIcon,
-  ClearAll as ClearAllIcon,
-  Close as CloseIcon,
-  ChevronRight as ChevronRightIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  OpenInNew as OpenInNewIcon,
-  ContentCopy as ContentCopyIcon,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import Fab from "@mui/material/Fab";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import ClearAllIcon from "@mui/icons-material/ClearAll";
+import CloseIcon from "@mui/icons-material/Close";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useNavigate } from "react-router-dom";
 import { useNotificationStore } from "../store";
 import { formatRelativeTime } from "../utils";

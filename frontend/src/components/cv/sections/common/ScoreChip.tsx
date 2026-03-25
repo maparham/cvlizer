@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import { Chip, Tooltip } from '@mui/material';
+import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
 import { getContentScoreColor } from '../utils/correctionHelpers';
 
 interface ScoreChipProps {

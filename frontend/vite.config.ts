@@ -54,13 +54,9 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          mui: ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers'],
-          router: ['react-router-dom'],
-          utils: ['axios', 'date-fns', 'zustand', '@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities']
-        }
-      }
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
+      },
     },
     chunkSizeWarningLimit: 1000,
   },

@@ -6,7 +6,10 @@
  */
 
 import React, { useRef, useEffect, useMemo } from 'react';
-import { Box, Typography, Chip, Alert } from '@mui/material';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Typography from '@mui/material/Typography';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import EditNoteIcon from '@mui/icons-material/EditNote';

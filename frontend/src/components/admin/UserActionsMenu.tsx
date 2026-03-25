@@ -16,27 +16,23 @@
  * - Keeps impersonation as a separate button outside the menu
  */
 import React, { useState } from "react";
-import {
-  IconButton,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Tooltip,
-  CircularProgress,
-} from "@mui/material";
-import {
-  MoreVert,
-  Visibility,
-  Description,
-  Block,
-  CheckCircleOutline,
-  TrendingUp,
-  Email,
-  ErrorOutline,
-  DeleteForever,
-  RestartAlt,
-} from "@mui/icons-material";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
+import MoreVert from "@mui/icons-material/MoreVert";
+import Visibility from "@mui/icons-material/Visibility";
+import Description from "@mui/icons-material/Description";
+import Block from "@mui/icons-material/Block";
+import CheckCircleOutline from "@mui/icons-material/CheckCircleOutline";
+import TrendingUp from "@mui/icons-material/TrendingUp";
+import Email from "@mui/icons-material/Email";
+import ErrorOutline from "@mui/icons-material/ErrorOutline";
+import DeleteForever from "@mui/icons-material/DeleteForever";
+import RestartAlt from "@mui/icons-material/RestartAlt";
 import { UserSummary } from "../../types/admin";
 
 interface UserActionsMenuProps {

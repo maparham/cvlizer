@@ -19,24 +19,20 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Box,
-  Typography,
-  Tabs,
-  Tab,
-  Alert,
-  IconButton,
-} from "@mui/material";
-import {
-  Link as LinkIcon,
-  Description as DescriptionIcon,
-  Upload as UploadIcon,
-  Close as CloseIcon,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
+import LinkIcon from "@mui/icons-material/Link";
+import DescriptionIcon from "@mui/icons-material/Description";
+import UploadIcon from "@mui/icons-material/Upload";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   useAIStore,
   useActiveJobDescription,

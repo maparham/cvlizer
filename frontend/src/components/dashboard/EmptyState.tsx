@@ -18,8 +18,14 @@
  */
 
 import React, { useState, useRef } from "react";
-import { Paper, Typography, Button, Stack, Box } from "@mui/material";
-import { CloudUpload as UploadIcon, Article as TemplateIcon, Add as AddIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import UploadIcon from "@mui/icons-material/CloudUpload";
+import TemplateIcon from "@mui/icons-material/Article";
+import AddIcon from "@mui/icons-material/Add";
 import { validateCVFile } from "../../utils/fileValidation";
 
 interface EmptyStateProps {

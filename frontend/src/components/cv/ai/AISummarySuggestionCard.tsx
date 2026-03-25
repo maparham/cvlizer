@@ -12,20 +12,16 @@
  */
 
 import React from "react";
-import {
-  Box,
-  Button,
-  Chip,
-  Typography,
-  Tooltip,
-  IconButton,
-  Divider,
-} from "@mui/material";
-import {
-  Add as AddIcon,
-  Close as CloseIcon,
-  InfoOutlined as InfoIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import InfoIcon from "@mui/icons-material/InfoOutlined";
 import SemanticDiff from "./SemanticDiff";
 
 interface AISummarySuggestionCardProps {

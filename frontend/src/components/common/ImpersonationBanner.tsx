@@ -15,23 +15,19 @@
  * - Use hybrid event-driven status checking for optimal performance
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Alert,
-  AlertTitle,
-  Box,
-  Button,
-  Chip,
-  Typography,
-  Snackbar,
-  CircularProgress,
-  useTheme,
-} from "@mui/material";
-import {
-  ExitToApp as ExitIcon,
-  Person as PersonIcon,
-  AccessTime as TimeIcon,
-  Warning as WarningIcon,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Snackbar from "@mui/material/Snackbar";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
+import ExitIcon from "@mui/icons-material/ExitToApp";
+import PersonIcon from "@mui/icons-material/Person";
+import TimeIcon from "@mui/icons-material/AccessTime";
+import WarningIcon from "@mui/icons-material/Warning";
 import {
   impersonationService,
   ImpersonationError,

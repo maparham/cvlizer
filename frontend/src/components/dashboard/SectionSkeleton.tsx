@@ -4,14 +4,12 @@
  * Reusable loading UI for dashboard sections while data is being fetched.
  */
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Stack,
-  Typography,
-  Box,
-  CircularProgress,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 
 interface SectionSkeletonProps {
   title: string;

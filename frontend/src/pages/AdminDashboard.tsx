@@ -23,24 +23,20 @@
  */
 
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Paper,
-  Typography,
-  Box,
-  Button,
-  Alert,
-  Tabs,
-  Tab,
-} from "@mui/material";
-import {
-  Dashboard,
-  People,
-  ArrowBack,
-  Refresh,
-  Analytics,
-  Feedback as FeedbackIcon,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import Paper from "@mui/material/Paper";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
+import Dashboard from "@mui/icons-material/Dashboard";
+import People from "@mui/icons-material/People";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import Refresh from "@mui/icons-material/Refresh";
+import Analytics from "@mui/icons-material/Analytics";
+import FeedbackIcon from "@mui/icons-material/Feedback";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useImpersonation } from "../hooks/useImpersonation";

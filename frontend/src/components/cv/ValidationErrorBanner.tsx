@@ -7,14 +7,13 @@
  */
 
 import React, { useCallback } from "react";
-import {
-  Alert,
-  AlertTitle,
-  Box,
-  Button,
-  Typography,
-} from "@mui/material";
-import { ErrorOutline, ArrowDownward } from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import ErrorOutline from "@mui/icons-material/ErrorOutline";
+import ArrowDownward from "@mui/icons-material/ArrowDownward";
 import { ValidationError } from "../../utils/validation";
 
 interface ValidationErrorBannerProps {

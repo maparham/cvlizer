@@ -14,7 +14,10 @@
  */
 
 import React from "react";
-import { Box, Container, Stack, Chip } from "@mui/material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Container from "@mui/material/Container";
+import Stack from "@mui/material/Stack";
 
 interface StatusCounts {
   total: number;

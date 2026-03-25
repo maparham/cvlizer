@@ -19,37 +19,33 @@
  */
 
 import React, { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardActions,
-  Typography,
-  Link,
-  Box,
-  Chip,
-  IconButton,
-  Tooltip,
-  Button,
-  CircularProgress,
-  LinearProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
-import {
-  Work as WorkIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Close as CloseIcon,
-  HourglassEmpty as HourglassEmptyIcon,
-  LocationOn as LocationOnIcon,
-  Visibility as VisibilityIcon,
-  Link as LinkIcon,
-  ContentCopy as ContentCopyIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import Link from "@mui/material/Link";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import WorkIcon from "@mui/icons-material/Work";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CloseIcon from "@mui/icons-material/Close";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import LinkIcon from "@mui/icons-material/Link";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { JobDescription } from "../../../types/ai";
 import { formatRelativeTime } from "../../../utils/formatters";
 import { MarkdownRenderer } from "../../common";

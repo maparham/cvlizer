@@ -6,19 +6,18 @@
  */
 
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Typography,
-  Box,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
-import { Warning, DeleteForever } from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import Warning from "@mui/icons-material/Warning";
+import DeleteForever from "@mui/icons-material/DeleteForever";
 
 interface DeleteUserDialogProps {
   open: boolean;

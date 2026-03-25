@@ -18,27 +18,23 @@
  * - Integrate with CV section components for consistent form behavior
  */
 import React from "react";
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  IconButton,
-  InputAdornment,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import MarkdownEditor from "./MarkdownEditor";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateField as MUIDateField } from "@mui/x-date-pickers/DateField";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import {
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Delete as DeleteIcon,
-  CheckCircle as CheckIcon,
-  Warning as WarningIcon,
-  CalendarToday as CalendarIcon,
-} from "@mui/icons-material";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CheckIcon from "@mui/icons-material/CheckCircle";
+import WarningIcon from "@mui/icons-material/Warning";
+import CalendarIcon from "@mui/icons-material/CalendarToday";
 import {
   formatDateForBackend,
   parseDateForPicker,

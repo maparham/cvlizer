@@ -15,8 +15,12 @@
  */
 
 import React from "react";
-import { Container, Grid, Typography, Button, Paper } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
 import { JobDescription } from "../../types/ai";
 import JobDescriptionCard from "../cv/ai/JobDescriptionCard";
 

@@ -1,5 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { Container, Typography, Box, Link } from "@mui/material";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import { ProfileHeader } from "./ProfileHeader";

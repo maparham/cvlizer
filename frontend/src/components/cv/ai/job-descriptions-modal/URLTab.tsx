@@ -5,15 +5,13 @@
  */
 
 import React from "react";
-import {
-  Stack,
-  Alert,
-  TextField,
-  Button,
-  CircularProgress,
-  Typography,
-} from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
 import { URLTabProps } from "./types";
 
 const URLTab: React.FC<URLTabProps> = ({

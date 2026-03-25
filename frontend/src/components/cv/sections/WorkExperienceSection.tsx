@@ -10,7 +10,8 @@
  * - AI-generated description improvement suggestions
  */
 import React, { useCallback, useMemo } from "react";
-import { Box, Typography } from "@mui/material";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
 import { FormField } from "../core/formUtils";

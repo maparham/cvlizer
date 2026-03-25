@@ -19,15 +19,16 @@
  */
 
 import React, { ReactNode, useState } from "react";
-import { Box, Tooltip, Chip, styled } from "@mui/material";
-import {
-  CheckCircle,
-  Cancel,
-  Pending,
-  Add,
-  Edit,
-  Delete,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import { styled } from "@mui/material/styles";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Cancel from "@mui/icons-material/Cancel";
+import Pending from "@mui/icons-material/Pending";
+import Add from "@mui/icons-material/Add";
+import Edit from "@mui/icons-material/Edit";
+import Delete from "@mui/icons-material/Delete";
 import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
 import { AISuggestion } from "../../../types/ai";
 import { SemanticDiff } from "./SemanticDiff";

@@ -4,19 +4,17 @@
  * No app logic; demo-only. Buttons are visual only, no handlers.
  */
 import React from "react";
-import {
-  Card,
-  CardContent,
-  CardActions,
-  Box,
-  Stack,
-  Typography,
-  Chip,
-  LinearProgress,
-  Button,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import DownloadIcon from "@mui/icons-material/Download";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import EditIcon from "@mui/icons-material/Edit";

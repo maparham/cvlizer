@@ -3,13 +3,11 @@
  * "Why Rahkar?" — card grid comparing Rahkar to others.
  */
 import React from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-  CardContent,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
 import TouchAppOutlinedIcon from "@mui/icons-material/TouchAppOutlined";

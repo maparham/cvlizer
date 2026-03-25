@@ -19,25 +19,21 @@
  */
 
 import React from "react";
-import {
-  Box,
-  Button,
-  Typography,
-  Card,
-  CardContent,
-  LinearProgress,
-  Chip,
-  Stack,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
-import {
-  AutoFixHigh,
-  CheckCircle,
-  Cancel,
-  Visibility,
-  VisibilityOff,
-} from "@mui/icons-material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import LinearProgress from "@mui/material/LinearProgress";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import AutoFixHigh from "@mui/icons-material/AutoFixHigh";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Cancel from "@mui/icons-material/Cancel";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
 import { useActiveJobDescription } from "../../../stores/ai";
 import { useCVEditor } from "../../../contexts/CVEditorContext";

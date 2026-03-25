@@ -6,8 +6,11 @@
  * the parent can open the Upload CV dialog with the file pre-selected.
  */
 import React, { useState, useRef } from "react";
-import { Card, CardContent, Typography, Grid } from "@mui/material";
-import { Upload as UploadIcon } from "@mui/icons-material";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import UploadIcon from "@mui/icons-material/Upload";
 import { validateCVFile } from "../../utils/fileValidation";
 
 interface CVPlaceholderCardProps {

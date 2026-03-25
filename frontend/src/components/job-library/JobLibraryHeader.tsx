@@ -14,8 +14,14 @@
  */
 
 import React from "react";
-import { Box, Container, Typography, Button, Stack, IconButton } from "@mui/material";
-import { Add as AddIcon, ArrowBack as ArrowBackIcon } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
 
 interface JobLibraryHeaderProps {

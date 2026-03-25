@@ -1,11 +1,9 @@
 /**
  * Utility functions for the Dashboard component
  */
-import {
-  Error as ErrorIcon,
-  CheckCircle as CheckCircleIcon,
-  HourglassEmpty as ProcessingIcon,
-} from "@mui/icons-material";
+import ErrorIcon from "@mui/icons-material/Error";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ProcessingIcon from "@mui/icons-material/HourglassEmpty";
 import { CV } from "../types";
 
 /**

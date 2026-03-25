@@ -1,23 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import {
-  TextField,
-  Chip,
-  Box,
-  Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemButton,
-  InputAdornment,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
-import {
-  Search as SearchIcon,
-  Add as AddIcon,
-  Close as CloseIcon,
-} from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   TECHNICAL_SKILLS,
   SOFT_SKILLS,

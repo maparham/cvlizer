@@ -21,34 +21,30 @@
  */
 
 import React, { useState } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  IconButton,
-  Button,
-  List,
-  ListItem,
-  ListItemSecondaryAction,
-  Divider,
-  Chip,
-  Collapse,
-  LinearProgress,
-  Tooltip,
-  Badge,
-  Stack,
-} from "@mui/material";
-import {
-  Close,
-  CheckCircle,
-  Cancel,
-  ExpandMore,
-  ExpandLess,
-  CheckCircleOutline,
-  CancelOutlined,
-  NavigateNext,
-  Settings,
-} from "@mui/icons-material";
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Collapse from "@mui/material/Collapse";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import Close from "@mui/icons-material/Close";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Cancel from "@mui/icons-material/Cancel";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import CheckCircleOutline from "@mui/icons-material/CheckCircleOutline";
+import CancelOutlined from "@mui/icons-material/CancelOutlined";
+import NavigateNext from "@mui/icons-material/NavigateNext";
+import Settings from "@mui/icons-material/Settings";
 import { useInlineDiffContext } from "../../../contexts/InlineDiffContext";
 import { useOverwriteConfirm, getOverwriteMessageBulk } from "../../../contexts/OverwriteConfirmContext";
 import { useCVStore } from "../../../stores/cv";
