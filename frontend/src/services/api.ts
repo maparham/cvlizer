@@ -11,9 +11,6 @@
 import axios from "axios";
 import { ClerkWindow, isClerkAvailable } from "../types/clerk";
 import { getActiveJobDescriptionIdForCV } from "../utils/activeJobDescriptionPreference";
-import {
-  getQuickExportDefaultTemplate,
-} from "../utils/exportTemplatePreference";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(
   /\/$/,
@@ -253,6 +250,14 @@ export const cvApi = {
     return response.data;
   },
 
+  /** Per-CV default export template (public share PDF uses this when set). */
+  patchExportTemplate: async (cvId: string, templateName: string | null) => {
+    const response = await api.patch(`/cvs/${cvId}/export-template`, {
+      template_name: templateName,
+    });
+    return response.data;
+  },
+
   // Download CV file
   downloadCV: async (cvId: string, filename: string) => {
     const response = await api.get(`/cvs/${cvId}/download`, {
@@ -315,9 +320,9 @@ export const cvApi = {
     }
   },
 
-  // Export CV as PDF (LaTeX compiled) in a new tab using server filename
-  exportCVAsPDF: async (cvId: string, template?: string) => {
-    // Get Clerk token to authorize the public export endpoint
+  // Export CV as PDF (LaTeX compiled). Template is resolved on the server from
+  // export_template_name (PATCH /cvs/:id/export-template).
+  exportCVAsPDF: async (cvId: string) => {
     if (typeof window === "undefined" || !isClerkAvailable(window)) {
       throw new Error("Authentication service not available");
     }
@@ -325,71 +330,55 @@ export const cvApi = {
     if (!clerk) {
       throw new Error("Authentication service not available");
     }
-    const token = await clerk.session?.getToken();
-    if (!token) throw new Error("No authentication token available");
+    if (!(await clerk.session?.getToken())) {
+      throw new Error("No authentication token available");
+    }
 
-    // Resolve explicit template first, then client-side quick export default.
-    const resolvedTemplate = template || getQuickExportDefaultTemplate();
     const jobDescriptionId = getActiveJobDescriptionIdForCV(cvId);
-
-    // Template controls rendering only; filename suffix is employer-or-none on backend.
-    if (resolvedTemplate) {
-      const queryParts = [`template=${encodeURIComponent(resolvedTemplate)}`];
-      if (jobDescriptionId) {
-        queryParts.push(`job_description_id=${encodeURIComponent(jobDescriptionId)}`);
-      }
-      const path = `/cvs/${cvId}/export/pdf?${queryParts.join("&")}`;
-      // Use blob download path for explicit template rendering selection.
-      try {
-        const response = await api.get(path, {
-          responseType: "blob",
-          headers: {
-            'Accept': 'application/pdf',
-          }
-        });
-        const blob = new Blob([response.data], { type: "application/pdf" });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-
-        // Extract filename from response headers - use same logic as backend generates
-        const contentDisposition = response.headers["content-disposition"] || response.headers["Content-Disposition"];
-        let filename = `CV_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.pdf`; // fallback
-
-        if (contentDisposition) {
-          // Try multiple regex patterns to match different header formats
-          let filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
-          if (!filenameMatch) {
-            filenameMatch = contentDisposition.match(/filename=([^;]+)/);
-          }
-          if (!filenameMatch) {
-            filenameMatch = contentDisposition.match(/filename[^=]*=\s*"?([^";\s]+)"?/);
-          }
-
-          if (filenameMatch) {
-            filename = filenameMatch[1].trim();
-          }
-        }
-
-        link.setAttribute("download", filename);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error("Failed to export CV with template:", error);
-        throw error;
-      }
-    } else {
-      // Use public endpoint when no template override is selected.
-    const path = `/cvs/${cvId}/export/pdf/public`;
-    const base = api.getUri({ url: path });
-    const queryParts = [`token=${encodeURIComponent(token)}`];
+    const queryParts: string[] = [];
     if (jobDescriptionId) {
       queryParts.push(`job_description_id=${encodeURIComponent(jobDescriptionId)}`);
     }
-    const url = `${base}?${queryParts.join("&")}`;
-    window.open(url, "_blank");
+    const path = `/cvs/${cvId}/export/pdf${queryParts.length ? `?${queryParts.join("&")}` : ""}`;
+
+    try {
+      const response = await api.get(path, {
+        responseType: "blob",
+        headers: {
+          Accept: "application/pdf",
+        },
+      });
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      const contentDisposition =
+        response.headers["content-disposition"] || response.headers["Content-Disposition"];
+      let filename = `CV_${new Date().toISOString().split("T")[0].replace(/-/g, "")}.pdf`;
+
+      if (contentDisposition) {
+        let filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+        if (!filenameMatch) {
+          filenameMatch = contentDisposition.match(/filename=([^;]+)/);
+        }
+        if (!filenameMatch) {
+          filenameMatch = contentDisposition.match(/filename[^=]*=\s*"?([^";\s]+)"?/);
+        }
+
+        if (filenameMatch) {
+          filename = filenameMatch[1].trim();
+        }
+      }
+
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export CV as PDF:", error);
+      throw error;
     }
   },
 
@@ -429,9 +418,9 @@ export const cvApi = {
       return urls;
     },
 
-    // Fetch LaTeX source for CV (as plain text)
-    getLatexSource: async (cvId: string, template?: string): Promise<string> => {
-      const path = `/cvs/${cvId}/export/latex${template ? `?template=${encodeURIComponent(template)}` : ''}`;
+    // Fetch LaTeX source for CV (as plain text). Template comes from export_template_name.
+    getLatexSource: async (cvId: string): Promise<string> => {
+      const path = `/cvs/${cvId}/export/latex`;
       try {
         const response = await api.get(path, {
           responseType: "text",

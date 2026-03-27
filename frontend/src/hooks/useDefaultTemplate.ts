@@ -1,34 +1,36 @@
 import { useEffect, useState } from "react";
-import {
-  getValidQuickExportDefaultTemplate,
-  setQuickExportDefaultTemplate,
-} from "../utils/exportTemplatePreference";
 
 /**
- * Manage Quick Export default template selection and validation.
+ * Derives the highlighted "default" template on the Export page from server-backed
+ * `export_template_name` when it matches an available template name.
+ *
+ * @param serverExportTemplateName - `undefined` until CV metadata is loaded; then
+ *   the per-CV template from the API or null.
  */
-export const useDefaultTemplate = (availableTemplateNames: string[]) => {
+export const useDefaultTemplate = (
+  availableTemplateNames: string[],
+  serverExportTemplateName?: string | null,
+) => {
   const [defaultTemplateName, setDefaultTemplateName] = useState<string | null>(
     null,
   );
 
   useEffect(() => {
-    // Avoid clearing a valid stored default before templates finish loading.
     if (availableTemplateNames.length === 0) {
       return;
     }
-    setDefaultTemplateName(
-      getValidQuickExportDefaultTemplate(availableTemplateNames),
-    );
-  }, [availableTemplateNames]);
-
-  const saveDefaultTemplate = (templateName: string): boolean => {
-    const success = setQuickExportDefaultTemplate(templateName);
-    if (success) {
-      setDefaultTemplateName(templateName);
+    if (serverExportTemplateName === undefined) {
+      return;
     }
-    return success;
-  };
+    if (
+      serverExportTemplateName &&
+      availableTemplateNames.includes(serverExportTemplateName)
+    ) {
+      setDefaultTemplateName(serverExportTemplateName);
+      return;
+    }
+    setDefaultTemplateName(null);
+  }, [availableTemplateNames, serverExportTemplateName]);
 
-  return { defaultTemplateName, saveDefaultTemplate };
+  return { defaultTemplateName };
 };

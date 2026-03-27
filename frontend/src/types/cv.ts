@@ -34,6 +34,8 @@ export interface CV {
   section_count?: number;
   /** Advisory validation warnings after save; set by API on PUT response */
   validation_warnings?: string[];
+  /** Per-CV LaTeX template for export; public PDF uses this when set */
+  export_template_name?: string | null;
 }
 
 // CV Data Structure

@@ -26,6 +26,9 @@ class CVResponse(BaseModel):
     has_been_edited: bool
     section_count: Optional[int] = None  # Set by backend on all CV responses
     validation_warnings: Optional[List[str]] = None  # Advisory errors after save
+    export_template_name: Optional[
+        str
+    ] = None  # Per-CV PDF template; public export uses this when set
 
     class Config:
         from_attributes = True
@@ -39,6 +42,15 @@ class CVListResponse(BaseModel):
     page: int
     limit: int
     pages: int
+
+
+class CVExportTemplatePatchRequest(BaseModel):
+    """Body for PATCH /cvs/{cv_id}/export-template."""
+
+    template_name: Optional[str] = Field(
+        None,
+        description="LaTeX template name, or null to clear and use server default for export",
+    )
 
 
 class CVTitleUpdateRequest(BaseModel):

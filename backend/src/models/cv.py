@@ -33,6 +33,8 @@ class CV(Base):
     is_public_shared = Column(Boolean, default=False, nullable=False, index=True)
     public_share_created_at = Column(DateTime(timezone=True), nullable=True)
     public_share_view_mode = Column(String(20), default="shell", nullable=False)
+    # LaTeX template name for export; drives public share PDF when set (else server default).
+    export_template_name = Column(String(64), nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -47,7 +49,7 @@ class CV(Base):
     user = relationship("User", back_populates="cvs")
     job_descriptions = relationship(
         "JobDescription",
-        back_populates="cv"
+        back_populates="cv",
         # REMOVED cascade="all, delete-orphan" - job descriptions should persist
         # when CV is deleted (handled by database FK with SET NULL)
     )
@@ -116,6 +118,7 @@ class CV(Base):
             "updated_at": self.updated_at.replace(tzinfo=timezone.utc).isoformat(),
             "is_imported": is_imported,
             "has_been_edited": has_been_edited,
+            "export_template_name": self.export_template_name,
         }
 
         # Only include parsed_data if explicitly requested (for list views, exclude it)

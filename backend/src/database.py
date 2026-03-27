@@ -144,6 +144,23 @@ def _migrate_add_public_sharing():
     logger.info("Migration: public sharing columns/indexes applied (idempotent)")
 
 
+def _migrate_cvs_export_template_name():
+    """
+    Add cvs.export_template_name if missing (per-CV LaTeX template for public PDF).
+    Safe to run multiple times.
+    """
+    statement = "ALTER TABLE cvs ADD COLUMN export_template_name VARCHAR(64)"
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(statement))
+        logger.info("Migration: added cvs.export_template_name")
+    except Exception as e:
+        msg = str(e).lower()
+        if "duplicate column" in msg or "already exists" in msg:
+            return
+        raise
+
+
 def _migrate_share_view_viewer_ip_width():
     """
     Widen share_views.viewer_ip for IPv6 with zone ID (PostgreSQL only).
@@ -173,6 +190,7 @@ def create_tables():
     _migrate_ai_usage_logs_service_tier()
     _migrate_ai_usage_logs_provider_cost()
     _migrate_add_public_sharing()
+    _migrate_cvs_export_template_name()
     _migrate_share_view_viewer_ip_width()
 
 

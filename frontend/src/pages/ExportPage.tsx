@@ -13,7 +13,7 @@
  * - Export with selected template functionality
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -65,12 +65,55 @@ export const ExportPage: React.FC = () => {
     previewUrls: string[];
     pageCount: number;
   } | null>(null);
+  /** `undefined` until GET /cvs/:id completes; then server `export_template_name` or null */
+  const [serverExportTemplateName, setServerExportTemplateName] = useState<
+    string | null | undefined
+  >(undefined);
   const templateNames = useMemo(
     () => templates.map((template) => template.name),
     [templates],
   );
-  const { defaultTemplateName, saveDefaultTemplate } =
-    useDefaultTemplate(templateNames);
+  const { defaultTemplateName } = useDefaultTemplate(
+    templateNames,
+    serverExportTemplateName,
+  );
+
+  /** Ensure CV row matches this card before export/LaTeX (server uses DB only). */
+  const syncExportTemplateIfNeeded = useCallback(
+    async (templateName: string) => {
+      if (!cvId) {
+        return;
+      }
+      if (serverExportTemplateName === templateName) {
+        return;
+      }
+      await cvApi.patchExportTemplate(cvId, templateName);
+      setServerExportTemplateName(templateName);
+    },
+    [cvId, serverExportTemplateName],
+  );
+
+  useEffect(() => {
+    if (!cvId) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const cv = await cvApi.getCV(cvId);
+        if (!cancelled) {
+          setServerExportTemplateName(cv.export_template_name ?? null);
+        }
+      } catch {
+        if (!cancelled) {
+          setServerExportTemplateName(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [cvId]);
 
   // Load templates on mount
   useEffect(() => {
@@ -198,7 +241,8 @@ export const ExportPage: React.FC = () => {
     if (!cvId) return;
 
     try {
-      await cvApi.exportCVAsPDF(cvId, templateName);
+      await syncExportTemplateIfNeeded(templateName);
+      await cvApi.exportCVAsPDF(cvId);
     } catch (error) {
       console.error("Failed to export CV:", error);
     }
@@ -209,7 +253,8 @@ export const ExportPage: React.FC = () => {
     if (!cvId) return;
 
     try {
-      const tex = await cvApi.getLatexSource(cvId, templateName);
+      await syncExportTemplateIfNeeded(templateName);
+      const tex = await cvApi.getLatexSource(cvId);
       await navigator.clipboard.writeText(tex);
       showSuccess("Copied", "LaTeX source copied to clipboard", true);
     } catch (error) {
@@ -226,17 +271,25 @@ export const ExportPage: React.FC = () => {
     setSelectedPreview({ template, previewUrls, pageCount });
   };
 
-  const handleSetDefaultTemplate = (templateName: string, displayName: string) => {
-    const success = saveDefaultTemplate(templateName);
-    if (!success) {
-      showError("Default not updated", "Unable to save template preference", true);
+  const handleSetDefaultTemplate = async (
+    templateName: string,
+    displayName: string,
+  ) => {
+    if (!cvId) {
       return;
     }
-    showSuccess(
-      "Default updated",
-      `${displayName} set as Quick Export default`,
-      true,
-    );
+    try {
+      await cvApi.patchExportTemplate(cvId, templateName);
+      setServerExportTemplateName(templateName);
+      showSuccess(
+        "Default updated",
+        `${displayName} set as Quick Export default`,
+        true,
+      );
+    } catch (error) {
+      console.error("Failed to save export template:", error);
+      showError("Default not updated", "Could not save template to your CV", true);
+    }
   };
 
   const handleClosePreview = () => {

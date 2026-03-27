@@ -99,7 +99,7 @@ async def download_public_cv_pdf(
             detail="LaTeX toolchain (pdflatex) not available on server",
         )
 
-    template_name = resolve_export_template(None)
+    template_name = resolve_export_template(cv.export_template_name)
     profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
         cv.parsed_data
     )

@@ -18,7 +18,7 @@ from src.services.cv.cv_export_naming import (
     export_filename_for_cv,
     resolve_export_template,
 )
-from src.services.cv.cv_service import get_cv_by_id
+from src.services.cv.cv_service import get_cv_by_id, update_cv_export_template
 from src.services.platform.file_service import get_profile_picture_settings
 from src.services.cv.latex_export_service import (
     compile_pdf_from_latex,
@@ -29,9 +29,12 @@ from src.services.job_descriptions.job_description_service import (
     get_cv_ids_for_job_description,
     get_job_description_owned_by,
 )
+from src.services.shared.template_loader import is_template_available
 from src.services.users.user_activity_service import log_api_call, log_user_activity
 
 from .common import logger
+from .models import CVExportTemplatePatchRequest, CVResponse
+from .responses import build_cv_response
 
 router = APIRouter()
 
@@ -64,12 +67,40 @@ def _employer_suffix_for_filename(
     return safe or None
 
 
+@router.patch("/{cv_id}/export-template", response_model=CVResponse)
+async def patch_cv_export_template(
+    cv_id: str,
+    body: CVExportTemplatePatchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+):
+    """
+    Set or clear the per-CV LaTeX template used for export (including public share PDF).
+    """
+    raw = body.template_name
+    if raw is None:
+        stored: Optional[str] = None
+    else:
+        stripped = raw.strip()
+        if not stripped:
+            stored = None
+        elif not is_template_available(stripped):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unknown or unavailable template name",
+            )
+        else:
+            stored = stripped
+
+    cv = update_cv_export_template(db, cv_id, str(current_user.id), stored)
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    return build_cv_response(cv)
+
+
 @router.get("/{cv_id}/export/pdf")
 async def export_cv_pdf(
     cv_id: str,
-    template: Optional[str] = Query(
-        None, description="Optional template name for PDF rendering"
-    ),
     job_description_id: Optional[str] = Query(
         None,
         description="Optional selected job description ID for filename employer suffix",
@@ -80,13 +111,14 @@ async def export_cv_pdf(
 ):
     """Export CV as PDF via LaTeX (pdflatex).
 
-    Template controls rendering style; filename uses employer suffix when available.
+    Template comes from the CV's stored export_template_name (PATCH export-template);
+    filename uses employer suffix when available.
     """
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    template_name = resolve_export_template(template)
+    template_name = resolve_export_template(cv.export_template_name)
     logger.info(
         f"User {current_user.email} exporting CV {cv_id} ({cv.original_filename}) as PDF with template '{template_name}'"
     )
@@ -144,7 +176,9 @@ async def export_cv_pdf(
                 endpoint=f"/api/cvs/{cv_id}/export/pdf",
                 method="GET",
                 status_code=200,
-                request_data={"template": template},
+                request_data={
+                    "export_template_name": cv.export_template_name,
+                },
                 response_data={"filename": filename, "file_size": len(pdf_bytes)},
             )
         except Exception as e:
@@ -161,9 +195,6 @@ async def export_cv_pdf(
 @router.get("/{cv_id}/export/latex")
 async def export_cv_latex(
     cv_id: str,
-    template: Optional[str] = Query(
-        None, description="Optional template name for LaTeX rendering"
-    ),
     job_description_id: Optional[str] = Query(
         None,
         description="Optional selected job description ID for filename employer suffix",
@@ -172,9 +203,9 @@ async def export_cv_latex(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
 ):
-    """Export CV as raw LaTeX source code for the selected template.
+    """Export CV as raw LaTeX source using the CV's stored export template.
 
-    Template controls rendering style; filename uses employer suffix when available.
+    Template comes from export_template_name; filename uses employer suffix when available.
     """
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
     if not cv:
@@ -184,7 +215,7 @@ async def export_cv_latex(
         cv.parsed_data
     )
     try:
-        template_name = resolve_export_template(template)
+        template_name = resolve_export_template(cv.export_template_name)
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
@@ -211,7 +242,9 @@ async def export_cv_latex(
                 endpoint=f"/api/cvs/{cv_id}/export/latex",
                 method="GET",
                 status_code=200,
-                request_data={"template": template},
+                request_data={
+                    "export_template_name": cv.export_template_name,
+                },
                 response_data={
                     "filename": filename,
                     "size": len(tex_source.encode("utf-8")),
@@ -271,7 +304,8 @@ async def export_cv_pdf_public(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
-    default_template = resolve_export_template(None)
+    # Per-CV stored template when set; else server default (same as share-token PDF).
+    template_name = resolve_export_template(cv.export_template_name)
     logger.info(
         f"User {local_user.email} exporting CV {cv_id} ({cv.original_filename}) as PDF via public endpoint"
     )
@@ -285,7 +319,7 @@ async def export_cv_pdf_public(
             details={
                 "cv_id": cv_id,
                 "cv_filename": cv.original_filename,
-                "template_name": default_template,
+                "template_name": template_name,
                 "export_type": "pdf",
                 "endpoint_type": "public",
             },
@@ -307,7 +341,7 @@ async def export_cv_pdf_public(
         tex_source = generate_cv_latex(
             cv.parsed_data or {},
             cv.original_filename or "My CV",
-            template_name=default_template,
+            template_name=template_name,
             profile_pic_path=profile_pic_path,
             profile_pic_shape=profile_pic_shape,
             profile_pic_size=profile_pic_size,

@@ -129,6 +129,21 @@ def delete_cv(db: Session, cv_id: str, user_id: str) -> bool:
     return True
 
 
+def update_cv_export_template(
+    db: Session, cv_id: str, user_id: str, template_name: Optional[str]
+) -> Optional[CV]:
+    """
+    Set or clear the per-CV export template name (LaTeX). None clears the column.
+    """
+    cv = get_cv_by_id(db, cv_id, user_id)
+    if not cv:
+        return None
+    cv.export_template_name = template_name
+    db.commit()
+    db.refresh(cv)
+    return cv
+
+
 def rename_cv(db: Session, cv_id: str, user_id: str, new_title: str) -> Optional[CV]:
     """
     Update a CV's display name (original_filename). Returns the updated CV or None if not found.
@@ -174,6 +189,10 @@ def duplicate_cv_for_user(db: Session, cv_id: str, user_id: str) -> Optional[CV]
         parsed_data=duplicated_parsed_data,
         is_parsed=True,
     )
+    if original.export_template_name:
+        new_cv.export_template_name = original.export_template_name
+        db.commit()
+        db.refresh(new_cv)
 
     if is_cv_history_enabled():
         data_size = len(json.dumps(duplicated_parsed_data).encode("utf-8"))
