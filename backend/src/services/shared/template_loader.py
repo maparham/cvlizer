@@ -21,8 +21,8 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
-# Path to templates directory (assuming running from backend/)
-TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
+# Path to backend/src/templates/ (this file lives under services/shared/)
+TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "templates"
 CONFIG_FILE = TEMPLATES_DIR / "config.json"
 
 
