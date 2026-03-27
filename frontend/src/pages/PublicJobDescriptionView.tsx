@@ -119,7 +119,7 @@ const PublicJobDescriptionView: React.FC = () => {
               alignItems: "center",
               gridTemplateColumns: {
                 xs: "1fr",
-                sm: "minmax(0, 1fr) auto auto",
+                sm: "minmax(0, 1fr) auto minmax(0, 1fr)",
               },
               gap: 2,
             }}
