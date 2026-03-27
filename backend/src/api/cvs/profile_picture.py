@@ -16,8 +16,8 @@ from sqlalchemy.orm import Session
 from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import get_db
 from src.models.user import User
-from src.services.cv_service import get_cv_by_id, update_cv
-from src.services.file_service import (
+from src.services.cv.cv_service import get_cv_by_id, update_cv
+from src.services.platform.file_service import (
     delete_file,
     resolve_profile_picture_path,
     save_profile_picture,

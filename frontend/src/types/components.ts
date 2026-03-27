@@ -50,6 +50,8 @@ export interface BaseSectionProps {
   onDelete?: () => void;
   /** If true, show delete icon (only custom sections can be deleted). */
   isCustomSection?: boolean;
+  /** Read-only mode for public rendering; hides editing controls and actions. */
+  readOnly?: boolean;
 }
 
 /**
@@ -100,6 +102,7 @@ export interface SectionProps<T = unknown> {
   onHide?: () => void;
   onDelete?: () => void;
   isCustomSection?: boolean;
+  readOnly?: boolean;
 }
 
 /**
@@ -158,6 +161,7 @@ export interface ArraySectionProps<T> {
   onHide?: () => void;
   onDelete?: () => void;
   isCustomSection?: boolean;
+  readOnly?: boolean;
 }
 
 /**

@@ -2,8 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { CVData, CVSection, CVSectionType } from "../types";
 import {
   AVAILABLE_SECTIONS,
-  getSectionsInDisplayOrder,
 } from "../components/cv/constants";
+import {
+  buildCvSectionsFromData,
+  isSectionEmpty,
+} from "../utils/buildCvSectionsFromData";
 
 interface SectionManagementState {
   sections: CVSection[];
@@ -29,101 +32,12 @@ export const useSectionManagement = ({
   cvData,
   onSave,
 }: UseSectionManagementProps): SectionManagementState => {
-  // Helper function to check if a section is empty
-  const isSectionEmpty = useCallback(
-    (sectionId: string, cvData: CVData): boolean => {
-      // Custom sections: look up by id in custom_sections
-      const customItem = cvData.custom_sections?.find((s) => s.id === sectionId);
-      if (customItem !== undefined) {
-        return !customItem.content || customItem.content.trim() === "";
-      }
-
-      const data = cvData[sectionId as keyof CVData];
-      if (!data) return true;
-
-      // Check if array is empty
-      if (Array.isArray(data)) {
-        return data.length === 0;
-      }
-
-      // Check if object is empty
-      if (typeof data === "object") {
-        // Personal info should always be visible in new CVs (it's a core required section)
-        if (sectionId === "personal_info") {
-          // Always show personal_info if it exists (even if fields are empty)
-          return false;
-        }
-
-        if (sectionId === "skills") {
-          const skills = data as {
-            technical?: string[];
-            soft?: string[];
-            languages?: string[];
-          };
-          return (
-            (!skills.technical || skills.technical.length === 0) &&
-            (!skills.soft || skills.soft.length === 0) &&
-            (!skills.languages || skills.languages.length === 0)
-          );
-        }
-
-        // Generic object check (fallback)
-        return Object.keys(data).length === 0;
-      }
-
-      return false;
-    },
-    [],
-  );
-
-  // Function to create sections dynamically based on CV data
-  const createSectionsFromCVData = useCallback(
-    (cvData: CVData): CVSection[] => {
-      if (!cvData) return [];
-
-      const sections: CVSection[] = [];
-      let order = 0;
-
-      // Get sections that have data in the CV
-      const sectionsWithData = getSectionsInDisplayOrder(
-        AVAILABLE_SECTIONS.filter((section) => {
-          return !isSectionEmpty(section.id, cvData);
-        }).map((s) => s.id),
-      );
-
-      sectionsWithData.forEach((sectionDef) => {
-        sections.push({
-          id: sectionDef.id,
-          type: sectionDef.id as CVSectionType,
-          title: sectionDef.name,
-          visible: true,
-          order: order++,
-        });
-      });
-
-      // Include custom sections (includes why_good_fit when present)
-      const customSections = cvData.custom_sections ?? [];
-      customSections.forEach((item) => {
-        sections.push({
-          id: item.id,
-          type: "custom" as CVSectionType,
-          title: item.title || "Section",
-          visible: true,
-          order: order++,
-        });
-      });
-
-      return sections;
-    },
-    [isSectionEmpty],
-  );
-
   // Initialize sections from CV data or use defaults
   const [sections, setSections] = useState<CVSection[]>(() => {
     if (cvData?.section_config?.sections) {
       return cvData.section_config.sections;
     }
-    return createSectionsFromCVData(cvData);
+    return buildCvSectionsFromData(cvData);
   });
 
   // Update sections when cvData changes
@@ -154,11 +68,11 @@ export const useSectionManagement = ({
         setSections(filteredSections);
       } else {
         // Create sections from CV data (only sections with data)
-        const newSections = createSectionsFromCVData(cvData);
+        const newSections = buildCvSectionsFromData(cvData);
         setSections(newSections);
       }
     }
-  }, [cvData, createSectionsFromCVData, isSectionEmpty]);
+  }, [cvData]);
 
   const toggleSectionVisibility = useCallback(
     (sectionId: string) => {
@@ -428,7 +342,7 @@ export const useSectionManagement = ({
   );
 
   const resetToDefaultOrder = useCallback(() => {
-    const defaultSections = createSectionsFromCVData(cvData);
+    const defaultSections = buildCvSectionsFromData(cvData);
     setSections(defaultSections);
 
     // Update the section configuration in CV data
@@ -440,7 +354,7 @@ export const useSectionManagement = ({
     };
 
     onSave(updatedCvData, "Section order reset to default");
-  }, [cvData, createSectionsFromCVData, onSave]);
+  }, [cvData, onSave]);
 
   const getAvailableSectionsToAdd = useCallback(() => {
     // Get all sections that exist (both visible and hidden) - they should not appear in available sections
@@ -459,14 +373,14 @@ export const useSectionManagement = ({
   }, [sections]);
 
   const isDefaultOrder = useCallback(() => {
-    const defaultSections = createSectionsFromCVData(cvData);
+    const defaultSections = buildCvSectionsFromData(cvData);
     return sections.every(
       (section, index) =>
         defaultSections[index] &&
         section.id === defaultSections[index].id &&
         section.order === index,
     );
-  }, [sections, cvData, createSectionsFromCVData]);
+  }, [sections, cvData]);
 
   const updateSectionTitle = useCallback(
     (sectionId: string, newTitle: string) => {

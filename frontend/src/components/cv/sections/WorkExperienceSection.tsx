@@ -475,6 +475,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
   sectionId,
   onHide,
   onDelete,
+  readOnly,
 }) => {
   // Get quality analysis from store (independent of jobs)
   const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
@@ -630,6 +631,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
         sectionId={sectionId}
         onHide={onHide}
         onDelete={onDelete}
+        readOnly={readOnly}
         data={data as WorkExperience[]}
         onUpdate={onUpdate}
         onSave={onSave}

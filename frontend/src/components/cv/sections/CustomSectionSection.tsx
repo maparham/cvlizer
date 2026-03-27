@@ -37,6 +37,7 @@ const CustomSectionSection: React.FC<CustomSectionSectionProps> = ({
   onHide,
   onDelete,
   isCustomSection = true,
+  readOnly,
 }) => {
   const safeData = data ?? { id: sectionId, title: "", content: "" };
   const { confirm: overwriteConfirm } = useOverwriteConfirm();
@@ -184,6 +185,7 @@ const CustomSectionSection: React.FC<CustomSectionSectionProps> = ({
       onHide={onHide}
       onDelete={onDelete}
       isCustomSection={isCustomSection}
+      readOnly={readOnly}
     />
   );
 };

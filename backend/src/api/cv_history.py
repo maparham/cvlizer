@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from src.middleware.clerk_auth import get_current_user, get_effective_user
 from src.models import CV, CVHistory, User, get_db
-from src.services.cv_diff_service import cv_diff_service
+from src.services.cv.cv_diff_service import cv_diff_service
 from src.utils.feature_flags import is_cv_history_enabled
 from src.utils.history_validation import (
     ValidatedCreateHistoryRequest,

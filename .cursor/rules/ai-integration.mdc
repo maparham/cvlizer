@@ -5,10 +5,10 @@ description: AI integration patterns and OpenAI service conventions
 # AI Integration & OpenAI Service Patterns
 
 ## OpenAI Service Architecture
-- Use [ai_service.py](mdc:backend/src/services/ai_service.py) for all operations
+- Use [ai_service](mdc:backend/src/services/ai_service/__init__.py) for all operations
 - Implement async and sync versions
 - Check `is_ai_enabled()` before operations
-- Log all usage with [ai_usage_service.py](mdc:backend/src/services/ai_usage_service.py)
+- Log all usage with [ai_usage_service.py](mdc:backend/src/services/ai_ops/ai_usage_service.py)
 
 ## Key Responsibilities
 - CV parsing with structured prompts

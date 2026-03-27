@@ -21,11 +21,13 @@ from src.middleware.clerk_auth import get_effective_user
 from src.models.base import get_db
 from src.models.user import User
 from src.services.ai_service import extract_job_description_with_ai
-from src.services.cv_parsing_service import parse_cv_with_openai
-from src.services.cv_service import create_cv
-from src.services.file_service import save_uploaded_file, validate_file
-from src.services.job_description_service import create_job_description_for_user_with_cvs
-from src.services.url_parsing_service import (
+from src.services.cv.cv_parsing_service import parse_cv_with_openai
+from src.services.cv.cv_service import create_cv
+from src.services.platform.file_service import save_uploaded_file, validate_file
+from src.services.job_descriptions.job_description_service import (
+    create_job_description_for_user_with_cvs,
+)
+from src.services.job_descriptions.url_parsing_service import (
     _extract_raw_content_with_fallback,
     _is_search_results_page,
 )

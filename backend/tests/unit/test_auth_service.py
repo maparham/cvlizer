@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from src.models.user import User
-from src.services.auth_service import (
+from src.services.users.auth_service import (
     authenticate_user,
     create_access_token,
     create_refresh_token,
@@ -19,8 +19,8 @@ from src.services.auth_service import (
 class TestAuthService:
     """Test cases for authentication service"""
 
-    @patch("src.services.auth_service.pwd_context.hash")
-    @patch("src.services.auth_service.pwd_context.verify")
+    @patch("src.services.users.auth_service.pwd_context.hash")
+    @patch("src.services.users.auth_service.pwd_context.verify")
     def test_verify_password(self, mock_verify, mock_hash):
         """Test password verification"""
         password = "testpassword123"
@@ -33,7 +33,7 @@ class TestAuthService:
         mock_verify.return_value = False
         assert verify_password("wrongpassword", hashed) == False
 
-    @patch("src.services.auth_service.pwd_context.hash")
+    @patch("src.services.users.auth_service.pwd_context.hash")
     def test_get_password_hash(self, mock_hash):
         """Test password hashing"""
         password = "testpassword123"
@@ -89,8 +89,8 @@ class TestAuthService:
         payload = verify_token(access_token, "refresh")
         assert payload is None
 
-    @patch("src.services.auth_service.pwd_context.hash")
-    @patch("src.services.auth_service.pwd_context.verify")
+    @patch("src.services.users.auth_service.pwd_context.hash")
+    @patch("src.services.users.auth_service.pwd_context.verify")
     def test_authenticate_user_success(self, mock_verify, mock_hash):
         """Test successful user authentication"""
         # Create a real user object with proper password hash
@@ -108,8 +108,8 @@ class TestAuthService:
 
         assert result == user
 
-    @patch("src.services.auth_service.pwd_context.hash")
-    @patch("src.services.auth_service.pwd_context.verify")
+    @patch("src.services.users.auth_service.pwd_context.hash")
+    @patch("src.services.users.auth_service.pwd_context.verify")
     def test_authenticate_user_wrong_password(self, mock_verify, mock_hash):
         """Test authentication with wrong password"""
         # Create a real user object with different password hash
@@ -147,7 +147,7 @@ class TestAuthService:
         assert result == mock_user
         db.query.assert_called_once_with(User)
 
-    @patch("src.services.auth_service.pwd_context.hash")
+    @patch("src.services.users.auth_service.pwd_context.hash")
     def test_create_user(self, mock_hash):
         """Test user creation"""
         mock_hash.return_value = "$2b$12$mockedhash"
@@ -157,7 +157,7 @@ class TestAuthService:
         db.commit.return_value = None
         db.refresh.return_value = None
 
-        with patch("src.services.auth_service.User") as mock_user_class:
+        with patch("src.services.users.auth_service.User") as mock_user_class:
             mock_user_class.return_value = mock_user
 
             result = create_user(db, "test@example.com", "testpassword123")

@@ -26,7 +26,7 @@ from src.schemas.cv_quality_schemas import (
     FieldRetryResponseSchema,
     IssueSchema,
 )
-from src.services.cv_service import get_cv_by_id
+from src.services.cv.cv_service import get_cv_by_id
 from src.services.ai_service.single_field_quality_service import (
     generate_single_field_correction,
     get_max_draft_history_per_field,

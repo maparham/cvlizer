@@ -815,7 +815,7 @@ class TestJobDescriptionPersistenceAfterCVDeletion:
         user_id = jd.user_id
 
         # Delete CV #1 directly via database (bypassing API auth)
-        from src.services.cv_service import delete_cv
+        from src.services.cv.cv_service import delete_cv
 
         result = delete_cv(db_session, cv1.id, test_user.id)
         assert result is True, "CV deletion should succeed"
@@ -857,13 +857,13 @@ class TestJobDescriptionPersistenceAfterCVDeletion:
         jd_id = jd.id
 
         # Delete CV #1 (original creator) directly via database
-        from src.services.cv_service import delete_cv
+        from src.services.cv.cv_service import delete_cv
 
         result = delete_cv(db_session, cv1.id, test_user.id)
         assert result is True, "CV deletion should succeed"
 
         # CRITICAL: Verify JD can be associated with CV #2
-        from src.services.job_description_service import (
+        from src.services.job_descriptions.job_description_service import (
             associate_jd_with_cv as service_associate,
         )
 
@@ -922,7 +922,7 @@ class TestJobDescriptionPersistenceAfterCVDeletion:
         jd_id = jd.id
 
         # Delete CV #1 (original creator) directly via database
-        from src.services.cv_service import delete_cv
+        from src.services.cv.cv_service import delete_cv
 
         result = delete_cv(db_session, cv1.id, test_user.id)
         assert result is True, "CV deletion should succeed"
@@ -991,7 +991,7 @@ class TestJobDescriptionPersistenceAfterCVDeletion:
         jd_id = jd.id
 
         # Delete CV #2 (not the original creator) directly via database
-        from src.services.cv_service import delete_cv
+        from src.services.cv.cv_service import delete_cv
 
         result = delete_cv(db_session, cv2.id, test_user.id)
         assert result is True, "CV deletion should succeed"
@@ -1050,7 +1050,7 @@ class TestJobDescriptionPersistenceAfterCVDeletion:
         jd_id = jd.id
 
         # Delete all CVs directly via database
-        from src.services.cv_service import delete_cv
+        from src.services.cv.cv_service import delete_cv
 
         for cv_id in [cv1.id, cv2.id, cv3.id]:
             result = delete_cv(db_session, cv_id, test_user.id)
@@ -1077,7 +1077,7 @@ class TestJobDescriptionPersistenceAfterCVDeletion:
 
         # CRITICAL: Verify JD can still be associated with new CVs
         cv_new = create_test_cv(db_session, test_user.id, "NewCV")
-        from src.services.job_description_service import (
+        from src.services.job_descriptions.job_description_service import (
             associate_jd_with_cv as service_associate,
         )
 

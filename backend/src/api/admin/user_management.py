@@ -28,7 +28,7 @@ from src.models.base import get_db
 from src.models.cv import CV
 from src.models.job_description import JobDescription
 from src.models.user import User
-from src.services.user_service import delete_user_and_all_data
+from src.services.users.user_service import delete_user_and_all_data
 
 from .models import UserDetail, UserSummary
 

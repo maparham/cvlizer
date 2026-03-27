@@ -27,8 +27,8 @@ from src.models.base import SessionLocal, get_db
 from src.models.cv import CV
 from src.models.job_description import JobDescription
 from src.models.user import User
-from src.services.cv_service import get_cv_by_id
-from src.services.job_description_service import (
+from src.services.cv.cv_service import get_cv_by_id
+from src.services.job_descriptions.job_description_service import (
     associate_jd_with_cv,
     create_job_description_for_cv,
     create_job_description_for_user,
@@ -44,7 +44,7 @@ from src.services.job_description_service import (
     list_job_descriptions_for_user,
     update_job_description_owned_by,
 )
-from src.services.url_parsing_service import (
+from src.services.job_descriptions.url_parsing_service import (
     MIN_PASTED_JOB_TEXT_CHARS,
     PASTED_JOB_SOURCE_MARKER,
     _is_search_results_page,
@@ -187,7 +187,7 @@ def parse_job_url_sync(task_id: str, user_id: str, url: str):
     """Synchronous job URL parsing function to run in thread pool."""
 
     def parse_with_session(db: Session) -> Dict[str, Any]:
-        from src.services.url_parsing_service import parse_job_url
+        from src.services.job_descriptions.url_parsing_service import parse_job_url
 
         return parse_job_url(url, user_id=user_id, db_session=db)
 

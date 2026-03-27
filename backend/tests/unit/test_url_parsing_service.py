@@ -10,7 +10,7 @@ from tests.unit.fixtures.selenium_stubs import (
     DummyIframeDriver,
     DummyWait,
 )
-from src.services.url_parsing_service import (
+from src.services.job_descriptions.url_parsing_service import (
     _extract_iframe_content_with_browser_automation,
     _extract_jsonld_job_posting,
     _extract_raw_content,
@@ -66,7 +66,9 @@ def test_extract_jsonld_job_posting_handles_non_string_description():
 def test_extract_iframe_content_collects_multiple_frames():
     """Iframe text extraction concatenates substantial frame content."""
     driver = DummyIframeDriver()
-    with patch("src.services.url_parsing_service.WebDriverWait", DummyWait):
+    with patch(
+        "src.services.job_descriptions.url_parsing_service.WebDriverWait", DummyWait
+    ):
         text = _extract_iframe_content_with_browser_automation(driver)
 
     assert "x" * 120 in text
@@ -74,8 +76,10 @@ def test_extract_iframe_content_collects_multiple_frames():
     assert "short" not in text
 
 
-@patch("src.services.url_parsing_service._parse_with_openai")
-@patch("src.services.url_parsing_service._extract_raw_content_with_fallback")
+@patch("src.services.job_descriptions.url_parsing_service._parse_with_openai")
+@patch(
+    "src.services.job_descriptions.url_parsing_service._extract_raw_content_with_fallback"
+)
 def test_parse_job_url_always_uses_raw_extraction_then_ai(mock_raw, mock_ai):
     """URL parsing should always use raw extraction, then pass content to AI."""
     mock_raw.return_value = "Extracted raw posting text " * 30
@@ -93,8 +97,10 @@ def test_parse_job_url_always_uses_raw_extraction_then_ai(mock_raw, mock_ai):
     mock_ai.assert_called_once()
 
 
-@patch("src.services.url_parsing_service._parse_with_openai")
-@patch("src.services.url_parsing_service._extract_raw_content_with_fallback")
+@patch("src.services.job_descriptions.url_parsing_service._parse_with_openai")
+@patch(
+    "src.services.job_descriptions.url_parsing_service._extract_raw_content_with_fallback"
+)
 def test_parse_job_url_returns_error_when_raw_extraction_fails(mock_raw, mock_ai):
     """Raw extraction failure should return a user-facing error without calling AI."""
     mock_raw.return_value = ""
@@ -107,7 +113,7 @@ def test_parse_job_url_returns_error_when_raw_extraction_fails(mock_raw, mock_ai
     mock_ai.assert_not_called()
 
 
-@patch("src.services.url_parsing_service.requests.get")
+@patch("src.services.job_descriptions.url_parsing_service.requests.get")
 def test_extract_raw_content_does_not_early_return_short_structured(mock_get):
     """Short JSON-LD should not bypass the normal text extraction path."""
     html = (
@@ -137,18 +143,20 @@ def test_extract_raw_content_does_not_early_return_short_structured(mock_get):
     assert "Long page content" in content
 
 
-@patch("src.services.url_parsing_service.time.sleep", return_value=None)
+@patch("src.services.job_descriptions.url_parsing_service.time.sleep", return_value=None)
 @patch(
-    "src.services.url_parsing_service._extract_iframe_content_with_browser_automation",
+    "src.services.job_descriptions.url_parsing_service._extract_iframe_content_with_browser_automation",
     return_value="",
 )
-@patch("src.services.url_parsing_service.webdriver.Chrome")
+@patch("src.services.job_descriptions.url_parsing_service.webdriver.Chrome")
 def test_browser_automation_structured_short_falls_back_to_parent_text(
     mock_chrome, _mock_iframe, _mock_sleep
 ):
     """Short structured data should not short-circuit browser extraction."""
     mock_chrome.return_value = DummyBrowserDriver()
-    with patch("src.services.url_parsing_service.WebDriverWait", DummyWait):
+    with patch(
+        "src.services.job_descriptions.url_parsing_service.WebDriverWait", DummyWait
+    ):
         content = _extract_with_browser_automation("https://example.com/job/structured")
 
     assert "Parent content" in content
@@ -173,8 +181,10 @@ def test_browser_automation_structured_short_falls_back_to_parent_text(
         ),
     ],
 )
-@patch("src.services.url_parsing_service._extract_with_browser_automation")
-@patch("src.services.url_parsing_service._extract_raw_content")
+@patch(
+    "src.services.job_descriptions.url_parsing_service._extract_with_browser_automation"
+)
+@patch("src.services.job_descriptions.url_parsing_service._extract_raw_content")
 def test_extract_raw_content_with_fallback_rejects_short_content(
     mock_raw,
     mock_browser,

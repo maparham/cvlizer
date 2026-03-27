@@ -9,8 +9,8 @@ from src.models.cv import CV
 from src.models.job_description import JobDescription
 from src.models.cv_job_description import CVJobDescription
 from src.models.user import User
-from src.services.cv_parsing_service import parse_cv_with_openai
-from src.services.cv_service import (
+from src.services.cv.cv_parsing_service import parse_cv_with_openai
+from src.services.cv.cv_service import (
     create_cv,
     delete_cv,
     get_cv_by_id,
@@ -33,7 +33,7 @@ class TestCVService:
         # get_unique_filename_for_user queries existing filenames
         db.query.return_value.filter.return_value.all.return_value = []
 
-        with patch("src.services.cv_service.CV") as mock_cv_class:
+        with patch("src.services.cv.cv_service.CV") as mock_cv_class:
             mock_cv_class.return_value = mock_cv
 
             result = create_cv(
@@ -161,7 +161,7 @@ class TestCVService:
 
         assert result == False
 
-    @patch("src.services.file_service.extract_text_from_file")
+    @patch("src.services.platform.file_service.extract_text_from_file")
     @patch("src.services.ai_service.parse_cv_text_with_openai")
     @pytest.mark.asyncio
     async def test_parse_cv_with_openai_success(self, mock_parse_text, mock_extract_text):
@@ -180,7 +180,7 @@ class TestCVService:
         mock_parse_text.assert_called_once()
         assert mock_parse_text.call_args[0][0] == "Extracted text content"
 
-    @patch("src.services.file_service.extract_text_from_file")
+    @patch("src.services.platform.file_service.extract_text_from_file")
     @pytest.mark.asyncio
     async def test_parse_cv_with_openai_error(self, mock_extract_text):
         """Test CV parsing with error"""

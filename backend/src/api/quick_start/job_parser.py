@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 from fastapi import Request
 
 from src.services.ai_service import extract_job_description_with_ai
-from src.services.url_parsing_service import (
+from src.services.job_descriptions.url_parsing_service import (
     _extract_raw_content_with_fallback,
     _is_search_results_page,
 )

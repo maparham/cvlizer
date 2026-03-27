@@ -93,6 +93,7 @@ function IndividualItemSection<T>({
   onHide,
   onDelete,
   isCustomSection,
+  readOnly = false,
 }: IndividualItemSectionProps<T>) {
   // Custom hooks for state management
   const {
@@ -467,19 +468,20 @@ function IndividualItemSection<T>({
     <ErrorBoundary fallback={CompactErrorFallback}>
       <BaseSection
         title={title}
-        isEditing={isEditing || editingItemIndex !== null}
-        onEdit={onEdit}
-        onClose={onClose}
+        isEditing={readOnly ? false : isEditing || editingItemIndex !== null}
+        onEdit={readOnly ? undefined : onEdit}
+        onClose={readOnly ? undefined : onClose}
         onSave={undefined}
         onCancel={undefined}
         isValid={true}
         onTitleSave={onTitleSave}
         sectionId={sectionId}
-        onHide={onHide}
-        onDelete={onDelete}
+        onHide={readOnly ? undefined : onHide}
+        onDelete={readOnly ? undefined : onDelete}
         isCustomSection={isCustomSection}
         headerActionsLeft={additionalHeaderActions}
         headerActions={
+          readOnly ? null : (
           <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
             {/* Right-side actions: Sort and Add */}
             {/* Sort controls */}
@@ -521,9 +523,12 @@ function IndividualItemSection<T>({
               </Tooltip>
             )}
           </Box>
+          )
         }
         editButton={
-          editingItemIndex !== null ? (
+          readOnly ? (
+            <span style={{ display: "none" }} />
+          ) : editingItemIndex !== null ? (
             <Tooltip title="Cancel editing">
               <span style={{ position: "absolute", top: 0, right: 0 }}>
                 <IconButton
@@ -545,6 +550,7 @@ function IndividualItemSection<T>({
             <span style={{ display: "none" }} />
           )
         }
+        readOnly={readOnly}
       >
         {itemsData.length === 0 && editingItemIndex === null ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
@@ -577,8 +583,8 @@ function IndividualItemSection<T>({
 
             {/* Drag and Drop Context for reordering existing items */}
             <DragDropContext
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEndComplete}
+              onDragStart={readOnly ? () => {} : handleDragStart}
+              onDragEnd={readOnly ? () => {} : handleDragEndComplete}
             >
               <Droppable droppableId="items">
                 {(provided) => (
@@ -588,7 +594,7 @@ function IndividualItemSection<T>({
                         key={`item-${index}`}
                         draggableId={`item-${index}`}
                         index={index}
-                        isDragDisabled={editingItemIndex !== null}
+                        isDragDisabled={readOnly || editingItemIndex !== null}
                       >
                         {(provided, snapshot) => (
                           <Box
@@ -697,26 +703,32 @@ function IndividualItemSection<T>({
                               // Show display view for this item
                               <Box>
                                 {/* Reordering controls - vertically aligned on left edge */}
-                                <ReorderControls
-                                  index={index}
-                                  itemsLength={itemsData.length}
-                                  onMoveUp={handleMoveUpItem}
-                                  onMoveDown={handleMoveDownItem}
-                                  dragHandleProps={provided.dragHandleProps}
-                                />
+                                {!readOnly && (
+                                  <ReorderControls
+                                    index={index}
+                                    itemsLength={itemsData.length}
+                                    onMoveUp={handleMoveUpItem}
+                                    onMoveDown={handleMoveDownItem}
+                                    dragHandleProps={provided.dragHandleProps}
+                                  />
+                                )}
 
-                                <ItemControls
-                                  item={item}
-                                  index={index}
-                                  title={title}
-                                  editingItemIndex={editingItemIndex}
-                                  isAnotherItemBeingEdited={
-                                    isAnotherItemBeingEdited
-                                  }
-                                  onEdit={handleEditItem}
-                                  onDelete={handleDeleteItemClick}
-                                  renderItemDisplay={renderItemDisplay}
-                                />
+                                {readOnly ? (
+                                  <Box>{renderItemDisplay(item, index)}</Box>
+                                ) : (
+                                  <ItemControls
+                                    item={item}
+                                    index={index}
+                                    title={title}
+                                    editingItemIndex={editingItemIndex}
+                                    isAnotherItemBeingEdited={
+                                      isAnotherItemBeingEdited
+                                    }
+                                    onEdit={handleEditItem}
+                                    onDelete={handleDeleteItemClick}
+                                    renderItemDisplay={renderItemDisplay}
+                                  />
+                                )}
                               </Box>
                             )}
                           </Box>
@@ -733,7 +745,8 @@ function IndividualItemSection<T>({
       </BaseSection>
 
       {/* Delete confirmation dialog */}
-      <ConfirmDialog
+      {!readOnly && (
+        <ConfirmDialog
         open={deleteConfirmation.open}
         onClose={() => setDeleteConfirmation({ open: false, index: null })}
         onConfirm={handleConfirmDelete}
@@ -743,7 +756,8 @@ function IndividualItemSection<T>({
         confirmButtonText="Delete"
         confirmButtonColor="error"
         severity="error"
-      />
+        />
+      )}
     </ErrorBoundary>
   );
 }

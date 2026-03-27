@@ -45,6 +45,10 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const LoginRedirect = lazy(() => import("./components/LoginRedirect"));
 const Legal = lazy(() => import("./pages/Legal"));
 const Feedback = lazy(() => import("./pages/Feedback"));
+const PublicCVView = lazy(() => import("./pages/PublicCVView"));
+const PublicJobDescriptionView = lazy(
+  () => import("./pages/PublicJobDescriptionView"),
+);
 
 // Loading component
 const PageLoader = () => (
@@ -119,6 +123,15 @@ const AppContent = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/quick-start" element={<QuickStart />} />
           <Route path="/legal" element={<Legal />} />
+          <Route path="/public/cv/:token" element={<PublicCVView />} />
+          <Route
+            path="/public/jd/:token"
+            element={<PublicJobDescriptionView />}
+          />
+          <Route
+            path="/public/job-description/:token"
+            element={<PublicJobDescriptionView />}
+          />
           <Route
             path="/feedback"
             element={

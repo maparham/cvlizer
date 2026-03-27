@@ -20,7 +20,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.services.latex_export_service import (
+from src.services.cv.latex_export_service import (
     generate_cv_latex,
     compile_pdf_from_latex,
     is_latex_available,

@@ -24,12 +24,18 @@ from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import SessionLocal, get_db
 from src.models.preview_job import PreviewJob
 from src.models.user import User
-from src.services.cv_service import get_cv_by_id
-from src.services.file_service import get_profile_picture_settings
-from src.services.latex_export_service import compile_pdf_from_latex, is_latex_available
-from src.services.latex_export_service import generate_cv_latex
-from src.services.preview_service import generate_blurred_preview, is_preview_available
-from src.services.template_loader import is_template_available
+from src.services.cv.cv_service import get_cv_by_id
+from src.services.platform.file_service import get_profile_picture_settings
+from src.services.cv.latex_export_service import (
+    compile_pdf_from_latex,
+    is_latex_available,
+)
+from src.services.cv.latex_export_service import generate_cv_latex
+from src.services.platform.preview_service import (
+    generate_blurred_preview,
+    is_preview_available,
+)
+from src.services.shared.template_loader import is_template_available
 from src.utils.background_tasks import executor
 from src.utils.preview_storage import (
     delete_preview_files,

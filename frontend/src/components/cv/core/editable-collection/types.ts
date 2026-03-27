@@ -38,6 +38,7 @@ export interface IndividualItemSectionProps<T> {
   onHide?: () => void
   onDelete?: () => void
   isCustomSection?: boolean
+  readOnly?: boolean
 }
 
 export interface ItemControlsProps<T> {

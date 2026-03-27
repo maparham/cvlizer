@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.services.cv_diff_service import CVDiffService, cv_diff_service
+from src.services.cv.cv_diff_service import CVDiffService, cv_diff_service
 
 
 class TestCVDiffService:

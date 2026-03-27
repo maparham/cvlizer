@@ -18,8 +18,8 @@ from src.dependencies.ai_quota import require_ai_quota
 from src.middleware.clerk_auth import get_effective_user_lightweight
 from src.models.base import get_db
 from src.models.user import User
-from src.services.cv_service import create_cv
-from src.services.file_service import save_uploaded_file, validate_file
+from src.services.cv.cv_service import create_cv
+from src.services.platform.file_service import save_uploaded_file, validate_file
 
 from src.utils.task_logging import make_task_exception_logger
 

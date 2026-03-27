@@ -34,6 +34,9 @@ class JobDescription(Base):
     company = Column(String(255), nullable=True)
     location = Column(String(255), nullable=True)
     hidden = Column(Boolean, default=False, nullable=False)
+    public_share_token = Column(String(128), unique=True, nullable=True, index=True)
+    is_public_shared = Column(Boolean, default=False, nullable=False, index=True)
+    public_share_created_at = Column(DateTime(timezone=True), nullable=True)
 
     # Status tracking fields
     status = Column(String(50), default="open", nullable=False)

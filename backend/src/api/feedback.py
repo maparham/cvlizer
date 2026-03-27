@@ -17,7 +17,7 @@ from src.schemas.feedback import (
     FeedbackResponse,
     FeedbackUpdate,
 )
-from src.services.feedback_service import (
+from src.services.platform.feedback_service import (
     create_feedback,
     get_feedback_stats,
     list_all_feedback,

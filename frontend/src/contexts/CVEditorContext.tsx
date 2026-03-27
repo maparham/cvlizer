@@ -12,7 +12,12 @@
  * Note: This is a large context that coordinates multiple editor features.
  * Consider breaking into smaller contexts if complexity grows further.
  */
-import React, { createContext, useContext, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  ReactNode,
+} from "react";
 import { CVData, CVSection, EditingIndividualItem } from "../types";
 import { usePDFCVEditor } from "../hooks/usePDFCVEditor";
 import { ValidationError } from "../utils/validation";
@@ -132,6 +137,69 @@ export const CVEditorProvider: React.FC<CVEditorProviderProps> = ({
     <CVEditorContext.Provider value={contextValue}>
       {children}
     </CVEditorContext.Provider>
+  );
+};
+
+const noop = () => {};
+const noopAsync = async () => {};
+
+/**
+ * Minimal CV editor context for read-only public pages. Supplies empty
+ * validation state and no-op handlers so sections using useFieldValidation /
+ * useItemValidation do not require the full PDF editor stack.
+ */
+export const PublicCVEditorStubProvider: React.FC<{
+  children: ReactNode;
+  cvData: CVData;
+}> = ({ children, cvData }) => {
+  const value = useMemo<CVEditorContextType>(
+    () => ({
+      cvData,
+      onUpdateCV: noop,
+      onSave: noopAsync,
+      sections: [],
+      toggleSectionVisibility: noop,
+      addNewSection: noop,
+      addCustomSection: noop,
+      removeSection: noop,
+      deleteSectionPermanently: noop,
+      resetToDefaultOrder: noop,
+      isDefaultOrder: () => true,
+      getAvailableSectionsToAdd: () => [],
+      updateSectionTitle: async () => {},
+      activeId: null,
+      handleDragStart: noop,
+      handleDragEnd: noop,
+      editingSection: null,
+      handleSectionEdit: noop,
+      handleSectionClose: noop,
+      requestSectionCancel: noop,
+      editingIndividualItem: null,
+      registerIndividualItemEditing: () => "success" as const,
+      unregisterIndividualItemEditing: noop,
+      cancelIndividualItemEditing: noop,
+      requestIndividualItemCancel: noop,
+      onUnsavedChanges: noop,
+      hasUnsavedChanges: false,
+      editingSections: new Set(),
+      pendingChanges: new Map(),
+      clearUnsavedChanges: noop,
+      clearEditingState: noop,
+      showUnsavedChangesDialog: false,
+      handleUnsavedChangesDialogClose: noop,
+      handleUnsavedChangesDialogConfirm: noop,
+      showResetDialog: false,
+      handleResetClick: noop,
+      setShowResetDialog: noop,
+      validationErrors: [],
+      setValidationErrors: noop,
+      clearValidationErrors: noop,
+    }),
+    [cvData],
+  );
+
+  return (
+    <CVEditorContext.Provider value={value}>{children}</CVEditorContext.Provider>
   );
 };
 

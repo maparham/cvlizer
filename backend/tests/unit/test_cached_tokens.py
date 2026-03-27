@@ -13,7 +13,7 @@ from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 
 from src.models.ai_usage_log import AIUsageLog
-from src.services.ai_usage_service import calculate_cost, log_ai_usage
+from src.services.ai_ops.ai_usage_service import calculate_cost, log_ai_usage
 from src.services.ai_service.common import extract_cached_tokens
 
 
@@ -251,7 +251,7 @@ class TestCostCalculationWithCachedTokens:
 class TestAIUsageLogging:
     """Test suite for AI usage logging with cached tokens."""
 
-    @patch("src.services.ai_usage_service.calculate_cost")
+    @patch("src.services.ai_ops.ai_usage_service.calculate_cost")
     def test_log_ai_usage_with_cached_tokens(self, mock_calculate_cost, db_session):
         """Test logging AI usage with cached tokens."""
         # Arrange
@@ -300,7 +300,7 @@ class TestAIUsageLogging:
             provider=None,
         )
 
-    @patch("src.services.ai_usage_service.calculate_cost")
+    @patch("src.services.ai_ops.ai_usage_service.calculate_cost")
     def test_log_ai_usage_without_cached_tokens(self, mock_calculate_cost, db_session):
         """Test logging AI usage without cached tokens (backward compatibility)."""
         # Arrange
@@ -328,7 +328,7 @@ class TestAIUsageLogging:
             "gpt-4o-mini", 1000, 500, 0, service_tier=None, provider=None
         )
 
-    @patch("src.services.ai_usage_service.calculate_cost")
+    @patch("src.services.ai_ops.ai_usage_service.calculate_cost")
     def test_log_ai_usage_with_service_tier(self, mock_calculate_cost, db_session):
         """Test logging AI usage with service_tier stores tier and uses tier cost."""
         mock_calculate_cost.return_value = 0.000225  # 0.5 × 0.00045 for flex
@@ -370,7 +370,7 @@ class TestAIUsageLogging:
         assert abs(usage_log.estimated_cost - expected_est) < 0.000001
         assert usage_log.provider_cost == 0.002
 
-    @patch("src.services.ai_usage_service.calculate_cost")
+    @patch("src.services.ai_ops.ai_usage_service.calculate_cost")
     def test_log_ai_usage_without_provider_cost_uses_calculate_cost(
         self, mock_calculate_cost, db_session
     ):

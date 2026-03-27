@@ -34,7 +34,7 @@ from sqlalchemy.orm import Session, joinedload
 from src.models.cv import CV
 from src.models.cv_job_description import CVJobDescription
 from src.models.job_description import JobDescription
-from src.services.cv_service import get_cv_by_id
+from src.services.cv.cv_service import get_cv_by_id
 
 _UNSET = object()
 

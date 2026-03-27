@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from src.middleware.clerk_auth import get_effective_user
 from src.models.base import get_db
 from src.models.user import User
-from src.services import quota_service
+from src.services.platform import quota_service
 
 router = APIRouter(tags=["usage"])
 

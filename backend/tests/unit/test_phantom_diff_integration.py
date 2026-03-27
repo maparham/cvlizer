@@ -217,7 +217,7 @@ class TestDiffServiceRobustness:
 
     def setup_method(self):
         """Set up test fixtures."""
-        from src.services.cv_diff_service import CVDiffService
+        from src.services.cv.cv_diff_service import CVDiffService
 
         self.diff_service = CVDiffService()
 

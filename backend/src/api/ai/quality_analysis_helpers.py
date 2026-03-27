@@ -19,7 +19,7 @@ from src.schemas.cv_quality_schemas import (
     IssueSchema,
     WritingCorrectionSchema,
 )
-from src.services.cv_service import get_cv_by_id, update_cv
+from src.services.cv.cv_service import get_cv_by_id, update_cv
 from src.services.ai_service.writing_corrections_service import apply_html_diff
 
 logger = logging.getLogger(__name__)

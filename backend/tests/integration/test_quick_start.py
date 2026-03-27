@@ -123,7 +123,8 @@ def test_quick_start_preview_rate_limit(client):
             new_callable=AsyncMock,
         ) as mock_job_parse:
             with patch(
-                "src.services.url_parsing_service.parse_job_url", new_callable=AsyncMock
+                "src.services.job_descriptions.url_parsing_service.parse_job_url",
+                new_callable=AsyncMock,
             ) as mock_url_parse:
                 mock_cv_parse.return_value = {"personal_information": {}}
                 mock_job_parse.return_value = {"title": "Test"}
@@ -253,10 +254,11 @@ def test_quick_start_claim_transaction_rollback(
     try:
         # Mock file saving and make JD creation fail
         with patch(
-            "src.services.file_service.save_uploaded_file", new_callable=AsyncMock
+            "src.services.platform.file_service.save_uploaded_file",
+            new_callable=AsyncMock,
         ) as mock_save_file:
             with patch(
-                "src.services.job_description_service.create_job_description_for_user_with_cvs"
+                "src.services.job_descriptions.job_description_service.create_job_description_for_user_with_cvs"
             ) as mock_create_jd:
                 mock_save_file.return_value = (
                     "uploads/test.pdf",

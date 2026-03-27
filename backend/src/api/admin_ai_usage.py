@@ -18,7 +18,7 @@ from src.middleware.clerk_auth import require_admin_allow_impersonating
 from src.models.ai_usage_log import AIUsageLog
 from src.models.base import get_db
 from src.models.user import User
-from src.services.ai_usage_service import (
+from src.services.ai_ops.ai_usage_service import (
     delete_all_usage_logs,
     delete_user_usage_logs,
     get_usage_by_operation,

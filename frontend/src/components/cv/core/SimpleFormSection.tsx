@@ -46,6 +46,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   onHide,
   onDelete,
   isCustomSection,
+  readOnly = false,
 }) => {
   // Memoize default data to prevent unnecessary re-renders
   const defaultData = useMemo(() => {
@@ -177,18 +178,19 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
       title={title}
       isEditing={isEditing}
       isSaving={isSaving}
-      onEdit={onEdit}
-      onClose={onClose}
+      onEdit={readOnly ? undefined : onEdit}
+      onClose={readOnly ? undefined : onClose}
       onSave={!autoSaveMode ? handleSave : undefined}
       onCancel={handleCancel}
       isValid={!autoSaveMode ? validateForm(editData) : true}
-      editButton={null}
+      editButton={readOnly ? <span style={{ display: "none" }} /> : null}
       onTitleSave={onTitleSave}
       sectionId={sectionId}
       showDivider={showDivider}
-      onHide={onHide}
-      onDelete={onDelete}
+      onHide={readOnly ? undefined : onHide}
+      onDelete={readOnly ? undefined : onDelete}
       isCustomSection={isCustomSection}
+      readOnly={readOnly}
     >
       {isEditing ? (
         <Box>{renderForm(editData, updateData, handleSave, handleCancel)}</Box>

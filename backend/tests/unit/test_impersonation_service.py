@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from src.models.impersonation_session import ImpersonationSession
 from src.models.user import User
-from src.services.impersonation_service import (
+from src.services.users.impersonation_service import (
     ImpersonationNotAllowedError,
     cleanup_expired_sessions,
     end_impersonation_session,
@@ -68,21 +68,24 @@ class TestImpersonationService:
         # Mock all internal functions
         with (
             patch(
-                "src.services.impersonation_service.log_admin_action", mock_audit_service
+                "src.services.users.impersonation_service.log_admin_action",
+                mock_audit_service,
             ),
             patch(
-                "src.services.impersonation_service.is_admin_user",
+                "src.services.users.impersonation_service.is_admin_user",
                 side_effect=lambda user: user.is_admin,
             ),
-            patch("src.services.impersonation_service._check_impersonation_enabled"),
-            patch("src.services.impersonation_service._validate_admin_user"),
             patch(
-                "src.services.impersonation_service._validate_target_user",
+                "src.services.users.impersonation_service._check_impersonation_enabled"
+            ),
+            patch("src.services.users.impersonation_service._validate_admin_user"),
+            patch(
+                "src.services.users.impersonation_service._validate_target_user",
                 return_value=target_user,
             ),
-            patch("src.services.impersonation_service._check_rate_limits"),
+            patch("src.services.users.impersonation_service._check_rate_limits"),
             patch(
-                "src.services.impersonation_service.get_active_session_for_admin",
+                "src.services.users.impersonation_service.get_active_session_for_admin",
                 return_value=None,
             ),
         ):
@@ -120,17 +123,20 @@ class TestImpersonationService:
 
         with (
             patch(
-                "src.services.impersonation_service.log_admin_action", mock_audit_service
+                "src.services.users.impersonation_service.log_admin_action",
+                mock_audit_service,
             ),
             patch(
-                "src.services.impersonation_service.is_admin_user",
+                "src.services.users.impersonation_service.is_admin_user",
                 side_effect=lambda user: user.is_admin,
             ),
-            patch("src.services.impersonation_service._check_impersonation_enabled"),
-            patch("src.services.impersonation_service._validate_admin_user"),
-            patch("src.services.impersonation_service._check_rate_limits"),
             patch(
-                "src.services.impersonation_service.get_active_session_for_admin",
+                "src.services.users.impersonation_service._check_impersonation_enabled"
+            ),
+            patch("src.services.users.impersonation_service._validate_admin_user"),
+            patch("src.services.users.impersonation_service._check_rate_limits"),
+            patch(
+                "src.services.users.impersonation_service.get_active_session_for_admin",
                 return_value=None,
             ),
         ):
@@ -159,21 +165,24 @@ class TestImpersonationService:
 
         with (
             patch(
-                "src.services.impersonation_service.log_admin_action", mock_audit_service
+                "src.services.users.impersonation_service.log_admin_action",
+                mock_audit_service,
             ),
             patch(
-                "src.services.impersonation_service.is_admin_user",
+                "src.services.users.impersonation_service.is_admin_user",
                 side_effect=lambda user: user.is_admin,
             ),
-            patch("src.services.impersonation_service._check_impersonation_enabled"),
-            patch("src.services.impersonation_service._validate_admin_user"),
-            patch("src.services.impersonation_service._check_rate_limits"),
             patch(
-                "src.services.impersonation_service.get_active_session_for_admin",
+                "src.services.users.impersonation_service._check_impersonation_enabled"
+            ),
+            patch("src.services.users.impersonation_service._validate_admin_user"),
+            patch("src.services.users.impersonation_service._check_rate_limits"),
+            patch(
+                "src.services.users.impersonation_service.get_active_session_for_admin",
                 return_value=existing_session,
             ),
             patch(
-                "src.services.impersonation_service.end_impersonation_session",
+                "src.services.users.impersonation_service.end_impersonation_session",
                 return_value=True,
             ),
         ):
@@ -188,7 +197,7 @@ class TestImpersonationService:
             )
 
             # Verify the existing session was ended
-            from src.services.impersonation_service import end_impersonation_session
+            from src.services.users.impersonation_service import end_impersonation_session
 
             end_impersonation_session.assert_called_once_with(
                 mock_db, existing_session.id, "ended_by_new_session"
@@ -225,10 +234,11 @@ class TestImpersonationService:
 
         with (
             patch(
-                "src.services.impersonation_service.log_admin_action", mock_audit_service
+                "src.services.users.impersonation_service.log_admin_action",
+                mock_audit_service,
             ),
             patch(
-                "src.services.impersonation_service.is_admin_user",
+                "src.services.users.impersonation_service.is_admin_user",
                 side_effect=lambda user: user.is_admin,
             ),
         ):
@@ -254,10 +264,11 @@ class TestImpersonationService:
 
         with (
             patch(
-                "src.services.impersonation_service.log_admin_action", mock_audit_service
+                "src.services.users.impersonation_service.log_admin_action",
+                mock_audit_service,
             ),
             patch(
-                "src.services.impersonation_service.is_admin_user",
+                "src.services.users.impersonation_service.is_admin_user",
                 side_effect=lambda user: user.is_admin,
             ),
         ):
@@ -407,7 +418,7 @@ class TestImpersonationService:
         )
         mock_db.commit = Mock()
 
-        with patch("src.services.impersonation_service.log_admin_action", Mock()):
+        with patch("src.services.users.impersonation_service.log_admin_action", Mock()):
             result = cleanup_expired_sessions(mock_db)
 
         # Verify cleanup was performed
@@ -422,7 +433,7 @@ class TestImpersonationService:
         mock_db.query.return_value.filter.return_value.all.return_value = []
         mock_db.commit = Mock()
 
-        with patch("src.services.impersonation_service.log_admin_action", Mock()):
+        with patch("src.services.users.impersonation_service.log_admin_action", Mock()):
             result = cleanup_expired_sessions(mock_db)
 
         # Verify no cleanup was performed

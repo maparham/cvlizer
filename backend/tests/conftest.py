@@ -161,7 +161,7 @@ def mock_clerk_auth():
 @pytest.fixture
 def mock_audit_service():
     """Mock audit service for tests"""
-    with patch("src.services.impersonation_service.audit_service") as mock_audit:
+    with patch("src.services.users.impersonation_service.audit_service") as mock_audit:
         yield mock_audit
 
 

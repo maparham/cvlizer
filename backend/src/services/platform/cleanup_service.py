@@ -23,12 +23,12 @@ from sqlalchemy.orm import Session
 from src.models.audit_log import AuditLog
 from src.models.base import SessionLocal
 from src.models.impersonation_session import ImpersonationSession
-from src.services.ai_enhancement_cleanup_service import (
+from src.services.ai_ops.ai_enhancement_cleanup_service import (
     cancel_all_running_ai_tasks,
     cleanup_stuck_ai_enhancements,
 )
-from src.services.impersonation_service import cleanup_expired_sessions
-from src.services.preview_cleanup_service import run_preview_job_cleanup
+from src.services.users.impersonation_service import cleanup_expired_sessions
+from src.services.platform.preview_cleanup_service import run_preview_job_cleanup
 
 logger = logging.getLogger(__name__)
 

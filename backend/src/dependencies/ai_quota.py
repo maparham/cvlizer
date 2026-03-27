@@ -15,7 +15,7 @@ from src.middleware.clerk_auth import (
     is_admin_user,
 )
 from src.models.base import get_db
-from src.services import quota_service
+from src.services.platform import quota_service
 
 
 async def require_ai_quota(

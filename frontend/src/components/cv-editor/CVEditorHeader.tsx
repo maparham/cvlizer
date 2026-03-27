@@ -25,6 +25,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ShareIcon from "@mui/icons-material/Share";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useNavigate } from "react-router-dom";
@@ -38,6 +39,7 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
   onMenuClose,
   anchorEl,
   onExport,
+  onShare,
   onDelete,
   isAdmin,
   isNewCV,
@@ -100,7 +102,14 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
           color: "text.primary",
         }}
       >
-        <Toolbar sx={{ minHeight: "64px !important", px: 3 }}>
+        <Toolbar
+          sx={{
+            flexWrap: "wrap",
+            rowGap: 1,
+            minHeight: { xs: "auto !important", sm: "64px !important" },
+            px: 3,
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <IconButton
               edge="start"
@@ -130,96 +139,144 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
           </Box>
           <Box sx={{ flexGrow: 1 }} />
 
-          {!isNewCV && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<DeleteIcon />}
-              onClick={onDelete}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "flex-end", sm: "center" },
+              gap: { xs: 1.5, sm: 2 },
+              flexShrink: 0,
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
+            <Box
               sx={{
-                mr: 2,
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: 2,
-                borderColor: "error.main",
-                color: "error.main",
-                "&:hover": {
-                  backgroundColor: "error.light",
-                  color: "error.contrastText",
-                  borderColor: "error.dark",
-                },
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 1,
+                alignItems: { xs: "stretch", sm: "center" },
+                flexWrap: { sm: "nowrap" },
+                width: { xs: "100%", sm: "auto" },
               }}
             >
-              Delete
-            </Button>
-          )}
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<PictureAsPdfIcon />}
-            endIcon={<ExpandMoreIcon />}
-            onClick={handleExportMenuOpen}
-            sx={{
-              mr: 2,
-              textTransform: "none",
-              fontWeight: 600,
-              borderRadius: 2,
-              borderColor: "divider",
-              color: "text.primary",
-              "&:hover": {
-                backgroundColor: "action.hover",
-                borderColor: "primary.light"
-              },
-            }}
-          >
-            Export
-          </Button>
-          <Menu
-            anchorEl={exportMenuAnchor}
-            open={Boolean(exportMenuAnchor)}
-            onClose={handleExportMenuClose}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "left",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "left",
-            }}
-          >
-            <MenuItem onClick={handleQuickExport}>
-              <FileDownloadIcon sx={{ mr: 1, fontSize: "1.2rem" }} />
-              Quick Export
-            </MenuItem>
-            <MenuItem onClick={handleAdvancedExport}>
-              <PictureAsPdfIcon sx={{ mr: 1, fontSize: "1.2rem" }} />
-              Advanced Export
-            </MenuItem>
-          </Menu>
-          <UsageChip
-            size="small"
-            showLabel
-            onClick={() => navigate("/profile#usage")}
-            sx={{ mr: 2 }}
-          />
-          <IconButton
-            size="medium"
-            edge="end"
-            aria-label="account of current user"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
-            onClick={onMenuOpen}
-            data-testid="cv-editor-user-menu-button"
-            sx={{
-              color: "text.secondary",
-              "&:hover": {
-                backgroundColor: "action.hover",
-                color: "text.primary",
-              },
-            }}
-          >
-            <AccountCircleIcon />
-          </IconButton>
+              {!isNewCV && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<ShareIcon />}
+                  onClick={onShare}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Share
+                </Button>
+              )}
+
+              {!isNewCV && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  onClick={onDelete}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    borderColor: "error.main",
+                    color: "error.main",
+                    whiteSpace: "nowrap",
+                    "&:hover": {
+                      backgroundColor: "error.light",
+                      color: "error.contrastText",
+                      borderColor: "error.dark",
+                    },
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<PictureAsPdfIcon />}
+                endIcon={<ExpandMoreIcon />}
+                onClick={handleExportMenuOpen}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  borderColor: "divider",
+                  color: "text.primary",
+                  whiteSpace: "nowrap",
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                    borderColor: "primary.light",
+                  },
+                }}
+              >
+                Export
+              </Button>
+              <Menu
+                anchorEl={exportMenuAnchor}
+                open={Boolean(exportMenuAnchor)}
+                onClose={handleExportMenuClose}
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "left",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "left",
+                }}
+              >
+                <MenuItem onClick={handleQuickExport}>
+                  <FileDownloadIcon sx={{ mr: 1, fontSize: "1.2rem" }} />
+                  Quick Export
+                </MenuItem>
+                <MenuItem onClick={handleAdvancedExport}>
+                  <PictureAsPdfIcon sx={{ mr: 1, fontSize: "1.2rem" }} />
+                  Advanced Export
+                </MenuItem>
+              </Menu>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 1,
+                flexShrink: 0,
+              }}
+            >
+              <UsageChip
+                size="small"
+                showLabel
+                onClick={() => navigate("/profile#usage")}
+              />
+              <IconButton
+                size="medium"
+                edge="end"
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={onMenuOpen}
+                data-testid="cv-editor-user-menu-button"
+                sx={{
+                  color: "text.secondary",
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                    color: "text.primary",
+                  },
+                }}
+              >
+                <AccountCircleIcon />
+              </IconButton>
+            </Box>
+          </Box>
           <Menu
             id="menu-appbar"
             anchorEl={anchorEl}

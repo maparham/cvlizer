@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from src.middleware.clerk_auth import get_effective_user
 from src.models.base import get_db
 from src.models.user import User
-from src.services.auth_service import (
+from src.services.users.auth_service import (
     authenticate_user,
     create_access_token,
     create_refresh_token,
@@ -25,7 +25,7 @@ from src.services.auth_service import (
     get_user_by_email,
     verify_token,
 )
-from src.services.user_service import delete_user_and_all_data
+from src.services.users.user_service import delete_user_and_all_data
 
 logger = logging.getLogger(__name__)
 

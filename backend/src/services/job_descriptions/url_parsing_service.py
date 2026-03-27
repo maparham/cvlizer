@@ -52,7 +52,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from src.config import BackgroundTaskConfig
 from src.services.ai_service import extract_job_description_with_ai
-from src.services.structured_data_extractor import (
+from src.services.shared.structured_data_extractor import (
     extract_jsonld_job_posting,
     is_complete_structured_job_data,
 )

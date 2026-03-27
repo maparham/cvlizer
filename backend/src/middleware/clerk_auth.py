@@ -25,9 +25,9 @@ from sqlalchemy.orm import Session
 
 from src.models.base import get_db
 from src.models.user import User
-from src.services.auth_service import ALGORITHM as APP_JWT_ALG
-from src.services.auth_service import SECRET_KEY as APP_JWT_SECRET
-from src.services.clerk_sync_service import sync_clerk_user_to_local_db
+from src.services.users.auth_service import ALGORITHM as APP_JWT_ALG
+from src.services.users.auth_service import SECRET_KEY as APP_JWT_SECRET
+from src.services.users.clerk_sync_service import sync_clerk_user_to_local_db
 
 load_dotenv()
 
@@ -561,7 +561,7 @@ def get_current_user_with_impersonation(
 
     # Validate impersonation session
     try:
-        from src.services.impersonation_service import validate_session
+        from src.services.users.impersonation_service import validate_session
 
         # Get client metadata for validation
         admin_ip = None
@@ -771,7 +771,7 @@ def get_effective_user_lightweight(
 
     # Validate impersonation session
     try:
-        from src.services.impersonation_service import validate_session
+        from src.services.users.impersonation_service import validate_session
 
         # Get client metadata for validation
         admin_ip = None
@@ -805,6 +805,19 @@ def get_effective_user_lightweight(
         logger.error(f"Error validating impersonation session: {str(e)}")
         # On error, return original user
         return original_user
+
+
+def get_client_ip(request: Request) -> Optional[str]:
+    """Extract client IP from proxy headers with request-client fallback."""
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+    if request.client:
+        return request.client.host
+    return None
 
 
 get_current_user = get_current_user_from_clerk

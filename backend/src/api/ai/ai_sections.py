@@ -15,8 +15,8 @@ from src.models.base import get_db
 from src.models.cv import CV
 from src.models.user import User
 from src.services.ai_service import generate_cv_section, is_ai_enabled
-from src.services.cv_service import get_cv_by_id
-from src.services.job_description_service import (
+from src.services.cv.cv_service import get_cv_by_id
+from src.services.job_descriptions.job_description_service import (
     get_job_description_by_id,
 )
 

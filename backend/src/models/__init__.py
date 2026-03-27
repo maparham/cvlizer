@@ -23,6 +23,8 @@ from .preview_job import PreviewJob
 from .user import User
 from .user_activity import UserActivity, UserSession
 
+from src.sharing.models.share_view import ShareView
+
 __all__ = [
     "Base",
     "get_db",
@@ -45,4 +47,5 @@ __all__ = [
     "CVQualityAnalysis",
     "Feedback",
     "PreviewJob",
+    "ShareView",
 ]

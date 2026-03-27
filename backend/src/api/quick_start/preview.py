@@ -13,7 +13,7 @@ from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
 
 from src.config import APIConfig
-from src.services.file_service import validate_file
+from src.services.platform.file_service import validate_file
 from src.utils.rate_limit import create_combined_limiter
 
 from .cv_parser import parse_cv_for_preview

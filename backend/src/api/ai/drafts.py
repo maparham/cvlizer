@@ -17,7 +17,7 @@ from src.models.ai_draft import AIDraft
 from src.models.base import get_db
 from src.models.user import User
 from src.schemas.cv_schemas import WhyGoodFitMetadataSchema, WhyGoodFitSchema
-from src.services.cv_service import get_cv_by_id
+from src.services.cv.cv_service import get_cv_by_id
 
 from .models import (
     DraftApproveRequest,

@@ -30,6 +30,7 @@ from src.api.cvs import router as cvs_router
 from src.api.impersonation import auth_router as impersonation_auth_router
 from src.api.impersonation import router as impersonation_router
 from src.api.job_descriptions import router as job_descriptions_router
+from src.sharing.api import router as public_shares_router
 from src.api.quick_start import router as quick_start_router
 from src.api.usage import router as usage_router
 from src.api.feedback import router as feedback_router
@@ -43,7 +44,7 @@ from src.middleware.rate_limit_user import RateLimitUserMiddleware
 from src.utils.rate_limit import create_combined_limiter
 
 # Import services for startup cleanup
-from src.services.cleanup_service import (
+from src.services.platform.cleanup_service import (
     cancel_running_ai_tasks_on_startup,
     start_cleanup_service,
     stop_cleanup_service,
@@ -120,6 +121,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(usage_router, prefix="/api")
 app.include_router(cvs_router)
 app.include_router(job_descriptions_router)
+app.include_router(public_shares_router)
 app.include_router(ai_router)
 app.include_router(cv_history_router)
 app.include_router(admin_router, prefix="/api")

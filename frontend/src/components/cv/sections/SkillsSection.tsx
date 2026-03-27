@@ -92,6 +92,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
   onTitleSave,
   onHide,
   onDelete,
+  readOnly,
 }) => {
   const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
   const [newSoftSkill, setNewSoftSkill] = useState("");
@@ -602,6 +603,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       onTitleSave={onTitleSave}
       onHide={onHide}
       onDelete={onDelete}
+      readOnly={readOnly}
     />
   );
 };

@@ -38,7 +38,7 @@ import subprocess
 import tempfile
 from typing import Any, Dict, List, Optional
 
-from src.services.template_loader import load_template, is_template_available
+from src.services.shared.template_loader import load_template, is_template_available
 
 logger = logging.getLogger(__name__)
 LATEX_REQUIRED_BIN = os.getenv("PDFLATEX_BIN", "pdflatex")

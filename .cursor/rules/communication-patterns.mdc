@@ -48,7 +48,7 @@ async def get_effective_user(...):
 ```
 To implement this feature, we should:
 1. Add a new endpoint in backend/src/api/cvs.py
-2. Create a service function in backend/src/services/cv_service.py
+2. Create a service function in backend/src/services/cv/cv_service.py
 3. Update the frontend CVService to call the new endpoint
 4. Add UI components in frontend/src/components/cv/
 

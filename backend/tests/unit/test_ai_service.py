@@ -5,7 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from src.services.ai_service import generate_cv_section, parse_cv_text_with_openai
-from src.services.ai_usage_service import calculate_cost
+from src.services.ai_ops.ai_usage_service import calculate_cost
 
 
 class TestAIService:

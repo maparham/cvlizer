@@ -89,6 +89,8 @@ export type PersonalInfoFieldConfig = (typeof PERSONAL_INFO_FIELDS)[number];
 
 interface PersonalInfoSectionProps extends SectionProps {
   cvId?: string;
+  /** Public share page: display-only image URL (blob); no upload UI. */
+  readOnlyProfilePictureUrl?: string | null;
 }
 
 const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
@@ -104,6 +106,8 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   cvId,
   onHide,
   onDelete,
+  readOnly,
+  readOnlyProfilePictureUrl,
 }) => {
   const personalInfoData = (data ?? {}) as PersonalInfo;
   // Get validation errors for required fields (hooks must be called at component level)
@@ -923,6 +927,42 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             />
           </Box>
         )}
+        {readOnly && personalInfoData.profile_picture && !cvId && (
+          <Box sx={{ flexShrink: 0 }}>
+            <Box
+              sx={{
+                width: pictureSize,
+                height: pictureSize,
+                borderRadius: shape === "circle" ? "50%" : 1,
+                overflow: "hidden",
+                border: "2px dashed",
+                borderColor: "divider",
+                bgcolor: readOnlyProfilePictureUrl ? "transparent" : "action.selected",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {readOnlyProfilePictureUrl ? (
+                <Box
+                  component="img"
+                  src={readOnlyProfilePictureUrl}
+                  alt="Profile"
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <AddPhotoIcon
+                  sx={{ fontSize: 36, color: "text.disabled" }}
+                  aria-hidden
+                />
+              )}
+            </Box>
+          </Box>
+        )}
       </Box>
     );
   };
@@ -945,6 +985,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
       onTitleSave={onTitleSave}
       onHide={onHide}
       onDelete={onDelete}
+      readOnly={readOnly}
     />
   );
 };
@@ -953,6 +994,8 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
 export default React.memo(PersonalInfoSection, (prevProps, nextProps) => {
   return (
     prevProps.data === nextProps.data &&
-    prevProps.isEditing === nextProps.isEditing
+    prevProps.isEditing === nextProps.isEditing &&
+    prevProps.readOnly === nextProps.readOnly &&
+    prevProps.readOnlyProfilePictureUrl === nextProps.readOnlyProfilePictureUrl
   );
 });

@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 from src.models.base import Base
 from src.models.ai_usage_log import AIUsageLog
 from src.models.user import User
-from src.services.quota_service import check_quota, get_period_usage
+from src.services.platform.quota_service import check_quota, get_period_usage
 
 
 @pytest.fixture
@@ -111,7 +111,7 @@ class TestGetPeriodUsage:
 class TestCheckQuota:
     """Tests for check_quota."""
 
-    @patch("src.services.quota_service.AIUsageConfig")
+    @patch("src.services.platform.quota_service.AIUsageConfig")
     def test_under_limit_allowed(self, mock_config, db_session, user_id):
         mock_config.FREE_TIER_QUOTA_ENABLED = True
         mock_config.FREE_TIER_COST_PER_30_DAYS = 0.25
@@ -125,7 +125,7 @@ class TestCheckQuota:
         assert result["used_tokens"] == 10000
         assert result["limit_tokens"] == 50000
 
-    @patch("src.services.quota_service.AIUsageConfig")
+    @patch("src.services.platform.quota_service.AIUsageConfig")
     def test_at_limit_not_allowed(self, mock_config, db_session, user_id):
         mock_config.FREE_TIER_QUOTA_ENABLED = True
         mock_config.FREE_TIER_COST_PER_30_DAYS = 0.25
@@ -136,7 +136,7 @@ class TestCheckQuota:
         assert result["used_cost"] == 0.25
         assert result["remaining_cost"] == 0.0
 
-    @patch("src.services.quota_service.AIUsageConfig")
+    @patch("src.services.platform.quota_service.AIUsageConfig")
     def test_over_limit_not_allowed(self, mock_config, db_session, user_id):
         mock_config.FREE_TIER_QUOTA_ENABLED = True
         mock_config.FREE_TIER_COST_PER_30_DAYS = 0.25
@@ -147,7 +147,7 @@ class TestCheckQuota:
         assert result["used_cost"] == 0.30
         assert result["remaining_cost"] == 0.0
 
-    @patch("src.services.quota_service.AIUsageConfig")
+    @patch("src.services.platform.quota_service.AIUsageConfig")
     def test_quota_disabled_always_allowed(self, mock_config, db_session, user_id):
         mock_config.FREE_TIER_QUOTA_ENABLED = False
         mock_config.FREE_TIER_COST_PER_30_DAYS = 0.25

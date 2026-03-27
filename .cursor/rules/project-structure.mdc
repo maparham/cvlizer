@@ -20,7 +20,7 @@ Full-stack AI-powered CV optimization SaaS: FastAPI backend + React/TypeScript f
 - [main.py](mdc:backend/main.py) - Application entry point
 - [src/api/](mdc:backend/src/api/) - API endpoints
 - [src/models/](mdc:backend/src/models/) - Database models
-- [src/services/](mdc:backend/src/services/) - Business logic layer
+- [src/services/](mdc:backend/src/services/) - Business logic layer (domain packages: `cv/`, `job_descriptions/`, `users/`, `platform/`, `shared/`, `ai_ops/`; `ai_service/` for OpenAI integration)
 - [src/schemas/](mdc:backend/src/schemas/) - Pydantic validation schemas
 - [src/middleware/](mdc:backend/src/middleware/) - Auth and request middleware
 - [src/utils/](mdc:backend/src/utils/) - Utility functions

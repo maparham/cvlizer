@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from src.middleware.clerk_auth import get_current_user
 from src.models.base import get_db
 from src.models.user import User
-from src.services.user_activity_service import (
+from src.services.users.user_activity_service import (
     create_user_session,
     end_user_session,
     log_api_call,

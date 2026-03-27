@@ -8,7 +8,7 @@ from fastapi import UploadFile
 
 from src.exceptions import InvalidFileException
 
-from src.services.file_service import (
+from src.services.platform.file_service import (
     _remove_page_number_lines,
     delete_file,
     extract_text_from_docx,
@@ -42,8 +42,8 @@ class TestFileService:
     @pytest.mark.asyncio
     async def test_save_uploaded_file_success(self, temp_dir, mock_upload_file):
         """Test successful file upload"""
-        with patch("src.services.file_service.os.makedirs"):
-            with patch("src.services.file_service.aiofiles.open") as mock_open:
+        with patch("src.services.platform.file_service.os.makedirs"):
+            with patch("src.services.platform.file_service.aiofiles.open") as mock_open:
                 mock_file = AsyncMock()
                 mock_open.return_value.__aenter__.return_value = mock_file
 
@@ -131,7 +131,7 @@ class TestFileService:
         """Test text extraction from DOCX file"""
         file_content = b"PK\x03\x04DOCX content"
 
-        with patch("src.services.file_service.docx.Document") as mock_doc:
+        with patch("src.services.platform.file_service.docx.Document") as mock_doc:
             mock_paragraph = Mock()
             mock_paragraph.text = "Extracted text"
             mock_doc.return_value.paragraphs = [mock_paragraph]
@@ -144,7 +144,9 @@ class TestFileService:
         """Test text extraction from file with PDF content type"""
         file_content = b"PDF content"
 
-        with patch("src.services.file_service.extract_text_from_pdf") as mock_extract:
+        with patch(
+            "src.services.platform.file_service.extract_text_from_pdf"
+        ) as mock_extract:
             mock_extract.return_value = "Extracted PDF text"
 
             result = extract_text_from_file(file_content, "application/pdf")
@@ -156,7 +158,9 @@ class TestFileService:
         """Test text extraction from file with DOCX content type"""
         file_content = b"DOCX content"
 
-        with patch("src.services.file_service.extract_text_from_docx") as mock_extract:
+        with patch(
+            "src.services.platform.file_service.extract_text_from_docx"
+        ) as mock_extract:
             mock_extract.return_value = "Extracted DOCX text"
 
             result = extract_text_from_file(

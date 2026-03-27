@@ -1,6 +1,6 @@
 import pytest
 
-from src.services.latex_export_service import generate_cv_latex
+from src.services.cv.latex_export_service import generate_cv_latex
 
 
 MINIMAL_PARSED = {

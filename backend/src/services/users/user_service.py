@@ -9,10 +9,10 @@ import logging
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 
-from ..models.user import User
-from ..models.cv import CV
-from ..config import AuthConfig
-from .file_service import delete_file
+from src.models.user import User
+from src.models.cv import CV
+from src.config import AuthConfig
+from src.services.platform.file_service import delete_file
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +84,9 @@ def delete_user_and_all_data(
         # Step 3: Delete user from database
         # First manually delete records with NOT NULL constraints on user_id
         try:
-            from ..models.user_activity import UserActivity, UserSession
-            from ..models.ai_usage_log import AIUsageLog
-            from ..models.impersonation_session import ImpersonationSession
+            from src.models.user_activity import UserActivity, UserSession
+            from src.models.ai_usage_log import AIUsageLog
+            from src.models.impersonation_session import ImpersonationSession
 
             # Delete user activities first (they have NOT NULL constraint)
             activities_deleted = (

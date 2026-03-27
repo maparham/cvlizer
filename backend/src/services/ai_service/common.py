@@ -201,7 +201,7 @@ def log_ai_usage_safe(
     """
     try:
         if db_session:
-            from src.services.ai_usage_service import log_ai_usage
+            from src.services.ai_ops.ai_usage_service import log_ai_usage
 
             log_ai_usage(
                 db=db_session,

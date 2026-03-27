@@ -20,8 +20,10 @@ from src.middleware.clerk_auth import get_effective_user
 from src.models.ai_enhancement import AIEnhancement
 from src.models.base import get_db
 from src.models.user import User
-from src.services.cv_service import get_cv_by_id
-from src.services.job_description_service import get_job_description_by_id
+from src.services.cv.cv_service import get_cv_by_id
+from src.services.job_descriptions.job_description_service import (
+    get_job_description_by_id,
+)
 from src.utils.rate_limit import create_combined_limiter
 from src.utils.task_logging import make_task_exception_logger
 

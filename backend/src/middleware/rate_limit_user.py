@@ -57,7 +57,7 @@ class RateLimitUserMiddleware(BaseHTTPMiddleware):
                         # Check if this is a valid impersonation session
                         db = SessionLocal()
                         try:
-                            from src.services.impersonation_service import (
+                            from src.services.users.impersonation_service import (
                                 validate_session,
                             )
 

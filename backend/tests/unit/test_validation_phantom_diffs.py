@@ -7,7 +7,7 @@ when users make unrelated edits.
 
 import pytest
 
-from src.services.cv_diff_service import CVDiffService
+from src.services.cv.cv_diff_service import CVDiffService
 from src.utils.validation import CVDataValidator
 
 

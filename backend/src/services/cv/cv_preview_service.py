@@ -24,13 +24,16 @@ import logging
 from typing import Dict, Any
 from PIL import Image
 
-from .file_service import get_profile_picture_settings
-from .latex_export_service import (
+from src.services.platform.file_service import get_profile_picture_settings
+from src.services.cv.latex_export_service import (
     generate_cv_latex,
     compile_pdf_from_latex,
     is_latex_available,
 )
-from .template_loader import get_default_template, is_template_available
+from src.services.shared.template_loader import (
+    get_default_template,
+    is_template_available,
+)
 
 logger = logging.getLogger(__name__)
 

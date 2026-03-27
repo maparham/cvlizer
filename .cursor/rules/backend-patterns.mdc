@@ -23,9 +23,9 @@ description: Backend development patterns and conventions for FastAPI, SQLAlchem
 - Return typed objects, not raw queries
 
 ## File Handling & AI Integration
-- Use [file_service.py](mdc:backend/src/services/file_service.py)
+- Use [file_service.py](mdc:backend/src/services/platform/file_service.py)
 - Validate file types and sizes before processing
-- Use [ai_service.py](mdc:backend/src/services/ai_service.py)
+- Use [ai_service](mdc:backend/src/services/ai_service/__init__.py)
 - Handle API rate limits and errors, log AI usage
 
 ## Error Handling & Validation

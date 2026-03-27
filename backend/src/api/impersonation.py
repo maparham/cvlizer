@@ -30,7 +30,7 @@ from src.middleware.clerk_auth import (
 from src.models.base import get_db
 from src.models.impersonation_session import ImpersonationSession
 from src.models.user import User
-from src.services.impersonation_service import (
+from src.services.users.impersonation_service import (
     ImpersonationError,
     ImpersonationNotAllowedError,
     ImpersonationRateLimitError,

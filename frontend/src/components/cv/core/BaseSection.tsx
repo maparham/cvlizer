@@ -32,6 +32,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
   onHide,
   onDelete,
   isCustomSection = false,
+  readOnly = false,
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -71,7 +72,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
         }),
       }}
     >
-      {isEditing && (onSave || onCancel) ? (
+      {!readOnly && isEditing && (onSave || onCancel) ? (
         // Show save and cancel icon buttons in edit mode (each button only if corresponding handler is provided)
         <Box
           sx={{
@@ -123,8 +124,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
             </Tooltip>
           )}
         </Box>
-      ) : // Show edit button or custom editButton in view mode
-      editButton !== null ? (
+      ) : readOnly ? null : editButton !== null ? (
         editButton
       ) : (
         <Box
@@ -199,7 +199,10 @@ const BaseSection: React.FC<BaseSectionProps> = ({
           {headerActionsLeft}
         </Box>
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-          {onHide !== undefined && onDelete !== undefined && !isEditing && (
+          {!readOnly &&
+            onHide !== undefined &&
+            onDelete !== undefined &&
+            !isEditing && (
             <>
               <Tooltip
                 title={
@@ -265,7 +268,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
           {headerActions}
         </Box>
       </Box>
-      {isCustomSection && onDelete && !isPersonalInfo && (
+      {!readOnly && isCustomSection && onDelete && !isPersonalInfo && (
         <ConfirmDialog
           open={deleteDialogOpen}
           onClose={() => setDeleteDialogOpen(false)}
@@ -282,7 +285,7 @@ const BaseSection: React.FC<BaseSectionProps> = ({
       )}
 
       {children}
-      {isEditing && (onSave || onCancel) && (
+      {!readOnly && isEditing && (onSave || onCancel) && (
         <Box
           sx={{
             display: "flex",

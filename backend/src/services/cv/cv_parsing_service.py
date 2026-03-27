@@ -48,14 +48,14 @@ async def parse_cv_with_openai(
     )
     from src.exceptions import ExtractionError, InvalidFileException
 
-    from .file_service import extract_text_from_file
+    from src.services.platform.file_service import extract_text_from_file
 
     try:
         # Extract text from file
         text_content = extract_text_from_file(file_content, content_type)
 
         # Parse with OpenAI
-        from .ai_service import parse_cv_text_with_openai
+        from src.services.ai_service import parse_cv_text_with_openai
 
         parsed_data = await parse_cv_text_with_openai(
             text_content, user_id=user_id, cv_id=cv_id, db_session=db_session

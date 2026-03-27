@@ -8,6 +8,7 @@ export interface CVEditorHeaderProps {
   onMenuClose: () => void;
   anchorEl: null | HTMLElement;
   onExport: () => void;
+  onShare: () => void;
   onDelete: () => void;
   isAdmin: boolean;
   isNewCV: boolean;

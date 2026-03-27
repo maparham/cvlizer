@@ -11,6 +11,7 @@ import { useCVNotifications } from "../../packages/notifications";
 import { cvApi } from "../../services/api";
 import { CVEditorContentProps } from "./types";
 import { CVEditorHeader } from "./CVEditorHeader";
+import { ShareDialog } from "../sharing/ShareDialog";
 
 export const CVEditorContent: React.FC<CVEditorContentProps> = ({
   cvId,
@@ -25,6 +26,7 @@ export const CVEditorContent: React.FC<CVEditorContentProps> = ({
   isNewCV,
 }) => {
   const { showError } = useCVNotifications(cvId);
+  const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
 
   const handleExport = async () => {
     try {
@@ -49,6 +51,7 @@ export const CVEditorContent: React.FC<CVEditorContentProps> = ({
         onMenuClose={onMenuClose}
         anchorEl={anchorEl}
         onExport={handleExport}
+        onShare={() => setShareDialogOpen(true)}
         onDelete={onDelete}
         isAdmin={isAdmin}
         isNewCV={isNewCV}
@@ -58,6 +61,14 @@ export const CVEditorContent: React.FC<CVEditorContentProps> = ({
         onTitleSave={onTitleSave}
         cvId={cvId !== "new" ? cvId : undefined}
       />
+      {cvId && cvId !== "new" && (
+        <ShareDialog
+          open={shareDialogOpen}
+          onClose={() => setShareDialogOpen(false)}
+          resourceType="cv"
+          resourceId={cvId}
+        />
+      )}
     </>
   );
 };

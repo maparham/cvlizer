@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session, joinedload
 from src.middleware.clerk_auth import is_admin_user
 from src.models.impersonation_session import ImpersonationSession
 from src.models.user import User
-from src.services.audit_service import log_admin_action
+from src.services.platform.audit_service import log_admin_action
 
 logger = logging.getLogger(__name__)
 

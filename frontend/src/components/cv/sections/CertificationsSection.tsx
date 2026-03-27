@@ -146,7 +146,7 @@ const CertificationDisplay: React.FC<{
   );
 };
 
-const CertificationsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Certifications', onTitleSave, cvId, sectionType, sectionId, onHide, onDelete }) => {
+const CertificationsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Certifications', onTitleSave, cvId, sectionType, sectionId, onHide, onDelete, readOnly }) => {
   const createNewCertification = (): Certification => ({
     id: generateSectionId('certifications'),
     name: '',
@@ -184,6 +184,7 @@ const CertificationsSection: React.FC<SectionProps & { sectionType?: string }> =
       sectionId={sectionId}
       onHide={onHide}
       onDelete={onDelete}
+      readOnly={readOnly}
       data={data as Certification[]}
       onUpdate={onUpdate}
       onSave={onSave}

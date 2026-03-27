@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from src.models.user import User
 from src.models.user_activity import UserActivity, UserSession
-from src.services.user_activity_service import (
+from src.services.users.user_activity_service import (
     cleanup_old_activities,
     create_user_session,
     end_user_session,
@@ -58,7 +58,7 @@ class TestUserActivityService:
         self.mock_db.refresh.return_value = None
 
         with patch(
-            "src.services.user_activity_service.UserActivity"
+            "src.services.users.user_activity_service.UserActivity"
         ) as mock_activity_class:
             mock_activity_class.return_value = mock_activity
 
@@ -99,7 +99,7 @@ class TestUserActivityService:
         self.mock_db.refresh.return_value = None
 
         with patch(
-            "src.services.user_activity_service.UserActivity"
+            "src.services.users.user_activity_service.UserActivity"
         ) as mock_activity_class:
             mock_activity_class.return_value = mock_activity
 
@@ -257,7 +257,7 @@ class TestUserActivityService:
         self.mock_db.refresh.return_value = None
 
         with patch(
-            "src.services.user_activity_service.UserSession"
+            "src.services.users.user_activity_service.UserSession"
         ) as mock_session_class:
             mock_session_class.return_value = mock_session
 
@@ -343,7 +343,7 @@ class TestUserActivityService:
         self.mock_db.refresh.return_value = None
 
         with patch(
-            "src.services.user_activity_service.UserActivity"
+            "src.services.users.user_activity_service.UserActivity"
         ) as mock_activity_class:
             mock_activity_class.return_value = mock_activity
 
@@ -371,7 +371,7 @@ class TestUserActivityService:
         self.mock_db.refresh.return_value = None
 
         with patch(
-            "src.services.user_activity_service.UserSession"
+            "src.services.users.user_activity_service.UserSession"
         ) as mock_session_class:
             mock_session_class.return_value = mock_session
 
@@ -389,7 +389,7 @@ class TestUserActivityService:
             )
 
             with patch(
-                "src.services.user_activity_service.UserActivity"
+                "src.services.users.user_activity_service.UserActivity"
             ) as mock_activity_class:
                 mock_activity_class.return_value = mock_activity
 
@@ -420,7 +420,7 @@ class TestUserActivityService:
             self.mock_db.refresh.return_value = None
 
             with patch(
-                "src.services.user_activity_service.UserActivity"
+                "src.services.users.user_activity_service.UserActivity"
             ) as mock_activity_class:
                 mock_activity_class.return_value = mock_activity
 

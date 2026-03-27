@@ -14,11 +14,11 @@ from fastapi import Request, UploadFile
 
 from src.constants import ERROR_INVALID_FILE_OR_EXTRACTION
 from src.exceptions import ExtractionError, InvalidFileException
-from src.services.cv_preview_service import (
+from src.services.cv.cv_preview_service import (
     generate_cv_preview_image,
     is_preview_generation_available,
 )
-from src.services.cv_parsing_service import parse_cv_with_openai
+from src.services.cv.cv_parsing_service import parse_cv_with_openai
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ async def parse_cv_for_preview(
         )
 
         # Extract text for AI processing
-        from src.services.file_service import extract_text_from_file
+        from src.services.platform.file_service import extract_text_from_file
 
         try:
             text_content = extract_text_from_file(file_content, cv_file.content_type)

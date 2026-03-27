@@ -13,7 +13,7 @@ from src.models.base import Base
 from src.models.cv import CV
 from src.models.preview_job import PreviewJob
 from src.models.user import User
-from src.services.preview_cleanup_service import (
+from src.services.platform.preview_cleanup_service import (
     cleanup_expired_preview_jobs,
     cleanup_stale_preview_jobs,
 )

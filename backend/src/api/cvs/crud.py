@@ -35,7 +35,7 @@ from src.models.user import User
 from src.schemas.cv_update_schemas import CVUpdateRequestSchema
 from src.utils.validate_cache import get_cached, set_cached
 from src.utils.validation import get_validation_errors
-from src.services.cv_service import (
+from src.services.cv.cv_service import (
     create_cv,
     delete_cv,
     duplicate_cv_for_user,
@@ -44,8 +44,8 @@ from src.services.cv_service import (
     rename_cv,
     update_cv,
 )
-from src.services.file_service import delete_file, resolve_profile_picture_path
-from src.services.template_loader import get_template_metadata
+from src.services.platform.file_service import delete_file, resolve_profile_picture_path
+from src.services.shared.template_loader import get_template_metadata
 from src.utils.validation import CVDataValidator
 
 from .models import (

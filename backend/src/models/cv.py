@@ -29,6 +29,10 @@ class CV(Base):
     parsed_data = Column(JSON, nullable=True)
     is_parsed = Column(Boolean, default=False, nullable=False)
     parse_error = Column(Text, nullable=True)
+    public_share_token = Column(String(128), unique=True, nullable=True, index=True)
+    is_public_shared = Column(Boolean, default=False, nullable=False, index=True)
+    public_share_created_at = Column(DateTime(timezone=True), nullable=True)
+    public_share_view_mode = Column(String(20), default="shell", nullable=False)
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

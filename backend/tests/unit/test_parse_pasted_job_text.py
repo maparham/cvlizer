@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from src.services.url_parsing_service import (
+from src.services.job_descriptions.url_parsing_service import (
     MIN_PASTED_JOB_TEXT_CHARS,
     PASTED_JOB_SOURCE_MARKER,
     parse_pasted_job_text,
@@ -17,7 +17,7 @@ def test_parse_pasted_job_text_too_short():
     assert "too short" in result["error"].lower()
 
 
-@patch("src.services.url_parsing_service._parse_with_openai")
+@patch("src.services.job_descriptions.url_parsing_service._parse_with_openai")
 def test_parse_pasted_job_text_delegates_to_openai(mock_parse):
     """Sufficient length delegates to _parse_with_openai with pasted marker URL."""
     mock_parse.return_value = {

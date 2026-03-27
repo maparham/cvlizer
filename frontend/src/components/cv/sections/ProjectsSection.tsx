@@ -145,7 +145,7 @@ const ProjectDisplay: React.FC<{
   );
 };
 
-const ProjectsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Projects', onTitleSave, cvId, sectionType, sectionId, onHide, onDelete }) => {
+const ProjectsSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Projects', onTitleSave, cvId, sectionType, sectionId, onHide, onDelete, readOnly }) => {
   const createNewProject = (): Project => ({
     id: generateSectionId('projects'),
     name: '',
@@ -182,6 +182,7 @@ const ProjectsSection: React.FC<SectionProps & { sectionType?: string }> = ({ da
       sectionId={sectionId}
       onHide={onHide}
       onDelete={onDelete}
+      readOnly={readOnly}
       data={data as Project[]}
       onUpdate={onUpdate}
       onSave={onSave}

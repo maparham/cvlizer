@@ -16,7 +16,7 @@ from src.utils.feature_flags import is_cv_history_enabled
 from src.models.base import SessionLocal
 from src.models.cv import CV
 from src.models.cv_history import CVHistory
-from src.services.cv_parsing_service import parse_cv_with_openai
+from src.services.cv.cv_parsing_service import parse_cv_with_openai
 
 # Rate limiter for CV operations
 limiter = create_combined_limiter()

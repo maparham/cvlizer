@@ -228,10 +228,10 @@ Request � Middleware (auth, CORS) � API Routes � Service Layer � Databas
    - Always close sessions in finally blocks
    - Update task status in database (pending � processing � completed/failed)
 
-5. **AI Integration** ([backend/src/services/ai_service.py](backend/src/services/ai_service.py)):
+5. **AI Integration** ([backend/src/services/ai_service](backend/src/services/ai_service/__init__.py)):
    - All OpenAI calls go through ai_service
    - Retry logic with exponential backoff (max 3 retries)
-   - Usage logging with [ai_usage_service.py](backend/src/services/ai_usage_service.py)
+   - Usage logging with [ai_usage_service.py](backend/src/services/ai_ops/ai_usage_service.py)
    - Check `is_ai_enabled()` before operations
 
 **Authentication Flow:**
@@ -562,11 +562,11 @@ When backend is running, access interactive API documentation at:
 - [App.tsx](frontend/src/App.tsx) - Main application component with routing
 
 ### Key Backend Services
-- [ai_service.py](backend/src/services/ai_service.py) - OpenAI integration and AI operations
-- [ai_usage_service.py](backend/src/services/ai_usage_service.py) - AI usage tracking and analytics
-- [job_description_service.py](backend/src/services/job_description_service.py) - Job description parsing and management
-- [file_service.py](backend/src/services/file_service.py) - File upload and validation
-- [auth_service.py](backend/src/services/auth_service.py) - JWT token handling
+- [ai_service](backend/src/services/ai_service/__init__.py) - OpenAI integration and AI operations
+- [ai_usage_service.py](backend/src/services/ai_ops/ai_usage_service.py) - AI usage tracking and analytics
+- [job_description_service.py](backend/src/services/job_descriptions/job_description_service.py) - Job description parsing and management
+- [file_service.py](backend/src/services/platform/file_service.py) - File upload and validation
+- [auth_service.py](backend/src/services/users/auth_service.py) - JWT token handling
 
 ### Key Frontend Stores
 - [aiStore.ts](frontend/src/stores/aiStore.ts) - AI operations, drafts, and suggestions state

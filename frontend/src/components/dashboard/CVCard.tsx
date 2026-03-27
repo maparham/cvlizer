@@ -37,8 +37,10 @@ import DownloadIcon from "@mui/icons-material/Download";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DuplicateIcon from "@mui/icons-material/FileCopy";
 import ScheduleIcon from "@mui/icons-material/Schedule";
+import ShareIcon from "@mui/icons-material/Share";
 import { EditableTitle } from "../cv";
 import CVQuickActions from "../cv/CVQuickActions";
+import { ShareDialog } from "../sharing/ShareDialog";
 import { CV } from "../../types";
 import {
   getCVStatusIcon,
@@ -65,6 +67,8 @@ const CVCard: React.FC<CVCardProps> = ({
   onTitleSave,
   onDownload,
 }) => {
+  const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
+
   return (
     <Grid item xs={12} sm={6} lg={4} key={cv.id}>
       <Card
@@ -313,6 +317,22 @@ const CVCard: React.FC<CVCardProps> = ({
                 </IconButton>
               </span>
             </Tooltip>
+            <Tooltip title="Share public readonly link">
+              <IconButton
+                size="small"
+                onClick={() => setShareDialogOpen(true)}
+                disabled={!cv.is_parsed || !!cv.parse_error}
+                sx={{
+                  color: "text.secondary",
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                    color: "text.primary",
+                  },
+                }}
+              >
+                <ShareIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Delete this CV">
               <IconButton
                 size="small"
@@ -338,6 +358,12 @@ const CVCard: React.FC<CVCardProps> = ({
           </Stack>
         </CardActions>
       </Card>
+      <ShareDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        resourceType="cv"
+        resourceId={cv.id}
+      />
     </Grid>
   );
 };

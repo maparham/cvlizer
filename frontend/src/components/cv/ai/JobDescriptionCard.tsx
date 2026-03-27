@@ -46,10 +46,12 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LinkIcon from "@mui/icons-material/Link";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ShareIcon from "@mui/icons-material/Share";
 import { JobDescription } from "../../../types/ai";
 import { formatRelativeTime } from "../../../utils/formatters";
 import { MarkdownRenderer } from "../../common";
 import { useNotifications } from "../../../packages/notifications";
+import { ShareDialog } from "../../sharing/ShareDialog";
 
 /**
  * Strip markdown formatting and convert to plain text
@@ -136,6 +138,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   maxChipWidth: _maxChipWidth,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [isCancellingParse, setIsCancellingParse] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -662,6 +665,25 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                 <VisibilityIcon fontSize="small" />
               </IconButton>
             </Tooltip>
+            <Tooltip title="Share public readonly link">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShareDialogOpen(true);
+                }}
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 0, 0, 0.04)",
+                    borderColor: "text.secondary",
+                  },
+                }}
+              >
+                <ShareIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
         </CardActions>
       </Card>
@@ -793,6 +815,12 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+      <ShareDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        resourceType="job_description"
+        resourceId={jobDescription.id}
+      />
     </>
   );
 };

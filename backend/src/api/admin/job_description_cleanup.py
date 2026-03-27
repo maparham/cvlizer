@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from src.middleware.clerk_auth import require_admin_not_impersonating
 from src.models.base import get_db
 from src.models.user import User
-from src.services.job_description_cleanup_service import (
+from src.services.job_descriptions.job_description_cleanup_service import (
     cleanup_stuck_job_descriptions,
     get_parsing_statistics,
 )

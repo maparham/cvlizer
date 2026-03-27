@@ -145,7 +145,7 @@ const VolunteerExperienceDisplay: React.FC<{
   );
 };
 
-const VolunteerExperienceSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Volunteer Experience', onTitleSave, cvId, sectionType, sectionId, onHide, onDelete }) => {
+const VolunteerExperienceSection: React.FC<SectionProps & { sectionType?: string }> = ({ data, onUpdate, onSave, isEditing, onEdit, onClose, onUnsavedChanges, registerIndividualItemEditing, unregisterIndividualItemEditing, requestIndividualItemCancel, title = 'Volunteer Experience', onTitleSave, cvId, sectionType, sectionId, onHide, onDelete, readOnly }) => {
   const createNewVolunteerExperience = (): VolunteerExperience => ({
     id: generateSectionId('volunteer_experience'),
     organization: '',
@@ -183,6 +183,7 @@ const VolunteerExperienceSection: React.FC<SectionProps & { sectionType?: string
       sectionId={sectionId}
       onHide={onHide}
       onDelete={onDelete}
+      readOnly={readOnly}
       data={data as VolunteerExperience[]}
       onUpdate={onUpdate}
       onSave={onSave}

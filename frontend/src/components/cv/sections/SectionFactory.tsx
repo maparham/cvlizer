@@ -53,6 +53,9 @@ interface SectionFactoryProps extends SectionProps {
   sectionTitle?: string;
   onSectionTitleSave?: (newTitle: string) => Promise<void>;
   sectionId?: string; // For custom sections: the custom section uuid
+  readOnly?: boolean;
+  /** Public share: object URL for profile image (PersonalInfoSection only). */
+  readOnlyProfilePictureUrl?: string | null;
 }
 
 // Map of sections
@@ -78,6 +81,8 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
   onHide,
   onDelete,
   isCustomSection,
+  readOnly,
+  readOnlyProfilePictureUrl,
   ...props
 }) => {
   if (!SECTIONS[sectionType]) {
@@ -97,6 +102,8 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
     onHide,
     onDelete,
     isCustomSection,
+    readOnly,
+    ...(sectionType === "personal_info" ? { readOnlyProfilePictureUrl } : {}),
   };
 
   if (sectionType === "custom" && sectionId) {
