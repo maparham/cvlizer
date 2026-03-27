@@ -44,6 +44,9 @@ class AIService {
   // Job descriptions
   createJobDescription = jobDescriptionService.createJobDescription.bind(jobDescriptionService);
   parseJobDescriptionUrl = jobDescriptionService.parseJobDescriptionUrl.bind(jobDescriptionService);
+  parseJobDescriptionPastedText = jobDescriptionService.parseJobDescriptionPastedText.bind(
+    jobDescriptionService,
+  );
   getJobDescriptionStatus = jobDescriptionService.getJobDescriptionStatus.bind(jobDescriptionService);
   getJobDescriptions = jobDescriptionService.getJobDescriptions.bind(jobDescriptionService);
   updateJobDescription = jobDescriptionService.updateJobDescription.bind(jobDescriptionService);
@@ -96,6 +99,7 @@ export const {
   deleteWhyGoodFitDraft,
   createJobDescription,
   parseJobDescriptionUrl,
+  parseJobDescriptionPastedText,
   getJobDescriptionStatus,
   getJobDescriptions,
   updateJobDescription,

@@ -6,15 +6,17 @@ job descriptions associated with CVs for AI-powered optimization.
 """
 
 import asyncio
+from contextlib import contextmanager
 from datetime import datetime
 import logging
+import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from src.config import BackgroundTaskConfig, APIConfig
@@ -42,7 +44,12 @@ from src.services.job_description_service import (
     list_job_descriptions_for_user,
     update_job_description_owned_by,
 )
-from src.services.url_parsing_service import _is_search_results_page, parse_job_url
+from src.services.url_parsing_service import (
+    MIN_PASTED_JOB_TEXT_CHARS,
+    PASTED_JOB_SOURCE_MARKER,
+    _is_search_results_page,
+    parse_pasted_job_text,
+)
 from src.utils.background_tasks import run_task_in_background
 from src.utils.task_logging import make_task_exception_logger
 
@@ -50,24 +57,93 @@ router = APIRouter(prefix="/api", tags=["job-descriptions"])
 limiter = create_combined_limiter()
 
 
-def parse_job_url_sync(task_id: str, url: str, user_id: str):
-    """Synchronous job URL parsing function to run in thread pool"""
-    import logging
-    import time
+def _persist_background_parse_exception(
+    task_id: str, exc: BaseException, log_prefix: str
+) -> None:
+    """
+    Mark a job description as no longer parsing after an unexpected exception.
 
-    logger = logging.getLogger(__name__)
+    Uses at most two DB sessions: first attempt stores the real error; on failure,
+    one retry sets a generic message (same behavior as the previous inline handlers).
+    """
 
-    # Add a small delay to ensure frontend can see is_parsing=True state
+    def _store_parse_error(message: str, *, only_if_parsing: bool = False) -> bool:
+        with _db_session() as db:
+            jd = db.query(JobDescription).filter(JobDescription.id == task_id).first()
+            if not jd:
+                return False
+            if only_if_parsing and not jd.is_parsing:
+                return False
+
+            jd.is_parsing = False
+            jd.parse_error = message
+            try:
+                db.commit()
+            except Exception:
+                db.rollback()
+                raise
+            return True
+
+    try:
+        if _store_parse_error(f"Background parsing failed: {str(exc)}"):
+            logger.info(
+                "%s: updated job description %s with error status", log_prefix, task_id
+            )
+    except Exception as update_error:
+        logger.exception(
+            "%s: failed to update job description with error: %s",
+            log_prefix,
+            str(update_error),
+        )
+        try:
+            if _store_parse_error(
+                "Parsing failed due to system error", only_if_parsing=True
+            ):
+                logger.info(
+                    "%s: updated job description %s on retry", log_prefix, task_id
+                )
+        except Exception as final_error:
+            logger.critical(
+                "%s: CRITICAL: failed to update job description after retry: %s",
+                log_prefix,
+                str(final_error),
+            )
+
+
+@contextmanager
+def _db_session():
+    """Yield a database session and always close it."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        try:
+            db.close()
+        except Exception:
+            pass
+
+
+def _parse_job_background_sync(
+    task_id: str,
+    user_id: str,
+    parse_with_session: Callable[[Session], Dict[str, Any]],
+    *,
+    default_source_url: str,
+    parse_failure_message: str,
+    log_prefix: str,
+) -> None:
+    """
+    Shared thread-pool worker: run a parser that uses the main session, then commit JD state.
+
+    ``parse_with_session`` receives the active SQLAlchemy session and must return the
+    same result shape as ``parse_job_url`` / ``parse_pasted_job_text``.
+    """
     time.sleep(BackgroundTaskConfig.URL_PARSING_DELAY_SECONDS)
 
     db = SessionLocal()
     try:
-        # Parse job URL (it's a synchronous function)
-        from src.services.url_parsing_service import parse_job_url
+        result = parse_with_session(db)
 
-        result = parse_job_url(url, user_id=user_id, db_session=db)
-
-        # Update JobDescription record with parsed data
         jd = db.query(JobDescription).filter(JobDescription.id == task_id).first()
         if jd:
             if result.get("success", False):
@@ -75,71 +151,71 @@ def parse_job_url_sync(task_id: str, url: str, user_id: str):
                 jd.title = result.get("title")
                 jd.company = result.get("company")
                 jd.location = result.get("location")
-                jd.source_url = result.get("source_url", url)
+                jd.source_url = result.get("source_url", default_source_url)
                 jd.is_parsing = False
                 jd.parse_error = None
             else:
                 jd.is_parsing = False
-                jd.parse_error = result.get("error", "Failed to parse URL")
+                jd.parse_error = result.get("error", parse_failure_message)
 
             db.commit()
             db.refresh(jd)
 
     except Exception as e:
-        # Update JobDescription record with error
-        logger.exception(f"parse_job_url_sync: Exception during parsing: {str(e)}")
-        db_error = SessionLocal()
-        try:
-            jd = (
-                db_error.query(JobDescription)
-                .filter(JobDescription.id == task_id)
-                .first()
-            )
-            if jd:
-                jd.is_parsing = False
-                jd.parse_error = f"Background parsing failed: {str(e)}"
-                db_error.commit()
-                logger.info(
-                    f"Successfully updated job description {task_id} with error status"
-                )
-        except Exception as update_error:
-            logger.exception(
-                f"parse_job_url_sync: Failed to update job description with error: {str(update_error)}"
-            )
-            # Even if commit fails, try one more time with a fresh session
-            try:
-                db_final = SessionLocal()
-                jd = (
-                    db_final.query(JobDescription)
-                    .filter(JobDescription.id == task_id)
-                    .first()
-                )
-                if jd and jd.is_parsing:
-                    jd.is_parsing = False
-                    jd.parse_error = "Parsing failed due to system error"
-                    db_final.commit()
-                    logger.info(
-                        f"Successfully updated job description {task_id} on retry"
-                    )
-                db_final.close()
-            except Exception as final_error:
-                logger.critical(
-                    f"CRITICAL: Failed to update job description {task_id} status after multiple attempts: {str(final_error)}"
-                )
-        finally:
-            db_error.close()
+        logger.exception("%s: Exception during parsing: %s", log_prefix, str(e))
+        _persist_background_parse_exception(task_id, e, log_prefix)
     finally:
-        # Ensure database session is always closed
         try:
             db.close()
         except Exception:
             pass
 
 
+def parse_job_url_sync(task_id: str, user_id: str, url: str):
+    """Synchronous job URL parsing function to run in thread pool."""
+
+    def parse_with_session(db: Session) -> Dict[str, Any]:
+        from src.services.url_parsing_service import parse_job_url
+
+        return parse_job_url(url, user_id=user_id, db_session=db)
+
+    _parse_job_background_sync(
+        task_id,
+        user_id,
+        parse_with_session,
+        default_source_url=url,
+        parse_failure_message="Failed to parse URL",
+        log_prefix="parse_job_url_sync",
+    )
+
+
 async def parse_job_url_background(jd_id: str, url: str, user_id: str):
     """Parse job URL in background using thread pool executor"""
     await run_task_in_background(
-        jd_id, "job_url_parsing", parse_job_url_sync, url, user_id
+        jd_id, "job_url_parsing", parse_job_url_sync, user_id, url
+    )
+
+
+def parse_job_text_sync(task_id: str, user_id: str, pasted_text: str):
+    """Synchronous pasted-text parsing for thread pool."""
+
+    def parse_with_session(db: Session) -> Dict[str, Any]:
+        return parse_pasted_job_text(pasted_text, user_id=user_id, db_session=db)
+
+    _parse_job_background_sync(
+        task_id,
+        user_id,
+        parse_with_session,
+        default_source_url=PASTED_JOB_SOURCE_MARKER,
+        parse_failure_message="Failed to parse pasted text",
+        log_prefix="parse_job_text_sync",
+    )
+
+
+async def parse_job_text_background(jd_id: str, pasted_text: str, user_id: str):
+    """Parse pasted job description text in background using thread pool executor."""
+    await run_task_in_background(
+        jd_id, "job_text_parsing", parse_job_text_sync, user_id, pasted_text
     )
 
 
@@ -192,6 +268,12 @@ class JobDescriptionListResponse(BaseModel):
 
 class JobDescriptionParseRequest(BaseModel):
     url: str
+
+
+class JobDescriptionParseTextRequest(BaseModel):
+    """Pasted job posting text to parse with the same AI pipeline as parse-url."""
+
+    text: str = Field(..., min_length=MIN_PASTED_JOB_TEXT_CHARS)
 
 
 class JobDescriptionParseResponse(BaseModel):
@@ -589,6 +671,77 @@ async def parse_user_job_description_url(
         company=None,
         location=None,
         source_url=parse_request.url,
+        source=None,
+        error=None,
+    )
+
+
+@router.post("/job-descriptions/parse-text", response_model=JobDescriptionParseResponse)
+@limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
+async def parse_user_job_description_text(
+    request: Request,
+    parse_request: JobDescriptionParseTextRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+    cv_id: Optional[str] = None,
+    _quota: None = Depends(require_ai_quota),
+):
+    """
+    Parse pasted job description text using background processing (same AI as URL flow).
+    Optionally associate it with a CV using the cv_id query parameter.
+    """
+    jd = JobDescription(
+        user_id=str(current_user.id),
+        cv_id=cv_id,
+        source_url=PASTED_JOB_SOURCE_MARKER,
+        is_parsing=True,
+        content="",
+        title=None,
+        company=None,
+        location=None,
+    )
+
+    db.add(jd)
+    db.flush()
+
+    if cv_id:
+        from src.models.cv_job_description import CVJobDescription
+
+        cv = get_cv_by_id(db, cv_id, str(current_user.id))
+        if not cv:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="CV not found"
+            )
+
+        association = CVJobDescription(cv_id=cv_id, job_description_id=jd.id)
+        db.add(association)
+
+    db.commit()
+    db.refresh(jd)
+
+    await asyncio.sleep(0.1)
+
+    task = asyncio.create_task(
+        parse_job_text_background(str(jd.id), parse_request.text, str(current_user.id))
+    )
+    task.add_done_callback(
+        make_task_exception_logger(
+            logger,
+            "Job description text parsing task failed: jd_id=%s, error=%s",
+            str(jd.id),
+        )
+    )
+
+    return JobDescriptionParseResponse(
+        success=True,
+        job_description_id=str(jd.id),
+        is_parsing=True,
+        content=None,
+        title=None,
+        company=None,
+        location=None,
+        source_url=PASTED_JOB_SOURCE_MARKER,
         source=None,
         error=None,
     )

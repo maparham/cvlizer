@@ -6,6 +6,14 @@ import { JobDescription } from "../../../../types/ai";
 import { FieldValidationResult } from "../../../../utils/validation";
 
 /**
+ * Minimum pasted length for AI parse on the URL tab.
+ * Must stay in sync with `MIN_PASTED_JOB_TEXT_CHARS` in
+ * `backend/src/services/url_parsing_service.py` and `JobDescriptionParseTextRequest`
+ * in `backend/src/api/job_descriptions.py`.
+ */
+export const MIN_PASTED_JOB_TEXT_CHARS = 100;
+
+/**
  * Main modal external props interface
  */
 export interface JobDescriptionsModalProps {
@@ -22,14 +30,16 @@ export interface JobDescriptionsModalProps {
  */
 export interface URLTabProps {
   urlInput: string;
-  setUrlInput: (value: string) => void;
   urlValidation: FieldValidationResult;
   urlTouched: boolean;
+  urlTabPasteText: string;
   isLoading: boolean;
   error: string | null;
   onUrlChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onUrlBlur: () => void;
+  onPasteChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
+  loadSaveDisabled: boolean;
 }
 
 /**

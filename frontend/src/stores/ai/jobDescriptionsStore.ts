@@ -7,11 +7,128 @@
  */
 
 import { StateCreator } from "zustand";
+import type { StoreApi } from "zustand";
 import type { AIStore } from "./types";
 import { JobDescription } from "../../types/ai";
 import { aiService } from "../../services/ai";
 import { Logger } from "../../utils/logger";
 import { ErrorHandler } from "../../utils/errorHandler";
+
+/** setState for the combined AI store (parsing placeholders touch jobDescriptions slice). */
+type AISetState = StoreApi<AIStore>["setState"];
+
+/** Shared response shape from parse-url and parse-text endpoints. */
+interface JobParseApiResponse {
+  job_description_id?: string;
+  is_parsing?: boolean;
+}
+
+interface ParseJobDescriptionConfig {
+  cvId: string;
+  parseRequest: () => Promise<JobParseApiResponse>;
+  sourceLabel: string;
+  sourceUrl: string;
+  placeholderContent: string;
+  errorAction: "parse-url" | "parse-text";
+  errorUserMessage: string;
+  errorMetadata: Record<string, unknown>;
+}
+
+/**
+ * Add a parsing placeholder job description and refresh from API if already complete.
+ */
+async function mergeParsingJobIntoStore(
+  set: AISetState,
+  cvId: string,
+  response: JobParseApiResponse,
+  contentLine: string,
+  sourceUrl: string,
+): Promise<void> {
+  if (!response.job_description_id) {
+    return;
+  }
+
+  const placeholderJobDescription: JobDescription = {
+    id: response.job_description_id,
+    title: "Parsing job description...",
+    company: "Unknown Company",
+    location: "Unknown Location",
+    content: contentLine,
+    source_url: sourceUrl,
+    is_parsing: true,
+    parse_error: undefined,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    cv_id: cvId,
+    cv_ids: [cvId],
+  };
+
+  set((state) => {
+    const newMap = { ...state.activeJobDescriptionIdPerCV };
+    newMap[cvId] = placeholderJobDescription.id;
+    localStorage.setItem(
+      "activeJobDescriptionIdPerCV",
+      JSON.stringify(newMap),
+    );
+
+    return {
+      jobDescriptions: [...state.jobDescriptions, placeholderJobDescription],
+      activeJobDescriptionIdPerCV: newMap,
+    };
+  });
+
+  if (!response.is_parsing) {
+    const jobDescription = await aiService.getJobDescriptionStatus(
+      response.job_description_id,
+    );
+    set((state) => ({
+      jobDescriptions: state.jobDescriptions.map((jd) =>
+        jd.id === response.job_description_id ? jobDescription : jd,
+      ),
+    }));
+  }
+}
+
+async function parseJobDescriptionAndMerge(
+  set: AISetState,
+  config: ParseJobDescriptionConfig,
+): Promise<JobParseApiResponse> {
+  const {
+    cvId,
+    parseRequest,
+    sourceLabel,
+    sourceUrl,
+    placeholderContent,
+    errorAction,
+    errorUserMessage,
+    errorMetadata,
+  } = config;
+
+  try {
+    Logger.info(`Parsing job description from ${sourceLabel}`, errorMetadata);
+    const response = await parseRequest();
+
+    aiService.clearAllCache();
+
+    await mergeParsingJobIntoStore(
+      set,
+      cvId,
+      response,
+      placeholderContent,
+      sourceUrl,
+    );
+
+    return response;
+  } catch (error) {
+    ErrorHandler.handle(error, {
+      feature: "job-descriptions",
+      action: errorAction,
+      userMessage: errorUserMessage,
+      metadata: errorMetadata,
+    });
+    throw error;
+  }
+}
 
 export interface JobDescriptionsSliceState {
   jobDescriptions: JobDescription[];
@@ -45,6 +162,7 @@ export interface JobDescriptionsSliceActions {
   showJobDescriptionInSidebar: (jobDescriptionId: string) => void;
   clearJobDescriptionsForCV: (cvId: string) => void;
   parseJobDescriptionUrl: (cvId: string, url: string) => Promise<any>;
+  parseJobDescriptionPastedText: (cvId: string, text: string) => Promise<any>;
   updateJobDescriptionStatus: (jobDescriptionId: string) => Promise<JobDescription>;
 }
 
@@ -312,72 +430,29 @@ export const createJobDescriptionsSlice: StateCreator<
     },
 
     parseJobDescriptionUrl: async (cvId: string, url: string) => {
-      try {
-        Logger.info("Parsing job description from URL", { cvId, url });
-        // Pass url first, then cvId for association
-        const response = await aiService.parseJobDescriptionUrl(url, cvId);
+      return parseJobDescriptionAndMerge(set, {
+        cvId,
+        parseRequest: () => aiService.parseJobDescriptionUrl(url, cvId),
+        sourceLabel: "URL",
+        sourceUrl: url,
+        placeholderContent: "Parsing job description from URL...",
+        errorAction: "parse-url",
+        errorUserMessage: "Failed to parse job description from URL",
+        errorMetadata: { cvId, url },
+      });
+    },
 
-        // Clear cache to ensure fresh data on next load
-        aiService.clearAllCache();
-
-        // Always create a placeholder job description immediately
-        if (response.job_description_id) {
-          const placeholderJobDescription: JobDescription = {
-            id: response.job_description_id,
-            title: "Parsing job description...",
-            company: "Unknown Company",
-            location: "Unknown Location",
-            content: "Parsing job description from URL...",
-            source_url: url,
-            is_parsing: true,
-            parse_error: undefined,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            cv_id: cvId,
-            cv_ids: [cvId], // Initially associated with this CV
-          };
-
-          set((state) => {
-            // Update per-CV map
-            const newMap = { ...state.activeJobDescriptionIdPerCV };
-            newMap[cvId] = placeholderJobDescription.id;
-            localStorage.setItem(
-              "activeJobDescriptionIdPerCV",
-              JSON.stringify(newMap),
-            );
-
-            return {
-              jobDescriptions: [
-                ...state.jobDescriptions,
-                placeholderJobDescription,
-              ],
-              activeJobDescriptionIdPerCV: newMap,
-            };
-          });
-
-          // If parsing is complete immediately, update the placeholder
-          if (!response.is_parsing) {
-            const jobDescription = await aiService.getJobDescriptionStatus(
-              response.job_description_id,
-            );
-            set((state) => ({
-              jobDescriptions: state.jobDescriptions.map((jd) =>
-                jd.id === response.job_description_id ? jobDescription : jd,
-              ),
-            }));
-          }
-        }
-
-        return response;
-      } catch (error) {
-        ErrorHandler.handle(error, {
-          feature: "job-descriptions",
-          action: "parse-url",
-          userMessage: "Failed to parse job description from URL",
-          metadata: { cvId, url },
-        });
-        throw error;
-      }
+    parseJobDescriptionPastedText: async (cvId: string, text: string) => {
+      return parseJobDescriptionAndMerge(set, {
+        cvId,
+        parseRequest: () => aiService.parseJobDescriptionPastedText(text, cvId),
+        sourceLabel: "pasted text",
+        sourceUrl: "pasted-text",
+        placeholderContent: "Parsing pasted job description...",
+        errorAction: "parse-text",
+        errorUserMessage: "Failed to parse pasted job description",
+        errorMetadata: { cvId },
+      });
     },
 
     updateJobDescriptionStatus: async (jobDescriptionId: string) => {

@@ -103,6 +103,41 @@ def parse_job_url(url: str, user_id: str = None, db_session=None) -> Dict[str, A
         }
 
 
+# Minimum pasted characters before AI parsing. Keep in sync with
+# `MIN_PASTED_JOB_TEXT_CHARS` in frontend `job-descriptions-modal/types.ts` and
+# `JobDescriptionParseTextRequest` in `api/job_descriptions.py`.
+MIN_PASTED_JOB_TEXT_CHARS = 100
+# Stored on JobDescription.source_url when content came from paste (not a live URL).
+PASTED_JOB_SOURCE_MARKER = "pasted-text"
+
+
+def parse_pasted_job_text(
+    raw_text: str, user_id: str = None, db_session=None
+) -> Dict[str, Any]:
+    """
+    Parse user-pasted job description text using the same AI pipeline as URL parsing.
+
+    Skips web scraping; sends trimmed text to OpenAI for structuring.
+    """
+    from src.services.ai_service.common import MAX_JOB_CONTENT_LENGTH
+
+    stripped = (raw_text or "").strip()
+    if len(stripped) < MIN_PASTED_JOB_TEXT_CHARS:
+        return {
+            "error": (
+                f"Pasted text is too short. Please paste at least {MIN_PASTED_JOB_TEXT_CHARS} "
+                "characters of the job posting."
+            ),
+            "success": False,
+        }
+
+    content = stripped
+    if len(content) > MAX_JOB_CONTENT_LENGTH:
+        content = content[:MAX_JOB_CONTENT_LENGTH] + "..."
+
+    return _parse_with_openai(content, PASTED_JOB_SOURCE_MARKER, user_id, db_session)
+
+
 def _extract_raw_content_with_fallback(url: str) -> str:
     """
     Extract raw content from URL with browser automation fallback for JavaScript-heavy sites.

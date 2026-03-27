@@ -78,6 +78,38 @@ class JobDescriptionService {
   }
 
   /**
+   * Parse pasted job description text (same AI pipeline as parse-url).
+   */
+  async parseJobDescriptionPastedText(
+    text: string,
+    cvId?: string,
+  ): Promise<any> {
+    try {
+      const params = cvId ? { cv_id: cvId } : {};
+      const response = await api.post<any>(
+        `/job-descriptions/parse-text`,
+        { text },
+        { params },
+      );
+
+      cacheManager.clearAllCache();
+
+      return response.data;
+    } catch (error: any) {
+      const detail = error.response?.data?.detail;
+      const message = Array.isArray(detail)
+        ? detail.map((d: { msg?: string }) => d.msg || "").join(" ")
+        : detail || "Failed to parse pasted job description";
+      const aiError: AIServiceError = {
+        error: message,
+        details: error.message,
+        code: error.response?.status?.toString(),
+      };
+      throw aiError;
+    }
+  }
+
+  /**
    * Check job description parsing status
    */
   async getJobDescriptionStatus(
@@ -236,6 +268,7 @@ export const jobDescriptionService = new JobDescriptionService();
 export const {
   createJobDescription,
   parseJobDescriptionUrl,
+  parseJobDescriptionPastedText,
   getJobDescriptionStatus,
   getJobDescriptions,
   updateJobDescription,

@@ -43,13 +43,18 @@ import {
   validateJobPostingUrl,
   FieldValidationResult,
 } from "../../../../utils/validation";
+import { normalizeApiError } from "../../../../services/api";
 import { useJobDescriptionPolling } from "../../../../hooks/useJobDescriptionPolling";
 import URLTab from "./URLTab";
 import ManualTab from "./ManualTab";
 import ArchiveTab from "./ArchiveTab";
 import EditDialog from "./EditDialog";
 import DeleteDialog from "./DeleteDialog";
-import { JobDescriptionsModalProps, TabPanelProps } from "./types";
+import {
+  JobDescriptionsModalProps,
+  MIN_PASTED_JOB_TEXT_CHARS,
+  TabPanelProps,
+} from "./types";
 
 function TabPanel({ children, value, index, ...other }: TabPanelProps) {
   return (
@@ -65,6 +70,46 @@ function TabPanel({ children, value, index, ...other }: TabPanelProps) {
   );
 }
 
+type UrlTabSubmitAction =
+  | { type: "submit-url" }
+  | { type: "submit-paste"; pasted: string }
+  | { type: "error"; message: string };
+
+function resolveUrlTabSubmitAction(
+  urlInput: string,
+  urlValidation: FieldValidationResult,
+  urlTabPasteText: string,
+): UrlTabSubmitAction {
+  const hasUrl = urlInput.trim().length > 0;
+  const pasted = urlTabPasteText.trim();
+
+  if (hasUrl) {
+    if (!urlValidation.isValid) {
+      return {
+        type: "error",
+        message: urlValidation.message || "Please enter a valid job posting URL",
+      };
+    }
+    return { type: "submit-url" };
+  }
+
+  if (pasted.length >= MIN_PASTED_JOB_TEXT_CHARS) {
+    return { type: "submit-paste", pasted };
+  }
+
+  if (pasted.length > 0) {
+    return {
+      type: "error",
+      message: `Please paste at least ${MIN_PASTED_JOB_TEXT_CHARS} characters of the job posting, or enter a valid job posting URL above.`,
+    };
+  }
+
+  return {
+    type: "error",
+    message: "Please enter a job posting URL or paste the job description below.",
+  };
+}
+
 const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
   open,
   onClose,
@@ -75,6 +120,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
 }) => {
   const [tabValue, setTabValue] = useState(0);
   const [urlInput, setUrlInput] = useState("");
+  const [urlTabPasteText, setUrlTabPasteText] = useState("");
   const [textInput, setTextInput] = useState("");
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -103,6 +149,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setActiveJobDescription,
     showJobDescriptionInSidebar,
     parseJobDescriptionUrl,
+    parseJobDescriptionPastedText,
     associateJobDescriptionWithCV,
   } = useAIStore();
 
@@ -150,6 +197,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setError(null);
     // Reset URL validation state when switching tabs
     setUrlTouched(false);
+    setUrlTabPasteText("");
     setUrlValidation({
       isValid: false,
       message: "Please enter a job posting URL",
@@ -183,6 +231,80 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setUrlValidation(validation);
   }, [urlInput, validateUrl]);
 
+  const handleUrlPasteChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setUrlTabPasteText(event.target.value);
+      setError(null);
+    },
+    [],
+  );
+
+  const clearFieldsAfterUrlTabParseSuccess = useCallback(() => {
+    setUrlInput("");
+    setUrlTabPasteText("");
+    setTitle("");
+    setCompany("");
+    setLocation("");
+    setTextInput("");
+  }, []);
+
+  const finishBackgroundParseSuccess = useCallback(() => {
+    clearFieldsAfterUrlTabParseSuccess();
+    onClose();
+    showSuccess(
+      "Job description created and is being parsed in the background",
+    );
+  }, [clearFieldsAfterUrlTabParseSuccess, onClose, showSuccess]);
+
+  const executeParseWithErrorHandling = useCallback(
+    async (
+      parseFunction: () => Promise<{ success?: boolean; error?: string }>,
+      errorFallback: string,
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const parsedData = await parseFunction();
+        if (!parsedData.success) {
+          throw new Error(parsedData.error || errorFallback);
+        }
+        finishBackgroundParseSuccess();
+      } catch (err) {
+        const normalized = normalizeApiError(err);
+        const message =
+          normalized && normalized !== "Request failed" && normalized !== "Network error"
+            ? normalized
+            : errorFallback;
+        setError(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [finishBackgroundParseSuccess],
+  );
+
+  const submitUrlTabParseFromUrl = useCallback(async () => {
+    await executeParseWithErrorHandling(
+      () => parseJobDescriptionUrl(cvId, urlInput),
+      'Unable to parse this URL. Please use the "MANUAL" tab to enter the job description manually.',
+    );
+  }, [
+    cvId,
+    urlInput,
+    parseJobDescriptionUrl,
+    executeParseWithErrorHandling,
+  ]);
+
+  const submitUrlTabParseFromPaste = useCallback(
+    async (pasted: string) => {
+      await executeParseWithErrorHandling(
+        () => parseJobDescriptionPastedText(cvId, pasted),
+        "Unable to parse pasted job description.",
+      );
+    },
+    [cvId, parseJobDescriptionPastedText, executeParseWithErrorHandling],
+  );
+
   // Initialize URL validation when modal opens
   useEffect(() => {
     if (open) {
@@ -191,66 +313,30 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     }
   }, [open, urlInput, validateUrl]);
 
-  const handleUrlSubmit = useCallback(async () => {
-    // Mark URL as touched and validate
+  const handleUrlTabSubmit = useCallback(async () => {
     setUrlTouched(true);
     const validation = validateUrl(urlInput);
     setUrlValidation(validation);
 
-    if (!urlInput.trim()) {
-      setError("Please enter a URL");
+    const action = resolveUrlTabSubmitAction(urlInput, validation, urlTabPasteText);
+
+    if (action.type === "submit-url") {
+      await submitUrlTabParseFromUrl();
       return;
     }
 
-    if (!validation.isValid) {
-      setError(validation.message || "Please enter a valid job posting URL");
+    if (action.type === "submit-paste") {
+      await submitUrlTabParseFromPaste(action.pasted);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Use the URL parsing service - this creates the job description on backend
-      const parsedData = await parseJobDescriptionUrl(cvId, urlInput);
-
-      if (!(parsedData as { success?: boolean }).success) {
-        const errorMsg =
-          (parsedData as { error?: string }).error || "Failed to parse URL";
-        throw new Error(errorMsg);
-      }
-
-      // Clear form fields
-      setUrlInput("");
-      setTitle("");
-      setCompany("");
-      setLocation("");
-      setTextInput("");
-
-      // Close the modal immediately to provide clear feedback
-      onClose();
-
-      // Show success message
-      showSuccess(
-        "Job description created and is being parsed in the background",
-      );
-    } catch (err) {
-      // Use the actual error message from the backend (e.g., "This appears to be a search results page...")
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : 'Unable to parse this URL. Please use the "MANUAL" tab to enter the job description manually.';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+    setError(action.message);
   }, [
-    urlInput,
-    cvId,
-    parseJobDescriptionUrl,
-    onClose,
-    showSuccess,
     validateUrl,
+    urlInput,
+    urlTabPasteText,
+    submitUrlTabParseFromUrl,
+    submitUrlTabParseFromPaste,
   ]);
 
   const handleTextSubmit = useCallback(async () => {
@@ -441,6 +527,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setTabValue(0);
     // Reset URL validation state when closing modal
     setUrlTouched(false);
+    setUrlTabPasteText("");
     setUrlValidation({
       isValid: false,
       message: "Please enter a job posting URL",
@@ -450,6 +537,14 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setEditingJobDescription(null);
     onClose();
   }, [onClose]);
+
+  const canSubmitUrl =
+    urlInput.trim().length > 0 && urlValidation.isValid;
+  const canSubmitPaste =
+    urlInput.trim().length === 0 &&
+    urlTabPasteText.trim().length >= MIN_PASTED_JOB_TEXT_CHARS;
+  const urlTabLoadSaveDisabled =
+    isLoading || (!canSubmitUrl && !canSubmitPaste);
 
   return (
     <>
@@ -516,14 +611,16 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
               <TabPanel value={tabValue} index={0}>
                 <URLTab
                   urlInput={urlInput}
-                  setUrlInput={setUrlInput}
                   urlValidation={urlValidation}
                   urlTouched={urlTouched}
+                  urlTabPasteText={urlTabPasteText}
                   isLoading={isLoading}
                   error={error}
                   onUrlChange={handleUrlChange}
                   onUrlBlur={handleUrlBlur}
-                  onSubmit={handleUrlSubmit}
+                  onPasteChange={handleUrlPasteChange}
+                  onSubmit={handleUrlTabSubmit}
+                  loadSaveDisabled={urlTabLoadSaveDisabled}
                 />
               </TabPanel>
 
