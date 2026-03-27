@@ -86,8 +86,8 @@ const PublicJobDescriptionView: React.FC = () => {
   };
 
   const showMetadataHeader = !loading && !error && Boolean(data);
-  const modifiedDateLabel = data?.updated_at
-    ? new Date(data.updated_at).toLocaleDateString(undefined, {
+  const createdDateLabel = data?.created_at
+    ? new Date(data.created_at).toLocaleDateString(undefined, {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -156,9 +156,9 @@ const PublicJobDescriptionView: React.FC = () => {
             </Box>
 
             <Box sx={{ minWidth: 0, justifySelf: "center" }}>
-              {showMetadataHeader && modifiedDateLabel && (
+              {showMetadataHeader && createdDateLabel && (
                 <Typography variant="subtitle2" color="text.secondary" noWrap>
-                  Updated on {modifiedDateLabel}
+                  Created on {createdDateLabel}
                 </Typography>
               )}
             </Box>
