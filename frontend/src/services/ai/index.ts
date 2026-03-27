@@ -48,6 +48,9 @@ class AIService {
     jobDescriptionService,
   );
   getJobDescriptionStatus = jobDescriptionService.getJobDescriptionStatus.bind(jobDescriptionService);
+  cancelJobDescriptionParsing = jobDescriptionService.cancelJobDescriptionParsing.bind(
+    jobDescriptionService,
+  );
   getJobDescriptions = jobDescriptionService.getJobDescriptions.bind(jobDescriptionService);
   updateJobDescription = jobDescriptionService.updateJobDescription.bind(jobDescriptionService);
   deleteJobDescription = jobDescriptionService.deleteJobDescription.bind(jobDescriptionService);
@@ -101,6 +104,7 @@ export const {
   parseJobDescriptionUrl,
   parseJobDescriptionPastedText,
   getJobDescriptionStatus,
+  cancelJobDescriptionParsing,
   getJobDescriptions,
   updateJobDescription,
   deleteJobDescription,

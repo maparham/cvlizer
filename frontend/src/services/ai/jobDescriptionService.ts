@@ -134,6 +134,25 @@ class JobDescriptionService {
   }
 
   /**
+   * Cancel in-progress parsing and hide the job description.
+   */
+  async cancelJobDescriptionParsing(jobDescriptionId: string): Promise<void> {
+    try {
+      await api.post(`/job-descriptions/${jobDescriptionId}/cancel`);
+      cacheManager.clearAllCache();
+    } catch (error: any) {
+      const aiError: AIServiceError = {
+        error:
+          error.response?.data?.detail ||
+          "Failed to cancel job description parsing",
+        details: error.message,
+        code: error.response?.status?.toString(),
+      };
+      throw aiError;
+    }
+  }
+
+  /**
    * Get all job descriptions for the user (not filtered by CV)
    */
   async getJobDescriptions(): Promise<JobDescription[]> {
@@ -270,6 +289,7 @@ export const {
   parseJobDescriptionUrl,
   parseJobDescriptionPastedText,
   getJobDescriptionStatus,
+  cancelJobDescriptionParsing,
   getJobDescriptions,
   updateJobDescription,
   deleteJobDescription,

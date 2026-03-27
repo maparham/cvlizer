@@ -151,6 +151,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     parseJobDescriptionUrl,
     parseJobDescriptionPastedText,
     associateJobDescriptionWithCV,
+    cancelJobDescriptionParsing,
   } = useAIStore();
 
   const jobDescriptions = useAIStore((state) => state.jobDescriptions);
@@ -522,6 +523,13 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     setJobDescriptionToDelete(null);
   }, []);
 
+  const handleCancelParsing = useCallback(
+    async (jobDescription: JobDescription) => {
+      await cancelJobDescriptionParsing(jobDescription.id);
+    },
+    [cancelJobDescriptionParsing],
+  );
+
   const handleClose = useCallback(() => {
     setError(null);
     setTabValue(0);
@@ -650,6 +658,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                   onEdit={handleEditClick}
                   onDelete={handleDeleteClick}
                   onSelect={handleJobDescriptionSelect}
+                  onCancelParsing={handleCancelParsing}
                 />
               </TabPanel>
             </Box>

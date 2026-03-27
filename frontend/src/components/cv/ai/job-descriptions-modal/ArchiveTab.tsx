@@ -19,6 +19,7 @@ const ArchiveTab: React.FC<ArchiveTabProps> = ({
   onEdit,
   onDelete,
   onSelect,
+  onCancelParsing,
 }) => {
   return (
     <Box sx={{ maxWidth: 1400, mx: "auto", p: 2 }}>
@@ -55,6 +56,7 @@ const ArchiveTab: React.FC<ArchiveTabProps> = ({
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onSelect={onSelect}
+                  onCancelParsing={onCancelParsing}
                   showSelectButton={true}
                   maxChipWidth={200}
                 />

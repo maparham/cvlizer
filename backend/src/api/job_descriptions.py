@@ -145,21 +145,33 @@ def _parse_job_background_sync(
         result = parse_with_session(db)
 
         jd = db.query(JobDescription).filter(JobDescription.id == task_id).first()
-        if jd:
-            if result.get("success", False):
-                jd.content = result.get("content", "")
-                jd.title = result.get("title")
-                jd.company = result.get("company")
-                jd.location = result.get("location")
-                jd.source_url = result.get("source_url", default_source_url)
-                jd.is_parsing = False
-                jd.parse_error = None
-            else:
-                jd.is_parsing = False
-                jd.parse_error = result.get("error", parse_failure_message)
+        if not jd:
+            return
 
-            db.commit()
-            db.refresh(jd)
+        # User may cancel/hide parsing while the background thread is still running.
+        # In that case, skip writing any late results.
+        if jd.hidden or not jd.is_parsing:
+            logger.info(
+                "%s: skipping final write for cancelled/hidden job description %s",
+                log_prefix,
+                task_id,
+            )
+            return
+
+        if result.get("success", False):
+            jd.content = result.get("content", "")
+            jd.title = result.get("title")
+            jd.company = result.get("company")
+            jd.location = result.get("location")
+            jd.source_url = result.get("source_url", default_source_url)
+            jd.is_parsing = False
+            jd.parse_error = None
+        else:
+            jd.is_parsing = False
+            jd.parse_error = result.get("error", parse_failure_message)
+
+        db.commit()
+        db.refresh(jd)
 
     except Exception as e:
         logger.exception("%s: Exception during parsing: %s", log_prefix, str(e))
@@ -444,82 +456,31 @@ async def delete_job_description(
     return {"message": "Job description hidden successfully"}
 
 
-@router.post(
-    "/cvs/{cv_id}/job-descriptions/parse-url", response_model=JobDescriptionParseResponse
-)
-@limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
-async def parse_job_description_url(
+@router.post("/job-descriptions/{jd_id}/cancel")
+async def cancel_job_description_parsing(
     request: Request,
-    cv_id: str,
-    parse_request: JobDescriptionParseRequest,
+    jd_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_effective_user_lightweight),
-    _quota: None = Depends(require_ai_quota),
 ):
-    """Parse a job description from a URL using background processing"""
-    # Verify CV exists and belongs to user
-    cv = get_cv_by_id(db, cv_id, str(current_user.id))
-
-    if not cv:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
-
-    # Validate URL before creating job description - check for search results pages
-    if _is_search_results_page(parse_request.url):
+    """Cancel an in-progress parsing task and hide it immediately from the user."""
+    jd = get_job_description_by_id(db, jd_id, str(current_user.id))
+    if not jd:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab.",
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job description not found"
         )
 
-    # Create JobDescription record immediately with parsing status
-    jd = JobDescription(
-        user_id=str(current_user.id),
-        cv_id=cv_id,  # Track original CV
-        source_url=parse_request.url,
-        is_parsing=True,
-        content="",  # Will be populated by background task
-        title=None,
-        company=None,
-        location=None,
-    )
+    if jd.hidden:
+        return {"message": "Job description already hidden"}
 
-    db.add(jd)
-    db.flush()  # Get the ID
+    if jd.is_parsing:
+        jd.is_parsing = False
+        jd.parse_error = "cancelled_by_user"
 
-    # Create association with CV
-    from src.models.cv_job_description import CVJobDescription
-
-    association = CVJobDescription(cv_id=cv_id, job_description_id=jd.id)
-    db.add(association)
-
+    jd.hidden = True
     db.commit()
-    db.refresh(jd)
 
-    # Add small delay to ensure DB commit before starting background task
-    await asyncio.sleep(0.1)
-
-    task = asyncio.create_task(
-        parse_job_url_background(str(jd.id), parse_request.url, str(current_user.id))
-    )
-    task.add_done_callback(
-        make_task_exception_logger(
-            logger,
-            "Job description URL parsing task failed: jd_id=%s, error=%s",
-            str(jd.id),
-        )
-    )
-
-    return JobDescriptionParseResponse(
-        success=True,
-        job_description_id=str(jd.id),
-        is_parsing=True,
-        content=None,
-        title=None,
-        company=None,
-        location=None,
-        source_url=parse_request.url,
-        source=None,
-        error=None,
-    )
+    return {"message": "Job description parsing cancelled"}
 
 
 @router.get("/job-descriptions/{jd_id}/status", response_model=JobDescriptionResponse)

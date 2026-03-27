@@ -115,6 +115,7 @@ export interface JobDescriptionCardProps {
   onHide?: (jobDescriptionId: string) => void;
   onSelect?: (jobDescription: JobDescription) => void;
   onStatusUpdate?: (jobDescription: JobDescription) => void;
+  onCancelParsing?: (jobDescription: JobDescription) => Promise<void>;
   showSelectButton?: boolean;
   variant?: "default" | "sidebar";
   maxChipWidth?: number;
@@ -129,11 +130,13 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   onHide,
   onSelect,
   onStatusUpdate,
+  onCancelParsing,
   showSelectButton = false,
   variant = "default",
   maxChipWidth: _maxChipWidth,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isCancellingParse, setIsCancellingParse] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { showSuccess, showError } = useNotifications();
@@ -157,6 +160,23 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
       showSuccess("Job description copied to clipboard");
     } catch (err) {
       showError("Error", "Failed to copy to clipboard");
+    }
+  };
+
+  const handleCancelParsing = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onCancelParsing || isCancellingParse) {
+      return;
+    }
+
+    setIsCancellingParse(true);
+    try {
+      await onCancelParsing(jobDescription);
+      showSuccess("Parsing cancelled");
+    } catch (_err) {
+      showError("Error", "Failed to cancel parsing");
+    } finally {
+      setIsCancellingParse(false);
     }
   };
 
@@ -266,6 +286,18 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                     This may take a few moments
                   </Typography>
                 </Box>
+                {onCancelParsing && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                    onClick={handleCancelParsing}
+                    disabled={isCancellingParse}
+                    sx={{ mt: 1 }}
+                  >
+                    {isCancellingParse ? "Cancelling..." : "Cancel parsing"}
+                  </Button>
+                )}
               </>
             )}
           </Box>

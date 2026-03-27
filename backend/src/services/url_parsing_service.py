@@ -49,9 +49,22 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from src.config import BackgroundTaskConfig
 from src.services.ai_service import extract_job_description_with_ai
 
 logger = logging.getLogger(__name__)
+
+
+def _is_driver_startup_failure(error_message: str) -> bool:
+    """Detect hard ChromeDriver startup failures that should fail fast."""
+    lowered = error_message.lower()
+    return (
+        "chromedriver unexpectedly exited" in lowered
+        or "status code was: -5" in lowered
+        or "service " in lowered
+        and "chromedriver" in lowered
+        and "exited" in lowered
+    )
 
 
 def parse_job_url(url: str, user_id: str = None, db_session=None) -> Dict[str, Any]:
@@ -239,19 +252,21 @@ def _extract_with_browser_automation(url: str) -> str:
             driver = webdriver.Chrome(service=service, options=chrome_options)
         else:
             driver = webdriver.Chrome(options=chrome_options)
-        driver.set_page_load_timeout(60)  # 60 seconds timeout
+        driver.set_page_load_timeout(
+            BackgroundTaskConfig.SELENIUM_PAGE_LOAD_TIMEOUT_SECONDS
+        )
 
         # Navigate to the URL
         driver.get(url)
 
         # Wait for page to load
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        WebDriverWait(
+            driver, BackgroundTaskConfig.SELENIUM_BODY_WAIT_TIMEOUT_SECONDS
+        ).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
         # Wait for dynamic content to load (JavaScript-heavy sites)
         # The JavaScript extraction below has its own robust selector logic with fallback
-        time.sleep(3)
+        time.sleep(BackgroundTaskConfig.SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS)
 
         # Extract page content using JavaScript
         content = driver.execute_script(
@@ -299,10 +314,22 @@ def _extract_with_browser_automation(url: str) -> str:
 
     except TimeoutException as e:
         logger.error(f"Browser automation timeout for {url}: {str(e)}")
-        raise Exception(f"Browser automation timeout: {str(e)}")
+        raise ValueError(
+            "Browser automation timed out on this URL. Please copy and paste the job "
+            "description manually using the 'Text' tab."
+        )
     except WebDriverException as e:
-        logger.error(f"Browser automation driver error for {url}: {str(e)}")
-        raise Exception(f"Browser automation driver error: {str(e)}")
+        error_message = str(e)
+        logger.error(f"Browser automation driver error for {url}: {error_message}")
+        if _is_driver_startup_failure(error_message):
+            raise ValueError(
+                "Browser automation failed to start for this URL. Please copy and "
+                "paste the job description manually using the 'Text' tab."
+            )
+        raise ValueError(
+            "Browser automation failed for this URL. Please copy and paste the job "
+            "description manually using the 'Text' tab."
+        )
     except Exception as e:
         logger.error(f"Browser automation failed for {url}: {str(e)}")
         raise

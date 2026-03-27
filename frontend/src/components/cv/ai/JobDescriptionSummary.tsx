@@ -77,6 +77,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   const {
     hideJobDescriptionFromSidebar,
     updateJobDescription,
+    cancelJobDescriptionParsing,
   } = useAIStore();
 
   // Calculate CV completeness
@@ -184,6 +185,13 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     showError,
   ]);
 
+  const handleCancelParsing = useCallback(
+    async (jobDescription: JobDescription) => {
+      await cancelJobDescriptionParsing(jobDescription.id);
+    },
+    [cancelJobDescriptionParsing],
+  );
+
   return (
     <>
       <Box>
@@ -265,6 +273,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   isActive={true}
                   onEdit={handleEditJobDescription}
                   onHide={handleJobDescriptionHide}
+                  onCancelParsing={handleCancelParsing}
                   variant="sidebar"
                   maxChipWidth={120}
                 />

@@ -378,6 +378,18 @@ class BackgroundTaskConfig:
     # Delays
     URL_PARSING_DELAY_SECONDS: float = float(os.getenv("URL_PARSING_DELAY", "1.0"))
 
+    # Selenium URL parsing tuning (seconds)
+    # Keep these configurable to tune reliability vs speed per environment.
+    SELENIUM_PAGE_LOAD_TIMEOUT_SECONDS: int = int(
+        os.getenv("SELENIUM_PAGE_LOAD_TIMEOUT_SECONDS", "20")
+    )
+    SELENIUM_BODY_WAIT_TIMEOUT_SECONDS: int = int(
+        os.getenv("SELENIUM_BODY_WAIT_TIMEOUT_SECONDS", "12")
+    )
+    SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS: float = float(
+        os.getenv("SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS", "1")
+    )
+
 
 # ============================================================================
 # File Upload Configuration

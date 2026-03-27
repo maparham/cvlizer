@@ -163,6 +163,7 @@ export interface JobDescriptionsSliceActions {
   clearJobDescriptionsForCV: (cvId: string) => void;
   parseJobDescriptionUrl: (cvId: string, url: string) => Promise<any>;
   parseJobDescriptionPastedText: (cvId: string, text: string) => Promise<any>;
+  cancelJobDescriptionParsing: (jobDescriptionId: string) => Promise<void>;
   updateJobDescriptionStatus: (jobDescriptionId: string) => Promise<JobDescription>;
 }
 
@@ -453,6 +454,40 @@ export const createJobDescriptionsSlice: StateCreator<
         errorUserMessage: "Failed to parse pasted job description",
         errorMetadata: { cvId },
       });
+    },
+
+    cancelJobDescriptionParsing: async (jobDescriptionId: string) => {
+      try {
+        await aiService.cancelJobDescriptionParsing(jobDescriptionId);
+
+        set((state) => {
+          const newMap = { ...state.activeJobDescriptionIdPerCV };
+          for (const [cvId, activeId] of Object.entries(newMap)) {
+            if (activeId === jobDescriptionId) {
+              delete newMap[cvId];
+            }
+          }
+          localStorage.setItem(
+            "activeJobDescriptionIdPerCV",
+            JSON.stringify(newMap),
+          );
+
+          return {
+            jobDescriptions: state.jobDescriptions.filter(
+              (jd) => jd.id !== jobDescriptionId,
+            ),
+            activeJobDescriptionIdPerCV: newMap,
+          };
+        });
+      } catch (error) {
+        ErrorHandler.handle(error, {
+          feature: "job-descriptions",
+          action: "cancel-parse",
+          userMessage: "Failed to cancel job description parsing",
+          metadata: { jobDescriptionId },
+        });
+        throw error;
+      }
     },
 
     updateJobDescriptionStatus: async (jobDescriptionId: string) => {
