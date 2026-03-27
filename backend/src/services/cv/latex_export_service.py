@@ -726,7 +726,8 @@ def _format_personal_info_header(
     """Format personal info header with name/title and contact.
 
     For template "jake": compact one-line contact (phone | email | links).
-    Otherwise: 2-row contact grid with Font Awesome icons.
+    Otherwise: row 1 is location | email | phone (values only, no \"Phone:\"-style
+    labels); optional row 2 is website; LinkedIn/GitHub URLs on one row below.
 
     If include_profile_picture is True, wrap content in left minipage and add
     right minipage with image (fixed name "profilepic"). Shape: circle (TikZ clip)
@@ -793,54 +794,64 @@ def _format_personal_info_header(
             )
         return f"\\begin{{center}}\n{name_line}\n\\end{{center}}\n"
 
-    # Default: build contact items (label + text), hyperlinks where relevant
-    contact_items: list[str] = []
-    if location:
-        contact_items.append(f"Location: {location}")
-    if phone:
-        contact_items.append(f"Phone: {phone}")
-    if linkedin:
-        lurl = _href_url_safe(ensure_protocol(linkedin))
-        contact_items.append(f"LinkedIn: \\href{{{lurl}}}{{{_tex_escape(linkedin)}}}")
+    # Default: primary grid (no LinkedIn/GitHub); social links on one row below
+    email_cell = ""
     if email:
-        contact_items.append(
-            f"Email: \\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
-        )
+        email_cell = f"\\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
+    phone_cell = phone if pi.get("phone") else ""
+
+    location_cell = location if location else ""
+    website_cell = ""
     if website:
         wurl = _href_url_safe(ensure_protocol(website))
-        contact_items.append(f"Website: \\href{{{wurl}}}{{{_tex_escape(website)}}}")
+        website_cell = f"\\href{{{wurl}}}{{{_tex_escape(website)}}}"
+
+    primary_row_lines: list[str] = []
+    if location_cell or email_cell or phone_cell:
+        primary_row_lines.append(f"{location_cell} & {email_cell} & {phone_cell} \\\\")
+    if website_cell:
+        primary_row_lines.append(f"{website_cell} & & \\\\")
+
+    social_cells: list[str] = []
+    if linkedin:
+        lurl = _href_url_safe(ensure_protocol(linkedin))
+        social_cells.append(f"\\href{{{lurl}}}{{{_tex_escape(linkedin)}}}")
     if github:
         gurl = _href_url_safe(ensure_protocol(github))
-        contact_items.append(f"GitHub: \\href{{{gurl}}}{{{_tex_escape(github)}}}")
+        social_cells.append(f"\\href{{{gurl}}}{{{_tex_escape(github)}}}")
 
-    # Arrange into two rows and as many columns as needed
     contact_block = ""
-    if contact_items:
-        import math
+    if primary_row_lines or social_cells:
+        inner_parts: list[str] = []
 
-        num_items = len(contact_items)
-        num_cols = max(1, math.ceil(num_items / 2))
+        if primary_row_lines:
+            col_spec = "@{}l@{\\hspace{2em}}l@{\\hspace{2em}}l@{}"
+            inner_parts.append(
+                f"\\begin{{center}}\n"
+                f"\\begin{{tabular}}{{{col_spec}}}\n"
+                + "\n".join(primary_row_lines)
+                + "\n"
+                f"\\end{{tabular}}\n"
+                f"\\end{{center}}\n"
+            )
 
-        row1 = contact_items[:num_cols]
-        row2 = contact_items[num_cols:]
-        while len(row2) < num_cols:
-            row2.append("")
-
-        # Use tabular for proper column alignment
-        col_spec = "@{}" + "@{\\hspace{2em}}".join(["l"] * num_cols) + "@{}"
-        row1_line = " & ".join(row1) + r" \\"
-        row2_line = " & ".join(row2)
+        if social_cells:
+            if inner_parts:
+                inner_parts.append("\\vspace{0.25\\baselineskip}\n")
+            n_social = len(social_cells)
+            social_col_spec = "@{}" + "@{\\hspace{2em}}".join(["l"] * n_social) + "@{}"
+            social_line = " & ".join(social_cells)
+            inner_parts.append(
+                f"\\begin{{center}}\n"
+                f"\\begin{{tabular}}{{{social_col_spec}}}\n"
+                f"{social_line}\n"
+                f"\\end{{tabular}}\n"
+                f"\\end{{center}}\n"
+            )
 
         contact_block = (
             f"\\vspace{{0.4\\baselineskip}}\n"
-            f"\\small\n"
-            f"\\begin{{center}}\n"
-            f"\\begin{{tabular}}{{{col_spec}}}\n"
-            f"{row1_line}\n"
-            f"{row2_line}\n"
-            f"\\end{{tabular}}\n"
-            f"\\end{{center}}\n"
-            f"\\normalsize\n"
+            f"\\small\n" + "".join(inner_parts) + "\\normalsize\n"
         )
 
     # Header: centered name and optional academic title
