@@ -25,7 +25,7 @@ export interface UseDebouncedCallbackOptions {
  * @param options - { delayMs, disabled? }
  * @returns Debounced callback with same signature as the original
  */
-export function useDebouncedCallback<T extends (...args: unknown[]) => void>(
+export function useDebouncedCallback<T extends (...args: any[]) => any>(
   callback: T,
   options: UseDebouncedCallbackOptions,
 ): T {

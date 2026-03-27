@@ -2,7 +2,7 @@ import React from 'react'
 import Box from '@mui/material/Box';import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField, DateFieldComponent } from '../core/formUtils'
-import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation, type ItemValidationState } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
 import { createTrackedFieldUpdater } from './hooks/createTrackedFieldUpdater'
@@ -100,11 +100,7 @@ const VolunteerExperienceForm: React.FC<{
 const VolunteerExperienceDisplay: React.FC<{
   volunteer: VolunteerExperience;
   index: number;
-  validation: {
-    organization: { hasError: boolean; errorMessage?: string };
-    role: { hasError: boolean; errorMessage?: string };
-    start_date: { hasError: boolean; errorMessage?: string };
-  };
+  validation: ItemValidationState;
 }> = ({ volunteer, index: _index, validation }) => {
   return (
     <>

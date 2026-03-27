@@ -55,11 +55,6 @@ export const useDashboardActions = () => {
     handleMenuClose();
   };
 
-  // Delete handlers
-  const _handleDeleteCancel = () => {
-    // This will be managed by parent component
-  };
-
   const handleDeleteConfirm = async (cvToDelete: CV | null) => {
     if (!cvToDelete) return;
 
@@ -126,7 +121,7 @@ export const useDashboardActions = () => {
     try {
       await cvApi.exportCVAsPDF(cv.id);
       showSuccess("Success", "CV exported successfully");
-      logUserAction("cv_exported", { cv_id: cv.id });
+      logUserAction("cv_exported", `User exported CV: ${cv.id}`, { cv_id: cv.id });
     } catch (error: any) {
       const errorMessage = error?.response?.data?.detail || error?.message || "Failed to export CV";
       showError("Error", errorMessage);

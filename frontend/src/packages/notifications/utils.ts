@@ -69,8 +69,8 @@ const normalizedMessage = (message: string | undefined): string => message ?? ""
  * @returns True if notifications should be grouped together
  */
 export const areNotificationsIdentical = (
-  notification1: Omit<Notification, "id" | "timestamp" | "shown" | "count" | "groupedIds">,
-  notification2: Omit<Notification, "id" | "timestamp" | "shown" | "count" | "groupedIds">
+  notification1: Omit<Notification, "id" | "timestamp" | "shown" | "count" | "groupedIds" | "groupedTimestamps" | "cvId">,
+  notification2: Omit<Notification, "id" | "timestamp" | "shown" | "count" | "groupedIds" | "groupedTimestamps" | "cvId">
 ): boolean => {
   return (
     notification1.type === notification2.type &&

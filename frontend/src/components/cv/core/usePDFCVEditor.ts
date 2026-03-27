@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { CVSection, PDFCVEditorProps } from "../../../types";
+import type { CVData, CustomSection } from "../../../types/cv";
 import { AVAILABLE_SECTIONS, getSectionsInDisplayOrder } from "../constants";
 import { useUnsavedChanges } from "./useUnsavedChanges";
 
@@ -40,7 +41,7 @@ export const usePDFCVEditor = ({
   );
 
   // Function to create sections dynamically based on CV data
-  const createSectionsFromCVData = (cvData: any): CVSection[] => {
+  const createSectionsFromCVData = (cvData: CVData | undefined): CVSection[] => {
     if (!cvData) return [];
 
     const sections: CVSection[] = [];
@@ -49,7 +50,7 @@ export const usePDFCVEditor = ({
     // Predefined sections that have data
     const sectionsWithData = getSectionsInDisplayOrder(
       AVAILABLE_SECTIONS.filter((section) => {
-        const data = cvData[section.id];
+        const data = (cvData as unknown as Record<string, unknown>)[section.id];
         return (
           data &&
           ((Array.isArray(data) && data.length > 0) ||
@@ -206,7 +207,7 @@ export const usePDFCVEditor = ({
     updatedSections: CVSection[],
     message?: string,
   ) => {
-    const updatedCvData = {
+    const updatedCvData: CVData = {
       ...cvData,
       section_config: {
         sections: updatedSections,
@@ -432,11 +433,11 @@ export const usePDFCVEditor = ({
     };
     const updatedSections = [...sections, newSection];
     // User-created sections use cover_letter so they are not treated as the summary section; backend only treats professional_summary as summary.
-    const updatedCvData = {
+    const updatedCvData: CVData = {
       ...cvData,
       custom_sections: [
         ...(cvData?.custom_sections ?? []),
-        { id, title: "New Section", content: "", type: "cover_letter" },
+        { id, title: "New Section", content: "", type: "cover_letter" as const } as CustomSection,
       ],
       section_config: { sections: updatedSections },
     };
@@ -451,7 +452,7 @@ export const usePDFCVEditor = ({
     // Preserve existing order values to maintain backend semantic ordering (gaps for reserved slots)
     const reorderedSections = updatedSections.map((sec) => ({ ...sec }));
     setSections(reorderedSections);
-    const updatedCvData = {
+    const updatedCvData: CVData = {
       ...cvData,
       section_config: { sections: reorderedSections },
     };

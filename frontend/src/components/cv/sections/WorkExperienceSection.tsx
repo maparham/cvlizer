@@ -548,8 +548,7 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
       'work_experience',
       exp.id,
       updateExperience,
-      onSave,
-      handleApplyWritingCorrection
+      onSave
     );
 
     return (

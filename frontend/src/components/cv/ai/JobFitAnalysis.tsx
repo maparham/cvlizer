@@ -16,7 +16,7 @@
  * - Integrates with AI store for state management
  */
 
-import React, { useMemo } from "react";
+import React from "react";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -48,7 +48,6 @@ import {
   useActiveJobDescription,
 } from "../../../stores/ai";
 import { useNotifications } from "../../../packages/notifications";
-import { calculateCVCompleteness } from "../../../utils/cvCompleteness";
 
 interface JobFitAnalysisProps {
   cvId: string;
@@ -60,30 +59,12 @@ interface JobFitAnalysisProps {
 
 const JobFitAnalysis: React.FC<JobFitAnalysisProps> = ({
   cvId,
-  cvData,
+  cvData: _cvData,
   onAddToCV: _onAddToCV,
   className,
   existingWhyGoodFit: _existingWhyGoodFit,
 }) => {
   const { showSuccess } = useNotifications();
-
-  // Calculate CV completeness
-  const _completeness = useMemo(() => {
-    if (!cvData) {
-      return {
-        score: 0,
-        isComplete: false,
-        missing: ["CV data not available"],
-        details: {
-          hasWorkExperience: false,
-          hasSkills: false,
-          skillCount: 0,
-          workExpCount: 0,
-        },
-      };
-    }
-    return calculateCVCompleteness(cvData);
-  }, [cvData]);
 
   const jobFitAnalysis = useJobFitAnalysis();
   const activeJobDescription = useActiveJobDescription(cvId);

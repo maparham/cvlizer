@@ -9,7 +9,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { SectionProps } from "../../../types";
 import IndividualItemSection from "../core/IndividualItemSection";
 import { FormField } from "../core/formUtils";
-import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation, type ItemValidationState } from "../core/validatedFields";
+import { ValidatedDateField, ValidatedDisplay, useItemValidation, type ItemValidationState } from "../core/validatedFields";
 import LocationAutocomplete from "../ui/LocationAutocomplete";
 import DegreeAutocomplete from "../ui/DegreeAutocomplete";
 import FieldOfStudyAutocomplete from "../ui/FieldOfStudyAutocomplete";
@@ -763,8 +763,7 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
       'education',
       edu.id,
       updateEducation,
-      onSave,
-      handleApplyWritingCorrection
+      onSave
     );
 
     return (

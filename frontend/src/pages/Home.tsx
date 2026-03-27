@@ -45,9 +45,9 @@ const Home: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dialogVideoRef = useRef<HTMLVideoElement>(null);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
-  const [heroDuration, setHeroDuration] = useState<number>(0);
+  const [, setHeroDuration] = useState<number>(0);
   const [heroRemaining, setHeroRemaining] = useState<number>(0);
-  const [dialogDuration, setDialogDuration] = useState<number>(0);
+  const [, setDialogDuration] = useState<number>(0);
   const [dialogRemaining, setDialogRemaining] = useState<number>(0);
 
   const formatRemaining = (seconds: number): string => {

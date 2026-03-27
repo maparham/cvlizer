@@ -16,7 +16,6 @@ import { useUsage } from "../../hooks/useUsage";
 import {
   getUsagePercent,
   getUsageColor,
-  getUsageTooltipContent,
   formatTokens,
   formatCost,
 } from "../../utils/usageFormatters";

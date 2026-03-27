@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField } from '../core/formUtils'
-import { ValidatedFormField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
+import { ValidatedFormField, ValidatedDisplay, useItemValidation, type ItemValidationState } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
 import { createTrackedFieldUpdater } from './hooks/createTrackedFieldUpdater'
@@ -91,10 +91,7 @@ const ProjectForm: React.FC<{
 const ProjectDisplay: React.FC<{
   project: Project;
   index: number;
-  validation: {
-    name: { hasError: boolean; errorMessage?: string };
-    description: { hasError: boolean; errorMessage?: string };
-  };
+  validation: ItemValidationState;
 }> = ({ project, index: _index, validation }) => {
   return (
     <>
@@ -112,7 +109,7 @@ const ProjectDisplay: React.FC<{
       <Box sx={{ mb: 1 }}>
         <ValidatedDisplay
           validation={validation.description}
-          variant="body1"
+          variant="body2"
           normalColor="#333"
         >
           <MarkdownRenderer content={project.description} variant="body1" />

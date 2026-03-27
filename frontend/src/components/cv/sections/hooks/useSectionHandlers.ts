@@ -36,7 +36,7 @@ function apiDetailToString(detail: unknown): string {
   return JSON.stringify(detail);
 }
 
-export interface SectionHandlers<T extends { id: string; description?: string }> {
+export interface SectionHandlers {
   handleApplySuggestion: (itemId: string, suggestedDescription: string) => Promise<void>;
   handleDiscardSuggestion: (itemId: string) => void;
   handleApplyQualitySuggestion: (itemId: string, suggestedDescription: string) => Promise<void>;
@@ -60,7 +60,7 @@ export function useSectionHandlers<T extends { id: string; description?: string 
   data: T[],
   onUpdate: (items: T[]) => void,
   onSave?: (items: T[], message?: string) => void
-): SectionHandlers<T> {
+): SectionHandlers {
   const { setCurrentCV, updateCVInList } = useCVStore();
   const { showSuccess, showError } = useNotifications();
   const { currentAnalysisId, dismissWritingCorrection } = useCVQualityStore();

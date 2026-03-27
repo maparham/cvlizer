@@ -319,8 +319,8 @@ const WhyGoodFitSection: React.FC<WhyGoodFitSectionProps> = ({
             {/* Generation Info */}
             <Box mt={2} pt={2} borderTop="1px solid" borderColor="divider">
               <Typography variant="caption" color="text.secondary">
-                Generated on {new Date(data.generated_at).toLocaleDateString()}{" "}
-                at {new Date(data.generated_at).toLocaleTimeString()}
+                Generated on {new Date(data.generated_at ?? Date.now()).toLocaleDateString()}{" "}
+                at {new Date(data.generated_at ?? Date.now()).toLocaleTimeString()}
               </Typography>
             </Box>
           </CardContent>

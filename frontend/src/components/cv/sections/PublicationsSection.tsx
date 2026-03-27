@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';import { SectionProps } from '
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField } from '../core/formUtils'
 import { generateSectionId } from '../../../utils/idGenerator'
-import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation, type ItemValidationState } from '../core/validatedFields'
 
 interface Publication {
   id: string
@@ -98,12 +98,7 @@ const PublicationForm: React.FC<{
 const PublicationDisplay: React.FC<{
   publication: Publication;
   index: number;
-  validation: {
-    title: { hasError: boolean; errorMessage?: string };
-    authors: { hasError: boolean; errorMessage?: string };
-    journal: { hasError: boolean; errorMessage?: string };
-    date: { hasError: boolean; errorMessage?: string };
-  };
+  validation: ItemValidationState;
 }> = ({ publication, index: _index, validation }) => {
   return (
     <>

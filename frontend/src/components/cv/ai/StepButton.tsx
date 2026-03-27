@@ -65,7 +65,7 @@ export const StepButton: React.FC<StepButtonProps> = ({
     }
     onClick={onClick}
     disabled={disabled}
-    sx={(theme) => {
+    sx={((theme: Theme) => {
       const primaryMain = theme.palette.primary.main;
       return {
         ...SHARED_STEP_BUTTON_SX,
@@ -89,9 +89,9 @@ export const StepButton: React.FC<StepButtonProps> = ({
             opacity: 1,
           },
         }),
-        ...extraSx,
+        ...(extraSx as object),
       };
-    }}
+    }) as SxProps<Theme>}
   >
     <Box
       component="span"

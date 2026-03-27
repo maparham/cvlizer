@@ -31,7 +31,7 @@ import CVTemplateSelector from "../cv/CVTemplateSelector";
 import { JobDescriptionsModal } from "../cv/ai";
 import JobDescriptionStatusDialog from "../cv/ai/JobDescriptionStatusDialog";
 import { CV } from "../../types";
-import { JobDescription } from "../../types/ai";
+import { JobDescription, JobDescriptionStatusUpdate } from "../../types/ai";
 
 interface DashboardDialogsProps {
   // Upload dialog
@@ -62,7 +62,7 @@ interface DashboardDialogsProps {
   statusDialogOpen: boolean;
   statusEditingJobDescription: JobDescription | null;
   onStatusDialogClose: () => void;
-  onStatusSave: (updates: any) => void;
+  onStatusSave: (updates: JobDescriptionStatusUpdate) => Promise<void>;
 }
 
 const DashboardDialogs: React.FC<DashboardDialogsProps> = ({

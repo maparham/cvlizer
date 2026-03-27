@@ -175,6 +175,7 @@ export interface AIStoreState {
 export interface SkillSuggestion {
   skill: string;
   reasoning: string;
+  original?: string;
 }
 
 export interface SkillsSuggestions {
@@ -384,7 +385,7 @@ export interface CoachingQuestion {
 export interface ContentCoachingItem {
   item_id: string;
   section: string;
-  issue_category: 'offensive_language' | 'unprofessional_tone' | 'discriminatory_content' | 'insufficient_content' | 'missing_impact' | 'too_brief' | 'missing_achievements' | 'lacks_specificity' | 'missing_context' | 'weak_action_verbs';
+  issue_category: 'offensive_language' | 'unprofessional_tone' | 'discriminatory_content' | 'insufficient_content' | 'missing_impact' | 'too_brief' | 'missing_achievements' | 'lacks_specificity' | 'missing_context' | 'weak_action_verbs' | 'grammar_errors';
   coaching_questions: CoachingQuestion[];
   direct_prompts: string[];
   /** Optional reasoning from the issue, shown in a tooltip on the coaching card. */
@@ -400,6 +401,7 @@ export interface Coaching {
 export type IssueItemType =
   | 'personal_info'
   | 'professional_summary'
+  | 'custom'
   | 'work_experience'
   | 'education'
   | 'skills'

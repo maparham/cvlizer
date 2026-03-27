@@ -322,6 +322,9 @@ export const cvApi = {
       throw new Error("Authentication service not available");
     }
     const clerk = (window as ClerkWindow).Clerk;
+    if (!clerk) {
+      throw new Error("Authentication service not available");
+    }
     const token = await clerk.session?.getToken();
     if (!token) throw new Error("No authentication token available");
 

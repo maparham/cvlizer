@@ -36,9 +36,7 @@ const rowBoxSx = {
   minWidth: 0,
 };
 
-const listItemTextSx: NonNullable<
-  React.ComponentProps<typeof ListItemText>["primaryTypographyProps"]
-> = {
+const listItemTextSx = {
   variant: "body2",
   sx: {
     fontWeight: 500,
@@ -46,7 +44,7 @@ const listItemTextSx: NonNullable<
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
-};
+} as const;
 
 /** Shared row: title + optional icon + chip. Used by NavGroup and CustomSectionNavItem. */
 export function NavItem<T extends NavGroupItem>({

@@ -263,7 +263,7 @@ export function useSingleSectionWritingCorrections(
               isPersonalInfo && parentCorrection.field_path
                 ? (parentCorrection.field_path.split(".").pop() ?? formFieldName)
                 : formFieldName;
-            const newValue = resolveFieldValue(updatedCV, fieldName, editData);
+            const newValue = resolveFieldValue(updatedCV as unknown as { parsed_data?: Record<string, unknown> }, fieldName, editData);
             updateData(fieldName, newValue);
             const updatedEditData = { ...editData, [fieldName]: newValue };
             await onSaveCallback(updatedEditData);

@@ -83,6 +83,18 @@ class UtilityService {
           original_text: "",
           key_changes: [],
         },
+        work_experience: [],
+        education: [],
+        why_good_fit: {
+          title: "",
+          confidence_score: 0,
+          fit_analysis: "",
+          key_matches: [],
+          missing_skills: [],
+          suggested_improvements: [],
+          strengths: [],
+          weaknesses: [],
+        },
       };
     }
   }

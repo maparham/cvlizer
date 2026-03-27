@@ -50,7 +50,7 @@ export interface FilePreviewProps {
 const FilePreview: React.FC<FilePreviewProps> = ({
   file,
   onRemove,
-  onUpload,
+  onUpload: _onUpload,
   uploading = false,
   error,
 }) => {
@@ -59,7 +59,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({
     const fileInfo = getFileTypeInfo(fileType);
     if (fileInfo.icon === "pdf") {
       return <PdfIcon sx={{ color: fileInfo.color }} />;
-    } else if (fileInfo.icon === "doc" || fileInfo.icon === "docx") {
+    } else if (fileInfo.icon === "docx") {
       return <DocIcon sx={{ color: fileInfo.color }} />;
     }
     return <DocumentIcon sx={{ color: fileInfo.color }} />;

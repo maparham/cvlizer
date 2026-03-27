@@ -38,7 +38,6 @@ import {
   clearAutoProofreadDone,
 } from "../../stores/cvQualityPersistence";
 import { isTempCVId, useCVStore } from "../../stores/cv";
-import { CVData } from "../../types/cv";
 import { useUIStore } from "../../stores/uiStore";
 import { useAITaskPollingContext } from "../../contexts/AITaskPollingContext";
 
@@ -78,23 +77,6 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobilePanel, setMobilePanel] = useState<"sidebar" | "content">("content");
-
-  // Debug wrapper for onUpdateCV
-  const debugOnUpdateCV = useCallback(
-    (newCvData: CVData) => {
-      onUpdateCV(newCvData);
-    },
-    [onUpdateCV],
-  );
-
-  // Debug wrapper for onSave
-  const debugOnSave = useCallback(
-    async (newCvData: CVData, message?: string) => {
-      await onSave(newCvData, message);
-    },
-    [onSave],
-  );
-
   // Tab state management - use Zustand store to persist across navigation
   const cvIdForTabs = cvId || "default";
   const sidebarTab = useUIStore(
@@ -252,8 +234,6 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
             onDragEnd={dragDrop.onDragEnd}
             activeTab={sidebarTab}
             onTabChange={setSidebarTab}
-            onUpdateCV={debugOnUpdateCV}
-            onSave={debugOnSave}
             onContentUpdate={(content, sectionType) => {
               if (sectionType === "why_good_fit") {
                 // Prevent client-side reconstruction of why_good_fit to avoid 422 validation errors

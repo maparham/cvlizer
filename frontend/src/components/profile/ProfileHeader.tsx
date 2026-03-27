@@ -13,9 +13,9 @@ import Edit from "@mui/icons-material/Edit";
 import Verified from "@mui/icons-material/Verified";
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import Warning from "@mui/icons-material/Warning";
-import { UserResource } from "@clerk/clerk-react";
 import { NavigateFunction } from "react-router-dom";
 import { formatDate } from "../../utils/dateFormat";
+import type { UserResource } from "@clerk/types";
 
 interface ProfileHeaderProps {
   user: UserResource;

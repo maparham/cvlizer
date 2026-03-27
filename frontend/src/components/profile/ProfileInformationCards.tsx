@@ -12,8 +12,8 @@ import CalendarToday from "@mui/icons-material/CalendarToday";
 import Settings from "@mui/icons-material/Settings";
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import Warning from "@mui/icons-material/Warning";
-import { UserResource } from "@clerk/clerk-react";
 import { formatDate } from "../../utils/dateFormat";
+import type { UserResource } from "@clerk/types";
 
 interface ProfileInformationCardsProps {
   user: UserResource;

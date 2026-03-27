@@ -2,7 +2,7 @@ import React from 'react'
 import Box from '@mui/material/Box';import { SectionProps } from '../../../types'
 import IndividualItemSection from '../core/IndividualItemSection'
 import { FormField } from '../core/formUtils'
-import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation } from '../core/validatedFields'
+import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValidation, type ItemValidationState } from '../core/validatedFields'
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
 import { createTrackedFieldUpdater } from './hooks/createTrackedFieldUpdater'
@@ -85,11 +85,7 @@ const AwardForm: React.FC<{
 const AwardDisplay: React.FC<{
   award: Award;
   index: number;
-  validation: {
-    name: { hasError: boolean; errorMessage?: string };
-    issuer: { hasError: boolean; errorMessage?: string };
-    date: { hasError: boolean; errorMessage?: string };
-  };
+  validation: ItemValidationState;
 }> = ({ award, index: _index, validation }) => {
   return (
     <>

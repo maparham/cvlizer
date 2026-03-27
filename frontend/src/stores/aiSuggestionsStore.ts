@@ -24,6 +24,16 @@ import { ErrorHandler } from "../utils/errorHandler";
 import { AllSuggestionsResponse, ItemDescriptionSuggestion } from "../types/ai";
 import { useAIStore } from "./ai";
 import { useEditedSinceAIStore } from "./editedSinceAIStore";
+const EMPTY_WHY_GOOD_FIT: AllSuggestionsResponse["why_good_fit"] = {
+  title: "",
+  confidence_score: 0,
+  fit_analysis: "",
+  key_matches: [],
+  missing_skills: [],
+  suggested_improvements: [],
+  strengths: [],
+  weaknesses: [],
+};
 
 /** Section keys in AllSuggestionsResponse that have item arrays using id/item_id. */
 const SUGGESTION_SECTIONS: (keyof Pick<
@@ -153,6 +163,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           },
           work_experience: [],
           education: [],
+          why_good_fit: EMPTY_WHY_GOOD_FIT,
         },
         suggestionsLoading: false,
         suggestionsError: isRateLimitError ? null : errorMessage,
@@ -177,16 +188,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           },
           work_experience: Array.isArray(rawData.work_experience) ? rawData.work_experience : [],
           education: Array.isArray(rawData.education) ? rawData.education : [],
-          why_good_fit: rawData.why_good_fit || {
-            title: "",
-            confidence_score: 0,
-            fit_analysis: "",
-            key_matches: [],
-            missing_skills: [],
-            suggested_improvements: [],
-            strengths: [],
-            weaknesses: [],
-          },
+          why_good_fit: (rawData.why_good_fit as AllSuggestionsResponse["why_good_fit"]) || EMPTY_WHY_GOOD_FIT,
           certifications: Array.isArray(rawData.certifications) ? rawData.certifications : [],
           projects: Array.isArray(rawData.projects) ? rawData.projects : [],
           awards: Array.isArray(rawData.awards) ? rawData.awards : [],
@@ -253,16 +255,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
             },
             work_experience: Array.isArray(rawData.work_experience) ? rawData.work_experience : [],
             education: Array.isArray(rawData.education) ? rawData.education : [],
-            why_good_fit: rawData.why_good_fit || {
-              title: "",
-              confidence_score: 0,
-              fit_analysis: "",
-              key_matches: [],
-              missing_skills: [],
-              suggested_improvements: [],
-              strengths: [],
-              weaknesses: [],
-            },
+            why_good_fit: (rawData.why_good_fit as AllSuggestionsResponse["why_good_fit"]) || EMPTY_WHY_GOOD_FIT,
             certifications: Array.isArray(rawData.certifications) ? rawData.certifications : [],
             projects: Array.isArray(rawData.projects) ? rawData.projects : [],
             awards: Array.isArray(rawData.awards) ? rawData.awards : [],

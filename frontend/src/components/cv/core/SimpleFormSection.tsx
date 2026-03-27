@@ -169,7 +169,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   // Default to false (line hidden) for personal_info, true for other sections
   const showDivider =
     sectionId === "personal_info"
-      ? actualData?.show_horizontal_line ?? false
+      ? (actualData as { show_horizontal_line?: boolean })?.show_horizontal_line ?? false
       : true;
 
   return (

@@ -80,9 +80,7 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
   isCustomSection,
   ...props
 }) => {
-  const SectionComponent = SECTIONS[sectionType];
-
-  if (!SectionComponent) {
+  if (!SECTIONS[sectionType]) {
     console.warn(`Unknown section type: ${sectionType}`);
     return null;
   }
@@ -94,17 +92,18 @@ const SectionFactory: React.FC<SectionFactoryProps> = ({
     onUnsavedChanges: props.onUnsavedChanges as any,
     title: sectionTitle,
     onTitleSave: onSectionTitleSave,
-    sectionType,
     sectionId,
+    sectionType,
     onHide,
     onDelete,
     isCustomSection,
   };
 
   if (sectionType === "custom" && sectionId) {
-    return <SectionComponent {...commonProps} sectionId={sectionId} />;
+    return <CustomSectionSection {...commonProps} sectionId={sectionId} />;
   }
 
+  const SectionComponent = SECTIONS[sectionType] as React.ComponentType<any>;
   return <SectionComponent {...commonProps} />;
 };
 

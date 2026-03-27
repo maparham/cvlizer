@@ -27,7 +27,7 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
   isCustomSection,
 }) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editData, setEditData] = useState<Record<string, unknown>>({});
+  const [editData, setEditData] = useState<any>({});
 
   // Use common auto-save hook - it now properly handles new vs existing items
   useArraySectionAutoSave(
@@ -152,7 +152,7 @@ const ArraySection: React.FC<ArraySectionProps<any>> = ({
       }
     >
       {isEditing && editingIndex !== null
-        ? renderEditForm?.(editData, editingIndex, setEditData)
+        ? renderEditForm?.(editData, editingIndex, (field, value) => setEditData((prev: any) => ({ ...prev, [field]: value })))
         : data.map((item: any, index: number) => renderItem?.(item, index))}
     </BaseSection>
   );

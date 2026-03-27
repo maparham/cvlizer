@@ -151,7 +151,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               cvId={cvId}
               onHide={() => toggleSectionVisibility(section.id)}
               onDelete={() => deleteSectionPermanently(section.id)}
-              isCustomSection={section.type === "custom"}
+              isCustomSection={false}
             />
           );
         case "custom": {
@@ -164,7 +164,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
             ? allSuggestions?.professional_summary
             : null;
           const hasSummarySuggestion =
-            summarySuggestion?.suggested_text?.trim().length > 0;
+            (summarySuggestion?.suggested_text?.trim().length ?? 0) > 0;
           const saveCustomSection = async (nextContent: string, message?: string) => {
             const next = (cvData?.custom_sections ?? []).map((s) =>
               s.id === section.id ? { ...s, content: nextContent } : s,
@@ -179,7 +179,7 @@ const CVContentArea: React.FC<CVContentAreaProps> = ({ cvId }) => {
               {hasSummarySuggestion && (
                 <Box sx={{ mb: 2 }}>
                   <AISummarySuggestionCard
-                    suggestion={summarySuggestion}
+                    suggestion={summarySuggestion!}
                     onApply={async (suggestedText) => {
                       await saveCustomSection(
                         suggestedText,

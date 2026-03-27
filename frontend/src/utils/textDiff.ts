@@ -5,7 +5,7 @@
  * Used to generate inline diff visualizations for AI suggestions.
  */
 
-import { diffWords, Change } from "diff";
+import { diffWords } from "diff";
 
 /**
  * Represents a single part of a diff with its change type
@@ -40,12 +40,10 @@ export function computeInlineDiff(
   }
 
   // Use word-level diffing for better readability
-  const changes = diffWords(original, suggested, {
-    ignoreWhitespace: false,
-  });
+  const changes = diffWords(original, suggested);
 
   // Convert diff library's Change format to our DiffPart format
-  return changes.map((change: Change) => ({
+  return changes.map((change) => ({
     value: change.value,
     added: change.added || false,
     removed: change.removed || false,

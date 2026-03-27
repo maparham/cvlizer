@@ -32,7 +32,7 @@ import { FormField } from "../core/formUtils";
 import MarkdownRenderer from "../../common/MarkdownRenderer";
 import { usePersonalInfoWritingCorrections } from "./hooks/usePersonalInfoWritingCorrections";
 import { usePersonalInfoInlineCorrection } from "./hooks/usePersonalInfoInlineCorrection";
-import { FieldCorrection, ContentCoachingItem, WritingCorrection } from "../../../types/ai";
+import { FieldCorrection, ContentCoachingItem } from "../../../types/ai";
 import { DescriptionCorrectionBlock } from "../ai/DescriptionCorrectionBlock";
 import { CoachingQuestionsPanel } from "../ai/CoachingQuestionsPanel";
 import { useValidatedQualityAnalysis } from "../../../stores/cvQualityStore";
@@ -42,6 +42,7 @@ import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { buildQualitySuggestionId } from "../../../utils/qualitySuggestionIds";
 import { ProfilePictureUpload } from "./ProfilePictureUpload";
 import { cvApi } from "../../../services/api";
+import type { PersonalInfo } from "../../../types/cv";
 
 /** Ensures a URL has a protocol so it is treated as absolute, not relative. */
 function ensureProtocol(url: string | undefined): string {
@@ -104,6 +105,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   onHide,
   onDelete,
 }) => {
+  const personalInfoData = (data ?? {}) as PersonalInfo;
   // Get validation errors for required fields (hooks must be called at component level)
   const fullNameValidation = useFieldValidation("personal_info", undefined, "full_name");
   const emailValidation = useFieldValidation("personal_info", undefined, "email");
@@ -130,9 +132,9 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
       (c.parsed_data?.personal_info as { description?: string } | undefined)
         ?.description ?? "",
     getValueFromCVByField: (c, fieldName) =>
-      (c.parsed_data?.personal_info as Record<string, unknown> | undefined)?.[
+      ((c.parsed_data?.personal_info as Record<string, unknown> | undefined)?.[
         fieldName
-      ] ?? "",
+      ] as string | undefined) ?? "",
   });
 
   const qualityAnalysis = useValidatedQualityAnalysis(cvId ?? "");
@@ -179,7 +181,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   const viewModeSizeRef = useRef<"small" | "standard" | "large">("standard");
 
   useEffect(() => {
-    if (!cvId || !data?.profile_picture) {
+    if (!cvId || !personalInfoData?.profile_picture) {
       if (profilePictureUrlRef.current) {
         window.URL.revokeObjectURL(profilePictureUrlRef.current);
         profilePictureUrlRef.current = null;
@@ -203,7 +205,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         profilePictureUrlRef.current = null;
       }
     };
-  }, [cvId, data?.profile_picture]);
+  }, [cvId, personalInfoData?.profile_picture]);
 
   const handleProfileUpload = useCallback(
     async (file: File, shape: "circle" | "square", size: "small" | "standard" | "large") => {
@@ -240,7 +242,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         profilePictureUrlRef.current = null;
       }
       setProfilePictureUrl(null);
-      const cleared = { ...data, profile_picture: undefined, profile_picture_shape: undefined, profile_picture_size: undefined };
+      const cleared: PersonalInfo = { ...personalInfoData, profile_picture: undefined, profile_picture_shape: undefined, profile_picture_size: undefined };
       onUpdate(cleared);
       await onSave(cleared);
     } catch (error) {
@@ -249,24 +251,24 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     } finally {
       setProfilePictureDeleting(false);
     }
-  }, [cvId, data, onUpdate, onSave]);
+  }, [cvId, personalInfoData, onUpdate, onSave]);
 
   const handleProfileShapeChange = useCallback(
     (shape: "circle" | "square") => {
-      const next = { ...data, profile_picture_shape: shape };
+      const next: PersonalInfo = { ...personalInfoData, profile_picture_shape: shape };
       onUpdate(next);
       void onSave(next);
     },
-    [data, onUpdate, onSave]
+    [personalInfoData, onUpdate, onSave]
   );
 
   const handleProfileSizeChange = useCallback(
     (size: "small" | "standard" | "large") => {
-      const next = { ...data, profile_picture_size: size };
+      const next: PersonalInfo = { ...personalInfoData, profile_picture_size: size };
       onUpdate(next);
       void onSave(next);
     },
-    [data, onUpdate, onSave]
+    [personalInfoData, onUpdate, onSave]
   );
 
   const handleProfilePictureMenuOpen = useCallback(
@@ -365,7 +367,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
               if (e.key === "Enter") {
                 e.preventDefault();
                 if (editData.full_name?.trim()) {
-                  onSave();
+                  handleSave();
                 }
               } else if (e.key === "Escape") {
                 // Let global escape handler manage this
@@ -398,7 +400,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  onSave();
+                  handleSave();
                 } else if (e.key === "Escape") {
                   e.preventDefault();
                   onCancel();
@@ -428,7 +430,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             if (e.key === "Enter") {
               e.preventDefault();
               if (editData.email?.trim()) {
-                onSave();
+                handleSave();
               }
             } else if (e.key === "Escape") {
               e.preventDefault();
@@ -462,7 +464,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              onSave();
+              handleSave();
             } else if (e.key === "Escape") {
               e.preventDefault();
               onCancel();
@@ -485,7 +487,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         <LocationAutocomplete
           value={editData.location || ""}
           onChange={(value) => wrappedUpdateDataLocation("location", value)}
-          onSave={onSave}
+          onSave={handleSave}
           onCancel={onCancel}
           error={!editData.location?.trim() || locationValidation.hasError}
           helperText={locationValidation.errorMessage || (!editData.location?.trim() ? "Location is required" : "")}
@@ -508,7 +510,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              onSave();
+              handleSave();
             } else if (e.key === "Escape") {
               e.preventDefault();
               onCancel();
@@ -534,7 +536,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              onSave();
+              handleSave();
             } else if (e.key === "Escape") {
               e.preventDefault();
               onCancel();
@@ -560,7 +562,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              onSave();
+              handleSave();
             } else if (e.key === "Escape") {
               e.preventDefault();
               onCancel();
@@ -591,7 +593,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         }}
         value={editData.description || ""}
         onChange={(value) => wrappedUpdateData("description", value)}
-        onSave={onSave}
+        onSave={handleSave}
         htmlDiffCorrection={descriptionCorrection}
         onApplyCorrection={
           descriptionCorrection
