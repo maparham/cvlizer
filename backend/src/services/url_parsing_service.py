@@ -36,7 +36,7 @@ ChromeDriver version must match your installed Chrome (e.g. Chrome 145 needs Chr
 import logging
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -46,13 +46,24 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from src.config import BackgroundTaskConfig
 from src.services.ai_service import extract_job_description_with_ai
+from src.services.structured_data_extractor import (
+    extract_jsonld_job_posting,
+    is_complete_structured_job_data,
+)
 
 logger = logging.getLogger(__name__)
+# "Substantial content" required for raw extraction paths to avoid noisy/partial pages.
+SUBSTANTIAL_CONTENT_CHARS = 500
+# Minimum iframe text length to include in merged browser extraction.
+MIN_IFRAME_CONTENT_CHARS = 100
+# Short iframe-specific wait while iterating frames after main page load has completed.
+SELENIUM_IFRAME_WAIT_TIMEOUT_SECONDS = 5
 
 
 def _is_driver_startup_failure(error_message: str) -> bool:
@@ -64,6 +75,146 @@ def _is_driver_startup_failure(error_message: str) -> bool:
         or "service " in lowered
         and "chromedriver" in lowered
         and "exited" in lowered
+    )
+
+
+def _clean_text_content(text: str) -> str:
+    """Normalize extracted text while keeping paragraph breaks readable."""
+    return (text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+
+
+def _build_chrome_options() -> Options:
+    """Build shared Chrome options used by Selenium extraction helpers."""
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-setuid-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-first-run")
+    chrome_options.add_argument("--no-default-browser-check")
+    chrome_options.add_argument("--disable-default-apps")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-web-security")
+    chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument(
+        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+    return chrome_options
+
+
+def _create_chrome_driver(chrome_options: Options) -> WebDriver:
+    """Create Chrome WebDriver using CHROMEDRIVER_PATH when configured."""
+    chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
+    if chromedriver_path:
+        service = Service(executable_path=chromedriver_path)
+        return webdriver.Chrome(service=service, options=chrome_options)
+    return webdriver.Chrome(options=chrome_options)
+
+
+def _is_acceptable_extracted_content(content: str) -> bool:
+    """Return True when raw extraction yielded substantial content."""
+    return bool(content and len(content) >= SUBSTANTIAL_CONTENT_CHARS)
+
+
+def _extract_jsonld_job_posting(soup: BeautifulSoup) -> Optional[Dict[str, str]]:
+    """Compatibility wrapper around shared structured-data extractor."""
+    return extract_jsonld_job_posting(soup, _clean_text_content)
+
+
+def _is_complete_structured_job_data(job_data: Dict[str, Any]) -> bool:
+    """Compatibility wrapper around shared structured-data completeness check."""
+    return is_complete_structured_job_data(job_data, SUBSTANTIAL_CONTENT_CHARS)
+
+
+def _extract_iframe_content_with_browser_automation(driver: WebDriver) -> str:
+    """Extract text from iframe documents and return concatenated content."""
+    iframe_text_chunks: List[str] = []
+    iframes = driver.find_elements(By.TAG_NAME, "iframe")
+    for iframe in iframes:
+        try:
+            driver.switch_to.frame(iframe)
+            WebDriverWait(driver, SELENIUM_IFRAME_WAIT_TIMEOUT_SECONDS).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            frame_text = driver.execute_script(
+                """
+                const body = document.body;
+                if (!body) return '';
+                const text = body.innerText || body.textContent || '';
+                return text.trim();
+                """
+            )
+            if frame_text and len(frame_text) > MIN_IFRAME_CONTENT_CHARS:
+                iframe_text_chunks.append(_clean_text_content(frame_text))
+        except Exception as e:
+            logger.debug("Skipping iframe content extraction due to error: %s", str(e))
+        finally:
+            try:
+                driver.switch_to.default_content()
+            except Exception as e:
+                logger.debug("Failed switching back to default content: %s", str(e))
+
+    return "\n\n".join(chunk for chunk in iframe_text_chunks if chunk)
+
+
+def _extract_structured_content_from_browser(driver: WebDriver) -> Optional[str]:
+    """Return structured JobPosting content from rendered page when substantial."""
+    structured = _extract_jsonld_job_posting(
+        BeautifulSoup(driver.page_source, "html.parser")
+    )
+    if structured and _is_complete_structured_job_data(structured):
+        return structured["content"]
+    return None
+
+
+def _extract_parent_content_with_browser_js(driver: WebDriver) -> str:
+    """Extract parent document content via JavaScript selectors with fallback."""
+    return driver.execute_script(
+        """
+        // Remove script and style elements
+        const scripts = document.querySelectorAll('script, style, nav, header, footer, .navigation, .menu, .sidebar');
+        scripts.forEach(el => el.remove());
+
+        // Try to find main content area
+        const contentSelectors = [
+            'main', 'article', '.content', '.job-description',
+            '.job-content', '.description', '#content', '.main-content',
+            '.job-details', '.position-description', '.job-info'
+        ];
+
+        let contentElement = null;
+        for (const selector of contentSelectors) {
+            const element = document.querySelector(selector);
+            if (element && element.textContent.trim().length > 100) {
+                contentElement = element;
+                break;
+            }
+        }
+
+        // Fall back to body if no specific content area found
+        if (!contentElement) {
+            contentElement = document.body;
+        }
+
+        // Get text content with preserved line breaks
+        const text = contentElement.textContent || contentElement.innerText || '';
+
+        // Clean up the text
+        return text
+            .replace(/\\s+/g, ' ')  // Replace multiple whitespace with single space
+            .replace(/\\n\\s*\\n/g, '\\n\\n')  // Preserve paragraph breaks
+            .trim();
+    """
+    )
+
+
+def _combine_parent_and_iframe_content(parent_content: str, iframe_content: str) -> str:
+    """Combine and normalize parent + iframe extraction results."""
+    return "\n\n".join(
+        part for part in [_clean_text_content(parent_content), iframe_content] if part
     )
 
 
@@ -174,30 +325,32 @@ def _extract_raw_content_with_fallback(url: str) -> str:
         # Try browser automation first for known problematic sites
         try:
             content = _extract_with_browser_automation(url)
-            if content and len(content) > 500:  # Ensure we got substantial content
+            if _is_acceptable_extracted_content(content):
                 return content
         except ValueError as e:
             # Re-raise user-friendly error messages
             raise
         except Exception as e:
-            pass  # Fall back to standard scraping
+            logger.debug(
+                "Browser-first extraction failed for js-heavy site %s: %s", url, str(e)
+            )
 
     # Try standard scraping first (or as fallback)
     try:
         content = _extract_raw_content(url)
-        if content and len(content) > 500:  # Ensure we got substantial content
+        if _is_acceptable_extracted_content(content):
             return content
     except ValueError as e:
         # Re-raise user-friendly error messages (404, 403, timeout, etc.)
         raise
     except Exception as e:
-        pass  # Fall back to browser automation for other errors
+        logger.debug("Standard extraction failed for %s: %s", url, str(e))
 
     # Fall back to browser automation for JavaScript-heavy sites or if standard scraping had minimal content
     if not is_js_heavy_site:  # Only try if we haven't already
         try:
             content = _extract_with_browser_automation(url)
-            if content:
+            if _is_acceptable_extracted_content(content):
                 return content
         except ValueError as e:
             # Re-raise user-friendly error messages
@@ -228,30 +381,10 @@ def _extract_with_browser_automation(url: str) -> str:
 
     try:
         # Configure Chrome options for headless mode
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-setuid-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-first-run")
-        chrome_options.add_argument("--no-default-browser-check")
-        chrome_options.add_argument("--disable-default-apps")
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument("--disable-web-security")
-        chrome_options.add_argument("--disable-features=VizDisplayCompositor")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument(
-            "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
+        chrome_options = _build_chrome_options()
 
         # Initialize the Chrome driver (use CHROMEDRIVER_PATH if set to match Chrome version)
-        chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
-        if chromedriver_path:
-            service = Service(executable_path=chromedriver_path)
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-        else:
-            driver = webdriver.Chrome(options=chrome_options)
+        driver = _create_chrome_driver(chrome_options)
         driver.set_page_load_timeout(
             BackgroundTaskConfig.SELENIUM_PAGE_LOAD_TIMEOUT_SECONDS
         )
@@ -264,48 +397,19 @@ def _extract_with_browser_automation(url: str) -> str:
             driver, BackgroundTaskConfig.SELENIUM_BODY_WAIT_TIMEOUT_SECONDS
         ).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
+        structured_content = _extract_structured_content_from_browser(driver)
+        if structured_content:
+            return structured_content
+
         # Wait for dynamic content to load (JavaScript-heavy sites)
         # The JavaScript extraction below has its own robust selector logic with fallback
         time.sleep(BackgroundTaskConfig.SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS)
 
         # Extract page content using JavaScript
-        content = driver.execute_script(
-            """
-            // Remove script and style elements
-            const scripts = document.querySelectorAll('script, style, nav, header, footer, .navigation, .menu, .sidebar');
-            scripts.forEach(el => el.remove());
+        parent_content = _extract_parent_content_with_browser_js(driver)
 
-            // Try to find main content area
-            const contentSelectors = [
-                'main', 'article', '.content', '.job-description',
-                '.job-content', '.description', '#content', '.main-content',
-                '.job-details', '.position-description', '.job-info'
-            ];
-
-            let contentElement = null;
-            for (const selector of contentSelectors) {
-                const element = document.querySelector(selector);
-                if (element && element.textContent.trim().length > 100) {
-                    contentElement = element;
-                    break;
-                }
-            }
-
-            // Fall back to body if no specific content area found
-            if (!contentElement) {
-                contentElement = document.body;
-            }
-
-            // Get text content with preserved line breaks
-            const text = contentElement.textContent || contentElement.innerText || '';
-
-            // Clean up the text
-            return text
-                .replace(/\\s+/g, ' ')  // Replace multiple whitespace with single space
-                .replace(/\\n\\s*\\n/g, '\\n\\n')  // Preserve paragraph breaks
-                .trim();
-        """
-        )
+        iframe_content = _extract_iframe_content_with_browser_automation(driver)
+        content = _combine_parent_and_iframe_content(parent_content, iframe_content)
 
         if content and len(content) > 100:
             return content
@@ -356,6 +460,11 @@ def _extract_raw_content(url: str) -> str:
         response.raise_for_status()
 
         soup = BeautifulSoup(response.content, "html.parser")
+
+        structured = _extract_jsonld_job_posting(soup)
+        # Keep this aligned with raw extraction gates that require substantial content.
+        if structured and len(structured.get("content", "")) >= SUBSTANTIAL_CONTENT_CHARS:
+            return structured["content"]
 
         # Remove script and style elements
         for script in soup(["script", "style"]):
