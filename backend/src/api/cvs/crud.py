@@ -315,6 +315,15 @@ async def delete_cv_data(
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
+    if cv.is_public_shared:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "This CV has an active public link. Turn off public sharing from the "
+                "Share dialog before deleting it."
+            ),
+        )
+
     # Delete profile picture file if present
     parsed = cv.parsed_data or {}
     profile_stored = (parsed.get("personal_info") or {}).get("profile_picture")

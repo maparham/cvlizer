@@ -112,6 +112,29 @@ def test_cv_share_settings_update_view_mode(client: TestClient):
     assert updated.json()["view_mode"] == "shell"
 
 
+def test_delete_cv_returns_409_when_public_sharing_enabled(client: TestClient):
+    """Cannot delete a CV while an active public share link exists."""
+    enable = client.post("/api/cvs/cv-1/share", json={"view_mode": "shell"})
+    assert enable.status_code == 200
+    assert enable.json()["is_shared"] is True
+
+    response = client.delete("/api/cvs/cv-1")
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert "public" in detail.lower() and "share" in detail.lower()
+
+
+def test_get_cv_includes_is_public_shared(client: TestClient):
+    detail = client.get("/api/cvs/cv-1")
+    assert detail.status_code == 200
+    assert detail.json().get("is_public_shared") is False
+
+    client.post("/api/cvs/cv-1/share", json={"view_mode": "shell"})
+    detail_shared = client.get("/api/cvs/cv-1")
+    assert detail_shared.status_code == 200
+    assert detail_shared.json().get("is_public_shared") is True
+
+
 def test_job_description_share_public_flow(client: TestClient):
     share_response = client.post("/api/job-descriptions/jd-1/share")
     assert share_response.status_code == 200

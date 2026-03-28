@@ -12,6 +12,7 @@ import { cvApi } from "../../services/api";
 import { CVEditorContentProps } from "./types";
 import { CVEditorHeader } from "./CVEditorHeader";
 import { ShareDialog } from "../sharing/ShareDialog";
+import { useCVStore } from "../../stores/cv";
 
 export const CVEditorContent: React.FC<CVEditorContentProps> = ({
   cvId,
@@ -27,6 +28,7 @@ export const CVEditorContent: React.FC<CVEditorContentProps> = ({
 }) => {
   const { showError } = useCVNotifications(cvId);
   const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
+  const fetchCV = useCVStore((s) => s.fetchCV);
 
   const handleExport = async () => {
     try {
@@ -55,6 +57,7 @@ export const CVEditorContent: React.FC<CVEditorContentProps> = ({
         onDelete={onDelete}
         isAdmin={isAdmin}
         isNewCV={isNewCV}
+        isPublicShared={!!activeCV?.is_public_shared}
       />
       <PDFCVEditor
         title={activeCV?.original_filename || "Untitled CV"}
@@ -67,6 +70,7 @@ export const CVEditorContent: React.FC<CVEditorContentProps> = ({
           onClose={() => setShareDialogOpen(false)}
           resourceType="cv"
           resourceId={cvId}
+          onSharingMutation={() => void fetchCV(cvId)}
         />
       )}
     </>

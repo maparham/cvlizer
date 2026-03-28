@@ -29,6 +29,10 @@ class CVResponse(BaseModel):
     export_template_name: Optional[
         str
     ] = None  # Per-CV PDF template; public export uses this when set
+    is_public_shared: bool = Field(
+        False,
+        description="True when this CV has public sharing enabled (active share token).",
+    )
 
     class Config:
         from_attributes = True

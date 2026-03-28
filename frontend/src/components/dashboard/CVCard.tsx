@@ -57,6 +57,8 @@ interface CVCardProps {
   onDuplicate: (cv: CV) => void;
   onTitleSave: (cv: CV, newTitle: string) => Promise<void>;
   onDownload: (cv: CV) => void;
+  /** Refetch CV list after share enable/disable/regenerate */
+  onSharingMutation?: () => void;
 }
 
 const CVCard: React.FC<CVCardProps> = ({
@@ -66,6 +68,7 @@ const CVCard: React.FC<CVCardProps> = ({
   onDuplicate,
   onTitleSave,
   onDownload,
+  onSharingMutation,
 }) => {
   const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
 
@@ -181,6 +184,23 @@ const CVCard: React.FC<CVCardProps> = ({
                 variant="outlined"
                 sx={{ borderRadius: 1.5 }}
               />
+            )}
+            {cv.is_public_shared && (
+              <Tooltip title="Click to manage public sharing">
+                <Chip
+                  icon={<ShareIcon />}
+                  label="Shared"
+                  size="small"
+                  color="info"
+                  variant="outlined"
+                  clickable
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShareDialogOpen(true);
+                  }}
+                  sx={{ borderRadius: 1.5, cursor: "pointer" }}
+                />
+              </Tooltip>
             )}
           </Stack>
 
@@ -333,7 +353,13 @@ const CVCard: React.FC<CVCardProps> = ({
                 <ShareIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Delete this CV">
+            <Tooltip
+              title={
+                cv.is_public_shared
+                  ? "Delete — you must turn off public sharing first (see dialog)"
+                  : "Delete this CV"
+              }
+            >
               <IconButton
                 size="small"
                 onClick={() => onDelete(cv)}
@@ -363,6 +389,7 @@ const CVCard: React.FC<CVCardProps> = ({
         onClose={() => setShareDialogOpen(false)}
         resourceType="cv"
         resourceId={cv.id}
+        onSharingMutation={onSharingMutation}
       />
     </Grid>
   );

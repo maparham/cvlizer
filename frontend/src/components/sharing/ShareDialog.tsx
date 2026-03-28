@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ContentCopy from "@mui/icons-material/ContentCopy";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -30,6 +30,8 @@ interface ShareDialogProps {
   resourceType: ShareResourceType;
   resourceId: string;
   onClose: () => void;
+  /** Called after enable, disable, or regenerate succeeds so lists can refetch. */
+  onSharingMutation?: () => void;
 }
 
 export const ShareDialog: React.FC<ShareDialogProps> = ({
@@ -37,6 +39,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   resourceType,
   resourceId,
   onClose,
+  onSharingMutation,
 }) => {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState(0);
@@ -58,7 +61,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     [resourceType],
   );
 
-  const loadShareState = async () => {
+  const loadShareState = useCallback(async () => {
     try {
       setLoading(true);
       const [currentInfo, analyticsInfo] =
@@ -73,18 +76,17 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             ]);
       setShareInfo(currentInfo);
       setAnalytics(analyticsInfo);
-    } catch (error) {
+    } catch {
       showError("Share setup failed", `Could not load ${resourceLabel} sharing state.`);
     } finally {
       setLoading(false);
     }
-  };
+  }, [resourceType, resourceId, resourceLabel, showError]);
 
   useEffect(() => {
     if (!open || !resourceId) return;
-    loadShareState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, resourceId, resourceType]);
+    void loadShareState();
+  }, [open, resourceId, loadShareState]);
 
   const handleCopyLink = async () => {
     if (!shareInfo?.public_url) return;
@@ -105,6 +107,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
           : await shareService.disableJobDescriptionSharing(resourceId);
       setShareInfo(next);
       showSuccess("Public link disabled");
+      onSharingMutation?.();
     } catch {
       showError("Disable failed", "Could not disable public sharing.");
     } finally {
@@ -121,6 +124,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
           : await shareService.enableJobDescriptionSharing(resourceId);
       setShareInfo(next);
       showSuccess("Public link enabled");
+      onSharingMutation?.();
     } catch {
       showError("Enable failed", "Could not enable public sharing.");
     } finally {
@@ -137,6 +141,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
           : await shareService.regenerateJobDescriptionShareToken(resourceId);
       setShareInfo(next);
       showSuccess("Public link regenerated. Old link is now invalid.");
+      onSharingMutation?.();
     } catch {
       showError("Regenerate failed", "Could not regenerate public link.");
     } finally {

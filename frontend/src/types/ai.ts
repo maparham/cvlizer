@@ -111,6 +111,8 @@ export interface JobDescription {
   status?: string;  // "open" | "applied" | "archived"
   application_date?: string | null;
   notes?: string;
+  /** True when a public read-only share link is enabled */
+  is_public_shared?: boolean;
 }
 
 export interface JobDescriptionStatusUpdate {

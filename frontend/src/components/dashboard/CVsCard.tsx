@@ -55,6 +55,8 @@ interface CVsCardProps {
   onDownload: (cv: CV) => void;
   onFileSelected: (file: File) => void;
   onValidationError?: (error: string) => void;
+  /** Refetch CV list after share changes from table view Shared chip */
+  onSharingMutation?: () => void;
   children: React.ReactNode;
 }
 
@@ -77,6 +79,7 @@ const CVsCard: React.FC<CVsCardProps> = ({
   onDownload,
   onFileSelected,
   onValidationError,
+  onSharingMutation,
   children,
 }) => {
   return (
@@ -301,6 +304,7 @@ const CVsCard: React.FC<CVsCardProps> = ({
               onDownload={onDownload}
               onFileSelected={onFileSelected}
               onValidationError={onValidationError}
+              onSharingMutation={onSharingMutation}
             />
           )}
         </Box>

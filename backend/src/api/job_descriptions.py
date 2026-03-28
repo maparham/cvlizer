@@ -269,6 +269,12 @@ class JobDescriptionResponse(BaseModel):
     status: str = "open"
     application_date: Optional[str] = None
     notes: Optional[str] = None
+    is_public_shared: bool = Field(
+        False,
+        description=(
+            "True when this job description has public sharing enabled (active share token)."
+        ),
+    )
 
     class Config:
         from_attributes = True
@@ -349,6 +355,7 @@ def _jd_to_response(jd: JobDescription, db: Session) -> JobDescriptionResponse:
         status=jd.status or "open",
         application_date=jd.application_date.isoformat() if jd.application_date else None,
         notes=jd.notes,
+        is_public_shared=bool(jd.is_public_shared),
     )
 
 

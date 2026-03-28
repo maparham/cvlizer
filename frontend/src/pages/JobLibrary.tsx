@@ -192,6 +192,7 @@ const JobLibrary: React.FC = () => {
         onDelete={handleDeleteJobDescription}
         onUpdateStatus={handleUpdateStatus}
         onAddJob={handleAddJob}
+        onSharingMutation={() => void loadJobDescriptions()}
       />
 
       <JobLibraryDialogs

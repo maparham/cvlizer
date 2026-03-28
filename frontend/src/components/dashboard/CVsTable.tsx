@@ -4,8 +4,9 @@
  * Displays the CV list in a sortable table view. Columns: Title, Status, File type,
  * Created, Modified, Sections, Actions. Last row is an "Add CV" drop zone.
  */
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -19,12 +20,14 @@ import Typography from "@mui/material/Typography";
 import EditIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ShareIcon from "@mui/icons-material/Share";
 import DuplicateIcon from "@mui/icons-material/FileCopy";
 import UploadIcon from "@mui/icons-material/Upload";
 import ErrorIcon from "@mui/icons-material/Error";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ProcessingIcon from "@mui/icons-material/HourglassEmpty";
 import { EditableTitle } from "../cv";
+import { ShareDialog } from "../sharing/ShareDialog";
 import { CV } from "../../types";
 import { getSectionCount, isUploadedCV } from "../../utils/dashboardUtils";
 import { formatDateTime } from "../../utils/dateFormat";
@@ -131,6 +134,7 @@ interface CVsTableProps {
   onDownload: (cv: CV) => void;
   onFileSelected: (file: File) => void;
   onValidationError?: (error: string) => void;
+  onSharingMutation?: () => void;
 }
 
 const CVsTable: React.FC<CVsTableProps> = ({
@@ -145,8 +149,10 @@ const CVsTable: React.FC<CVsTableProps> = ({
   onDownload,
   onFileSelected,
   onValidationError,
+  onSharingMutation,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [shareCvId, setShareCvId] = useState<string | null>(null);
 
   const sortedCVs = useMemo(() => {
     const list = [...cvs];
@@ -210,12 +216,31 @@ const CVsTable: React.FC<CVsTableProps> = ({
           {sortedCVs.map((cv) => (
             <TableRow key={cv.id} hover>
               <TableCell>
-                <EditableTitle
-                  title={cv.original_filename}
-                  onSave={(newTitle) => onTitleSave(cv, newTitle)}
-                  variant="h6"
-                  sx={{ fontSize: "0.875rem", fontWeight: 600 }}
-                />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                  <EditableTitle
+                    title={cv.original_filename}
+                    onSave={(newTitle) => onTitleSave(cv, newTitle)}
+                    variant="h6"
+                    sx={{ fontSize: "0.875rem", fontWeight: 600 }}
+                  />
+                  {cv.is_public_shared && (
+                    <Tooltip title="Click to manage public sharing">
+                      <Chip
+                        icon={<ShareIcon />}
+                        label="Shared"
+                        size="small"
+                        color="info"
+                        variant="outlined"
+                        clickable
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShareCvId(cv.id);
+                        }}
+                        sx={{ cursor: "pointer" }}
+                      />
+                    </Tooltip>
+                  )}
+                </Box>
               </TableCell>
               <TableCell>
                 <Tooltip title={getStatusLabel(cv)}>
@@ -285,7 +310,13 @@ const CVsTable: React.FC<CVsTableProps> = ({
                     </IconButton>
                   </Tooltip>
                 )}
-                <Tooltip title="Delete">
+                <Tooltip
+                  title={
+                    cv.is_public_shared
+                      ? "Delete — turn off public sharing first (see dialog)"
+                      : "Delete"
+                  }
+                >
                   <IconButton
                     size="small"
                     onClick={() => onDelete(cv)}
@@ -330,6 +361,15 @@ const CVsTable: React.FC<CVsTableProps> = ({
         style={{ display: "none" }}
         data-testid="cv-table-file-input"
       />
+      {shareCvId && (
+        <ShareDialog
+          open
+          onClose={() => setShareCvId(null)}
+          resourceType="cv"
+          resourceId={shareCvId}
+          onSharingMutation={onSharingMutation}
+        />
+      )}
     </TableContainer>
   );
 };

@@ -11,6 +11,11 @@ You are an expert reviewer for this repo (FastAPI + React/TypeScript). **Review 
 
 ## How to respond
 
+Provide your entire response in a single code block (for easier copy-pasting).
+
+Start with: "Verify if these issues exist and shortlist issues worth addressing for this MVP."
+
+Then provide:
 1. One‑sentence summary of what the diff does.
 2. Bullet list of findings (if any), each with:
    - **Severity** (High / Medium / Low)
@@ -19,4 +24,4 @@ You are an expert reviewer for this repo (FastAPI + React/TypeScript). **Review 
    - **Recommendation** (short, concrete; favor small, targeted changes)
 3. If there are **no material issues**, say that explicitly and optionally mention one or two small improvements.
 4. At the end, report the net number of lines added by the change
-5. Report issues in the order of severity (high to low) in a code block (for easier copy-pasting)
+5. Report issues in the order of severity (high to low)

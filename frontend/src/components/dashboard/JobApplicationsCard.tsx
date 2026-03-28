@@ -47,6 +47,7 @@ interface JobApplicationsCardProps {
   onUpdateStatus: (jd: JobDescription) => void;
   onAddJob: () => void;
   onViewAll: () => void;
+  onSharingMutation?: () => void;
 }
 
 const JobApplicationsCard: React.FC<JobApplicationsCardProps> = ({
@@ -61,6 +62,7 @@ const JobApplicationsCard: React.FC<JobApplicationsCardProps> = ({
   onUpdateStatus,
   onAddJob,
   onViewAll,
+  onSharingMutation,
 }) => {
   const cardViewJDs = useMemo(() => {
     const copy = [...jobDescriptions];
@@ -309,6 +311,7 @@ const JobApplicationsCard: React.FC<JobApplicationsCardProps> = ({
                         showSelectButton={false}
                         onEdit={onEditJobDescription}
                         onStatusUpdate={onUpdateStatus}
+                        onSharingMutation={onSharingMutation}
                       />
                     </Box>
                   ))}
@@ -322,6 +325,7 @@ const JobApplicationsCard: React.FC<JobApplicationsCardProps> = ({
                 onSortChange={onTableSortChange}
                 onEditJobDescription={onEditJobDescription}
                 onUpdateStatus={onUpdateStatus}
+                onSharingMutation={onSharingMutation}
               />
             )}
           </Box>

@@ -78,6 +78,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
     hideJobDescriptionFromSidebar,
     updateJobDescription,
     cancelJobDescriptionParsing,
+    loadJobDescriptions,
   } = useAIStore();
 
   // Calculate CV completeness
@@ -276,6 +277,7 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
                   onCancelParsing={handleCancelParsing}
                   variant="sidebar"
                   maxChipWidth={120}
+                  onSharingMutation={() => void loadJobDescriptions()}
                 />
 
                 <Box

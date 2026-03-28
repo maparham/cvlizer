@@ -20,6 +20,7 @@ const ArchiveTab: React.FC<ArchiveTabProps> = ({
   onDelete,
   onSelect,
   onCancelParsing,
+  onSharingMutation,
 }) => {
   return (
     <Box sx={{ maxWidth: 1400, mx: "auto", p: 2 }}>
@@ -59,6 +60,7 @@ const ArchiveTab: React.FC<ArchiveTabProps> = ({
                   onCancelParsing={onCancelParsing}
                   showSelectButton={true}
                   maxChipWidth={200}
+                  onSharingMutation={onSharingMutation}
                 />
               </Grid>
             );

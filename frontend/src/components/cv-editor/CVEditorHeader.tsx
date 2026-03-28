@@ -20,6 +20,7 @@ import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Toolbar from "@mui/material/Toolbar";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
@@ -43,6 +44,7 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
   onDelete,
   isAdmin,
   isNewCV,
+  isPublicShared = false,
 }) => {
   const navigate = useNavigate();
   const { editingSection, editingIndividualItem, hasUnsavedChanges } =
@@ -177,27 +179,39 @@ export const CVEditorHeader: React.FC<CVEditorHeaderProps> = ({
               )}
 
               {!isNewCV && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<DeleteIcon />}
-                  onClick={onDelete}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 600,
-                    borderRadius: 2,
-                    borderColor: "error.main",
-                    color: "error.main",
-                    whiteSpace: "nowrap",
-                    "&:hover": {
-                      backgroundColor: "error.light",
-                      color: "error.contrastText",
-                      borderColor: "error.dark",
-                    },
-                  }}
+                <Tooltip
+                  title={
+                    isPublicShared
+                      ? "Turn off public sharing (Share) before deleting this CV"
+                      : ""
+                  }
+                  disableHoverListener={!isPublicShared}
                 >
-                  Delete
-                </Button>
+                  <span>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={onDelete}
+                      disabled={isPublicShared}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        borderColor: "error.main",
+                        color: "error.main",
+                        whiteSpace: "nowrap",
+                        "&:hover": {
+                          backgroundColor: "error.light",
+                          color: "error.contrastText",
+                          borderColor: "error.dark",
+                        },
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </span>
+                </Tooltip>
               )}
               <Button
                 variant="outlined"

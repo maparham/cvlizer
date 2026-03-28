@@ -32,6 +32,7 @@ interface JobLibraryGridProps {
   onDelete: (jobDescription: JobDescription) => void;
   onUpdateStatus: (jobDescription: JobDescription) => void;
   onAddJob: () => void;
+  onSharingMutation?: () => void;
 }
 
 export const JobLibraryGrid: React.FC<JobLibraryGridProps> = ({
@@ -42,6 +43,7 @@ export const JobLibraryGrid: React.FC<JobLibraryGridProps> = ({
   onDelete,
   onUpdateStatus,
   onAddJob,
+  onSharingMutation,
 }) => {
   const hasActiveFilters = searchQuery || statusFilter !== "all";
 
@@ -124,6 +126,7 @@ export const JobLibraryGrid: React.FC<JobLibraryGridProps> = ({
                 onStatusUpdate={onUpdateStatus}
                 showSelectButton={false}
                 variant="default"
+                onSharingMutation={onSharingMutation}
               />
             </Grid>
           ))}

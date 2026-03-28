@@ -12,6 +12,8 @@ export interface CVEditorHeaderProps {
   onDelete: () => void;
   isAdmin: boolean;
   isNewCV: boolean;
+  /** When true, delete is blocked until public sharing is disabled */
+  isPublicShared?: boolean;
 }
 
 export interface CVEditorContentProps {

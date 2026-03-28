@@ -14,6 +14,7 @@ export const useCVEditorActions = (_isAdmin: boolean, isNewCV: boolean, cvId: st
     updateCVTitle,
     setTemporaryCV,
     deleteCV,
+    currentCV,
   } = useCVStore();
   const { showSuccess, showError } = useCVNotifications(cvId);
 
@@ -40,6 +41,13 @@ export const useCVEditorActions = (_isAdmin: boolean, isNewCV: boolean, cvId: st
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!cvId || isNewCV) return;
+    if (currentCV?.is_public_shared) {
+      showError(
+        "Cannot delete",
+        "Turn off public sharing from the Share dialog before deleting this CV.",
+      );
+      return;
+    }
 
     try {
       await deleteCV(cvId);
@@ -51,7 +59,7 @@ export const useCVEditorActions = (_isAdmin: boolean, isNewCV: boolean, cvId: st
         error?.response?.data?.detail || "Failed to delete CV";
       showError("Error", errorMessage);
     }
-  }, [cvId, isNewCV, deleteCV, showSuccess, showError, navigate]);
+  }, [cvId, isNewCV, currentCV?.is_public_shared, deleteCV, showSuccess, showError, navigate]);
 
   const handleDeleteCancel = useCallback(() => {
     setDeleteDialogOpen(false);

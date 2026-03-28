@@ -70,6 +70,7 @@ export interface ArchiveTabProps {
   onDelete: (jobDescription: JobDescription) => void;
   onSelect: (jobDescription: JobDescription) => void;
   onCancelParsing: (jobDescription: JobDescription) => Promise<void>;
+  onSharingMutation?: () => void;
 }
 
 /**

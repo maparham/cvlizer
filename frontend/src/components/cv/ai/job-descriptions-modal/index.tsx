@@ -152,6 +152,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
     parseJobDescriptionPastedText,
     associateJobDescriptionWithCV,
     cancelJobDescriptionParsing,
+    loadJobDescriptions,
   } = useAIStore();
 
   const jobDescriptions = useAIStore((state) => state.jobDescriptions);
@@ -659,6 +660,7 @@ const JobDescriptionsModal: React.FC<JobDescriptionsModalProps> = ({
                   onDelete={handleDeleteClick}
                   onSelect={handleJobDescriptionSelect}
                   onCancelParsing={handleCancelParsing}
+                  onSharingMutation={() => void loadJobDescriptions()}
                 />
               </TabPanel>
             </Box>

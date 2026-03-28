@@ -391,6 +391,7 @@ const Dashboard: React.FC = () => {
             onDownload={handleDownload}
             onFileSelected={handlePlaceholderFileSelected}
             onValidationError={(error) => showError("Invalid file", error)}
+            onSharingMutation={() => void fetchCVs()}
           >
             {cvs.map((cv) => (
               <CVCard
@@ -401,6 +402,7 @@ const Dashboard: React.FC = () => {
                 onDuplicate={handleDuplicate}
                 onTitleSave={handleTitleSave}
                 onDownload={handleDownload}
+                onSharingMutation={() => void fetchCVs()}
               />
             ))}
             <CVPlaceholderCard
@@ -426,6 +428,7 @@ const Dashboard: React.FC = () => {
             onUpdateStatus={handleUpdateStatus}
             onAddJob={() => setJobDescriptionModalOpen(true)}
             onViewAll={() => navigate("/applications")}
+            onSharingMutation={() => void loadJobDescriptions()}
           />
         )}
 

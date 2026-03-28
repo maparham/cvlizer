@@ -121,6 +121,8 @@ export interface JobDescriptionCardProps {
   showSelectButton?: boolean;
   variant?: "default" | "sidebar";
   maxChipWidth?: number;
+  /** Refetch job descriptions after share enable/disable/regenerate */
+  onSharingMutation?: () => void;
 }
 
 const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
@@ -136,6 +138,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   showSelectButton = false,
   variant = "default",
   maxChipWidth: _maxChipWidth,
+  onSharingMutation,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -186,6 +189,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
   // Parsing/Error state card
   if (isParsing || hasError) {
     return (
+      <>
       <Card
         variant="outlined"
         sx={{
@@ -210,6 +214,25 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
             minHeight: variant === "sidebar" ? 150 : 200,
           }}
         >
+          {jobDescription.is_public_shared && (
+            <Box sx={{ alignSelf: "stretch", mb: 1 }}>
+              <Tooltip title="Click to manage public sharing">
+                <Chip
+                  icon={<ShareIcon />}
+                  label="Shared"
+                  size="small"
+                  color="info"
+                  variant="outlined"
+                  clickable
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShareDialogOpen(true);
+                  }}
+                  sx={{ cursor: "pointer" }}
+                />
+              </Tooltip>
+            </Box>
+          )}
           <Box
             sx={{
               display: "flex",
@@ -306,6 +329,14 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
           </Box>
         </CardContent>
       </Card>
+      <ShareDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        resourceType="job_description"
+        resourceId={jobDescription.id}
+        onSharingMutation={onSharingMutation}
+      />
+      </>
     );
   }
 
@@ -448,8 +479,11 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
             </Box>
           </Box>
 
-          {/* Company, Location, Status chips */}
-          {(jobDescription.company || jobDescription.location || jobDescription.status) && (
+          {/* Company, Location, Status, Shared chips */}
+          {(jobDescription.company ||
+            jobDescription.location ||
+            jobDescription.status ||
+            jobDescription.is_public_shared) && (
             <Box
               sx={{
                 display: "flex",
@@ -535,6 +569,23 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                       : {},
                   }}
                 />
+              )}
+              {jobDescription.is_public_shared && (
+                <Tooltip title="Click to manage public sharing">
+                  <Chip
+                    icon={<ShareIcon />}
+                    label="Shared"
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                    clickable
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShareDialogOpen(true);
+                    }}
+                    sx={{ cursor: "pointer" }}
+                  />
+                </Tooltip>
               )}
             </Box>
           )}
@@ -736,8 +787,10 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               </Typography>
             )}
             {/* Metadata chips */}
-            {(jobDescription.company || jobDescription.location) && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "nowrap", overflow: "hidden" }}>
+            {(jobDescription.company ||
+              jobDescription.location ||
+              jobDescription.is_public_shared) && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", overflow: "hidden" }}>
                 {jobDescription.company && (
                   <Chip
                     icon={<WorkIcon />}
@@ -798,6 +851,23 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                     }}
                   />
                 )}
+                {jobDescription.is_public_shared && (
+                  <Tooltip title="Click to manage public sharing">
+                    <Chip
+                      icon={<ShareIcon />}
+                      label="Shared"
+                      size="small"
+                      color="info"
+                      variant="outlined"
+                      clickable
+                      onClick={() => {
+                        handleCloseDialog();
+                        setShareDialogOpen(true);
+                      }}
+                      sx={{ cursor: "pointer" }}
+                    />
+                  </Tooltip>
+                )}
               </Box>
             )}
           </Box>
@@ -820,6 +890,7 @@ const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
         onClose={() => setShareDialogOpen(false)}
         resourceType="job_description"
         resourceId={jobDescription.id}
+        onSharingMutation={onSharingMutation}
       />
     </>
   );

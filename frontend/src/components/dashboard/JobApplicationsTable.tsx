@@ -9,7 +9,8 @@
  * - Rendered by JobApplicationsCard when viewMode === "list"
  * - Receives handlers for Edit and Update Status from the Dashboard
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Table from "@mui/material/Table";
@@ -22,9 +23,11 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import EditIcon from "@mui/icons-material/Edit";
+import ShareIcon from "@mui/icons-material/Share";
 import StatusIcon from "@mui/icons-material/SwapHoriz";
 import { JobDescription } from "../../types/ai";
 import { formatDateTime } from "../../utils/dateFormat";
+import { ShareDialog } from "../sharing/ShareDialog";
 
 export type JobTableSortColumn =
   | "title"
@@ -129,6 +132,7 @@ interface JobApplicationsTableProps {
   onSortChange: (sortBy: JobTableSortColumn, sortDirection: "asc" | "desc") => void;
   onEditJobDescription: (jd: JobDescription) => void;
   onUpdateStatus: (jd: JobDescription) => void;
+  onSharingMutation?: () => void;
 }
 
 const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({
@@ -138,7 +142,9 @@ const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({
   onSortChange,
   onEditJobDescription,
   onUpdateStatus,
+  onSharingMutation,
 }) => {
+  const [shareJdId, setShareJdId] = useState<string | null>(null);
   const sortedJDs = useMemo(() => {
     const list = [...jobDescriptions];
     list.sort((a, b) => compareJDs(a, b, sortBy, sortDirection));
@@ -171,9 +177,28 @@ const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({
           {sortedJDs.map((jd) => (
             <TableRow key={jd.id} hover>
               <TableCell>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {jd.title || "—"}
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {jd.title || "—"}
+                  </Typography>
+                  {jd.is_public_shared && (
+                    <Tooltip title="Click to manage public sharing">
+                      <Chip
+                        icon={<ShareIcon />}
+                        label="Shared"
+                        size="small"
+                        color="info"
+                        variant="outlined"
+                        clickable
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShareJdId(jd.id);
+                        }}
+                        sx={{ cursor: "pointer" }}
+                      />
+                    </Tooltip>
+                  )}
+                </Box>
               </TableCell>
               <TableCell>
                 <Typography variant="body2" color="text.secondary">
@@ -222,6 +247,15 @@ const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({
           ))}
         </TableBody>
       </Table>
+      {shareJdId && (
+        <ShareDialog
+          open
+          onClose={() => setShareJdId(null)}
+          resourceType="job_description"
+          resourceId={shareJdId}
+          onSharingMutation={onSharingMutation}
+        />
+      )}
     </TableContainer>
   );
 };

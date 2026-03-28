@@ -36,6 +36,8 @@ export interface CV {
   validation_warnings?: string[];
   /** Per-CV LaTeX template for export; public PDF uses this when set */
   export_template_name?: string | null;
+  /** True when a public read-only share link is enabled */
+  is_public_shared?: boolean;
 }
 
 // CV Data Structure

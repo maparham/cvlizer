@@ -122,19 +122,28 @@ const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography>
-            Delete "{cvToDelete?.original_filename}"?
-          </Typography>
+          {cvToDelete?.is_public_shared ? (
+            <>
+              <Typography sx={{ mb: 1 }}>
+                You cannot delete &quot;{cvToDelete.original_filename}&quot; while a public share link
+                is active.
+              </Typography>
+              <Typography color="text.secondary" variant="body2">
+                Open the Share dialog on this CV&apos;s card and turn off public sharing first. After
+                that, you can delete the CV.
+              </Typography>
+            </>
+          ) : (
+            <Typography>Delete &quot;{cvToDelete?.original_filename}&quot;?</Typography>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={onDeleteCancel}>Cancel</Button>
-          <Button
-            onClick={onDeleteConfirm}
-            color="error"
-            variant="contained"
-          >
-            Delete CV
-          </Button>
+          {!cvToDelete?.is_public_shared && (
+            <Button onClick={onDeleteConfirm} color="error" variant="contained">
+              Delete CV
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

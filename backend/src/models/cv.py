@@ -119,6 +119,7 @@ class CV(Base):
             "is_imported": is_imported,
             "has_been_edited": has_been_edited,
             "export_template_name": self.export_template_name,
+            "is_public_shared": bool(self.is_public_shared),
         }
 
         # Only include parsed_data if explicitly requested (for list views, exclude it)
