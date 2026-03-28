@@ -20,6 +20,7 @@ from src.models.base import get_db
 from src.models.user import User
 from src.services.cv.cv_service import create_cv
 from src.services.platform.file_service import save_uploaded_file, validate_file
+from src.services.users.user_activity_service import safe_log_user_activity
 
 from src.utils.task_logging import make_task_exception_logger
 
@@ -84,6 +85,19 @@ async def upload_cv(
                 "CV background parsing task failed: cv_id=%s, error=%s",
                 str(cv.id),
             )
+        )
+
+        safe_log_user_activity(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="cv_upload",
+            description=f"Uploaded CV file '{cv.original_filename}'",
+            details={
+                "cv_id": str(cv.id),
+                "filename": cv.original_filename,
+                "file_size": file_size,
+            },
         )
 
         return build_cv_response(cv)

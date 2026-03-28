@@ -19,6 +19,7 @@ from src.services.cv.cv_service import get_cv_by_id
 from src.services.job_descriptions.job_description_service import (
     get_job_description_by_id,
 )
+from src.services.users.user_activity_service import append_user_activity_for_commit
 
 from .models import AIGenerationRequest, AISectionListResponse, AISectionResponse
 
@@ -87,6 +88,19 @@ async def generate_ai_section(
         )
 
         db.add(ai_section)
+        append_user_activity_for_commit(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="ai_generate_section",
+            description=f"Generated AI section '{request.section_type}'",
+            details={
+                "cv_id": cv_id,
+                "job_description_id": request.job_description_id,
+                "section_type": request.section_type,
+                "ai_section_id": str(ai_section.id),
+            },
+        )
         db.commit()
         db.refresh(ai_section)
 

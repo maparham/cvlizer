@@ -27,6 +27,10 @@ from src.schemas.cv_quality_schemas import (
     IssueSchema,
 )
 from src.services.cv.cv_service import get_cv_by_id
+from src.services.users.user_activity_service import (
+    append_user_activity_for_commit,
+    safe_log_user_activity,
+)
 from src.services.ai_service.single_field_quality_service import (
     generate_single_field_correction,
     get_max_draft_history_per_field,
@@ -185,6 +189,19 @@ async def create_cv_quality_analysis(
 
     task.add_done_callback(task_done_callback)
 
+    safe_log_user_activity(
+        db=db,
+        user=user,
+        activity_type="user_action",
+        action="cv_quality_analysis_start",
+        description="Started CV quality analysis",
+        details={
+            "cv_id": cv_id,
+            "analysis_id": analysis_id,
+            "correction_mode": request.correction_mode,
+        },
+    )
+
     return CVQualityAnalysisCreateResponseSchema(
         analysis_id=analysis_id,
         is_generating=True,
@@ -325,6 +342,20 @@ async def field_retry(
             detail="Failed to save draft history",
         )
 
+    safe_log_user_activity(
+        db=db,
+        user=user,
+        activity_type="user_action",
+        action="cv_quality_field_retry",
+        description="Ran single-field quality retry",
+        details={
+            "cv_id": cv_id,
+            "analysis_id": request.analysis_id,
+            "field_path": request.field_path,
+            "item_id": request.item_id,
+        },
+    )
+
     return FieldRetryResponseSchema(
         issue=IssueSchema.model_validate(issue_dict),
         list_for_field=[IssueSchema.model_validate(x) for x in new_list],
@@ -396,6 +427,16 @@ async def update_cv_quality_analysis(
 
     # Convert validated Pydantic model to dict for storage (by_alias so field_path is used)
     analysis.quality_data = update_data.quality_data.model_dump(by_alias=True)
+    cv_id_for_log = str(analysis.cv_id)
+
+    append_user_activity_for_commit(
+        db=db,
+        user=user,
+        activity_type="user_action",
+        action="cv_quality_analysis_patch",
+        description="Updated CV quality analysis data",
+        details={"analysis_id": analysis_id, "cv_id": cv_id_for_log},
+    )
 
     try:
         db.commit()
@@ -442,7 +483,16 @@ async def delete_cv_quality_analysis(
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
 
+    cv_id_for_log = str(analysis.cv_id)
     db.delete(analysis)
+    append_user_activity_for_commit(
+        db=db,
+        user=user,
+        activity_type="user_action",
+        action="cv_quality_analysis_delete",
+        description="Deleted CV quality analysis",
+        details={"analysis_id": analysis_id, "cv_id": cv_id_for_log},
+    )
 
     try:
         db.commit()
@@ -486,8 +536,18 @@ async def delete_all_cv_quality_analyses(
     count = (
         db.query(CVQualityAnalysis)
         .filter(CVQualityAnalysis.cv_id == cv_id, CVQualityAnalysis.user_id == user.id)
-        .delete()
+        .delete(synchronize_session=False)
     )
+
+    if count:
+        append_user_activity_for_commit(
+            db=db,
+            user=user,
+            activity_type="user_action",
+            action="cv_quality_analysis_delete_all",
+            description=f"Deleted all quality analyses for CV ({count})",
+            details={"cv_id": cv_id, "deleted_count": count},
+        )
 
     try:
         db.commit()

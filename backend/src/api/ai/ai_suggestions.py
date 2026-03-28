@@ -25,6 +25,10 @@ from src.services.job_descriptions.job_description_service import (
     get_job_description_by_id,
 )
 from src.utils.rate_limit import create_combined_limiter
+from src.services.users.user_activity_service import (
+    append_user_activity_for_commit,
+    safe_log_user_activity,
+)
 from src.utils.task_logging import make_task_exception_logger
 
 from .background_tasks import ai_suggestions_background
@@ -80,6 +84,17 @@ async def create_ai_suggestion(
         )
 
         db.add(ai_suggestion)
+        append_user_activity_for_commit(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="ai_suggestion_create",
+            description="Created AI suggestion record",
+            details={
+                "cv_id": suggestion.cv_id,
+                "suggestion_id": str(ai_suggestion.id),
+            },
+        )
         db.commit()
         db.refresh(ai_suggestion)
 
@@ -131,6 +146,22 @@ async def accept_ai_suggestion(
             suggestion.is_accepted = bool(request.is_accepted)
         else:
             suggestion.is_accepted = "accepted" if request.is_accepted else "rejected"
+        append_user_activity_for_commit(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="ai_suggestion_accept",
+            description=(
+                "Accepted AI suggestion"
+                if request.is_accepted
+                else "Rejected AI suggestion"
+            ),
+            details={
+                "suggestion_id": suggestion_id,
+                "cv_id": str(suggestion.cv_id),
+                "accepted": bool(request.is_accepted),
+            },
+        )
         db.commit()
 
         return {
@@ -204,6 +235,19 @@ async def create_ai_suggestions(
                 "AI suggestions background task failed: enhancement_id=%s, error=%s",
                 enhancement_id,
             )
+        )
+
+        safe_log_user_activity(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="ai_suggestions_job_start",
+            description="Started AI suggestions / job-fit enhancement job",
+            details={
+                "cv_id": cv_id,
+                "enhancement_id": enhancement_id,
+                "job_description_id": enhancement_request.job_description_id,
+            },
         )
 
         return AIEnhancementCreateResponse(
@@ -326,6 +370,18 @@ async def update_ai_enhancement(
         db.commit()
         db.refresh(enhancement)
 
+        safe_log_user_activity(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="ai_enhancement_update",
+            description="Updated AI enhancement record",
+            details={
+                "enhancement_id": enhancement_id,
+                "cv_id": str(enhancement.cv_id),
+            },
+        )
+
         return {"message": "AI enhancement updated successfully", "id": enhancement.id}
     except Exception as e:
         db.rollback()
@@ -358,7 +414,16 @@ async def delete_ai_enhancement(
         )
 
     try:
+        cv_id_for_log = str(enhancement.cv_id)
         db.delete(enhancement)
+        append_user_activity_for_commit(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="ai_enhancement_delete",
+            description="Deleted AI enhancement record",
+            details={"enhancement_id": enhancement_id, "cv_id": cv_id_for_log},
+        )
         db.commit()
         return {"message": "AI enhancement deleted successfully"}
     except Exception as e:
@@ -397,6 +462,14 @@ async def delete_all_ai_enhancements_for_cv(
         if deleted_count > 0:
             for enhancement in enhancements:
                 db.delete(enhancement)
+            append_user_activity_for_commit(
+                db=db,
+                user=current_user,
+                activity_type="user_action",
+                action="ai_enhancements_delete_all",
+                description=f"Deleted all AI enhancements for CV ({deleted_count})",
+                details={"cv_id": cv_id, "deleted_count": deleted_count},
+            )
             db.commit()
             logger.info(f"Deleted {deleted_count} AI enhancement(s) for CV {cv_id}")
 

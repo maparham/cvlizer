@@ -18,6 +18,10 @@ from src.models.base import get_db
 from src.models.user import User
 from src.schemas.cv_schemas import WhyGoodFitMetadataSchema, WhyGoodFitSchema
 from src.services.cv.cv_service import get_cv_by_id
+from src.services.users.user_activity_service import (
+    append_user_activity_for_commit,
+    safe_log_user_activity,
+)
 
 from .models import (
     DraftApproveRequest,
@@ -312,6 +316,15 @@ async def approve_why_good_fit_draft(
         db.commit()
         db.refresh(cv)
 
+        safe_log_user_activity(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="ai_why_good_fit_approve",
+            description="Approved why_good_fit draft into CV",
+            details={"cv_id": cv_id, "draft_id": str(request.draft_id)},
+        )
+
         response_data = {
             "message": "Draft approved and committed successfully",
             "cv": cv.to_response_dict(),
@@ -352,8 +365,17 @@ async def delete_why_good_fit_draft(
         )
 
     try:
+        draft_id_for_log = str(draft.id)
         # Delete the draft
         db.delete(draft)
+        append_user_activity_for_commit(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="ai_why_good_fit_draft_delete",
+            description="Deleted why_good_fit draft",
+            details={"cv_id": cv_id, "draft_id": draft_id_for_log},
+        )
         db.commit()
 
         return {"message": "Draft deleted successfully"}

@@ -24,6 +24,7 @@ from src.sharing.share_service import (
     regenerate_jd_share_token,
     update_cv_share_settings,
 )
+from src.services.users.user_activity_service import safe_log_user_activity
 from src.utils.datetime_utils import format_datetime_utc_iso
 
 router = APIRouter()
@@ -41,6 +42,14 @@ async def enable_cv_public_share(
     cv = enable_cv_sharing(db, cv_id, str(current_user.id), view_mode)
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="cv_share_enable",
+        description="Enabled public CV sharing",
+        details={"cv_id": cv_id, "view_mode": view_mode},
+    )
     return ShareResponse(
         public_url=public_frontend_url(request, "cv", cv.public_share_token or ""),
         token=cv.public_share_token,
@@ -81,6 +90,14 @@ async def update_cv_public_share(
     cv = update_cv_share_settings(db, cv_id, str(current_user.id), payload.view_mode)
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="cv_share_update",
+        description="Updated public CV share settings",
+        details={"cv_id": cv_id, "view_mode": payload.view_mode},
+    )
     token = cv.public_share_token or ""
     return ShareResponse(
         public_url=public_frontend_url(request, "cv", token) if token else "",
@@ -101,6 +118,14 @@ async def disable_cv_public_share(
     cv = disable_cv_sharing(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="cv_share_disable",
+        description="Disabled public CV sharing",
+        details={"cv_id": cv_id},
+    )
     token = cv.public_share_token or ""
     return ShareResponse(
         public_url=public_frontend_url(request, "cv", token) if token else "",
@@ -121,6 +146,14 @@ async def regenerate_cv_public_share(
     cv = regenerate_cv_share_token(db, cv_id, str(current_user.id))
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="cv_share_regenerate",
+        description="Regenerated public CV share link",
+        details={"cv_id": cv_id},
+    )
     return ShareResponse(
         public_url=public_frontend_url(request, "cv", cv.public_share_token or ""),
         token=cv.public_share_token,

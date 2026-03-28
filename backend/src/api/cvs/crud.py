@@ -45,6 +45,7 @@ from src.services.cv.cv_service import (
     update_cv,
 )
 from src.services.platform.file_service import delete_file, resolve_profile_picture_path
+from src.services.users.user_activity_service import safe_log_user_activity
 from src.services.shared.template_loader import get_template_metadata
 from src.utils.validation import CVDataValidator
 
@@ -299,6 +300,18 @@ async def duplicate_cv(
         )
     if not new_cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="cv_duplicate",
+        description=f"Duplicated CV to '{new_cv.original_filename}'",
+        details={
+            "source_cv_id": cv_id,
+            "new_cv_id": str(new_cv.id),
+            "new_filename": new_cv.original_filename,
+        },
+    )
     return build_cv_response(new_cv)
 
 
@@ -324,6 +337,8 @@ async def delete_cv_data(
             ),
         )
 
+    cv_filename = cv.original_filename
+
     # Delete profile picture file if present
     parsed = cv.parsed_data or {}
     profile_stored = (parsed.get("personal_info") or {}).get("profile_picture")
@@ -342,5 +357,14 @@ async def delete_cv_data(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete CV",
         )
+
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="cv_delete",
+        description=f"Deleted CV '{cv_filename}'",
+        details={"cv_id": cv_id, "cv_filename": cv_filename},
+    )
 
     return {"message": "CV deleted successfully"}

@@ -30,7 +30,10 @@ from src.services.job_descriptions.job_description_service import (
     get_job_description_owned_by,
 )
 from src.services.shared.template_loader import is_template_available
-from src.services.users.user_activity_service import log_api_call, log_user_activity
+from src.services.users.user_activity_service import (
+    safe_log_api_call,
+    safe_log_user_activity,
+)
 
 from .common import logger
 from .models import CVExportTemplatePatchRequest, CVResponse
@@ -95,6 +98,18 @@ async def patch_cv_export_template(
     cv = update_cv_export_template(db, cv_id, str(current_user.id), stored)
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="cv_export_template_patch",
+        description="Updated CV export LaTeX template setting",
+        details={
+            "cv_id": cv_id,
+            "template_name": stored,
+            "cleared": stored is None,
+        },
+    )
     return build_cv_response(cv)
 
 
@@ -122,22 +137,19 @@ async def export_cv_pdf(
     logger.info(
         f"User {current_user.email} exporting CV {cv_id} ({cv.original_filename}) as PDF with template '{template_name}'"
     )
-    try:
-        log_user_activity(
-            db=db,
-            user=current_user,
-            activity_type="user_action",
-            action="export_cv_pdf",
-            description=f"Exported CV '{cv.original_filename}' as PDF with template '{template_name}'",
-            details={
-                "cv_id": cv_id,
-                "cv_filename": cv.original_filename,
-                "template_name": template_name,
-                "export_type": "pdf",
-            },
-        )
-    except Exception as e:
-        logger.warning(f"Failed to log user activity for PDF export: {str(e)}")
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="export_cv_pdf",
+        description=f"Exported CV '{cv.original_filename}' as PDF with template '{template_name}'",
+        details={
+            "cv_id": cv_id,
+            "cv_filename": cv.original_filename,
+            "template_name": template_name,
+            "export_type": "pdf",
+        },
+    )
 
     if not is_latex_available():
         raise HTTPException(
@@ -168,21 +180,17 @@ async def export_cv_pdf(
             "Access-Control-Expose-Headers": "Content-Disposition",
         }
 
-        # Log successful API call
-        try:
-            log_api_call(
-                db=db,
-                user=current_user,
-                endpoint=f"/api/cvs/{cv_id}/export/pdf",
-                method="GET",
-                status_code=200,
-                request_data={
-                    "export_template_name": cv.export_template_name,
-                },
-                response_data={"filename": filename, "file_size": len(pdf_bytes)},
-            )
-        except Exception as e:
-            logger.warning(f"Failed to log API call for PDF export: {str(e)}")
+        safe_log_api_call(
+            db=db,
+            user=current_user,
+            endpoint=f"/api/cvs/{cv_id}/export/pdf",
+            method="GET",
+            status_code=200,
+            request_data={
+                "export_template_name": cv.export_template_name,
+            },
+            response_data={"filename": filename, "file_size": len(pdf_bytes)},
+        )
 
         return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
     except Exception as e:
@@ -234,24 +242,33 @@ async def export_cv_latex(
             "Access-Control-Expose-Headers": "Content-Disposition",
         }
 
-        # Log API call (best-effort)
-        try:
-            log_api_call(
-                db=db,
-                user=current_user,
-                endpoint=f"/api/cvs/{cv_id}/export/latex",
-                method="GET",
-                status_code=200,
-                request_data={
-                    "export_template_name": cv.export_template_name,
-                },
-                response_data={
-                    "filename": filename,
-                    "size": len(tex_source.encode("utf-8")),
-                },
-            )
-        except Exception:
-            pass
+        safe_log_user_activity(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="export_cv_latex",
+            description=f"Exported CV '{cv.original_filename}' as LaTeX with template '{template_name}'",
+            details={
+                "cv_id": cv_id,
+                "cv_filename": cv.original_filename,
+                "template_name": template_name,
+                "export_type": "latex",
+            },
+        )
+        safe_log_api_call(
+            db=db,
+            user=current_user,
+            endpoint=f"/api/cvs/{cv_id}/export/latex",
+            method="GET",
+            status_code=200,
+            request_data={
+                "export_template_name": cv.export_template_name,
+            },
+            response_data={
+                "filename": filename,
+                "size": len(tex_source.encode("utf-8")),
+            },
+        )
 
         return Response(
             content=tex_source, media_type="text/plain; charset=utf-8", headers=headers
@@ -309,23 +326,20 @@ async def export_cv_pdf_public(
     logger.info(
         f"User {local_user.email} exporting CV {cv_id} ({cv.original_filename}) as PDF via public endpoint"
     )
-    try:
-        log_user_activity(
-            db=db,
-            user=local_user,
-            activity_type="user_action",
-            action="export_cv_pdf_public",
-            description=f"Exported CV '{cv.original_filename}' as PDF via public endpoint",
-            details={
-                "cv_id": cv_id,
-                "cv_filename": cv.original_filename,
-                "template_name": template_name,
-                "export_type": "pdf",
-                "endpoint_type": "public",
-            },
-        )
-    except Exception as e:
-        logger.warning(f"Failed to log user activity for public PDF export: {str(e)}")
+    safe_log_user_activity(
+        db=db,
+        user=local_user,
+        activity_type="user_action",
+        action="export_cv_pdf_public",
+        description=f"Exported CV '{cv.original_filename}' as PDF via public endpoint",
+        details={
+            "cv_id": cv_id,
+            "cv_filename": cv.original_filename,
+            "template_name": template_name,
+            "export_type": "pdf",
+            "endpoint_type": "public",
+        },
+    )
 
     if not is_latex_available():
         raise HTTPException(
@@ -358,19 +372,15 @@ async def export_cv_pdf_public(
             "Access-Control-Expose-Headers": "Content-Disposition",
         }
 
-        # Log successful API call
-        try:
-            log_api_call(
-                db=db,
-                user=local_user,
-                endpoint=f"/api/cvs/{cv_id}/export/pdf/public",
-                method="GET",
-                status_code=200,
-                request_data={"token": "***"},
-                response_data={"filename": filename, "file_size": len(pdf_bytes)},
-            )
-        except Exception as e:
-            logger.warning(f"Failed to log API call for public PDF export: {str(e)}")
+        safe_log_api_call(
+            db=db,
+            user=local_user,
+            endpoint=f"/api/cvs/{cv_id}/export/pdf/public",
+            method="GET",
+            status_code=200,
+            request_data={"token": "***"},
+            response_data={"filename": filename, "file_size": len(pdf_bytes)},
+        )
 
         return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
     except Exception as e:

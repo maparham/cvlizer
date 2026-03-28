@@ -19,6 +19,7 @@ from src.schemas.cv_quality_schemas import (
 )
 from src.api.cvs.models import CVResponse
 from src.services.ai_service.writing_corrections_service import apply_writing_correction
+from src.services.users.user_activity_service import safe_log_user_activity
 from .quality_analysis_helpers import (
     validate_and_load_cv,
     load_quality_analysis,
@@ -90,6 +91,19 @@ async def apply_writing_correction_endpoint(
         db, analysis, quality_data, [correction_id]
     )
 
+    safe_log_user_activity(
+        db=db,
+        user=user,
+        activity_type="user_action",
+        action="writing_correction_apply",
+        description="Applied writing correction to CV",
+        details={
+            "cv_id": request.cv_id,
+            "analysis_id": request.analysis_id,
+            "correction_id": correction_id,
+        },
+    )
+
     return CVResponse(**updated_cv.to_response_dict())
 
 
@@ -150,5 +164,18 @@ async def apply_writing_corrections_batch_endpoint(
     # Remove applied corrections from analysis so GET latest returns correct state
     applied_ids = [c.item_id for c in corrections_to_apply]
     update_analysis_after_applying_corrections(db, analysis, quality_data, applied_ids)
+
+    safe_log_user_activity(
+        db=db,
+        user=user,
+        activity_type="user_action",
+        action="writing_correction_apply_batch",
+        description="Applied batch writing corrections to CV",
+        details={
+            "cv_id": request.cv_id,
+            "analysis_id": request.analysis_id,
+            "correction_ids": applied_ids,
+        },
+    )
 
     return CVResponse(**updated_cv.to_response_dict())

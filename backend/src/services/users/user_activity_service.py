@@ -74,6 +74,72 @@ def log_user_activity(
         raise
 
 
+def safe_log_user_activity(
+    db: Session,
+    user: User,
+    activity_type: str,
+    action: str,
+    description: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    page_url: Optional[str] = None,
+    session_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> None:
+    """
+    Best-effort user activity log: failures are logged and never propagated.
+    """
+    try:
+        log_user_activity(
+            db=db,
+            user=user,
+            activity_type=activity_type,
+            action=action,
+            description=description,
+            details=details,
+            page_url=page_url,
+            session_id=session_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+    except Exception as e:
+        logger.warning("Failed to log user activity (action=%s): %s", action, str(e))
+
+
+def append_user_activity_for_commit(
+    db: Session,
+    user: User,
+    activity_type: str,
+    action: str,
+    description: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    page_url: Optional[str] = None,
+    session_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> UserActivity:
+    """
+    Queue a UserActivity row on the current session only.
+
+    Use with other ORM changes (e.g. deletes) so one db.commit() persists both
+    the data change and the audit row together.
+    """
+    activity = UserActivity(
+        user_id=user.id,
+        activity_type=activity_type,
+        action=action,
+        description=description,
+        details=details,
+        page_url=page_url,
+        session_id=session_id,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        timestamp=datetime.now(timezone.utc),
+    )
+    db.add(activity)
+    return activity
+
+
 def log_user_error(
     db: Session,
     user: User,
@@ -177,6 +243,38 @@ def log_api_call(
         ip_address=ip_address,
         user_agent=user_agent,
     )
+
+
+def safe_log_api_call(
+    db: Session,
+    user: User,
+    endpoint: str,
+    method: str,
+    status_code: int,
+    response_time_ms: Optional[int] = None,
+    request_data: Optional[Dict[str, Any]] = None,
+    response_data: Optional[Dict[str, Any]] = None,
+    session_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> None:
+    """Best-effort API call log; failures are logged and never propagated."""
+    try:
+        log_api_call(
+            db=db,
+            user=user,
+            endpoint=endpoint,
+            method=method,
+            status_code=status_code,
+            response_time_ms=response_time_ms,
+            request_data=request_data,
+            response_data=response_data,
+            session_id=session_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+    except Exception as e:
+        logger.warning("Failed to log API call (%s %s): %s", method, endpoint, str(e))
 
 
 def create_user_session(
