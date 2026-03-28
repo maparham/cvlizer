@@ -597,6 +597,11 @@ class AIUsageConfig:
         "gpt-5-mini": {"input_price_per_1m": 0.250, "output_price_per_1m": 2.000},
         "gpt-5-nano": {"input_price_per_1m": 0.050, "output_price_per_1m": 0.400},
         "gpt-5-pro": {"input_price_per_1m": 15.00, "output_price_per_1m": 120.00},
+        # GPT-5.4 family (Standard tier, per OpenAI API pricing docs).
+        "gpt-5.4-pro": {"input_price_per_1m": 30.00, "output_price_per_1m": 180.00},
+        "gpt-5.4-mini": {"input_price_per_1m": 0.75, "output_price_per_1m": 4.50},
+        "gpt-5.4-nano": {"input_price_per_1m": 0.20, "output_price_per_1m": 1.25},
+        "gpt-5.4": {"input_price_per_1m": 2.50, "output_price_per_1m": 15.00},
     }
 
     # Default pricing for unknown models
@@ -652,14 +657,29 @@ class OpenAIPricing:
         Returns:
             Estimated cost in USD
         """
-        # Find the pricing for the model (case-insensitive match)
-        model_lower = model.lower()
-        pricing = None
+        # Normalize: OpenRouter-style ids (e.g. openai/gpt-5.4-mini) -> short id.
+        model_lower = model.strip().lower()
+        if "/" in model_lower:
+            model_lower = model_lower.split("/")[-1]
 
+        pricing = None
+        # 1) Exact key match (case-insensitive) — avoids "gpt-5" matching "gpt-5.4-mini".
         for model_key, model_pricing in AIUsageConfig.MODEL_PRICING.items():
-            if model_key.lower() in model_lower:
+            if model_key.lower() == model_lower:
                 pricing = model_pricing
                 break
+
+        # 2) Substring fallback for versioned ids (e.g. gpt-4o-2024-05-13): longest key
+        # first so specific models win over shorter prefixes (gpt-5.2 before gpt-5).
+        if not pricing:
+            for model_key, model_pricing in sorted(
+                AIUsageConfig.MODEL_PRICING.items(),
+                key=lambda item: len(item[0]),
+                reverse=True,
+            ):
+                if model_key.lower() in model_lower:
+                    pricing = model_pricing
+                    break
 
         # Use default pricing if model not found
         if not pricing:

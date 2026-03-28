@@ -272,6 +272,33 @@ class TestAIUsageService:
         assert abs(openai_flex - expected * 0.5) < 0.000001
 
 
+class TestOpenAIPricingEstimateCost:
+    """Regression: OpenAIPricing.estimate_cost must not match short keys (e.g. gpt-5) before gpt-5.x."""
+
+    def test_gpt_5_4_mini_not_gpt_5_pricing(self):
+        from src.config import OpenAIPricing
+
+        # 1M input tokens only — gpt-5.4-mini $0.75/1M; gpt-5 would be $1.25/1M.
+        cost_mini = OpenAIPricing.estimate_cost("gpt-5.4-mini", 1_000_000, 0)
+        cost_gpt5 = OpenAIPricing.estimate_cost("gpt-5", 1_000_000, 0)
+        assert abs(cost_mini - 0.75) < 0.000001
+        assert abs(cost_gpt5 - 1.25) < 0.000001
+        assert abs(cost_mini - cost_gpt5) > 0.01
+
+    def test_gpt_5_2_not_gpt_5_pricing(self):
+        from src.config import OpenAIPricing
+
+        cost = OpenAIPricing.estimate_cost("gpt-5.2", 1_000_000, 0)
+        assert abs(cost - 1.75) < 0.000001
+
+    def test_openrouter_model_id_normalized(self):
+        from src.config import OpenAIPricing
+
+        a = OpenAIPricing.estimate_cost("gpt-5.4", 1000, 500)
+        b = OpenAIPricing.estimate_cost("openai/gpt-5.4", 1000, 500)
+        assert abs(a - b) < 0.000001
+
+
 class _MinimalSchema(BaseModel):
     """Minimal schema for OpenRouter runner tests."""
 
