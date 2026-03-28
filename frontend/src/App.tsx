@@ -33,6 +33,7 @@ import { clearTitleNotification } from "./utils/titleNotification";
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import("./pages/Home"));
+const HomeMarketing = lazy(() => import("./pages/HomeMarketing"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const CVEditor = lazy(() => import("./pages/CVEditor"));
@@ -119,6 +120,7 @@ const AppContent = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/home" element={<HomeMarketing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/quick-start" element={<QuickStart />} />
