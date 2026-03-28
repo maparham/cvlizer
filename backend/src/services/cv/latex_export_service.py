@@ -88,7 +88,7 @@ def _tex_escape(text: str | None) -> str:
 
     # Preserve LaTeX non-breaking spaces from Unicode NBSP while still escaping
     # literal '~' characters from user content.
-    nbsp_placeholder = "\uE000"
+    nbsp_placeholder = "\ue000"
 
     # First, normalize Unicode characters that LaTeX can't handle directly
     # Replace various Unicode spaces with regular space or LaTeX equivalents
@@ -96,15 +96,15 @@ def _tex_escape(text: str | None) -> str:
         "\u2013": "--",  # en-dash
         "\u2014": "---",  # em-dash
         "\u2212": "-",  # minus sign
-        "\u202F": " ",  # narrow no-break space (CRITICAL: causes LaTeX errors)
-        "\u00A0": nbsp_placeholder,  # non-breaking space (converted after escaping)
-        "\u201C": "``",  # left double quotation mark
-        "\u201D": "''",  # right double quotation mark
+        "\u202f": " ",  # narrow no-break space (CRITICAL: causes LaTeX errors)
+        "\u00a0": nbsp_placeholder,  # non-breaking space (converted after escaping)
+        "\u201c": "``",  # left double quotation mark
+        "\u201d": "''",  # right double quotation mark
         "\u2018": "`",  # left single quotation mark
         "\u2019": "'",  # right single quotation mark
         "\u2026": "...",  # horizontal ellipsis
-        "\u00AB": "<<",  # left-pointing double angle quotation mark
-        "\u00BB": ">>",  # right-pointing double angle quotation mark
+        "\u00ab": "<<",  # left-pointing double angle quotation mark
+        "\u00bb": ">>",  # right-pointing double angle quotation mark
     }
 
     # Apply Unicode replacements first
@@ -725,9 +725,11 @@ def _format_personal_info_header(
 ) -> str:
     """Format personal info header with name/title and contact.
 
-    For template "jake": compact one-line contact (phone | email | links).
-    Otherwise: row 1 is location | email | phone (values only, no \"Phone:\"-style
-    labels); optional row 2 is website; LinkedIn/GitHub URLs on one row below.
+    For template "jake": location/phone/email on one line, URLs on the next.
+    Otherwise: one tabular when both contact and links exist — row 1 is
+    location | email | phone; row 2 left-packs website, LinkedIn, GitHub in order
+    (no leading empty column when some are missing). Social-only with one link
+    uses a width-limited minipage instead of a tabular.
 
     If include_profile_picture is True, wrap content in left minipage and add
     right minipage with image (fixed name "profilepic"). Shape: circle (TikZ clip)
@@ -760,7 +762,9 @@ def _format_personal_info_header(
     website = pi.get("website_url", "")
     github = pi.get("github_url", "")
 
-    # Jake-style: compact one-line header, no icons (template does not load fontawesome)
+    # Jake-style: compact header, no icons (template does not load fontawesome).
+    # Primary fields on one line; URLs on a second line so a lone link is not
+    # concatenated onto phone/email (avoids an overly long single row).
     if template_name == "jake":
         name_line = (
             f"\\textbf{{\\Huge \\scshape {_tex_escape(full_name)}}}"
@@ -770,88 +774,125 @@ def _format_personal_info_header(
                 f"\\normalsize{{\\textnormal{{{_tex_escape(academic_title)}}}}}"
             )
         )
-        contact_parts: list[str] = []
+        primary_bits: list[str] = []
+        if location:
+            primary_bits.append(location)
         if phone:
-            contact_parts.append(phone)
+            primary_bits.append(phone)
         if email:
-            contact_parts.append(
+            primary_bits.append(
                 f"\\href{{mailto:{_href_url_safe(email)}}}{{\\underline{{{_tex_escape(email)}}}}}"
             )
+        link_bits: list[str] = []
         for url_val, label in [
-            (linkedin, linkedin),
             (website, website),
+            (linkedin, linkedin),
             (github, github),
         ]:
             if url_val:
-                contact_parts.append(contact_link(url_val, label))
-        contact_line = " $|$ ".join(contact_parts) if contact_parts else ""
-        if contact_line:
-            return (
-                f"\\begin{{center}}\n"
-                f"{name_line} \\\\ \\vspace{{1pt}}\n"
-                f"\\small {contact_line}\n"
-                f"\\end{{center}}\n"
-            )
-        return f"\\begin{{center}}\n{name_line}\n\\end{{center}}\n"
+                link_bits.append(contact_link(url_val, label))
 
-    # Default: primary grid (no LinkedIn/GitHub); social links on one row below
+        if not primary_bits and not link_bits:
+            return f"\\begin{{center}}\n{name_line}\n\\end{{center}}\n"
+        sep = " $|$ "
+        if primary_bits and link_bits:
+            contact_body = (
+                f"{sep.join(primary_bits)} \\\\\n"
+                f"\\vspace*{{1.5pt}}\n"
+                f"{sep.join(link_bits)}"
+            )
+        elif primary_bits:
+            contact_body = sep.join(primary_bits)
+        else:
+            contact_body = sep.join(link_bits)
+        return (
+            f"\\begin{{center}}\n"
+            f"{name_line} \\\\ \\vspace{{1pt}}\n"
+            f"\\small {contact_body}\n"
+            f"\\end{{center}}\n"
+        )
+
+    # Default: row 1 location | email | phone; row 2 packs website / LinkedIn / GitHub
+    # left-to-right (missing slots do not leave a leading empty column).
     email_cell = ""
     if email:
         email_cell = f"\\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
     phone_cell = phone if pi.get("phone") else ""
 
     location_cell = location if location else ""
-    website_cell = ""
+
+    has_primary = bool(location_cell or email_cell or phone_cell)
+
+    website_href = ""
     if website:
         wurl = _href_url_safe(ensure_protocol(website))
-        website_cell = f"\\href{{{wurl}}}{{{_tex_escape(website)}}}"
-
-    primary_row_lines: list[str] = []
-    if location_cell or email_cell or phone_cell:
-        primary_row_lines.append(f"{location_cell} & {email_cell} & {phone_cell} \\\\")
-    if website_cell:
-        primary_row_lines.append(f"{website_cell} & & \\\\")
-
-    social_cells: list[str] = []
+        website_href = f"\\href{{{wurl}}}{{{_tex_escape(website)}}}"
+    linkedin_href = ""
     if linkedin:
         lurl = _href_url_safe(ensure_protocol(linkedin))
-        social_cells.append(f"\\href{{{lurl}}}{{{_tex_escape(linkedin)}}}")
+        linkedin_href = f"\\href{{{lurl}}}{{{_tex_escape(linkedin)}}}"
+    github_href = ""
     if github:
         gurl = _href_url_safe(ensure_protocol(github))
-        social_cells.append(f"\\href{{{gurl}}}{{{_tex_escape(github)}}}")
+        github_href = f"\\href{{{gurl}}}{{{_tex_escape(github)}}}"
+    has_social_row = bool(website_href or linkedin_href or github_href)
+
+    # Pack links left (website, then LinkedIn, then GitHub) so missing fields do
+    # not leave an empty first column — two links use columns 1–2 under location/email.
+    social_ordered = [h for h in (website_href, linkedin_href, github_href) if h]
+    social_packed = (social_ordered + ["", "", ""])[:3]
+    s1, s2, s3 = social_packed[0], social_packed[1], social_packed[2]
+    social_line = f"{s1} & {s2} & {s3} \\\\"
 
     contact_block = ""
-    if primary_row_lines or social_cells:
-        inner_parts: list[str] = []
+    if has_primary or has_social_row:
+        # One center; one tabular when primary+social so column widths are chosen
+        # from BOTH rows. Stacked tabulars size columns independently, so a lone
+        # long URL in row 2 can span almost the full line and look like row 1.
+        col_spec = "@{}l@{\\hspace{0.5em}}l@{\\hspace{1em}}l@{}"
+        center_inner: str
 
-        if primary_row_lines:
-            col_spec = "@{}l@{\\hspace{2em}}l@{\\hspace{2em}}l@{}"
-            inner_parts.append(
-                f"\\begin{{center}}\n"
+        if has_primary and has_social_row:
+            center_inner = (
                 f"\\begin{{tabular}}{{{col_spec}}}\n"
-                + "\n".join(primary_row_lines)
-                + "\n"
-                f"\\end{{tabular}}\n"
-                f"\\end{{center}}\n"
-            )
-
-        if social_cells:
-            if inner_parts:
-                inner_parts.append("\\vspace{0.25\\baselineskip}\n")
-            n_social = len(social_cells)
-            social_col_spec = "@{}" + "@{\\hspace{2em}}".join(["l"] * n_social) + "@{}"
-            social_line = " & ".join(social_cells)
-            inner_parts.append(
-                f"\\begin{{center}}\n"
-                f"\\begin{{tabular}}{{{social_col_spec}}}\n"
+                f"{location_cell} & {email_cell} & {phone_cell} \\\\[0.35ex]\n"
                 f"{social_line}\n"
                 f"\\end{{tabular}}\n"
-                f"\\end{{center}}\n"
             )
+        elif has_primary:
+            center_inner = (
+                f"\\begin{{tabular}}{{{col_spec}}}\n"
+                f"{location_cell} & {email_cell} & {phone_cell} \\\\\n"
+                f"\\end{{tabular}}\n"
+            )
+        else:
+            n_social = (
+                (1 if website_href else 0)
+                + (1 if linkedin_href else 0)
+                + (1 if github_href else 0)
+            )
+            if n_social == 1:
+                single_href = website_href or linkedin_href or github_href
+                center_inner = (
+                    "\\begin{minipage}{0.88\\textwidth}\n"
+                    "\\centering\n"
+                    f"{single_href}\n"
+                    "\\end{minipage}\n"
+                )
+            else:
+                center_inner = (
+                    f"\\begin{{tabular}}{{{col_spec}}}\n"
+                    f"{social_line}\n"
+                    f"\\end{{tabular}}\n"
+                )
 
         contact_block = (
             f"\\vspace{{0.4\\baselineskip}}\n"
-            f"\\small\n" + "".join(inner_parts) + "\\normalsize\n"
+            f"\\small\n"
+            f"\\begin{{center}}\n"
+            f"{center_inner}"
+            f"\\end{{center}}\n"
+            "\\normalsize\n"
         )
 
     # Header: centered name and optional academic title
