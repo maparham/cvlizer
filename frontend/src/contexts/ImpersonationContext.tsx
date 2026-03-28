@@ -30,6 +30,7 @@ import {
   impersonationService,
   ImpersonationStatus,
 } from "../services/impersonationService";
+import { reloadScopedDashboardDataAfterIdentityChange } from "../utils/impersonationScopedDataRefresh";
 import { useAuth } from "./AuthContext";
 
 interface ImpersonationContextType {
@@ -131,11 +132,18 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
   const endImpersonation = useCallback(async () => {
     try {
       await impersonationService.endImpersonation();
-      setStatus({ active: false });
     } catch (error) {
       console.error("Failed to end impersonation:", error);
       throw error;
     }
+    try {
+      await reloadScopedDashboardDataAfterIdentityChange();
+    } catch (error) {
+      setStatus({ active: false });
+      console.error("Failed to reload data after ending impersonation:", error);
+      throw error;
+    }
+    setStatus({ active: false });
   }, []);
 
   // Set up hybrid event-driven status checking

@@ -24,7 +24,8 @@ import {
   impersonationService,
   ImpersonationError,
 } from "../services/impersonationService";
-import api from "../services/api";
+import api, { normalizeApiError } from "../services/api";
+import { reloadScopedDashboardDataAfterIdentityChange } from "../utils/impersonationScopedDataRefresh";
 import { UserDetail, UserCV, UserSummary } from "../types/admin";
 
 interface UseUserActionsReturn {
@@ -208,6 +209,8 @@ export const useUserActions = (): UseUserActionsReturn => {
         justification: impersonationJustification || undefined,
       });
 
+      await reloadScopedDashboardDataAfterIdentityChange();
+
       setImpersonationDialogOpen(false);
       setImpersonationJustification("");
       showSuccess(
@@ -220,9 +223,8 @@ export const useUserActions = (): UseUserActionsReturn => {
     } catch (error) {
       if (error instanceof ImpersonationError) {
         throw new Error(error.message);
-      } else {
-        throw new Error("Failed to start impersonation session");
       }
+      throw new Error(normalizeApiError(error));
     } finally {
       setActionLoading(null);
     }
