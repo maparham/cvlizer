@@ -29,6 +29,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
+import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import UploadIcon from "@mui/icons-material/Upload";
 import TemplateIcon from "@mui/icons-material/Article";
 import ViewModuleIcon from "@mui/icons-material/ViewModule";
@@ -48,6 +49,7 @@ interface CVsCardProps {
   onCreateFromTemplate: () => void;
   onStartFromScratch: () => void;
   onUpload: () => void;
+  onPasteCV: () => void;
   onEdit: (cvId: string) => void;
   onDelete: (cv: CV) => void;
   onDuplicate: (cv: CV) => void;
@@ -72,6 +74,7 @@ const CVsCard: React.FC<CVsCardProps> = ({
   onCreateFromTemplate,
   onStartFromScratch,
   onUpload,
+  onPasteCV,
   onEdit,
   onDelete,
   onDuplicate,
@@ -240,6 +243,26 @@ const CVsCard: React.FC<CVsCardProps> = ({
               }}
             >
               Create Empty
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<ContentPasteIcon />}
+              onClick={onPasteCV}
+              disabled={creating}
+              data-testid="cv-from-text-button"
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                whiteSpace: "nowrap",
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                },
+              }}
+            >
+              CV from text
             </Button>
             <Button
               variant="contained"

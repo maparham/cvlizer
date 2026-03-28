@@ -48,6 +48,7 @@ import type { JobTableSortColumn } from "../components/dashboard/JobApplications
 
 const Dashboard: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [fromTextOpen, setFromTextOpen] = useState(false);
   const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -384,6 +385,7 @@ const Dashboard: React.FC = () => {
             onCreateFromTemplate={() => setTemplateSelectorOpen(true)}
             onStartFromScratch={handleStartFromScratch}
             onUpload={() => setUploadOpen(true)}
+            onPasteCV={() => setFromTextOpen(true)}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onDuplicate={handleDuplicate}
@@ -443,6 +445,12 @@ const Dashboard: React.FC = () => {
             setPendingEditorCvId(cvId);
           }}
           initialFile={pendingUploadFile}
+          fromTextOpen={fromTextOpen}
+          onFromTextClose={() => setFromTextOpen(false)}
+          onFromTextSuccess={(cvId: string) => {
+            showSuccess("Success", "CV created successfully and is being parsed");
+            setPendingEditorCvId(cvId);
+          }}
           templateSelectorOpen={templateSelectorOpen}
           onTemplateSelectorClose={() => setTemplateSelectorOpen(false)}
           onTemplateSelect={handleTemplateSelect}

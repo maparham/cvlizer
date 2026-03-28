@@ -238,6 +238,12 @@ export const cvApi = {
     return response.data;
   },
 
+  /** Create CV from pasted raw text; server runs the same parse pipeline as file upload. */
+  createCVFromText: async (payload: { text: string; title?: string }) => {
+    const response = await api.post("/cvs/from-text", payload);
+    return response.data;
+  },
+
   // Create blank CV from scratch
   createBlankCV: async () => {
     const response = await api.post("/cvs/create-blank");

@@ -6,7 +6,7 @@ This module defines Pydantic models for CV API responses.
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class CVResponse(BaseModel):
@@ -55,6 +55,31 @@ class CVExportTemplatePatchRequest(BaseModel):
         None,
         description="LaTeX template name, or null to clear and use server default for export",
     )
+
+
+class CreateCVFromTextRequest(BaseModel):
+    """Body for POST /cvs/from-text: paste raw resume text for AI parsing."""
+
+    text: str = Field(..., description="Raw CV text to parse")
+    title: Optional[str] = Field(
+        None,
+        max_length=255,
+        description="Optional CV title; defaults to a generated name ending in .txt",
+    )
+
+    @field_validator("text")
+    @classmethod
+    def validate_text_length(cls, v: str) -> str:
+        s = (v or "").strip()
+        if len(s) < 10:
+            raise ValueError(
+                "Text must be at least 10 characters after trimming whitespace."
+            )
+        if len(s) > 15000:
+            raise ValueError(
+                "Text must be at most 15,000 characters after trimming whitespace."
+            )
+        return s
 
 
 class CVTitleUpdateRequest(BaseModel):

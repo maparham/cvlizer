@@ -12,6 +12,33 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 
+async def parse_cv_text_pipeline(
+    text_content: str,
+    user_id: Optional[str] = None,
+    cv_id: Optional[str] = None,
+    db_session: Optional[Session] = None,
+) -> dict:
+    """
+    Parse already-extracted or pasted CV text: OpenAI structured parse, then UUID
+    assignment and end_date normalization. Same post-extraction path as file uploads.
+
+    Returns a dict (possibly with an "error" key) consistent with parse_cv_with_openai.
+    """
+    from src.services.ai_service import parse_cv_text_with_openai
+
+    parsed_data = await parse_cv_text_with_openai(
+        text_content, user_id=user_id, cv_id=cv_id, db_session=db_session
+    )
+
+    if parsed_data.get("error"):
+        return parsed_data
+
+    parsed_data = _add_uuids_to_cv_data(parsed_data)
+    parsed_data = _normalize_present_strings(parsed_data)
+
+    return parsed_data
+
+
 async def parse_cv_with_openai(
     file_content: bytes,
     filename: str,
@@ -39,8 +66,6 @@ async def parse_cv_with_openai(
     Returns:
         Dictionary containing parsed CV data, or same shape with "error" key set.
     """
-    import uuid
-
     from src.constants import (
         EMPTY_PARSED_CV_PAYLOAD,
         ERROR_EXTRACT_PDF,
@@ -54,29 +79,12 @@ async def parse_cv_with_openai(
         # Extract text from file
         text_content = extract_text_from_file(file_content, content_type)
 
-        # Parse with OpenAI
-        from src.services.ai_service import parse_cv_text_with_openai
-
-        parsed_data = await parse_cv_text_with_openai(
-            text_content, user_id=user_id, cv_id=cv_id, db_session=db_session
+        return await parse_cv_text_pipeline(
+            text_content,
+            user_id=user_id,
+            cv_id=cv_id,
+            db_session=db_session,
         )
-
-        # Check if parsing resulted in an error
-        if parsed_data.get("error"):
-            return parsed_data
-
-        # Add UUIDs to all array items immediately after parsing (only if no error)
-        parsed_data = _add_uuids_to_cv_data(parsed_data)
-
-        # Language proficiency is already normalized by CVParsingResponseSchema
-        # (LanguageItemSchema.coerce_proficiency) during validation.
-
-        # Normalize "PRESENT" strings to None for end_date fields
-        parsed_data = _normalize_present_strings(parsed_data)
-
-        # Date normalization removed - only YYYY-MM-DD format is supported
-
-        return parsed_data
     except (InvalidFileException, ExtractionError):
         return {"error": ERROR_INVALID_FILE_OR_EXTRACTION, **EMPTY_PARSED_CV_PAYLOAD}
     except Exception as e:

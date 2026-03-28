@@ -7,7 +7,7 @@ This module handles CV file upload and background parsing.
 import asyncio
 import logging
 from copy import deepcopy
-from typing import List
+from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
@@ -24,9 +24,20 @@ from src.services.users.user_activity_service import safe_log_user_activity
 
 from src.utils.task_logging import make_task_exception_logger
 
-from .common import limiter, parse_cv_background
-from .models import CVResponse
+from .common import limiter, parse_cv_background, parse_cv_from_text_background
+from .models import CreateCVFromTextRequest, CVResponse
 from .responses import build_cv_response
+
+
+def _original_filename_for_text_cv(title: Optional[str]) -> str:
+    """Build a display filename for a text-import CV; ensures .txt when no extension."""
+    t = (title or "").strip()
+    if not t:
+        return "CV from text.txt"
+    if "." not in t:
+        return f"{t}.txt"
+    return t
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -106,4 +117,65 @@ async def upload_cv(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing CV: {str(e)}",
+        )
+
+
+@router.post("/from-text", response_model=CVResponse)
+@limiter.limit(APIConfig.AI_PARSING_RATE_LIMIT)
+async def create_cv_from_text(
+    request: Request,
+    body: CreateCVFromTextRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+    _quota: None = Depends(require_ai_quota),
+):
+    """Create a CV from pasted raw text and start the same background parsing as file upload."""
+    try:
+        empty_parsed_data = deepcopy(DEFAULT_PARSED_CV)
+        proposed_name = _original_filename_for_text_cv(body.title)
+
+        cv = create_cv(
+            db=db,
+            user_id=str(current_user.id),
+            original_filename=proposed_name,
+            file_path="",
+            file_size=0,
+            file_type="text/plain",
+            parsed_data=empty_parsed_data,
+            is_parsed=False,
+        )
+
+        text_for_parse = body.text
+
+        await asyncio.sleep(0.1)
+
+        task = asyncio.create_task(
+            parse_cv_from_text_background(str(cv.id), text_for_parse)
+        )
+        task.add_done_callback(
+            make_task_exception_logger(
+                logger,
+                "CV background text parsing task failed: cv_id=%s, error=%s",
+                str(cv.id),
+            )
+        )
+
+        safe_log_user_activity(
+            db=db,
+            user=current_user,
+            activity_type="user_action",
+            action="cv_create_from_text",
+            description=f"Created CV from pasted text '{cv.original_filename}'",
+            details={
+                "cv_id": str(cv.id),
+                "filename": cv.original_filename,
+            },
+        )
+
+        return build_cv_response(cv)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating CV from text: {str(e)}",
         )

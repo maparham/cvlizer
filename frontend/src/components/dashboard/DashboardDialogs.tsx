@@ -26,7 +26,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 import WarningIcon from "@mui/icons-material/Warning";
-import { CVUpload } from "../cv";
+import { CVFromTextDialog, CVUpload } from "../cv";
 import CVTemplateSelector from "../cv/CVTemplateSelector";
 import { JobDescriptionsModal } from "../cv/ai";
 import JobDescriptionStatusDialog from "../cv/ai/JobDescriptionStatusDialog";
@@ -40,6 +40,11 @@ interface DashboardDialogsProps {
   onUploadSuccess: (cvId: string) => void;
   /** Pre-selected file when opening from placeholder card (click or drop). */
   initialFile?: File | null;
+
+  // CV from text dialog
+  fromTextOpen: boolean;
+  onFromTextClose: () => void;
+  onFromTextSuccess: (cvId: string) => void;
 
   // Template selector
   templateSelectorOpen: boolean;
@@ -70,6 +75,9 @@ const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
   onUploadClose,
   onUploadSuccess,
   initialFile = null,
+  fromTextOpen,
+  onFromTextClose,
+  onFromTextSuccess,
   templateSelectorOpen,
   onTemplateSelectorClose,
   onTemplateSelect,
@@ -93,6 +101,12 @@ const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
         onClose={onUploadClose}
         onSuccess={onUploadSuccess}
         initialFile={initialFile}
+      />
+
+      <CVFromTextDialog
+        open={fromTextOpen}
+        onClose={onFromTextClose}
+        onSuccess={onFromTextSuccess}
       />
 
       {/* Template Selector */}

@@ -44,6 +44,7 @@ export interface CVCrudSliceActions {
   fetchCVs: (page?: number, limit?: number) => Promise<void>;
   fetchCV: (cvId: string) => Promise<CV | null>;
   uploadCV: (file: File) => Promise<CV>;
+  createCVFromText: (payload: { text: string; title?: string }) => Promise<CV>;
   createTemporaryCV: () => CV;
   saveTemporaryCV: (cvData: CVUpdateRequest) => Promise<CV>;
   updateCV: (cvId: string, data: CVUpdateRequest) => Promise<CV>;
@@ -201,6 +202,35 @@ export const createCVCrudSlice: StateCreator<
     } catch (error: any) {
       const errorMessage =
         normalizeApiError(error) || "Failed to upload CV";
+      set({
+        error: errorMessage,
+        uploading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  createCVFromText: async (payload: { text: string; title?: string }) => {
+    set({ uploading: true, error: null });
+
+    try {
+      const cv = await cvApi.createCVFromText(payload);
+
+      set((state) => ({
+        cvs: [...state.cvs, cv],
+        uploading: false,
+        error: null,
+        hasUnparsedCVs: true,
+      }));
+
+      if (!get().pollingManager?.isActive()) {
+        get().startPolling();
+      }
+
+      return cv;
+    } catch (error: unknown) {
+      const errorMessage =
+        normalizeApiError(error) || "Failed to create CV from text";
       set({
         error: errorMessage,
         uploading: false,

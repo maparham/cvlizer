@@ -1,6 +1,7 @@
 // Main CV Components
 export { default as PDFCVEditor } from './PDFCVEditor'
 export { default as CVUpload } from './CVUpload'
+export { default as CVFromTextDialog } from './CVFromTextDialog'
 export { EditableTitle } from './EditableTitle'
 export { default as CVTemplateSelector } from './CVTemplateSelector'
 export { default as FilePreview } from './FilePreview'
