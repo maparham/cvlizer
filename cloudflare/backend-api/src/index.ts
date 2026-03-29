@@ -7,10 +7,10 @@
  * before `npm run deploy` so the image matches Cloudflare (linux/amd64).
  *
  * Backend env for the Python process:
- * - Plain text: edit `vars` in wrangler.jsonc, then `npm run deploy` (Wrangler CLI uploads them).
- * - Or `npm run deploy:vars` — same CLI with `--var` per line from repo-root `.env.prod` (skips `VITE_*`).
- * - Secrets: `npx wrangler secret put KEY` (not stored in wrangler.jsonc).
- * All string Worker vars are forwarded into the container (see `envVars`), except bindings.
+ * - Plain text: `vars` in wrangler.jsonc + `npm run deploy`.
+ * - Non-secret overrides: `npm run deploy:vars` (reads `.env.prod`, skips `VITE_*` and secret keys).
+ * - Secrets (never in git): `npm run secrets:push` or `npx wrangler secret put` / `wrangler secret bulk`.
+ * All string Worker env (vars + secrets) is forwarded into the container (see `envVars`), except bindings.
  */
 import { env as workerEnv } from "cloudflare:workers";
 import { Container } from "@cloudflare/containers";

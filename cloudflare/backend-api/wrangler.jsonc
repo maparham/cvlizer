@@ -1,8 +1,8 @@
 {
   // Worker entry + Container from ../../backend/Dockerfile.wrangler (slim; use Dockerfile for full TeX).
-  // Plain-text backend env (Worker `vars`): applied by `npx wrangler deploy` from this directory.
-  // Secrets (use `npx wrangler secret put KEY` — not `vars`): JWT_SECRET_KEY, CLERK_SECRET_KEY,
-  // OPENAI_API_KEY, OPENROUTER_API_KEY, IMPERSONATION_SECRET_KEY.
+  // Plain-text backend env (Worker `vars`): `npx wrangler deploy`. Do not put secrets here.
+  // Secrets (JWT, Clerk, OpenAI, etc.): `npm run secrets:push` from repo root `.env.prod`, or
+  // `npx wrangler secret put NAME` / `wrangler secret bulk file.env` (see scripts/push-worker-secrets.mjs).
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cv-lator-backend",
   "main": "src/index.ts",

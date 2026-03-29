@@ -1,18 +1,19 @@
 #!/usr/bin/env node
 /**
- * Deploy the Worker with plain-text Worker `vars` from a dotenv file (uses
- * `wrangler deploy --var KEY:value` repeatedly — not `wrangler secret`).
+ * Upload Worker secrets from a local dotenv file using `wrangler secret bulk`
+ * (values are not written to wrangler.jsonc or the repo).
  *
  * Usage:
- *   node scripts/deploy-with-worker-vars.mjs [path/to/.env]
+ *   node scripts/push-worker-secrets.mjs [path/to/.env]
  *
- * Default env path: repo root `.env.prod` (two levels above this directory).
- * Skips `VITE_*` (frontend) and secret keys (use `npm run secrets:push` instead).
+ * Default: repo root `.env.prod`. Only keys listed in secrets-config.mjs are sent.
  */
 import { spawn } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { WORKER_SECRET_ENV_KEYS } from "./secrets-config.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,22 +55,38 @@ if (!existsSync(envPath)) {
 }
 
 const raw = parseDotEnv(readFileSync(envPath, "utf8"));
-const args = ["wrangler", "deploy"];
-
-for (const [key, value] of Object.entries(raw)) {
-  if (key.startsWith("VITE_")) {
+const lines = [];
+for (const key of WORKER_SECRET_ENV_KEYS) {
+  const value = raw[key];
+  if (value === undefined || value === "") {
+    console.warn(`Skipping ${key} (missing or empty in ${envPath})`);
     continue;
   }
-  if (WORKER_SECRET_ENV_KEYS.has(key)) {
-    continue;
-  }
-  args.push("--var", `${key}:${value}`);
+  lines.push(`${key}=${value}`);
 }
 
-const child = spawn("npx", args, {
+if (lines.length === 0) {
+  console.error("No secret keys to upload. Check .env.prod and secrets-config.mjs.");
+  process.exit(1);
+}
+
+const tmpFile = join(
+  tmpdir(),
+  `wrangler-secrets-${Date.now()}-${Math.random().toString(36).slice(2)}.env`,
+);
+writeFileSync(tmpFile, lines.join("\n") + "\n", "utf8");
+
+const child = spawn("npx", ["wrangler", "secret", "bulk", tmpFile], {
   cwd: projectRoot,
   stdio: "inherit",
   env: process.env,
 });
 
-child.on("exit", (code) => process.exit(code ?? 1));
+child.on("exit", (code) => {
+  try {
+    unlinkSync(tmpFile);
+  } catch {
+    /* ignore */
+  }
+  process.exit(code ?? 1);
+});

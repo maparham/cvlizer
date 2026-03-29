@@ -6,6 +6,8 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "deploy:vars": "node scripts/deploy-with-worker-vars.mjs",
+    "secrets:push": "node scripts/push-worker-secrets.mjs",
+    "secrets:list": "wrangler secret list",
     "dev": "wrangler dev",
     "typecheck": "tsc --noEmit"
   },
