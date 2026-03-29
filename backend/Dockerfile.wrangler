@@ -1,6 +1,9 @@
 # Minimal image for Cloudflare Containers when local Docker has very little free disk.
 # No system packages: PDF preview/export that need poppler or pdflatex will not work
 # until you use Dockerfile / Dockerfile.wrangler (with poppler) or free Docker disk.
+#
+# DATABASE_URL must be set for the process (Worker forwards vars + secrets). Use Neon Postgres
+# in production (psycopg2-binary in requirements.txt); push DATABASE_URL with cloudflare/backend-api `npm run secrets:push`.
 FROM python:3.11-slim
 
 WORKDIR /app

@@ -2,5 +2,10 @@
   "workbench.editor.autoReveal": false,
   "workbench.editor.revealIfOpen": false,
   "workbench.editor.enablePreview": false,
-  "workbench.editor.enablePreviewFromQuickOpen": false
+  "workbench.editor.enablePreviewFromQuickOpen": false,
+  "plugins": {
+    "cloudflare": {
+      "enabled": true
+    }
+  }
 }

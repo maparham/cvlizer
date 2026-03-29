@@ -38,13 +38,17 @@ def get_period_usage(db: Session, user_id: str, days: int = 30) -> Dict[str, Any
             AIUsageLog.user_id == user_id,
             AIUsageLog.timestamp >= start_date,
             AIUsageLog.timestamp <= end_date,
-            AIUsageLog.success == True,
+            AIUsageLog.success.is_(True),
         )
     )
     row = query.first()
+    if row is None:
+        return {"used_cost": 0.0, "used_tokens": 0}
+    used_cost = row.used_cost
+    used_tokens = row.used_tokens
     return {
-        "used_cost": float(row.used_cost or 0.0),
-        "used_tokens": int(row.used_tokens or 0),
+        "used_cost": float(used_cost if used_cost is not None else 0.0),
+        "used_tokens": int(used_tokens if used_tokens is not None else 0),
     }
 
 

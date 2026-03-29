@@ -9,7 +9,8 @@
  * Backend env for the Python process:
  * - Plain text: `vars` in wrangler.jsonc + `npm run deploy`.
  * - Non-secret overrides: `npm run deploy:vars` (reads `.env.prod`, skips `VITE_*` and secret keys).
- * - Secrets (never in git): `npm run secrets:push` or `npx wrangler secret put` / `wrangler secret bulk`.
+ * - Secrets (never in git), including `DATABASE_URL` (e.g. Neon Postgres): `npm run secrets:push` or
+ *   `npx wrangler secret put` / `wrangler secret bulk`.
  * All string Worker env (vars + secrets) is forwarded into the container (see `envVars`), except bindings.
  */
 import { env as workerEnv } from "cloudflare:workers";

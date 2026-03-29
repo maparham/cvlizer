@@ -259,7 +259,7 @@ class AIConfig:
 
 
 class DatabaseConfig:
-    """Database related configuration"""
+    """Database related configuration (local dev: SQLite; production / Cloudflare: Neon Postgres via DATABASE_URL)."""
 
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./cv_optimizer.db")
 

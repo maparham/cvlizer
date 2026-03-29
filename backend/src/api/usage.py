@@ -4,14 +4,19 @@ Usage API for free-tier quota and AI usage display.
 Provides GET /usage for the frontend to show token/cost progress and allowed status.
 """
 
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.middleware.clerk_auth import get_effective_user
 from src.models.base import get_db
 from src.models.user import User
 from src.services.platform import quota_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["usage"])
 
@@ -38,13 +43,21 @@ def get_usage(
 
     Uses effective user (impersonation shows the impersonated user's usage).
     """
-    result = quota_service.check_quota(db, str(current_user.id))
+    try:
+        result = quota_service.check_quota(db, str(current_user.id))
+    except SQLAlchemyError:
+        logger.exception("GET /api/usage: database error in check_quota")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Usage temporarily unavailable",
+        ) from None
+
     return UsageResponse(
-        used_tokens=result["used_tokens"],
-        limit_tokens=result["limit_tokens"],
-        used_cost=result["used_cost"],
-        limit_cost=result["limit_cost"],
-        remaining_cost=result["remaining_cost"],
-        period_days=result["period_days"],
-        allowed=result["allowed"],
+        used_tokens=int(result["used_tokens"]),
+        limit_tokens=int(result["limit_tokens"]),
+        used_cost=float(result["used_cost"]),
+        limit_cost=float(result["limit_cost"]),
+        remaining_cost=float(result["remaining_cost"]),
+        period_days=int(result["period_days"]),
+        allowed=bool(result["allowed"]),
     )

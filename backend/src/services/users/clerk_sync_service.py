@@ -17,6 +17,13 @@ from src.models.user import User
 logger = logging.getLogger(__name__)
 
 
+def _utc_aware(dt: datetime) -> datetime:
+    """Make datetimes comparable: Postgres returns TIMESTAMPTZ (aware); fromtimestamp may be naive."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def sync_clerk_user_to_local_db(
     clerk_user_id: str,
     email: str,
@@ -79,9 +86,13 @@ def sync_clerk_user_to_local_db(
                     if isinstance(last_sign_in, int):
                         # Check if it's milliseconds (13 digits) or seconds (10 digits)
                         if last_sign_in > 1e12:  # Millisecond timestamp
-                            new_last_login = datetime.fromtimestamp(last_sign_in / 1000)
+                            new_last_login = datetime.fromtimestamp(
+                                last_sign_in / 1000, tz=timezone.utc
+                            )
                         else:  # Second timestamp
-                            new_last_login = datetime.fromtimestamp(last_sign_in)
+                            new_last_login = datetime.fromtimestamp(
+                                last_sign_in, tz=timezone.utc
+                            )
                     elif isinstance(last_sign_in, str):
                         # ISO string format
                         new_last_login = datetime.fromisoformat(
@@ -99,7 +110,10 @@ def sync_clerk_user_to_local_db(
                             updated = True
                         else:
                             time_diff = abs(
-                                (new_last_login - user.last_login).total_seconds()
+                                (
+                                    _utc_aware(new_last_login)
+                                    - _utc_aware(user.last_login)
+                                ).total_seconds()
                             )
                             if (
                                 time_diff > 60
@@ -167,10 +181,12 @@ def sync_clerk_user_to_local_db(
                     # Check if it's milliseconds (13 digits) or seconds (10 digits)
                     if last_sign_in > 1e12:  # Millisecond timestamp
                         user_data["last_login"] = datetime.fromtimestamp(
-                            last_sign_in / 1000
+                            last_sign_in / 1000, tz=timezone.utc
                         )
                     else:  # Second timestamp
-                        user_data["last_login"] = datetime.fromtimestamp(last_sign_in)
+                        user_data["last_login"] = datetime.fromtimestamp(
+                            last_sign_in, tz=timezone.utc
+                        )
                 elif isinstance(last_sign_in, str):
                     # ISO string format
                     user_data["last_login"] = datetime.fromisoformat(

@@ -44,6 +44,11 @@ interface ErrorContext {
   timestamp: string;
 }
 
+/** Same base URL logic as `api.ts` so unload requests hit the API host, not the SPA origin. */
+function getApiBaseUrl(): string {
+  return (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "");
+}
+
 class ActivityLogger {
   private sessionId: string;
   private userId: string | null = null;
@@ -54,6 +59,8 @@ class ActivityLogger {
   private lastPageView: string | null = null;
   private lastActivityTime: number = 0;
   private activityThrottleMs: number = 1000; // 1 second throttle
+  /** Prevents duplicate unload flushes when both pagehide and beforeunload fire. */
+  private unloadFlushStarted: boolean = false;
 
   constructor() {
     this.sessionId = this.generateSessionId();
@@ -349,50 +356,58 @@ class ActivityLogger {
       this.flushActivities();
     }, this.flushInterval);
 
-    // Flush on page unload using navigator.sendBeacon for reliable delivery
-    window.addEventListener("beforeunload", () => {
-      this.flushActivitiesOnUnload();
-    });
+    // Flush on page hide / unload: must use API base URL + auth (sendBeacon cannot set Bearer token).
+    const onUnload = () => {
+      void this.flushActivitiesOnUnload();
+    };
+    window.addEventListener("pagehide", onUnload);
+    window.addEventListener("beforeunload", onUnload);
   }
 
   /**
-   * Flush activities on page unload using navigator.sendBeacon for reliable delivery
+   * Flush activities on page unload using fetch + keepalive (correct API URL, JSON body, Bearer token).
+   * Relative paths like "/user-activities/batch" hit the SPA host and return 405.
    */
   private flushActivitiesOnUnload() {
-    if (this.activityQueue.length === 0 || !this.userId) {
+    if (this.unloadFlushStarted || this.activityQueue.length === 0 || !this.userId) {
       return;
     }
 
-    try {
-      // Copy the queued activities
-      const activitiesToFlush = [...this.activityQueue];
+    const activitiesToFlush = [...this.activityQueue];
+    this.unloadFlushStarted = true;
 
-      // Create a Blob with the activities data
-      const blob = new Blob([JSON.stringify(activitiesToFlush)], {
-        type: "application/json",
-      });
-
-      // Use navigator.sendBeacon if available, otherwise fall back to regular flush
-      if (navigator.sendBeacon) {
-        const success = navigator.sendBeacon(
-          "/user-activities/batch",
-          blob,
-        );
-        if (success) {
-          // Clear the queue only if sendBeacon succeeded
-          this.activityQueue = [];
-        } else {
-          // Fall back to regular flush if sendBeacon failed
-          this.flushActivities();
+    void (async () => {
+      try {
+        const { isClerkAvailable } = await import("../types/clerk");
+        const win = window as import("../types/clerk").ClerkWindow;
+        if (!isClerkAvailable(win) || !win.Clerk?.session) {
+          return;
         }
-      } else {
-        // Fall back to regular flush if sendBeacon is not available
-        this.flushActivities();
+        const token = await win.Clerk.session.getToken();
+        if (!token) {
+          return;
+        }
+        const url = `${getApiBaseUrl()}/user-activities/batch`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ activities: activitiesToFlush }),
+          keepalive: true,
+          credentials: "include",
+        });
+        if (res.ok) {
+          this.activityQueue = [];
+        }
+      } catch {
+        // network / abort
+      } finally {
+        // Reset so cancelled unload or later navigation can flush again (success path omitted this before).
+        this.unloadFlushStarted = false;
       }
-    } catch (error) {
-      // Fall back to regular flush on error
-      this.flushActivities();
-    }
+    })();
   }
 
   /**

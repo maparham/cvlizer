@@ -1,14 +1,14 @@
 {
   // Worker entry + Container from ../../backend/Dockerfile.wrangler (slim; use Dockerfile for full TeX).
   // Plain-text backend env (Worker `vars`): `npx wrangler deploy`. Do not put secrets here.
-  // Secrets (JWT, Clerk, OpenAI, etc.): `npm run secrets:push` from repo root `.env.prod`, or
-  // `npx wrangler secret put NAME` / `wrangler secret bulk file.env` (see scripts/push-worker-secrets.mjs).
+  // Secrets (JWT, Clerk, OpenAI, DATABASE_URL for Neon Postgres, etc.): `npm run secrets:push`
+  // from repo root `.env.prod`, or `npx wrangler secret put NAME` / `wrangler secret bulk file.env`
+  // (see scripts/push-worker-secrets.mjs). Do not put DATABASE_URL in `vars` — use secrets only.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cv-lator-backend",
   "main": "src/index.ts",
   "compatibility_date": "2025-03-01",
   "vars": {
-    "DATABASE_URL": "sqlite:///./data/cv_optimizer.db",
     "JWT_ALGORITHM": "HS256",
     "JWT_ACCESS_TOKEN_EXPIRE_MINUTES": "15",
     "JWT_REFRESH_TOKEN_EXPIRE_DAYS": "7",
@@ -17,7 +17,7 @@
     "CLERK_AUDIENCE": "clerk.enabling-chamois-1",
     "CLERK_VERIFY_TOKENS": "true",
     "PUBLIC_FRONTEND_BASE_URL": "https://rahkar.pro",
-    "ADMIN_EMAIL": "your-admin@example.com",
+    "ADMIN_EMAIL": "mahmoud.shahrud@gmail.com",
     "AI_PROVIDER": "openai",
     "OPENAI_MODEL": "gpt-5.4",
     "OPENAI_PARSING_MODEL": "gpt-5.4",
