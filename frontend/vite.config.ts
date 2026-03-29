@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 /** Build-time replacement for public URL in index.html (og:url) and sitemap.xml. Set VITE_PUBLIC_URL per deployment. When unset, the og:url meta tag and sitemap are omitted. */
 function replacePublicUrl() {
   const publicUrl = process.env.VITE_PUBLIC_URL
@@ -14,7 +16,7 @@ function replacePublicUrl() {
     apply: 'build',
     transformIndexHtml(html: string) {
       if (safeUrl == null) return html.replace(ogUrlTagRegex, '')
-      return html.replace(/__PUBLIC_URL__/g, safeUrl)
+      return html.replace(/__PUBLIC_URL__/g, safeUrl);
     },
     writeBundle: {
       order: 'post',
@@ -30,12 +32,12 @@ function replacePublicUrl() {
         writeFileSync(distSitemap, content)
       },
     },
-  }
+  };
 }
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [replacePublicUrl(), react()],
+  plugins: [replacePublicUrl(), react(), cloudflare()],
   server: {
     port: 3000,
     host: true,
