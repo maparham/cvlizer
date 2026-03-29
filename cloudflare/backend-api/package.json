@@ -5,6 +5,7 @@
   "description": "Cloudflare Worker + Container proxy for the FastAPI backend (repo root: ../../backend).",
   "scripts": {
     "deploy": "wrangler deploy",
+    "deploy:vars": "node scripts/deploy-with-worker-vars.mjs",
     "dev": "wrangler dev",
     "typecheck": "tsc --noEmit"
   },

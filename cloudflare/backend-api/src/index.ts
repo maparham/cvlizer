@@ -5,8 +5,36 @@
  * Deploy from this directory with Docker running. For Apple Silicon, prefer:
  *   export DOCKER_DEFAULT_PLATFORM=linux/amd64
  * before `npm run deploy` so the image matches Cloudflare (linux/amd64).
+ *
+ * Backend env for the Python process (plain `vars`, not `wrangler secret`):
+ * - `npm run deploy:vars` — deploys with `--var` from repo-root `.env.prod` (skips `VITE_*`).
+ * - Or set `vars` in wrangler.jsonc, then `npm run deploy`.
+ * All string Worker vars are forwarded into the container (see `envVars`), except bindings.
  */
+import { env as workerEnv } from "cloudflare:workers";
 import { Container } from "@cloudflare/containers";
+
+/** Keys that are Worker bindings, not FastAPI environment variables. */
+const SKIP_ENV_KEYS = new Set<string>(["BACKEND_CONTAINER"]);
+
+/**
+ * Copy Worker string config (vars + secrets) into the container OS env for uvicorn.
+ */
+function envForBackendContainer(env: WorkerEnvWithBindings): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const key of Object.keys(env)) {
+    if (SKIP_ENV_KEYS.has(key)) {
+      continue;
+    }
+    const value = env[key];
+    if (typeof value === "string") {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+type WorkerEnvWithBindings = Record<string, unknown>;
 
 /** Durable Object + container lifecycle for the Python API image. */
 export class BackendContainer extends Container {
@@ -15,6 +43,8 @@ export class BackendContainer extends Container {
   sleepAfter = "10m";
   /** FastAPI needs outbound calls (OpenAI, Clerk, JWKS, etc.). */
   enableInternet = true;
+  /** Pass Worker `vars` and `wrangler secret` values into the FastAPI process. */
+  envVars = envForBackendContainer(workerEnv as WorkerEnvWithBindings);
 }
 
 export interface Env {
