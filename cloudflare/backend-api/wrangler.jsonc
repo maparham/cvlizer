@@ -1,0 +1,31 @@
+{
+  // Worker entry + Container from ../../backend/Dockerfile.wrangler (slim; use Dockerfile for full TeX).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cv-lator-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-01",
+  "observability": {
+    "enabled": true
+  },
+  "containers": [
+    {
+      "class_name": "BackendContainer",
+      "image": "../../backend/Dockerfile.wrangler",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "BACKEND_CONTAINER",
+        "class_name": "BackendContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["BackendContainer"]
+    }
+  ]
+}
