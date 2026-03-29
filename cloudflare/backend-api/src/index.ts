@@ -6,9 +6,10 @@
  *   export DOCKER_DEFAULT_PLATFORM=linux/amd64
  * before `npm run deploy` so the image matches Cloudflare (linux/amd64).
  *
- * Backend env for the Python process (plain `vars`, not `wrangler secret`):
- * - `npm run deploy:vars` — deploys with `--var` from repo-root `.env.prod` (skips `VITE_*`).
- * - Or set `vars` in wrangler.jsonc, then `npm run deploy`.
+ * Backend env for the Python process:
+ * - Plain text: edit `vars` in wrangler.jsonc, then `npm run deploy` (Wrangler CLI uploads them).
+ * - Or `npm run deploy:vars` — same CLI with `--var` per line from repo-root `.env.prod` (skips `VITE_*`).
+ * - Secrets: `npx wrangler secret put KEY` (not stored in wrangler.jsonc).
  * All string Worker vars are forwarded into the container (see `envVars`), except bindings.
  */
 import { env as workerEnv } from "cloudflare:workers";
