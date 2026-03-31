@@ -39,7 +39,7 @@ function envForBackendContainer(env: WorkerEnvWithBindings): Record<string, stri
 type WorkerEnvWithBindings = Record<string, unknown>;
 
 /** Durable Object + container lifecycle for the Python API image. */
-export class BackendContainer extends Container {
+export class BackendContainerV2 extends Container {
   defaultPort = 8000;
   /** Keep API warm briefly; tune per cost vs cold-start tradeoff. */
   sleepAfter = "10m";
@@ -50,7 +50,7 @@ export class BackendContainer extends Container {
 }
 
 export interface Env {
-  BACKEND_CONTAINER: DurableObjectNamespace<BackendContainer>;
+  BACKEND_CONTAINER: DurableObjectNamespace<BackendContainerV2>;
 }
 
 /**

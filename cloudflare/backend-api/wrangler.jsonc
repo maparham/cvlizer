@@ -69,7 +69,7 @@
   },
   "containers": [
     {
-      "class_name": "BackendContainer",
+      "class_name": "BackendContainerV2",
       "image": "../../backend/Dockerfile.wrangler",
       "max_instances": 1
     }
@@ -78,14 +78,14 @@
     "bindings": [
       {
         "name": "BACKEND_CONTAINER",
-        "class_name": "BackendContainer"
+        "class_name": "BackendContainerV2"
       }
     ]
   },
   "migrations": [
     {
-      "tag": "v1",
-      "new_sqlite_classes": ["BackendContainer"]
+      "tag": "v2",
+      "new_sqlite_classes": ["BackendContainerV2"]
     }
   ]
 }

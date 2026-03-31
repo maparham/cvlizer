@@ -1,21 +1,17 @@
 """Unit tests for URL parsing structured and iframe extraction paths."""
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bs4 import BeautifulSoup
 
-from tests.unit.fixtures.selenium_stubs import (
-    DummyBrowserDriver,
-    DummyIframeDriver,
-    DummyWait,
-)
 from src.services.job_descriptions.url_parsing_service import (
-    _extract_iframe_content_with_browser_automation,
     _extract_jsonld_job_posting,
     _extract_raw_content,
     _extract_raw_content_with_fallback,
     _extract_with_browser_automation,
+    _extract_with_browser_automation_async,
+    _extract_iframe_content_with_playwright,
     parse_job_url,
 )
 
@@ -63,13 +59,28 @@ def test_extract_jsonld_job_posting_handles_non_string_description():
     assert "Nested description value" in parsed["content"]
 
 
-def test_extract_iframe_content_collects_multiple_frames():
+@pytest.mark.asyncio
+async def test_extract_iframe_content_collects_multiple_frames():
     """Iframe text extraction concatenates substantial frame content."""
-    driver = DummyIframeDriver()
-    with patch(
-        "src.services.job_descriptions.url_parsing_service.WebDriverWait", DummyWait
-    ):
-        text = _extract_iframe_content_with_browser_automation(driver)
+    main_frame = object()
+
+    frame1 = AsyncMock()
+    frame1.wait_for_selector = AsyncMock()
+    frame1.evaluate = AsyncMock(return_value="x" * 120)
+
+    frame2 = AsyncMock()
+    frame2.wait_for_selector = AsyncMock()
+    frame2.evaluate = AsyncMock(return_value="short")
+
+    frame3 = AsyncMock()
+    frame3.wait_for_selector = AsyncMock()
+    frame3.evaluate = AsyncMock(return_value="y" * 130)
+
+    page = MagicMock()
+    page.main_frame = main_frame
+    page.frames = [main_frame, frame1, frame2, frame3]
+
+    text = await _extract_iframe_content_with_playwright(page)
 
     assert "x" * 120 in text
     assert "y" * 130 in text
@@ -143,21 +154,48 @@ def test_extract_raw_content_does_not_early_return_short_structured(mock_get):
     assert "Long page content" in content
 
 
-@patch("src.services.job_descriptions.url_parsing_service.time.sleep", return_value=None)
+@pytest.mark.asyncio
 @patch(
-    "src.services.job_descriptions.url_parsing_service._extract_iframe_content_with_browser_automation",
-    return_value="",
+    "src.services.job_descriptions.url_parsing_service.asyncio.sleep",
+    new_callable=AsyncMock,
 )
-@patch("src.services.job_descriptions.url_parsing_service.webdriver.Chrome")
-def test_browser_automation_structured_short_falls_back_to_parent_text(
-    mock_chrome, _mock_iframe, _mock_sleep
+@patch("src.services.job_descriptions.url_parsing_service.async_playwright")
+async def test_browser_automation_structured_short_falls_back_to_parent_text(
+    mock_playwright, _mock_sleep
 ):
     """Short structured data should not short-circuit browser extraction."""
-    mock_chrome.return_value = DummyBrowserDriver()
-    with patch(
-        "src.services.job_descriptions.url_parsing_service.WebDriverWait", DummyWait
-    ):
-        content = _extract_with_browser_automation("https://example.com/job/structured")
+    html = """
+    <html><head>
+      <script type="application/ld+json">
+      {"@type":"JobPosting","title":"T","description":"short"}
+      </script>
+    </head><body>Body</body></html>
+    """
+
+    page = AsyncMock()
+    page.goto = AsyncMock()
+    page.wait_for_selector = AsyncMock()
+    page.content = AsyncMock(return_value=html)
+    page.evaluate = AsyncMock(return_value="Parent content " * 20)
+    page.main_frame = object()
+    page.frames = [page.main_frame]  # no iframes
+
+    context = AsyncMock()
+    context.new_page = AsyncMock(return_value=page)
+
+    browser = AsyncMock()
+    browser.new_context = AsyncMock(return_value=context)
+    browser.close = AsyncMock()
+
+    playwright_instance = AsyncMock()
+    playwright_instance.chromium.launch = AsyncMock(return_value=browser)
+
+    mock_playwright.return_value.__aenter__ = AsyncMock(return_value=playwright_instance)
+    mock_playwright.return_value.__aexit__ = AsyncMock(return_value=None)
+
+    content = await _extract_with_browser_automation_async(
+        "https://example.com/job/structured"
+    )
 
     assert "Parent content" in content
 

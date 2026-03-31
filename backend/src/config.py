@@ -378,16 +378,27 @@ class BackgroundTaskConfig:
     # Delays
     URL_PARSING_DELAY_SECONDS: float = float(os.getenv("URL_PARSING_DELAY", "1.0"))
 
-    # Selenium URL parsing tuning (seconds)
+    # Browser automation URL parsing tuning (seconds)
     # Keep these configurable to tune reliability vs speed per environment.
+    # These settings are used by Playwright, but we keep the SELENIUM_* attribute
+    # names for backward compatibility.
     SELENIUM_PAGE_LOAD_TIMEOUT_SECONDS: int = int(
-        os.getenv("SELENIUM_PAGE_LOAD_TIMEOUT_SECONDS", "20")
+        os.getenv(
+            "BROWSER_PAGE_LOAD_TIMEOUT_SECONDS",
+            os.getenv("SELENIUM_PAGE_LOAD_TIMEOUT_SECONDS", "20"),
+        )
     )
     SELENIUM_BODY_WAIT_TIMEOUT_SECONDS: int = int(
-        os.getenv("SELENIUM_BODY_WAIT_TIMEOUT_SECONDS", "12")
+        os.getenv(
+            "BROWSER_BODY_WAIT_TIMEOUT_SECONDS",
+            os.getenv("SELENIUM_BODY_WAIT_TIMEOUT_SECONDS", "12"),
+        )
     )
     SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS: float = float(
-        os.getenv("SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS", "1")
+        os.getenv(
+            "BROWSER_DYNAMIC_CONTENT_WAIT_SECONDS",
+            os.getenv("SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS", "1"),
+        )
     )
 
 

@@ -85,13 +85,9 @@ def setup_logging(log_dir: str = "logs") -> None:
     logging.getLogger("httpcore.http11").setLevel(
         logging.WARNING
     )  # Silence HTTP/1.1 debug logs
-    logging.getLogger("selenium").setLevel(logging.WARNING)  # Silence Selenium debug logs
-    logging.getLogger("selenium.webdriver").setLevel(
+    logging.getLogger("playwright").setLevel(
         logging.WARNING
-    )  # Silence Selenium webdriver debug logs
-    logging.getLogger("selenium.webdriver.remote.remote_connection").setLevel(
-        logging.WARNING
-    )  # Silence Selenium connection logs
+    )  # Silence Playwright debug logs
     logging.getLogger("multipart").setLevel(logging.INFO)  # Silence multipart debug logs
 
     logging.info(f"Logging configured - Level: {LoggingConfig.LOG_LEVEL}")

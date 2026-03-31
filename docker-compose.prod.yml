@@ -10,9 +10,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     env_file: .env.prod
+    environment:
+      # Force remote DB in production (no SQLite fallback).
+      DATABASE_URL: ${DATABASE_URL}
     ports: []   # no host exposure; reached via frontend -> backend internally
     volumes:
-      - prod_data:/app/data
       - prod_uploads:/app/uploads
     restart: unless-stopped
     command: python run_production.py
@@ -50,5 +52,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  prod_data:
   prod_uploads:

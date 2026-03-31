@@ -81,7 +81,6 @@ MARKDOWN FORMAT for content:
 • **bold** for key terms
 • \\n\\n between sections
 • 1., 2. for numbered lists
-• Consolidate duplicates: If similar requirements (e.g., "Strong programming" + "Solid programming/scripting"), merge into ONE comprehensive requirement
 • Keep technical terms exact
 • Preserve structure/hierarchy
 
@@ -90,7 +89,7 @@ Missing info: Use "" or "Unknown". Identify source from URL. Valid JSON only.
 
         # Use unified OpenAI call builder
         extracted_data, metadata = await call_openai_with_schema(
-            system_prompt="You're a job posting extraction expert. Return valid JSON. Format 'content' as markdown (##, ###, bullets, **bold**, \\n\\n). Consolidate duplicate requirements (e.g., 'Strong programming' + 'Solid scripting' → one requirement). Keep unique requirements.",
+            system_prompt="You're a job posting extraction expert. Return valid JSON. CRITICAL: Preserve the original language of the job posting. Do NOT translate. Format 'content' as markdown (##, ###, bullets, **bold**, \\n\\n).",
             user_prompt=prompt,
             response_schema=JobExtractionResponseSchema,
             model=AIConfig.OPENAI_PARSING_MODEL,
