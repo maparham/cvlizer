@@ -52,6 +52,10 @@
     "ALLOWED_FILE_TYPES": "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "PROFILE_PICTURE_MAX_SIZE": "1048576",
     "LOG_LEVEL": "DEBUG",
+    // Job URL parsing (Playwright); forwarded to FastAPI (BackgroundTaskConfig).
+    "BROWSER_DYNAMIC_CONTENT_WAIT_SECONDS": "5",
+    "BROWSER_NETWORKIDLE_TIMEOUT_SECONDS": "5",
+    "BROWSER_LOG_FULL_EXTRACTED_CONTENT": "false",
     "IMPERSONATION_ENABLED": "true",
     "IMPERSONATION_TTL_SECONDS": "1800",
     "IMPERSONATION_RATE_LIMIT_ADMIN_PER_HOUR": "20",
