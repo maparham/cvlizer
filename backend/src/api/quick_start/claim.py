@@ -256,6 +256,10 @@ async def claim_quick_start_data(
 
                 # Extract raw content from URL
                 raw_content = _extract_raw_content_with_fallback(job_url)
+                logger.debug(
+                    "Claim JD parse (URL) raw_chars=%s",
+                    len(raw_content or ""),
+                )
 
                 if not raw_content:
                     raise HTTPException(

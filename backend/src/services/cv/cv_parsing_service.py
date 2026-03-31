@@ -7,9 +7,12 @@ This module provides specialized functions for:
 - Parsing error handling and fallback responses
 """
 
+import logging
 from typing import Optional
 
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 
 async def parse_cv_text_pipeline(
@@ -26,16 +29,23 @@ async def parse_cv_text_pipeline(
     """
     from src.services.ai_service import parse_cv_text_with_openai
 
+    logger.debug(
+        "CV parse pipeline OpenAI step cv_id=%s input_chars=%s",
+        cv_id,
+        len(text_content) if text_content else 0,
+    )
     parsed_data = await parse_cv_text_with_openai(
         text_content, user_id=user_id, cv_id=cv_id, db_session=db_session
     )
 
     if parsed_data.get("error"):
+        logger.debug("CV parse pipeline stopped (error) cv_id=%s", cv_id)
         return parsed_data
 
     parsed_data = _add_uuids_to_cv_data(parsed_data)
     parsed_data = _normalize_present_strings(parsed_data)
 
+    logger.debug("CV parse pipeline post-process done cv_id=%s", cv_id)
     return parsed_data
 
 
@@ -78,6 +88,12 @@ async def parse_cv_with_openai(
     try:
         # Extract text from file
         text_content = extract_text_from_file(file_content, content_type)
+        logger.debug(
+            "CV parse extracted text cv_id=%s filename=%s chars=%s",
+            cv_id,
+            filename,
+            len(text_content) if text_content else 0,
+        )
 
         return await parse_cv_text_pipeline(
             text_content,
@@ -86,10 +102,21 @@ async def parse_cv_with_openai(
             db_session=db_session,
         )
     except (InvalidFileException, ExtractionError):
+        logger.debug(
+            "CV parse extraction failed (invalid/extraction) cv_id=%s filename=%s",
+            cv_id,
+            filename,
+        )
         return {"error": ERROR_INVALID_FILE_OR_EXTRACTION, **EMPTY_PARSED_CV_PAYLOAD}
     except Exception as e:
         # Return error structure if parsing fails
         error_message = str(e) if str(e) else ERROR_EXTRACT_PDF
+        logger.debug(
+            "CV parse extraction unexpected error cv_id=%s filename=%s err=%s",
+            cv_id,
+            filename,
+            error_message,
+        )
         return {"error": error_message, **EMPTY_PARSED_CV_PAYLOAD}
 
 

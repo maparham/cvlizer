@@ -616,6 +616,13 @@ async def parse_user_job_description_url(
     db.commit()
     db.refresh(jd)
 
+    logger.debug(
+        "JD parse (URL) start jd_id=%s cv_id=%s url=%s",
+        str(jd.id),
+        cv_id,
+        parse_request.url or "",
+    )
+
     # Add small delay to ensure DB commit before starting background task
     await asyncio.sleep(0.1)
 

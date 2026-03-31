@@ -65,6 +65,10 @@ async def parse_job_for_preview(
                 else:
                     # Extract raw content from URL
                     raw_content = _extract_raw_content_with_fallback(job_url)
+                    logger.debug(
+                        "Quick start JD parse (URL) raw_chars=%s",
+                        len(raw_content or ""),
+                    )
 
                     if raw_content:
                         # Use AI service to extract structured data with timeout

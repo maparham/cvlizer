@@ -59,10 +59,21 @@ async def parse_cv_text_with_openai(
     """
     # Check if text content is empty or too short
     if not text_content or len(text_content.strip()) < 10:
+        logger.debug(
+            "CV parse OpenAI skipped: text too short cv_id=%s len=%s",
+            cv_id,
+            len(text_content or ""),
+        )
         return {"error": ERROR_EXTRACT_PDF, **EMPTY_PARSED_CV_PAYLOAD}
 
     # Check if text content is too long to be a CV
-    if len(text_content.strip()) > 15000:
+    stripped_len = len(text_content.strip())
+    if stripped_len > 15000:
+        logger.debug(
+            "CV parse OpenAI skipped: text too long cv_id=%s len=%s",
+            cv_id,
+            stripped_len,
+        )
         return {
             "error": "Document is too long to be a CV. Please upload a CV document (typically 500-10,000 characters).",
             **EMPTY_PARSED_CV_PAYLOAD,
@@ -136,6 +147,11 @@ Omit any content that cannot fit an allowed field.
         if not is_ai_enabled():
             raise RuntimeError("OpenAI disabled")
 
+        logger.debug(
+            "CV parse OpenAI request cv_id=%s chars=%s",
+            cv_id,
+            stripped_len,
+        )
         # Use unified OpenAI call builder (schema attached to API call, not in prompt)
         parsed_content, metadata = await call_openai_with_schema(
             system_prompt=cv_parsing_system_prompt,
@@ -155,6 +171,7 @@ Omit any content that cannot fit an allowed field.
             validation_error = parsed_content.get(
                 "validation_error", "This document does not appear to be a CV."
             )
+            logger.debug("CV parse OpenAI: invalid document cv_id=%s", cv_id)
             return {"error": validation_error, **EMPTY_PARSED_CV_PAYLOAD}
 
         # Assign UUIDs to custom_sections; preserve type from AI (professional_summary or cover_letter)
@@ -180,11 +197,24 @@ Omit any content that cannot fit an allowed field.
         parsed_content.pop("is_valid_cv", None)
         parsed_content.pop("validation_error", None)
 
+        logger.debug(
+            "CV parse OpenAI success cv_id=%s work=%s edu=%s custom=%s",
+            cv_id,
+            len(parsed_content.get("work_experience") or []),
+            len(parsed_content.get("education") or []),
+            len(parsed_content.get("custom_sections") or []),
+        )
         return parsed_content
 
     except Exception as e:
         # Error already logged by call_openai_with_schema
         # Additional context logging only
+        logger.debug(
+            "CV parse OpenAI failed cv_id=%s chars=%s err=%s",
+            cv_id,
+            len(text_content or ""),
+            e,
+        )
         logger.error(f"Text content length: {len(text_content)} characters")
 
         # Get user-friendly error message from the exception

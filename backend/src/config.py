@@ -537,9 +537,13 @@ class APIConfig:
 
 
 class LoggingConfig:
-    """Logging configuration"""
+    """
+    Logging paths and format.
 
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+    Log level is not stored here (import-time env snapshot would be stale). It is
+    read at runtime in ``src.utils.logging_setup.setup_logging`` from LOG_LEVEL.
+    """
+
     LOG_FORMAT: str = os.getenv(
         "LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )

@@ -10,6 +10,10 @@ import logging
 import os
 
 from dotenv import load_dotenv
+
+# Load .env before any src.* imports so config and logging see DATABASE_URL, LOG_LEVEL, etc.
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -55,8 +59,6 @@ from src.utils.logging_setup import setup_logging
 
 # Configuration imports
 from src.config import AIConfig
-
-load_dotenv()
 
 # Setup logging to both console and file
 setup_logging()

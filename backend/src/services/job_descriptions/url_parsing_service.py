@@ -159,6 +159,10 @@ def parse_job_url(url: str, user_id: str = None, db_session=None) -> Dict[str, A
         # Validate URL format
         parsed_url = urlparse(url)
         if not parsed_url.scheme or not parsed_url.netloc:
+            logger.debug(
+                "JD parse (URL) skip invalid url_len=%s",
+                len(url or ""),
+            )
             return {
                 "error": "Invalid URL format. Please check the URL and try again, or use the 'Text' tab to enter the job description manually.",
                 "success": False,
@@ -166,6 +170,10 @@ def parse_job_url(url: str, user_id: str = None, db_session=None) -> Dict[str, A
 
         # Check if this is a search results page
         if _is_search_results_page(url):
+            logger.debug(
+                "JD parse (URL) skip search-results host=%s",
+                parsed_url.netloc,
+            )
             return {
                 "error": "This appears to be a search results page, not an individual job posting. Please open a specific job listing and use that URL instead, or copy and paste the job description using the 'Text' tab.",
                 "success": False,
@@ -173,6 +181,10 @@ def parse_job_url(url: str, user_id: str = None, db_session=None) -> Dict[str, A
 
         # Extract raw content from URL using web scraping with browser automation fallback
         raw_content = _extract_raw_content_with_fallback(url)
+        logger.debug(
+            "JD parse (URL) extract raw_chars=%s",
+            len(raw_content or ""),
+        )
         if not raw_content:
             return {
                 "error": "Unable to extract content from this URL. The page may be empty or protected. Please copy and paste the job description manually using the 'Text' tab.",
@@ -285,6 +297,7 @@ def _extract_raw_content_with_fallback(url: str) -> str:
         except Exception as e:
             logger.error(f"Browser automation failed for {url}: {str(e)}")
 
+    logger.debug("JD parse (URL) extract empty after fallbacks")
     return ""
 
 
@@ -549,11 +562,20 @@ def _parse_with_openai(
 
         # Check if AI service returned an error
         if result.get("error"):
+            logger.debug(
+                "JD parse OpenAI raw_chars=%s ok=False",
+                len(raw_content or ""),
+            )
             return {
                 "error": f"AI parsing failed: {result.get('error')}. Please copy and paste the job description manually using the 'Text' tab.",
                 "success": False,
             }
 
+        logger.debug(
+            "JD parse OpenAI raw_chars=%s content_chars=%s ok=True",
+            len(raw_content or ""),
+            len(result.get("content") or ""),
+        )
         return {
             "success": True,
             "content": result.get("content", ""),

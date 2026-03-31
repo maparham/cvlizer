@@ -55,6 +55,13 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
     The session must be closed in a finally block to guarantee the connection
     is returned to the pool even if exceptions occur.
     """
+    logger.debug(
+        "CV parse (file) start cv_id=%s filename=%s content_type=%s bytes=%s",
+        cv_id,
+        filename,
+        content_type,
+        len(file_content),
+    )
     db = SessionLocal()
     try:
         # Get CV record to retrieve user_id for AI usage logging
@@ -83,6 +90,11 @@ def parse_cv_sync(cv_id: str, file_content: bytes, filename: str, content_type: 
             else:
                 cv.is_parsed = True
                 cv.parse_error = None
+            logger.debug(
+                "CV parse (file) finished cv_id=%s ok=%s",
+                cv_id,
+                not bool(parsed_data.get("error")),
+            )
             db.commit()
             db.refresh(cv)
 
@@ -144,6 +156,11 @@ async def parse_cv_background(
     cv_id: str, file_content: bytes, filename: str, content_type: str
 ):
     """Parse CV in background using thread pool executor"""
+    logger.debug(
+        "CV parse (file) executor submit cv_id=%s filename=%s",
+        cv_id,
+        filename,
+    )
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
         cv_parse_executor, parse_cv_sync, cv_id, file_content, filename, content_type
@@ -156,6 +173,11 @@ def parse_cv_from_text_sync(cv_id: str, raw_text: str):
 
     Runs in a background thread; manages its own DB session and closes it in finally.
     """
+    logger.debug(
+        "CV parse (text) start cv_id=%s chars=%s",
+        cv_id,
+        len(raw_text) if raw_text else 0,
+    )
     db = SessionLocal()
     try:
         cv = db.query(CV).filter(CV.id == cv_id).first()
@@ -178,6 +200,11 @@ def parse_cv_from_text_sync(cv_id: str, raw_text: str):
             else:
                 cv.is_parsed = True
                 cv.parse_error = None
+            logger.debug(
+                "CV parse (text) finished cv_id=%s ok=%s",
+                cv_id,
+                not bool(parsed_data.get("error")),
+            )
             db.commit()
             db.refresh(cv)
 
@@ -229,6 +256,7 @@ def parse_cv_from_text_sync(cv_id: str, raw_text: str):
 
 async def parse_cv_from_text_background(cv_id: str, raw_text: str):
     """Parse pasted CV text in background using thread pool executor."""
+    logger.debug("CV parse (text) executor submit cv_id=%s", cv_id)
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
         cv_parse_executor, parse_cv_from_text_sync, cv_id, raw_text

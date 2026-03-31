@@ -2,7 +2,10 @@
 Logging Setup Utility
 
 Configures Python's logging to output to both console and file.
-Uses configuration from src/config.py LoggingConfig.
+Uses LoggingConfig for format, log file path, and file toggles.
+
+LOG_LEVEL is read here from os.environ only (default INFO), not from LoggingConfig,
+so it reflects load_dotenv() and process env. Call setup_logging() after load_dotenv().
 """
 
 import logging
@@ -17,6 +20,8 @@ def setup_logging(log_dir: str = "logs") -> None:
     """
     Configure application logging to output to both console and file.
 
+    Call after load_dotenv() so LOG_LEVEL from .env is visible in os.environ.
+
     Args:
         log_dir: Directory to store log files (default: "logs")
     """
@@ -27,9 +32,11 @@ def setup_logging(log_dir: str = "logs") -> None:
     # Get log file path
     log_file = log_path / LoggingConfig.LOG_FILE
 
+    log_level = os.getenv("LOG_LEVEL", "INFO")
+
     # Configure root logger
     root_logger = logging.getLogger()
-    root_logger.setLevel(LoggingConfig.LOG_LEVEL)
+    root_logger.setLevel(log_level)
 
     # Clear existing handlers to avoid duplicates
     root_logger.handlers.clear()
@@ -39,11 +46,12 @@ def setup_logging(log_dir: str = "logs") -> None:
 
     # Console handler - always enabled
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(LoggingConfig.LOG_LEVEL)
+    console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
 
     # File handler - enabled based on config or always in production
+    file_handler = None
     if (
         LoggingConfig.LOG_FILE_ENABLED
         or os.getenv("ENVIRONMENT", "development") == "production"
@@ -53,7 +61,7 @@ def setup_logging(log_dir: str = "logs") -> None:
         file_handler = RotatingFileHandler(
             log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"  # 10 MB
         )
-        file_handler.setLevel(LoggingConfig.LOG_LEVEL)
+        file_handler.setLevel(log_level)
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
 
@@ -64,10 +72,7 @@ def setup_logging(log_dir: str = "logs") -> None:
         logger = logging.getLogger(logger_name)
         logger.handlers.clear()
         logger.addHandler(console_handler)
-        if (
-            LoggingConfig.LOG_FILE_ENABLED
-            or os.getenv("ENVIRONMENT", "development") == "production"
-        ):
+        if file_handler is not None:
             logger.addHandler(file_handler)
         logger.propagate = False
 
@@ -90,7 +95,7 @@ def setup_logging(log_dir: str = "logs") -> None:
     )  # Silence Playwright debug logs
     logging.getLogger("multipart").setLevel(logging.INFO)  # Silence multipart debug logs
 
-    logging.info(f"Logging configured - Level: {LoggingConfig.LOG_LEVEL}")
+    logging.info("Logging configured - Level: %s", log_level)
 
 
 def get_logger(name: str) -> logging.Logger:
