@@ -254,6 +254,8 @@ class SingleIssueResponseSchema(BaseModel):
 class CVQualityAnalysisDBSchema(BaseModel):
     """Database model schema for API responses."""
 
+    model_config = {"protected_namespaces": (), "from_attributes": True}
+
     id: str
     cv_id: str
     user_id: str
@@ -273,9 +275,6 @@ class CVQualityAnalysisDBSchema(BaseModel):
         if isinstance(v, datetime):
             return v.isoformat()
         return v
-
-    class Config:
-        from_attributes = True
 
 
 class CVQualityAnalysisCreateResponseSchema(BaseModel):

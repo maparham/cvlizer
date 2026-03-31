@@ -49,9 +49,6 @@ def get_combined_rate_limit_keys(request: Request) -> List[str]:
     user_id = getattr(request.state, "user_id", None)
     if user_id:
         keys.append(f"user:{user_id}")
-        logger.debug(f"Rate limiting keys for authenticated user {user_id}: {keys}")
-    else:
-        logger.debug(f"Rate limiting keys for unauthenticated request: {keys}")
 
     return keys
 

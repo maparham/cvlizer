@@ -26,6 +26,7 @@ import Box from "@mui/material/Box";
 import { useAIStore } from "../stores/ai";
 import { JobDescription, JobDescriptionStatusUpdate } from "../types/ai";
 import { useNotifications } from "../packages/notifications";
+import { DestructiveConfirmDialog } from "../components/common";
 import {
   JobLibraryHeader,
   JobLibraryStats,
@@ -55,6 +56,10 @@ const JobLibrary: React.FC = () => {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [statusEditingJobDescription, setStatusEditingJobDescription] =
     useState<JobDescription | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [jobDescriptionToDelete, setJobDescriptionToDelete] =
+    useState<JobDescription | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load job descriptions on mount
   useEffect(() => {
@@ -114,23 +119,37 @@ const JobLibrary: React.FC = () => {
     setIsModalOpen(true);
   }, []);
 
-  const handleDeleteJobDescription = useCallback(
-    async (jd: JobDescription) => {
-      if (
-        window.confirm(
-          `Delete "${jd.title || "this job description"}"?`
-        )
-      ) {
-        try {
-          await deleteJobDescription(jd.id);
-          showSuccess("Job description deleted successfully");
-        } catch (error) {
-          showError("Error", "Failed to delete job description");
-        }
-      }
-    },
-    [deleteJobDescription, showSuccess, showError]
-  );
+  const handleDeleteJobDescription = useCallback((jd: JobDescription) => {
+    setJobDescriptionToDelete(jd);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleDeleteCancel = useCallback(() => {
+    if (isDeleting) return;
+    setDeleteDialogOpen(false);
+    setJobDescriptionToDelete(null);
+  }, [isDeleting]);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!jobDescriptionToDelete || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await deleteJobDescription(jobDescriptionToDelete.id);
+      showSuccess("Job description deleted successfully");
+      setDeleteDialogOpen(false);
+      setJobDescriptionToDelete(null);
+    } catch (error) {
+      showError("Error", "Failed to delete job description");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [
+    jobDescriptionToDelete,
+    isDeleting,
+    deleteJobDescription,
+    showSuccess,
+    showError,
+  ]);
 
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
@@ -203,6 +222,16 @@ const JobLibrary: React.FC = () => {
         onModalClose={handleModalClose}
         onStatusDialogClose={handleStatusDialogClose}
         onStatusSave={handleStatusSave}
+      />
+
+      <DestructiveConfirmDialog
+        open={deleteDialogOpen}
+        title="Delete Job Description"
+        message={`Delete "${jobDescriptionToDelete?.title || "this job description"}"?`}
+        confirmText="Delete"
+        loading={isDeleting}
+        onCancel={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
       />
     </Box>
   );

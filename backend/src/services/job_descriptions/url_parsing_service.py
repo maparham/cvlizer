@@ -327,6 +327,7 @@ async def _extract_with_browser_automation_async(url: str) -> str:
         browser = None
         context = None
         try:
+            start_time = time.monotonic()
             browser = await p.chromium.launch(
                 headless=True,
                 args=[
@@ -346,20 +347,49 @@ async def _extract_with_browser_automation_async(url: str) -> str:
             )
             page = await context.new_page()
 
-            await page.goto(
+            response = await page.goto(
                 url,
                 timeout=BackgroundTaskConfig.SELENIUM_PAGE_LOAD_TIMEOUT_SECONDS * 1000,
                 wait_until="domcontentloaded",
             )
+            try:
+                status = response.status if response else None
+            except Exception:
+                status = None
             await page.wait_for_selector(
                 "body",
                 timeout=BackgroundTaskConfig.SELENIUM_BODY_WAIT_TIMEOUT_SECONDS * 1000,
             )
 
+            # Best-effort SPA rendering wait: some sites paint meaningful content only
+            # after DOMContentLoaded. Use a bounded "networkidle" wait to avoid long
+            # stalls on chatty pages, then fall back to the existing dynamic sleep.
+            networkidle_timeout_ms = int(
+                max(0.0, BackgroundTaskConfig.BROWSER_NETWORKIDLE_TIMEOUT_SECONDS) * 1000
+            )
+            if networkidle_timeout_ms > 0:
+                try:
+                    await page.wait_for_load_state(
+                        "networkidle", timeout=networkidle_timeout_ms
+                    )
+                except PlaywrightTimeoutError:
+                    pass
+            try:
+                await page.title()
+            except Exception as e:
+                logger.debug(
+                    "Browser automation could not read page title for %s: %s", url, str(e)
+                )
+
             page_content = await page.content()
-            structured_content = _extract_structured_content_from_html(page_content)
+            structured_content = _extract_structured_content_from_html(page_content) or ""
             if structured_content:
-                return structured_content
+                if BackgroundTaskConfig.BROWSER_LOG_FULL_EXTRACTED_CONTENT:
+                    logger.debug(
+                        "Browser automation full structured content for %s:\n%s",
+                        url,
+                        structured_content,
+                    )
 
             await asyncio.sleep(
                 BackgroundTaskConfig.SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS
@@ -369,9 +399,46 @@ async def _extract_with_browser_automation_async(url: str) -> str:
             iframe_content = await _extract_iframe_content_with_playwright(page)
             content = _combine_parent_and_iframe_content(parent_content, iframe_content)
 
+            if BackgroundTaskConfig.BROWSER_LOG_FULL_EXTRACTED_CONTENT:
+                logger.debug(
+                    "Browser automation full parent content for %s:\n%s",
+                    url,
+                    parent_content or "",
+                )
+                logger.debug(
+                    "Browser automation full iframe content for %s:\n%s",
+                    url,
+                    iframe_content or "",
+                )
+                logger.debug(
+                    "Browser automation full combined content for %s:\n%s",
+                    url,
+                    content or "",
+                )
             if content and len(content) > 100:
                 return content
 
+            # Reliability-first fallback: if the visible text extraction did not yield
+            # enough content, but structured extraction did, return structured as the
+            # best available signal instead of failing outright.
+            if structured_content and len(structured_content) > 100:
+                return structured_content
+
+            try:
+                body_text = await page.evaluate(
+                    "() => (document.body && (document.body.innerText || document.body.textContent) || '').trim()"
+                )
+                logger.debug(
+                    "Browser automation minimal content debug for %s: body_text_chars=%s",
+                    url,
+                    len(body_text or ""),
+                )
+            except Exception as e:
+                logger.debug(
+                    "Browser automation could not evaluate body text for %s: %s",
+                    url,
+                    str(e),
+                )
             raise Exception("Browser automation extracted minimal content")
 
         except PlaywrightTimeoutError as e:

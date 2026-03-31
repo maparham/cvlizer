@@ -228,7 +228,11 @@ def list_all_job_descriptions_for_user(
     if include_cv_ids:
         query = query.options(joinedload(JobDescription.cv_associations))
 
-    return query.all()
+    # Enforce deterministic ordering for all consumers (UI cards, archive, dashboard, etc.).
+    # "Latest first" is defined as newest `created_at` first, with `id` as a stable tiebreaker.
+    return query.order_by(
+        JobDescription.created_at.desc(), JobDescription.id.desc()
+    ).all()
 
 
 def create_job_description_for_user_with_cvs(

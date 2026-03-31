@@ -400,6 +400,19 @@ class BackgroundTaskConfig:
             os.getenv("SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS", "1"),
         )
     )
+    # Best-effort Playwright load-state wait after initial navigation. This aims to
+    # improve extraction reliability for SPAs that render after DOMContentLoaded.
+    #
+    # NOTE: "networkidle" can be delayed indefinitely on pages with continuous
+    # background requests (analytics/long-polling). Keep this bounded and rely on
+    # SELENIUM_DYNAMIC_CONTENT_WAIT_SECONDS as a fallback.
+    BROWSER_NETWORKIDLE_TIMEOUT_SECONDS: float = float(
+        os.getenv("BROWSER_NETWORKIDLE_TIMEOUT_SECONDS", "2")
+    )
+    # When true, logs full extracted browser text (can be very large).
+    BROWSER_LOG_FULL_EXTRACTED_CONTENT: bool = (
+        os.getenv("BROWSER_LOG_FULL_EXTRACTED_CONTENT", "false").strip().lower() == "true"
+    )
 
 
 # ============================================================================
