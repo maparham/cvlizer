@@ -68,7 +68,7 @@ class UserSession(Base):
     ended_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(
         String(10), default="true", nullable=False
-    )  # 'true' or 'false' as string for SQLite compatibility
+    )  # 'true' or 'false' as string
 
     # Relationships
     user = relationship("User", backref="sessions")

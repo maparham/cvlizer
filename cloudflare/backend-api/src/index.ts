@@ -39,7 +39,7 @@ function envForBackendContainer(env: WorkerEnvWithBindings): Record<string, stri
 type WorkerEnvWithBindings = Record<string, unknown>;
 
 /** Durable Object + container lifecycle for the Python API image. */
-export class BackendContainerV2 extends Container {
+export class BackendContainer extends Container {
   defaultPort = 8000;
   /** Keep API warm briefly; tune per cost vs cold-start tradeoff. */
   sleepAfter = "10m";
@@ -50,12 +50,12 @@ export class BackendContainerV2 extends Container {
 }
 
 export interface Env {
-  BACKEND_CONTAINER: DurableObjectNamespace<BackendContainerV2>;
+  BACKEND_CONTAINER: DurableObjectNamespace<BackendContainer>;
 }
 
 /**
- * Single named instance so one container (and one SQLite file, if used) backs all traffic.
- * Use multiple instances + getRandom only with a shared remote DB (e.g. Postgres).
+ * Single named instance so one container backs all traffic. App data lives in PostgreSQL
+ * (DATABASE_URL). Use multiple instances + getRandom only if the API is stateless enough.
  */
 const SINGLETON_NAME = "primary";
 

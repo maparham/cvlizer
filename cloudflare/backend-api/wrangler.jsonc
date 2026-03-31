@@ -4,8 +4,10 @@
   // Secrets (JWT, Clerk, OpenAI, DATABASE_URL for Neon Postgres, etc.): `npm run secrets:push`
   // from repo root `.env.prod`, or `npx wrangler secret put NAME` / `wrangler secret bulk file.env`
   // (see scripts/push-worker-secrets.mjs). Do not put DATABASE_URL in `vars` — use secrets only.
+  // Secrets are per Worker name in the Cloudflare account: if you change `name` above, run
+  // `npm run secrets:push` again so the container receives JWT_SECRET_KEY and CLERK_SECRET_KEY.
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "cv-lator-backend",
+  "name": "cvlator-backend",
   "main": "src/index.ts",
   "compatibility_date": "2025-03-01",
   "vars": {
@@ -69,7 +71,7 @@
   },
   "containers": [
     {
-      "class_name": "BackendContainerV2",
+      "class_name": "BackendContainer",
       "image": "../../backend/Dockerfile.wrangler",
       "max_instances": 1
     }
@@ -78,14 +80,17 @@
     "bindings": [
       {
         "name": "BACKEND_CONTAINER",
-        "class_name": "BackendContainerV2"
+        "class_name": "BackendContainer"
       }
     ]
   },
+  // Migrations are cumulative per Worker: tags are opaque ids (not semver). Do not remove
+  // or rename a tag after Cloudflare has applied it. `new_sqlite_classes` names Cloudflare's
+  // DO storage API, not your app DB (Postgres is DATABASE_URL).
   "migrations": [
     {
-      "tag": "v2",
-      "new_sqlite_classes": ["BackendContainerV2"]
+      "tag": "backend-container",
+      "new_sqlite_classes": ["BackendContainer"]
     }
   ]
 }

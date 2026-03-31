@@ -20,7 +20,7 @@ from src.services.platform.quota_service import check_quota, get_period_usage
 
 @pytest.fixture
 def db_session():
-    """In-memory SQLite session with Base tables."""
+    """Isolated in-memory SQLite engine/session for quota tests (no Postgres required)."""
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(bind=engine)
