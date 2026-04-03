@@ -10,6 +10,7 @@ import {
   CVQualityAnalysisCreateResponse,
   CVQualityAnalysisData,
   Issue,
+  RewordingMode,
 } from '../../types/ai';
 
 export interface FieldRetryResponse {
@@ -18,6 +19,8 @@ export interface FieldRetryResponse {
 }
 
 export type CorrectionMode = 'proofread' | 'coaching';
+
+export type { RewordingMode };
 
 export const cvQualityService = {
   /**
@@ -29,11 +32,13 @@ export const cvQualityService = {
    */
   async createQualityAnalysis(
     cvId: string,
-    correctionMode: CorrectionMode = 'proofread'
+    correctionMode: CorrectionMode = 'proofread',
+    rewordingMode: RewordingMode = 'minimal'
   ): Promise<CVQualityAnalysisCreateResponse> {
     try {
       const response = await api.post(`/cvs/${cvId}/quality-analysis`, {
         correction_mode: correctionMode,
+        rewording_mode: rewordingMode,
       });
 
       if (!response.data || !response.data.analysis_id) {
@@ -100,11 +105,17 @@ export const cvQualityService = {
     cvId: string,
     analysisId: string,
     fieldPath: string,
-    itemId?: string
+    itemId?: string,
+    rewordingMode: RewordingMode = 'minimal'
   ): Promise<FieldRetryResponse> {
     const response = await api.post(
       `/cvs/${cvId}/quality-analysis/field-retry`,
-      { analysis_id: analysisId, field_path: fieldPath, item_id: itemId ?? null }
+      {
+        analysis_id: analysisId,
+        field_path: fieldPath,
+        item_id: itemId ?? null,
+        rewording_mode: rewordingMode,
+      }
     );
     return response.data;
   },

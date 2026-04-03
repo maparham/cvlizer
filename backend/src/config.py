@@ -134,6 +134,16 @@ class AIConfig:
         os.getenv("CV_QUALITY_MAX_DRAFT_HISTORY", "3")
     )
 
+    # Default coaching rewording mode when the client omits rewording_mode: minimal | deep
+    _cv_quality_default_rewording: str = (
+        os.getenv("CV_QUALITY_DEFAULT_REWORDING_MODE", "minimal").strip().lower()
+    )
+    CV_QUALITY_DEFAULT_REWORDING_MODE: str = (
+        _cv_quality_default_rewording
+        if _cv_quality_default_rewording in ("minimal", "deep")
+        else "minimal"
+    )
+
     # Max length (characters) for html_diff in CV quality issues. Default 5000 keeps
     # structured output within model limits; for very long sections (e.g. cover letters)
     # or detailed experience text, raise CV_QUALITY_HTML_DIFF_MAX_LENGTH (e.g. 10000+).

@@ -20,10 +20,10 @@ import { jobDescriptionService } from "./jobDescriptionService";
 import { aiSectionsService } from "./aiSectionsService";
 import { utilityService } from "./utilityService";
 import { atsService } from "./atsService";
-import { cvQualityService, type CorrectionMode } from "./cvQualityService";
+import { cvQualityService, type CorrectionMode, type RewordingMode } from "./cvQualityService";
 
 // Re-export types
-export type { CorrectionMode };
+export type { CorrectionMode, RewordingMode };
 import { writingCorrectionsService } from "./writingCorrectionsService";
 
 /**

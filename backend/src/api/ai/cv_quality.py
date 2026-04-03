@@ -148,6 +148,7 @@ async def create_cv_quality_analysis(
             user_id=user.id,
             cv_id=cv_id,
             correction_mode=request.correction_mode,
+            rewording_mode=request.rewording_mode,
         )
     )
 
@@ -199,6 +200,7 @@ async def create_cv_quality_analysis(
             "cv_id": cv_id,
             "analysis_id": analysis_id,
             "correction_mode": request.correction_mode,
+            "rewording_mode": request.rewording_mode,
         },
     )
 
@@ -294,6 +296,7 @@ async def field_retry(
             user_id=user.id,
             cv_id=cv_id,
             db_session=db,
+            rewording_mode=request.rewording_mode,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))

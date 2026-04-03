@@ -8,7 +8,12 @@
  */
 
 import React from "react";
-import { WritingCorrection, FieldCorrection, Issue } from "../../../../types/ai";
+import {
+  WritingCorrection,
+  FieldCorrection,
+  Issue,
+  type RewordingMode,
+} from "../../../../types/ai";
 import {
   useValidatedQualityAnalysis,
   useCVQualityStore,
@@ -104,6 +109,9 @@ export function useSingleSectionWritingCorrections(
   } = params;
   const isPersonalInfo = sectionKeys[0] === "personal_info";
   const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
+  const storeRewordingMode = useCVQualityStore((s) =>
+    s.currentCvId === cvId ? s.rewordingMode : "minimal"
+  );
   const {
     dismissWritingCorrection,
     currentAnalysisId,
@@ -330,6 +338,17 @@ export function useSingleSectionWritingCorrections(
         )
       : null;
 
+  const rewordingModeForRetry: RewordingMode = React.useMemo(() => {
+    if (qualityAnalysis?.correction_mode === "coaching") {
+      return qualityAnalysis.rewording_mode === "deep" ? "deep" : "minimal";
+    }
+    return storeRewordingMode;
+  }, [
+    qualityAnalysis?.correction_mode,
+    qualityAnalysis?.rewording_mode,
+    storeRewordingMode,
+  ]);
+
   const onRetryCallback = React.useCallback(async () => {
     if (!cvId || !currentAnalysisId || !fieldPath) return;
     setRetrying(true);
@@ -338,7 +357,8 @@ export function useSingleSectionWritingCorrections(
         cvId,
         currentAnalysisId,
         fieldPath,
-        itemId || undefined
+        itemId || undefined,
+        rewordingModeForRetry
       );
       setFieldDraftHistory(cvId, fieldPath, response.list_for_field);
       setCurrentGenerationIndex(0);
@@ -356,6 +376,7 @@ export function useSingleSectionWritingCorrections(
     currentAnalysisId,
     fieldPath,
     itemId,
+    rewordingModeForRetry,
     setFieldDraftHistory,
     showSuccess,
     showError,

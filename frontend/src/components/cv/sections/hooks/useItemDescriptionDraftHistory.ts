@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { Issue, WritingCorrection } from "../../../../types/ai";
+import { Issue, WritingCorrection, type RewordingMode } from "../../../../types/ai";
 import {
   descriptionCorrectionToIssue,
   issueToDescriptionCorrection,
@@ -63,6 +63,9 @@ export function useItemDescriptionDraftHistory(
     formFieldName = "description",
   } = params;
   const qualityAnalysis = useValidatedQualityAnalysis(cvId || "");
+  const storeRewordingMode = useCVQualityStore((s) =>
+    s.currentCvId === cvId ? s.rewordingMode : "minimal"
+  );
   const { currentAnalysisId, setFieldDraftHistory } = useCVQualityStore();
   const { showSuccess, showError } = useNotifications();
   const [currentIndex, setCurrentIndex] = React.useState(0);
@@ -96,6 +99,17 @@ export function useItemDescriptionDraftHistory(
       ? issueToDescriptionCorrection(generationsList[currentIndex], formFieldName)
       : null;
 
+  const rewordingModeForRetry: RewordingMode = React.useMemo(() => {
+    if (qualityAnalysis?.correction_mode === "coaching") {
+      return qualityAnalysis.rewording_mode === "deep" ? "deep" : "minimal";
+    }
+    return storeRewordingMode;
+  }, [
+    qualityAnalysis?.correction_mode,
+    qualityAnalysis?.rewording_mode,
+    storeRewordingMode,
+  ]);
+
   const onRetryCallback = React.useCallback(async () => {
     if (!cvId || !currentAnalysisId) return;
     setRetrying(true);
@@ -104,7 +118,8 @@ export function useItemDescriptionDraftHistory(
         cvId,
         currentAnalysisId,
         apiPath,
-        itemId
+        itemId,
+        rewordingModeForRetry
       );
       setFieldDraftHistory(cvId, key, response.list_for_field);
       setCurrentIndex(0);
@@ -123,6 +138,7 @@ export function useItemDescriptionDraftHistory(
     apiPath,
     itemId,
     key,
+    rewordingModeForRetry,
     setFieldDraftHistory,
     showSuccess,
     showError,

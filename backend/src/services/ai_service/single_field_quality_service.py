@@ -94,6 +94,15 @@ def _derive_item_type_from_field_path(field_path: str) -> str:
     return "custom"
 
 
+def _normalize_field_rewording_mode(rewording_mode: Optional[str]) -> str:
+    raw = (
+        (rewording_mode or AIConfig.CV_QUALITY_DEFAULT_REWORDING_MODE or "minimal")
+        .strip()
+        .lower()
+    )
+    return "deep" if raw == "deep" else "minimal"
+
+
 async def generate_single_field_correction(
     cv_data: Dict[str, Any],
     field_path: str,
@@ -101,6 +110,7 @@ async def generate_single_field_correction(
     user_id: str,
     cv_id: str,
     db_session: Session,
+    rewording_mode: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Run single-field coaching for one description field and return one issue.
@@ -112,6 +122,7 @@ async def generate_single_field_correction(
         user_id: User id for logging.
         cv_id: CV id for logging.
         db_session: Session for AI usage logging.
+        rewording_mode: 'minimal' (objective edits) or 'deep' (legacy coaching).
 
     Returns:
         Tuple of (issue_dict, metadata). issue_dict has IssueSchema shape with
@@ -120,13 +131,20 @@ async def generate_single_field_correction(
     if not is_ai_enabled():
         raise RuntimeError("AI features are not enabled")
 
+    rewording_effective = _normalize_field_rewording_mode(rewording_mode)
+
     current_text = get_description_field_text(cv_data, field_path, item_id)
-    system_prompt = build_single_field_coach_system_prompt()
+    system_prompt = build_single_field_coach_system_prompt(rewording_effective)
     text_block = current_text if current_text else "(empty or missing)"
     user_prompt = f"TEXT TO IMPROVE:\n\n{text_block}"
 
     openrouter_preset = AIConfig.get_cv_quality_preset(True)
-    use_openrouter = AIConfig.AI_PROVIDER == "openrouter" and bool(openrouter_preset)
+    # Presets are treated as aligned with deep coaching; minimal uses inline prompts + default model.
+    use_openrouter = (
+        AIConfig.AI_PROVIDER == "openrouter"
+        and bool(openrouter_preset)
+        and rewording_effective == "deep"
+    )
 
     if use_openrouter:
         response, metadata = await call_openai_with_schema(

@@ -79,12 +79,27 @@ def _build_cv_quality_user_prompt(
     return prompt, id_mapping
 
 
+def _normalize_rewording_mode(correction_mode: str, rewording_mode: Optional[str]) -> str:
+    """Return minimal|deep for coaching; proofread ignores this (caller uses minimal for API consistency)."""
+    if correction_mode != "coaching":
+        return "minimal"
+    raw = (
+        (rewording_mode or AIConfig.CV_QUALITY_DEFAULT_REWORDING_MODE or "minimal")
+        .strip()
+        .lower()
+    )
+    if raw == "deep":
+        return "deep"
+    return "minimal"
+
+
 async def generate_cv_corrections_and_feedback(
     cv_data: Dict[str, Any],
     user_id: str,
     cv_id: str,
     db_session: Session,
     correction_mode: str = "proofread",
+    rewording_mode: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Generate comprehensive CV corrections and feedback.
@@ -98,13 +113,17 @@ async def generate_cv_corrections_and_feedback(
         cv_id: CV ID for logging
         db_session: Database session for AI usage logging
         correction_mode: 'proofread' for spelling/grammar only,
-                        'coaching' to also fix unprofessional content
+                        'coaching' for writing improvements / coaching
+        rewording_mode: When correction_mode is 'coaching', 'minimal' (objective edits)
+            or 'deep' (legacy full coach). Ignored for proofread.
 
     Returns:
         Tuple of (quality_data, metadata)
     """
     if not is_ai_enabled():
         raise RuntimeError("AI features are not enabled")
+
+    rewording_effective = _normalize_rewording_mode(correction_mode, rewording_mode)
 
     # Build CV payload (same string as current user message) and ID mapping
     prompt, id_mapping = _build_cv_quality_user_prompt(cv_data)
@@ -113,17 +132,22 @@ async def generate_cv_corrections_and_feedback(
     cv_variable = AIConfig.CV_QUALITY_PROMPT_CV_VARIABLE
     is_coach = correction_mode == "coaching"
     # Prompt-by-ID (dashboard prompts) is OpenAI-only; OpenRouter uses presets or inline.
+    # Dashboard coach prompts are treated as deep mode; minimal coaching always uses inline prompts.
     prompt_id_for_mode = (
         AIConfig.OPENAI_CV_QUALITY_COACH_PROMPT_ID
         if is_coach
         else AIConfig.OPENAI_CV_QUALITY_PROMPT_ID
     )
-    use_openai_prompt_id = AIConfig.AI_PROVIDER == "openai" and bool(
-        prompt_id_for_mode and prompt_id_for_mode.strip()
+    use_openai_prompt_id = (
+        AIConfig.AI_PROVIDER == "openai"
+        and bool(prompt_id_for_mode and prompt_id_for_mode.strip())
+        and (not is_coach or rewording_effective == "deep")
     )
     openrouter_preset = AIConfig.get_cv_quality_preset(is_coach)
-    use_openrouter_preset = AIConfig.AI_PROVIDER == "openrouter" and bool(
-        openrouter_preset
+    use_openrouter_preset = (
+        AIConfig.AI_PROVIDER == "openrouter"
+        and bool(openrouter_preset)
+        and (not is_coach or rewording_effective == "deep")
     )
 
     try:
@@ -153,7 +177,10 @@ async def generate_cv_corrections_and_feedback(
                 text_format_schema=CV_CORRECTIONS_COACHING_FORMAT,
             )
         else:
-            system_prompt = build_system_prompt(correction_mode)
+            system_prompt = build_system_prompt(
+                correction_mode,
+                rewording_effective if is_coach else "minimal",
+            )
             response, metadata = await call_openai_with_schema(
                 system_prompt=system_prompt,
                 user_prompt=prompt,
@@ -178,6 +205,10 @@ async def generate_cv_corrections_and_feedback(
         timeline_gaps = analyze_timeline_gaps(cv_data)
         response["timeline_gaps"] = timeline_gaps
         response["correction_mode"] = correction_mode
+        if is_coach:
+            response["rewording_mode"] = rewording_effective
+        else:
+            response["rewording_mode"] = None
 
         response = CVQualityAnalysisResponseSchemaV2(**response).model_dump()
 

@@ -1,22 +1,26 @@
 """
 CV quality analysis system prompts.
 
-Public API: build_system_prompt(correction_mode) returns the system prompt
-for the given mode. User prompt (CV data) is built in cv_quality_service.
+Public API: build_system_prompt(correction_mode, rewording_mode) returns the
+system prompt for the given mode. User prompt (CV data) is built in
+cv_quality_service.
 
 Modes: proofread_mode (proofread), coach_mode (coaching).
+Rewording: for coaching only — minimal (objective) or deep (legacy coach).
 """
 
 from . import coach_mode
 from . import proofread_mode
 
 
-def build_system_prompt(correction_mode: str) -> str:
+def build_system_prompt(correction_mode: str, rewording_mode: str = "minimal") -> str:
     """
     Return the system prompt for the given correction_mode.
 
     Args:
         correction_mode: 'proofread' or 'coaching'
+        rewording_mode: When correction_mode is 'coaching', 'minimal' or 'deep'.
+            Ignored for proofread.
 
     Returns:
         Full system prompt string.
@@ -27,5 +31,5 @@ def build_system_prompt(correction_mode: str) -> str:
     if correction_mode == "proofread":
         return proofread_mode.build_proofread_mode_system_prompt()
     if correction_mode == "coaching":
-        return coach_mode.build_coach_mode_system_prompt()
+        return coach_mode.build_coach_mode_system_prompt(rewording_mode)
     raise ValueError(f"Unknown correction_mode: {correction_mode!r}")

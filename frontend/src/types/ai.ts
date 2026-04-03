@@ -432,6 +432,9 @@ export interface Issue {
   suggested?: string;
 }
 
+/** Coaching analysis: objective edits vs full career-coach rewording. */
+export type RewordingMode = 'minimal' | 'deep';
+
 /** Professional summary for cv_review_v2 (original_text + html_diff only). */
 export interface ProfessionalSummaryV2 {
   original_text: string;
@@ -454,6 +457,8 @@ export interface CVQualityAnalysisData {
   field_draft_histories?: Record<string, Issue[]>;
   /** Mode used to generate this analysis; only 'coaching' enables regenerate. */
   correction_mode?: 'proofread' | 'coaching';
+  /** Coaching only: minimal (objective edits) or deep (full coach). */
+  rewording_mode?: 'minimal' | 'deep' | null;
 }
 
 /** @deprecated Use CVQualityAnalysisData; kept for normalizer/summary component. */

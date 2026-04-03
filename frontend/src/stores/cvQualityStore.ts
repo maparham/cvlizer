@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand';
-import { aiService, type CorrectionMode } from '../services/ai';
+import { aiService, type CorrectionMode, type RewordingMode } from '../services/ai';
 import { Logger } from '../utils/logger';
 import { ErrorHandler } from '../utils/errorHandler';
 import { useNotificationStore } from '../packages/notifications/store';
@@ -129,6 +129,9 @@ interface CVQualityStore {
   currentAnalysisId: string | null;
   /** Mode of the in-progress analysis; used when resuming polling so loadingStep shows correctly. */
   currentCorrectionMode: CorrectionMode | null;
+  /** User-selected coaching rewording scope; synced from completed coaching analysis when present. */
+  rewordingMode: RewordingMode;
+  setRewordingMode: (mode: RewordingMode) => void;
   analysisLoading: boolean;
   analysisError: string | null;
   overallScore: number | null;
@@ -139,7 +142,11 @@ interface CVQualityStore {
   lastDismissedAt: number | null;
 
   // Actions
-  generateQualityAnalysis: (cvId: string, correctionMode?: CorrectionMode) => Promise<string | void>;
+  generateQualityAnalysis: (
+    cvId: string,
+    correctionMode?: CorrectionMode,
+    rewordingMode?: RewordingMode
+  ) => Promise<string | void>;
   updateQualityAnalysisStatus: (
     analysisId: string
   ) => Promise<CVQualityAnalysisResponse>;
@@ -179,6 +186,10 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
   currentCvId: null,
   currentAnalysisId: null,
   currentCorrectionMode: null,
+  rewordingMode: 'minimal',
+  setRewordingMode: (mode: RewordingMode) => {
+    set({ rewordingMode: mode });
+  },
   analysisLoading: false,
   analysisError: null,
   overallScore: null,
@@ -187,7 +198,12 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
   lastDismissedAt: null,
 
   // Generate quality analysis
-  generateQualityAnalysis: async (cvId: string, correctionMode: CorrectionMode = 'proofread') => {
+  generateQualityAnalysis: async (
+    cvId: string,
+    correctionMode: CorrectionMode = 'proofread',
+    rewordingModeArg?: RewordingMode
+  ) => {
+    const rewordingMode = rewordingModeArg ?? get().rewordingMode ?? 'minimal';
     set({
       analysisLoading: true,
       analysisError: null,
@@ -210,7 +226,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
         overallScore: null,
       });
 
-      const result = await aiService.createQualityAnalysis(cvId, correctionMode);
+      const result = await aiService.createQualityAnalysis(cvId, correctionMode, rewordingMode);
 
       if (!result || !result.analysis_id) {
         throw new Error('Invalid response from quality analysis API');
@@ -269,7 +285,14 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
         }
 
         const nextState = computeNextStateFromCompletion(analysis, stateSlice);
-        set(nextState);
+        const qd = analysis.quality_data;
+        const nextRewordingMode: RewordingMode =
+          qd?.correction_mode === 'coaching'
+            ? qd?.rewording_mode === 'deep'
+              ? 'deep'
+              : 'minimal'
+            : get().rewordingMode;
+        set({ ...nextState, rewordingMode: nextRewordingMode });
 
         if (
           nextState.proofreadScore != null &&
@@ -314,6 +337,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
         analysisError: null,
         analysisLoading: false,
         currentCorrectionMode: null,
+        rewordingMode: 'minimal',
       });
     }
 
@@ -334,6 +358,7 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
           qualityAnalysis: null,
           currentAnalysisId: null,
           currentCorrectionMode: null,
+          rewordingMode: 'minimal',
           analysisLoading: false,
           analysisError: null,
           overallScore: null,
@@ -393,11 +418,18 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
       }
 
       if (qualityData) {
+        const loadedRewordingMode: RewordingMode =
+          qualityData.correction_mode === 'coaching'
+            ? qualityData.rewording_mode === 'deep'
+              ? 'deep'
+              : 'minimal'
+            : get().rewordingMode;
         set({
           qualityAnalysis: qualityData,
           currentCvId: cvId,
           currentAnalysisId: analysis.id,
           currentCorrectionMode: null,
+          rewordingMode: loadedRewordingMode,
           analysisLoading: false,
           analysisError: analysis.generation_error || null,
           overallScore: analysis.overall_quality_score ?? null,

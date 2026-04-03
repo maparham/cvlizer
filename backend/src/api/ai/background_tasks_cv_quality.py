@@ -15,6 +15,7 @@ def cv_quality_analysis_sync(
     user_id: str,
     cv_id: str,
     correction_mode: str = "proofread",
+    rewording_mode: str = "minimal",
 ):
     """
     Synchronous CV quality analysis task.
@@ -27,6 +28,7 @@ def cv_quality_analysis_sync(
         user_id: User ID for logging
         cv_id: CV ID for logging
         correction_mode: 'proofread' or 'coaching'
+        rewording_mode: When coaching: 'minimal' or 'deep' (ignored for proofread)
     """
     from src.services.ai_service.cv_quality_service import (
         generate_cv_corrections_and_feedback,
@@ -40,7 +42,12 @@ def cv_quality_analysis_sync(
         # Generate corrections and feedback via AI
         quality_data, metadata = loop.run_until_complete(
             generate_cv_corrections_and_feedback(
-                cv_data, user_id, cv_id, db, correction_mode
+                cv_data,
+                user_id,
+                cv_id,
+                db,
+                correction_mode,
+                rewording_mode if correction_mode == "coaching" else None,
             )
         )
 
@@ -106,6 +113,7 @@ async def cv_quality_analysis_background(
     user_id: str,
     cv_id: str,
     correction_mode: str = "proofread",
+    rewording_mode: str = "minimal",
 ):
     """
     Background task wrapper for CV quality analysis.
@@ -116,6 +124,7 @@ async def cv_quality_analysis_background(
         user_id: User ID
         cv_id: CV ID
         correction_mode: 'proofread' or 'coaching'
+        rewording_mode: When coaching: 'minimal' or 'deep'
     """
     await run_task_in_background(
         analysis_id,
@@ -125,4 +134,5 @@ async def cv_quality_analysis_background(
         user_id,
         cv_id,
         correction_mode,
+        rewording_mode,
     )

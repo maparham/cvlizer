@@ -5,7 +5,7 @@ Defines strict validation for all quality analysis data structures.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -238,6 +238,11 @@ class CVQualityAnalysisResponseSchemaV2(BaseModel):
         default=None,
         description="'proofread' or 'coaching'; frontend gates retry/history on coaching",
     )
+    # Coaching only: minimal (objective edits) or deep (legacy coach). Null for proofread or legacy rows.
+    rewording_mode: Optional[Literal["minimal", "deep"]] = Field(
+        default=None,
+        description="When correction_mode is coaching: minimal or deep rewording scope",
+    )
 
 
 class SingleIssueResponseSchema(BaseModel):
@@ -294,6 +299,11 @@ class CVQualityAnalysisCreateRequestSchema(BaseModel):
         description="Correction mode: 'proofread' for spelling/grammar only, "
         "'coaching' to also fix unprofessional content",
     )
+    rewording_mode: str = Field(
+        default="minimal",
+        pattern="^(minimal|deep)$",
+        description="When correction_mode is coaching: 'minimal' objective edits or 'deep' full coach",
+    )
 
 
 class CVQualityAnalysisUpdateSchema(BaseModel):
@@ -345,6 +355,11 @@ class FieldRetryRequestSchema(BaseModel):
     item_id: Optional[str] = Field(
         default=None,
         description="Item ID for work_experience or education list items",
+    )
+    rewording_mode: str = Field(
+        default="minimal",
+        pattern="^(minimal|deep)$",
+        description="Align single-field retry with full analysis: minimal or deep rewording",
     )
 
 

@@ -9,6 +9,11 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
@@ -20,7 +25,7 @@ import { StepButton } from './StepButton';
 import { Step3Button, getStep3TooltipTitle } from './Step3Button';
 import { useTypewriterMessages } from '../../../hooks/useTypewriterMessages';
 import { useLoadingStep } from '../../../hooks/useLoadingStep';
-import type { CorrectionMode } from '../../../services/ai';
+import type { CorrectionMode, RewordingMode } from '../../../services/ai';
 
 const PROOFREAD_LOADING_MESSAGES = [
   'Checking spelling',
@@ -40,7 +45,7 @@ const LABEL_PROOFREAD = 'Fix spelling and grammar';
 const LABEL_COACHING = 'Improve writing style';
 
 const DESC_PROOFREAD = 'Correct typos, grammar, and punctuation only.';
-const DESC_COACHING = 'Rewords unprofessional language and improves clarity and impact.';
+const DESC_COACHING = 'Minimal: light edits. Deep: stronger tone and impact.';
 
 const PROOFREAD_MIN_WIDTH_CH = Math.max(
   LABEL_PROOFREAD.length,
@@ -111,7 +116,8 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
   const { overallScore, analysisLoading, analysisError, currentCorrectionMode } =
     useScopedQualityState(cvId);
 
-  const { generateQualityAnalysis, clearAnalysisError } = useCVQualityStore();
+  const { generateQualityAnalysis, clearAnalysisError, rewordingMode, setRewordingMode } =
+    useCVQualityStore();
   const { addTask, activeTasks } = useAITaskPollingContext();
   const isMountedRef = useRef(true);
 
@@ -142,9 +148,17 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
     };
   }, []);
 
+  const handleRewordingChange = (event: SelectChangeEvent<RewordingMode>) => {
+    setRewordingMode(event.target.value as RewordingMode);
+  };
+
   const handleAnalyze = async (correctionMode: CorrectionMode) => {
     try {
-      const analysisId = await generateQualityAnalysis(cvId, correctionMode);
+      const analysisId = await generateQualityAnalysis(
+        cvId,
+        correctionMode,
+        correctionMode === 'coaching' ? rewordingMode : undefined
+      );
       if (!isMountedRef.current) return;
       if (analysisId) {
         addTask({
@@ -152,7 +166,10 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
           type: 'cv_quality_analysis',
           cvId,
           isGenerating: true,
-          data: { correctionMode },
+          data: {
+            correctionMode,
+            ...(correctionMode === 'coaching' ? { rewordingMode } : {}),
+          },
         });
       }
     } catch {
@@ -210,17 +227,50 @@ export const CVQualityPanel: React.FC<CVQualityPanelProps> = ({
       )}
 
       {subTabIndex === 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <StepButton
-            label={LABEL_COACHING}
-            loadingText={coachingLoadingText}
-            isLoading={analysisLoading && loadingStep === 2}
-            disabled={anyStepLoading}
-            onClick={() => handleAnalyze('coaching')}
-            icon={<EditNoteIcon />}
-            minWidthCh={COACHING_MIN_WIDTH_CH}
-          />
-        </Box>
+        <>
+          <Box sx={{ maxWidth: 320, mx: 'auto', mb: 2 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id={`cv-quality-rewording-label-${cvId}`}>Rewording style</InputLabel>
+              <Select<RewordingMode>
+                labelId={`cv-quality-rewording-label-${cvId}`}
+                label="Rewording style"
+                value={rewordingMode}
+                onChange={handleRewordingChange}
+                disabled={anyStepLoading}
+              >
+                <MenuItem value="minimal">
+                  <Tooltip
+                    title="Improves grammar, clarity, and structure without reinterpreting your tone or intent. Best for an honest resume in your own words."
+                    placement="left"
+                    enterDelay={400}
+                  >
+                    <span style={{ display: 'block', width: '100%' }}>Minimal rewording</span>
+                  </Tooltip>
+                </MenuItem>
+                <MenuItem value="deep">
+                  <Tooltip
+                    title="Stronger edits: tone, impact, and coaching-style suggestions—similar to the previous default behavior."
+                    placement="left"
+                    enterDelay={400}
+                  >
+                    <span style={{ display: 'block', width: '100%' }}>Deep rewording</span>
+                  </Tooltip>
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <StepButton
+              label={LABEL_COACHING}
+              loadingText={coachingLoadingText}
+              isLoading={analysisLoading && loadingStep === 2}
+              disabled={anyStepLoading}
+              onClick={() => handleAnalyze('coaching')}
+              icon={<EditNoteIcon />}
+              minWidthCh={COACHING_MIN_WIDTH_CH}
+            />
+          </Box>
+        </>
       )}
 
       {subTabIndex === 2 && showStep3 && step3Props && (
