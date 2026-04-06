@@ -55,6 +55,7 @@ interface CVsCardProps {
   onDuplicate: (cv: CV) => void;
   onTitleSave: (cv: CV, newTitle: string) => Promise<void>;
   onDownload: (cv: CV) => void;
+  onDownloadOriginal: (cv: CV) => void;
   onFileSelected: (file: File) => void;
   onValidationError?: (error: string) => void;
   /** Refetch CV list after share changes from table view Shared chip */
@@ -80,6 +81,7 @@ const CVsCard: React.FC<CVsCardProps> = ({
   onDuplicate,
   onTitleSave,
   onDownload,
+  onDownloadOriginal,
   onFileSelected,
   onValidationError,
   onSharingMutation,
@@ -325,6 +327,7 @@ const CVsCard: React.FC<CVsCardProps> = ({
               onDuplicate={onDuplicate}
               onTitleSave={onTitleSave}
               onDownload={onDownload}
+              onDownloadOriginal={onDownloadOriginal}
               onFileSelected={onFileSelected}
               onValidationError={onValidationError}
               onSharingMutation={onSharingMutation}

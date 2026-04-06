@@ -26,6 +26,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useCVStore } from "../stores/cv";
 import { useAIStore } from "../stores/ai";
 import { useUIStore } from "../stores/uiStore";
+import axios from "axios";
 import { useNotifications } from "../packages/notifications";
 import { cvApi } from "../services/api";
 import { useActivityLogger } from "../hooks/useActivityLogger";
@@ -322,6 +323,22 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleDownloadOriginal = async (cv: CV) => {
+    try {
+      await cvApi.downloadCV(cv.id, cv.original_filename || "cv");
+      showSuccess("Success", "Original file downloaded");
+    } catch (e: unknown) {
+      let detail = "Unable to download the original file";
+      if (axios.isAxiosError(e)) {
+        const d = e.response?.data?.detail;
+        if (typeof d === "string") {
+          detail = d;
+        }
+      }
+      showError("Download failed", detail);
+    }
+  };
+
   const handleDelete = (cv: CV) => {
     setCvToDelete(cv);
     setDeleteDialogOpen(true);
@@ -391,6 +408,7 @@ const Dashboard: React.FC = () => {
             onDuplicate={handleDuplicate}
             onTitleSave={handleTitleSave}
             onDownload={handleDownload}
+            onDownloadOriginal={handleDownloadOriginal}
             onFileSelected={handlePlaceholderFileSelected}
             onValidationError={(error) => showError("Invalid file", error)}
             onSharingMutation={() => void fetchCVs()}
@@ -404,6 +422,7 @@ const Dashboard: React.FC = () => {
                 onDuplicate={handleDuplicate}
                 onTitleSave={handleTitleSave}
                 onDownload={handleDownload}
+                onDownloadOriginal={handleDownloadOriginal}
                 onSharingMutation={() => void fetchCVs()}
               />
             ))}

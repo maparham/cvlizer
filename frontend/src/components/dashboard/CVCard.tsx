@@ -57,6 +57,7 @@ interface CVCardProps {
   onDuplicate: (cv: CV) => void;
   onTitleSave: (cv: CV, newTitle: string) => Promise<void>;
   onDownload: (cv: CV) => void;
+  onDownloadOriginal: (cv: CV) => void;
   /** Refetch CV list after share enable/disable/regenerate */
   onSharingMutation?: () => void;
 }
@@ -68,6 +69,7 @@ const CVCard: React.FC<CVCardProps> = ({
   onDuplicate,
   onTitleSave,
   onDownload,
+  onDownloadOriginal,
   onSharingMutation,
 }) => {
   const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
@@ -380,6 +382,7 @@ const CVCard: React.FC<CVCardProps> = ({
               onDuplicate={onDuplicate}
               onRename={(cv, newTitle) => onTitleSave(cv, newTitle)}
               onDownload={onDownload}
+              onDownloadOriginal={onDownloadOriginal}
             />
           </Stack>
         </CardActions>

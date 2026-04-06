@@ -19,6 +19,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import EditIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ShareIcon from "@mui/icons-material/Share";
 import DuplicateIcon from "@mui/icons-material/FileCopy";
@@ -132,6 +133,7 @@ interface CVsTableProps {
   onDuplicate: (cv: CV) => void;
   onTitleSave: (cv: CV, newTitle: string) => Promise<void>;
   onDownload: (cv: CV) => void;
+  onDownloadOriginal: (cv: CV) => void;
   onFileSelected: (file: File) => void;
   onValidationError?: (error: string) => void;
   onSharingMutation?: () => void;
@@ -147,6 +149,7 @@ const CVsTable: React.FC<CVsTableProps> = ({
   onDuplicate,
   onTitleSave,
   onDownload,
+  onDownloadOriginal,
   onFileSelected,
   onValidationError,
   onSharingMutation,
@@ -304,9 +307,20 @@ const CVsTable: React.FC<CVsTableProps> = ({
                   </span>
                 </Tooltip>
                 {isUploadedCV(cv) && !cv.parse_error && (
-                  <Tooltip title="Download">
+                  <Tooltip title="Export PDF">
                     <IconButton size="small" onClick={() => onDownload(cv)}>
                       <DownloadIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {isUploadedCV(cv) && (
+                  <Tooltip title="Download original file">
+                    <IconButton
+                      size="small"
+                      onClick={() => onDownloadOriginal(cv)}
+                      data-testid={`download-original-cv-button-${cv.id}`}
+                    >
+                      <InsertDriveFileIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 )}

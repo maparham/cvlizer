@@ -2,7 +2,7 @@
  * CV Quick Actions Component
  *
  * This module provides a context menu and 3-dot menu for CV cards with quick actions
- * including Duplicate, Rename, Delete, and Export PDF. It supports both
+ * including Duplicate, Rename, Export PDF, and Download original file. It supports both
  * right-click context menus and 3-dot button menus for better accessibility.
  *
  * Key responsibilities:
@@ -31,19 +31,24 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DuplicateIcon from "@mui/icons-material/ContentCopy";
 import RenameIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import CloseIcon from "@mui/icons-material/Close";
 import { CV } from "../../types";
 import { commonStyles } from "../../styles/commonStyles";
 import MenuItems, { MenuItemData } from "../common/MenuItems";
 import { useDialogState, useMenuState } from "../../hooks/useDialogState";
+import { isUploadedCV } from "../../utils/dashboardUtils";
 
 export interface CVQuickActionsProps {
   cv: CV;
   onDuplicate: (_cv: CV) => void;
   onRename: (_cv: CV, _newName: string) => void;
   onDownload: (_cv: CV) => void;
+  /** Stored upload only; shown when `isUploadedCV(cv)`. */
+  onDownloadOriginal: (_cv: CV) => void;
   duplicating?: boolean;
   downloading?: boolean;
+  downloadingOriginal?: boolean;
 }
 
 const CVQuickActions: React.FC<CVQuickActionsProps> = ({
@@ -51,8 +56,10 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
   onDuplicate,
   onRename,
   onDownload,
+  onDownloadOriginal,
   duplicating = false,
   downloading = false,
+  downloadingOriginal = false,
 }) => {
   const { anchorEl, openMenu, closeMenu, isOpen } = useMenuState();
   const {
@@ -99,6 +106,11 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
     handleMenuClose();
   };
 
+  const handleDownloadOriginal = () => {
+    onDownloadOriginal(cv);
+    handleMenuClose();
+  };
+
   const handleRenameConfirm = () => {
     if (newName.trim() && newName !== cv.original_filename) {
       onRename(cv, newName.trim());
@@ -113,6 +125,7 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
   };
 
   const isError = Boolean(cv.parse_error);
+  const showOriginalDownload = isUploadedCV(cv);
 
   const menuItems: MenuItemData[] = [
     {
@@ -138,6 +151,18 @@ const CVQuickActions: React.FC<CVQuickActionsProps> = ({
       loading: downloading,
       testId: `download-cv-button-${cv.id}`,
     },
+    ...(showOriginalDownload
+      ? [
+          {
+            label: "Download original file",
+            icon: <InsertDriveFileIcon />,
+            onClick: handleDownloadOriginal,
+            disabled: downloadingOriginal,
+            loading: downloadingOriginal,
+            testId: `download-original-cv-button-${cv.id}`,
+          } satisfies MenuItemData,
+        ]
+      : []),
   ];
 
   return (
