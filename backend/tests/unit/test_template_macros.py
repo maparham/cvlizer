@@ -75,6 +75,7 @@ def test_personal_info_header_single_social_uses_three_columns():
     }
     out = _format_personal_info_header(pi, template_name="standard")
     assert out.count("\\begin{tabular}") == 1
+    assert "\\faLinkedin" in out or "\\faIcon{" in out
     social_line = next(l for l in out.splitlines() if "linkedin.com/in/onlysocial" in l)
     assert social_line.count(" & ") == 2
 
@@ -91,7 +92,7 @@ def test_second_row_social_left_packed_without_website():
     }
     out = _format_personal_info_header(pi, template_name="standard")
     row2 = out.split("\\\\[0.35ex]\n", 1)[1].split("\\\\")[0]
-    assert row2.strip().startswith("\\href")
+    assert "\\href" in row2
     assert row2.index("linkedin.com") < row2.index("github.com")
 
 

@@ -716,6 +716,19 @@ def _format_skills(skills: Dict[str, Any]) -> str:
     return "\\\\[0.3ex]\n".join(blocks)
 
 
+def _fa_pi_icon(icon_name: str) -> str:
+    """Small Font Awesome 5 solid icon snippet for personal info lines (fontawesome5 + pdflatex)."""
+    return f"{{\\small\\faIcon{{{icon_name}}}}}"
+
+
+def _fa_pi_brand_linkedin() -> str:
+    return "{\\small\\faLinkedin}"
+
+
+def _fa_pi_brand_github() -> str:
+    return "{\\small\\faGithub}"
+
+
 def _format_personal_info_header(
     pi: Dict[str, Any],
     template_name: str = "",
@@ -762,7 +775,7 @@ def _format_personal_info_header(
     website = pi.get("website_url", "")
     github = pi.get("github_url", "")
 
-    # Jake-style: compact header, no icons (template does not load fontawesome).
+    # Jake-style: compact header; Font Awesome icons (templates load fontawesome5).
     # Primary fields on one line; URLs on a second line so a lone link is not
     # concatenated onto phone/email (avoids an overly long single row).
     if template_name == "jake":
@@ -771,26 +784,29 @@ def _format_personal_info_header(
             if not academic_title
             else (
                 f"\\textbf{{\\Huge \\scshape {_tex_escape(full_name)}}}\\\\\n"
-                f"\\normalsize{{\\textnormal{{{_tex_escape(academic_title)}}}}}"
+                f"\\normalsize{{\\textnormal{{{_fa_pi_icon('graduation-cap')}~"
+                f"{_tex_escape(academic_title)}}}}}"
             )
         )
         primary_bits: list[str] = []
         if location:
-            primary_bits.append(location)
+            primary_bits.append(f"{_fa_pi_icon('map-marker-alt')}~{location}")
         if phone:
-            primary_bits.append(phone)
+            primary_bits.append(f"{_fa_pi_icon('phone')}~{phone}")
         if email:
             primary_bits.append(
+                f"{_fa_pi_icon('envelope')}~"
                 f"\\href{{mailto:{_href_url_safe(email)}}}{{\\underline{{{_tex_escape(email)}}}}}"
             )
         link_bits: list[str] = []
-        for url_val, label in [
-            (website, website),
-            (linkedin, linkedin),
-            (github, github),
-        ]:
-            if url_val:
-                link_bits.append(contact_link(url_val, label))
+        if website:
+            link_bits.append(f"{_fa_pi_icon('globe')}~{contact_link(website, website)}")
+        if linkedin:
+            link_bits.append(
+                f"{_fa_pi_brand_linkedin()}~{contact_link(linkedin, linkedin)}"
+            )
+        if github:
+            link_bits.append(f"{_fa_pi_brand_github()}~{contact_link(github, github)}")
 
         if not primary_bits and not link_bits:
             return f"\\begin{{center}}\n{name_line}\n\\end{{center}}\n"
@@ -816,25 +832,32 @@ def _format_personal_info_header(
     # left-to-right (missing slots do not leave a leading empty column).
     email_cell = ""
     if email:
-        email_cell = f"\\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
-    phone_cell = phone if pi.get("phone") else ""
+        email_cell = (
+            f"{_fa_pi_icon('envelope')}~"
+            f"\\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
+        )
+    phone_cell = f"{_fa_pi_icon('phone')}~{phone}" if pi.get("phone") else ""
 
-    location_cell = location if location else ""
+    location_cell = f"{_fa_pi_icon('map-marker-alt')}~{location}" if location else ""
 
     has_primary = bool(location_cell or email_cell or phone_cell)
 
     website_href = ""
     if website:
         wurl = _href_url_safe(ensure_protocol(website))
-        website_href = f"\\href{{{wurl}}}{{{_tex_escape(website)}}}"
+        website_href = (
+            f"{_fa_pi_icon('globe')}~\\href{{{wurl}}}{{{_tex_escape(website)}}}"
+        )
     linkedin_href = ""
     if linkedin:
         lurl = _href_url_safe(ensure_protocol(linkedin))
-        linkedin_href = f"\\href{{{lurl}}}{{{_tex_escape(linkedin)}}}"
+        linkedin_href = (
+            f"{_fa_pi_brand_linkedin()}~\\href{{{lurl}}}{{{_tex_escape(linkedin)}}}"
+        )
     github_href = ""
     if github:
         gurl = _href_url_safe(ensure_protocol(github))
-        github_href = f"\\href{{{gurl}}}{{{_tex_escape(github)}}}"
+        github_href = f"{_fa_pi_brand_github()}~\\href{{{gurl}}}{{{_tex_escape(github)}}}"
     has_social_row = bool(website_href or linkedin_href or github_href)
 
     # Pack links left (website, then LinkedIn, then GitHub) so missing fields do
@@ -900,7 +923,8 @@ def _format_personal_info_header(
         header = (
             f"\\begin{{center}}\n"
             f"\\LARGE\\textbf{{{_tex_escape(full_name)}}}\\\\\n"
-            f"\\normalsize{{\\textnormal{{{_tex_escape(academic_title)}}}}}\n"
+            f"\\normalsize{{\\textnormal{{{_fa_pi_icon('graduation-cap')}~"
+            f"{_tex_escape(academic_title)}}}}}\n"
             f"\\end{{center}}\n"
         )
     else:
