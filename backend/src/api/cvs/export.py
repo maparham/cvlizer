@@ -25,6 +25,11 @@ from src.services.cv.latex_export_service import (
     generate_cv_latex,
     is_latex_available,
 )
+from src.services.cv.pdf_service_client import (
+    PDFServiceError,
+    generate_pdf_via_service,
+    should_use_pdf_service,
+)
 from src.services.job_descriptions.job_description_service import (
     get_cv_ids_for_job_description,
     get_job_description_owned_by,
@@ -151,24 +156,38 @@ async def export_cv_pdf(
         },
     )
 
-    if not is_latex_available():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="LaTeX toolchain (pdflatex) not available on server",
-        )
+    use_pdf_service = should_use_pdf_service()
     profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
         cv.parsed_data
     )
     try:
-        tex_source = generate_cv_latex(
-            cv.parsed_data or {},
-            cv.original_filename or "My CV",
-            template_name=template_name,
-            profile_pic_path=profile_pic_path,
-            profile_pic_shape=profile_pic_shape,
-            profile_pic_size=profile_pic_size,
-        )
-        pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
+        if use_pdf_service:
+            pdf_bytes = await generate_pdf_via_service(
+                cv_data=cv.parsed_data or {},
+                cv_filename=cv.original_filename or "My CV",
+                template_name=template_name,
+                profile_pic_path=profile_pic_path,
+                profile_pic_shape=profile_pic_shape,
+                profile_pic_size=profile_pic_size,
+            )
+        else:
+            if not is_latex_available():
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="LaTeX toolchain (pdflatex) not available on server",
+                )
+
+            tex_source = generate_cv_latex(
+                cv.parsed_data or {},
+                cv.original_filename or "My CV",
+                template_name=template_name,
+                profile_pic_path=profile_pic_path,
+                profile_pic_shape=profile_pic_shape,
+                profile_pic_size=profile_pic_size,
+            )
+            pdf_bytes = compile_pdf_from_latex(
+                tex_source, profile_pic_path=profile_pic_path
+            )
         employer_suffix = _employer_suffix_for_filename(
             db, str(current_user.id), cv_id, job_description_id
         )
@@ -193,6 +212,13 @@ async def export_cv_pdf(
         )
 
         return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+    except PDFServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"PDF service unavailable: {str(e)}",
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -341,26 +367,39 @@ async def export_cv_pdf_public(
         },
     )
 
-    if not is_latex_available():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="LaTeX toolchain (pdflatex) not available on server",
-        )
-
+    use_pdf_service = should_use_pdf_service()
     profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
         cv.parsed_data
     )
 
     try:
-        tex_source = generate_cv_latex(
-            cv.parsed_data or {},
-            cv.original_filename or "My CV",
-            template_name=template_name,
-            profile_pic_path=profile_pic_path,
-            profile_pic_shape=profile_pic_shape,
-            profile_pic_size=profile_pic_size,
-        )
-        pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
+        if use_pdf_service:
+            pdf_bytes = await generate_pdf_via_service(
+                cv_data=cv.parsed_data or {},
+                cv_filename=cv.original_filename or "My CV",
+                template_name=template_name,
+                profile_pic_path=profile_pic_path,
+                profile_pic_shape=profile_pic_shape,
+                profile_pic_size=profile_pic_size,
+            )
+        else:
+            if not is_latex_available():
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="LaTeX toolchain (pdflatex) not available on server",
+                )
+
+            tex_source = generate_cv_latex(
+                cv.parsed_data or {},
+                cv.original_filename or "My CV",
+                template_name=template_name,
+                profile_pic_path=profile_pic_path,
+                profile_pic_shape=profile_pic_shape,
+                profile_pic_size=profile_pic_size,
+            )
+            pdf_bytes = compile_pdf_from_latex(
+                tex_source, profile_pic_path=profile_pic_path
+            )
         employer_suffix = _employer_suffix_for_filename(
             db, str(local_user.id), cv_id, job_description_id
         )
@@ -383,6 +422,13 @@ async def export_cv_pdf_public(
         )
 
         return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+    except PDFServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"PDF service unavailable: {str(e)}",
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

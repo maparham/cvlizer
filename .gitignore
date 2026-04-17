@@ -162,6 +162,9 @@ jspm_packages/
 # Optional eslint cache
 .eslintcache
 
+# Cloudflare Wrangler (repo root or monorepo); may contain account cache — never commit
+.wrangler/
+
 # Vite cache / timestamp artifacts
 frontend/vite.config.ts.timestamp-*.mjs
 

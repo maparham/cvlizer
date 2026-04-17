@@ -22,6 +22,7 @@ import base64
 import io
 import logging
 from typing import Dict, Any
+
 from PIL import Image
 
 from src.services.platform.file_service import get_profile_picture_settings
@@ -29,6 +30,11 @@ from src.services.cv.latex_export_service import (
     generate_cv_latex,
     compile_pdf_from_latex,
     is_latex_available,
+)
+from src.services.cv.pdf_service_client import (
+    PDFServiceError,
+    generate_pdf_via_service,
+    should_use_pdf_service,
 )
 from src.services.shared.template_loader import (
     get_default_template,
@@ -198,8 +204,8 @@ async def generate_cv_preview_image(
         RuntimeError: If LaTeX is not available or image conversion fails
         ImportError: If required image conversion libraries are not available
     """
-    # Check if LaTeX is available
-    if not is_latex_available():
+    # Check if PDF generation is available (service or local LaTeX).
+    if not should_use_pdf_service() and not is_latex_available():
         raise RuntimeError("LaTeX (pdflatex) is not available on the server")
 
     # Resolve template: default from config, else "standard" if available
@@ -214,27 +220,41 @@ async def generate_cv_preview_image(
     )
 
     try:
-        # Generate LaTeX from parsed data
-        logger.info("Generating LaTeX from CV data for preview")
-        latex_source = generate_cv_latex(
-            parsed_cv_data,
-            title,
-            template_name,
-            profile_pic_path=profile_pic_path,
-            profile_pic_shape=profile_pic_shape,
-            profile_pic_size=profile_pic_size,
-        )
+        if should_use_pdf_service():
+            logger.info("Generating preview PDF via PDF service")
+            pdf_bytes = await generate_pdf_via_service(
+                cv_data=parsed_cv_data,
+                cv_filename=title,
+                template_name=template_name,
+                profile_pic_path=profile_pic_path,
+                profile_pic_shape=profile_pic_shape,
+                profile_pic_size=profile_pic_size,
+            )
+        else:
+            # Generate LaTeX from parsed data
+            logger.info("Generating LaTeX from CV data for preview")
+            latex_source = generate_cv_latex(
+                parsed_cv_data,
+                title,
+                template_name,
+                profile_pic_path=profile_pic_path,
+                profile_pic_shape=profile_pic_shape,
+                profile_pic_size=profile_pic_size,
+            )
 
-        # Compile LaTeX to PDF
-        logger.info("Compiling LaTeX to PDF for preview")
-        pdf_bytes = compile_pdf_from_latex(
-            latex_source, profile_pic_path=profile_pic_path
-        )
+            # Compile LaTeX to PDF
+            logger.info("Compiling LaTeX to PDF for preview")
+            pdf_bytes = compile_pdf_from_latex(
+                latex_source, profile_pic_path=profile_pic_path
+            )
 
         # Convert PDF to image using extracted function
         logger.info("Converting PDF to preview image")
         return convert_pdf_to_preview_image(pdf_bytes, max_width)
 
+    except PDFServiceError as e:
+        logger.error(f"Failed to generate CV preview image via PDF service: {str(e)}")
+        raise RuntimeError(f"Failed to generate CV preview image: {str(e)}")
     except Exception as e:
         logger.error(f"Failed to generate CV preview image: {str(e)}")
         raise RuntimeError(f"Failed to generate CV preview image: {str(e)}")
@@ -247,8 +267,9 @@ def is_preview_generation_available() -> bool:
     Returns:
         True if both LaTeX and at least one image conversion library are available
     """
+    pdf_generation_available = should_use_pdf_service() or is_latex_available()
     return (
-        is_latex_available()
+        pdf_generation_available
         and (PYMUPDF_AVAILABLE or PDF2IMAGE_AVAILABLE)
         and PILLOW_AVAILABLE
     )

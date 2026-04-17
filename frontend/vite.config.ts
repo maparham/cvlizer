@@ -5,6 +5,8 @@ import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 
 import { cloudflare } from "@cloudflare/vite-plugin";
 
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || "http://localhost:8000";
+
 /** Build-time replacement for public URL in index.html (og:url) and sitemap.xml. Set VITE_PUBLIC_URL per deployment. When unset, the og:url meta tag and sitemap are omitted. */
 function replacePublicUrl() {
   const publicUrl = process.env.VITE_PUBLIC_URL
@@ -41,10 +43,10 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
-    allowedHosts: ['demo.maparham.eu'],
+    allowedHosts: ['demo.maparham.eu', 'tunnel.rahkar.pro'],
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: apiProxyTarget,
         changeOrigin: true,
         secure: false,
       },

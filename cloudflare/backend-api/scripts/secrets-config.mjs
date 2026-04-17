@@ -10,6 +10,7 @@ export const WORKER_SECRET_ENV_KEYS = new Set([
   "OPENAI_API_KEY",
   "OPENROUTER_API_KEY",
   "IMPERSONATION_SECRET_KEY",
+  "PDF_SERVICE_AUTH_TOKEN",
 ]);
 
 /**
@@ -38,6 +39,10 @@ export function getRequiredSecretKeys(raw) {
     keys.push("OPENROUTER_API_KEY");
   } else {
     keys.push("OPENAI_API_KEY");
+  }
+  const usePdfService = (raw.USE_PDF_SERVICE || "false").toLowerCase().trim() === "true";
+  if (usePdfService) {
+    keys.push("PDF_SERVICE_AUTH_TOKEN");
   }
   return keys;
 }

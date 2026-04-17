@@ -191,6 +191,18 @@ async def startup_event():
             raise RuntimeError(
                 "CLERK_SECRET_KEY is missing or placeholder in non-dev mode"
             )
+        use_pdf_service = os.getenv("USE_PDF_SERVICE", "false").strip().lower() == "true"
+        if use_pdf_service:
+            pdf_service_url = os.getenv("PDF_SERVICE_URL", "").strip()
+            pdf_service_auth_token = os.getenv("PDF_SERVICE_AUTH_TOKEN", "").strip()
+            if not pdf_service_url:
+                raise RuntimeError(
+                    "PDF_SERVICE_URL is required in non-dev mode when USE_PDF_SERVICE=true"
+                )
+            if not pdf_service_auth_token:
+                raise RuntimeError(
+                    "PDF_SERVICE_AUTH_TOKEN is required in non-dev mode when USE_PDF_SERVICE=true"
+                )
     try:
         # Database initialization and table creation
         from src.database import create_tables

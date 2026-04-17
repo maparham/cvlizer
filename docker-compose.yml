@@ -1,26 +1,46 @@
-# Development stack: frontend 3000, backend 8000, hot reload. Prod uses docker-compose.prod.yml on 80/443.
-# Run: docker compose up
-name: cvlator-dev
-version: '3.8'
+# Local stack aligned with Cloudflare container images.
+# Run: docker compose up -d --build
+name: cvlator-local
 
 services:
+  pdf-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.pdf-service
+    env_file: .env.prod
+    environment:
+      PDF_SERVICE_AUTH_HEADER: X-PDF-Service-Token
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
   backend:
-    build: ./backend
-    env_file: .env.dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.wrangler
+    env_file: .env.prod
+    environment:
+      USE_PDF_SERVICE: "true"
+      PDF_SERVICE_URL: http://pdf-service:8001
+      PDF_SERVICE_AUTH_HEADER: X-PDF-Service-Token
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
       - ./uploads:/app/uploads
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - pdf-service
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
+    env_file: .env.prod
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_API_BASE_URL=/api
+      - VITE_API_PROXY_TARGET=http://backend:8000
+      - NPM_CONFIG_INCLUDE_OPTIONAL=true
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run dev
+    command: sh -c "npm install --include=optional && npm run dev -- --host 0.0.0.0 --port 3000"

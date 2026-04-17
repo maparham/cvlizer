@@ -31,6 +31,12 @@ from src.services.cv.latex_export_service import (
     is_latex_available,
 )
 from src.services.cv.latex_export_service import generate_cv_latex
+from src.services.cv.pdf_service_client import (
+    PDFServiceError,
+    generate_pdf_via_service_sync,
+    generate_preview_via_service_sync,
+    should_use_pdf_service,
+)
 from src.services.platform.preview_service import (
     generate_blurred_preview,
     is_preview_available,
@@ -127,29 +133,83 @@ def generate_preview_sync(cv_id: str, template_name: str, user_id: str) -> None:
             profile_pic_size,
         ) = get_profile_picture_settings(cv.parsed_data)
 
-        tex_source = generate_cv_latex(
-            cv.parsed_data or {},
-            cv.original_filename or "My CV",
-            template_name=template_name,
-            profile_pic_path=profile_pic_path,
-            profile_pic_shape=profile_pic_shape,
-            profile_pic_size=profile_pic_size,
-        )
+        use_pdf_service = should_use_pdf_service()
+        if use_pdf_service:
+            try:
+                pdf_bytes = generate_pdf_via_service_sync(
+                    cv_data=cv.parsed_data or {},
+                    cv_filename=cv.original_filename or "My CV",
+                    template_name=template_name,
+                    profile_pic_path=profile_pic_path,
+                    profile_pic_shape=profile_pic_shape,
+                    profile_pic_size=profile_pic_size,
+                )
+            except PDFServiceError as service_error:
+                raise RuntimeError(
+                    f"PDF service unavailable: {service_error}"
+                ) from service_error
+        else:
+            tex_source = generate_cv_latex(
+                cv.parsed_data or {},
+                cv.original_filename or "My CV",
+                template_name=template_name,
+                profile_pic_path=profile_pic_path,
+                profile_pic_shape=profile_pic_shape,
+                profile_pic_size=profile_pic_size,
+            )
+            pdf_bytes = compile_pdf_from_latex(
+                tex_source, profile_pic_path=profile_pic_path
+            )
 
-        pdf_bytes = compile_pdf_from_latex(tex_source, profile_pic_path=profile_pic_path)
+        if use_pdf_service:
+            conversion_result = generate_preview_via_service_sync(
+                pdf_bytes,
+                blur_radius=0,
+            )
+            conversion_status = conversion_result.get("status")
+            conversion_error = conversion_result.get("error")
+            preview_pages = conversion_result.get("pages")
 
-        if is_preview_available():
-            preview_pages = generate_blurred_preview(pdf_bytes, blur_radius=0)
-            if preview_pages:
+            if conversion_status == "converted" and preview_pages:
                 write_preview_pages(job_id, preview_pages)
                 _complete_preview_images(job_id, len(preview_pages))
             else:
-                logger.error("Failed to generate blurred preview - returned None")
-                _fail_preview_job(job_id, "Failed to generate preview")
+                logger.warning(
+                    "Remote preview conversion %s for %s; falling back to PDF. %s",
+                    conversion_status,
+                    job_id,
+                    conversion_error or "No additional error details",
+                )
+                write_preview_pdf_fallback(job_id, pdf_bytes)
+                _complete_preview_pdf(job_id)
         else:
-            logger.warning("Preview service not available, falling back to PDF")
-            write_preview_pdf_fallback(job_id, pdf_bytes)
-            _complete_preview_pdf(job_id)
+            if is_preview_available():
+                preview_pages = generate_blurred_preview(pdf_bytes, blur_radius=0)
+                if preview_pages is None:
+                    logger.warning(
+                        "Local preview conversion failed for %s; falling back to PDF",
+                        job_id,
+                    )
+                    write_preview_pdf_fallback(job_id, pdf_bytes)
+                    _complete_preview_pdf(job_id)
+                elif preview_pages:
+                    write_preview_pages(job_id, preview_pages)
+                    _complete_preview_images(job_id, len(preview_pages))
+                else:
+                    logger.warning(
+                        "Local preview conversion returned no pages for %s; "
+                        "falling back to PDF",
+                        job_id,
+                    )
+                    write_preview_pdf_fallback(job_id, pdf_bytes)
+                    _complete_preview_pdf(job_id)
+            else:
+                logger.warning(
+                    "Local preview conversion unavailable for %s; falling back to PDF",
+                    job_id,
+                )
+                write_preview_pdf_fallback(job_id, pdf_bytes)
+                _complete_preview_pdf(job_id)
     except Exception as e:
         logger.error(
             "Preview generation failed for CV %s template %s: %s",
@@ -186,7 +246,7 @@ async def start_preview_generation(
 
     job_id = f"{cv_id}_{template}"
 
-    if not is_latex_available():
+    if not should_use_pdf_service() and not is_latex_available():
         logger.error("LaTeX toolchain not available")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

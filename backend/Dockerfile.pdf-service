@@ -1,0 +1,38 @@
+# Dedicated PDF generation container for Cloudflare.
+# Includes full LaTeX stack while keeping the main API image slim.
+
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+COPY requirements.pdf-service.txt .
+RUN pip install --no-cache-dir -r requirements.pdf-service.txt
+
+# Install LaTeX and Poppler toolchain required by latex_export_service.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    texlive-latex-base \
+    texlive-fonts-recommended \
+    texlive-latex-recommended \
+    texlive-latex-extra \
+    texlive-fonts-extra \
+    lmodern \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only modules needed for PDF generation and optional /convert-preview.
+COPY src/api/pdf_service_app.py /app/src/api/pdf_service_app.py
+COPY src/services/cv/latex_export_service.py /app/src/services/cv/latex_export_service.py
+COPY src/services/platform/preview_service.py /app/src/services/platform/preview_service.py
+COPY src/services/shared/template_loader.py /app/src/services/shared/template_loader.py
+COPY src/templates /app/src/templates
+
+# Ensure Python package imports work consistently.
+RUN mkdir -p /app/src /app/src/api /app/src/services /app/src/services/cv \
+    /app/src/services/platform /app/src/services/shared \
+    && touch /app/src/__init__.py /app/src/api/__init__.py /app/src/services/__init__.py \
+    /app/src/services/cv/__init__.py /app/src/services/platform/__init__.py \
+    /app/src/services/shared/__init__.py
+
+EXPOSE 8001
+
+CMD ["uvicorn", "src.api.pdf_service_app:app", "--host", "0.0.0.0", "--port", "8001"]

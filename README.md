@@ -84,20 +84,13 @@ npm run dev
 
 ### 4. Docker Setup (Alternative)
 
-**Development** (frontend http://localhost:3000, backend http://localhost:8000, hot reload):
+**Local stack** (Compose project `cvlator-local`: frontend on http://localhost:3000, backend 8000, PDF service 8001; images aligned with Cloudflare container builds). Prepare `.env.prod` (see repo root), then:
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-**Production on the same machine** (app on http://localhost:80; HTTPS on 443 if you add certs in `ssl/` — see `ssl/README`):
-
-```bash
-# Edit .env.prod with real secrets, then run with --env-file so build args (e.g. VITE_PUBLIC_URL) are set:
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-```
-
-Dev and prod use separate Compose projects (`cvlator-dev` / `cvlator-prod`) and separate env files (`.env.dev` / `.env.prod`) and data (prod uses Docker volumes).
+Production is deployed via **Cloudflare** (Worker + containers + static frontend); see **Deployment** below.
 
 ## 🔧 Configuration
 
@@ -247,20 +240,17 @@ frontend/
    - Deploy to CDN or static hosting
    - Configure environment variables
 
-3. **Docker Deployment**:
-   ```bash
-   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
-   ```
-
-4. **Cloudflare Worker + Container (FastAPI)**
+3. **Cloudflare Worker + Container (FastAPI)**
    Deploy behind a Worker using Wrangler ([Containers get started](https://developers.cloudflare.com/containers/get-started/)):
    ```bash
    cd cloudflare/backend-api && npm install && npm run deploy
    ```
-   - **`backend/Dockerfile.wrangler`**: minimal image (pip only, no TeX/poppler) so builds fit tight **Docker Desktop disk**; PDF/LaTeX features need the full **`backend/Dockerfile`** once disk allows.
-   - **`wrangler.jsonc`** points at `Dockerfile.wrangler` by default; change `image` to `../../backend/Dockerfile` for the full stack.
+   - The `cvlator-backend` Worker runs **two containers**:
+     - `BackendContainer` → `backend/Dockerfile.wrangler` (main API, slim image)
+     - `PDFServiceContainer` → `backend/Dockerfile.pdf-service` (LaTeX/PDF generation)
+   - PDF requests are routed internally through `https://api.rahkar.pro/internal/pdf-service` (no standalone `cvlator-pdf-service` Worker required).
    - On **Apple Silicon**: `export DOCKER_DEFAULT_PLATFORM=linux/amd64` before deploy.
-   - One named container (`primary`): use **shared Postgres** for production, not SQLite inside the container.
+   - Use **shared Postgres** for production, not SQLite inside containers.
    - If deploy fails with **`Unauthorized`** after the Worker uploads, the call to **`/accounts/{id}/containers/me`** returned **401** — enable **Workers Paid** / **Containers** on the account, or create an **API token** with Container permissions and set `CLOUDFLARE_API_TOKEN` (see [Wrangler](https://developers.cloudflare.com/workers/wrangler/)).
    - Set runtime config with `wrangler secret put` / dashboard as needed.
 

@@ -1,0 +1,42 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "cvlator-pdf-service",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-03-01",
+	"vars": {
+		"PDF_SERVICE_AUTH_HEADER": "X-PDF-Service-Token"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"containers": [
+		{
+			"class_name": "PDFServiceContainer",
+			"image": "../../backend/Dockerfile.pdf-service",
+			"max_instances": 1
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "PDF_SERVICE_CONTAINER",
+				"class_name": "PDFServiceContainer"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "pdf-service-container",
+			"new_sqlite_classes": [
+				"PDFServiceContainer"
+			]
+		}
+	],
+	"routes": [
+		{
+			"pattern": "pdf.rahkar.pro",
+			"zone_name": "rahkar.pro",
+			"custom_domain": true
+		}
+	]
+}

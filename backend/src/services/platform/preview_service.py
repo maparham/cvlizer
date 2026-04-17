@@ -18,6 +18,7 @@ Dependencies:
 from __future__ import annotations
 
 import logging
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -35,7 +36,13 @@ logger = logging.getLogger(__name__)
 
 def is_preview_available() -> bool:
     """Check if PDF to image conversion is available."""
-    return PDF_TO_IMAGE_AVAILABLE
+    # pdf2image import alone is insufficient; poppler binaries are required at runtime.
+    poppler_available = shutil.which("pdftoppm") is not None
+    if PDF_TO_IMAGE_AVAILABLE and not poppler_available:
+        logger.warning(
+            "Preview conversion disabled: pdftoppm binary not found at runtime"
+        )
+    return PDF_TO_IMAGE_AVAILABLE and poppler_available
 
 
 def add_corner_watermark(image: Image.Image, text: str = "PREVIEW") -> Image.Image:
@@ -144,6 +151,9 @@ def generate_blurred_preview(
             images = convert_from_path(str(pdf_path), dpi=100)
 
             if not images:
+                logger.warning(
+                    "PDF to image conversion returned no pages for preview generation"
+                )
                 return None
 
             # Process each page
@@ -169,7 +179,13 @@ def generate_blurred_preview(
                 result_pages.append(result_bytes)
             return result_pages
         except Exception as e:
-            # Log error but return None to gracefully handle failures
+            # Log error but return None to gracefully handle failures.
+            # Use exc_info to preserve stack traces in Cloudflare/worker logs.
+            logger.error(
+                "Error generating blurred preview pages from PDF conversion: %s",
+                str(e),
+                exc_info=True,
+            )
             return None
 
 

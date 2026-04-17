@@ -7,5 +7,6 @@ To enable HTTPS, create:
 Self-signed (localhost) one-liner from repo root:
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ssl/key.pem -out ssl/cert.pem -subj "/CN=localhost"
 
-Then uncomment the HTTPS server block in nginx.conf and restart prod:
-  docker compose -f docker-compose.prod.yml --project-name cvlator-prod up -d
+Then uncomment the HTTPS server block in the repo root `nginx.conf` (if you run your own nginx) and reload that proxy.
+
+Production TLS is normally terminated at **Cloudflare** (or your provider), not via this repo’s compose files.

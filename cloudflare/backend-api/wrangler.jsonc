@@ -1,5 +1,5 @@
 {
-	// Worker entry + Container from ../../backend/Dockerfile.wrangler (slim; use Dockerfile for full TeX).
+	// Worker entry + Container from ../../backend/Dockerfile.wrangler (slim; no TeX/PDF toolchain).
 	// Plain-text backend env (Worker `vars`): `npx wrangler deploy`. Do not put secrets here.
 	// Secrets (JWT, Clerk, OpenAI, DATABASE_URL for Neon Postgres, etc.): `npm run secrets:push`
 	// from repo root `.env.prod`, or `npx wrangler secret put NAME` / `wrangler secret bulk file.env`
@@ -61,6 +61,9 @@
 		"IMPERSONATION_RATE_LIMIT_ADMIN_PER_HOUR": "20",
 		"IMPERSONATION_RATE_LIMIT_TARGET_PER_DAY": "50",
 		"IMPERSONATION_STRICT_IP_BINDING": "false",
+		"USE_PDF_SERVICE": "true",
+		"PDF_SERVICE_URL": "https://api.rahkar.pro/internal/pdf-service",
+		"PDF_SERVICE_AUTH_HEADER": "X-PDF-Service-Token",
 		"DATA_RETENTION_DAYS_SESSIONS": "90",
 		"DATA_RETENTION_DAYS_AUDIT": "365",
 		"CLEANUP_INTERVAL_MINUTES": "60",
@@ -78,6 +81,12 @@
 			"class_name": "BackendContainer",
 			"image": "../../backend/Dockerfile.wrangler",
 			"max_instances": 1
+		},
+		{
+			"class_name": "PDFServiceContainer",
+			"image": "../../backend/Dockerfile.pdf-service",
+			"instance_type": "basic",
+			"max_instances": 1
 		}
 	],
 	"durable_objects": {
@@ -85,6 +94,10 @@
 			{
 				"name": "BACKEND_CONTAINER",
 				"class_name": "BackendContainer"
+			},
+			{
+				"name": "PDF_SERVICE_CONTAINER",
+				"class_name": "PDFServiceContainer"
 			}
 		]
 	},
@@ -96,6 +109,12 @@
 			"tag": "backend-container",
 			"new_sqlite_classes": [
 				"BackendContainer"
+			]
+		},
+		{
+			"tag": "pdf-service-container-in-backend-worker",
+			"new_sqlite_classes": [
+				"PDFServiceContainer"
 			]
 		}
 	],

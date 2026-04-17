@@ -29,7 +29,8 @@ COPY --from=builder /root/.local /root/.local
 # Make sure scripts in .local are usable
 ENV PATH=/root/.local/bin:$PATH
 
-# Install only runtime dependencies for Playwright
+# Runtime OS deps: Playwright/Chromium libs for job URL parsing.
+# LaTeX/Poppler are intentionally excluded; PDF generation runs in a separate service.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 \
     libnspr4 \
