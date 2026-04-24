@@ -90,7 +90,7 @@ npm run dev
 docker compose up -d --build
 ```
 
-Production is deployed via **Cloudflare** (Worker + containers + static frontend); see **Deployment** below.
+Production: **frontend on Cloudflare**; **API on AWS** (Docker Compose + Nginx). See **Deployment** below.
 
 ## 🔧 Configuration
 
@@ -227,32 +227,17 @@ frontend/
 
 ## 🚀 Deployment
 
-### Production Deployment
+### Production (current)
 
-1. **Backend Deployment**:
-   - Use PostgreSQL instead of SQLite
-   - Set up proper environment variables
-   - Use a production WSGI server (Gunicorn)
-   - Set up reverse proxy (Nginx)
+- **Frontend**: Cloudflare (static / Pages + `wrangler deploy` in `frontend/` as before).
+- **Backend API**: **AWS** (e.g. Lightsail EC2): repo root `.env.prod`, then `docker compose up -d --build` for **`backend`** + **`pdf-service`** only (same images as local: `backend/Dockerfile.wrangler`, `backend/Dockerfile.pdf-service`). **Nginx** on the host terminates **80/443** and proxies to **127.0.0.1:8000**. Point **`api.<domain>`** in Cloudflare DNS to the instance **public IP** (proxied **A** record); SSL mode **Full** (or **Full strict** with a Cloudflare origin cert on Nginx).
+- **Database**: managed PostgreSQL (`DATABASE_URL` in `.env.prod`), not SQLite.
 
-2. **Frontend Deployment**:
-   - Build for production: `npm run build`
-   - Deploy to CDN or static hosting
-   - Configure environment variables
+**Logs (SSH on the instance):** `cd ~/cv_lator && sudo docker compose logs -f backend`
 
-3. **Cloudflare Worker + Container (FastAPI)**
-   Deploy behind a Worker using Wrangler ([Containers get started](https://developers.cloudflare.com/containers/get-started/)):
-   ```bash
-   cd cloudflare/backend-api && npm install && npm run deploy
-   ```
-   - The `cvlator-backend` Worker runs **two containers**:
-     - `BackendContainer` → `backend/Dockerfile.wrangler` (main API, slim image)
-     - `PDFServiceContainer` → `backend/Dockerfile.pdf-service` (LaTeX/PDF generation)
-   - PDF requests are routed internally through `https://api.rahkar.pro/internal/pdf-service` (no standalone `cvlator-pdf-service` Worker required).
-   - On **Apple Silicon**: `export DOCKER_DEFAULT_PLATFORM=linux/amd64` before deploy.
-   - Use **shared Postgres** for production, not SQLite inside containers.
-   - If deploy fails with **`Unauthorized`** after the Worker uploads, the call to **`/accounts/{id}/containers/me`** returned **401** — enable **Workers Paid** / **Containers** on the account, or create an **API token** with Container permissions and set `CLOUDFLARE_API_TOKEN` (see [Wrangler](https://developers.cloudflare.com/workers/wrangler/)).
-   - Set runtime config with `wrangler secret put` / dashboard as needed.
+### Optional: Cloudflare Worker + Containers (legacy API host)
+
+Previously the API could run entirely on Cloudflare Containers; see `cloudflare/backend-api/` and [Containers get started](https://developers.cloudflare.com/containers/get-started/). Deploy: `cd cloudflare/backend-api && npm install && npm run deploy`. Apple Silicon: `export DOCKER_DEFAULT_PLATFORM=linux/amd64` before deploy. Secrets: `wrangler secret put` / `npm run secrets:push` from repo root `.env.prod`.
 
 ## 🔒 Security Features
 
