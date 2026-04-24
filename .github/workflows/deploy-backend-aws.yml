@@ -1,0 +1,47 @@
+# Deploy FastAPI backend + PDF service to EC2 (Docker Compose + Nginx on host).
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   AWS_SSH_HOST          e.g. 3.139.146.5
+#   AWS_SSH_USER          e.g. ec2-user
+#   AWS_SSH_PRIVATE_KEY   full PEM (-----BEGIN ... PRIVATE KEY-----)
+# Optional:
+#   AWS_DEPLOY_PATH       absolute path on server (default: /home/ec2-user/cv_lator)
+#
+# The instance must: clone this repo, have .env.prod, Docker, and git remote read access (deploy key if private).
+
+name: Deploy backend (AWS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - "backend/**"
+      - "docker-compose.yml"
+      - ".github/workflows/deploy-backend-aws.yml"
+
+concurrency:
+  group: deploy-backend-aws
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH deploy
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.AWS_SSH_HOST }}
+          username: ${{ secrets.AWS_SSH_USER }}
+          key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            DEPLOY_PATH="${{ secrets.AWS_DEPLOY_PATH }}"
+            DEPLOY_PATH="${DEPLOY_PATH:-/home/ec2-user/cv_lator}"
+            cd "$DEPLOY_PATH"
+            git fetch origin
+            git checkout master
+            git pull --ff-only origin master
+            sudo docker compose --env-file .env.prod up -d --build pdf-service backend

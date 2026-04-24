@@ -235,6 +235,8 @@ frontend/
 
 **Logs (SSH on the instance):** `cd ~/cv_lator && sudo docker compose logs -f backend`
 
+**CI deploy:** [`.github/workflows/deploy-backend-aws.yml`](.github/workflows/deploy-backend-aws.yml) runs on pushes to **`master`** that touch `backend/` or `docker-compose.yml`, and on **manual run** (Actions tab). Add secrets `AWS_SSH_HOST`, `AWS_SSH_USER`, `AWS_SSH_PRIVATE_KEY`; optional `AWS_DEPLOY_PATH` (defaults to `/home/ec2-user/cv_lator`). From your machine: `gh secret set AWS_SSH_PRIVATE_KEY < deploy.pem`
+
 ### Optional: Cloudflare Worker + Containers (legacy API host)
 
 Previously the API could run entirely on Cloudflare Containers; see `cloudflare/backend-api/` and [Containers get started](https://developers.cloudflare.com/containers/get-started/). Deploy: `cd cloudflare/backend-api && npm install && npm run deploy`. Apple Silicon: `export DOCKER_DEFAULT_PLATFORM=linux/amd64` before deploy. Secrets: `wrangler secret put` / `npm run secrets:push` from repo root `.env.prod`.
