@@ -1,8 +1,5 @@
-# Optimized multi-stage build for Cloudflare Containers
-# Reduces image size and improves push reliability
-#
-# DATABASE_URL must be set for the process (Worker forwards vars + secrets). Use Neon Postgres
-# in production (psycopg2-binary in requirements.txt); push DATABASE_URL with cloudflare/backend-api `npm run secrets:push`.
+# Slim multi-stage API image for Docker Compose / EC2 (no LaTeX; PDFs via pdf-service).
+# Set DATABASE_URL (and other secrets) via `.env.prod` or your host/orchestrator env.
 
 # Stage 1: Build dependencies
 FROM python:3.11-slim-bookworm AS builder

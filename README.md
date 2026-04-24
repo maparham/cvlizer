@@ -230,16 +230,12 @@ frontend/
 ### Production (current)
 
 - **Frontend**: Cloudflare (static / Pages + `wrangler deploy` in `frontend/` as before).
-- **Backend API**: **AWS** (e.g. Lightsail EC2): repo root `.env.prod`, then `docker compose up -d --build` for **`backend`** + **`pdf-service`** only (same images as local: `backend/Dockerfile.wrangler`, `backend/Dockerfile.pdf-service`). **Nginx** on the host terminates **80/443** and proxies to **127.0.0.1:8000**. Point **`api.<domain>`** in Cloudflare DNS to the instance **public IP** (proxied **A** record); SSL mode **Full** (or **Full strict** with a Cloudflare origin cert on Nginx).
+- **Backend API**: **AWS** (e.g. Lightsail EC2): repo root `.env.prod`, then `docker compose up -d --build` for **`backend`** + **`pdf-service`** only (same images as local: slim `backend/Dockerfile.wrangler` for the API, `backend/Dockerfile.pdf-service` for PDF/LaTeX). **Nginx** on the host terminates **80/443** and proxies to **127.0.0.1:8000**. Point **`api.<domain>`** in Cloudflare DNS to the instance **public IP** (proxied **A** record); SSL mode **Full** (or **Full strict** with a Cloudflare origin cert on Nginx).
 - **Database**: managed PostgreSQL (`DATABASE_URL` in `.env.prod`), not SQLite.
 
-**Logs (SSH on the instance):** `cd ~/cv_lator && sudo docker compose logs -f backend`
+**SSH (production API host):** `ssh ec2-user@3.139.146.5` — then e.g. `cd ~/cv_lator && sudo docker compose logs -f backend`
 
 **CI deploy:** [`.github/workflows/deploy-backend-aws.yml`](.github/workflows/deploy-backend-aws.yml) checks out the repo, **SCP**s `backend/` + `docker-compose.yml` to **`/home/ec2-user/cv_lator`** on the instance, then runs **`docker compose`**. Triggers: push to **`master`** (paths `backend/**`, `docker-compose.yml`, or this workflow) and **workflow_dispatch**. Secrets: `AWS_SSH_HOST`, `AWS_SSH_USER`, `AWS_SSH_PRIVATE_KEY`. Instance must already have `.env.prod` and Docker; path is fixed in the workflow unless you edit it.
-
-### Optional: Cloudflare Worker + Containers (legacy API host)
-
-Previously the API could run entirely on Cloudflare Containers; see `cloudflare/backend-api/` and [Containers get started](https://developers.cloudflare.com/containers/get-started/). Deploy: `cd cloudflare/backend-api && npm install && npm run deploy`. Apple Silicon: `export DOCKER_DEFAULT_PLATFORM=linux/amd64` before deploy. Secrets: `wrangler secret put` / `npm run secrets:push` from repo root `.env.prod`.
 
 ## 🔒 Security Features
 
