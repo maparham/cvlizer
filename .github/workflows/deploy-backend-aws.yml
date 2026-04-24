@@ -35,13 +35,12 @@ jobs:
           host: ${{ secrets.AWS_SSH_HOST }}
           username: ${{ secrets.AWS_SSH_USER }}
           key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
-          script_stop: true
           script: |
             set -euo pipefail
             DEPLOY_PATH="${{ secrets.AWS_DEPLOY_PATH }}"
             DEPLOY_PATH="${DEPLOY_PATH:-/home/ec2-user/cv_lator}"
             cd "$DEPLOY_PATH"
-            git fetch origin
-            git checkout master
-            git pull --ff-only origin master
+            /usr/bin/git fetch origin
+            /usr/bin/git checkout master
+            /usr/bin/git pull --ff-only origin master
             sudo docker compose --env-file .env.prod up -d --build pdf-service backend
