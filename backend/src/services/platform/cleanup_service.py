@@ -27,6 +27,9 @@ from src.services.ai_ops.ai_enhancement_cleanup_service import (
     cancel_all_running_ai_tasks,
     cleanup_stuck_ai_enhancements,
 )
+from src.services.job_descriptions.job_description_cleanup_service import (
+    cleanup_stuck_job_descriptions,
+)
 from src.services.users.impersonation_service import cleanup_expired_sessions
 from src.services.platform.preview_cleanup_service import run_preview_job_cleanup
 
@@ -36,6 +39,9 @@ logger = logging.getLogger(__name__)
 DATA_RETENTION_DAYS_SESSIONS = int(os.getenv("DATA_RETENTION_DAYS_SESSIONS", "90"))
 DATA_RETENTION_DAYS_AUDIT = int(os.getenv("DATA_RETENTION_DAYS_AUDIT", "365"))
 CLEANUP_INTERVAL_MINUTES = int(os.getenv("CLEANUP_INTERVAL_MINUTES", "60"))
+JOB_DESCRIPTION_PARSING_TIMEOUT_MINUTES = int(
+    os.getenv("JOB_DESCRIPTION_PARSING_TIMEOUT_MINUTES", "10")
+)
 
 
 class CleanupService:
@@ -116,6 +122,14 @@ class CleanupService:
                         f"Cleaned up {stuck_enhancements} stuck AI enhancement(s)"
                     )
 
+                # Clean up stuck job description parsing tasks
+                stuck_job_descriptions = self._cleanup_stuck_job_descriptions(db)
+                if stuck_job_descriptions > 0:
+                    logger.info(
+                        "Cleaned up %s stuck job description parsing task(s)",
+                        stuck_job_descriptions,
+                    )
+
                 expired_previews, stale_previews = run_preview_job_cleanup(db)
                 if expired_previews > 0 or stale_previews > 0:
                     logger.info(
@@ -186,6 +200,18 @@ class CleanupService:
             db.rollback()
             return 0
 
+    def _cleanup_stuck_job_descriptions(self, db: Session) -> int:
+        """Clean up stuck job descriptions that are still marked as parsing."""
+        try:
+            found_count, fixed_count = cleanup_stuck_job_descriptions(
+                db, JOB_DESCRIPTION_PARSING_TIMEOUT_MINUTES
+            )
+            return fixed_count
+        except Exception as e:
+            logger.error(f"Error cleaning up stuck job descriptions: {str(e)}")
+            db.rollback()
+            return 0
+
 
 # Global cleanup service instance
 cleanup_service = CleanupService()
@@ -203,13 +229,19 @@ async def stop_cleanup_service():
 
 def cancel_running_ai_tasks_on_startup():
     """
-    Cancel all running AI tasks on backend startup.
+    Cancel all running AI tasks and clear stale job parsing records on startup.
 
     This should be called once during application startup to cancel any
     in-flight AI tasks since the AI API connections are lost during restart.
+    It also clears job descriptions stuck in parsing state from previous runs.
 
     Returns:
-        Tuple of (enhancements_cancelled, drafts_cancelled, quality_analyses_cancelled)
+        Tuple of (
+            enhancements_cancelled,
+            drafts_cancelled,
+            quality_analyses_cancelled,
+            stuck_job_descriptions_fixed,
+        )
     """
     db = SessionLocal()
     try:
@@ -229,12 +261,27 @@ def cancel_running_ai_tasks_on_startup():
                     f"{drafts_cancelled} AI draft(s), and "
                     f"{quality_analyses_cancelled} CV quality analysis/analyses on startup"
                 )
-            return enhancements_cancelled, drafts_cancelled, quality_analyses_cancelled
+            found_count, fixed_count = cleanup_stuck_job_descriptions(
+                db, JOB_DESCRIPTION_PARSING_TIMEOUT_MINUTES
+            )
+            if fixed_count > 0:
+                logger.info(
+                    "Fixed %s out of %s stuck job description parsing task(s) on startup",
+                    fixed_count,
+                    found_count,
+                )
+
+            return (
+                enhancements_cancelled,
+                drafts_cancelled,
+                quality_analyses_cancelled,
+                fixed_count,
+            )
         finally:
             db.close()
     except Exception as e:
         logger.error(f"Failed to cancel running AI tasks on startup: {e}")
-        return 0, 0, 0
+        return 0, 0, 0, 0
 
 
 def run_cleanup_once():
@@ -251,12 +298,14 @@ def run_cleanup_once():
             old_sessions = service._cleanup_old_sessions(db)
             old_audit_logs = service._cleanup_old_audit_logs(db)
             stuck_enhancements = service._cleanup_stuck_ai_enhancements(db)
+            stuck_job_descriptions = service._cleanup_stuck_job_descriptions(db)
 
             expired_previews, stale_previews = run_preview_job_cleanup(db)
 
             logger.info(
                 f"Manual cleanup completed: {old_sessions} old sessions, "
                 f"{old_audit_logs} old audit logs, {stuck_enhancements} stuck AI enhancements, "
+                f"{stuck_job_descriptions} stuck job descriptions, "
                 f"{expired_previews} expired preview jobs, {stale_previews} stale preview jobs"
             )
 
