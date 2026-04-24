@@ -4,10 +4,11 @@
 #   AWS_SSH_HOST          e.g. 3.139.146.5
 #   AWS_SSH_USER          e.g. ec2-user
 #   AWS_SSH_PRIVATE_KEY   full PEM (-----BEGIN ... PRIVATE KEY-----)
-# Optional:
-#   AWS_DEPLOY_PATH       absolute path on server (default: /home/ec2-user/cv_lator)
 #
-# The instance must: clone this repo, have .env.prod, Docker, and git remote read access (deploy key if private).
+# The runner checks out this repo (works for private repos via default GITHUB_TOKEN),
+# copies backend/ + docker-compose.yml over SSH, then runs docker compose on the instance.
+# The server must already have .env.prod, Docker, and project path /home/ec2-user/cv_lator
+# (edit the paths below if yours differ).
 
 name: Deploy backend (AWS)
 
@@ -29,7 +30,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH deploy
+      - uses: actions/checkout@v4
+
+      - name: Copy backend + compose to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.AWS_SSH_HOST }}
+          username: ${{ secrets.AWS_SSH_USER }}
+          key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+          source: "backend/,docker-compose.yml"
+          target: "/home/ec2-user/cv_lator"
+          strip_components: 0
+
+      - name: Docker compose up
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.AWS_SSH_HOST }}
@@ -37,10 +50,5 @@ jobs:
           key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            DEPLOY_PATH="${{ secrets.AWS_DEPLOY_PATH }}"
-            DEPLOY_PATH="${DEPLOY_PATH:-/home/ec2-user/cv_lator}"
-            cd "$DEPLOY_PATH"
-            /usr/bin/git fetch origin
-            /usr/bin/git checkout master
-            /usr/bin/git pull --ff-only origin master
+            cd /home/ec2-user/cv_lator
             sudo docker compose --env-file .env.prod up -d --build pdf-service backend

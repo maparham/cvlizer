@@ -235,7 +235,7 @@ frontend/
 
 **Logs (SSH on the instance):** `cd ~/cv_lator && sudo docker compose logs -f backend`
 
-**CI deploy:** [`.github/workflows/deploy-backend-aws.yml`](.github/workflows/deploy-backend-aws.yml) runs on pushes to **`master`** that touch `backend/` or `docker-compose.yml`, and on **manual run** (Actions tab). Add secrets `AWS_SSH_HOST`, `AWS_SSH_USER`, `AWS_SSH_PRIVATE_KEY`; optional `AWS_DEPLOY_PATH` (defaults to `/home/ec2-user/cv_lator`). From your machine: `gh secret set AWS_SSH_PRIVATE_KEY < deploy.pem`
+**CI deploy:** [`.github/workflows/deploy-backend-aws.yml`](.github/workflows/deploy-backend-aws.yml) checks out the repo, **SCP**s `backend/` + `docker-compose.yml` to **`/home/ec2-user/cv_lator`** on the instance, then runs **`docker compose`**. Triggers: push to **`master`** (paths `backend/**`, `docker-compose.yml`, or this workflow) and **workflow_dispatch**. Secrets: `AWS_SSH_HOST`, `AWS_SSH_USER`, `AWS_SSH_PRIVATE_KEY`. Instance must already have `.env.prod` and Docker; path is fixed in the workflow unless you edit it.
 
 ### Optional: Cloudflare Worker + Containers (legacy API host)
 
