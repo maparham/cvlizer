@@ -8,8 +8,14 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import Alert from "@mui/material/Alert";
 import { SectionProps } from "../../../types";
 import SimpleFormSection from "../core/SimpleFormSection";
+import ConfirmDialog from "../../common/ConfirmDialog";
 import SkillsAutocomplete from "../ui/SkillsAutocomplete";
 import {
   useAISuggestionsStore,
@@ -32,11 +38,12 @@ import {
 } from "./hooks/useSkillsQualitySuggestions";
 import type { SkillsSuggestions } from "../../../types/ai";
 import type { Language } from "../../../types/cv";
+import { isCategorizedTechnical } from "../../../types/cv";
 import { generateId } from "../../../utils/idGenerator";
 
 /** Section data shape for skills (technical + soft + languages). */
 export interface SkillsSectionData {
-  technical?: string[];
+  technical?: string[] | Record<string, string[]>; // Support both flat and categorized
   soft?: string[];
   languages?: Language[];
 }
@@ -100,6 +107,10 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
   const [newLanguageProficiency, setNewLanguageProficiency] = useState<
     Language["proficiency"]
   >("Intermediate");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [categoryEditValue, setCategoryEditValue] = useState("");
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   // Get unified AI suggestions store with CV validation
   const {
@@ -154,6 +165,106 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
     },
     [onUpdate, onSave],
   );
+
+  // Helper functions for categorized technical skills
+  const addSkillToCategory = useCallback((
+    editData: SkillsSectionData,
+    category: string,
+    skill: string,
+    updateData: (field: string, value: any) => void
+  ) => {
+    const technical = editData.technical || {};
+    const categorized = isCategorizedTechnical(technical) ? technical : { "Technical": technical || [] };
+
+    const updatedTechnical = {
+      ...categorized,
+      [category]: [...(categorized[category] || []), skill]
+    };
+
+    const updatedData = { ...editData, technical: updatedTechnical };
+    updateData("technical", updatedTechnical);
+    saveDataImmediately(updatedData, `Skill "${skill}" added to ${category}`);
+  }, [saveDataImmediately]);
+
+  const removeSkillFromCategory = useCallback((
+    editData: SkillsSectionData,
+    category: string,
+    skillIndex: number,
+    updateData: (field: string, value: any) => void
+  ) => {
+    const technical = editData.technical;
+    if (!isCategorizedTechnical(technical)) return;
+
+    const updatedCategorySkills = (technical[category] || []).filter((_, i) => i !== skillIndex);
+    const updatedTechnical = updatedCategorySkills.length > 0
+      ? { ...technical, [category]: updatedCategorySkills }
+      : Object.fromEntries(Object.entries(technical).filter(([k]) => k !== category));
+
+    const updatedData = { ...editData, technical: updatedTechnical };
+    updateData("technical", updatedTechnical);
+    saveDataImmediately(updatedData, "Skill removed");
+  }, [saveDataImmediately]);
+
+  const addCategory = useCallback((
+    editData: SkillsSectionData,
+    categoryName: string,
+    updateData: (field: string, value: any) => void
+  ) => {
+    const technical = editData.technical || {};
+    const categorized = isCategorizedTechnical(technical) ? technical : { "Technical": technical || [] };
+
+    if (categorized[categoryName]) {
+      showSuccess("Category already exists");
+      return;
+    }
+
+    const updatedTechnical = { ...categorized, [categoryName]: [] };
+    const updatedData = { ...editData, technical: updatedTechnical };
+    updateData("technical", updatedTechnical);
+    saveDataImmediately(updatedData, `Category "${categoryName}" added`);
+    setNewCategoryName("");
+  }, [saveDataImmediately, showSuccess]);
+
+  const removeCategory = useCallback((
+    editData: SkillsSectionData,
+    category: string,
+    updateData: (field: string, value: any) => void
+  ) => {
+    const technical = editData.technical;
+    if (!isCategorizedTechnical(technical)) return;
+
+    const updatedTechnical = Object.fromEntries(
+      Object.entries(technical).filter(([k]) => k !== category)
+    );
+
+    const updatedData = { ...editData, technical: updatedTechnical };
+    updateData("technical", updatedTechnical);
+    saveDataImmediately(updatedData, `Category "${category}" removed`);
+  }, [saveDataImmediately]);
+
+  const renameCategory = useCallback((
+    editData: SkillsSectionData,
+    oldName: string,
+    newName: string,
+    updateData: (field: string, value: any) => void
+  ) => {
+    const technical = editData.technical;
+    if (!isCategorizedTechnical(technical) || !newName.trim() || oldName === newName) return;
+
+    if (technical[newName]) {
+      showSuccess("Category with this name already exists");
+      return;
+    }
+
+    const updatedTechnical = Object.fromEntries(
+      Object.entries(technical).map(([k, v]) => k === oldName ? [newName, v] : [k, v])
+    );
+
+    const updatedData = { ...editData, technical: updatedTechnical };
+    updateData("technical", updatedTechnical);
+    saveDataImmediately(updatedData, `Category renamed to "${newName}"`);
+    setEditingCategory(null);
+  }, [saveDataImmediately, showSuccess]);
 
   const renderForm = (
     editData: any,
@@ -248,18 +359,48 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       saveDataImmediately(updatedData, "Language removed");
     };
 
-    // AI Suggestions handlers
+    // AI Suggestions handlers - category-aware
     const handleAddSuggestedSkill = async (
       skill: string,
       type: "technical" | "soft",
     ) => {
-      const updatedData = {
-        ...editData,
-        [type]: [...(editData[type] || []), skill],
-      };
-      updateData(type, updatedData[type]);
-      saveDataImmediately(updatedData, `AI suggested skill "${skill}" added`);
-      await dismissJobSkillSuggestion(skill, type);
+      if (type === "soft") {
+        // Soft skills remain flat
+        const updatedData = {
+          ...editData,
+          soft: [...(editData.soft || []), skill],
+        };
+        updateData("soft", updatedData.soft);
+        saveDataImmediately(updatedData, `AI suggested skill "${skill}" added`);
+        await dismissJobSkillSuggestion(skill, type);
+      } else {
+        // Technical skills: add to appropriate category
+        const technical = editData.technical || [];
+        if (isCategorizedTechnical(technical)) {
+          // Add to "AI Suggested" category or first category if it exists
+          const targetCategory = technical["AI Suggested"] !== undefined
+            ? "AI Suggested"
+            : Object.keys(technical)[0] || "Technical";
+
+          const updatedTechnical = {
+            ...technical,
+            [targetCategory]: [...(technical[targetCategory] || []), skill]
+          };
+
+          const updatedData = { ...editData, technical: updatedTechnical };
+          updateData("technical", updatedTechnical);
+          saveDataImmediately(updatedData, `AI suggested skill "${skill}" added to ${targetCategory}`);
+        } else {
+          // Legacy format: just append to array
+          const updatedData = {
+            ...editData,
+            technical: [...technical, skill],
+          };
+          updateData("technical", updatedData.technical);
+          saveDataImmediately(updatedData, `AI suggested skill "${skill}" added`);
+        }
+        await dismissJobSkillSuggestion(skill, type);
+      }
     };
 
     const handleApplyAllSuggestions = async () => {
@@ -273,12 +414,23 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
 
       const updatedData = { ...editData };
 
-      // Add all technical skills
+      // Add all technical skills - category-aware
       if (skillsSuggestions.technical.length > 0) {
-        updatedData.technical = [
-          ...(updatedData.technical || []),
-          ...skillsSuggestions.technical.map((s) => s.skill),
-        ];
+        const technical = updatedData.technical || [];
+        if (isCategorizedTechnical(technical)) {
+          // Add to "AI Suggested" category
+          const suggestedSkills = skillsSuggestions.technical.map((s) => s.skill);
+          updatedData.technical = {
+            ...technical,
+            "AI Suggested": [...(technical["AI Suggested"] || []), ...suggestedSkills]
+          };
+        } else {
+          // Legacy format
+          updatedData.technical = [
+            ...(Array.isArray(technical) ? technical : []),
+            ...skillsSuggestions.technical.map((s) => s.skill),
+          ];
+        }
       }
 
       // Add all soft skills
@@ -323,32 +475,170 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
 
     return (
       <Box>
+        {/* Legacy format alert */}
+        {!isCategorizedTechnical(editData.technical) && editData.technical && editData.technical.length > 0 && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Your technical skills are in legacy format.
+            Skills from newly parsed CVs will be automatically categorized by the AI.
+          </Alert>
+        )}
+
+        {/* Technical Skills Section */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
             Technical Skills
           </Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-            {(editData.technical || []).map((skill: string, index: number) => (
-              <Chip
-                key={index}
-                label={skill}
-                onDelete={() => removeTechnicalSkill(index)}
-                sx={{
-                  bgcolor: "#e3f2fd",
-                  color: "#1976d2",
-                }}
+
+          {/* Render categorized technical skills */}
+          {isCategorizedTechnical(editData.technical) ? (
+            <Box>
+              {Object.entries(editData.technical).map(([category, skills]) => (
+                <Box key={category} sx={{ mb: 3, pl: 1, borderLeft: "3px solid #1976d2" }}>
+                  {/* Category Header */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                    {editingCategory === category ? (
+                      <>
+                        <TextField
+                          size="small"
+                          value={categoryEditValue}
+                          onChange={(e) => setCategoryEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              renameCategory(editData, category, categoryEditValue, wrappedUpdateData);
+                            } else if (e.key === "Escape") {
+                              setEditingCategory(null);
+                            }
+                          }}
+                          autoFocus
+                          sx={{ flex: 1 }}
+                        />
+                        <Button
+                          size="small"
+                          onClick={() => renameCategory(editData, category, categoryEditValue, wrappedUpdateData)}
+                        >
+                          Save
+                        </Button>
+                        <Button size="small" onClick={() => setEditingCategory(null)}>
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#1976d2", flex: 1 }}>
+                          {category}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setEditingCategory(category);
+                            setCategoryEditValue(category);
+                          }}
+                          title="Rename category"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setCategoryToDelete(category);
+                          }}
+                          title="Delete category"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    )}
+                  </Box>
+
+                  {/* Skills in Category */}
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1, ml: 1 }}>
+                    {skills.map((skill: string, index: number) => (
+                      <Chip
+                        key={index}
+                        label={skill}
+                        onDelete={() => removeSkillFromCategory(editData, category, index, wrappedUpdateData)}
+                        sx={{ bgcolor: "#e3f2fd", color: "#1976d2" }}
+                      />
+                    ))}
+                  </Box>
+
+                  {/* Add Skill to Category */}
+                  <Box sx={{ ml: 1 }}>
+                    <SkillsAutocomplete
+                      value={newTechnicalSkill}
+                      onChange={setNewTechnicalSkill}
+                      onAdd={() => {
+                        if (newTechnicalSkill.trim()) {
+                          addSkillToCategory(editData, category, newTechnicalSkill.trim(), wrappedUpdateData);
+                          setNewTechnicalSkill("");
+                        }
+                      }}
+                      onAddDirect={(skill) => {
+                        addSkillToCategory(editData, category, skill, wrappedUpdateData);
+                      }}
+                      placeholder={`Add skill to ${category}`}
+                      skillType="technical"
+                      existingSkills={skills}
+                    />
+                  </Box>
+                </Box>
+              ))}
+
+              {/* Add New Category */}
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 2 }}>
+                <TextField
+                  size="small"
+                  placeholder="New category name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newCategoryName.trim()) {
+                      e.preventDefault();
+                      addCategory(editData, newCategoryName.trim(), wrappedUpdateData);
+                    }
+                  }}
+                  sx={{ flex: 1 }}
+                />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    if (newCategoryName.trim()) {
+                      addCategory(editData, newCategoryName.trim(), wrappedUpdateData);
+                    }
+                  }}
+                  disabled={!newCategoryName.trim()}
+                >
+                  Add Category
+                </Button>
+              </Box>
+            </Box>
+          ) : (
+            /* Legacy flat list rendering */
+            <Box>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                {(editData.technical || []).map((skill: string, index: number) => (
+                  <Chip
+                    key={index}
+                    label={skill}
+                    onDelete={() => removeTechnicalSkill(index)}
+                    sx={{ bgcolor: "#e3f2fd", color: "#1976d2" }}
+                  />
+                ))}
+              </Box>
+              <SkillsAutocomplete
+                value={newTechnicalSkill}
+                onChange={setNewTechnicalSkill}
+                onAdd={addTechnicalSkill}
+                onAddDirect={addTechnicalSkillDirect}
+                placeholder="Add technical skill"
+                skillType="technical"
+                existingSkills={editData.technical || []}
               />
-            ))}
-          </Box>
-          <SkillsAutocomplete
-            value={newTechnicalSkill}
-            onChange={setNewTechnicalSkill}
-            onAdd={addTechnicalSkill}
-            onAddDirect={addTechnicalSkillDirect}
-            placeholder="Add technical skill"
-            skillType="technical"
-            existingSkills={editData.technical || []}
-          />
+            </Box>
+          )}
         </Box>
 
         <Box sx={{ mb: 2 }}>
@@ -449,12 +739,31 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
             variant="edit"
           />
         )}
+
+        <ConfirmDialog
+          open={Boolean(categoryToDelete)}
+          onClose={() => setCategoryToDelete(null)}
+          onConfirm={() => {
+            if (!categoryToDelete) return;
+            removeCategory(editData, categoryToDelete, wrappedUpdateData);
+            setCategoryToDelete(null);
+          }}
+          title="Delete category?"
+          message={
+            categoryToDelete
+              ? `Remove the entire category "${categoryToDelete}"?`
+              : "Remove the entire category?"
+          }
+          confirmButtonText="Delete"
+          confirmButtonColor="error"
+          severity="warning"
+        />
       </Box>
     );
   };
 
   const renderDisplay = (data: SkillsSectionData) => {
-    // Handler functions for display mode
+    // Handler functions for display mode - category-aware
     const handleApplyAllSuggestionsDisplay = async () => {
       if (!skillsSuggestions) {
         return;
@@ -466,12 +775,23 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
 
       const updatedData = { ...data };
 
-      // Add all technical skills
+      // Add all technical skills - category-aware
       if (skillsSuggestions.technical.length > 0) {
-        updatedData.technical = [
-          ...(updatedData.technical || []),
-          ...skillsSuggestions.technical.map((s) => s.skill),
-        ];
+        const technical = updatedData.technical || [];
+        if (isCategorizedTechnical(technical)) {
+          // Add to "AI Suggested" category
+          const suggestedSkills = skillsSuggestions.technical.map((s) => s.skill);
+          updatedData.technical = {
+            ...technical,
+            "AI Suggested": [...(technical["AI Suggested"] || []), ...suggestedSkills]
+          };
+        } else {
+          // Legacy format
+          updatedData.technical = [
+            ...(Array.isArray(technical) ? technical : []),
+            ...skillsSuggestions.technical.map((s) => s.skill),
+          ];
+        }
       }
 
       // Add all soft skills
@@ -502,42 +822,110 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
       suggestion: { skill: string },
       type: "technical" | "soft",
     ) => {
-      const updatedData = {
-        ...data,
-        [type]: [...(data[type] || []), suggestion.skill],
-      };
-      onUpdate(updatedData);
-      onSave?.(updatedData);
-      await dismissJobSkillSuggestion(suggestion.skill, type);
-      showSuccess(
-        `Added "${suggestion.skill}" to ${type === "technical" ? "technical" : "soft"} skills`,
-      );
+      if (type === "soft") {
+        // Soft skills remain flat
+        const updatedData = {
+          ...data,
+          soft: [...(data.soft || []), suggestion.skill],
+        };
+        onUpdate(updatedData);
+        onSave?.(updatedData);
+        await dismissJobSkillSuggestion(suggestion.skill, type);
+        showSuccess(`Added "${suggestion.skill}" to soft skills`);
+      } else {
+        // Technical skills: category-aware
+        const technical = data.technical || [];
+        if (isCategorizedTechnical(technical)) {
+          // Add to "AI Suggested" category or first category
+          const targetCategory = technical["AI Suggested"] !== undefined
+            ? "AI Suggested"
+            : Object.keys(technical)[0] || "Technical";
+
+          const updatedData = {
+            ...data,
+            technical: {
+              ...technical,
+              [targetCategory]: [...(technical[targetCategory] || []), suggestion.skill]
+            }
+          };
+          onUpdate(updatedData);
+          onSave?.(updatedData);
+          await dismissJobSkillSuggestion(suggestion.skill, type);
+          showSuccess(`Added "${suggestion.skill}" to ${targetCategory}`);
+        } else {
+          // Legacy format
+          const updatedData = {
+            ...data,
+            technical: [...technical, suggestion.skill],
+          };
+          onUpdate(updatedData);
+          onSave?.(updatedData);
+          await dismissJobSkillSuggestion(suggestion.skill, type);
+          showSuccess(`Added "${suggestion.skill}" to technical skills`);
+        }
+      }
     };
 
     return (
       <Box>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-          {data.technical?.map((skill: string, index: number) => (
-            <Chip
-              key={index}
-              label={skill}
-              sx={{
-                bgcolor: "#e3f2fd",
-                color: "#1976d2",
-              }}
-            />
-          ))}
-          {data.soft?.map((skill: string, index: number) => (
-            <Chip
-              key={`soft-${index}`}
-              label={skill}
-              sx={{
-                bgcolor: "#f3e5f5",
-                color: "#7b1fa2",
-              }}
-            />
-          ))}
-        </Box>
+        {/* Legacy format alert */}
+        {!isCategorizedTechnical(data.technical) && data.technical && data.technical.length > 0 && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Your technical skills are in legacy format.
+            Skills from newly parsed CVs will be automatically categorized by the AI.
+          </Alert>
+        )}
+
+        {/* Technical Skills - Categorized or Flat */}
+        {isCategorizedTechnical(data.technical) ? (
+          <Box sx={{ mb: 2 }}>
+            {Object.entries(data.technical).map(([category, skills]) => (
+              <Box key={category} sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold", color: "#1976d2" }}>
+                  {category}
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {skills.map((skill: string, index: number) => (
+                    <Chip
+                      key={index}
+                      label={skill}
+                      sx={{ bgcolor: "#e3f2fd", color: "#1976d2" }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          /* Legacy flat display - mixed with soft skills as before */
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+            {data.technical?.map((skill: string, index: number) => (
+              <Chip
+                key={index}
+                label={skill}
+                sx={{ bgcolor: "#e3f2fd", color: "#1976d2" }}
+              />
+            ))}
+          </Box>
+        )}
+
+        {/* Soft Skills */}
+        {data.soft && data.soft.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
+              Soft Skills
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {data.soft.map((skill: string, index: number) => (
+                <Chip
+                  key={`soft-${index}`}
+                  label={skill}
+                  sx={{ bgcolor: "#f3e5f5", color: "#7b1fa2" }}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
 
         {data.languages && data.languages.length > 0 && (
           <Box sx={{ mt: 2 }}>

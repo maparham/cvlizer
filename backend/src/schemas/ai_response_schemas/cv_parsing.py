@@ -5,7 +5,7 @@ Used by the CV parsing prompt to constrain and validate structured output
 (personal_info, work_experience, education, skills, etc.).
 """
 
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -110,25 +110,73 @@ class LanguageItemSchema(BaseModel):
         return LANGUAGE_PROFICIENCY_MAP.get(key, "Intermediate")  # type: ignore[return-value]
 
 
+class TechnicalCategoryItemSchema(BaseModel):
+    """Schema for one technical skill category in AI parsing response."""
+
+    category: str = Field(..., min_length=1, description="Technical skill category name")
+    skills: List[str] = Field(
+        ..., min_length=1, description="Skills that belong to this category"
+    )
+
+
 class SkillsResponseSchema(BaseModel):
-    """Schema for skills section."""
+    """Schema for skills section in AI parsing response.
 
-    technical: List[str] = Field(default_factory=list)
-    soft: List[str] = Field(default_factory=list)
-    languages: List[LanguageItemSchema] = Field(default_factory=list)
+    Technical skills should be categorized by the AI into logical groups
+    relevant to the user's field (e.g., Programming Languages, DevOps, Databases).
+    """
 
-    @field_validator("technical", "soft", mode="before")
+    technical: List[TechnicalCategoryItemSchema] = Field(
+        default_factory=list,
+        description="Technical skills grouped by category (e.g., [{'category': 'Programming Languages', 'skills': ['Python', 'JavaScript']}])",
+    )
+    soft: List[str] = Field(default_factory=list, description="Soft skills")
+    languages: List[LanguageItemSchema] = Field(
+        default_factory=list, description="Language proficiencies"
+    )
+
+    @field_validator("technical", mode="before")
     @classmethod
-    def validate_skill_format(cls, v: List[str]) -> List[str]:
-        """Validate that skills are strings. Preserve original formatting."""
-        if not isinstance(v, list):
+    def normalize_technical(
+        cls, v: Union[Dict[str, List[str]], List[str], List[Dict[str, object]], object]
+    ) -> List[Dict[str, List[str]]]:
+        """Normalize technical skills to list-of-categories format."""
+        if isinstance(v, dict):
+            return [
+                {
+                    "category": category.strip(),
+                    "skills": [
+                        skill.strip()
+                        for skill in skills
+                        if isinstance(skill, str) and skill.strip()
+                    ],
+                }
+                for category, skills in v.items()
+                if isinstance(category, str)
+                and category.strip()
+                and isinstance(skills, list)
+                and any(isinstance(skill, str) and skill.strip() for skill in skills)
+            ]
+        if isinstance(v, list) and v and all(isinstance(item, str) for item in v):
+            skills = [
+                skill.strip() for skill in v if isinstance(skill, str) and skill.strip()
+            ]
+            return [{"category": "Technical", "skills": skills}] if skills else []
+        if isinstance(v, list):
             return v
-        validated_skills = []
-        for skill in v:
-            if not isinstance(skill, str):
-                continue
-            validated_skills.append(skill)
-        return validated_skills
+        return []
+
+    @field_validator("soft", mode="before")
+    @classmethod
+    def validate_soft_format(cls, v: List[str]) -> List[str]:
+        """Validate that soft skills are strings."""
+        if not isinstance(v, list):
+            return []
+        return [skill.strip() for skill in v if isinstance(skill, str) and skill.strip()]
+
+    def to_dict_format(self) -> Dict[str, List[str]]:
+        """Convert technical categories list to internal dictionary format."""
+        return {category.category: category.skills for category in self.technical}
 
 
 class CertificationItemSchema(BaseModel):

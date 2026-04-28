@@ -15,6 +15,8 @@ from sqlalchemy.orm import Session
 from src.config import AIConfig
 from src.constants import EMPTY_PARSED_CV_PAYLOAD, ERROR_EXTRACT_PDF
 from src.schemas.ai_response_schemas import CVParsingResponseSchema
+from src.schemas.ai_response_schemas.cv_parsing import SkillsResponseSchema
+from src.services.ai_service.openai_schema_utils import CV_PARSING_RESPONSE_FORMAT
 
 from .common import (
     RETRY_ATTEMPTS,
@@ -26,7 +28,6 @@ from .common import (
     log_ai_usage_safe,
     with_retries,
 )
-from .openai_schema_utils import CV_PARSING_RESPONSE_FORMAT
 from .response_parsing import extract_response_data, validate_with_schema
 
 logger = logging.getLogger(__name__)
@@ -119,11 +120,18 @@ All CV content must be assigned to one of these fields:
 Omit any content that cannot fit an allowed field.
 
 5. Skills
-- skills.technical: Each entry is a single atomic skill/technology (e.g., "Python").
-  - Do not include labels (e.g., "Programming Languages:").
-  - Split grouped skills; one per entry.
-- skills.soft: Each entry is an individual soft skill (e.g., "Team Leadership").
-- skills.languages: Extract all spoken languages from anywhere in the CV.
+- skills.technical: MUST be a dictionary/object categorizing technical skills by type. Each category key is a descriptive name, and its value is an array of skills.
+- skills.technical: MUST be an array of category objects, each with:
+  - category: descriptive category name in title case (e.g., "Programming Languages")
+  - skills: array of atomic skills for that category (e.g., ["Python", "TypeScript"])
+  - Categorize technical skills into logical groups relevant to the user's professional field.
+  - Example categories: "Programming Languages", "Frameworks & Libraries", "DevOps & Infrastructure", "Databases & Storage", "Cloud Platforms", "Machine Learning & AI", "Testing & QA", "Design Tools", etc.
+  - Order categories by relevance/importance to the candidate's primary role or expertise.
+  - Each category must contain at least one skill; omit empty categories.
+  - Do not include category labels inside skill strings (e.g., avoid "Programming Languages: Python").
+  - Example format: [{"category":"Programming Languages","skills":["Python","JavaScript","TypeScript"]},{"category":"DevOps & Infrastructure","skills":["Docker","Kubernetes","Git"]}]
+- skills.soft: Array of individual soft skills (e.g., "Team Leadership", "Communication").
+- skills.languages: Extract all spoken languages from anywhere in the CV (array of objects with language name and proficiency level).
 
 6. Publications
 - Only include from an explicit "Publications" section.
@@ -157,13 +165,13 @@ Omit any content that cannot fit an allowed field.
             system_prompt=cv_parsing_system_prompt,
             user_prompt=user_prompt,
             response_schema=CVParsingResponseSchema,
+            text_format_schema=CV_PARSING_RESPONSE_FORMAT,
             model=AIConfig.OPENAI_PARSING_MODEL,
             reasoning_effort=AIConfig.OPENAI_PARSING_EFFORT,
             user_id=user_id,
             cv_id=cv_id,
             operation_type="parse_cv",
             db_session=db_session,
-            text_format_schema=CV_PARSING_RESPONSE_FORMAT,
         )
 
         # Check if AI determined this is not a valid CV
@@ -173,6 +181,12 @@ Omit any content that cannot fit an allowed field.
             )
             logger.debug("CV parse OpenAI: invalid document cv_id=%s", cv_id)
             return {"error": validation_error, **EMPTY_PARSED_CV_PAYLOAD}
+
+        # Convert OpenAI-friendly technical category list to internal dict format.
+        skills = parsed_content.get("skills")
+        if isinstance(skills, dict) and "technical" in skills:
+            normalized_skills = SkillsResponseSchema.model_validate(skills)
+            skills["technical"] = normalized_skills.to_dict_format()
 
         # Assign UUIDs to custom_sections; preserve type from AI (professional_summary or cover_letter)
         raw_custom = parsed_content.get("custom_sections") or []

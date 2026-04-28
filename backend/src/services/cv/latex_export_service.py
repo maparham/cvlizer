@@ -684,16 +684,28 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
 
 
 def _format_skills(skills: Dict[str, Any]) -> str:
-    """Format skills section with bold category labels."""
+    """Format skills section with bold category labels.
+
+    Supports both legacy (flat list) and categorized (dictionary) formats for technical skills.
+    """
     if not skills:
         return ""
 
     blocks: List[str] = []
 
-    # Technical Skills with bold category
-    if skills.get("technical"):
-        tech_items = ", ".join(_tex_escape(s) for s in skills["technical"])
-        blocks.append(f"\\textbf{{Technical:}} {tech_items}")
+    # Technical Skills - handle both formats
+    technical = skills.get("technical")
+    if technical:
+        if isinstance(technical, dict):
+            # New categorized format: {"Programming": ["Python", "JS"], "DevOps": ["Docker"]}
+            for category, skill_list in technical.items():
+                if skill_list:  # Only show non-empty categories
+                    tech_items = ", ".join(_tex_escape(s) for s in skill_list)
+                    blocks.append(f"\\textbf{{{_tex_escape(category)}:}} {tech_items}")
+        elif isinstance(technical, list):
+            # Legacy flat list format: ["Python", "Docker"]
+            tech_items = ", ".join(_tex_escape(s) for s in technical)
+            blocks.append(f"\\textbf{{Technical:}} {tech_items}")
 
     # Soft Skills with bold category
     if skills.get("soft"):

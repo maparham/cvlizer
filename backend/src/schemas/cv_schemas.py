@@ -3,7 +3,7 @@ Comprehensive Pydantic schemas for CV data validation with proper type safety.
 """
 
 from datetime import date
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -198,27 +198,60 @@ class LanguageSchema(BaseModel):
 
 
 class SkillsSchema(BaseModel):
-    """Schema for skills section."""
+    """Schema for skills section.
 
-    technical: List[str] = Field(default_factory=list, description="Technical skills")
+    Supports both legacy (flat list) and categorized (dictionary) formats for technical skills.
+    - Legacy format: technical: ["Python", "Docker"]
+    - Categorized format: technical: {"Programming": ["Python"], "DevOps": ["Docker"]}
+    """
+
+    technical: Union[List[str], Dict[str, List[str]]] = Field(
+        default_factory=list,
+        description="Technical skills - supports flat list (legacy) or categorized dictionary (new)",
+    )
     soft: List[str] = Field(default_factory=list, description="Soft skills")
     languages: List[LanguageSchema] = Field(
         default_factory=list, description="Language proficiencies"
     )
 
-    @field_validator("technical", "soft", mode="before")
+    @field_validator("technical", mode="before")
     @classmethod
-    def validate_skill_format(cls, v: List[str]) -> List[str]:
-        """Validate that skills are strings. Preserve original formatting including category labels and comma-separated lists."""
+    def validate_technical_format(
+        cls, v: Union[List[str], Dict[str, List[str]]]
+    ) -> Union[List[str], Dict[str, List[str]]]:
+        """Validate technical skills format (supports both list and dict).
+
+        For categorized format:
+        - Category names must be non-empty strings
+        - Each category must contain at least one skill
+        - Skills must be non-empty strings
+        """
+        if isinstance(v, dict):
+            # Validate categorized format
+            validated_dict = {}
+            for category, skills in v.items():
+                if not isinstance(category, str) or not category.strip():
+                    continue  # Skip invalid category names
+                if not isinstance(skills, list) or not skills:
+                    continue  # Skip empty categories
+                validated_skills = [
+                    skill for skill in skills if isinstance(skill, str) and skill.strip()
+                ]
+                if validated_skills:
+                    validated_dict[category.strip()] = validated_skills
+            return validated_dict
+        elif isinstance(v, list):
+            # Validate flat list format (legacy)
+            return [skill for skill in v if isinstance(skill, str) and skill.strip()]
+        return v
+
+    @field_validator("soft", mode="before")
+    @classmethod
+    def validate_soft_format(cls, v: List[str]) -> List[str]:
+        """Validate that soft skills are strings."""
         if not isinstance(v, list):
             return v
-        validated_skills = []
-        for skill in v:
-            if not isinstance(skill, str):
-                continue
-            # Preserve original formatting - no length limit to allow category labels and comma-separated lists
-            validated_skills.append(skill)
-        return validated_skills
+        return [skill for skill in v if isinstance(skill, str) and skill.strip()]
 
     class Config:
         extra = "forbid"  # Reject any additional fields
