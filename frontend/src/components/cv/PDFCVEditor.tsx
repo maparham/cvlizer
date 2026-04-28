@@ -8,7 +8,7 @@
  * - Unsaved changes detection and confirmation dialogs
  * - Integration with CV editor context for state management
  */
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -77,6 +77,7 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobilePanel, setMobilePanel] = useState<"sidebar" | "content">("content");
+  const lastQualitySyncRef = useRef<{ cvId: string; updatedAt?: string | null } | null>(null);
   // Tab state management - use Zustand store to persist across navigation
   const cvIdForTabs = cvId || "default";
   const sidebarTab = useUIStore(
@@ -110,8 +111,12 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
       loadJobDescriptions(cvId);
       getCVDrafts(cvId);
       loadLatestAIEnhancement(cvId);
-      // Pass CV updated_at to ensure we don't load stale analyses
-      loadLatestQualityAnalysis(cvId, currentCV?.updated_at);
+      // Reset quality sync marker on CV switch; quality loading is handled by
+      // the dedicated effect below to avoid duplicate fetches.
+      lastQualitySyncRef.current = {
+        cvId,
+        updatedAt: null,
+      };
     }
   }, [
     cvId,
@@ -119,15 +124,28 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
     getCVDrafts,
     loadLatestAIEnhancement,
     clearAllSuggestions,
-    loadLatestQualityAnalysis,
   ]);
 
-  // Reload quality analysis when CV is updated (but don't reload drafts - they're independent)
-  // This ensures we don't show stale quality analysis after CV changes
+  // Reload only quality analysis when the current CV content changes.
   useEffect(() => {
-    if (cvId && !isTempCVId(cvId) && currentCV?.updated_at) {
-      loadLatestQualityAnalysis(cvId, currentCV.updated_at);
+    if (!cvId || isTempCVId(cvId) || !currentCV?.updated_at) {
+      return;
     }
+
+    const lastSync = lastQualitySyncRef.current;
+    if (
+      lastSync &&
+      lastSync.cvId === cvId &&
+      lastSync.updatedAt === currentCV.updated_at
+    ) {
+      return;
+    }
+
+    loadLatestQualityAnalysis(cvId, currentCV.updated_at);
+    lastQualitySyncRef.current = {
+      cvId,
+      updatedAt: currentCV.updated_at,
+    };
   }, [cvId, currentCV?.updated_at, loadLatestQualityAnalysis]);
 
   // Resume polling for in-progress quality analyses after page refresh.

@@ -92,12 +92,12 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
 }) => {
   const [status, setStatus] = useState<ImpersonationStatus>({ active: false });
   const [loading, setLoading] = useState(true);
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, isAdmin } = useAuth();
 
   // Fetch impersonation status
   const fetchStatus = useCallback(async () => {
-    // Don't make API calls if not authenticated or auth is still loading
-    if (!isAuthenticated || authLoading) {
+    // Only admins can impersonate, so skip network work for non-admin users.
+    if (!isAdmin || !isAuthenticated || authLoading) {
       setStatus({ active: false });
       setLoading(false);
       return;
@@ -113,7 +113,7 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, authLoading]);
+  }, [isAdmin, isAuthenticated, authLoading]);
 
   // Manual refresh function
   const refreshStatus = useCallback(async () => {
@@ -123,10 +123,10 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
 
   // Force immediate status check (for when impersonation starts)
   const forceStatusCheck = useCallback(async () => {
-    if (isAuthenticated && !authLoading) {
+    if (isAdmin && isAuthenticated && !authLoading) {
       await fetchStatus();
     }
-  }, [fetchStatus, isAuthenticated, authLoading]);
+  }, [fetchStatus, isAdmin, isAuthenticated, authLoading]);
 
   // End impersonation session
   const endImpersonation = useCallback(async () => {
@@ -150,26 +150,26 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
   useEffect(() => {
     let fallbackIntervalId: NodeJS.Timeout;
 
-    // Check status on app load (only if authenticated)
-    if (isAuthenticated && !authLoading) {
+    // Check status on app load (admins only).
+    if (isAdmin && isAuthenticated && !authLoading) {
       fetchStatus();
     }
 
     // Event handlers for user activity
     const handleFocus = () => {
-      if (isAuthenticated && !authLoading) {
+      if (isAdmin && isAuthenticated && !authLoading) {
         fetchStatus();
       }
     };
 
     const handleRouteChange = () => {
-      if (isAuthenticated && !authLoading) {
+      if (isAdmin && isAuthenticated && !authLoading) {
         fetchStatus();
       }
     };
 
     const handleVisibilityChange = () => {
-      if (!document.hidden && isAuthenticated && !authLoading) {
+      if (!document.hidden && isAdmin && isAuthenticated && !authLoading) {
         fetchStatus();
       }
     };
@@ -180,8 +180,8 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
     window.addEventListener("visibilitychange", handleVisibilityChange);
 
     // Fallback: infrequent polling as safety net (every 2 minutes)
-    // Only start polling if authenticated
-    if (isAuthenticated && !authLoading) {
+    // Only start polling if admin is authenticated.
+    if (isAdmin && isAuthenticated && !authLoading) {
       fallbackIntervalId = setInterval(fetchStatus, fallbackInterval);
     }
 
@@ -193,7 +193,7 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({
       window.removeEventListener("popstate", handleRouteChange);
       window.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [fetchStatus, fallbackInterval, isAuthenticated, authLoading]);
+  }, [fetchStatus, fallbackInterval, isAdmin, isAuthenticated, authLoading]);
 
   const contextValue: ImpersonationContextType = useMemo(
     () => ({

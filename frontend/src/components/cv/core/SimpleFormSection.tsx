@@ -163,7 +163,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
   };
 
   const updateData = (field: string, value: any) => {
-    setEditData({ ...editData, [field]: value });
+    setEditData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   // For personal_info section, control divider visibility based on show_horizontal_line

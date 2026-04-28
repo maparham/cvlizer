@@ -233,9 +233,8 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
     const technical = editData.technical;
     if (!isCategorizedTechnical(technical)) return;
 
-    const updatedTechnical = Object.fromEntries(
-      Object.entries(technical).filter(([k]) => k !== category)
-    );
+    const updatedTechnical: Record<string, string[]> = { ...technical };
+    delete updatedTechnical[category];
 
     const updatedData = { ...editData, technical: updatedTechnical };
     updateData("technical", updatedTechnical);

@@ -178,6 +178,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   const [profilePictureDeleting, setProfilePictureDeleting] = useState(false);
 
   const profilePictureUrlRef = React.useRef<string | null>(null);
+  const profilePictureMissingRef = useRef<Record<string, boolean>>({});
   const [profilePictureMenuAnchor, setProfilePictureMenuAnchor] =
     useState<HTMLElement | null>(null);
   const viewModeFileInputRef = useRef<HTMLInputElement>(null);
@@ -193,15 +194,24 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
       }
       return;
     }
+    if (profilePictureMissingRef.current[cvId]) {
+      return;
+    }
     let cancelled = false;
-    cvApi.getProfilePicture(cvId).then((url) => {
-      if (cancelled || !url) return;
-      if (profilePictureUrlRef.current) {
-        window.URL.revokeObjectURL(profilePictureUrlRef.current);
-      }
-      profilePictureUrlRef.current = url;
-      setProfilePictureUrl(url);
-    });
+    cvApi
+      .getProfilePicture(cvId)
+      .then((url) => {
+        if (cancelled || !url) return;
+        if (profilePictureUrlRef.current) {
+          window.URL.revokeObjectURL(profilePictureUrlRef.current);
+        }
+        profilePictureUrlRef.current = url;
+        setProfilePictureUrl(url);
+      })
+      .catch(() => {
+        // Cache missing profile picture for this CV to avoid repeated slow 404 fetches.
+        profilePictureMissingRef.current[cvId] = true;
+      });
     return () => {
       cancelled = true;
       if (profilePictureUrlRef.current) {
@@ -228,6 +238,9 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
         }
         const url = window.URL.createObjectURL(file);
         profilePictureUrlRef.current = url;
+        if (cvId) {
+          delete profilePictureMissingRef.current[cvId];
+        }
         setProfilePictureUrl(url);
       } finally {
         setProfilePictureUploading(false);

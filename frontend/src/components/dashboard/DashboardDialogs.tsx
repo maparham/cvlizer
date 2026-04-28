@@ -17,21 +17,24 @@
  * - Provides consistent dialog UI across dashboard features
  */
 
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 import WarningIcon from "@mui/icons-material/Warning";
-import { CVFromTextDialog, CVUpload } from "../cv";
-import CVTemplateSelector from "../cv/CVTemplateSelector";
-import { JobDescriptionsModal } from "../cv/ai";
 import JobDescriptionStatusDialog from "../cv/ai/JobDescriptionStatusDialog";
 import { CV } from "../../types";
 import { JobDescription, JobDescriptionStatusUpdate } from "../../types/ai";
+
+const CVUpload = lazy(() => import("../cv/CVUpload"));
+const CVFromTextDialog = lazy(() => import("../cv/CVFromTextDialog"));
+const CVTemplateSelector = lazy(() => import("../cv/CVTemplateSelector"));
+const JobDescriptionsModal = lazy(() => import("../cv/ai/job-descriptions-modal"));
 
 interface DashboardDialogsProps {
   // Upload dialog
@@ -94,27 +97,45 @@ const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
   onStatusDialogClose,
   onStatusSave,
 }) => {
+  const renderLoader = (
+    <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+      <CircularProgress size={24} />
+    </Box>
+  );
+
   return (
     <>
-      <CVUpload
-        open={uploadOpen}
-        onClose={onUploadClose}
-        onSuccess={onUploadSuccess}
-        initialFile={initialFile}
-      />
+      {uploadOpen && (
+        <Suspense fallback={renderLoader}>
+          <CVUpload
+            open={uploadOpen}
+            onClose={onUploadClose}
+            onSuccess={onUploadSuccess}
+            initialFile={initialFile}
+          />
+        </Suspense>
+      )}
 
-      <CVFromTextDialog
-        open={fromTextOpen}
-        onClose={onFromTextClose}
-        onSuccess={onFromTextSuccess}
-      />
+      {fromTextOpen && (
+        <Suspense fallback={renderLoader}>
+          <CVFromTextDialog
+            open={fromTextOpen}
+            onClose={onFromTextClose}
+            onSuccess={onFromTextSuccess}
+          />
+        </Suspense>
+      )}
 
       {/* Template Selector */}
-      <CVTemplateSelector
-        open={templateSelectorOpen}
-        onClose={onTemplateSelectorClose}
-        onSelectTemplate={onTemplateSelect}
-      />
+      {templateSelectorOpen && (
+        <Suspense fallback={renderLoader}>
+          <CVTemplateSelector
+            open={templateSelectorOpen}
+            onClose={onTemplateSelectorClose}
+            onSelectTemplate={onTemplateSelect}
+          />
+        </Suspense>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog
@@ -162,13 +183,17 @@ const DashboardDialogs: React.FC<DashboardDialogsProps> = ({
       </Dialog>
 
       {/* Job Descriptions Modal */}
-      <JobDescriptionsModal
-        open={jobDescriptionModalOpen}
-        onClose={onJobDescriptionClose}
-        onJobDescriptionCreated={onJobDescriptionCreated}
-        cvId="" // No CV context when creating from Dashboard
-        editingJobDescription={editingJobDescription}
-      />
+      {jobDescriptionModalOpen && (
+        <Suspense fallback={renderLoader}>
+          <JobDescriptionsModal
+            open={jobDescriptionModalOpen}
+            onClose={onJobDescriptionClose}
+            onJobDescriptionCreated={onJobDescriptionCreated}
+            cvId="" // No CV context when creating from Dashboard
+            editingJobDescription={editingJobDescription}
+          />
+        </Suspense>
+      )}
 
       {/* Status Update Dialog */}
       <JobDescriptionStatusDialog
