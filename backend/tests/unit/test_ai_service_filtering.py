@@ -9,7 +9,12 @@ import json
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from src.services.ai_service.section_generation import generate_cv_section
-from src.services.ai_service.ai_suggestions_service import _build_ai_suggestions_prompt
+from src.services.ai_service.ai_suggestions_service import (
+    AI_SUGGESTIONS_DEVELOPER_PROMPT,
+    AI_SUGGESTIONS_SYSTEM_PROMPT,
+    _build_ai_suggestions_prompt,
+    generate_ai_suggestions,
+)
 
 
 @pytest.fixture
@@ -240,6 +245,67 @@ class TestAISuggestionsFiltering:
         # Other sections should be present
         assert "Tech Corp" in prompt or "work_experience" in prompt
         assert "Python" in prompt
+
+    @pytest.mark.asyncio
+    async def test_ai_suggestions_uses_three_prompt_layers(self):
+        """Test AI suggestions call passes system, developer, and user prompts."""
+        cv_data = {
+            "personal_info": {"full_name": "John Doe"},
+            "work_experience": [
+                {"id": "1", "company": "Tech Corp", "position": "Engineer"}
+            ],
+            "skills": {"technical": ["Python"], "soft": []},
+            "section_config": {
+                "sections": [
+                    {"id": "personal_info", "type": "personal_info", "visible": True},
+                    {"id": "work_experience", "type": "work_experience", "visible": True},
+                    {"id": "skills", "type": "skills", "visible": True},
+                ]
+            },
+        }
+        job_description = "Python backend engineer role"
+
+        mocked_response = {
+            "title": "Hello Tech Corp!",
+            "confidence_score": 78,
+            "fit_analysis": '## Introduction\nI am a fit.\n\n## Your Requirements\n**"Python"**\n\nI use it.',
+            "key_matches": ["Python"],
+            "missing_skills": [],
+            "suggested_improvements": ["Clarify impact in bullets"],
+            "strengths": ["Backend experience"],
+            "weaknesses": ["No cloud exposure"],
+            "skills": {"technical": [], "soft": []},
+            "professional_summary": None,
+            "work_experience": [],
+            "education": [],
+        }
+        mocked_metadata = {
+            "tokens_used": 100,
+            "generation_time": 10,
+            "model_used": "gpt-5-mini",
+            "prompt_tokens": 60,
+            "completion_tokens": 40,
+            "cached_tokens": 0,
+        }
+
+        with patch(
+            "src.services.ai_service.ai_suggestions_service.call_openai_with_schema"
+        ) as mock_openai:
+            mock_openai.return_value = (mocked_response, mocked_metadata)
+
+            await generate_ai_suggestions(
+                cv_data=cv_data,
+                job_description=job_description,
+                user_id="user-1",
+                cv_id="cv-1",
+            )
+
+            kwargs = mock_openai.call_args.kwargs
+            assert kwargs["system_prompt"] == AI_SUGGESTIONS_SYSTEM_PROMPT
+            assert kwargs["developer_prompt"] == AI_SUGGESTIONS_DEVELOPER_PROMPT
+            assert "CV:" in kwargs["user_prompt"]
+            assert "Job:" in kwargs["user_prompt"]
+            assert "Python backend engineer role" in kwargs["user_prompt"]
 
     def test_ai_suggestions_excludes_hidden_skills(self):
         """Test that hidden skills are not in AI suggestions prompt."""

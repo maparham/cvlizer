@@ -85,6 +85,7 @@ async def run_openai_call(
     use_prompt_ref: bool,
     use_reasoning: bool,
     system_prompt: Optional[str],
+    developer_prompt: Optional[str],
     user_prompt: Optional[str],
     response_schema: Type[BaseModel],
     operation_type: str,
@@ -121,6 +122,11 @@ async def run_openai_call(
         prompt_ref=prompt_ref,
         prompt_variables=prompt_variables,
     )
+
+    inline_messages = [{"role": "system", "content": system_prompt}]
+    if developer_prompt:
+        inline_messages.append({"role": "developer", "content": developer_prompt})
+    inline_messages.append({"role": "user", "content": user_prompt})
 
     # Execute either prompt-by-ID or inline prompt branch
     if use_prompt_ref and prompt_ref is not None and prompt_variables is not None:
@@ -200,10 +206,7 @@ async def run_openai_call(
         # input + text.format so the same cv_review_v2 schema is used as preset modes.
         call_kwargs: Dict[str, Any] = {
             "model": model,
-            "input": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            "input": inline_messages,
             "text": {"format": text_format_schema},
             "max_output_tokens": max_output_tokens,
         }
@@ -262,10 +265,7 @@ async def run_openai_call(
         # Branch: inline system + user prompt; use responses.parse
         call_kwargs = {
             "model": model,
-            "input": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            "input": inline_messages,
             "text_format": response_schema,
             "max_output_tokens": max_output_tokens,
         }

@@ -21,6 +21,93 @@ from .cv_section_utils import get_summary_custom_section
 
 logger = logging.getLogger(__name__)
 
+AI_SUGGESTIONS_SYSTEM_PROMPT = """You are an expert CV and job-fit evaluator. Your task is to analyze a candidate against a specific job description and provide honest, high-quality recommendations that improve the application only where there is clear value.
+
+CORE OBJECTIVE
+Help the candidate present their real strengths clearly and credibly. Prioritize judgment, relevance, and truthfulness over keyword matching.
+
+NON-NEGOTIABLE RULES
+1. Never invent experience, skills, achievements, metrics, responsibilities, certifications, or tools.
+2. Never imply the candidate has done work not supported by the CV.
+3. Use transferable skills when direct experience is missing.
+4. Preserve the candidate’s natural voice whenever suggesting edits.
+5. Prefer minimal necessary changes over rewriting.
+6. If existing content is already strong, keep it unchanged.
+7. Be accurate, specific, and concise.
+
+LANGUAGE
+Write all content in the same language as the job description unless explicitly instructed otherwise.
+
+EVALUATION PRINCIPLES
+Judge fit based on substance, not generosity. Prioritize:
+- Relevant hands-on experience
+- Technical depth
+- Ownership and delivery
+- Similarity to job responsibilities
+- Complexity of past work
+- Communication and collaboration evidence
+- Growth potential where gaps are reasonable
+
+Do NOT overweight:
+- Buzzwords
+- Exact keyword matches
+- Inflated titles
+- Minor tool mismatches
+- Missing nice-to-have items
+
+SCORING GUIDELINES
+90-100 = Excellent fit
+75-89 = Good fit
+60-74 = Moderate fit
+40-59 = Weak to partial fit
+1-39 = Poor fit
+
+WRITING STYLE
+Clear, direct, natural language. No hype, no filler, no empty praise.
+
+EDITING RULES
+Only suggest edits with clear benefit:
+- clarity
+- grammar
+- stronger relevance
+- removal of weak phrasing
+- better evidence already present
+
+Do not suggest cosmetic rewrites.
+
+FINAL STANDARD
+Every recommendation must materially improve clarity, credibility, relevance, or hiring chances."""
+
+AI_SUGGESTIONS_DEVELOPER_PROMPT = """Follow the provided structured output schema exactly.
+- Never output fields outside schema.
+- Respect required vs nullable fields.
+- Arrays should be concise and high-signal.
+- Avoid repetitive suggestions.
+- If evidence is weak, lower confidence.
+- Use realistic scoring, not inflated scoring.
+- Do not lower scores merely because content is brief.
+- Preserve original candidate wording whenever possible.
+- Only produce low-score suggestions when there is a concrete problem: grammar, unclear impact, weak relevance, confusing wording, factual issue.
+
+html_diff rules:
+- Generate html_diff whenever a suggestion field changes text.
+- Output complete suggested text with inline change markers.
+- Use only <del>removed</del> and <ins>added</ins>.
+- Keep unchanged text plain.
+- Mark minimal changed spans only.
+- Ensure balanced valid tags.
+- If no changes, return empty string.
+
+Schema contract rules:
+- suggested_improvements, strengths, weaknesses must have >=1 value.
+- key_matches can be empty.
+- For professional_summary: if no changes needed, return null.
+- For work_experience and education: include ALL items with current_content_score.
+- Use item_type=\"high_score\" for score >= 50 with only id/current_content_score fields.
+- Use item_type=\"low_score\" for score < 50 and include all required suggestion fields.
+- For 'suggested' fields, always return ready-to-use rewritten text, not instructions.
+- Keep reasoning concise and specific (maximum 30 words for item-level reasoning)."""
+
 
 def _normalize_skill_name(skill: str) -> str:
     """
@@ -137,35 +224,6 @@ def _build_ai_suggestions_prompt(
     work_json = json.dumps(work_items)
     education_json = json.dumps(education_items)
 
-    # ============================================================================
-    # HTML DIFF FORMATTING INSTRUCTIONS
-    # ============================================================================
-    # This instruction applies to professional_summary, work_experience, and education
-    # sections when they include html_diff fields.
-    html_diff_instruction = (
-        "Provide html_diff showing the COMPLETE suggested text with inline HTML change markers. "
-        "GOAL: Enable users to quickly see changes—single out ONLY changed parts, keep all unchanged text plain. "
-        "CRITICAL: html_diff must contain EVERY word from 'suggested' field, but mark ONLY changed phrases/words/punctuation. "
-        "Rules: Use <del>text</del> for removed text, <ins>text</ins> for added text. "
-        "Process: Compare word-by-word and punctuation-by-punctuation with 'original', mark only changed elements. "
-        "Examples: '- existing part<ins>, new part</ins>' (inserting or appending text), "
-        "'- Unchanged part and <del>old part</del><ins>new part</ins>' (partial change), "
-        "'- Text with <del>Old</del><ins>old</ins> word' (capitalization), "
-        "'First part <del>and</del><ins>;</ins> second part' (punctuation change), "
-        "CRITICAL: for line removals: When an entire line is removed, include the COMPLETE line including newline character in <del> tags. "
-        "Example: Original: '- Line1 A\\n- Line2 B\\n- Line3 C', Suggested: '- Line1 A\\n- Line3 C'. "
-        "html_diff: '- Line A\\n<del>- Line B\\n</del>- Line C' (entire removed line including \\n is in <del>). "
-        "CRITICAL: for line additions: When an entire line is added, show the complete new line in <ins> tags including newline. "
-        "Example: Original: '- Line1 A\\n- Line3 C', Suggested: '- Line1 A\\n- Line2 B\\n- Line3 C'. "
-        "html_diff: '- Line A\\n<ins>- Line B\\n</ins>- Line C' (entire added line including \\n is in <ins>). "
-        "CRITICAL: for complete additions when original_text is empty and all suggested_text is new: "
-        "the entire suggested_text should be in <ins> tags with NO <del> tags. "
-        "Example: Original: empty, Suggested: 'New complete text here'. "
-        "html_diff: '<ins>New complete text here</ins>' (entire text in <ins>, no <del>). "
-        'CRITICAL for html_diff: Mark at phrase/word/punctuation level. Keep marking MINIMAL. If no changes, use empty string "".'
-        "CRITICAL: The HTML tags must be properly closed and balanced. Use only <del> and <ins> tags, no other HTML."
-    )
-
     # Build conditional optimization instructions
     optimization_tasks = []
     if has_skills_section:
@@ -192,8 +250,7 @@ def _build_ai_suggestions_prompt(
             "If original_text exists, only suggest changes when there are clear issues: unclear messaging, weak impact, grammar errors, or factual problems. "
             "Preserve original structure and key phrases. Avoid unnecessary rephrasing. "
             "Stay close to original wording—only modify when the change addresses a concrete problem that significantly improves clarity or impact. "
-            "If no changes needed, set professional_summary field to null. "
-            f"See HTML DIFF FORMATTING INSTRUCTIONS section above for html_diff format requirements."
+            "If no changes needed, set professional_summary field to null."
         )
 
     # Shared instructions for item-based sections (work_experience and education)
@@ -219,7 +276,6 @@ def _build_ai_suggestions_prompt(
             f"   CRITICAL: The 'suggested' field must contain the ACTUAL rewritten content written as the candidate's own text. "
             f"Write the complete improved version directly. DO NOT include meta-instructions like 'Clarify X' or 'Add Y'. "
             f"The 'suggested' field is ready-to-use content, not instructions.\n"
-            f"   See HTML DIFF FORMATTING INSTRUCTIONS section above for html_diff format requirements."
         )
 
     optimization_tasks_text = (
@@ -320,40 +376,7 @@ def _build_ai_suggestions_prompt(
    - If no acronym is present, use an appropriate short form of the company name in the title
    - Throughout the fit_analysis, consistently refer to the company using the acronym or short name for brevity and natural flow"""
 
-    return f"""Analyze CV fit for position and suggest improvements.
-
-⚠️ LANGUAGE: Write ALL content in SAME LANGUAGE as job description.
-
-⚠️ WRITING STYLE:
-- Be brief and concise—avoid unnecessary words and phrases.
-- Write like a human coach, not a corporate recruiter. Use simple language, avoid corporate jargon.
-- Use phrases like 'position' or 'job' instead of corporate jargons like 'role'.
-- Respect the candidate's existing writing STYLE: observe their CV—only suggest metrics if they already use them. If CV uses bullets, suggest bullets except when there is only one item. If CV has no metrics, don't add metrics.
-- Write naturally: avoid hyphenated compounds like "multi-year" and "data-pipeline"—use separate words or rephrase for a conversational, human tone.
-- CRITICAL: Do NOT start every sentence with "I". Maximum 30% of sentences should begin with "I"/"I've"/"I'm".
-
-⚠️ MINIMAL CHANGES PRINCIPLE (CRITICAL):
-- Only suggest changes when there is a CLEAR, SUBSTANTIAL benefit: fixing grammar errors, clarifying unclear messaging, adding missing impact, or correcting factual issues.
-- AVOID cosmetic changes: synonym swapping (e.g., "developed" → "created"), minor rephrasing, style tweaks, or changes that don't address concrete problems.
-- Stay CLOSE to original wording—preserve the candidate's voice and authentic expression. Don't change words just to sound "better" or more polished.
-- When in doubt, keep the original text unchanged. Only modify when the change addresses a specific, concrete issue that significantly improves clarity, correctness, or impact.
-- Preserve original structure, key phrases, and the candidate's natural writing style unless there's a compelling reason to change them.
-- CRITICAL: Preserve ALL Unicode characters exactly as they appear in the original CV text (e.g., apostrophes, quotes, dashes). Do not modify or corrupt Unicode characters.
-
-⚠️ CAREER COACHING APPROACH:
-- Provide DETAILED and CONCRETE reasoning for ALL suggestions—explain WHY each suggestion helps. Quote specific CV phrases when explaining issues. Reference actual job IDs, dates, or company names.
-- Count keyword usage across ALL suggestions. If 'Docker' appears twice, don't use it again. Each keyword should appear at most 2 times over all suggestions.
-- Focus on TRANSFERABLE SKILLS from the CV, not keywords from the job description, unless they are explicitly mentioned in the CV
-- Try to connect skills mentioned in the job description with the skills mentioned in the CV. E.g. if the job description mentions "AWS", try to find a skill that is related to deployment, scaling, etc
-- FACT-BASED ONLY: For work_experience/education suggestions, only reference technologies/skills explicitly in each item's data. Never add technologies not listed in that item's 'technologies' array. NEVER suggest skills/technologies candidate hasn't used. Only highlight existing skills they may have undersold.
-
-CV: {cv_json}
-Job: {job_description}
-
-⚠️ HTML DIFF FORMATTING INSTRUCTIONS:
-{html_diff_instruction}
-
-TASKS:
+    return f"""TASKS:
 1. Job Fit Analysis (write as candidate, first person):
 {company_name_instruction}
    - confidence_score: 1-100 match quality based on transferable skills and authentic fit
@@ -384,21 +407,14 @@ TASKS:
 2. Optimization Suggestions:
 {optimization_tasks_text}
 
+REQUEST PAYLOAD:
+CV: {cv_json}
+Job: {job_description}
+
 OUTPUT JSON:
 {{
 {json_output_example}
 }}
-
-- suggested_improvements, strengths, weaknesses must have ≥1 value.
-- key_matches can be empty.
-- First focus on writing issues, e.g. grammar, punctuation, etc. Then focus on semantics.
-- In your reasoning, provide accurate explanation of why the existing content is not good enough. Quote the specific parts of the CV that you are referring to.
-- CRITICAL for 'suggested' field: Write the ACTUAL improved content as the candidate's own text. DO NOT write instructions like 'Clarify X' or 'Add Y'. The 'reasoning' field explains what to improve; the 'suggested' field is the actual rewritten text ready to use.
-- Be as specific as possible. Be very brief, concise and to the point. Reasoning fields: maximum 30 words each.
-- CRITICAL: Only suggest changes when there's a clear, substantial benefit. Avoid cosmetic modifications, synonym swapping, or unnecessary rephrasing.
-- For professional_summary: If no changes needed, set the field to null. If changes exist, include html_diff with the diff string.
-- CRITICAL for work_experience and education: Include ALL items with their current_content_score. Use item_type="high_score" for score >= 50 (only id and score). Use item_type="low_score" for score < 50 with clear issues (all suggestion fields). The schema will reject responses that don't follow this format.
-- CRITICAL for html_diff: See HTML DIFF FORMATTING INSTRUCTIONS section above. Must show the COMPLETE suggested text with INLINE HTML change markers only. Mark ONLY changed portions, keep unchanged text plain. Use only <del> and <ins> tags.
 """
 
 
@@ -436,40 +452,20 @@ async def generate_ai_suggestions(
     if not is_ai_enabled():
         raise RuntimeError("AI features are not enabled")
 
-    # Build token-optimized prompt
-    prompt = _build_ai_suggestions_prompt(cv_data, job_description, company_name)
+    # Split prompts by concern to improve maintenance and reasoning quality while
+    # keeping the dynamic request payload concise and reducing instruction bloat.
+    user_prompt = _build_ai_suggestions_prompt(cv_data, job_description, company_name)
 
     try:
         logger.info(
             f"Generating AI suggestions - user_id={user_id}, cv_id={cv_id}, operation=ai_suggestions"
         )
 
-        system_prompt = (
-            "You are a supportive career coach dedicated to helping candidates confidently present their "
-            "authentic experiences. Emphasize transferable skills and demonstrate genuine job fit, rather than "
-            "focusing solely on keyword matching.\n\n"
-            "CRITICAL: Only suggest changes when there is a clear and substantial benefit—such as correcting "
-            "grammar errors, clarifying unclear messaging, or making missing impact explicit. Avoid cosmetic "
-            "edits, unnecessary synonym swaps, or rewording merely for style. Stay as close as possible to the "
-            "candidate's original wording and preserve their unique voice.\n\n"
-            "After your review, provide a brief validation step: confirm whether your suggestions directly "
-            "enhance clarity, accuracy, or impact. If not, self-correct or note any outstanding issues that "
-            "could not be addressed within the scope.\n\n"
-            "Be both encouraging and honest, helping candidates share their stories effectively while supporting "
-            "them throughout the process. Do not expand length unnecessarily for added politeness.\n\n"
-            "Output Verbosity: Limit your feedback to a maximum of 2 short paragraphs or up to 6 concise bullets "
-            "(1 line each). Prioritize complete, actionable answers within these boundaries.\n\n"
-            "Avoid using corporate jargon or overly formal language. Examples to avoid: 'role', 'ship', "
-            "'synergize', 'leverage', 'utilize' (use 'use'), 'facilitate' (use 'help' or 'enable'), "
-            "'paradigm shift', 'circle back', 'touch base', 'deep dive', 'low-hanging fruit', 'move the needle', "
-            "'at the end of the day', 'think outside the box'. Instead, use clear, direct, and simple language that sounds "
-            "natural and human.\n\n"
-        )
-
         # Single unified OpenAI call
         response, metadata = await call_openai_with_schema(
-            system_prompt=system_prompt,
-            user_prompt=prompt,
+            system_prompt=AI_SUGGESTIONS_SYSTEM_PROMPT,
+            developer_prompt=AI_SUGGESTIONS_DEVELOPER_PROMPT,
+            user_prompt=user_prompt,
             response_schema=AISuggestionsResponseSchema,
             user_id=user_id,
             cv_id=cv_id,

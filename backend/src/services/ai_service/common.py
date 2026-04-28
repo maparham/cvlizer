@@ -296,6 +296,7 @@ def get_user_friendly_error_message(error: Exception) -> str:
 async def call_openai_with_schema(
     *,
     system_prompt: Optional[str] = None,
+    developer_prompt: Optional[str] = None,
     user_prompt: Optional[str] = None,
     response_schema: Type[BaseModel],
     model: Optional[str] = None,
@@ -331,6 +332,7 @@ async def call_openai_with_schema(
 
     Args:
         system_prompt: System message content (required when not using prompt_ref)
+        developer_prompt: Optional developer message content for app-level rules
         user_prompt: User message content (required when not using prompt_ref)
         response_schema: Pydantic schema for response parsing and validation
         model: Model to use (defaults from get_model_for_operation when not set)
@@ -430,6 +432,7 @@ async def call_openai_with_schema(
                 use_prompt_ref=use_prompt_ref,
                 use_reasoning=use_reasoning,
                 system_prompt=system_prompt,
+                developer_prompt=developer_prompt,
                 user_prompt=user_prompt,
                 response_schema=response_schema,
                 operation_type=operation_type,

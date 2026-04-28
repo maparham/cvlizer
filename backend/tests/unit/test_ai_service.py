@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from src.services.ai_service import generate_cv_section, parse_cv_text_with_openai
+from src.services.ai_service.responses_runner import run_openai_call
 from src.services.ai_ops.ai_usage_service import calculate_cost
 
 
@@ -186,6 +187,57 @@ class TestAIService:
 
             assert "error" in result
             assert "Unable to extract text from PDF" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_run_openai_call_includes_developer_message(self):
+        """Inline responses.parse call should include system->developer->user roles."""
+
+        class _DummySchema(BaseModel):
+            title: str
+            content: str
+            key_points: list[str]
+
+        mock_client = Mock()
+        mock_response = Mock(spec=["output_parsed", "usage"])
+        mock_response.output_parsed = _DummySchema(
+            title="t", content="c", key_points=["k1"]
+        )
+        mock_response.usage = Mock(input_tokens=10, output_tokens=5)
+        mock_client.responses.parse.return_value = mock_response
+
+        parsed_data, metadata = await run_openai_call(
+            client=mock_client,
+            model="gpt-5-mini",
+            reasoning_effort="medium",
+            reasoning_summary=None,
+            use_prompt_ref=False,
+            use_reasoning=False,
+            system_prompt="system text",
+            developer_prompt="developer rules",
+            user_prompt="user payload",
+            response_schema=_DummySchema,
+            operation_type="ai_suggestions",
+            retry_attempts=1,
+            retry_delay=0.0,
+            text_verbosity=None,
+            prompt_ref=None,
+            prompt_variables=None,
+            text_format_schema=None,
+            get_seed_for_operation=lambda _op: None,
+            with_retries_fn=lambda fn, attempts, delay: fn(),
+            extract_cached_tokens_fn=lambda _response: 0,
+            max_output_tokens=300,
+        )
+
+        call_kwargs = mock_client.responses.parse.call_args.kwargs
+        assert call_kwargs["input"][0] == {"role": "system", "content": "system text"}
+        assert call_kwargs["input"][1] == {
+            "role": "developer",
+            "content": "developer rules",
+        }
+        assert call_kwargs["input"][2] == {"role": "user", "content": "user payload"}
+        assert parsed_data["title"] == "t"
+        assert metadata["tokens_used"] == 15
 
 
 class TestAIUsageService:
