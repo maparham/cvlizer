@@ -76,11 +76,13 @@ class TestSkillsResponseSchemaValidation:
         assert isinstance(schema.technical, dict)
         assert len(schema.technical) == 3
 
-    def test_ai_parsing_rejects_legacy_list_input(self):
-        """Test that flat list input no longer produces categorized output."""
+    def test_ai_parsing_coerces_legacy_flat_list(self):
+        """Flat list of strings maps to the legacy PDF category bucket."""
         data = {"technical": ["Python", "Docker"]}
         schema = SkillsResponseSchema(**data)
-        assert schema.technical == {}
+        assert schema.technical == {
+            "Technical": ["Python", "Docker"],
+        }
 
 
 class TestPDFExportCategorizedSkills:
@@ -141,12 +143,12 @@ class TestPDFExportCategorizedSkills:
 
 
 class TestStrictSkillsFormat:
-    """Test strict categorized-skills validation behavior."""
+    """Categorized schema still accepts legacy flat technical lists."""
 
-    def test_schema_rejects_flat_input(self):
+    def test_schema_coerces_flat_list_to_single_category(self):
         flat_data = {"technical": ["Python"]}
         flat_schema = SkillsSchema(**flat_data)
-        assert flat_schema.technical == {}
+        assert flat_schema.technical == {"Technical": ["Python"]}
 
 
 if __name__ == "__main__":

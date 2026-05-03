@@ -184,6 +184,11 @@ class EducationSchema(BaseModel):
         extra = "forbid"  # Reject any additional fields
 
 
+# Bucket name for legacy flat ``technical`` lists; matches PDF export in
+# ``latex_export_service._format_skills`` (``"Technical"`` heading).
+LEGACY_FLAT_TECHNICAL_SKILLS_CATEGORY = "Technical"
+
+
 class SkillsSchema(BaseModel):
     """Schema for skills section.
 
@@ -200,7 +205,11 @@ class SkillsSchema(BaseModel):
     def validate_technical_format(
         cls, v: Dict[str, List[str]] | List[str] | object
     ) -> Dict[str, List[str]]:
-        """Validate skills format with non-empty category names and skill values."""
+        """Validate skills format with non-empty category names and skill values.
+
+        Legacy API payloads may send ``technical`` as a flat list of strings; those
+        are coerced to a single category so updates do not drop skills silently.
+        """
         if isinstance(v, dict):
             validated_dict = {}
             for category, skills in v.items():
@@ -216,6 +225,13 @@ class SkillsSchema(BaseModel):
                 if validated_skills:
                     validated_dict[category.strip()] = validated_skills
             return validated_dict
+        if isinstance(v, list):
+            flat_skills = [
+                skill.strip() for skill in v if isinstance(skill, str) and skill.strip()
+            ]
+            if flat_skills:
+                return {LEGACY_FLAT_TECHNICAL_SKILLS_CATEGORY: flat_skills}
+            return {}
         return {}
 
     class Config:

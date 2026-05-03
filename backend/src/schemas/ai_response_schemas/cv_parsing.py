@@ -9,6 +9,8 @@ from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.schemas.cv_schemas import LEGACY_FLAT_TECHNICAL_SKILLS_CATEGORY
+
 
 class PersonalInfoResponseSchema(BaseModel):
     """Schema for personal information in CV parsing response."""
@@ -100,7 +102,11 @@ class SkillsResponseSchema(BaseModel):
     def normalize_technical(
         cls, v: Dict[str, List[str]] | List[str] | List[Dict[str, object]] | object
     ) -> Dict[str, List[str]]:
-        """Normalize skills to internal dictionary format."""
+        """Normalize skills to internal dictionary format.
+
+        Flat lists of strings (legacy or malformed model output) map to one
+        category so parsed skills are not discarded.
+        """
         if isinstance(v, dict):
             normalized: Dict[str, List[str]] = {}
             for category, skills in v.items():
@@ -117,6 +123,11 @@ class SkillsResponseSchema(BaseModel):
                     normalized[category.strip()] = cleaned
             return normalized
         if isinstance(v, list):
+            flat_skills = [
+                skill.strip() for skill in v if isinstance(skill, str) and skill.strip()
+            ]
+            if flat_skills:
+                return {LEGACY_FLAT_TECHNICAL_SKILLS_CATEGORY: flat_skills}
             return {}
         return {}
 
