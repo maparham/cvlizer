@@ -60,17 +60,19 @@ export function normalizeCVSkillsTechnicalInParsedData(cv: CV): CV {
   if (!pd || typeof pd !== "object") {
     return cv;
   }
-  const skills = pd.skills as Record<string, unknown> | undefined;
-  if (!skills || typeof skills !== "object") {
+  const skillsBlock = pd.skills;
+  if (!skillsBlock || typeof skillsBlock !== "object") {
     return cv;
   }
-  const technical = normalizeSkillsTechnical(skills.technical);
+  const technical = normalizeSkillsTechnical(
+    (skillsBlock as { technical?: unknown }).technical,
+  );
   return {
     ...cv,
     parsed_data: {
       ...pd,
       skills: {
-        ...skills,
+        ...skillsBlock,
         technical,
       },
     },
