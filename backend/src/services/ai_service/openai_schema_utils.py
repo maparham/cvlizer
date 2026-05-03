@@ -169,6 +169,10 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
             "Skills": {
                 "type": "object",
                 "description": "Dynamic skill categories where each key is a category and each value is an array of skill suggestions.",
+                # OpenAI structured outputs require object schemas to declare ``properties``
+                # (even when empty); map-style keys use ``additionalProperties`` below.
+                "properties": {},
+                "required": [],
                 "additionalProperties": {
                     "type": "array",
                     "maxItems": 6,

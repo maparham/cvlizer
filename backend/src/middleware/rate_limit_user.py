@@ -78,7 +78,7 @@ class RateLimitUserMiddleware(BaseHTTPMiddleware):
 
                             if session and session.is_active:
                                 # Use impersonated user's ID for rate limiting
-                                request.state.user_id = session.impersonated_user_id
+                                request.state.user_id = session.target_user_id
                             else:
                                 # Invalid/expired session - use original user ID
                                 request.state.user_id = clerk_user_id
