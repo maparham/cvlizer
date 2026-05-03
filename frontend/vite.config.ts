@@ -1,9 +1,62 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'fs'
 
 import { cloudflare } from "@cloudflare/vite-plugin";
+
+/**
+ * Remove macOS metadata from dist after the public/ copy so Wrangler uploads
+ * stay clean (Finder writes .DS_Store and AppleDouble ._* files into public/).
+ */
+function stripDarwinMetadataFromDist(): Plugin {
+  return {
+    name: 'strip-darwin-metadata-from-dist',
+    apply: 'build',
+    closeBundle() {
+      const distDir = resolve(process.cwd(), 'dist')
+      if (!existsSync(distDir)) {
+        return
+      }
+      const walk = (dir: string): void => {
+        let names: string[]
+        try {
+          names = readdirSync(dir)
+        } catch {
+          return
+        }
+        for (const name of names) {
+          if (name === '.DS_Store' || name.startsWith('._')) {
+            try {
+              unlinkSync(resolve(dir, name))
+            } catch {
+              /* ignore */
+            }
+            continue
+          }
+          const full = resolve(dir, name)
+          let st: ReturnType<typeof statSync>
+          try {
+            st = statSync(full)
+          } catch {
+            continue
+          }
+          if (st.isDirectory()) {
+            walk(full)
+          }
+        }
+      }
+      walk(distDir)
+    },
+  }
+}
 
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || "http://localhost:8000";
 
@@ -39,7 +92,7 @@ function replacePublicUrl() {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [replacePublicUrl(), react(), cloudflare()],
+  plugins: [replacePublicUrl(), react(), cloudflare(), stripDarwinMetadataFromDist()],
   server: {
     port: 3000,
     host: true,
