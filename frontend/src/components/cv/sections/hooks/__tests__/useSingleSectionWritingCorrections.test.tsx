@@ -75,7 +75,7 @@ describe("useSingleSectionWritingCorrections", () => {
       mockUseValidatedQualityAnalysis.mockReturnValue({
         issues: [],
         overall_quality_score: 70,
-        skills: { technical: [], soft: [] },
+        skills: {},
         timeline_gaps: [],
       });
 
@@ -104,7 +104,7 @@ describe("useSingleSectionWritingCorrections", () => {
           },
         ],
         overall_quality_score: 70,
-        skills: { technical: [], soft: [] },
+        skills: {},
         timeline_gaps: [],
       });
 
@@ -147,7 +147,7 @@ describe("useSingleSectionWritingCorrections", () => {
           },
         ],
         overall_quality_score: 70,
-        skills: { technical: [], soft: [] },
+        skills: {},
         timeline_gaps: [],
       });
 
@@ -196,7 +196,7 @@ describe("useSingleSectionWritingCorrections", () => {
           },
         ],
         overall_quality_score: 70,
-        skills: { technical: [], soft: [] },
+        skills: {},
         timeline_gaps: [],
       });
       const dismissWritingCorrection = jest.fn().mockResolvedValue(undefined);
@@ -269,7 +269,7 @@ describe("useSingleSectionWritingCorrections", () => {
           },
         ],
         overall_quality_score: 70,
-        skills: { technical: [], soft: [] },
+        skills: {},
         timeline_gaps: [],
       });
       const dismissWritingCorrection = jest.fn().mockResolvedValue(undefined);

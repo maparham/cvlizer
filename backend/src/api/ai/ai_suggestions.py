@@ -42,7 +42,6 @@ from .models import (
     GenerateSuggestionsRequest,
     ProfessionalSummarySuggestion,
     SkillSuggestion,
-    SkillsSuggestions,
 )
 
 router = APIRouter(tags=["ai"])

@@ -17,10 +17,11 @@ Pool configuration automatically adjusts based on environment:
 
 import logging
 import os
+import time
 from typing import Any, Dict
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -28,10 +29,18 @@ from sqlalchemy.pool import StaticPool
 # Import config after dotenv is loaded
 load_dotenv()
 from src.config import DatabaseConfig
+from src.utils.sqlite_foreign_keys import register_sqlite_pragma_foreign_keys
 
 logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./cv_optimizer.db")
+DB_TIMING_DEBUG_ENABLED = str(os.getenv("DB_TIMING_DEBUG", "false")).lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+DB_SLOW_QUERY_MS = float(os.getenv("DB_SLOW_QUERY_MS", "300"))
 
 # Create engine with appropriate pool configuration based on database type
 if DatabaseConfig.is_poolable_database():
@@ -45,6 +54,7 @@ if DatabaseConfig.is_poolable_database():
         max_overflow=max_overflow,
         pool_timeout=DatabaseConfig.POOL_TIMEOUT,
         pool_recycle=DatabaseConfig.POOL_RECYCLE,
+        pool_pre_ping=True,
         echo=False,
     )
     logger.info(
@@ -53,7 +63,8 @@ if DatabaseConfig.is_poolable_database():
         f"size={pool_size}, "
         f"max_overflow={max_overflow}, "
         f"timeout={DatabaseConfig.POOL_TIMEOUT}s, "
-        f"recycle={DatabaseConfig.POOL_RECYCLE}s"
+        f"recycle={DatabaseConfig.POOL_RECYCLE}s, "
+        f"pre_ping=True"
     )
 else:
     # SQLite - use StaticPool for connection reuse
@@ -74,10 +85,57 @@ else:
         f"Database engine created with StaticPool for SQLite: "
         f"url={DATABASE_URL}, timeout=30s (single persistent connection)"
     )
+    register_sqlite_pragma_foreign_keys(engine)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+if DB_TIMING_DEBUG_ENABLED and DatabaseConfig.is_poolable_database():
+    logger.info("DB timing debug enabled (slow query threshold=%sms)", DB_SLOW_QUERY_MS)
+
+    @event.listens_for(engine, "before_cursor_execute")
+    def _before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+        context._query_start_time = time.perf_counter()
+
+    @event.listens_for(engine, "after_cursor_execute")
+    def _after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+        start = getattr(context, "_query_start_time", None)
+        if start is None:
+            return
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+        compact_sql = " ".join(statement.split())
+        preview = compact_sql[:240] + ("..." if len(compact_sql) > 240 else "")
+        if elapsed_ms >= DB_SLOW_QUERY_MS:
+            logger.warning(
+                "Slow SQL query (%.1f ms): %s",
+                elapsed_ms,
+                preview,
+            )
+        else:
+            logger.debug("SQL query (%.1f ms): %s", elapsed_ms, preview)
+
+    @event.listens_for(engine, "handle_error")
+    def _handle_sql_error(exception_context):
+        context = exception_context.execution_context
+        start = getattr(context, "_query_start_time", None) if context else None
+        elapsed_ms = (time.perf_counter() - start) * 1000.0 if start else None
+        statement = exception_context.statement or ""
+        compact_sql = " ".join(statement.split())
+        preview = compact_sql[:240] + ("..." if len(compact_sql) > 240 else "")
+        if elapsed_ms is not None:
+            logger.error(
+                "SQL error after %.1f ms: %s | error=%s",
+                elapsed_ms,
+                preview,
+                exception_context.original_exception,
+            )
+        else:
+            logger.error(
+                "SQL error: %s | error=%s",
+                preview,
+                exception_context.original_exception,
+            )
 
 
 def get_db():

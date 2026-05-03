@@ -27,6 +27,20 @@ from .openai_schema_utils import CV_CORRECTIONS_COACHING_FORMAT
 logger = logging.getLogger(__name__)
 
 
+def _proofread_skill_suggestions_present(skills: Any) -> bool:
+    """
+    True if the quality response ``skills`` object has any non-empty suggestion list.
+
+    Supports legacy ``technical`` / ``soft`` keys and dynamic category keys from the model.
+    """
+    if not skills or not isinstance(skills, dict):
+        return False
+    for value in skills.values():
+        if isinstance(value, list) and len(value) > 0:
+            return True
+    return False
+
+
 def _cv_quality_prompt_ref(correction_mode: str) -> Dict[str, Any]:
     """Build prompt_ref for CV quality (id + version). Uses OpenAI provider-prefixed vars."""
     is_coach = correction_mode == "coaching"
@@ -199,7 +213,7 @@ async def generate_cv_corrections_and_feedback(
         if correction_mode == "proofread":
             skills = response.get("skills") or {}
             issues = response.get("issues") or []
-            if not issues and not (skills.get("technical") or skills.get("soft")):
+            if not issues and not _proofread_skill_suggestions_present(skills):
                 response["overall_quality_score"] = 100
 
         timeline_gaps = analyze_timeline_gaps(cv_data)

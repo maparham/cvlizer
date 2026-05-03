@@ -53,9 +53,12 @@ def sample_cv_data():
             }
         ],
         "skills": {
-            "technical": ["Python", "JavaScript", "React"],
-            "soft": ["Leadership", "Communication"],
-            "languages": [{"id": "1", "language": "English", "proficiency": "Native"}],
+            "technical": {
+                "Programming Languages": ["Python", "JavaScript"],
+                "Frameworks": ["React"],
+                "Soft Skills": ["Leadership", "Communication"],
+                "Languages": ["English"],
+            },
         },
         "certifications": [
             {

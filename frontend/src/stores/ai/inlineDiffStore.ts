@@ -87,7 +87,7 @@ export const createInlineDiffSlice: StateCreator<
             placement.includes("interpersonal")
           ) {
             section = "skills";
-            fieldPath = "soft";
+            fieldPath = "Soft Skills";
           } else if (
             placement.includes("professional") ||
             placement.includes("summary")
@@ -106,13 +106,10 @@ export const createInlineDiffSlice: StateCreator<
         // Generate more specific description based on section and field
         let description = "";
         if (section === "skills") {
-          if (fieldPath === "technical") {
-            description = `Add "${keyword.keyword}" to technical skills`;
-          } else if (fieldPath === "soft") {
-            description = `Add "${keyword.keyword}" to soft skills`;
-          } else {
-            description = `Add "${keyword.keyword}" to skills section`;
-          }
+          description =
+            fieldPath === "Soft Skills"
+              ? `Add "${keyword.keyword}" to Soft Skills`
+              : `Add "${keyword.keyword}" to skills`;
         } else if (section === "work_experience") {
           description = `Integrate "${keyword.keyword}" into work experience descriptions`;
         } else if (section === "professional_summary") {
@@ -296,10 +293,21 @@ export const createInlineDiffSlice: StateCreator<
         if (suggestion.section === "skills" && suggestion.fieldPath) {
           // Ensure the skills structure exists but don't add the keyword yet
           if (!tempData.skills) {
-            tempData.skills = { technical: [], soft: [] };
+            tempData.skills = { technical: {} };
           }
-          if (!tempData.skills[suggestion.fieldPath]) {
-            tempData.skills[suggestion.fieldPath] = [];
+          if (
+            !tempData.skills.technical ||
+            typeof tempData.skills.technical !== "object" ||
+            Array.isArray(tempData.skills.technical)
+          ) {
+            tempData.skills.technical = {};
+          }
+          const targetCategory =
+            suggestion.fieldPath === "technical"
+              ? "General"
+              : suggestion.fieldPath;
+          if (!tempData.skills.technical[targetCategory]) {
+            tempData.skills.technical[targetCategory] = [];
           }
         }
       } else if (suggestion.type === "enhance_content") {
@@ -358,23 +366,33 @@ export const createInlineDiffSlice: StateCreator<
         ) {
           // Ensure skills object exists before accessing it
           if (!updatedTempData.skills) {
-            updatedTempData.skills = { technical: [], soft: [] };
+            updatedTempData.skills = { technical: {} };
           }
-          // Ensure field path array exists
           if (
-            acceptedSuggestion.fieldPath &&
-            !updatedTempData.skills[acceptedSuggestion.fieldPath]
+            !updatedTempData.skills.technical ||
+            typeof updatedTempData.skills.technical !== "object" ||
+            Array.isArray(updatedTempData.skills.technical)
           ) {
-            updatedTempData.skills[acceptedSuggestion.fieldPath] = [];
+            updatedTempData.skills.technical = {};
+          }
+          const targetCategory =
+            acceptedSuggestion.fieldPath === "technical"
+              ? "General"
+              : acceptedSuggestion.fieldPath;
+          if (
+            targetCategory &&
+            !updatedTempData.skills.technical[targetCategory]
+          ) {
+            updatedTempData.skills.technical[targetCategory] = [];
           }
           // Add the skill if not already present
           if (
-            acceptedSuggestion.fieldPath &&
-            !updatedTempData.skills[acceptedSuggestion.fieldPath].includes(
+            targetCategory &&
+            !updatedTempData.skills.technical[targetCategory].includes(
               acceptedSuggestion.suggestedValue,
             )
           ) {
-            updatedTempData.skills[acceptedSuggestion.fieldPath].push(
+            updatedTempData.skills.technical[targetCategory].push(
               acceptedSuggestion.suggestedValue,
             );
           }
@@ -497,15 +515,29 @@ export const createInlineDiffSlice: StateCreator<
         suggestion.section === "skills"
       ) {
         if (suggestion.fieldPath) {
-          if (!finalData.skills[suggestion.fieldPath]) {
-            finalData.skills[suggestion.fieldPath] = [];
+          if (!finalData.skills) {
+            finalData.skills = { technical: {} };
           }
           if (
-            !finalData.skills[suggestion.fieldPath].includes(
+            !finalData.skills.technical ||
+            typeof finalData.skills.technical !== "object" ||
+            Array.isArray(finalData.skills.technical)
+          ) {
+            finalData.skills.technical = {};
+          }
+          const targetCategory =
+            suggestion.fieldPath === "technical"
+              ? "General"
+              : suggestion.fieldPath;
+          if (!finalData.skills.technical[targetCategory]) {
+            finalData.skills.technical[targetCategory] = [];
+          }
+          if (
+            !finalData.skills.technical[targetCategory].includes(
               suggestion.suggestedValue,
             )
           ) {
-            finalData.skills[suggestion.fieldPath].push(
+            finalData.skills.technical[targetCategory].push(
               suggestion.suggestedValue,
             );
           }

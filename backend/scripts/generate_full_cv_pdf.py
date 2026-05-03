@@ -128,19 +128,13 @@ def _build_full_parsed_cv() -> dict:
             }
         ],
         "skills": {
-            "technical": [
-                "Python",
-                "FastAPI",
-                "SQLAlchemy",
-                "TypeScript",
-                "React",
-                "AWS",
-            ],
-            "soft": ["Leadership", "Communication", "Collaboration"],
-            "languages": [
-                {"language": "English", "proficiency": "Native"},
-                {"language": "Spanish", "proficiency": "Professional"},
-            ],
+            "technical": {
+                "Programming Languages": ["Python", "TypeScript"],
+                "Frameworks & Libraries": ["FastAPI", "React", "SQLAlchemy"],
+                "Cloud Platforms": ["AWS"],
+                "Soft Skills": ["Leadership", "Communication", "Collaboration"],
+                "Languages": ["English", "Spanish"],
+            },
         },
         "certifications": [
             {

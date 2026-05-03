@@ -29,15 +29,10 @@ export function isSectionEmpty(sectionId: string, cvData: CVData): boolean {
     }
 
     if (sectionId === "skills") {
-      const skills = data as {
-        technical?: string[];
-        soft?: string[];
-        languages?: string[];
-      };
-      return (
-        (!skills.technical || skills.technical.length === 0) &&
-        (!skills.soft || skills.soft.length === 0) &&
-        (!skills.languages || skills.languages.length === 0)
+      const skills = data as { technical?: Record<string, string[]> };
+      const technical = skills.technical || {};
+      return !Object.values(technical).some(
+        (categorySkills) => Array.isArray(categorySkills) && categorySkills.length > 0,
       );
     }
 

@@ -2,7 +2,7 @@
  * SkillsSection Component Tests
  *
  * Tests for skills section including:
- * - Adding/removing technical and soft skills
+ * - Adding/removing technical skills
  * - Skills autocomplete integration
  * - AI suggestions integration
  * - Data structure handling
@@ -29,6 +29,20 @@ jest.mock('../../../../stores/uiStore', () => ({
   }))
 }))
 
+jest.mock('../../../../packages/notifications', () => ({
+  useNotifications: jest.fn(() => ({
+    showSuccess: jest.fn(),
+    showError: jest.fn()
+  }))
+}))
+
+jest.mock('../../../../contexts/OverwriteConfirmContext', () => ({
+  OVERWRITE_MSG: 'overwrite',
+  useOverwriteConfirm: jest.fn(() => ({
+    confirm: jest.fn(async () => true)
+  }))
+}))
+
 jest.mock('../../../../components/cv/ui/SkillsAutocomplete', () => ({
   __esModule: true,
   default: ({ value, onChange, onAdd, label }: any) => (
@@ -47,7 +61,7 @@ jest.mock('../../../../components/cv/ui/SkillsAutocomplete', () => ({
 jest.mock('../../../../components/cv/core/SimpleFormSection', () => ({
   __esModule: true,
   default: ({ data, renderForm, renderDisplay, title, isEditing }: any) => {
-    const [editData, setEditData] = React.useState(data || { technical: [], soft: [] })
+    const [editData, setEditData] = React.useState(data || { technical: {} })
     const [editing, setEditing] = React.useState(isEditing || false)
 
     const updateData = (field: string, value: any) => {
@@ -75,7 +89,7 @@ jest.mock('../../../../components/cv/core/SimpleFormSection', () => ({
 
 describe('SkillsSection', () => {
   const defaultProps = {
-    data: { technical: [], soft: [] },
+    data: { technical: {} },
     onUpdate: jest.fn(),
     onSave: jest.fn(),
     isEditing: false,
@@ -108,8 +122,7 @@ describe('SkillsSection', () => {
   describe('Technical Skills', () => {
     test('displays existing technical skills', () => {
       const data = {
-        technical: ['React', 'TypeScript', 'Node.js'],
-        soft: []
+        technical: { General: ['React', 'TypeScript', 'Node.js'] }
       }
       render(<SkillsSection {...defaultProps} data={data} />)
 
@@ -128,42 +141,26 @@ describe('SkillsSection', () => {
     test('displays technical skills autocomplete in edit mode', () => {
       render(<SkillsSection {...defaultProps} isEditing={true} />)
 
+      fireEvent.change(screen.getByPlaceholderText('New category name'), {
+        target: { value: 'General' }
+      })
+      fireEvent.click(screen.getByText('Add Category'))
+
       const autocompletes = screen.getAllByTestId('skills-autocomplete')
       expect(autocompletes.length).toBeGreaterThan(0)
     })
   })
 
-  describe('Soft Skills', () => {
-    test('displays existing soft skills', () => {
-      const data = {
-        technical: [],
-        soft: ['Leadership', 'Communication', 'Problem Solving']
-      }
-      render(<SkillsSection {...defaultProps} data={data} />)
-
-      expect(screen.getByText('Leadership')).toBeInTheDocument()
-      expect(screen.getByText('Communication')).toBeInTheDocument()
-      expect(screen.getByText('Problem Solving')).toBeInTheDocument()
-    })
-
-    test('shows empty state when no soft skills', () => {
-      render(<SkillsSection {...defaultProps} />)
-      fireEvent.click(screen.getByText('Edit'))
-
-      expect(screen.getByText(/Soft Skills/i)).toBeInTheDocument()
-    })
-  })
-
   describe('Data Structure', () => {
     test('handles missing technical skills array', () => {
-      const data = { soft: ['Communication'] }
+      const data = {}
       render(<SkillsSection {...defaultProps} data={data} />)
 
-      expect(screen.getByText('Communication')).toBeInTheDocument()
+      expect(screen.getByText('Edit')).toBeInTheDocument()
     })
 
-    test('handles missing soft skills array', () => {
-      const data = { technical: ['React'] }
+    test('handles categorized skills data', () => {
+      const data = { technical: { General: ['React'] } }
       render(<SkillsSection {...defaultProps} data={data} />)
 
       expect(screen.getByText('React')).toBeInTheDocument()
@@ -179,26 +176,22 @@ describe('SkillsSection', () => {
   describe('Display Mode', () => {
     test('displays skills as chips', () => {
       const data = {
-        technical: ['React', 'Node.js'],
-        soft: ['Leadership']
+        technical: { General: ['React', 'Node.js'] }
       }
       render(<SkillsSection {...defaultProps} data={data} />)
 
       // All skills should be visible
       expect(screen.getByText('React')).toBeInTheDocument()
       expect(screen.getByText('Node.js')).toBeInTheDocument()
-      expect(screen.getByText('Leadership')).toBeInTheDocument()
     })
 
-    test('separates technical and soft skills visually', () => {
+    test('shows only technical skills in display mode', () => {
       const data = {
-        technical: ['React'],
-        soft: ['Leadership']
+        technical: { General: ['React'] }
       }
       render(<SkillsSection {...defaultProps} data={data} />)
 
       expect(screen.getByText('React')).toBeInTheDocument()
-      expect(screen.getByText('Leadership')).toBeInTheDocument()
     })
   })
 
@@ -216,13 +209,13 @@ describe('SkillsSection', () => {
     test.skip('rerenders when data changes', () => {
       // SKIPPED: Component memoization or re-render logic needs investigation
       const { rerender } = render(
-        <SkillsSection {...defaultProps} data={{ technical: ['React'], soft: [] }} />
+        <SkillsSection {...defaultProps} data={{ technical: { General: ['React'] } }} />
       )
 
       expect(screen.getByText('React')).toBeInTheDocument()
 
       // Component is memoized, so need to pass different props
-      const newProps = { ...defaultProps, data: { technical: ['Vue'], soft: [] }, isEditing: true }
+      const newProps = { ...defaultProps, data: { technical: { General: ['Vue'] } }, isEditing: true }
       rerender(<SkillsSection {...newProps} />)
 
       // After rerender with different data, Vue should appear

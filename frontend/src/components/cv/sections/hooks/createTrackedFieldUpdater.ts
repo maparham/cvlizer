@@ -10,7 +10,7 @@ import { useEditedSinceAIStore } from "../../../../stores/editedSinceAIStore";
  * @param cvId - Current CV id (undefined when not applicable)
  * @param fieldKey - Key used in editedSinceAI store (e.g. "professional_summary", "skills", "work_experience:itemId")
  * @param updateFn - The real update callback from the section
- * @param triggerFields - If provided, only call setEdited when the updated field is in this list (e.g. ["description"], ["content"], ["technical", "soft"])
+ * @param triggerFields - If provided, only call setEdited when the updated field is in this list (e.g. ["description"], ["content"], ["technical"])
  * @returns Wrapped updater that calls setEdited then updateFn (same signature as updateFn)
  */
 export function createTrackedFieldUpdater<F extends string>(

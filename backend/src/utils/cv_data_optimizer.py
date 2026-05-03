@@ -98,7 +98,6 @@ def optimize_cv_data_for_quality_analysis(
     - Removing technologies arrays (not used in quality analysis)
     - Removing empty arrays and unused fields (achievements, honors, URLs, GPA, expiry_date)
     - Simplifying personal_info (removing unused URL fields)
-    - Removing id fields from skills.languages
     - Removing empty keywords arrays
     - Filtering all empty/null values recursively
 
@@ -214,12 +213,6 @@ def optimize_cv_data_for_quality_analysis(
         prof_summary = optimized["professional_summary"]
         if "keywords" in prof_summary and not prof_summary["keywords"]:
             prof_summary.pop("keywords", None)
-
-    # Remove id from skills.languages (not referenced in quality analysis)
-    if "skills" in optimized and "languages" in optimized["skills"]:
-        for lang in optimized["skills"]["languages"]:
-            if isinstance(lang, dict):
-                lang.pop("id", None)
 
     # Remove all empty/null values recursively (final cleanup pass)
     optimized = remove_empty_fields(optimized)

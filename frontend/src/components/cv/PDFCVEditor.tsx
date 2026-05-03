@@ -280,37 +280,34 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
                     // Handle skills section
                     if (!updatedCvData.skills) {
                       updatedCvData.skills = {
-                        technical: [],
-                        soft: [],
-                        languages: [],
+                        technical: {},
                       };
                     }
-                    if (!updatedCvData.skills.technical)
-                      updatedCvData.skills.technical = [];
-                    if (!updatedCvData.skills.soft)
-                      updatedCvData.skills.soft = [];
-                    if (!updatedCvData.skills.languages)
-                      updatedCvData.skills.languages = [];
+                    if (
+                      !updatedCvData.skills.technical ||
+                      typeof updatedCvData.skills.technical !== "object" ||
+                      Array.isArray(updatedCvData.skills.technical)
+                    ) {
+                      updatedCvData.skills.technical = {};
+                    }
+
+                    const targetCategory = suggestedPlacement.includes("soft")
+                      ? "Soft Skills"
+                      : "General";
+                    const targetSkills =
+                      updatedCvData.skills.technical[targetCategory] || [];
 
                     // Check if keyword already exists to avoid duplicates
                     const alreadyExists =
-                      updatedCvData.skills.technical.includes(keyword) ||
-                      updatedCvData.skills.soft.includes(keyword) ||
-                      updatedCvData.skills.languages.some((lang) =>
-                        typeof lang === "string"
-                          ? lang === keyword
-                          : lang.language === keyword,
+                      Object.values(updatedCvData.skills.technical).some((skills) =>
+                        Array.isArray(skills) ? skills.includes(keyword) : false,
                       );
 
                     if (!alreadyExists) {
-                      if (suggestedPlacement.includes("technical")) {
-                        updatedCvData.skills.technical.push(keyword);
-                      } else if (suggestedPlacement.includes("soft")) {
-                        updatedCvData.skills.soft.push(keyword);
-                      } else {
-                        // Default to technical skills
-                        updatedCvData.skills.technical.push(keyword);
-                      }
+                      updatedCvData.skills.technical[targetCategory] = [
+                        ...targetSkills,
+                        keyword,
+                      ];
                     }
 
                     // Ensure skills section exists in section config
@@ -365,16 +362,23 @@ const PDFCVEditor: React.FC<PDFCVEditorProps> = ({
                       // No work experience, add to skills instead
                       if (!updatedCvData.skills) {
                         updatedCvData.skills = {
-                          technical: [],
-                          soft: [],
-                          languages: [],
+                          technical: {},
                         };
                       }
-                      if (!updatedCvData.skills.technical)
-                        updatedCvData.skills.technical = [];
-
-                      if (!updatedCvData.skills.technical.includes(keyword)) {
-                        updatedCvData.skills.technical.push(keyword);
+                      if (
+                        !updatedCvData.skills.technical ||
+                        typeof updatedCvData.skills.technical !== "object" ||
+                        Array.isArray(updatedCvData.skills.technical)
+                      ) {
+                        updatedCvData.skills.technical = {};
+                      }
+                      const generalSkills =
+                        updatedCvData.skills.technical.General || [];
+                      if (!generalSkills.includes(keyword)) {
+                        updatedCvData.skills.technical.General = [
+                          ...generalSkills,
+                          keyword,
+                        ];
                       }
 
                       onUpdateCV(updatedCvData);

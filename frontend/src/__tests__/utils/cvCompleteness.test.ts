@@ -15,7 +15,7 @@ describe("filterVisibleSections", () => {
   const mockCVData = {
     personal_info: { full_name: "John Doe", email: "john@example.com" },
     work_experience: [{ title: "Engineer", company: "Tech Corp" }],
-    skills: { technical: ["React", "TypeScript"], soft: ["Leadership"] },
+    skills: { technical: { Frameworks: ["React"], Languages: ["TypeScript", "Leadership"] } },
     education: [{ degree: "BS Computer Science" }],
     section_config: {
       sections: [
@@ -115,7 +115,7 @@ describe("filterVisibleSections", () => {
       professional_summary: { content: "Summary" },
       work_experience: [{ title: "Job" }],
       education: [{ degree: "BS" }],
-      skills: { technical: ["A"], soft: [] },
+      skills: { technical: { General: ["A"] } },
       certifications: [{ name: "Cert" }],
       section_config: {
         sections: [
@@ -142,7 +142,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
   it("returns incomplete when work_experience is hidden", () => {
     const cvData = {
       work_experience: [{ title: "Engineer", description: "Built things" }],
-      skills: { technical: ["A", "B", "C"], soft: [] },
+      skills: { technical: { General: ["A", "B", "C"] } },
       section_config: {
         sections: [
           {
@@ -175,7 +175,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
   it("returns incomplete when skills are hidden", () => {
     const cvData = {
       work_experience: [{ title: "Engineer", description: "Built things" }],
-      skills: { technical: ["A", "B", "C"], soft: [] },
+      skills: { technical: { General: ["A", "B", "C"] } },
       section_config: {
         sections: [
           {
@@ -207,7 +207,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
   it("returns incomplete when both required sections are hidden", () => {
     const cvData = {
       work_experience: [{ title: "Engineer", description: "Built things" }],
-      skills: { technical: ["A", "B", "C"], soft: [] },
+      skills: { technical: { General: ["A", "B", "C"] } },
       section_config: {
         sections: [
           {
@@ -241,7 +241,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
     const cvData = {
       work_experience: [{ title: "Engineer", description: "Built things" }],
       education: [{ degree: "BS" }],
-      skills: { technical: ["A", "B", "C"], soft: [] },
+      skills: { technical: { General: ["A", "B", "C"] } },
       section_config: {
         sections: [
           {
@@ -279,7 +279,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
   it("handles partial skill count with hidden skills section", () => {
     const cvData = {
       work_experience: [{ title: "Engineer", description: "Built things" }],
-      skills: { technical: ["A", "B"], soft: [] }, // Only 2 skills
+      skills: { technical: { General: ["A", "B"] } }, // Only 2 skills
       section_config: {
         sections: [
           {
@@ -308,7 +308,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
   it("maintains backward compatibility with no section_config", () => {
     const cvData = {
       work_experience: [{ title: "Engineer", description: "Built things" }],
-      skills: { technical: ["A", "B", "C"], soft: [] },
+      skills: { technical: { General: ["A", "B", "C"] } },
     };
     const result = calculateCVCompleteness(cvData);
     expect(result.isComplete).toBe(true);
@@ -321,7 +321,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
         { title: "Job 1", description: "Work" },
         { title: "Job 2", description: "More work" },
       ],
-      skills: { technical: ["A", "B", "C"], soft: [] },
+      skills: { technical: { General: ["A", "B", "C"] } },
       section_config: {
         sections: [
           {
@@ -351,7 +351,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
         { title: "Job 1", description: "Work" },
         { title: "Job 2", description: "More work" },
       ],
-      skills: { technical: ["A", "B", "C"], soft: [] },
+      skills: { technical: { General: ["A", "B", "C"] } },
       section_config: {
         sections: [
           {

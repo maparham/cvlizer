@@ -1,8 +1,7 @@
 """
 Tests for categorized technical skills functionality.
 
-Tests schema validation, PDF export, and backward compatibility
-for the new categorized technical skills feature.
+Tests schema validation and PDF export for categorized technical skills.
 """
 
 import pytest
@@ -12,18 +11,7 @@ from src.services.cv.latex_export_service import _format_skills
 
 
 class TestSkillsSchemaValidation:
-    """Test SkillsSchema validation for both flat and categorized formats."""
-
-    def test_flat_technical_skills_legacy_format(self):
-        """Test that legacy flat list format is still accepted."""
-        data = {
-            "technical": ["Python", "Docker", "JavaScript"],
-            "soft": ["Leadership", "Communication"],
-            "languages": [],
-        }
-        schema = SkillsSchema(**data)
-        assert schema.technical == ["Python", "Docker", "JavaScript"]
-        assert schema.soft == ["Leadership", "Communication"]
+    """Test SkillsSchema validation for dynamic categorized skills."""
 
     def test_categorized_technical_skills_new_format(self):
         """Test that new categorized dictionary format is accepted."""
@@ -32,9 +20,9 @@ class TestSkillsSchemaValidation:
                 "Programming Languages": ["Python", "JavaScript", "TypeScript"],
                 "DevOps & Infrastructure": ["Docker", "Kubernetes", "Git"],
                 "Databases": ["PostgreSQL", "MongoDB"],
-            },
-            "soft": ["Leadership", "Communication"],
-            "languages": [],
+                "Soft Skills": ["Leadership", "Communication"],
+                "Languages": ["English", "German"],
+            }
         }
         schema = SkillsSchema(**data)
         assert isinstance(schema.technical, dict)
@@ -48,9 +36,7 @@ class TestSkillsSchemaValidation:
                 "Programming Languages": ["Python"],
                 "Empty Category": [],
                 "DevOps": ["Docker"],
-            },
-            "soft": [],
-            "languages": [],
+            }
         }
         schema = SkillsSchema(**data)
         # Empty categories should be filtered out
@@ -65,9 +51,7 @@ class TestSkillsSchemaValidation:
                 "": ["Python"],
                 "  ": ["JavaScript"],
                 "Valid Category": ["Docker"],
-            },
-            "soft": [],
-            "languages": [],
+            }
         }
         schema = SkillsSchema(**data)
         # Invalid categories should be filtered
@@ -80,30 +64,23 @@ class TestSkillsResponseSchemaValidation:
     """Test SkillsResponseSchema for AI parsing output."""
 
     def test_ai_parsing_categorized_output(self):
-        """Test that AI parsing schema accepts categorized list format."""
+        """Test that AI parsing schema accepts categorized dict format."""
         data = {
-            "technical": [
-                {"category": "Programming Languages", "skills": ["Python", "Java"]},
-                {"category": "Cloud Platforms", "skills": ["AWS", "Azure"]},
-            ],
-            "soft": ["Problem Solving"],
-            "languages": [],
+            "technical": {
+                "Programming Languages": ["Python", "Java"],
+                "Cloud Platforms": ["AWS", "Azure"],
+                "Soft Skills": ["Problem Solving"],
+            }
         }
         schema = SkillsResponseSchema(**data)
-        assert isinstance(schema.technical, list)
-        assert len(schema.technical) == 2
+        assert isinstance(schema.technical, dict)
+        assert len(schema.technical) == 3
 
-    def test_ai_parsing_fallback_to_categorized(self):
-        """Test that flat list input is converted to one category object."""
-        data = {
-            "technical": ["Python", "Docker"],
-            "soft": ["Leadership"],
-            "languages": [],
-        }
+    def test_ai_parsing_rejects_legacy_list_input(self):
+        """Test that flat list input no longer produces categorized output."""
+        data = {"technical": ["Python", "Docker"]}
         schema = SkillsResponseSchema(**data)
-        assert isinstance(schema.technical, list)
-        assert schema.technical[0].category == "Technical"
-        assert schema.technical[0].skills == ["Python", "Docker"]
+        assert schema.technical == {}
 
 
 class TestPDFExportCategorizedSkills:
@@ -115,9 +92,9 @@ class TestPDFExportCategorizedSkills:
             "technical": {
                 "Programming Languages": ["Python", "JavaScript"],
                 "DevOps": ["Docker", "Kubernetes"],
-            },
-            "soft": ["Leadership"],
-            "languages": [{"language": "English", "proficiency": "Fluent"}],
+                "Soft Skills": ["Leadership"],
+                "Languages": ["English"],
+            }
         }
         result = _format_skills(skills)
 
@@ -127,30 +104,13 @@ class TestPDFExportCategorizedSkills:
         # Should contain skills
         assert "Python" in result
         assert "Docker" in result
-        # Should contain soft skills
+        # Should contain dynamic categories too
         assert "Leadership" in result
-
-    def test_pdf_format_legacy_flat_skills(self):
-        """Test that PDF export still handles legacy flat list format."""
-        skills = {
-            "technical": ["Python", "Docker", "JavaScript"],
-            "soft": ["Leadership"],
-            "languages": [],
-        }
-        result = _format_skills(skills)
-
-        # Should have Technical label
-        assert "Technical:" in result
-        # Should contain skills
-        assert "Python" in result
-        assert "Docker" in result
 
     def test_pdf_format_mixed_empty_categories(self):
         """Test that empty categories are skipped in PDF export."""
         skills = {
             "technical": {"Programming": ["Python"], "Empty": []},
-            "soft": [],
-            "languages": [],
         }
         result = _format_skills(skills)
 
@@ -160,38 +120,33 @@ class TestPDFExportCategorizedSkills:
         # Should not contain empty category label
         assert "Empty" not in result
 
-
-class TestBackwardCompatibility:
-    """Test backward compatibility between flat and categorized formats."""
-
-    def test_schema_accepts_both_formats(self):
-        """Test that SkillsSchema accepts both flat and categorized technical skills."""
-        # Test flat
-        flat_data = {"technical": ["Python"], "soft": [], "languages": []}
-        flat_schema = SkillsSchema(**flat_data)
-        assert isinstance(flat_schema.technical, list)
-
-        # Test categorized
-        cat_data = {"technical": {"Programming": ["Python"]}, "soft": [], "languages": []}
-        cat_schema = SkillsSchema(**cat_data)
-        assert isinstance(cat_schema.technical, dict)
-
-    def test_pdf_export_handles_both_formats(self):
-        """Test that PDF export works for both formats."""
-        # Flat format
-        flat_skills = {"technical": ["Python"], "soft": [], "languages": []}
-        flat_result = _format_skills(flat_skills)
-        assert "Python" in flat_result
-
-        # Categorized format
-        cat_skills = {
-            "technical": {"Programming": ["Python"]},
-            "soft": [],
-            "languages": [],
+    def test_pdf_format_legacy_flat_technical_soft_languages(self):
+        """Legacy skills shape (list technical, soft, languages) is exported."""
+        skills = {
+            "technical": ["Python", "FastAPI"],
+            "soft": ["Leadership", "Communication"],
+            "languages": [
+                {"language": "English", "proficiency": "Native"},
+                {"language": "Spanish", "proficiency": "Professional"},
+            ],
         }
-        cat_result = _format_skills(cat_skills)
-        assert "Python" in cat_result
-        assert "Programming" in cat_result
+        result = _format_skills(skills)
+        assert "Technical" in result
+        assert "Python" in result and "FastAPI" in result
+        assert "Soft Skills" in result
+        assert "Leadership" in result
+        assert "Languages" in result
+        assert "English" in result and "Native" in result
+        assert "Spanish" in result
+
+
+class TestStrictSkillsFormat:
+    """Test strict categorized-skills validation behavior."""
+
+    def test_schema_rejects_flat_input(self):
+        flat_data = {"technical": ["Python"]}
+        flat_schema = SkillsSchema(**flat_data)
+        assert flat_schema.technical == {}
 
 
 if __name__ == "__main__":

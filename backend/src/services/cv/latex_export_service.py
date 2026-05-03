@@ -684,43 +684,61 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
 
 
 def _format_skills(skills: Dict[str, Any]) -> str:
-    """Format skills section with bold category labels.
+    """Format skills section with bold dynamic category labels.
 
-    Supports both legacy (flat list) and categorized (dictionary) formats for technical skills.
+    Supports categorized ``skills["technical"]`` as a dict (current format), and
+    legacy shapes still found in stored CVs: flat ``technical`` list, top-level
+    ``soft`` list, and ``languages`` as strings or ``{language, proficiency}`` dicts.
     """
     if not skills:
         return ""
 
     blocks: List[str] = []
 
-    # Technical Skills - handle both formats
+    def append_category_block(category: str, string_values: List[str]) -> None:
+        if not category or not string_values:
+            return
+        escaped_items = ", ".join(_tex_escape(s) for s in string_values)
+        blocks.append(f"\\textbf{{{_tex_escape(category)}:}} {escaped_items}")
+
     technical = skills.get("technical")
-    if technical:
-        if isinstance(technical, dict):
-            # New categorized format: {"Programming": ["Python", "JS"], "DevOps": ["Docker"]}
-            for category, skill_list in technical.items():
-                if skill_list:  # Only show non-empty categories
-                    tech_items = ", ".join(_tex_escape(s) for s in skill_list)
-                    blocks.append(f"\\textbf{{{_tex_escape(category)}:}} {tech_items}")
-        elif isinstance(technical, list):
-            # Legacy flat list format: ["Python", "Docker"]
-            tech_items = ", ".join(_tex_escape(s) for s in technical)
-            blocks.append(f"\\textbf{{Technical:}} {tech_items}")
+    if isinstance(technical, dict):
+        for category, skill_list in technical.items():
+            if not isinstance(category, str) or not category.strip():
+                continue
+            if isinstance(skill_list, list) and skill_list:
+                cleaned = [
+                    s.strip() for s in skill_list if isinstance(s, str) and s.strip()
+                ]
+                if cleaned:
+                    append_category_block(category.strip(), cleaned)
+    elif isinstance(technical, list):
+        cleaned = [s.strip() for s in technical if isinstance(s, str) and s.strip()]
+        if cleaned:
+            append_category_block("Technical", cleaned)
 
-    # Soft Skills with bold category
-    if skills.get("soft"):
-        soft_items = ", ".join(_tex_escape(s) for s in skills["soft"])
-        blocks.append(f"\\textbf{{Soft:}} {soft_items}")
+    soft = skills.get("soft")
+    if isinstance(soft, list):
+        cleaned = [s.strip() for s in soft if isinstance(s, str) and s.strip()]
+        if cleaned:
+            append_category_block("Soft Skills", cleaned)
 
-    # Languages with bold category
-    if skills.get("languages"):
-        lang_strs = []
-        for l in skills["languages"]:
-            lang_strs.append(
-                f"{_tex_escape(l.get('language',''))} ({_tex_escape(l.get('proficiency',''))})"
-            )
-        lang_items = ", ".join(lang_strs)
-        blocks.append(f"\\textbf{{Languages:}} {lang_items}")
+    languages = skills.get("languages")
+    if isinstance(languages, list):
+        lang_strings: List[str] = []
+        for entry in languages:
+            if isinstance(entry, str) and entry.strip():
+                lang_strings.append(entry.strip())
+            elif isinstance(entry, dict):
+                lang = entry.get("language")
+                prof = entry.get("proficiency")
+                if isinstance(lang, str) and lang.strip():
+                    if isinstance(prof, str) and prof.strip():
+                        lang_strings.append(f"{lang.strip()} ({prof.strip()})")
+                    else:
+                        lang_strings.append(lang.strip())
+        if lang_strings:
+            append_category_block("Languages", lang_strings)
 
     if not blocks:
         return ""

@@ -74,13 +74,6 @@ class SkillSuggestion(BaseModel):
     reasoning: str
 
 
-class SkillsSuggestions(BaseModel):
-    """Groups skill suggestions by category (technical vs soft skills)."""
-
-    technical: List[SkillSuggestion]
-    soft: List[SkillSuggestion]
-
-
 class ProfessionalSummarySuggestion(BaseModel):
     """Provides AI-generated professional summary with before/after comparison and key changes."""
 
@@ -115,7 +108,7 @@ class WhyGoodFitSuggestion(BaseModel):
 
 
 class AllSuggestionsResponse(BaseModel):
-    skills: SkillsSuggestions
+    skills: Dict[str, List[SkillSuggestion]]
     professional_summary: ProfessionalSummarySuggestion
     work_experience: List[ItemDescriptionSuggestion]
     education: List[ItemDescriptionSuggestion]

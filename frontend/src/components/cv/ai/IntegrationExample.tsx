@@ -38,8 +38,12 @@ import {
 // Mock CV data for demonstration
 const mockCVData = {
   skills: {
-    technical: ["JavaScript", "React", "Node.js"],
-    soft: ["Communication", "Leadership"],
+    technical: {
+      "Programming Languages": ["JavaScript"],
+      "Frameworks": ["React"],
+      "Runtime & Backend": ["Node.js"],
+      "Soft Skills": ["Communication", "Leadership"],
+    },
   },
   professional_summary: {
     content: "Experienced software developer with 5 years in web development.",
@@ -202,49 +206,32 @@ const AIIntegrationDemo: React.FC = () => {
           {/* Skills Section */}
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
-              Technical Skills
+              Skills
             </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {cvData.skills.technical.map((skill, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    px: 1.5,
-                    py: 0.5,
-                    bgcolor: "primary.light",
-                    color: "primary.contrastText",
-                    borderRadius: 1,
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  {skill}
+            {Object.entries(cvData.skills.technical).map(([category, skills]) => (
+              <Box key={category} sx={{ mb: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                  {category}
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
+                  {skills.map((skill, index) => (
+                    <Box
+                      key={`${category}-${index}`}
+                      sx={{
+                        px: 1.5,
+                        py: 0.5,
+                        bgcolor: "primary.light",
+                        color: "primary.contrastText",
+                        borderRadius: 1,
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      {skill}
+                    </Box>
+                  ))}
                 </Box>
-              ))}
-            </Box>
-          </Box>
-
-          {/* Soft Skills Section */}
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
-              Soft Skills
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {cvData.skills.soft.map((skill, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    px: 1.5,
-                    py: 0.5,
-                    bgcolor: "secondary.light",
-                    color: "secondary.contrastText",
-                    borderRadius: 1,
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  {skill}
-                </Box>
-              ))}
-            </Box>
+              </Box>
+            ))}
           </Box>
 
           {/* Professional Summary */}

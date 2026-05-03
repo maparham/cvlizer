@@ -114,11 +114,11 @@ class TestOptimizeCVDataForQualityAnalysis:
                 }
             ],
             "skills": {
-                "technical": ["Python", "JavaScript"],
-                "soft": ["Leadership"],
-                "languages": [
-                    {"id": "lang_1", "language": "English", "proficiency": "Native"}
-                ],
+                "technical": {
+                    "Programming Languages": ["Python", "JavaScript"],
+                    "Soft Skills": ["Leadership"],
+                    "Languages": ["English"],
+                },
             },
             "section_config": {
                 "sections": [
@@ -160,14 +160,12 @@ class TestOptimizeCVDataForQualityAnalysis:
         result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
         assert "keywords" not in result["professional_summary"]
 
-    def test_removes_id_from_languages(self, sample_cv_data):
-        """Should remove id field from skills.languages."""
+    def test_preserves_categorized_skills(self, sample_cv_data):
+        """Should preserve categorized skills structure."""
         result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
-        languages = result["skills"]["languages"]
-        assert len(languages) == 1
-        assert "id" not in languages[0]
-        assert languages[0]["language"] == "English"
-        assert languages[0]["proficiency"] == "Native"
+        assert "skills" in result
+        assert "technical" in result["skills"]
+        assert result["skills"]["technical"]["Languages"] == ["English"]
 
     def test_removes_empty_achievements(self, sample_cv_data):
         """Should remove empty achievements array from work experience."""

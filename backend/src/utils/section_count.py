@@ -30,7 +30,10 @@ def count_visible_sections_with_data(parsed_data: dict | None) -> int:
             return bool(parsed_data.get("education"))
         if section_type == "skills":
             s = parsed_data.get("skills") or {}
-            return bool(s.get("technical") or s.get("soft") or s.get("languages"))
+            technical = s.get("technical")
+            if not isinstance(technical, dict):
+                return False
+            return any(isinstance(v, list) and len(v) > 0 for v in technical.values())
         if section_type == "certifications":
             return bool(parsed_data.get("certifications"))
         if section_type == "projects":

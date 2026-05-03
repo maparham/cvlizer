@@ -396,21 +396,21 @@ class CVDataCleaner {
 
   private cleanSkills(data: any): void {
     if (data.skills) {
-      const technical = this.cleanArray(data.skills.technical);
-      const soft = this.cleanArray(data.skills.soft);
+      const rawTechnical = data.skills.technical;
+      const technical: Record<string, string[]> = {};
+      if (rawTechnical && typeof rawTechnical === "object" && !Array.isArray(rawTechnical)) {
+        Object.entries(rawTechnical).forEach(([category, values]) => {
+          const cleanedValues = this.cleanArray(Array.isArray(values) ? values : []);
+          if (category.trim() && cleanedValues.length > 0) {
+            technical[category.trim()] = cleanedValues;
+          }
+        });
+      }
 
-      // Clean languages array
-      const languages = this.cleanArray(data.skills.languages || []);
-
-      // Backend requires at least one technical or soft skill
-      if (technical.length === 0 && soft.length === 0) {
+      if (Object.keys(technical).length === 0) {
         delete data.skills;
       } else {
-        data.skills = {
-          technical,
-          soft,
-          languages,
-        };
+        data.skills = { technical };
       }
     }
   }
@@ -670,19 +670,16 @@ class SkillsValidator extends SectionValidator {
       return this.createResult(false, ["Skills section is required"]);
     }
 
-    const technical = Array.isArray(data.technical) ? data.technical : [];
-    const soft = Array.isArray(data.soft) ? data.soft : [];
+    const technical = data.technical;
+    const categories =
+      technical && typeof technical === "object" && !Array.isArray(technical)
+        ? Object.values(technical).filter((v) => Array.isArray(v) && v.length > 0)
+        : [];
 
-    if (technical.length === 0 && soft.length === 0) {
-      errors.push("At least one technical or soft skill is required");
-    }
-
-    if (technical.length === 0) {
-      warnings.push("Consider adding technical skills");
-    }
-
-    if (soft.length === 0) {
-      warnings.push("Consider adding soft skills");
+    if (categories.length === 0) {
+      errors.push("At least one skill category with items is required");
+    } else if (categories.length < 2) {
+      warnings.push("Consider adding more skill categories");
     }
 
     return this.createResult(errors.length === 0, errors, warnings);

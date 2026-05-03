@@ -110,9 +110,12 @@ const JobDescriptionSummary: React.FC<JobDescriptionSummaryProps> = ({
   // Calculate total suggestions count (same logic as SectionManagerSidebar)
   const totalSuggestionsCount = useMemo(() => {
     if (!allSuggestions) return 0;
+    const skillsCount = Object.values(allSuggestions.skills || {}).reduce(
+      (total, items) => total + (Array.isArray(items) ? items.length : 0),
+      0,
+    );
     return (
-      (allSuggestions.skills?.technical?.length || 0) +
-      (allSuggestions.skills?.soft?.length || 0) +
+      skillsCount +
       (allSuggestions.professional_summary?.suggested_text?.trim() ? 1 : 0) +
       (allSuggestions.work_experience?.filter((s) => s.suggested).length || 0) +
       (allSuggestions.education?.filter((s) => s.suggested).length || 0)

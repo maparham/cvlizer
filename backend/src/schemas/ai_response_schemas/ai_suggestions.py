@@ -6,9 +6,9 @@ suggestions (skills, professional summary, work/education descriptions).
 """
 
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 
 # ---------------------------------------------------------------------------
@@ -43,11 +43,8 @@ class SkillSuggestionSchema(BaseModel):
     reasoning: str = Field(min_length=1)
 
 
-class SkillsSuggestionsSchema(BaseModel):
-    """Schema for skills suggestions."""
-
-    technical: List[SkillSuggestionSchema] = Field(default_factory=list)
-    soft: List[SkillSuggestionSchema] = Field(default_factory=list)
+class SkillsSuggestionsSchema(RootModel[Dict[str, List[SkillSuggestionSchema]]]):
+    """Schema for skills suggestions grouped by dynamic category."""
 
 
 class ProfessionalSummarySuggestionSchema(BaseModel):
@@ -128,7 +125,9 @@ ItemDescriptionSuggestionSchema = Union[HighScoreItemSchema, LowScoreItemSchema]
 class OptimizationSuggestionsResponseSchema(BaseModel):
     """Schema for optimization suggestions AI response."""
 
-    skills: SkillsSuggestionsSchema = Field(default_factory=SkillsSuggestionsSchema)
+    skills: SkillsSuggestionsSchema = Field(
+        default_factory=lambda: SkillsSuggestionsSchema({})
+    )
     professional_summary: ProfessionalSummarySuggestionSchema = Field(
         default_factory=ProfessionalSummarySuggestionSchema
     )
@@ -161,7 +160,9 @@ class AISuggestionsResponseSchema(BaseModel):
     weaknesses: List[str] = Field(default_factory=list)
 
     # Optimization fields
-    skills: SkillsSuggestionsSchema = Field(default_factory=SkillsSuggestionsSchema)
+    skills: SkillsSuggestionsSchema = Field(
+        default_factory=lambda: SkillsSuggestionsSchema({})
+    )
     professional_summary: Optional[ProfessionalSummarySuggestionSchema] = Field(
         default=None,
         description="Only include if professional summary is visible in CV",

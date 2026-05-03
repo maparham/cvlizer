@@ -2,12 +2,12 @@
  * Utility Service for AI Features
  *
  * Provides utility functions for AI feature management.
- * Handles AI feature status checks, retry logic, and legacy methods.
+ * Handles AI feature status checks and retry logic.
  *
  * Key responsibilities:
  * - Check if AI features are enabled
  * - Retry failed operations with exponential backoff
- * - Provide legacy unified suggestions endpoint
+ * - Provide unified suggestions endpoint
  */
 
 import { apiClient as api } from "../api";
@@ -56,7 +56,7 @@ class UtilityService {
   }
 
   /**
-   * Generate ALL AI suggestions in one unified call (synchronous - kept for backward compatibility)
+   * Generate ALL AI suggestions in one unified call.
    */
   async generateAllSuggestions(
     cvId: string,
@@ -77,7 +77,7 @@ class UtilityService {
         error: error.message,
       });
       return {
-        skills: { technical: [], soft: [] },
+        skills: {},
         professional_summary: {
           suggested_text: "",
           original_text: "",

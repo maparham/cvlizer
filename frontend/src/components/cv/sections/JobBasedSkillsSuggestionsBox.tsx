@@ -1,6 +1,6 @@
 /**
  * Presentational box for job-based AI suggested skills (from job description).
- * Renders technical/soft suggestion chips and Apply All / Discard actions.
+ * Renders categorized suggestion chips and Apply All / Discard actions.
  * Used in both edit and display mode; behavior is callback-driven.
  */
 
@@ -19,7 +19,7 @@ export interface JobBasedSkillsSuggestionsBoxProps {
   suggestions: SkillsSuggestions;
   onApplyOne: (
     suggestion: SkillSuggestion,
-    type: "technical" | "soft",
+    type: string,
   ) => void | Promise<void>;
   onApplyAll: () => void | Promise<void>;
   onRejectAll: () => void | Promise<void>;
@@ -30,8 +30,8 @@ export const JobBasedSkillsSuggestionsBox: React.FC<
   JobBasedSkillsSuggestionsBoxProps
 > = ({ suggestions, onApplyOne, onApplyAll, onRejectAll, variant }) => {
   const isEdit = variant === "edit";
-  const hasAny =
-    suggestions.technical.length > 0 || suggestions.soft.length > 0;
+  const categories = Object.entries(suggestions);
+  const hasAny = categories.some(([, items]) => (items?.length ?? 0) > 0);
 
   const boxSx = isEdit
     ? {
@@ -88,16 +88,6 @@ export const JobBasedSkillsSuggestionsBox: React.FC<
         backgroundColor: "white",
         border: "1px solid #1976d2",
         color: "#1976d2",
-        cursor: "pointer",
-        "&:hover": { backgroundColor: "#f5f5f5" },
-      };
-
-  const softChipSx = isEdit
-    ? { ...technicalChipSx }
-    : {
-        backgroundColor: "white",
-        border: "1px solid #7b1fa2",
-        color: "#7b1fa2",
         cursor: "pointer",
         "&:hover": { backgroundColor: "#f5f5f5" },
       };
@@ -163,88 +153,48 @@ export const JobBasedSkillsSuggestionsBox: React.FC<
 
       {hasAny && (
         <Box>
-          {suggestions.technical.length > 0 && (
-            <Box sx={{ mb: suggestions.soft.length > 0 ? 2 : 0 }}>
-              <Typography
-                variant={isEdit ? "body2" : "caption"}
-                sx={subsectionLabelSx}
-              >
-                {isEdit ? "Technical Skills" : "Technical Skills:"}
-              </Typography>
-              <Box sx={chipWrapSx}>
-                {suggestions.technical.map((suggestion) => (
-                  <Tooltip
-                    key={suggestion.skill}
-                    title={suggestion.reasoning}
-                    arrow={isEdit}
-                  >
-                    <Chip
-                      label={
-                        isEdit ? (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <span>{suggestion.skill}</span>
-                            <AddIcon sx={{ fontSize: "16px" }} />
-                          </Box>
-                        ) : (
-                          suggestion.skill
-                        )
-                      }
-                      size={isEdit ? "medium" : "small"}
-                      onClick={() => onApplyOne(suggestion, "technical")}
-                      sx={technicalChipSx}
-                    />
-                  </Tooltip>
-                ))}
+          {categories.map(([category, items], index) =>
+            (items?.length ?? 0) > 0 ? (
+              <Box key={category} sx={{ mb: index < categories.length - 1 ? 2 : 0 }}>
+                <Typography
+                  variant={isEdit ? "body2" : "caption"}
+                  sx={subsectionLabelSx}
+                >
+                  {isEdit ? category : `${category}:`}
+                </Typography>
+                <Box sx={chipWrapSx}>
+                  {items.map((suggestion) => (
+                    <Tooltip
+                      key={`${category}-${suggestion.skill}`}
+                      title={suggestion.reasoning}
+                      arrow={isEdit}
+                    >
+                      <Chip
+                        label={
+                          isEdit ? (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <span>{suggestion.skill}</span>
+                              <AddIcon sx={{ fontSize: "16px" }} />
+                            </Box>
+                          ) : (
+                            suggestion.skill
+                          )
+                        }
+                        size={isEdit ? "medium" : "small"}
+                        onClick={() => onApplyOne(suggestion, category)}
+                        sx={technicalChipSx}
+                      />
+                    </Tooltip>
+                  ))}
+                </Box>
               </Box>
-            </Box>
-          )}
-
-          {suggestions.soft.length > 0 && (
-            <Box>
-              <Typography
-                variant={isEdit ? "body2" : "caption"}
-                sx={subsectionLabelSx}
-              >
-                {isEdit ? "Soft Skills" : "Soft Skills:"}
-              </Typography>
-              <Box sx={chipWrapSx}>
-                {suggestions.soft.map((suggestion) => (
-                  <Tooltip
-                    key={suggestion.skill}
-                    title={suggestion.reasoning}
-                    arrow={isEdit}
-                  >
-                    <Chip
-                      label={
-                        isEdit ? (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <span>{suggestion.skill}</span>
-                            <AddIcon sx={{ fontSize: "16px" }} />
-                          </Box>
-                        ) : (
-                          suggestion.skill
-                        )
-                      }
-                      size={isEdit ? "medium" : "small"}
-                      onClick={() => onApplyOne(suggestion, "soft")}
-                      sx={softChipSx}
-                    />
-                  </Tooltip>
-                ))}
-              </Box>
-            </Box>
+            ) : null,
           )}
 
           <Box sx={buttonBoxSx}>

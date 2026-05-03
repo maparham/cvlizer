@@ -3,7 +3,7 @@ Comprehensive Pydantic schemas for CV data validation with proper type safety.
 """
 
 from datetime import date
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -184,74 +184,39 @@ class EducationSchema(BaseModel):
         extra = "forbid"  # Reject any additional fields
 
 
-class LanguageSchema(BaseModel):
-    """Schema for language proficiency."""
-
-    id: Optional[str] = Field(
-        None, description="Unique identifier for the language entry"
-    )
-    language: str = Field(..., min_length=1, description="Language name")
-    proficiency: str = Field(..., min_length=1, description="Proficiency level")
-
-    class Config:
-        extra = "forbid"  # Reject any additional fields
-
-
 class SkillsSchema(BaseModel):
     """Schema for skills section.
 
-    Supports both legacy (flat list) and categorized (dictionary) formats for technical skills.
-    - Legacy format: technical: ["Python", "Docker"]
-    - Categorized format: technical: {"Programming": ["Python"], "DevOps": ["Docker"]}
+    All skills are represented as dynamically categorized technical buckets.
     """
 
-    technical: Union[List[str], Dict[str, List[str]]] = Field(
-        default_factory=list,
-        description="Technical skills - supports flat list (legacy) or categorized dictionary (new)",
-    )
-    soft: List[str] = Field(default_factory=list, description="Soft skills")
-    languages: List[LanguageSchema] = Field(
-        default_factory=list, description="Language proficiencies"
+    technical: Dict[str, List[str]] = Field(
+        default_factory=dict,
+        description="Skills grouped by dynamic category name",
     )
 
     @field_validator("technical", mode="before")
     @classmethod
     def validate_technical_format(
-        cls, v: Union[List[str], Dict[str, List[str]]]
-    ) -> Union[List[str], Dict[str, List[str]]]:
-        """Validate technical skills format (supports both list and dict).
-
-        For categorized format:
-        - Category names must be non-empty strings
-        - Each category must contain at least one skill
-        - Skills must be non-empty strings
-        """
+        cls, v: Dict[str, List[str]] | List[str] | object
+    ) -> Dict[str, List[str]]:
+        """Validate skills format with non-empty category names and skill values."""
         if isinstance(v, dict):
-            # Validate categorized format
             validated_dict = {}
             for category, skills in v.items():
                 if not isinstance(category, str) or not category.strip():
-                    continue  # Skip invalid category names
+                    continue
                 if not isinstance(skills, list) or not skills:
-                    continue  # Skip empty categories
+                    continue
                 validated_skills = [
-                    skill for skill in skills if isinstance(skill, str) and skill.strip()
+                    skill.strip()
+                    for skill in skills
+                    if isinstance(skill, str) and skill.strip()
                 ]
                 if validated_skills:
                     validated_dict[category.strip()] = validated_skills
             return validated_dict
-        elif isinstance(v, list):
-            # Validate flat list format (legacy)
-            return [skill for skill in v if isinstance(skill, str) and skill.strip()]
-        return v
-
-    @field_validator("soft", mode="before")
-    @classmethod
-    def validate_soft_format(cls, v: List[str]) -> List[str]:
-        """Validate that soft skills are strings."""
-        if not isinstance(v, list):
-            return v
-        return [skill for skill in v if isinstance(skill, str) and skill.strip()]
+        return {}
 
     class Config:
         extra = "forbid"  # Reject any additional fields

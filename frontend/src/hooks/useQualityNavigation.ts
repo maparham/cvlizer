@@ -103,6 +103,22 @@ function groupIssuesIntoNavItems(
   };
 }
 
+/** Count skill rows across dynamic quality categories (not legacy technical/soft arrays). */
+function countQualitySkillSuggestions(
+  skills: CVQualityAnalysisData["skills"] | undefined,
+): number {
+  if (!skills || typeof skills !== "object") {
+    return 0;
+  }
+  let total = 0;
+  for (const value of Object.values(skills)) {
+    if (Array.isArray(value)) {
+      total += value.length;
+    }
+  }
+  return total;
+}
+
 export { getSectionFromFieldPath } from "../utils/qualityTitleGenerators";
 
 /**
@@ -122,9 +138,10 @@ export function getTotalQualityIssueCount(
     qualityAnalysis.professional_summary?.html_diff ||
     qualityAnalysis.professional_summary?.suggested_text
   );
-  const techCount = qualityAnalysis.skills?.technical?.length ?? 0;
-  const softCount = qualityAnalysis.skills?.soft?.length ?? 0;
-  const hasSkills = techCount + softCount > 0;
+  const skillSuggestionCount = countQualitySkillSuggestions(
+    qualityAnalysis.skills,
+  );
+  const hasSkills = skillSuggestionCount > 0;
 
   const { personalInfo, customSectionsBySectionId, workExperience, education } =
     groupIssuesIntoNavItems(qualityAnalysis.issues ?? [], cvData);
@@ -183,12 +200,13 @@ export function useQualityNavigation(
       });
     }
 
-    const techCount = qualityAnalysis.skills?.technical?.length ?? 0;
-    const softCount = qualityAnalysis.skills?.soft?.length ?? 0;
-    if (techCount + softCount > 0) {
+    const skillSuggestionCount = countQualitySkillSuggestions(
+      qualityAnalysis.skills,
+    );
+    if (skillSuggestionCount > 0) {
       skills.push({
         id: "quality-skills",
-        title: `Skills (${techCount + softCount} issue${techCount + softCount !== 1 ? "s" : ""})`,
+        title: `Skills (${skillSuggestionCount} issue${skillSuggestionCount !== 1 ? "s" : ""})`,
         section: "skills",
         itemId: null,
       });

@@ -133,22 +133,15 @@ export function useJobFitNavigation(
       });
     }
 
-    // Add skill suggestions (combine technical and soft)
-    allSuggestions.skills?.technical?.forEach((skill) => {
-      skills.push({
-        id: `skill-technical-${skill.skill}`,
-        title: getSuggestionTitle(skill, "skill"),
-        section: "skills",
-        type: "skill",
-      });
-    });
-
-    allSuggestions.skills?.soft?.forEach((skill) => {
-      skills.push({
-        id: `skill-soft-${skill.skill}`,
-        title: getSuggestionTitle(skill, "skill"),
-        section: "skills",
-        type: "skill",
+    // Add skill suggestions from all dynamic categories.
+    Object.entries(allSuggestions.skills || {}).forEach(([category, suggestions]) => {
+      suggestions.forEach((skill) => {
+        skills.push({
+          id: `skill-${category}-${skill.skill}`,
+          title: getSuggestionTitle(skill, "skill"),
+          section: "skills",
+          type: "skill",
+        });
       });
     });
 

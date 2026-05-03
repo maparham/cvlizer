@@ -692,6 +692,12 @@ def get_current_user_lightweight(
     work without redirect loops.
     """
     token = credentials.credentials
+    db_debug_enabled = str(os.getenv("DB_TIMING_DEBUG", "false")).lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
     # Verify the Clerk token
     payload = verify_clerk_token(token)
@@ -714,10 +720,18 @@ def get_current_user_lightweight(
         )
 
     # Get existing user from database (no Clerk API calls when user exists)
+    db_lookup_started = time.perf_counter()
     user = db.query(User).filter(User.clerk_id == clerk_user_id).first()
+    if db_debug_enabled:
+        logger.info(
+            "auth.lightweight db lookup clerk_user_id=%s elapsed_ms=%.1f",
+            clerk_user_id,
+            (time.perf_counter() - db_lookup_started) * 1000.0,
+        )
 
     if not user:
         # First request: sync user to local DB so we don't 401 and trigger redirect loop
+        sync_started = time.perf_counter()
         email = _resolve_email_for_sync(clerk_user_id, token_email, db)
         if not email:
             raise HTTPException(
@@ -731,6 +745,12 @@ def get_current_user_lightweight(
             db=db,
             additional_data={},
         )
+        if db_debug_enabled:
+            logger.info(
+                "auth.lightweight first-sync clerk_user_id=%s elapsed_ms=%.1f",
+                clerk_user_id,
+                (time.perf_counter() - sync_started) * 1000.0,
+            )
 
     if not user.is_active:
         raise HTTPException(

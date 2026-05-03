@@ -114,7 +114,7 @@ class TestParseQualityData:
             "overall_quality_score": 85,
             "issues": [],
             "professional_summary": None,
-            "skills": {"technical": [], "soft": []},
+            "skills": {},
             "timeline_gaps": [],
         }
         mock_analysis = Mock(quality_data=quality_dict)
@@ -153,7 +153,7 @@ class TestParseQualityData:
                 },
             ],
             "professional_summary": {"original_text": "Summary", "html_diff": None},
-            "skills": {"technical": [], "soft": []},
+            "skills": {},
             "timeline_gaps": [],
         }
         mock_analysis = Mock(quality_data=quality_dict)
@@ -176,7 +176,7 @@ class TestFindCorrectionById:
             overall_quality_score=80,
             issues=[],
             professional_summary=None,
-            skills={"technical": [], "soft": []},
+            skills={},
             timeline_gaps=[],
         )
 
@@ -206,7 +206,7 @@ class TestFindCorrectionById:
             overall_quality_score=70,
             issues=[issue],
             professional_summary=None,
-            skills={"technical": [], "soft": []},
+            skills={},
             timeline_gaps=[],
         )
 
@@ -246,7 +246,7 @@ class TestFindCorrectionById:
                 overall_quality_score=70,
                 issues=[issue],
                 professional_summary=None,
-                skills={"technical": [], "soft": []},
+                skills={},
                 timeline_gaps=[],
             )
             result = find_correction_by_id(quality_data, "item1")
@@ -298,7 +298,7 @@ class TestFindCorrectionsBatch:
                 ),
             ],
             professional_summary=None,
-            skills={"technical": [], "soft": []},
+            skills={},
             timeline_gaps=[],
         )
 
@@ -327,7 +327,7 @@ class TestFindCorrectionsBatch:
                 ),
             ],
             professional_summary=None,
-            skills={"technical": [], "soft": []},
+            skills={},
             timeline_gaps=[],
         )
 
@@ -343,7 +343,7 @@ class TestFindCorrectionsBatch:
             overall_quality_score=80,
             issues=[],
             professional_summary=None,
-            skills={"technical": [], "soft": []},
+            skills={},
             timeline_gaps=[],
         )
 
@@ -384,7 +384,7 @@ class TestRemoveAppliedCorrectionsFromQualityData:
                 ),
             ],
             professional_summary=None,
-            skills={"technical": [], "soft": []},
+            skills={},
             timeline_gaps=[],
         )
 
@@ -423,7 +423,7 @@ class TestRemoveAppliedCorrectionsFromQualityData:
                 ),
             ],
             professional_summary=None,
-            skills={"technical": [], "soft": []},
+            skills={},
             timeline_gaps=[],
         )
 

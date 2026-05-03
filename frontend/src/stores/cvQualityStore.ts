@@ -29,6 +29,10 @@ import {
   shouldApplyCompletion,
   computeNextStateFromCompletion,
 } from '../utils/cvQualityCompletionHelpers';
+import {
+  updateQualitySkillsBatchState,
+  updateQualitySkillsState,
+} from './utils/suggestionStateUpdaters';
 
 /** Skip overwriting with GET for this long after a dismiss to avoid ghost suggestion cards. */
 const DISMISS_COOLDOWN_MS = 3000;
@@ -78,9 +82,10 @@ function clearEditedFlagsForQualityAnalysis(
     }
   });
   const hasSkills =
-    qualityData.skills &&
-    ((qualityData.skills.technical?.length ?? 0) > 0 ||
-      (qualityData.skills.soft?.length ?? 0) > 0);
+    !!qualityData.skills &&
+    Object.values(qualityData.skills).some(
+      (items) => Array.isArray(items) && items.length > 0
+    );
   if (hasSkills) clearEdited(cvId, 'skills');
 }
 
@@ -168,10 +173,10 @@ interface CVQualityStore {
   dismissProfessionalSummarySuggestion: (summarySectionId?: string) => Promise<void>;
   dismissWorkExperienceSuggestion: (itemId: string) => Promise<void>;
   dismissEducationSuggestion: (itemId: string) => Promise<void>;
-  dismissSkillSuggestion: (skill: string, type: 'technical' | 'soft') => Promise<void>;
+  dismissSkillSuggestion: (skill: string, type: string) => Promise<void>;
   /** Remove multiple skill suggestions in one PATCH (for Apply All). */
   dismissSkillSuggestionsBatch: (
-    suggestions: Array<{ skill: string; type: 'technical' | 'soft' }>,
+    suggestions: Array<{ skill: string; type: string }>,
   ) => Promise<void>;
   dismissAllQualitySuggestions: () => Promise<void>;
 
@@ -654,15 +659,9 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
   },
 
   // Dismiss skill suggestion
-  dismissSkillSuggestion: async (skill: string, type: 'technical' | 'soft') => {
+  dismissSkillSuggestion: async (skill: string, type: string) => {
     await get()._dismissItem(
-      (current) => ({
-        ...current,
-        skills: {
-          ...current.skills,
-          [type]: current.skills[type].filter((s) => s.skill !== skill),
-        },
-      }),
+      (current) => updateQualitySkillsState(current, skill, type),
       'Failed to dismiss suggestion',
       'The skill suggestion could not be dismissed. Please try again.'
     );
@@ -670,24 +669,11 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
 
   // Dismiss multiple skill suggestions in one PATCH (for Apply All)
   dismissSkillSuggestionsBatch: async (
-    suggestions: Array<{ skill: string; type: 'technical' | 'soft' }>,
+    suggestions: Array<{ skill: string; type: string }>,
   ) => {
     if (suggestions.length === 0) return;
-    const toRemove = new Set(
-      suggestions.map((s) => `${s.type}:${s.skill}`),
-    );
     await get()._dismissItem(
-      (current) => ({
-        ...current,
-        skills: {
-          technical: current.skills.technical.filter(
-            (s) => !toRemove.has(`technical:${s.skill}`),
-          ),
-          soft: current.skills.soft.filter(
-            (s) => !toRemove.has(`soft:${s.skill}`),
-          ),
-        },
-      }),
+      (current) => updateQualitySkillsBatchState(current, suggestions),
       'Failed to dismiss suggestions',
       'Skill suggestions could not be dismissed. Please try again.'
     );

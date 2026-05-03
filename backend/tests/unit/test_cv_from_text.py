@@ -38,7 +38,7 @@ async def test_parse_cv_text_pipeline_applies_uuids_and_normalize():
             }
         ],
         "education": [],
-        "skills": {"technical": [], "soft": [], "languages": []},
+        "skills": {"technical": {}},
         "certifications": [],
         "projects": [],
         "awards": [],

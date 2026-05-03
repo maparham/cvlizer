@@ -119,14 +119,23 @@ def update_cv(db: Session, cv_id: str, user_id: str, parsed_data: dict) -> Optio
 
 
 def delete_cv(db: Session, cv_id: str, user_id: str) -> bool:
-    """Delete a CV"""
-    cv = get_cv_by_id(db, cv_id, user_id)
-    if not cv:
-        return False
+    """
+    Delete a CV row for this user.
 
-    db.delete(cv)
+    Uses a bulk DELETE so the database applies FK cascades (see models on
+    ``cvs.id``). Avoids ORM ``session.delete(cv)``, which loads every cascaded
+    collection and issues many round-trips on remote Postgres.
+
+    ``synchronize_session="evaluate"`` marks matching in-memory ``CV`` instances
+    as deleted so the same session can keep querying without ``ObjectDeletedError``.
+    """
+    deleted = (
+        db.query(CV)
+        .filter(CV.id == cv_id, CV.user_id == user_id)
+        .delete(synchronize_session="evaluate")
+    )
     db.commit()
-    return True
+    return deleted == 1
 
 
 def update_cv_export_template(

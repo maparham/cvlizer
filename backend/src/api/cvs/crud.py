@@ -17,7 +17,9 @@ for validation/compound errors.
 - Deleting CVs
 """
 
+import logging
 import os
+import time
 from copy import deepcopy
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -59,6 +61,7 @@ from .models import (
 from .responses import build_cv_response
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=CVListResponse)
@@ -323,8 +326,30 @@ async def delete_cv_data(
     current_user: User = Depends(get_effective_user_lightweight),
 ):
     """Delete a CV"""
+    started_at = time.perf_counter()
+    db_debug_enabled = str(os.getenv("DB_TIMING_DEBUG", "false")).lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+    def _log_step(step_name: str, step_started: float) -> None:
+        if not db_debug_enabled:
+            return
+        elapsed_ms = (time.perf_counter() - step_started) * 1000.0
+        logger.info(
+            "delete_cv timing cv_id=%s user_id=%s step=%s elapsed_ms=%.1f",
+            cv_id,
+            current_user.id,
+            step_name,
+            elapsed_ms,
+        )
+
     # Get CV to find file path
+    step_started = time.perf_counter()
     cv = get_cv_by_id(db, cv_id, str(current_user.id))
+    _log_step("fetch_cv", step_started)
     if not cv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
@@ -343,21 +368,28 @@ async def delete_cv_data(
     parsed = cv.parsed_data or {}
     profile_stored = (parsed.get("personal_info") or {}).get("profile_picture")
     if profile_stored:
+        step_started = time.perf_counter()
         profile_path = resolve_profile_picture_path(profile_stored)
         if profile_path:
             delete_file(profile_path)
+        _log_step("delete_profile_picture", step_started)
 
     # Delete file from disk
+    step_started = time.perf_counter()
     delete_file(cv.file_path)
+    _log_step("delete_cv_file", step_started)
 
     # Delete from database
+    step_started = time.perf_counter()
     success = delete_cv(db, cv_id, str(current_user.id))
+    _log_step("delete_cv_db_commit", step_started)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete CV",
         )
 
+    step_started = time.perf_counter()
     safe_log_user_activity(
         db=db,
         user=current_user,
@@ -366,5 +398,15 @@ async def delete_cv_data(
         description=f"Deleted CV '{cv_filename}'",
         details={"cv_id": cv_id, "cv_filename": cv_filename},
     )
+    _log_step("log_user_activity", step_started)
+
+    if db_debug_enabled:
+        total_ms = (time.perf_counter() - started_at) * 1000.0
+        logger.info(
+            "delete_cv total timing cv_id=%s user_id=%s total_ms=%.1f",
+            cv_id,
+            current_user.id,
+            total_ms,
+        )
 
     return {"message": "CV deleted successfully"}

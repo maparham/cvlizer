@@ -111,7 +111,7 @@ class TestAIService:
             "work_experience": [{"company": "Tech Corp", "position": "Developer"}],
             "custom_sections": [],
             "education": [],
-            "skills": {"technical": [], "soft": [], "languages": []},
+            "skills": {"technical": {}},
             "certifications": [],
             "projects": [],
             "awards": [],

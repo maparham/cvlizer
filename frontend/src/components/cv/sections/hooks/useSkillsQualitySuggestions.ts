@@ -11,11 +11,11 @@ import {
   applyQualitySuggestionsToList,
   type QualitySkillSuggestion,
 } from "../utils/qualitySkillHelpers";
+import { normalizeSkillsTechnical } from "../../../../utils/normalizeSkillsTechnical";
 
-/** Section data shape for skills (technical + soft arrays). */
+/** Section data shape for skills (categorized technical only). */
 export interface SkillsSectionDataForQuality {
-  technical?: string[];
-  soft?: string[];
+  technical?: Record<string, string[]>;
 }
 
 export type UpdateAndSaveSkills = (
@@ -24,12 +24,12 @@ export type UpdateAndSaveSkills = (
 ) => Promise<void>;
 
 export interface UseSkillsQualitySuggestionsParams {
-  /** Quality skills from CV quality analysis (technical + soft). */
-  qualitySkills: { technical: QualitySkillSuggestion[]; soft: QualitySkillSuggestion[] } | null;
+  /** Quality skills grouped by category from CV quality analysis. */
+  qualitySkills: Record<string, QualitySkillSuggestion[]> | null;
   /** Dismiss a single skill suggestion. */
-  dismissOne: (skill: string, type: "technical" | "soft") => Promise<void>;
+  dismissOne: (skill: string, type: string) => Promise<void>;
   /** Dismiss multiple suggestions in one call (for Apply All). */
-  dismissBatch: (suggestions: Array<{ skill: string; type: "technical" | "soft" }>) => Promise<void>;
+  dismissBatch: (suggestions: Array<{ skill: string; type: string }>) => Promise<void>;
   showSuccess: (message: string) => void;
 }
 
@@ -37,7 +37,7 @@ export interface UseSkillsQualitySuggestionsResult {
   /** Apply one suggestion. Pass sectionData and updateAndSave from renderForm or renderDisplay. */
   handleAddQualitySkill: (
     suggestion: QualitySkillSuggestion,
-    type: "technical" | "soft",
+    category: string,
     sectionData: SkillsSectionDataForQuality,
     updateAndSave: UpdateAndSaveSkills
   ) => Promise<void>;
@@ -61,25 +61,34 @@ export function useSkillsQualitySuggestions(
   const handleAddQualitySkill = useCallback(
     async (
       suggestion: QualitySkillSuggestion,
-      type: "technical" | "soft",
+      category: string,
       sectionData: SkillsSectionDataForQuality,
       updateAndSave: UpdateAndSaveSkills
     ) => {
       const { skill } = suggestion;
-      const existingList = (sectionData[type] || []) as string[];
+      const normalizedCategory = category.trim();
+      if (!normalizedCategory) return;
+      const technical = normalizeSkillsTechnical(sectionData.technical);
+      const existingList = technical[normalizedCategory] || [];
       const newList = applyOneQualitySuggestion(existingList, suggestion);
       if (newList === null) {
-        await dismissOne(skill, type);
+        await dismissOne(skill, normalizedCategory);
         showSuccess(`Skill correction "${skill}" dismissed (already present).`);
         return;
       }
-      const updatedData = { ...sectionData, [type]: newList };
+      const updatedData = {
+        ...sectionData,
+        technical: {
+          ...technical,
+          [normalizedCategory]: newList,
+        },
+      };
       const isCorrection = newList.length === existingList.length;
       await updateAndSave(
         updatedData,
-        `CV quality skill "${skill}" ${isCorrection ? "corrected" : "added"} in ${type} skills`
+        `CV quality skill "${skill}" ${isCorrection ? "corrected" : "added"} in ${normalizedCategory}`
       );
-      await dismissOne(skill, type);
+      await dismissOne(skill, normalizedCategory);
     },
     [dismissOne, showSuccess]
   );
@@ -91,26 +100,22 @@ export function useSkillsQualitySuggestions(
     ) => {
       if (!qualitySkills) return;
 
-      const updatedData = { ...sectionData };
-      if (qualitySkills.technical.length > 0) {
-        updatedData.technical = applyQualitySuggestionsToList(
-          (updatedData.technical || []) as string[],
-          qualitySkills.technical
+      const technical = { ...normalizeSkillsTechnical(sectionData.technical) };
+      for (const [category, suggestions] of Object.entries(qualitySkills)) {
+        if (!Array.isArray(suggestions) || suggestions.length === 0) continue;
+        technical[category] = applyQualitySuggestionsToList(
+          technical[category] || [],
+          suggestions
         );
       }
-      if (qualitySkills.soft.length > 0) {
-        updatedData.soft = applyQualitySuggestionsToList(
-          (updatedData.soft || []) as string[],
-          qualitySkills.soft
-        );
-      }
+      const updatedData = { ...sectionData, technical };
 
       await updateAndSave(updatedData, "All CV quality skill corrections applied");
 
-      const toDismiss = [
-        ...(qualitySkills?.technical || []).map((s) => ({ skill: s.skill, type: "technical" as const })),
-        ...(qualitySkills?.soft || []).map((s) => ({ skill: s.skill, type: "soft" as const })),
-      ];
+      const toDismiss = Object.entries(qualitySkills).flatMap(
+        ([category, suggestions]) =>
+          (suggestions || []).map((s) => ({ skill: s.skill, type: category }))
+      );
       if (toDismiss.length > 0) {
         await dismissBatch(toDismiss);
       }
@@ -123,10 +128,10 @@ export function useSkillsQualitySuggestions(
   const handleRejectAllQualitySuggestions = useCallback(async () => {
     if (!qualitySkills) return;
 
-    const toDismiss = [
-      ...(qualitySkills.technical || []).map((s) => ({ skill: s.skill, type: "technical" as const })),
-      ...(qualitySkills.soft || []).map((s) => ({ skill: s.skill, type: "soft" as const })),
-    ];
+    const toDismiss = Object.entries(qualitySkills).flatMap(
+      ([category, suggestions]) =>
+        (suggestions || []).map((s) => ({ skill: s.skill, type: category }))
+    );
     if (toDismiss.length > 0) {
       await dismissBatch(toDismiss);
     }

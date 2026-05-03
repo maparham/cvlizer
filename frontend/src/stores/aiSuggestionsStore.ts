@@ -24,6 +24,16 @@ import { ErrorHandler } from "../utils/errorHandler";
 import { AllSuggestionsResponse, ItemDescriptionSuggestion } from "../types/ai";
 import { useAIStore } from "./ai";
 import { useEditedSinceAIStore } from "./editedSinceAIStore";
+import { dismissWithRollback } from "./utils/suggestionDismissalManager";
+import { hasNoSuggestionsAcrossSections } from "./utils/suggestionEmptyChecks";
+import {
+  clearSectionSuggestionsState,
+  clearSkillsState,
+  updateSectionItemSuggestionState,
+  updateSkillsState,
+  updateSummaryState,
+  updateWhyGoodFitState,
+} from "./utils/suggestionStateUpdaters";
 const EMPTY_WHY_GOOD_FIT: AllSuggestionsResponse["why_good_fit"] = {
   title: "",
   confidence_score: 0,
@@ -68,10 +78,15 @@ function clearEditedFlagsForNewSuggestions(cvId: string, allSuggestions: AllSugg
       if (itemId) clearEdited(cvId, `${section}:${itemId}`);
     }
   }
-  const hasSkills =
-    allSuggestions.skills &&
-    ((allSuggestions.skills.technical?.length ?? 0) > 0 || (allSuggestions.skills.soft?.length ?? 0) > 0);
+  const hasSkills = countSkillSuggestions(allSuggestions.skills) > 0;
   if (hasSkills) clearEdited(cvId, "skills");
+}
+
+function countSkillSuggestions(skills: AllSuggestionsResponse["skills"]): number {
+  return Object.values(skills || {}).reduce(
+    (sum, items) => sum + (Array.isArray(items) ? items.length : 0),
+    0,
+  );
 }
 
 interface AIStore {
@@ -90,9 +105,13 @@ interface AIStore {
   updateAIEnhancementStatus: (enhancementId: string) => Promise<any>;
   loadLatestAIEnhancement: (cvId: string) => Promise<void>;
   setSuggestionsLoading: (loading: boolean) => void;
+  dismissWithLifecycle: (
+    updateFn: (current: AllSuggestionsResponse) => AllSuggestionsResponse,
+    logContext: string,
+  ) => Promise<void>;
   dismissSkillSuggestion: (
     skill: string,
-    type: "technical" | "soft",
+    type: string,
   ) => Promise<void>;
   dismissAllSkillSuggestions: () => Promise<void>;
   dismissSummarySuggestion: () => Promise<void>;
@@ -155,7 +174,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       // Rate limit errors are shown as toast notifications only
       set({
         allSuggestions: {
-          skills: { technical: [], soft: [] },
+          skills: {},
           professional_summary: {
             suggested_text: "",
             original_text: "",
@@ -180,7 +199,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
         // Convert enhancement data to AllSuggestionsResponse format
         const rawData = enhancement.enhancement_data || {};
         const allSuggestions: AllSuggestionsResponse = {
-          skills: rawData.skills || { technical: [], soft: [] },
+          skills: rawData.skills || {},
           professional_summary: rawData.professional_summary || {
             suggested_text: "",
             original_text: "",
@@ -247,7 +266,7 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
           // Normalize enhancement data to ensure proper structure
           const rawData = enhancement.enhancement_data || {};
           const allSuggestions: AllSuggestionsResponse = {
-            skills: rawData.skills || { technical: [], soft: [] },
+            skills: rawData.skills || {},
             professional_summary: rawData.professional_summary || {
               suggested_text: "",
               original_text: "",
@@ -304,367 +323,95 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
     set({ suggestionsLoading: loading });
   },
 
-  // Dismiss a single skill suggestion from the UI
-  dismissSkillSuggestion: async (skill: string, type: "technical" | "soft") => {
+  dismissWithLifecycle: async (
+    updateFn: (current: AllSuggestionsResponse) => AllSuggestionsResponse,
+    logContext: string,
+  ) => {
     const currentSuggestions = get().allSuggestions;
     const enhancementId = get().currentEnhancementId;
 
-    if (!currentSuggestions) {
-      return;
-    }
-
-    // Update UI immediately - remove just this skill
-    const updatedSuggestions = {
-      ...currentSuggestions,
-      skills: {
-        ...currentSuggestions.skills,
-        [type]: currentSuggestions.skills[type].filter(
-          (s) => s.skill !== skill,
-        ),
+    await dismissWithRollback({
+      currentState: currentSuggestions,
+      updateFn,
+      setStateFn: (allSuggestions) => set({ allSuggestions }),
+      checkEmptyFn: hasNoSuggestionsAcrossSections,
+      deleteFn: async () => {
+        await get().deleteCurrentEnhancement();
       },
-    };
+      persistFn: enhancementId
+        ? async (updated) => {
+            await aiService.updateAIEnhancement(enhancementId, updated);
+          }
+        : undefined,
+      onError: (error) => {
+        console.error(`❌ [${logContext}] Failed to update backend:`, error);
+      },
+    });
+  },
 
-    set({ allSuggestions: updatedSuggestions });
-
-    // Check if ALL suggestions across ALL sections are now dismissed
-    const hasNoSuggestions =
-      updatedSuggestions.skills.technical.length === 0 &&
-      updatedSuggestions.skills.soft.length === 0 &&
-      !updatedSuggestions.professional_summary.suggested_text &&
-      (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0 &&
-      !updatedSuggestions.why_good_fit?.fit_analysis;
-
-    if (hasNoSuggestions) {
-      // Delete the entire enhancement if EVERYTHING is dismissed
-      await get().deleteCurrentEnhancement();
-    } else if (enhancementId) {
-      // Update the backend with partial dismissal
-      try {
-        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-      } catch (error) {
-        console.error(
-          "❌ [dismissSkillSuggestion] Failed to update backend:",
-          error,
-        );
-      }
-    }
+  // Dismiss a single skill suggestion from the UI
+  dismissSkillSuggestion: async (skill: string, type: string) => {
+    await get().dismissWithLifecycle(
+      (current) => updateSkillsState(current, skill, type),
+      "dismissSkillSuggestion",
+    );
   },
 
   // Dismiss all skill suggestions from the UI
   dismissAllSkillSuggestions: async () => {
-    const currentSuggestions = get().allSuggestions;
-    const enhancementId = get().currentEnhancementId;
-
-    if (!currentSuggestions) {
-      return;
-    }
-
-    // Update UI immediately - clear skills only
-    const updatedSuggestions = {
-      ...currentSuggestions,
-      skills: {
-        technical: [],
-        soft: [],
-      },
-    };
-
-    set({ allSuggestions: updatedSuggestions });
-
-    // Check if ALL suggestions across ALL sections are now dismissed
-    const hasNoSuggestions =
-      updatedSuggestions.skills.technical.length === 0 &&
-      updatedSuggestions.skills.soft.length === 0 &&
-      !updatedSuggestions.professional_summary.suggested_text &&
-      (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0 &&
-      !updatedSuggestions.why_good_fit?.fit_analysis;
-
-    if (hasNoSuggestions) {
-      // Delete the entire enhancement if EVERYTHING is dismissed
-      await get().deleteCurrentEnhancement();
-    } else if (enhancementId) {
-      // Update the backend with partial dismissal
-      try {
-        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-      } catch (error) {
-        console.error(
-          "❌ [dismissAllSkillSuggestions] Failed to update backend:",
-          error,
-        );
-      }
-    }
+    await get().dismissWithLifecycle(
+      (current) => clearSkillsState(current),
+      "dismissAllSkillSuggestions",
+    );
   },
 
   // Dismiss professional summary suggestion
   dismissSummarySuggestion: async () => {
-    const currentSuggestions = get().allSuggestions;
-    const enhancementId = get().currentEnhancementId;
-
-    if (!currentSuggestions) {
-      return;
-    }
-
-    // Update UI immediately - clear summary only
-    const updatedSuggestions = {
-      ...currentSuggestions,
-      professional_summary: {
-        suggested_text: "",
-        original_text: currentSuggestions.professional_summary.original_text,
-        key_changes: [],
-      },
-    };
-
-    set({ allSuggestions: updatedSuggestions });
-
-    // Check if ALL suggestions across ALL sections are now dismissed
-    const hasNoSuggestions =
-      updatedSuggestions.skills.technical.length === 0 &&
-      updatedSuggestions.skills.soft.length === 0 &&
-      !updatedSuggestions.professional_summary.suggested_text &&
-      (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0 &&
-      !updatedSuggestions.why_good_fit?.fit_analysis;
-
-    if (hasNoSuggestions) {
-      // Delete the entire enhancement if EVERYTHING is dismissed
-      await get().deleteCurrentEnhancement();
-    } else if (enhancementId) {
-      // Update the backend with partial dismissal - save the updated suggestions
-      try {
-        // Update the enhancement_data in the backend with the new state
-        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-      } catch (error) {
-        console.error(
-          "❌ [dismissSummarySuggestion] Failed to update backend:",
-          error,
-        );
-      }
-    }
+    await get().dismissWithLifecycle(
+      (current) => updateSummaryState(current),
+      "dismissSummarySuggestion",
+    );
   },
 
   // Dismiss why_good_fit suggestion
   dismissWhyGoodFitSuggestion: async () => {
-    const currentSuggestions = get().allSuggestions;
-    const enhancementId = get().currentEnhancementId;
-
-    if (!currentSuggestions) {
-      return;
-    }
-
-    // Update UI immediately - clear why_good_fit only
-    const updatedSuggestions = {
-      ...currentSuggestions,
-      why_good_fit: {
-        title: "",
-        confidence_score: 0,
-        fit_analysis: "",
-        key_matches: [],
-        missing_skills: [],
-        suggested_improvements: [],
-        strengths: [],
-        weaknesses: [],
-      },
-    };
-
-    set({ allSuggestions: updatedSuggestions });
-
-    // Check if ALL suggestions across ALL sections are now dismissed
-    const hasNoSuggestions =
-      updatedSuggestions.skills.technical.length === 0 &&
-      updatedSuggestions.skills.soft.length === 0 &&
-      !updatedSuggestions.professional_summary.suggested_text &&
-      (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0 &&
-      !updatedSuggestions.why_good_fit?.fit_analysis;
-
-    if (hasNoSuggestions) {
-      // Delete the entire enhancement if EVERYTHING is dismissed
-      await get().deleteCurrentEnhancement();
-    } else if (enhancementId) {
-      // Update the backend with partial dismissal - save the updated suggestions
-      try {
-        // Update the enhancement_data in the backend with the new state
-        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-      } catch (error) {
-        console.error(
-          "❌ [dismissWhyGoodFitSuggestion] Failed to update backend:",
-          error,
-        );
-      }
-    }
+    await get().dismissWithLifecycle(
+      (current) => updateWhyGoodFitState(current),
+      "dismissWhyGoodFitSuggestion",
+    );
   },
 
   // Dismiss a single work experience suggestion
   dismissWorkExperienceSuggestion: async (itemId: string) => {
-    const currentSuggestions = get().allSuggestions;
-    const enhancementId = get().currentEnhancementId;
-
-    if (!currentSuggestions) {
-      return;
-    }
-
-    // Update UI immediately - remove just this item's suggestion
-    const updatedSuggestions = {
-      ...currentSuggestions,
-      work_experience: (currentSuggestions.work_experience || []).filter(
-        (s) => s.id !== itemId,
-      ),
-    };
-
-    set({ allSuggestions: updatedSuggestions });
-
-    // Check if ALL suggestions across ALL sections are now dismissed
-    const hasNoSuggestions =
-      updatedSuggestions.skills.technical.length === 0 &&
-      updatedSuggestions.skills.soft.length === 0 &&
-      !updatedSuggestions.professional_summary.suggested_text &&
-      (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0 &&
-      !updatedSuggestions.why_good_fit?.fit_analysis;
-
-    if (hasNoSuggestions) {
-      // Delete the entire enhancement if EVERYTHING is dismissed
-      await get().deleteCurrentEnhancement();
-    } else if (enhancementId) {
-      // Update the backend with partial dismissal
-      try {
-        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-      } catch (error) {
-        console.error(
-          "❌ [dismissWorkExperienceSuggestion] Failed to update backend:",
-          error,
-        );
-      }
-    }
+    await get().dismissWithLifecycle(
+      (current) =>
+        updateSectionItemSuggestionState(current, "work_experience", itemId),
+      "dismissWorkExperienceSuggestion",
+    );
   },
 
   // Dismiss all work experience suggestions
   dismissAllWorkExperienceSuggestions: async () => {
-    const currentSuggestions = get().allSuggestions;
-    const enhancementId = get().currentEnhancementId;
-
-    if (!currentSuggestions) {
-      return;
-    }
-
-    // Update UI immediately - clear work experience suggestions only
-    const updatedSuggestions = {
-      ...currentSuggestions,
-      work_experience: [],
-    };
-
-    set({ allSuggestions: updatedSuggestions });
-
-    // Check if ALL suggestions across ALL sections are now dismissed
-    const hasNoSuggestions =
-      updatedSuggestions.skills.technical.length === 0 &&
-      updatedSuggestions.skills.soft.length === 0 &&
-      !updatedSuggestions.professional_summary.suggested_text &&
-      (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0 &&
-      !updatedSuggestions.why_good_fit?.fit_analysis;
-
-    if (hasNoSuggestions) {
-      // Delete the entire enhancement if EVERYTHING is dismissed
-      await get().deleteCurrentEnhancement();
-    } else if (enhancementId) {
-      // Update the backend with partial dismissal
-      try {
-        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-      } catch (error) {
-        console.error(
-          "❌ [dismissAllWorkExperienceSuggestions] Failed to update backend:",
-          error,
-        );
-      }
-    }
+    await get().dismissWithLifecycle(
+      (current) => clearSectionSuggestionsState(current, "work_experience"),
+      "dismissAllWorkExperienceSuggestions",
+    );
   },
 
   // Dismiss a single education suggestion
   dismissEducationSuggestion: async (itemId: string) => {
-    const currentSuggestions = get().allSuggestions;
-    const enhancementId = get().currentEnhancementId;
-
-    if (!currentSuggestions) {
-      return;
-    }
-
-    // Update UI immediately - remove just this item's suggestion
-    const updatedSuggestions = {
-      ...currentSuggestions,
-      education: (currentSuggestions.education || []).filter(
-        (s) => s.id !== itemId,
-      ),
-    };
-
-    set({ allSuggestions: updatedSuggestions });
-
-    // Check if ALL suggestions across ALL sections are now dismissed
-    const hasNoSuggestions =
-      updatedSuggestions.skills.technical.length === 0 &&
-      updatedSuggestions.skills.soft.length === 0 &&
-      !updatedSuggestions.professional_summary.suggested_text &&
-      (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0 &&
-      !updatedSuggestions.why_good_fit?.fit_analysis;
-
-    if (hasNoSuggestions) {
-      // Delete the entire enhancement if EVERYTHING is dismissed
-      await get().deleteCurrentEnhancement();
-    } else if (enhancementId) {
-      // Update the backend with partial dismissal
-      try {
-        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-      } catch (error) {
-        console.error(
-          "❌ [dismissEducationSuggestion] Failed to update backend:",
-          error,
-        );
-      }
-    }
+    await get().dismissWithLifecycle(
+      (current) => updateSectionItemSuggestionState(current, "education", itemId),
+      "dismissEducationSuggestion",
+    );
   },
 
   // Dismiss all education suggestions
   dismissAllEducationSuggestions: async () => {
-    const currentSuggestions = get().allSuggestions;
-    const enhancementId = get().currentEnhancementId;
-
-    if (!currentSuggestions) {
-      return;
-    }
-
-    // Update UI immediately - clear education suggestions only
-    const updatedSuggestions = {
-      ...currentSuggestions,
-      education: [],
-    };
-
-    set({ allSuggestions: updatedSuggestions });
-
-    // Check if ALL suggestions across ALL sections are now dismissed
-    const hasNoSuggestions =
-      updatedSuggestions.skills.technical.length === 0 &&
-      updatedSuggestions.skills.soft.length === 0 &&
-      !updatedSuggestions.professional_summary.suggested_text &&
-      (updatedSuggestions.work_experience || []).length === 0 &&
-      (updatedSuggestions.education || []).length === 0 &&
-      !updatedSuggestions.why_good_fit?.fit_analysis;
-
-    if (hasNoSuggestions) {
-      // Delete the entire enhancement if EVERYTHING is dismissed
-      await get().deleteCurrentEnhancement();
-    } else if (enhancementId) {
-      // Update the backend with partial dismissal
-      try {
-        await aiService.updateAIEnhancement(enhancementId, updatedSuggestions);
-      } catch (error) {
-        console.error(
-          "❌ [dismissAllEducationSuggestions] Failed to update backend:",
-          error,
-        );
-      }
-    }
+    await get().dismissWithLifecycle(
+      (current) => clearSectionSuggestionsState(current, "education"),
+      "dismissAllEducationSuggestions",
+    );
   },
 
   // Dismiss all suggestions across all sections

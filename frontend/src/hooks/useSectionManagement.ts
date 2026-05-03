@@ -214,9 +214,7 @@ export const useSectionManagement = ({
       if (!existingSection) {
         if (sectionId === "skills") {
           (updatedCvData as any)[sectionId] = {
-            technical: [],
-            soft: [],
-            languages: [],
+            technical: {},
           };
         } else if (sectionId === "personal_info") {
           (updatedCvData as any)[sectionId] = {

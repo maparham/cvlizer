@@ -125,7 +125,7 @@ def _normalize_skill_name(skill: str) -> str:
 def _filter_existing_skills(
     suggested_skills: List[Dict[str, Any]],
     existing_skills: List[str],
-    skill_type: str,
+    category: str,
 ) -> List[Dict[str, Any]]:
     """
     Filter out suggested skills that already exist in the CV.
@@ -133,7 +133,7 @@ def _filter_existing_skills(
     Args:
         suggested_skills: List of skill suggestion dicts with 'skill' key
         existing_skills: List of existing skill names from CV
-        skill_type: Type of skill ('technical' or 'soft') for logging
+        category: Category name for logging
 
     Returns:
         Filtered list of skill suggestions without duplicates
@@ -162,7 +162,7 @@ def _filter_existing_skills(
 
     if filtered_out:
         logger.info(
-            f"Filtered out {len(filtered_out)} duplicate {skill_type} skills: {filtered_out}"
+            f"Filtered out {len(filtered_out)} duplicate skills in '{category}': {filtered_out}"
         )
 
     return filtered
@@ -187,12 +187,12 @@ def _build_ai_suggestions_prompt(
 
     # Extract current CV data for optimization (compact format)
     skills_data = filtered_cv_data.get("skills") or {}
-    current_technical_skills = skills_data.get("technical") or []
-    current_soft_skills = skills_data.get("soft") or []
-    has_skills_section = bool(
-        filtered_cv_data.get("skills")
-        and (current_technical_skills or current_soft_skills)
+    current_technical_skills = (
+        skills_data.get("technical")
+        if isinstance(skills_data.get("technical"), dict)
+        else {}
     )
+    has_skills_section = bool(filtered_cv_data.get("skills") and current_technical_skills)
 
     work_experience = filtered_cv_data.get("work_experience", [])
     work_items = [
@@ -228,21 +228,12 @@ def _build_ai_suggestions_prompt(
     optimization_tasks = []
     if has_skills_section:
         # Format current skills for prompt
-        current_technical_str = (
-            json.dumps(current_technical_skills) if current_technical_skills else "[]"
-        )
-        current_soft_str = (
-            json.dumps(current_soft_skills) if current_soft_skills else "[]"
-        )
+        current_technical_str = json.dumps(current_technical_skills)
         optimization_tasks.append(
-            f"   - skills.technical: ONLY suggest NEW skills that are NOT already in the candidate's CV. "
-            f"CRITICAL: Do NOT suggest any skills from the current technical skills list: {current_technical_str}. "
-            f"Only suggest skills the candidate has actually used but may have undersold, and that are NOT in the current list (max 10) with reasoning"
-        )
-        optimization_tasks.append(
-            f"   - skills.soft: Suggest NEW soft skills that are NOT already in the candidate's CV. "
-            f"CRITICAL: Do NOT suggest any skills from the current soft skills list: {current_soft_str}. "
-            f"Only suggest soft skills that would help highlight their authentic strengths and that are NOT in the current list (max 5) with reasoning"
+            f"   - skills: Return a dictionary of dynamic categories, each value an array of suggestions in this shape: "
+            f'{{"skill": "...", "reasoning": "..."}}. '
+            f"CRITICAL: Do NOT suggest skills that already exist anywhere in the candidate's current skills dictionary: {current_technical_str}. "
+            f"Only suggest NEW, evidence-backed skills from the CV that are relevant to the job (max 12 total across all categories)."
         )
     if has_professional_summary:
         optimization_tasks.append(
@@ -315,11 +306,11 @@ def _build_ai_suggestions_prompt(
     if has_skills_section:
         comma = "," if has_any_after_skills else ""
         json_output_parts.append(
-            f'  "skills": {{"technical": [{{"skill": "X", "reasoning": "Y"}}], "soft": []}}{comma}'
+            f'  "skills": {{"Programming Languages": [{{"skill": "X", "reasoning": "Y"}}], "Soft Skills": []}}{comma}'
         )
     else:
         comma = "," if has_any_after_skills else ""
-        json_output_parts.append(f'  "skills": {{"technical": [], "soft": []}}{comma}')
+        json_output_parts.append(f'  "skills": {{}}{comma}')
 
     # Only include professional_summary in JSON output if section is visible
     if has_professional_summary:
@@ -514,26 +505,48 @@ async def generate_ai_suggestions(
         education_suggestions = response.get("education", [])
 
         # Filter out existing skills from suggestions (safety measure)
-        raw_skills_response = response.get("skills", {"technical": [], "soft": []})
+        raw_skills_response = response.get("skills", {})
         skills_data = filtered_cv_data.get("skills") or {}
-        current_technical_skills = skills_data.get("technical") or []
-        current_soft_skills = skills_data.get("soft") or []
-
-        filtered_technical = _filter_existing_skills(
-            raw_skills_response.get("technical", []),
-            current_technical_skills,
-            "technical",
+        current_technical_skills = (
+            skills_data.get("technical")
+            if isinstance(skills_data.get("technical"), dict)
+            else {}
         )
-        filtered_soft = _filter_existing_skills(
-            raw_skills_response.get("soft", []),
-            current_soft_skills,
-            "soft",
+        raw_skills_by_category = (
+            raw_skills_response if isinstance(raw_skills_response, dict) else {}
         )
 
-        filtered_skills_response = {
-            "technical": filtered_technical,
-            "soft": filtered_soft,
+        # Build one normalized set across all existing categories to prevent cross-category duplicates.
+        current_technical_values = (
+            current_technical_skills.values()
+            if isinstance(current_technical_skills, dict)
+            else []
+        )
+        existing_any_category = {
+            _normalize_skill_name(skill)
+            for values in current_technical_values
+            if isinstance(values, list)
+            for skill in values
+            if isinstance(skill, str)
         }
+        filtered_skills_response: Dict[str, List[Dict[str, Any]]] = {}
+        for category, suggestions in raw_skills_by_category.items():
+            if not isinstance(category, str) or not category.strip():
+                continue
+            if not isinstance(suggestions, list):
+                continue
+            filtered_category = _filter_existing_skills(
+                suggestions,
+                list(existing_any_category),
+                category,
+            )
+            # Keep the dedupe set updated to avoid repeating suggestions in different categories.
+            for suggestion in filtered_category:
+                skill_name = suggestion.get("skill")
+                if isinstance(skill_name, str) and skill_name.strip():
+                    existing_any_category.add(_normalize_skill_name(skill_name))
+            if filtered_category:
+                filtered_skills_response[category.strip()] = filtered_category
 
         optimization_data = {
             "skills": filtered_skills_response,

@@ -1,5 +1,15 @@
 # Local stack aligned with Cloudflare container images.
 # Run: docker compose up -d --build
+#
+# Environment files (container runtime):
+# - Base secrets/config: .env.prod (default)
+# - Optional overrides: set ENV_FILE_EXTRA to a path like backend/.env.debug
+#   Example: ENV_FILE_EXTRA=backend/.env.debug docker compose up -d --build
+#   Or use the small compose env file (sets ENV_FILE_EXTRA for you):
+#   docker compose --env-file backend/.env.compose-debug up -d --build
+#
+# Note: docker compose --env-file only loads variables for Compose interpolation;
+# it does not automatically inject into containers unless referenced here.
 name: cvlator-local
 
 services:
@@ -7,7 +17,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.pdf-service
-    env_file: .env.prod
+    env_file:
+      - ${ENV_FILE:-.env.prod}
+      - ${ENV_FILE_EXTRA:-backend/.env.empty}
     environment:
       PDF_SERVICE_AUTH_HEADER: X-PDF-Service-Token
     ports:
@@ -18,7 +30,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.wrangler
-    env_file: .env.prod
+    env_file:
+      - ${ENV_FILE:-.env.prod}
+      - ${ENV_FILE_EXTRA:-backend/.env.empty}
     environment:
       USE_PDF_SERVICE: "true"
       PDF_SERVICE_URL: http://pdf-service:8001
@@ -33,7 +47,9 @@ services:
 
   frontend:
     build: ./frontend
-    env_file: .env.prod
+    env_file:
+      - ${ENV_FILE:-.env.prod}
+      - ${ENV_FILE_EXTRA:-backend/.env.empty}
     ports:
       - "3000:3000"
     environment:

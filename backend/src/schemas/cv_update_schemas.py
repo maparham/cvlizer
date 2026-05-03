@@ -15,7 +15,6 @@ from src.schemas.cv_schemas import (
     CertificationSchema,
     CustomSectionSchema,
     EducationSchema,
-    LanguageSchema,
     PersonalInfoSchema,
     ProjectSchema,
     PublicationSchema,
@@ -65,13 +64,6 @@ class EducationSchemaRelaxed(EducationSchema):
     start_date: str = Field(default="")
 
 
-class LanguageSchemaRelaxed(LanguageSchema):
-    """Relaxed language: allow empty required fields."""
-
-    language: str = Field(default="")
-    proficiency: str = Field(default="")
-
-
 class CertificationSchemaRelaxed(CertificationSchema):
     """Relaxed certification: allow empty required fields."""
 
@@ -113,11 +105,7 @@ class VolunteerExperienceSchemaRelaxed(VolunteerExperienceSchema):
 
 
 class SkillsSchemaRelaxed(SkillsSchema):
-    """Relaxed skills: languages use relaxed schema."""
-
-    languages: List[LanguageSchemaRelaxed] = Field(
-        default_factory=list, description="Language proficiencies"
-    )
+    """Relaxed skills schema."""
 
 
 class CVUpdateDataSchema(BaseModel):

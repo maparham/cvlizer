@@ -96,13 +96,16 @@ export function useAIEnhancementPolling({
           const enhancementData = (task as { data?: { enhancement_data?: unknown } })?.data?.enhancement_data;
           const suggestions = enhancementData || allSuggestionsRef.current;
           const sug = suggestions as {
-            skills?: { technical?: unknown[]; soft?: unknown[] };
+            skills?: Record<string, unknown[]>;
             professional_summary?: { suggested_text?: string };
           };
+          const hasSkillSuggestions = !!sug.skills &&
+            Object.values(sug.skills).some(
+              (items) => Array.isArray(items) && items.length > 0,
+            );
           const hasAnySuggestions =
             sug &&
-            ((sug.skills?.technical?.length ?? 0) > 0 ||
-              (sug.skills?.soft?.length ?? 0) > 0 ||
+            (hasSkillSuggestions ||
               (sug.professional_summary?.suggested_text?.trim?.()?.length ?? 0) > 0);
 
           if (!completedTasksRef.current.has(taskId)) {

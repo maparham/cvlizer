@@ -58,9 +58,10 @@ class TestCVDiffService:
                 }
             ],
             "skills": {
-                "technical": ["Python", "JavaScript"],
-                "soft": ["Communication", "Leadership"],
-                "languages": [],
+                "technical": {
+                    "Programming Languages": ["Python", "JavaScript"],
+                    "Soft Skills": ["Communication", "Leadership"],
+                },
             },
         }
 
@@ -314,14 +315,16 @@ class TestCVDiffService:
         """Test changes in skills section."""
         new_cv = self.sample_old_cv.copy()
         new_cv["skills"] = {
-            "technical": ["Python", "JavaScript", "TypeScript"],  # Added TypeScript
-            "soft": ["Communication"],  # Removed Leadership
-            "languages": ["English", "Spanish"],  # Added languages
+            "technical": {
+                "Programming Languages": ["Python", "JavaScript", "TypeScript"],
+                "Soft Skills": ["Communication"],
+                "Languages": ["English", "Spanish"],
+            },
         }
 
         result = self.diff_service.compute_diff(self.sample_old_cv, new_cv)
 
-        # Should detect 3 separate skill changes (technical, soft, languages)
+        # Should detect 3 category-level skill changes.
         assert result["total_changes"] == 3
 
         # Check that all changes are skills-related
@@ -331,9 +334,11 @@ class TestCVDiffService:
 
         # Check specific changes
         descriptions = [change["description"] for change in result["changes"]]
-        assert any("Technical skills - added 1 skill" in desc for desc in descriptions)
-        assert any("Soft skills - removed 1 skill" in desc for desc in descriptions)
-        assert any("Languages - added 2 language" in desc for desc in descriptions)
+        assert any(
+            "Programming Languages - added 1 skill" in desc for desc in descriptions
+        )
+        assert any("Soft Skills - removed 1 skill" in desc for desc in descriptions)
+        assert any("Languages - added 2 skills" in desc for desc in descriptions)
 
     def test_section_display_names(self):
         """Test that section names are user-friendly."""

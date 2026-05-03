@@ -57,6 +57,35 @@ class CVDataValidator:
 
         return ""
 
+    @staticmethod
+    def _skills_section_has_any_skill(skills: Any) -> bool:
+        """
+        True if the skills block contains at least one non-empty skill string.
+
+        Supports categorized ``skills.technical`` (dict of category -> list of strings),
+        legacy flat ``technical`` as a list of strings, and legacy ``skills.soft`` list.
+        """
+        if skills is None or not isinstance(skills, dict):
+            return False
+        technical = skills.get("technical")
+        if isinstance(technical, dict):
+            for values in technical.values():
+                if not isinstance(values, list):
+                    continue
+                for item in values:
+                    if isinstance(item, str) and item.strip():
+                        return True
+        elif isinstance(technical, list):
+            for item in technical:
+                if isinstance(item, str) and item.strip():
+                    return True
+        soft = skills.get("soft")
+        if isinstance(soft, list):
+            for item in soft:
+                if isinstance(item, str) and item.strip():
+                    return True
+        return False
+
     @classmethod
     def clean_empty_entries(cls, cv_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -150,7 +179,7 @@ class CVDataValidator:
         - Professional Summary: content is mandatory when present
         - Work Experience: position, company, start_date are mandatory (only when work_experience array has items)
         - Education: institution, degree, start_date are mandatory (only when education array has items)
-        - Skills: at least one skill (technical or soft) is required when skills section exists
+        - Skills: at least one skill under skills.technical (categorized dict or legacy list), or legacy skills.soft
         - Projects: name and description are mandatory when projects array has items
         - Awards: name, issuer, date are mandatory when awards array has items
         - Certifications: name, issuer, date are mandatory when certifications array has items
@@ -180,14 +209,13 @@ class CVDataValidator:
         if custom_sections is not None and not isinstance(custom_sections, list):
             errors.append("Custom sections must be a list")
 
-        # Validate Skills - at least one skill required when skills section exists
-        skills = cv_data.get("skills", {})
+        # Validate Skills - at least one skill when a non-empty skills object is present
+        skills = cv_data.get("skills")
         if skills:
-            technical_skills = cls.safe_get_list(skills, "technical")
-            soft_skills = cls.safe_get_list(skills, "soft")
-            if not technical_skills and not soft_skills:
+            if isinstance(skills, dict) and not cls._skills_section_has_any_skill(skills):
                 errors.append(
-                    "Skills: At least one skill (technical or soft) is required"
+                    "Skills: At least one skill is required under skills.technical "
+                    "(or legacy skills.soft)"
                 )
 
         # Validate Work Experience - all entries should have required fields since empty ones are filtered out

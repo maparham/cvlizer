@@ -291,10 +291,10 @@ class CVDiffService:
                     )
                 else:
                     # Multiple field changes
-                    detail_descriptions = [
+                    detail_descriptions: List[str] = [
                         change["description"] for change in field_changes
                     ]
-                    text_diffs = [
+                    text_diffs: List[Any] = [
                         change["text_diff"]
                         for change in field_changes
                         if change["text_diff"]
@@ -364,10 +364,10 @@ class CVDiffService:
                         }
                     )
                 else:
-                    detail_descriptions = [
+                    detail_descriptions: List[str] = [
                         change["description"] for change in field_changes
                     ]
-                    text_diffs = [
+                    text_diffs: List[Any] = [
                         change["text_diff"]
                         for change in field_changes
                         if change["text_diff"]
@@ -390,8 +390,8 @@ class CVDiffService:
     def _compare_skills_section(
         self, old_skills: Optional[Dict], new_skills: Optional[Dict]
     ) -> List[Dict[str, Any]]:
-        """Compare skills section with detailed skill-level changes."""
-        changes = []
+        """Compare skills section with dynamic category support."""
+        changes: List[Dict[str, Any]] = []
 
         if not old_skills and new_skills:
             # Skills section added
@@ -420,129 +420,63 @@ class CVDiffService:
                 }
             )
         elif old_skills and new_skills:
-            # Compare individual skill categories
+            old_technical = old_skills.get("technical", {})
+            new_technical = new_skills.get("technical", {})
             changes.extend(
-                self._compare_skill_category(
-                    old_skills.get("technical", []),
-                    new_skills.get("technical", []),
-                    "Technical",
-                )
-            )
-            changes.extend(
-                self._compare_skill_category(
-                    old_skills.get("soft", []), new_skills.get("soft", []), "Soft"
-                )
-            )
-            changes.extend(
-                self._compare_languages(
-                    old_skills.get("languages", []),
-                    new_skills.get("languages", []),
-                    "Languages",
-                )
+                self._compare_dynamic_skill_categories(old_technical, new_technical)
             )
 
         return changes
 
-    def _compare_skill_category(
-        self, old_skills: List[str], new_skills: List[str], category: str
+    def _compare_dynamic_skill_categories(
+        self, old_technical: Any, new_technical: Any
     ) -> List[Dict[str, Any]]:
-        """Compare a specific skill category (technical, soft) with detailed changes."""
+        """Compare dynamic skill categories and report category-level changes."""
         changes = []
 
-        old_set = set(old_skills) if old_skills else set()
-        new_set = set(new_skills) if new_skills else set()
+        old_categories = old_technical if isinstance(old_technical, dict) else {}
+        new_categories = new_technical if isinstance(new_technical, dict) else {}
 
-        added_skills = new_set - old_set
-        removed_skills = old_set - new_set
+        all_category_names = set(old_categories.keys()) | set(new_categories.keys())
+        for category in sorted(all_category_names):
+            old_skills = old_categories.get(category, [])
+            new_skills = new_categories.get(category, [])
 
-        if added_skills or removed_skills:
-            details = []
-            description_parts = []
+            old_set = set(old_skills) if isinstance(old_skills, list) else set()
+            new_set = set(new_skills) if isinstance(new_skills, list) else set()
+            added_skills = new_set - old_set
+            removed_skills = old_set - new_set
 
-            if added_skills:
-                added_list = sorted(list(added_skills))
-                details.append(f"Added: {', '.join(added_list)}")
-                description_parts.append(
-                    f"added {len(added_list)} skill{'s' if len(added_list) > 1 else ''}"
+            if added_skills or removed_skills:
+                details = []
+                description_parts = []
+
+                if added_skills:
+                    added_list = sorted(list(added_skills))
+                    details.append(f"Added: {', '.join(added_list)}")
+                    description_parts.append(
+                        f"added {len(added_list)} skill{'s' if len(added_list) > 1 else ''}"
+                    )
+
+                if removed_skills:
+                    removed_list = sorted(list(removed_skills))
+                    details.append(f"Removed: {', '.join(removed_list)}")
+                    description_parts.append(
+                        f"removed {len(removed_list)} skill{'s' if len(removed_list) > 1 else ''}"
+                    )
+
+                description = f"Skills: {category} - {' and '.join(description_parts)}"
+                changes.append(
+                    {
+                        "type": "skills_modified",
+                        "section": "skills",
+                        "description": description,
+                        "details": details,
+                        "text_diff": None,
+                        "icon": "edit",
+                        "color": "warning",
+                    }
                 )
-
-            if removed_skills:
-                removed_list = sorted(list(removed_skills))
-                details.append(f"Removed: {', '.join(removed_list)}")
-                description_parts.append(
-                    f"removed {len(removed_list)} skill{'s' if len(removed_list) > 1 else ''}"
-                )
-
-            description = f"Skills: {category} skills - {' and '.join(description_parts)}"
-
-            changes.append(
-                {
-                    "type": "skills_modified",
-                    "section": "skills",
-                    "description": description,
-                    "details": details,
-                    "text_diff": None,
-                    "icon": "edit",
-                    "color": "warning",
-                }
-            )
-
-        return changes
-
-    def _compare_languages(
-        self, old_languages: List, new_languages: List, category: str
-    ) -> List[Dict[str, Any]]:
-        """Compare languages with support for both string and object formats."""
-        changes = []
-
-        # Handle both string arrays and object arrays
-        if old_languages and isinstance(old_languages[0], dict):
-            # Object format - compare by language name
-            old_lang_names = {
-                lang.get("language", "") for lang in old_languages if lang.get("language")
-            }
-            new_lang_names = {
-                lang.get("language", "") for lang in new_languages if lang.get("language")
-            }
-        else:
-            # String format
-            old_lang_names = set(old_languages) if old_languages else set()
-            new_lang_names = set(new_languages) if new_languages else set()
-
-        added_languages = new_lang_names - old_lang_names
-        removed_languages = old_lang_names - new_lang_names
-
-        if added_languages or removed_languages:
-            details = []
-            description_parts = []
-
-            if added_languages:
-                added_list = sorted(list(added_languages))
-                details.append(f"Added: {', '.join(added_list)}")
-                description_parts.append(
-                    f"added {len(added_list)} language{'s' if len(added_list) > 1 else ''}"
-                )
-
-            if removed_languages:
-                removed_list = sorted(list(removed_languages))
-                details.append(f"Removed: {', '.join(removed_list)}")
-                description_parts.append(
-                    f"removed {len(removed_list)} language{'s' if len(removed_list) > 1 else ''}"
-                )
-
-            description = f"Skills: {category} - {' and '.join(description_parts)}"
-
-            changes.append(
-                {
-                    "type": "skills_modified",
-                    "section": "skills",
-                    "description": description,
-                    "details": details,
-                    "text_diff": None,
-                    "icon": "edit",
-                    "color": "warning",
-                }
-            )
 
         return changes
 

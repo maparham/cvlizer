@@ -16,6 +16,7 @@ import { CVValidationService } from "../../services/cvValidationService";
 import { DEFAULT_CV_FILENAME, TEMP_CV_ID_PREFIX, DEFAULT_CV_DATA } from "./constants";
 import type { CVStore } from "./types";
 import { useEditedSinceAIStore } from "../editedSinceAIStore";
+import { normalizeCVSkillsTechnicalInParsedData } from "../../utils/normalizeSkillsTechnical";
 
 export interface CVCrudSliceState {
   // State
@@ -151,7 +152,7 @@ export const createCVCrudSlice: StateCreator<
     set({ loading: true, error: null });
 
     try {
-      const cv = await cvApi.getCV(cvId);
+      const cv = normalizeCVSkillsTechnicalInParsedData(await cvApi.getCV(cvId));
 
       set({
         currentCV: cv,
@@ -288,7 +289,9 @@ export const createCVCrudSlice: StateCreator<
 
       // Execute updates in parallel
       const results = await Promise.all(promises);
-      const finalCV = results[results.length - 1]; // Get the last result (either updateCV or updateCVTitle)
+      const finalCV = normalizeCVSkillsTechnicalInParsedData(
+        results[results.length - 1],
+      ); // Get the last result (either updateCV or updateCVTitle)
 
       // Add to the CVs list and clear temporary CV
       set((state) => ({
@@ -319,7 +322,9 @@ export const createCVCrudSlice: StateCreator<
       // filterVisibleSections is only for AI/display operations, not for saving
       const cleanedData = CVValidationService.cleanForBackend(data.parsed_data);
       const cleanedRequest = { parsed_data: cleanedData };
-      const updatedCV = await cvApi.updateCV(cvId, cleanedRequest);
+      const updatedCV = normalizeCVSkillsTechnicalInParsedData(
+        await cvApi.updateCV(cvId, cleanedRequest),
+      );
       set({
         currentCV:
           get().currentCV?.id === cvId ? updatedCV : get().currentCV,
@@ -425,7 +430,9 @@ export const createCVCrudSlice: StateCreator<
     set({ loading: true, error: null });
 
     try {
-      const updatedCV = await cvApi.updateCVTitle(cvId, title);
+      const updatedCV = normalizeCVSkillsTechnicalInParsedData(
+        await cvApi.updateCVTitle(cvId, title),
+      );
 
       // Update in both currentCV and CVs list
       set({
@@ -483,7 +490,9 @@ export const createCVCrudSlice: StateCreator<
     set({ loading: true, error: null });
 
     try {
-      const duplicatedCV = await cvApi.duplicateCV(cvId);
+      const duplicatedCV = normalizeCVSkillsTechnicalInParsedData(
+        await cvApi.duplicateCV(cvId),
+      );
 
       // Add to the CVs list
       set((state) => ({
@@ -508,7 +517,9 @@ export const createCVCrudSlice: StateCreator<
   setCurrentCV: (cv: CV | null) => {
     const previousId = get().currentCV?.id ?? null;
     const newId = cv?.id ?? null;
-    set({ currentCV: cv });
+    set({
+      currentCV: cv ? normalizeCVSkillsTechnicalInParsedData(cv) : null,
+    });
     if (previousId && previousId !== newId) {
       useEditedSinceAIStore.getState().clearEditedForCV(previousId);
     }

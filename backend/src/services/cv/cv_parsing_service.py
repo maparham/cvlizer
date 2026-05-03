@@ -141,15 +141,6 @@ def _add_uuids_to_cv_data(cv_data: dict) -> dict:
                 if isinstance(item, dict) and "id" not in item:
                     item["id"] = f"{prefix}_{uuid.uuid4()}"
 
-    # Handle languages in skills section
-    if "skills" in cv_data and isinstance(cv_data["skills"], dict):
-        if "languages" in cv_data["skills"] and isinstance(
-            cv_data["skills"]["languages"], list
-        ):
-            for lang in cv_data["skills"]["languages"]:
-                if isinstance(lang, dict) and "id" not in lang:
-                    lang["id"] = f"item_{uuid.uuid4()}"
-
     return cv_data
 
 

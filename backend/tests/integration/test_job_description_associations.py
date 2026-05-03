@@ -13,10 +13,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from main import app
 from src.models import User, CV, JobDescription, CVJobDescription
 from src.models.base import Base
+from src.utils.sqlite_foreign_keys import register_sqlite_pragma_foreign_keys
 
 # CRITICAL: Use a separate test database, NOT the production database
 TEST_DATABASE_URL = "sqlite:///./test_jd_associations.db"
 test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+register_sqlite_pragma_foreign_keys(test_engine)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 

@@ -60,7 +60,7 @@ const SimpleFormSection: React.FC<SimpleFormSectionProps> = ({
         website_url: "",
       };
     } else if (sectionId === "skills") {
-      return { technical: [], soft: [], languages: [] };
+      return { technical: {} };
     }
     // Custom sections (sectionId is the custom section uuid)
     if (sectionId && sectionId.length > 10) {

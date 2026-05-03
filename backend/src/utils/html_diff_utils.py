@@ -115,10 +115,15 @@ def extract_original_from_cv_data_issues(
                 issue["original"] = ""
 
         elif item_type == "skills" and field_path:
-            skill_type = _skill_type_from_field_path(field_path)
-            if skill_type:
+            skill_category = _skill_category_from_field_path(field_path)
+            if skill_category:
                 skills_data = cv_data.get("skills", {})
-                skill_list = skills_data.get(skill_type, [])
+                technical = skills_data.get("technical", {})
+                skill_list = (
+                    technical.get(skill_category, [])
+                    if isinstance(technical, dict)
+                    else []
+                )
                 if isinstance(skill_list, list):
                     original_skill, _ = _extract_skill_from_html_diff(
                         issue.get("html_diff") or ""
@@ -175,9 +180,10 @@ def fill_skill_originals_from_cv_data(
     Derive missing 'original' on skill suggestions from CV data.
 
     When the model omits 'original' (to save tokens), match each suggestion's
-    'skill' against the CV's technical/soft lists (case-insensitive). If exactly
-    one CV skill matches, set original to that CV string (correction). Otherwise
-    leave original as None (new suggestion).
+    'skill' against all strings under ``skills.technical`` (categorized dict) and
+    legacy ``skills.soft`` (case-insensitive). If a CV skill matches, set
+    ``original`` to that CV string (correction). Otherwise leave ``original`` as
+    None (new suggestion).
 
     Modifies response in place; also returns response.
     """
@@ -190,21 +196,34 @@ def fill_skill_originals_from_cv_data(
     if not isinstance(cv_skills, dict):
         return response
 
-    for skill_type in ("technical", "soft"):
-        skill_list = skills_obj.get(skill_type)
-        if not isinstance(skill_list, list):
-            continue
-        cv_list = cv_skills.get(skill_type) or []
-        if not isinstance(cv_list, list):
-            continue
-        # Build set of normalized CV skill strings for lookup; keep first exact CV string per normalized form
-        cv_normalized_to_original: Dict[str, str] = {}
-        for s in cv_list:
+    cv_normalized_to_original: Dict[str, str] = {}
+    technical = cv_skills.get("technical")
+    if isinstance(technical, dict):
+        for skill_values in technical.values():
+            if not isinstance(skill_values, list):
+                continue
+            for s in skill_values:
+                if isinstance(s, str) and s.strip():
+                    key = s.strip().lower()
+                    if key not in cv_normalized_to_original:
+                        cv_normalized_to_original[key] = s.strip()
+    elif isinstance(technical, list):
+        for s in technical:
+            if isinstance(s, str) and s.strip():
+                key = s.strip().lower()
+                if key not in cv_normalized_to_original:
+                    cv_normalized_to_original[key] = s.strip()
+    soft_legacy = cv_skills.get("soft")
+    if isinstance(soft_legacy, list):
+        for s in soft_legacy:
             if isinstance(s, str) and s.strip():
                 key = s.strip().lower()
                 if key not in cv_normalized_to_original:
                     cv_normalized_to_original[key] = s.strip()
 
+    for skill_list in skills_obj.values():
+        if not isinstance(skill_list, list):
+            continue
         for item in skill_list:
             if not isinstance(item, dict):
                 continue
@@ -220,17 +239,36 @@ def fill_skill_originals_from_cv_data(
     return response
 
 
-def _skill_type_from_field_path(field_path: str) -> Optional[str]:
+def _skill_category_from_field_path(field_path: str) -> Optional[str]:
     """
-    Return "technical" or "soft" if field_path is skills.technical or skills.soft
-    (with optional [index]); otherwise None.
+    Return dynamic skills category from a field_path when available.
+
+    Supported forms include:
+    - skills.technical
+    - skills.technical.<Category>
+    - skills.technical["Category"]
+    - skills.technical.<Category>[index]
     """
-    if not field_path or "." not in field_path:
+    if not field_path or not field_path.startswith("skills.technical"):
         return None
-    segment = field_path.split(".")[-1]
-    if "[" in segment:
-        segment = segment.split("[")[0]
-    return segment if segment in ("technical", "soft") else None
+
+    suffix = field_path[len("skills.technical") :]
+    if not suffix:
+        return "General"
+
+    if suffix.startswith("."):
+        category = suffix[1:]
+        if "[" in category:
+            category = category.split("[")[0]
+        return category.strip() or "General"
+
+    if suffix.startswith('["'):
+        end = suffix.find('"]')
+        if end > 2:
+            category = suffix[2:end].strip()
+            return category or "General"
+
+    return "General"
 
 
 def _extract_skill_from_html_diff(html_diff: str) -> tuple[Optional[str], Optional[str]]:
@@ -261,7 +299,7 @@ def clean_quality_response_issues(
     Clean html_diff in issues and compute suggested/suggested_text (cv_review_v2).
 
     Cleans each issue's html_diff; for issues with "original" sets "suggested".
-    Converts skills issues into skills.technical/soft format.
+    Converts skills issues into dynamic category buckets.
     Does not add a top-level professional_summary; the frontend derives
     professional summary suggestions from the issues array only (single source
     of truth).
@@ -274,13 +312,9 @@ def clean_quality_response_issues(
 
     # Initialize skills object if not present
     if "skills" not in response:
-        response["skills"] = {"technical": [], "soft": []}
+        response["skills"] = {}
     elif not isinstance(response["skills"], dict):
-        response["skills"] = {"technical": [], "soft": []}
-    if "technical" not in response["skills"]:
-        response["skills"]["technical"] = []
-    if "soft" not in response["skills"]:
-        response["skills"]["soft"] = []
+        response["skills"] = {}
 
     for issue in issues:
         if not isinstance(issue, dict):
@@ -296,18 +330,22 @@ def clean_quality_response_issues(
                     issue["original"], issue["html_diff"]
                 )
 
-        # Convert skills issues to skills.technical/soft format
+        # Convert skills issues to dynamic category format.
         if item_type == "skills" and field_path and html_diff:
-            skill_type = _skill_type_from_field_path(field_path)
-            if skill_type:
+            skill_category = _skill_category_from_field_path(field_path)
+            if skill_category:
                 original_skill, suggested_skill = _extract_skill_from_html_diff(html_diff)
                 if issue.get("original") is not None:
                     original_skill = issue["original"]
                 if suggested_skill:
+                    if skill_category not in response["skills"] or not isinstance(
+                        response["skills"][skill_category], list
+                    ):
+                        response["skills"][skill_category] = []
                     # Check for duplicates (case-insensitive)
                     existing_skills = [
                         s.get("skill", "").lower()
-                        for s in response["skills"][skill_type]
+                        for s in response["skills"][skill_category]
                         if isinstance(s, dict)
                     ]
 
@@ -319,7 +357,7 @@ def clean_quality_response_issues(
                             "original": original_skill if original_skill else None,
                         }
 
-                        # Add to appropriate skills array
-                        response["skills"][skill_type].append(skill_suggestion)
+                        # Add to target category
+                        response["skills"][skill_category].append(skill_suggestion)
 
     return response

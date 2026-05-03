@@ -16,6 +16,7 @@ import {
   HistoryStats,
 } from "../../types";
 import { backendHistoryService } from "../../services/backendHistoryService";
+import { normalizeCVSkillsTechnicalInParsedData } from "../../utils/normalizeSkillsTechnical";
 import { isHistoryEnabled } from "./constants";
 import type { CVStore } from "./types";
 
@@ -135,7 +136,7 @@ export const createCVHistorySlice: StateCreator<
         options.entryId,
       );
 
-      const updatedCV = result.cv;
+      const updatedCV = normalizeCVSkillsTechnicalInParsedData(result.cv);
 
       // Update local state
       set({

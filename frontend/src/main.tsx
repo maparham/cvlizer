@@ -23,7 +23,6 @@
  * - React DOM for application mounting
  * - Environment variables for configuration
  */
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { ClerkProvider } from "@clerk/clerk-react";
@@ -81,18 +80,16 @@ if (!PUBLISHABLE_KEY) {
 
 // Ensure your index.html contains a <div id="root"></div> element for React to mount the app.
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    {PUBLISHABLE_KEY && PUBLISHABLE_KEY !== "pk_test_placeholder" ? (
-      <ClerkProvider
-        publishableKey={PUBLISHABLE_KEY}
-        afterSignOutUrl="/"
-        signInFallbackRedirectUrl="/login-redirect"
-        signUpFallbackRedirectUrl="/login-redirect"
-      >
-        <App />
-      </ClerkProvider>
-    ) : (
-      <MissingKeyError />
-    )}
-  </StrictMode>,
+  PUBLISHABLE_KEY && PUBLISHABLE_KEY !== "pk_test_placeholder" ? (
+    <ClerkProvider
+      publishableKey={PUBLISHABLE_KEY}
+      afterSignOutUrl="/"
+      signInFallbackRedirectUrl="/login-redirect"
+      signUpFallbackRedirectUrl="/login-redirect"
+    >
+      <App />
+    </ClerkProvider>
+  ) : (
+    <MissingKeyError />
+  ),
 );

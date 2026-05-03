@@ -6,9 +6,10 @@ from sqlalchemy.orm import sessionmaker
 
 from src.models.base import Base
 from src.models.cv import CV
-from src.models.job_description import JobDescription
 from src.models.cv_job_description import CVJobDescription
+from src.models.job_description import JobDescription
 from src.models.user import User
+from src.utils.sqlite_foreign_keys import register_sqlite_pragma_foreign_keys
 from src.services.cv.cv_parsing_service import parse_cv_with_openai
 from src.services.cv.cv_service import (
     create_cv,
@@ -139,27 +140,27 @@ class TestCVService:
         assert result is None
 
     def test_delete_cv(self):
-        """Test deleting CV"""
+        """Test deleting CV via bulk delete (rowcount 1)."""
         db = Mock()
-        mock_cv = Mock()
-        db.query.return_value.filter.return_value.first.return_value = mock_cv
-        db.delete.return_value = None
-        db.commit.return_value = None
+        mock_filtered = db.query.return_value.filter.return_value
+        mock_filtered.delete.return_value = 1
 
         result = delete_cv(db, "cv123", "user123")
 
-        assert result == True
-        db.delete.assert_called_once_with(mock_cv)
+        assert result is True
+        db.query.assert_called_once_with(CV)
+        mock_filtered.delete.assert_called_once_with(synchronize_session="evaluate")
         db.commit.assert_called_once()
 
     def test_delete_cv_not_found(self):
-        """Test deleting CV when not found"""
+        """Test deleting CV when not found (bulk delete rowcount 0)."""
         db = Mock()
-        db.query.return_value.filter.return_value.first.return_value = None
+        db.query.return_value.filter.return_value.delete.return_value = 0
 
         result = delete_cv(db, "cv123", "user123")
 
-        assert result == False
+        assert result is False
+        db.commit.assert_called_once()
 
     @patch("src.services.platform.file_service.extract_text_from_file")
     @patch("src.services.ai_service.parse_cv_text_with_openai")
@@ -214,6 +215,7 @@ class TestCVDeletionWithJobDescriptions:
         """Create a test database session"""
         # Use in-memory SQLite for fast tests
         engine = create_engine("sqlite:///:memory:")
+        register_sqlite_pragma_foreign_keys(engine)
         Base.metadata.create_all(bind=engine)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         session = SessionLocal()

@@ -168,22 +168,12 @@ CV_CORRECTIONS_COACHING_FORMAT: Dict[str, Any] = {
             },
             "Skills": {
                 "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "technical": {
-                        "type": "array",
-                        "maxItems": 5,
-                        "items": {"$ref": "#/$defs/Skill"},
-                        "description": "Corrected skills and/or new skill suggestions (max 5)",
-                    },
-                    "soft": {
-                        "type": "array",
-                        "maxItems": 3,
-                        "items": {"$ref": "#/$defs/Skill"},
-                        "description": "Corrected soft skills and/or new suggestions (max 3)",
-                    },
+                "description": "Dynamic skill categories where each key is a category and each value is an array of skill suggestions.",
+                "additionalProperties": {
+                    "type": "array",
+                    "maxItems": 6,
+                    "items": {"$ref": "#/$defs/Skill"},
                 },
-                "required": ["technical", "soft"],
             },
         },
         "type": "object",

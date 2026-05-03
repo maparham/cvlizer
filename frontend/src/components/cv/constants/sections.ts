@@ -55,7 +55,7 @@ export const AVAILABLE_SECTIONS: SectionDefinition[] = [
   {
     id: "skills",
     name: "Skills",
-    description: "Technical skills, soft skills, languages, competencies",
+    description: "Categorized skills and competencies",
     component: "SkillsSection",
     icon: "🛠️",
     category: "core",

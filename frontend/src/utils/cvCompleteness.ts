@@ -100,7 +100,7 @@ export function filterVisibleSections(cvData: any): any {
  *
  * Scoring:
  * - Work experience with description/achievements: 50 points
- * - At least 3 skills (technical + soft combined): 50 points
+ * - At least 3 skills across skills.technical categories: 50 points
  * - Total: 100 points = complete and ready for AI features
  *
  * Note: Only counts visible sections. Hidden sections are filtered out before scoring.
@@ -127,11 +127,12 @@ export function calculateCVCompleteness(cvData: any): CVCompletenessResult {
     missing.push("work experience with description or achievements");
   }
 
-  // Check skills (50 points - requires 3+)
+  // Check skills (50 points - requires 3+ across all categories)
   const skills = visibleData?.skills || {};
-  const technicalSkills = skills.technical || [];
-  const softSkills = skills.soft || [];
-  const totalSkills = technicalSkills.length + softSkills.length;
+  const technical = skills.technical || {};
+  const totalSkills = Object.values(technical).reduce((sum: number, value: unknown) => {
+    return sum + (Array.isArray(value) ? value.length : 0);
+  }, 0);
 
   if (totalSkills >= 3) {
     score += 50;

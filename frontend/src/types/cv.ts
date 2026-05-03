@@ -150,34 +150,7 @@ export interface Education {
 
 // Skills
 export interface Skills {
-  technical: string[] | Record<string, string[]>; // Supports both flat list (legacy) and categorized dict (new)
-  soft: string[];
-  languages: Language[];
-  frameworks?: string[];
-  tools?: string[];
-  databases?: string[];
-}
-
-export interface Language {
-  id: string;
-  language: string;
-  proficiency: "Basic" | "Intermediate" | "Advanced" | "Fluent" | "Native";
-}
-
-/**
- * Type guard to check if technical skills are in categorized format
- * @param technical - The technical skills value to check
- * @returns true if technical is a categorized Record, false if it's a flat array
- */
-export function isCategorizedTechnical(
-  technical: string[] | Record<string, string[]> | undefined
-): technical is Record<string, string[]> {
-  return (
-    technical !== undefined &&
-    !Array.isArray(technical) &&
-    typeof technical === 'object' &&
-    technical !== null
-  );
+  technical: Record<string, string[]>;
 }
 
 // Certifications

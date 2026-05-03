@@ -6,6 +6,8 @@ activity logs for admin debugging and support purposes.
 """
 
 import logging
+import os
+import time
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -66,10 +68,18 @@ async def log_batch_activities(
     """
     Log multiple user activities in batch.
     """
+    started_at = time.perf_counter()
+    db_debug_enabled = str(os.getenv("DB_TIMING_DEBUG", "false")).lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     try:
         logged_activities = []
 
         for activity_data in request.activities:
+            activity_started = time.perf_counter()
             activity = log_user_activity(
                 db=db,
                 user=current_user,
@@ -86,6 +96,21 @@ async def log_batch_activities(
                     "action": activity.action,
                     "timestamp": activity.timestamp.isoformat(),
                 }
+            )
+            if db_debug_enabled:
+                logger.info(
+                    "user_activities.batch item timing user_id=%s action=%s elapsed_ms=%.1f",
+                    current_user.id,
+                    activity_data.action,
+                    (time.perf_counter() - activity_started) * 1000.0,
+                )
+
+        if db_debug_enabled:
+            logger.info(
+                "user_activities.batch total timing user_id=%s count=%s total_ms=%.1f",
+                current_user.id,
+                len(request.activities),
+                (time.perf_counter() - started_at) * 1000.0,
             )
 
         return {

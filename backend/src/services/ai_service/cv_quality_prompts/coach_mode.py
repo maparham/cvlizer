@@ -6,7 +6,7 @@ skills, and overall quality score. Output is issues-based: one issue per field.
 
 Rewording modes:
 - minimal: objective writing fixes without tone or intent interpretation
-- deep: full career-coach style (legacy behavior)
+- deep: full career-coach style
 """
 
 
@@ -42,10 +42,10 @@ Custom sections:
 - Generate 2-4 sentences if missing.
 
 Skills:
-- Only correct/suggest items from skills.technical and skills.soft arrays.
-- For corrections: skill = corrected form, original = exact (wrong) string from skills array, rationale = what's wrong.
+- Only correct/suggest items from skills.technical dynamic categories.
+- For corrections: skill = corrected form, original = exact (wrong) string from skills lists, rationale = what's wrong.
 - For new suggestions: skill = name, original = null, rationale = why relevant.
-- Technical: up to 5 items. Soft: up to 3 items."""
+- Return concise category groups with up to 8 total items."""
 
 
 def _build_coach_mode_minimal_system_prompt() -> str:
@@ -86,10 +86,10 @@ Custom sections:
 - Generate 2-4 sentences if missing (generic content only, no personal traits).
 
 Skills:
-- Only correct/suggest items from skills.technical and skills.soft arrays.
-- For corrections: skill = corrected form, original = exact (wrong) string from skills array, rationale = what's wrong.
+- Only correct/suggest items from skills.technical dynamic categories.
+- For corrections: skill = corrected form, original = exact (wrong) string from skills lists, rationale = what's wrong.
 - For new suggestions: skill = name, original = null, rationale = why relevant.
-- Technical: up to 5 items. Soft: up to 3 when clearly supported."""
+- Return concise category groups with up to 8 total items."""
 
 
 def build_coach_mode_system_prompt(rewording_mode: str = "minimal") -> str:
@@ -97,7 +97,7 @@ def build_coach_mode_system_prompt(rewording_mode: str = "minimal") -> str:
     Return the system prompt for correction_mode == 'coaching'.
 
     Args:
-        rewording_mode: 'minimal' (objective edits) or 'deep' (full coaching / legacy).
+        rewording_mode: 'minimal' (objective edits) or 'deep' (full coaching).
 
     Returns:
         Full system prompt string for the AI.

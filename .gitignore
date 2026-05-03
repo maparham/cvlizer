@@ -188,6 +188,8 @@ frontend/vite.config.ts.timestamp-*.mjs
 .env.test
 .env.dev
 .env.prod
+backend/.env.debug
+backend/.env.compose-debug
 # Local TLS certs for prod HTTPS (see ssl/README)
 ssl/*.pem
 .env.local

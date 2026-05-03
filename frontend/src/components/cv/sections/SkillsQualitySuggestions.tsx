@@ -23,21 +23,16 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-const CATEGORIES: Array<{ key: "technical" | "soft"; label: string }> = [
-  { key: "technical", label: "technical" },
-  { key: "soft", label: "soft" },
-];
-
 export interface SkillsQualitySuggestionsProps {
-  /** Quality skills from CV quality analysis (technical + soft). */
+  /** Quality skills from CV quality analysis (dynamic categories). */
   suggestions: SkillsSuggestions;
   /** Called when user applies a single skill (full suggestion so replace-by-original can be used). */
   onApplyOne: (
     suggestion: SkillQualitySuggestion,
-    category: "technical" | "soft",
+    category: string,
   ) => void | Promise<void>;
   /** Called when user dismisses a single skill. */
-  onDismissOne: (skill: string, category: "technical" | "soft") => void | Promise<void>;
+  onDismissOne: (skill: string, category: string) => void | Promise<void>;
   /** Called when user applies all suggestions. */
   onApplyAll: () => void | Promise<void>;
   /** Called when user dismisses all suggestions. */
@@ -53,9 +48,9 @@ export const SkillsQualitySuggestions: React.FC<SkillsQualitySuggestionsProps> =
 }) => {
   return (
     <Box sx={{ mt: 1.5 }}>
-      {CATEGORIES.map(({ key }) => {
+      {Object.entries(suggestions).map(([key, categorySuggestions]) => {
         // Sort: corrections (with original) first, then suggestions (without original)
-        const sorted = [...suggestions[key]].sort((a, b) => {
+        const sorted = [...(categorySuggestions || [])].sort((a, b) => {
           const aIsCorrection = a.original != null && a.original !== "";
           const bIsCorrection = b.original != null && b.original !== "";
           if (aIsCorrection && !bIsCorrection) return -1;

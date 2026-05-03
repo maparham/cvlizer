@@ -31,16 +31,12 @@ describe("CVValidationService", () => {
     ],
     education: [],
     skills: {
-      technical: ["JavaScript", "React", "Python"],
-      soft: ["Leadership", "Communication"],
-      languages: [
-        { id: "lang_1", language: "English", proficiency: "Native" as const },
-        {
-          id: "lang_2",
-          language: "Spanish",
-          proficiency: "Intermediate" as const,
-        },
-      ],
+      technical: {
+        "Programming Languages": ["JavaScript", "Python"],
+        "Frameworks": ["React"],
+        "Soft Skills": ["Leadership", "Communication"],
+        "Languages": ["English", "Spanish"],
+      },
     },
     certifications: [],
     projects: [],
@@ -101,7 +97,7 @@ describe("CVValidationService", () => {
       expect(result.professional_summary).toBeUndefined();
     });
 
-    it("should remove personal info with missing required fields", () => {
+    it("should keep personal info and normalize empty required fields", () => {
       const invalidData = {
         ...mockCVData,
         personal_info: {
@@ -116,22 +112,17 @@ describe("CVValidationService", () => {
 
       const result = CVValidationService.cleanForBackend(invalidData);
 
-      expect(result.personal_info).toBeUndefined();
+      expect(result.personal_info).toBeDefined();
+      expect(result.personal_info.full_name).toBe("");
+      expect(result.personal_info.email).toBe("test@example.com");
+      expect(result.personal_info.location).toBe("New York");
     });
 
-    it("should remove skills with no technical or soft skills", () => {
+    it("should remove skills with no technical categories", () => {
       const invalidData = {
         ...mockCVData,
         skills: {
-          technical: [],
-          soft: [],
-          languages: [
-            {
-              id: "lang_1",
-              language: "English",
-              proficiency: "Native" as const,
-            },
-          ],
+          technical: {},
         },
       };
 
@@ -140,36 +131,32 @@ describe("CVValidationService", () => {
       expect(result.skills).toBeUndefined();
     });
 
-    it("should preserve skills with only technical skills", () => {
+    it("should preserve skills with technical categories", () => {
       const validData = {
         ...mockCVData,
         skills: {
-          technical: ["JavaScript"],
-          soft: [],
-          languages: [],
+          technical: { General: ["JavaScript"] },
         },
       };
 
       const result = CVValidationService.cleanForBackend(validData);
 
       expect(result.skills).toBeDefined();
-      expect(result.skills.technical).toEqual(["JavaScript"]);
+      expect(result.skills.technical).toEqual({ General: ["JavaScript"] });
     });
 
-    it("should preserve skills with only soft skills", () => {
+    it("should preserve skills with soft-skill category inside technical", () => {
       const validData = {
         ...mockCVData,
         skills: {
-          technical: [],
-          soft: ["Leadership"],
-          languages: [],
+          technical: { "Soft Skills": ["Leadership"] },
         },
       };
 
       const result = CVValidationService.cleanForBackend(validData);
 
       expect(result.skills).toBeDefined();
-      expect(result.skills.soft).toEqual(["Leadership"]);
+      expect(result.skills.technical).toEqual({ "Soft Skills": ["Leadership"] });
     });
   });
 

@@ -32,8 +32,7 @@ export interface AIEnhancementRequest {
  * Enhanced skills suggestion data structure
  */
 export interface EnhancementSkillsData {
-  technical: Array<{ skill: string; reasoning: string }>;
-  soft: Array<{ skill: string; reasoning: string }>;
+  [category: string]: Array<{ skill: string; reasoning: string }>;
 }
 
 /**
@@ -181,8 +180,7 @@ export interface SkillSuggestion {
 }
 
 export interface SkillsSuggestions {
-  technical: SkillSuggestion[];
-  soft: SkillSuggestion[];
+  [category: string]: SkillSuggestion[];
 }
 
 export interface ProfessionalSummarySuggestion {
@@ -449,8 +447,7 @@ export interface CVQualityAnalysisData {
   issues: Issue[];
   professional_summary?: ProfessionalSummaryV2 | null;
   skills: {
-    technical: SkillQualitySuggestion[];
-    soft: SkillQualitySuggestion[];
+    [category: string]: SkillQualitySuggestion[];
   };
   timeline_gaps: TimelineGap[];
   /** Per-field draft history for retry (up to 3 generations per field, newest first). */

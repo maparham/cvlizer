@@ -5,8 +5,9 @@ Defines strict validation for all quality analysis data structures.
 """
 
 from datetime import datetime
-from typing import Dict, List, Literal, Optional
-from pydantic import BaseModel, Field, field_validator
+from typing import Annotated, Dict, List, Literal, Optional
+
+from pydantic import BaseModel, Field, RootModel, field_validator, model_validator
 
 
 # ============================================================================
@@ -118,16 +119,35 @@ class SkillQualitySuggestionSchema(BaseModel):
     )
 
 
-class SkillsSuggestionsSchema(BaseModel):
-    """Skills suggestions structure."""
+# At most six suggestions per category (matches OpenAI cv_review_v2 ``Skills`` def).
+_MaxSixSkillQualitySuggestions = Annotated[
+    List[SkillQualitySuggestionSchema],
+    Field(max_length=6),
+]
 
-    technical: List[SkillQualitySuggestionSchema] = Field(
-        default_factory=list, max_length=5
-    )
-    soft: List[SkillQualitySuggestionSchema] = Field(default_factory=list, max_length=3)
 
-    class Config:
-        extra = "forbid"  # Prevent additional properties
+class SkillsSuggestionsSchema(RootModel[Dict[str, _MaxSixSkillQualitySuggestions]]):
+    """Skill suggestions grouped by dynamic category (matches ``CV_CORRECTIONS_COACHING_FORMAT``)."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy_technical_soft(cls, data: object) -> object:
+        """Coerce legacy ``{technical, soft}`` payloads from stored analyses into category buckets."""
+        if data is None:
+            return {}
+        if not isinstance(data, dict):
+            return {}
+        keys = frozenset(data.keys())
+        if keys <= frozenset({"technical", "soft"}):
+            out: Dict[str, object] = {}
+            tech = data.get("technical")
+            soft = data.get("soft")
+            if isinstance(tech, list) and tech:
+                out["Technical"] = tech
+            if isinstance(soft, list) and soft:
+                out["Soft Skills"] = soft
+            return out
+        return data
 
 
 # ============================================================================
@@ -225,7 +245,7 @@ class CVQualityAnalysisResponseSchemaV2(BaseModel):
     issues: List[IssueSchema] = Field(default_factory=list)
     professional_summary: Optional[ProfessionalSummaryV2Schema] = Field(default=None)
     skills: SkillsSuggestionsSchema = Field(
-        default_factory=SkillsSuggestionsSchema,
+        default_factory=lambda: SkillsSuggestionsSchema({}),
     )
     timeline_gaps: List[TimelineGapSchema] = Field(default_factory=list)
     # Per-field draft history for retry (length capped by CV_QUALITY_MAX_DRAFT_HISTORY, default 3)

@@ -40,9 +40,7 @@ export const DEFAULT_CV_DATA: CVData = {
   work_experience: [],
   education: [],
   skills: {
-    technical: [],
-    soft: [],
-    languages: [],
+    technical: {},
   },
   certifications: [],
   projects: [],

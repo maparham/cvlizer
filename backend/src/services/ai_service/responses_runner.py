@@ -262,7 +262,8 @@ async def run_openai_call(
             response, response_schema, operation_type, extract_cached_tokens_fn
         )
     else:
-        # Branch: inline system + user prompt; use responses.parse
+        # Branch: inline prompts without explicit text_format_schema.
+        # Default path uses responses.parse with the provided Pydantic schema.
         call_kwargs = {
             "model": model,
             "input": inline_messages,

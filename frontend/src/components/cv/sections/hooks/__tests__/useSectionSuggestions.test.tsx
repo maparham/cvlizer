@@ -208,7 +208,7 @@ describe('useSectionSuggestions', () => {
       }
     ],
     professional_summary: undefined,
-    skills: { technical: [], soft: [] },
+    skills: {},
     timeline_gaps: []
   };
 

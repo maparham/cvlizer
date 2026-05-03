@@ -81,12 +81,12 @@ const studentTemplate: CVTemplate = {
       },
     ],
     skills: {
-      technical: ["Python", "JavaScript", "React", "SQL"],
-      soft: ["Problem Solving", "Teamwork", "Communication"],
-      languages: [
-        { id: "lang-1", language: "English", proficiency: "Native" },
-        { id: "lang-2", language: "Spanish", proficiency: "Intermediate" },
-      ],
+      technical: {
+        "Programming Languages": ["Python", "JavaScript", "SQL"],
+        "Frameworks & Libraries": ["React"],
+        "Soft Skills": ["Problem Solving", "Teamwork", "Communication"],
+        "Languages": ["English", "Spanish"],
+      },
     },
   },
 };
@@ -149,9 +149,13 @@ const professionalTemplate: CVTemplate = {
       },
     ],
     skills: {
-      technical: ["JavaScript", "Python", "React", "Node.js", "AWS", "Docker"],
-      soft: ["Leadership", "Project Management", "Problem Solving"],
-      languages: [{ id: "lang-1", language: "English", proficiency: "Native" }],
+      technical: {
+        "Programming Languages": ["JavaScript", "Python"],
+        "Frameworks & Libraries": ["React", "Node.js"],
+        "Cloud & DevOps": ["AWS", "Docker"],
+        "Soft Skills": ["Leadership", "Project Management", "Problem Solving"],
+        "Languages": ["English"],
+      },
     },
     certifications: [
       {
@@ -237,18 +241,20 @@ const executiveTemplate: CVTemplate = {
       },
     ],
     skills: {
-      technical: [
-        "Strategic Planning",
-        "Team Leadership",
-        "Digital Transformation",
-        "Product Strategy",
-      ],
-      soft: [
-        "Executive Communication",
-        "Change Management",
-        "Stakeholder Management",
-      ],
-      languages: [{ id: "lang-1", language: "English", proficiency: "Native" }],
+      technical: {
+        "Leadership & Strategy": [
+          "Strategic Planning",
+          "Team Leadership",
+          "Digital Transformation",
+          "Product Strategy",
+        ],
+        "Soft Skills": [
+          "Executive Communication",
+          "Change Management",
+          "Stakeholder Management",
+        ],
+        "Languages": ["English"],
+      },
     },
     education: [
       {

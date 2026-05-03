@@ -103,12 +103,13 @@ export const createMockCVData = (overrides = {}) => ({
     },
   ],
   skills: {
-    technical: ["JavaScript", "React", "Node.js"],
-    soft: ["Leadership", "Communication"],
-    languages: [
-      { language: "English", proficiency: "Native" as const },
-      { language: "Spanish", proficiency: "Intermediate" as const },
-    ],
+    technical: {
+      "Programming Languages": ["JavaScript"],
+      "Frameworks": ["React"],
+      "Runtime & Backend": ["Node.js"],
+      "Soft Skills": ["Leadership", "Communication"],
+      "Languages": ["English", "Spanish"],
+    },
   },
   certifications: [],
   projects: [],

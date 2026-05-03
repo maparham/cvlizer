@@ -120,18 +120,12 @@ All CV content must be assigned to one of these fields:
 Omit any content that cannot fit an allowed field.
 
 5. Skills
-- skills.technical: MUST be a dictionary/object categorizing technical skills by type. Each category key is a descriptive name, and its value is an array of skills.
-- skills.technical: MUST be an array of category objects, each with:
-  - category: descriptive category name in title case (e.g., "Programming Languages")
-  - skills: array of atomic skills for that category (e.g., ["Python", "TypeScript"])
-  - Categorize technical skills into logical groups relevant to the user's professional field.
-  - Example categories: "Programming Languages", "Frameworks & Libraries", "DevOps & Infrastructure", "Databases & Storage", "Cloud Platforms", "Machine Learning & AI", "Testing & QA", "Design Tools", etc.
-  - Order categories by relevance/importance to the candidate's primary role or expertise.
-  - Each category must contain at least one skill; omit empty categories.
-  - Do not include category labels inside skill strings (e.g., avoid "Programming Languages: Python").
-  - Example format: [{"category":"Programming Languages","skills":["Python","JavaScript","TypeScript"]},{"category":"DevOps & Infrastructure","skills":["Docker","Kubernetes","Git"]}]
-- skills.soft: Array of individual soft skills (e.g., "Team Leadership", "Communication").
-- skills.languages: Extract all spoken languages from anywhere in the CV (array of objects with language name and proficiency level).
+- skills.technical MUST be a dictionary/object.
+- Include ALL skills (technical, soft, and spoken languages) inside skills.technical.
+- Each key is a category name chosen from CV context; each value is an array of atomic skill strings.
+- The category names must be descriptive and non-empty.
+- Each category must contain at least one skill; omit empty categories.
+- Do not include category labels inside skill strings (e.g., avoid "Programming: Python").
 
 6. Publications
 - Only include from an explicit "Publications" section.
@@ -182,11 +176,10 @@ Omit any content that cannot fit an allowed field.
             logger.debug("CV parse OpenAI: invalid document cv_id=%s", cv_id)
             return {"error": validation_error, **EMPTY_PARSED_CV_PAYLOAD}
 
-        # Convert OpenAI-friendly technical category list to internal dict format.
         skills = parsed_content.get("skills")
         if isinstance(skills, dict) and "technical" in skills:
             normalized_skills = SkillsResponseSchema.model_validate(skills)
-            skills["technical"] = normalized_skills.to_dict_format()
+            skills["technical"] = normalized_skills.technical
 
         # Assign UUIDs to custom_sections; preserve type from AI (professional_summary or cover_letter)
         raw_custom = parsed_content.get("custom_sections") or []
@@ -346,9 +339,7 @@ def _add_section_config(parsed_content: dict) -> dict:
         if key == "personal_info":
             return bool(data.get("full_name"))
         if key == "skills":
-            return bool(
-                data.get("technical") or data.get("soft") or data.get("languages")
-            )
+            return bool(data.get("technical"))
         if key in (
             "work_experience",
             "education",

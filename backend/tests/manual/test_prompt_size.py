@@ -64,8 +64,7 @@ YOUR TASKS:
    - NO rewritten content - only coaching questions and direct suggestions
 
 5. SKILLS SUGGESTIONS (optional):
-   - Suggest NEW technical skills (max 10)
-   - Suggest NEW soft skills (max 5)
+   - Group suggestions by category (e.g. Programming Languages, Soft Skills); cap lists per schema
    - Only suggest if highly relevant to candidate's background and not already in the CV
    - Provide brief reasoning for each
 

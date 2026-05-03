@@ -44,8 +44,11 @@ def cv_data_with_hidden_sections():
             }
         ],
         "skills": {
-            "technical": ["Python", "Django", "React"],
-            "soft": ["Leadership"],
+            "technical": {
+                "Programming Languages": ["Python"],
+                "Frameworks": ["Django", "React"],
+                "Soft Skills": ["Leadership"],
+            },
         },
         "certifications": [
             {
@@ -133,7 +136,7 @@ class TestPersonalInfoNeverFiltered:
                 "full_name": "John Doe",
                 "email": "john@example.com",
             },
-            "skills": {"technical": ["Python"]},
+            "skills": {"technical": {"Programming Languages": ["Python"]}},
             "section_config": {
                 "sections": [
                     # In practice, frontend prevents this, but test backend behavior
@@ -165,7 +168,7 @@ class TestProfessionalSummaryFiltering:
                     "type": "professional_summary",
                 }
             ],
-            "skills": {"technical": ["Python"]},
+            "skills": {"technical": {"Programming Languages": ["Python"]}},
             "section_config": {
                 "sections": [
                     {"id": "personal_info", "type": "personal_info", "visible": True},
@@ -224,7 +227,7 @@ class TestAISuggestionsFiltering:
             "work_experience": [
                 {"id": "1", "company": "Tech Corp", "position": "Engineer"}
             ],
-            "skills": {"technical": ["Python"]},
+            "skills": {"technical": {"Programming Languages": ["Python"]}},
             "section_config": {
                 "sections": [
                     {"id": "personal_info", "type": "personal_info", "visible": True},
@@ -254,7 +257,7 @@ class TestAISuggestionsFiltering:
             "work_experience": [
                 {"id": "1", "company": "Tech Corp", "position": "Engineer"}
             ],
-            "skills": {"technical": ["Python"], "soft": []},
+            "skills": {"technical": {"Programming Languages": ["Python"]}},
             "section_config": {
                 "sections": [
                     {"id": "personal_info", "type": "personal_info", "visible": True},
@@ -274,7 +277,7 @@ class TestAISuggestionsFiltering:
             "suggested_improvements": ["Clarify impact in bullets"],
             "strengths": ["Backend experience"],
             "weaknesses": ["No cloud exposure"],
-            "skills": {"technical": [], "soft": []},
+            "skills": {},
             "professional_summary": None,
             "work_experience": [],
             "education": [],
@@ -313,8 +316,10 @@ class TestAISuggestionsFiltering:
             "personal_info": {"full_name": "John Doe"},
             "work_experience": [{"id": "1", "company": "Tech Corp"}],
             "skills": {
-                "technical": ["Secret Tech", "Python"],
-                "soft": ["Secret Soft"],
+                "technical": {
+                    "Programming Languages": ["Secret Tech", "Python"],
+                    "Soft Skills": ["Secret Soft"],
+                },
             },
             "section_config": {
                 "sections": [
@@ -342,7 +347,7 @@ class TestAISuggestionsFiltering:
             "education": [
                 {"id": "1", "institution": "Secret University", "degree": "PhD"}
             ],
-            "skills": {"technical": ["Python"]},
+            "skills": {"technical": {"Programming Languages": ["Python"]}},
             "section_config": {
                 "sections": [
                     {"id": "personal_info", "type": "personal_info", "visible": True},
