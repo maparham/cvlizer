@@ -231,11 +231,17 @@ def _set_additional_properties_false(schema: Dict[str, Any]) -> None:
     # This is required by OpenAI strict mode for object schemas.
     props = schema.get("properties")
     if isinstance(props, dict):
-        # Only include keys that are actually in properties (filter out dict-type fields)
-        property_keys = set(props.keys())
+        # Exclude map-type fields (Dict[K, V]) from required: OpenAI strict mode rejects
+        # objects where a required key's schema uses additionalProperties as a sub-schema.
+        non_map_keys = {
+            k
+            for k, v in props.items()
+            if not (
+                isinstance(v, dict) and isinstance(v.get("additionalProperties"), dict)
+            )
+        }
         original_required = set(schema.get("required") or [])
-        # Intersect with property keys to avoid including dict-type fields
-        schema["required"] = list(original_required & property_keys | property_keys)
+        schema["required"] = list(original_required & non_map_keys | non_map_keys)
         # For object schemas with explicit properties, disallow extra keys.
         # NOTE: Do not blindly override map/dictionary schemas that use
         # additionalProperties as a nested schema (e.g. Dict[str, List[str]]).
