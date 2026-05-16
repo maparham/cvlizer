@@ -235,7 +235,9 @@ frontend/
 
 **SSH (production API host):** `ssh ec2-user@3.139.146.5` — then e.g. `cd ~/cv_lator && sudo docker compose logs -f backend`
 
-**CI deploy:** [`.github/workflows/deploy-backend-aws.yml`](.github/workflows/deploy-backend-aws.yml) checks out the repo, **SCP**s `backend/` + `docker-compose.yml` to **`/home/ec2-user/cv_lator`** on the instance, then runs **`docker compose`**. Triggers: push to **`master`** (paths `backend/**`, `docker-compose.yml`, or this workflow) and **workflow_dispatch**. Secrets: `AWS_SSH_HOST`, `AWS_SSH_USER`, `AWS_SSH_PRIVATE_KEY`. Instance must already have `.env.prod` and Docker; path is fixed in the workflow unless you edit it.
+**CI deploy:** [`.github/workflows/deploy-backend-aws.yml`](.github/workflows/deploy-backend-aws.yml) checks out the repo, **SCP**s `backend/` + `docker-compose.yml` to **`/home/ec2-user/cv_lator`** on the instance, then runs **`docker compose`**. Triggers: push to **`master`** (paths `backend/**`, `docker-compose.yml`, or this workflow) and **workflow_dispatch**. Secrets: `AWS_SSH_HOST`, `AWS_SSH_USER`, `AWS_SSH_PRIVATE_KEY`. **CI does not upload `.env.prod`** — the VPS must already have one (bootstrap once), unless you overwrite it locally.
+
+**Laptop backend deploy:** [`./scripts/deploy-backend-ec2.sh`](./scripts/deploy-backend-ec2.sh) (**repo root**) rsyncs **`backend/`**, **`docker-compose.yml`**, and **`./.env.prod`** from this machine (`DEPLOY_ENV_FILE` overrides) to the VPS, then runs the same Compose target as CI — or **`./scripts/deploy-backend-ec2.sh --env-only`** to rsync **`./.env.prod`** alone and **`--force-recreate`** services. See [.cursor/commands/deploy.md](.cursor/commands/deploy.md).
 
 ## 🔒 Security Features
 
