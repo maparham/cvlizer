@@ -87,6 +87,11 @@ function stripDarwinMetadataFromDist(): Plugin {
 
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || "http://localhost:8000";
 
+/** Compose / Docker frontend: avoid stale persisted `node_modules/.vite` (chunk 404 drift). */
+const dockerComposeFrontend =
+  process.env.CV_DOCKER_FRONTEND === '1' ||
+  process.env.CV_DOCKER_FRONTEND?.toLowerCase() === 'true'
+
 /** Build-time replacement for public URL in index.html (og:url) and sitemap.xml. Set VITE_PUBLIC_URL per deployment. When unset, the og:url meta tag and sitemap are omitted. */
 function replacePublicUrl(): Plugin {
   const publicUrl = process.env.VITE_PUBLIC_URL
@@ -166,6 +171,7 @@ export default defineConfig(({ command, mode }) => {
     },
     optimizeDeps: {
       include: ['react', 'react-dom', '@mui/material', '@mui/icons-material'],
+      ...(dockerComposeFrontend ? { force: true } : {}),
     },
   }
 })

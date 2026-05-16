@@ -67,6 +67,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         rehypePlugins={[rehypeRaw]}
         components={{
           br: () => <br />,
+          div: ({ className, ...props }) => {
+            if (className === "md-dashed-line")
+              return <Box component="hr" sx={{ my: 1.5, border: "none", borderTop: "2px dashed", borderColor: "divider" }} />;
+            if (className === "md-dotted-line")
+              return <Box component="hr" sx={{ my: 1.5, border: "none", borderTop: "2px dotted", borderColor: "divider" }} />;
+            return <div className={className} {...props} />;
+          },
           // Headings
           h1: ({ children }) => (
             <Typography
@@ -122,11 +129,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             <Typography
               variant={variant}
               sx={{
-                mb: 1,
+                mb: 1.5,
+                mt: 0,
                 color,
                 lineHeight: 1.6,
                 mr: 0,
                 textAlign: "inherit",
+                "&:last-child": { mb: 0 },
               }}
             >
               {children}
@@ -263,6 +272,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 {children}
               </Typography>
             </Box>
+          ),
+
+          // Horizontal rule
+          hr: () => (
+            <Box component="hr" sx={{ my: 1.5, border: "none", borderTop: "1px solid", borderColor: "divider" }} />
           ),
 
           // Blockquote

@@ -19,11 +19,54 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor, { commands } from "@uiw/react-md-editor";
 import Box from "@mui/material/Box";
 import FormHelperText from "@mui/material/FormHelperText";
 import { useTheme } from "@mui/material/styles";
 import "@uiw/react-md-editor/markdown-editor.css";
+
+const dashedLineCommand: commands.ICommand = {
+  name: "dashed-line",
+  keyCommand: "dashed-line",
+  buttonProps: { "aria-label": "Insert dashed line", title: "Insert dashed line" },
+  icon: (
+    <svg width="12" height="12" viewBox="0 0 24 4">
+      <line x1="0" y1="2" x2="24" y2="2" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" />
+    </svg>
+  ),
+  execute(_state, api) {
+    api.replaceSelection("\n<div class=\"md-dashed-line\"></div>\n");
+  },
+};
+
+const dottedLineCommand: commands.ICommand = {
+  name: "dotted-line",
+  keyCommand: "dotted-line",
+  buttonProps: { "aria-label": "Insert dotted line", title: "Insert dotted line" },
+  icon: (
+    <svg width="12" height="12" viewBox="0 0 24 4">
+      <line x1="0" y1="2" x2="24" y2="2" stroke="currentColor" strokeWidth="2" strokeDasharray="1.5 2" />
+    </svg>
+  ),
+  execute(_state, api) {
+    api.replaceSelection("\n<div class=\"md-dotted-line\"></div>\n");
+  },
+};
+
+const brCommand: commands.ICommand = {
+  name: "br",
+  keyCommand: "br",
+  buttonProps: { "aria-label": "Insert line break (<br>)", title: "Insert line break (<br>)" },
+  icon: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 10 4 15 9 20" />
+      <path d="M20 4v7a4 4 0 0 1-4 4H4" />
+    </svg>
+  ),
+  execute(_state, api) {
+    api.replaceSelection("<br>\n");
+  },
+};
 
 export interface MarkdownEditorProps {
   value: string;
@@ -208,6 +251,18 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             disabled: disabled,
             readOnly: disabled,
           }}
+          commands={[
+            commands.bold, commands.italic, commands.strikethrough, commands.hr,
+            commands.group([commands.title1, commands.title2, commands.title3, commands.title4, commands.title5, commands.title6], { name: "title", groupName: "title", buttonProps: { "aria-label": "Insert title", title: "Insert title" } }),
+            commands.divider,
+            commands.link, commands.quote, commands.code, commands.codeBlock,
+            commands.comment, commands.image, commands.table,
+            commands.divider,
+            commands.unorderedListCommand, commands.orderedListCommand, commands.checkedListCommand,
+            commands.divider,
+            dashedLineCommand, dottedLineCommand, brCommand,
+            commands.help,
+          ]}
         />
       </Box>
       {helperText && (

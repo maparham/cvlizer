@@ -428,13 +428,53 @@ def _markdown_to_latex(text: str) -> str:
     for line in lines:
         stripped = line.strip()
 
-        # Preserve paragraph breaks: empty markdown lines -> blank line in LaTeX
+        # Empty line -> blank paragraph break
         if stripped == "":
             if in_list:
                 result.append("\\end{itemize}")
                 in_list = False
-            # Emit a blank line to create a new paragraph in LaTeX
             result.append("")
+            continue
+
+        # Bare <br> line(s) -> vertical space
+        if re.fullmatch(r"(<br\s*/?>)+", stripped, re.IGNORECASE):
+            if in_list:
+                result.append("\\end{itemize}")
+                in_list = False
+            count = len(re.findall(r"<br\s*/?>", stripped, re.IGNORECASE))
+            result.append(f"\\vspace{{{count * 0.5:.1f}\\baselineskip}}")
+            continue
+
+        # Horizontal rule: --- or *** or ___ -> solid line
+        if re.match(r"^(-{3,}|\*{3,}|_{3,})$", stripped):
+            if in_list:
+                result.append("\\end{itemize}")
+                in_list = False
+            result.append("\\noindent\\rule{\\textwidth}{0.4pt}")
+            continue
+
+        # Dashed line div
+        if re.match(
+            r'^<div\s+class="md-dashed-line"\s*></div>$', stripped, re.IGNORECASE
+        ):
+            if in_list:
+                result.append("\\end{itemize}")
+                in_list = False
+            result.append(
+                "\\noindent\\tikz\\draw[dashed,line width=0.4pt](0,0)--(\\linewidth,0);"
+            )
+            continue
+
+        # Dotted line div
+        if re.match(
+            r'^<div\s+class="md-dotted-line"\s*></div>$', stripped, re.IGNORECASE
+        ):
+            if in_list:
+                result.append("\\end{itemize}")
+                in_list = False
+            result.append(
+                "\\noindent\\tikz\\draw[dotted,line width=0.4pt](0,0)--(\\linewidth,0);"
+            )
             continue
 
         # Headings: #, ##, ###, ####, #####, ######
@@ -484,8 +524,9 @@ def _markdown_to_latex(text: str) -> str:
 
             # Extract list item text (remove leading - or *)
             item_text = re.sub(r"^[-*]\s+", "", stripped)
-            # Escape and process the item text
-            item_text = _tex_escape(item_text)
+            # Split on <br> tags, escape each segment, rejoin with LaTeX line break
+            br_parts = re.split(r"<br\s*/?>", item_text, flags=re.IGNORECASE)
+            item_text = "\\\\\\\\ ".join(_tex_escape(p) for p in br_parts)
             # Convert **text** to \textbf{text}
             item_text = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", item_text)
             # Convert *text* to \textit{text} (if not followed by *)
@@ -513,8 +554,9 @@ def _markdown_to_latex(text: str) -> str:
                 in_list = False
 
             if stripped:
-                # Process paragraph text
-                processed = _tex_escape(stripped)
+                # Process paragraph text — split on <br> before escaping
+                br_parts = re.split(r"<br\s*/?>", stripped, flags=re.IGNORECASE)
+                processed = "\\\\\\\\ ".join(_tex_escape(p) for p in br_parts)
                 # Convert **text** to \\textbf{text}
                 processed = re.sub(r"\*\*([^*]+)\*\*", r"\\textbf{\1}", processed)
                 # Convert *text* to \\textit{text} (if not followed by *)

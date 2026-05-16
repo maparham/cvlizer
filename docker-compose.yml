@@ -53,10 +53,16 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - CV_DOCKER_FRONTEND=1
       - VITE_API_BASE_URL=/api
       - VITE_API_PROXY_TARGET=http://backend:8000
       - NPM_CONFIG_INCLUDE_OPTIONAL=true
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: sh -c "npm install --include=optional && npm run dev -- --host 0.0.0.0 --port 3000"
+    # Clear Vite optimize-deps dir on each boot: the anonymous node_modules volume
+    # otherwise keeps stale .vite/metadata vs chunk filenames (404 + "file does not exist").
+    command: >-
+      sh -c "npm install --include=optional &&
+      rm -rf node_modules/.vite &&
+      exec npm run dev -- --host 0.0.0.0 --port 3000 --force"
