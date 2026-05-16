@@ -760,9 +760,80 @@ def get_current_user_lightweight(
     return user
 
 
+def get_current_user_with_impersonation_lightweight(
+    request: Request,
+    original_user: User = Depends(get_current_user_lightweight),
+    db: Session = Depends(get_db),
+) -> AuthContext:
+    """
+    Lightweight variant of get_current_user_with_impersonation.
+
+    Skips the Clerk API sync (one DB lookup instead of 2-3) while still
+    returning a full AuthContext with impersonation support. Use this for
+    dependencies like require_ai_quota that need original_user for admin checks
+    but don't need Clerk profile sync on every call.
+
+    FastAPI deduplicates Depends(get_current_user_lightweight) across this and
+    get_effective_user_lightweight within the same request, so only one
+    SELECT users fires even with both deps active.
+    """
+    impersonation_cookie = getattr(request, "cookies", {}).get("impersonation_session")
+    if not impersonation_cookie:
+        return AuthContext(
+            effective_user=original_user,
+            original_user=original_user,
+            is_impersonating=False,
+        )
+
+    try:
+        from src.services.users.impersonation_service import validate_session
+
+        admin_ip = None
+        admin_user_agent = None
+        if hasattr(request, "headers"):
+            forwarded_for = request.headers.get("X-Forwarded-For")
+            if forwarded_for:
+                admin_ip = forwarded_for.split(",")[0].strip()
+            elif hasattr(request, "client") and request.client:
+                admin_ip = request.client.host
+            admin_user_agent = request.headers.get("User-Agent")
+
+        session = validate_session(db, impersonation_cookie, admin_ip, admin_user_agent)
+        if not session:
+            return AuthContext(
+                effective_user=original_user,
+                original_user=original_user,
+                is_impersonating=False,
+            )
+
+        if original_user.id != session.admin_id:
+            logger.warning(
+                f"Impersonation session admin mismatch: token user {original_user.id}, session admin {session.admin_id}"
+            )
+            return AuthContext(
+                effective_user=original_user,
+                original_user=original_user,
+                is_impersonating=False,
+            )
+
+        return AuthContext(
+            effective_user=session.target_user,
+            original_user=original_user,
+            is_impersonating=True,
+        )
+
+    except Exception as e:
+        logger.error(f"Error validating impersonation session: {str(e)}")
+        return AuthContext(
+            effective_user=original_user,
+            original_user=original_user,
+            is_impersonating=False,
+        )
+
+
 def get_effective_user_lightweight(
     request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    original_user: User = Depends(get_current_user_lightweight),
     db: Session = Depends(get_db),
 ) -> User:
     """
@@ -774,6 +845,10 @@ def get_effective_user_lightweight(
     get_effective_user. Perfect for CV and job description endpoints that need
     to work efficiently while respecting admin impersonation.
 
+    FastAPI deduplicates Depends(get_current_user_lightweight) across this and
+    get_current_user_with_impersonation_lightweight within the same request,
+    so only one SELECT users fires even with both deps active.
+
     During impersonation:
     - Returns the target user being impersonated
     - Admin's real identity is authenticated via JWT token
@@ -781,8 +856,6 @@ def get_effective_user_lightweight(
     Normal authentication:
     - Returns the authenticated user directly from database
     """
-    # Get the original authenticated user (lightweight - no Clerk API calls)
-    original_user = get_current_user_lightweight(credentials, db)
 
     # Check for impersonation session cookie
     impersonation_cookie = request.cookies.get("impersonation_session")

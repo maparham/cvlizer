@@ -114,6 +114,7 @@ export function useSingleSectionWritingCorrections(
   );
   const {
     dismissWritingCorrection,
+    dismissWritingCorrectionLocally,
     currentAnalysisId,
     setFieldDraftHistory,
   } = useCVQualityStore();
@@ -231,7 +232,7 @@ export function useSingleSectionWritingCorrections(
       mode: "edit" | "display",
       editData?: Record<string, unknown>,
       updateData?: (field: string, value: unknown) => void,
-      onSaveCallback?: (data: Record<string, unknown>) => Promise<void>
+      _onSaveCallback?: (data: Record<string, unknown>) => Promise<void>
     ) => {
       return async (
         _fieldCorrection: FieldCorrection,
@@ -261,25 +262,16 @@ export function useSingleSectionWritingCorrections(
           );
           setCurrentCV(updatedCV);
           updateCVInList(updatedCV);
-          if (
-            mode === "edit" &&
-            updateData &&
-            onSaveCallback &&
-            editData !== undefined
-          ) {
+          if (mode === "edit" && updateData && editData !== undefined) {
             const fieldName =
               isPersonalInfo && parentCorrection.field_path
                 ? (parentCorrection.field_path.split(".").pop() ?? formFieldName)
                 : formFieldName;
             const newValue = resolveFieldValue(updatedCV as unknown as { parsed_data?: Record<string, unknown> }, fieldName, editData);
             updateData(fieldName, newValue);
-            const updatedEditData = { ...editData, [fieldName]: newValue };
-            await onSaveCallback(updatedEditData);
           }
-          await dismissWritingCorrection(
-            correctionId,
-            parentCorrection.field_path
-          );
+          // Backend already persisted the removal; dismiss locally only (no PATCH)
+          dismissWritingCorrectionLocally(correctionId, parentCorrection.field_path);
           showSuccess("Writing correction applied successfully");
         } catch (error: unknown) {
           const err = error as { response?: { data?: { detail?: string } }; message?: string };
@@ -301,7 +293,7 @@ export function useSingleSectionWritingCorrections(
       resolveFieldValue,
       setCurrentCV,
       updateCVInList,
-      dismissWritingCorrection,
+      dismissWritingCorrectionLocally,
       showSuccess,
       showError,
     ]

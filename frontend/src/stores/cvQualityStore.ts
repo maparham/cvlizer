@@ -168,6 +168,9 @@ interface CVQualityStore {
   ) => Promise<void>;
 
   // Dismissal actions
+  /** Local-only dismiss: removes the correction from in-memory state without a server PATCH.
+   *  Use after a successful apply (the backend already removed it from quality_data). */
+  dismissWritingCorrectionLocally: (itemId: string, fieldPath: string) => void;
   dismissWritingCorrection: (itemId: string, fieldPath: string) => Promise<void>;
   dismissContentCoaching: (itemId: string) => Promise<void>;
   dismissProfessionalSummarySuggestion: (summarySectionId?: string) => Promise<void>;
@@ -545,6 +548,29 @@ export const useCVQualityStore = create<CVQualityStore>((set, get) => ({
     } else {
       set({ isDismissing: false });
     }
+  },
+
+  // Local-only variant: same filtering as dismissWritingCorrection but no server PATCH.
+  // Use after a successful apply — the backend already removed the correction from quality_data.
+  dismissWritingCorrectionLocally: (itemId: string, fieldPath: string) => {
+    const normalizedId =
+      itemId.startsWith('work_') && itemId.length > 5
+        ? itemId.slice(5)
+        : itemId.startsWith('edu_') && itemId.length > 4
+          ? itemId.slice(4)
+          : null;
+
+    const current = get().qualityAnalysis;
+    if (!current) return;
+
+    const nextIssues = current.issues.filter(
+      (i) => !matchesWritingCorrection(i, itemId, fieldPath, normalizedId)
+    );
+    const nextHistories = computeNextDraftHistories(current, fieldPath, itemId);
+    set({
+      qualityAnalysis: { ...current, issues: nextIssues, field_draft_histories: nextHistories },
+      lastDismissedAt: Date.now(),
+    });
   },
 
   // Dismiss individual writing correction. When itemId is a section key (e.g. personal_info),

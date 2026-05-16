@@ -10,6 +10,7 @@ This module provides functions for CRUD operations on CV records:
 import json
 import re
 from copy import deepcopy
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -104,6 +105,13 @@ def get_cvs_by_user(
         .limit(limit)
         .all()
     )
+
+
+def update_cv_in_place(cv: CV, parsed_data: dict) -> None:
+    """Mutate an already-loaded CV ORM object. Caller is responsible for db.commit().
+    Sets updated_at in Python so db.refresh() is not needed after commit."""
+    cv.parsed_data = parsed_data
+    cv.updated_at = datetime.now(timezone.utc)
 
 
 def update_cv(db: Session, cv_id: str, user_id: str, parsed_data: dict) -> Optional[CV]:

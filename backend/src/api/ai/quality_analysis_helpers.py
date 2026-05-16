@@ -19,7 +19,7 @@ from src.schemas.cv_quality_schemas import (
     IssueSchema,
     WritingCorrectionSchema,
 )
-from src.services.cv.cv_service import get_cv_by_id, update_cv
+from src.services.cv.cv_service import get_cv_by_id, update_cv_in_place
 from src.services.ai_service.writing_corrections_service import apply_html_diff
 
 logger = logging.getLogger(__name__)
@@ -390,54 +390,15 @@ def remove_applied_corrections_from_quality_data(
     return updated
 
 
-def update_analysis_after_applying_corrections(
-    db: Session,
-    analysis: CVQualityAnalysis,
-    quality_data: CVQualityAnalysisResponseSchemaV2,
-    correction_ids: List[str],
-) -> None:
+def update_cv_with_corrections(cv: CV, updated_cv_data: dict) -> None:
     """
-    Update analysis.quality_data to remove applied corrections and commit.
+    Mutate cv.parsed_data in place with corrected data.
 
-    Call after applying writing corrections so GET latest analysis returns
-    correct state (applied corrections no longer listed).
+    Caller is responsible for db.commit(). Does not commit or refresh internally
+    so multiple mutations can be batched into a single round-trip.
 
     Args:
-        db: Database session
-        analysis: CVQualityAnalysis record to update
-        quality_data: Parsed quality analysis data (before removal)
-        correction_ids: item_ids of applied corrections to remove
-    """
-    updated_quality_data = remove_applied_corrections_from_quality_data(
-        quality_data, correction_ids
-    )
-    analysis.quality_data = updated_quality_data
-    db.commit()
-    db.refresh(analysis)
-
-
-def update_cv_with_corrections(
-    db: Session, cv_id: str, user_id: str, updated_cv_data: dict
-) -> CV:
-    """
-    Update CV with corrected data and handle errors.
-
-    Args:
-        db: Database session
-        cv_id: CV ID to update
-        user_id: User ID for ownership check
+        cv: Already-loaded CV ORM object
         updated_cv_data: New CV parsed_data
-
-    Returns:
-        CV: Updated CV
-
-    Raises:
-        HTTPException: 500 if update fails
     """
-    updated_cv = update_cv(db, cv_id, user_id, updated_cv_data)
-    if not updated_cv:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update CV",
-        )
-    return updated_cv
+    update_cv_in_place(cv, updated_cv_data)

@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from src.config import AIUsageConfig
 from src.middleware.clerk_auth import (
     AuthContext,
-    get_current_user_with_impersonation,
+    get_current_user_with_impersonation_lightweight,
     is_admin_user,
 )
 from src.models.base import get_db
@@ -20,7 +20,7 @@ from src.services.platform import quota_service
 
 async def require_ai_quota(
     request: Request,
-    auth_context: AuthContext = Depends(get_current_user_with_impersonation),
+    auth_context: AuthContext = Depends(get_current_user_with_impersonation_lightweight),
     db: Session = Depends(get_db),
 ) -> None:
     """

@@ -63,7 +63,7 @@ export function useSectionHandlers<T extends { id: string; description?: string 
 ): SectionHandlers {
   const { setCurrentCV, updateCVInList } = useCVStore();
   const { showSuccess, showError } = useNotifications();
-  const { currentAnalysisId, dismissWritingCorrection } = useCVQualityStore();
+  const { currentAnalysisId, dismissWritingCorrectionLocally } = useCVQualityStore();
   const { isEdited, clearEdited } = useEditedSinceAIStore();
   const { confirm: overwriteConfirm } = useOverwriteConfirm();
 
@@ -226,10 +226,9 @@ export function useSectionHandlers<T extends { id: string; description?: string 
         // Update local data with new CV data
         const updatedSectionData = getSectionDataFromCV(updatedCV);
         onUpdate(updatedSectionData);
-        onSave?.(updatedSectionData, "Writing correction applied successfully");
 
-        // Dismiss the correction from the analysis
-        await dismissWritingCorrection(correction.item_id, correction.field_path);
+        // Backend already persisted the correction removal; dismiss locally only (no PATCH)
+        dismissWritingCorrectionLocally(correction.item_id, correction.field_path);
         clearEdited(cvId, fieldKey);
         showSuccess("Writing correction applied successfully");
       } catch (error: any) {
@@ -240,7 +239,7 @@ export function useSectionHandlers<T extends { id: string; description?: string 
         showError('Writing correction failed', message);
       }
     },
-    [cvId, currentAnalysisId, setCurrentCV, updateCVInList, onUpdate, onSave, dismissWritingCorrection, showSuccess, showError, getSectionDataFromCV, getFieldKey, isEdited, clearEdited, overwriteConfirm]
+    [cvId, currentAnalysisId, setCurrentCV, updateCVInList, onUpdate, dismissWritingCorrectionLocally, showSuccess, showError, getSectionDataFromCV, getFieldKey, isEdited, clearEdited, overwriteConfirm]
   );
 
   // Handle applying all suggestions (quality + writing corrections) atomically
@@ -278,34 +277,15 @@ export function useSectionHandlers<T extends { id: string; description?: string 
 
           finalCV = updatedCV;
 
-          // Dismiss all corrections together with error handling
-          const dismissedCorrections: WritingCorrection[] = [];
-          const failedDismissals: WritingCorrection[] = [];
-
+          // Backend already persisted the removal; dismiss all locally (no PATCH per correction)
           for (const correction of writingCorrections) {
-            try {
-              await dismissWritingCorrection(correction.item_id, correction.field_path);
-              dismissedCorrections.push(correction);
-            } catch (error) {
-              failedDismissals.push(correction);
-              console.error(`Failed to dismiss correction ${correction.item_id}:`, error);
-            }
+            dismissWritingCorrectionLocally(correction.item_id, correction.field_path);
           }
-
-          if (failedDismissals.length > 0) {
-            const failedIds = failedDismissals.map(c => c.item_id).join(', ');
-            showError(
-              `Corrections applied but ${failedDismissals.length} dismissal(s) failed. ` +
-              `Applied corrections (${failedIds}) were not dismissed. Please try dismissing them manually.`
-            );
-          } else {
-            showSuccess(`Applied ${writingCorrections.length} writing correction(s) successfully`);
-          }
+          showSuccess(`Applied ${writingCorrections.length} writing correction(s) successfully`);
         }
 
         // Step 2: Apply quality suggestion if present (after batch corrections)
         // Collect all changes before updating state atomically
-        let qualitySuggestionApplied = false;
         let finalSectionData: T[] | null = null;
 
         if (qualitySuggested) {
@@ -346,7 +326,6 @@ export function useSectionHandlers<T extends { id: string; description?: string 
 
             finalSectionData = updatedItems;
             dismissQualitySuggestion(itemId);
-            qualitySuggestionApplied = true;
           }
         } else if (finalCV) {
           // If we only have batch corrections, get section data from finalCV
@@ -363,16 +342,6 @@ export function useSectionHandlers<T extends { id: string; description?: string 
         if (finalSectionData) {
           onUpdate(finalSectionData);
           clearEdited(cvId, fieldKey);
-
-          // Determine success message based on what was applied
-          if (qualitySuggestionApplied && writingCorrections && writingCorrections.length > 0) {
-            onSave?.(finalSectionData, "All corrections applied successfully");
-          } else if (qualitySuggestionApplied) {
-            onSave?.(finalSectionData, "Quality suggestion applied successfully");
-          } else if (writingCorrections && writingCorrections.length > 0) {
-            // Message already shown in Step 1, just save without message
-            onSave?.(finalSectionData);
-          }
         }
       } catch (error: any) {
         const message =
@@ -389,8 +358,7 @@ export function useSectionHandlers<T extends { id: string; description?: string 
       setCurrentCV,
       updateCVInList,
       onUpdate,
-      onSave,
-      dismissWritingCorrection,
+      dismissWritingCorrectionLocally,
       dismissQualitySuggestion,
       showSuccess,
       showError,

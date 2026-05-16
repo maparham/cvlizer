@@ -440,31 +440,13 @@ class TestUpdateCVWithCorrections:
     """Test CV update helper"""
 
     def test_success(self):
-        """Test successful CV update"""
-        db = Mock()
+        """Test successful CV update mutates cv.parsed_data in place"""
         mock_cv = Mock()
+        updated_data = {"updated": "data"}
 
-        with patch("src.api.ai.quality_analysis_helpers.update_cv") as mock_update:
-            mock_update.return_value = mock_cv
+        with patch(
+            "src.api.ai.quality_analysis_helpers.update_cv_in_place"
+        ) as mock_update:
+            update_cv_with_corrections(mock_cv, updated_data)
 
-            result = update_cv_with_corrections(
-                db, "cv123", "user123", {"updated": "data"}
-            )
-
-            assert result == mock_cv
-            mock_update.assert_called_once_with(
-                db, "cv123", "user123", {"updated": "data"}
-            )
-
-    def test_update_failure_raises_500(self):
-        """Test update failure raises 500"""
-        db = Mock()
-
-        with patch("src.api.ai.quality_analysis_helpers.update_cv") as mock_update:
-            mock_update.return_value = None
-
-            with pytest.raises(HTTPException) as exc_info:
-                update_cv_with_corrections(db, "cv123", "user123", {"updated": "data"})
-
-            assert exc_info.value.status_code == 500
-            assert "Failed to update CV" in exc_info.value.detail
+            mock_update.assert_called_once_with(mock_cv, updated_data)
