@@ -35,8 +35,7 @@ def sample_cv_data():
                 "start_date": "2020-01",
                 "end_date": "2023-12",
                 "current": False,
-                "description": "Built scalable systems",
-                "achievements": ["Improved performance by 50%"],
+                "description": "Built scalable systems. Improved performance by 50%.",
                 "technologies": ["Python", "Django"],
             }
         ],

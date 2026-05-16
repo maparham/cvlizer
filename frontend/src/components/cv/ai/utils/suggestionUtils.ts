@@ -31,7 +31,6 @@ export const getFieldLabel = (fieldName: string): string => {
     description: 'Description',
     start_date: 'Start Date',
     end_date: 'End Date',
-    achievements: 'Achievements',
     honors: 'Honors',
   };
   return labels[fieldName] || fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/_/g, ' ');

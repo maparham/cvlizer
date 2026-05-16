@@ -581,9 +581,8 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
         # Use mbox to prevent date from breaking across lines
         dates_str = f"\\mbox{{{dates_str}}}"
 
-        # Description and achievements - process description as markdown
+        # Description - process description as markdown
         desc = job.get("description", "")
-        achievements = _itemize(job.get("achievements", []) or [])
 
         # Build left parbox content (70% width) containing all content
         left_content = f"\\textcolor{{boldgray}}{{\\textbf{{{position}}}}}, \\textcolor{{companygray}}{{{company_line}}}"
@@ -594,8 +593,6 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
                 left_content += f"\n{desc_latex}"
             else:
                 left_content += f"\\\\\n{desc_latex}"
-        if achievements.strip():
-            left_content += f"\n{achievements}"
 
         # Two-column layout: left column for all content, right column for dates
         block = (
@@ -623,7 +620,6 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
         start_date = _tex_escape(edu.get("start_date", ""))
         end_date = _tex_escape(edu.get("end_date", ""))
         desc = _tex_escape(edu.get("description", ""))
-        achievements = _itemize(edu.get("achievements", []) or [])
         honors = _itemize(edu.get("honors", []) or [])
 
         # Format title line with institution, dates right-aligned
@@ -667,8 +663,6 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
                 left_content += f"\n{desc_latex}"
             else:
                 left_content += f"\\\\\n{desc_latex}"
-        if achievements.strip():
-            left_content += f"\n{achievements}"
         if honors.strip():
             left_content += f"\n{honors}"
 

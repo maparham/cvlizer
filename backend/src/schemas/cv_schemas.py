@@ -149,7 +149,6 @@ class WorkExperienceSchema(BaseModel):
     end_date: Optional[str] = Field(None, description="End date in YYYY-MM-DD format")
     current: bool = Field(default=False, description="Currently working here")
     description: Optional[str] = Field(None, description="Job description")
-    achievements: List[str] = Field(default_factory=list, description="Key achievements")
     technologies: List[str] = Field(default_factory=list, description="Technologies used")
 
     class Config:
@@ -175,9 +174,6 @@ class EducationSchema(BaseModel):
     end_date: Optional[str] = Field(None, description="End date in YYYY-MM-DD format")
     gpa: Optional[str] = Field(None, description="GPA or grade")
     description: Optional[str] = Field(None, description="Additional details")
-    achievements: List[str] = Field(
-        default_factory=list, description="Academic achievements"
-    )
     honors: List[str] = Field(default_factory=list, description="Honors and awards")
 
     class Config:

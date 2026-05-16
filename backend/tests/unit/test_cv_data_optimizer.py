@@ -109,7 +109,6 @@ class TestOptimizeCVDataForQualityAnalysis:
                     "company": "Tech Corp",
                     "position": "Senior Engineer",
                     "description": "Built systems",
-                    "achievements": [],
                     "technologies": ["Python", "Django"],
                 }
             ],
@@ -166,12 +165,6 @@ class TestOptimizeCVDataForQualityAnalysis:
         assert "skills" in result
         assert "technical" in result["skills"]
         assert result["skills"]["technical"]["Languages"] == ["English"]
-
-    def test_removes_empty_achievements(self, sample_cv_data):
-        """Should remove empty achievements array from work experience."""
-        result, _ = optimize_cv_data_for_quality_analysis(sample_cv_data)
-        work = result["work_experience"][0]
-        assert "achievements" not in work
 
     def test_removes_technologies_arrays(self, sample_cv_data):
         """Should remove technologies arrays (not used in quality analysis)."""

@@ -25,7 +25,6 @@ describe("CVValidationService", () => {
         end_date: "2023-12",
         current: false,
         description: "Led development team",
-        achievements: [],
         technologies: [],
       },
     ],

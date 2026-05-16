@@ -387,7 +387,7 @@ export async function getCompletenessMessages(page: Page): Promise<string[]> {
   const messages: string[] = [];
 
   // Check for work experience message
-  const workExpMsg = page.getByText(/work experience with description or achievements/i);
+  const workExpMsg = page.getByText(/work experience with description/i);
   if (await workExpMsg.isVisible({ timeout: 1000 }).catch(() => false)) {
     messages.push(await workExpMsg.textContent() || "");
   }

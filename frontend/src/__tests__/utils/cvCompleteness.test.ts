@@ -166,7 +166,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
     expect(result.isComplete).toBe(false);
     expect(result.score).toBe(50); // Only skills count
     expect(result.missing).toContain(
-      "work experience with description or achievements"
+      "work experience with description"
     );
     expect(result.details.hasWorkExperience).toBe(false);
     expect(result.details.hasSkills).toBe(true);
@@ -232,7 +232,7 @@ describe("calculateCVCompleteness with hidden sections", () => {
     expect(result.score).toBe(0);
     expect(result.missing).toHaveLength(2);
     expect(result.missing).toContain(
-      "work experience with description or achievements"
+      "work experience with description"
     );
     expect(result.missing).toContain("at least 3 skills");
   });

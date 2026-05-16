@@ -519,7 +519,6 @@ class CVDataCleaner {
         "end_date",
         "current",
         "description",
-        "achievements",
         "technologies",
       ],
       education: [
@@ -533,7 +532,6 @@ class CVDataCleaner {
         "end_date",
         "gpa",
         "description",
-        "achievements",
         "honors",
       ],
       projects: ["id", "name", "description", "technologies", "url"],

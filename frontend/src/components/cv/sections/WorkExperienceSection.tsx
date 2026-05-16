@@ -5,7 +5,7 @@
  * - Multiple work experience entries with individual editing
  * - Job position and location autocomplete functionality
  * - Date range management with current job handling
- * - Achievements and technologies tracking
+ * - Technologies tracking
  * - Add, edit, delete, and reorder functionality
  * - AI-generated description improvement suggestions
  */
@@ -48,7 +48,6 @@ interface WorkExperience {
   end_date: string;
   current: boolean;
   description: string;
-  achievements: string[];
   technologies: string[];
 }
 
@@ -93,7 +92,6 @@ const WorkExperienceForm: React.FC<{
       { fieldName: 'location' },
       { fieldName: 'start_date' },
       { fieldName: 'end_date' },
-      { fieldName: 'achievements' },
     ],
     onApplySingleFieldCorrection!,
     onDismissWritingCorrection!
@@ -168,7 +166,7 @@ const WorkExperienceForm: React.FC<{
         config={{
           name: "description",
           label: "Description",
-          placeholder: "Describe your role and achievements...",
+          placeholder: "Describe your role and impact...",
           multiline: true,
           rows: 3,
           useMarkdownEditor: true,
@@ -248,7 +246,6 @@ const WorkExperienceDisplay: React.FC<{
       { fieldName: 'location' },
       { fieldName: 'start_date' },
       { fieldName: 'end_date' },
-      { fieldName: 'achievements' },
     ],
     (_, parent) => handleApplyWritingCorrection(parent, 0),
     handleDismissWritingCorrection
@@ -394,33 +391,7 @@ const WorkExperienceDisplay: React.FC<{
           )}
         </Box>
       ) : null}
-      {exp.achievements && exp.achievements.length > 0 && (
-        <Box sx={{ mb: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
-            Achievements:
-          </Typography>
-          <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {exp.achievements.map((achievement, idx) => (
-              <li key={idx}>
-                <MarkdownRenderer content={achievement} variant="body2" />
-              </li>
-            ))}
-          </ul>
-        </Box>
-      )}
-      {fieldCorrectionProps.achievements?.correctionImportance !== undefined && fieldCorrectionProps.achievements?.fieldCorrection && (
-        <Box sx={{ mb: 1 }}>
-          <InlineFieldCorrection
-            fieldCorrection={fieldCorrectionProps.achievements.fieldCorrection}
-            importance={fieldCorrectionProps.achievements.correctionImportance!}
-            reasoning={fieldCorrectionProps.achievements.correctionReasoning}
-            onApply={() => fieldCorrectionProps.achievements!.onApplyCorrection(fieldCorrectionProps.achievements!.fieldCorrection!)}
-            onDismiss={fieldCorrectionProps.achievements.onDismissCorrection}
-            suggestionCardId={buildQualitySuggestionId("work_experience", exp.id, `work_experience[${exp.id}].achievements`)}
-          />
-        </Box>
-      )}
-      {!exp.description && (!exp.achievements || exp.achievements.length === 0) && (
+      {!exp.description && (
         <Typography variant="body1" sx={{ lineHeight: 1.6, color: "text.secondary" }}>
           Job description...
         </Typography>
@@ -522,7 +493,6 @@ const WorkExperienceSection: React.FC<SectionProps & { sectionType?: string }> =
     end_date: "",
     current: false,
     description: "",
-    achievements: [],
     technologies: [],
   });
 

@@ -306,6 +306,7 @@ class TestAISuggestionsFiltering:
             kwargs = mock_openai.call_args.kwargs
             assert kwargs["system_prompt"] == AI_SUGGESTIONS_SYSTEM_PROMPT
             assert kwargs["developer_prompt"] == AI_SUGGESTIONS_DEVELOPER_PROMPT
+            assert kwargs.get("text_format_schema") is not None
             assert "CV:" in kwargs["user_prompt"]
             assert "Job:" in kwargs["user_prompt"]
             assert "Python backend engineer role" in kwargs["user_prompt"]

@@ -63,18 +63,25 @@ def _normalize_schema_for_openrouter(
       gets 'required' including all keys (for Pydantic-derived schemas).
     - When require_all_props is False: leave 'required' as-is (for custom
       schemas with optional fields e.g. Skill.original).
-    - Every object (type=object or has properties) gets additionalProperties: false.
+    - Every fixed-key object (type=object or has properties) gets additionalProperties: false;
+      dynamic-key maps keep additionalProperties as their value schema.
     Modifies schema in place.
     """
     if not isinstance(schema, dict):
         return
+    # Match OpenAI rules: object schemas must declare ``properties`` (may be empty).
+    if schema.get("type") == "object" and "properties" not in schema:
+        schema["properties"] = {}
+        schema.setdefault("required", [])
     if require_all_props and "properties" in schema:
         props = schema["properties"]
         if isinstance(props, dict):
             required = set(schema.get("required") or []) | set(props.keys())
             schema["required"] = list(required)
     if schema.get("type") == "object" or "properties" in schema:
-        schema["additionalProperties"] = False
+        # Keep map-style objects (dynamic keys → additionalProperties is a schema dict).
+        if not isinstance(schema.get("additionalProperties"), dict):
+            schema["additionalProperties"] = False
     for v in schema.values():
         if isinstance(v, dict):
             _normalize_schema_for_openrouter(v, require_all_props=require_all_props)

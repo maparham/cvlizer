@@ -84,12 +84,10 @@ def _build_full_parsed_cv() -> dict:
                 "description": (
                     "Led the redesign of a multi-tenant platform serving millions.\n"
                     "- **Scaled** services with event-driven architecture\n"
-                    "- Reduced p95 latency from 450ms to 180ms"
+                    "- Reduced p95 latency from 450ms to 180ms\n"
+                    "- Launched 0-downtime deploys via blue/green\n"
+                    "- Drove security posture improvements (SAST/DAST)"
                 ),
-                "achievements": [
-                    {"bullet": "Launched 0-downtime deploys via blue/green"},
-                    {"bullet": "Drove security posture improvements (SAST/DAST)"},
-                ],
             },
             {
                 "position": "Software Engineer",
@@ -100,12 +98,10 @@ def _build_full_parsed_cv() -> dict:
                 "description": (
                     "Built data pipelines and internal tools.\n"
                     "- **Optimized** ETL throughput by 2x\n"
-                    "- Introduced *feature flags* for safe rollouts"
+                    "- Introduced *feature flags* for safe rollouts\n"
+                    "- Standardized logging and tracing\n"
+                    "- Mentored 3 junior engineers"
                 ),
-                "achievements": [
-                    {"bullet": "Standardized logging and tracing"},
-                    {"bullet": "Mentored 3 junior engineers"},
-                ],
             },
         ],
         "education": [
@@ -118,10 +114,10 @@ def _build_full_parsed_cv() -> dict:
                 "gpa": "3.9/4.0",
                 "start_date": "2014",
                 "end_date": "2018",
-                "description": "Coursework in algorithms, distributed systems, AI.",
-                "achievements": [
-                    {"bullet": "Dean's List (all semesters)"},
-                ],
+                "description": (
+                    "Coursework in algorithms, distributed systems, AI.\n"
+                    "- Dean's List (all semesters)"
+                ),
                 "honors": [
                     {"bullet": "Undergraduate Research Award"},
                 ],

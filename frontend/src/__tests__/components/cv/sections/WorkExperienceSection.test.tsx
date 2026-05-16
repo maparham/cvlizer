@@ -142,7 +142,6 @@ describe('WorkExperienceSection', () => {
     end_date: '2023-12',
     current: false,
     description: 'Developed web applications',
-    achievements: [],
     technologies: []
   }
 
@@ -619,7 +618,6 @@ describe('WorkExperienceSection', () => {
         end_date: '',
         current: false,
         description: '',
-        achievements: [],
         technologies: []
       }
 

@@ -85,8 +85,8 @@ export const createMockCVData = (overrides = {}) => ({
       start_date: "2020-01",
       end_date: "2023-01",
       current: false,
-      description: "Developed web applications using React and Node.js.",
-      achievements: ["Increased performance by 30%"],
+      description:
+        "Developed web applications using React and Node.js. Increased performance by 30%.",
       technologies: ["React", "Node.js", "TypeScript"],
     },
   ],

@@ -126,8 +126,7 @@ describe('EducationSection', () => {
     end_date: '2020-06',
     gpa: '3.8',
     description: 'Focused on AI and Machine Learning',
-    achievements: ['Dean\'s List'],
-    honors: ['Cum Laude']
+    honors: ['Dean\'s List', 'Cum Laude']
   }
 
   beforeEach(() => {
@@ -393,7 +392,6 @@ describe('EducationSection', () => {
         end_date: '2020',
         gpa: '',
         description: '',
-        achievements: [],
         honors: []
       }
 
@@ -401,10 +399,9 @@ describe('EducationSection', () => {
       expect(screen.getByText(/University/)).toBeInTheDocument()
     })
 
-    test('handles empty arrays for achievements and honors', () => {
+    test('handles empty honors array', () => {
       const eduWithEmptyArrays = {
         ...sampleEducation,
-        achievements: [],
         honors: []
       }
 

@@ -141,7 +141,6 @@ class CVDiffService:
         field_maps = {
             "work_experience": [
                 "description",
-                "achievements",
                 "technologies",
                 "end_date",
             ],
@@ -149,7 +148,6 @@ class CVDiffService:
                 "field_of_study",
                 "gpa",
                 "description",
-                "achievements",
                 "honors",
                 "end_date",
             ],
@@ -163,7 +161,7 @@ class CVDiffService:
         optional_fields = field_maps.get(section, [])
         for field in optional_fields:
             if field not in item or item[field] is None:
-                if field in ["achievements", "technologies", "honors"]:
+                if field in ["technologies", "honors"]:
                     item[field] = []  # Arrays default to empty list
                 else:
                     item[field] = ""  # Strings default to empty string
@@ -539,7 +537,6 @@ class CVDiffService:
             "description",
             "content",
             "summary",
-            "achievements",
             "responsibilities",
             "details",
             "notes",

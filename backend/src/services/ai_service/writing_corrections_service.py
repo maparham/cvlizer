@@ -33,7 +33,6 @@ ALLOWED_FIELD_NAMES = {
     "end_date",
     "content",
     "current",
-    "achievements",
     "honors",
     # Personal info (proofread corrections)
     "email",
@@ -130,8 +129,8 @@ def apply_field_corrections(
                 field_correction.original_value, field_correction.html_diff
             )
 
-        # Array fields (achievements, honors) may arrive as JSON strings; parse to list
-        if field_name in ("achievements", "honors") and isinstance(corrected_value, str):
+        # Array fields (honors) may arrive as JSON strings; parse to list
+        if field_name == "honors" and isinstance(corrected_value, str):
             try:
                 parsed = json.loads(corrected_value)
                 if isinstance(parsed, list):

@@ -11,10 +11,10 @@ import { useCVQualityStore } from '../../../../stores/cvQualityStore';
 import { WritingCorrection, FieldCorrection } from '../../../../types/ai';
 import { parseHtmlDiff } from '../../../../utils/htmlDiffParser';
 
-const ARRAY_FIELD_NAMES = ['achievements', 'honors'] as const;
+const ARRAY_FIELD_NAMES = ['honors'] as const;
 
 /**
- * Normalize corrected_value for array fields (achievements, honors) that may
+ * Normalize corrected_value for array fields (honors) that may
  * arrive as JSON strings from the API. Returns parsed array or value as-is.
  */
 function normalizeCorrectedValue(

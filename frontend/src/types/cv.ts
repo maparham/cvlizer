@@ -128,7 +128,6 @@ export interface WorkExperience {
   end_date: string;
   current: boolean;
   description: string;
-  achievements: string[];
   technologies: string[];
   responsibilities?: string[];
 }

@@ -2,8 +2,9 @@
 OpenAI Responses API JSON schema utilities.
 
 Provides CV_CORRECTIONS_COACHING_FORMAT (full CV quality analysis),
-SINGLE_ISSUE_RESPONSE_FORMAT (single-field coaching / field retry), and
-CV_PARSING_RESPONSE_FORMAT (structured CV parsing output).
+SINGLE_ISSUE_RESPONSE_FORMAT (single-field coaching / field retry),
+CV_PARSING_RESPONSE_FORMAT (structured CV parsing output), and
+AI_SUGGESTIONS_RESPONSE_FORMAT (job fit + optimization suggestions).
 Shared defs (CoachingQuestion, Coaching, Issue) are defined once and reused.
 """
 
@@ -220,13 +221,18 @@ def _set_additional_properties_false(schema: Dict[str, Any]) -> None:
     """
     Recursively normalize Pydantic-derived JSON schema for OpenAI/OpenRouter.
 
-    - Set additionalProperties: false on every object.
+    - Set additionalProperties: false on fixed-key objects (not on dynamic-key maps).
     - Ensure every object with 'properties' also has a 'required' array that
       includes *all* property keys (OpenAI/OpenRouter strict mode requirement).
     Modifies schema in place.
     """
     if not isinstance(schema, dict):
         return
+    # OpenAI structured outputs require every object schema to declare
+    # ``properties`` (possibly empty). Pydantic RootModel[Dict[...]] omits it.
+    if schema.get("type") == "object" and "properties" not in schema:
+        schema["properties"] = {}
+        schema.setdefault("required", [])
     # When concrete properties are present, ensure "required" includes all keys.
     # This is required by OpenAI strict mode for object schemas.
     props = schema.get("properties")
@@ -242,10 +248,10 @@ def _set_additional_properties_false(schema: Dict[str, Any]) -> None:
         }
         original_required = set(schema.get("required") or [])
         schema["required"] = list(original_required & non_map_keys | non_map_keys)
-        # For object schemas with explicit properties, disallow extra keys.
-        # NOTE: Do not blindly override map/dictionary schemas that use
-        # additionalProperties as a nested schema (e.g. Dict[str, List[str]]).
-        schema["additionalProperties"] = False
+        # For object schemas with explicit fixed keys, disallow extra keys.
+        # Preserve dynamic-key maps (additionalProperties is a JSON Schema object).
+        if not isinstance(schema.get("additionalProperties"), dict):
+            schema["additionalProperties"] = False
     elif schema.get("type") == "object" and "additionalProperties" not in schema:
         # Keep previous behavior for plain object schemas that don't define
         # map-style additionalProperties.
@@ -282,3 +288,169 @@ CV_PARSING_RESPONSE_FORMAT: Dict[str, Any] = _format_from_pydantic(
     name="cv_parsing_response",
     description="Structured CV parsing output with personal_info, work_experience, education, skills, etc.",
 )
+
+# AI suggestions (job fit + optimization): hand-crafted to avoid OpenAI strict-mode
+# rejections caused by Pydantic's $ref+siblings (→ allOf), anyOf[ref,ref] (→ union),
+# and map-type required fields.
+#
+# IMPORTANT: When changing ItemSuggestionSchema / AISuggestionsResponseSchema, update
+# the hand-crafted schema below to match and run:
+#   pytest backend/tests/unit/test_openai_schema_utils.py::test_ai_suggestions_contract
+#
+# Uses a single merged ItemSuggestion object where
+# low-score-only fields are nullable so the schema stays strict-compatible.
+_ITEM_SUGGESTION_DEF: Dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "description": (
+        "CV item suggestion. item_type='high_score': only id/current_content_score "
+        "needed. item_type='low_score': all fields required (nullable ones set to null "
+        "for high_score items)."
+    ),
+    "properties": {
+        "item_type": {
+            "type": "string",
+            "enum": ["high_score", "low_score"],
+            "description": "high_score=score>=50 (no edits), low_score=score<50 (edits included)",
+        },
+        "id": {"type": "string", "minLength": 1, "description": "Item ID from CV data"},
+        "current_content_score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Content relevance score 0-100 vs job description",
+        },
+        "original": {
+            "type": ["string", "null"],
+            "description": "Original description text; null for high_score items",
+        },
+        "suggested": {
+            "type": ["string", "null"],
+            "description": "Improved description; null for high_score items",
+        },
+        "reasoning": {
+            "type": ["string", "null"],
+            "description": "Reason for suggestion; null for high_score items",
+        },
+        "importance": {
+            "type": ["string", "null"],
+            "enum": ["highly_recommended", "standard", None],
+            "description": "'highly_recommended' or 'standard'; null for high_score items",
+        },
+        "html_diff": {
+            "type": ["string", "null"],
+            "description": "HTML diff with <del>/<ins>; null or empty for high_score items",
+        },
+    },
+    "required": [
+        "item_type",
+        "id",
+        "current_content_score",
+        "original",
+        "suggested",
+        "reasoning",
+        "importance",
+        "html_diff",
+    ],
+}
+
+_PROFESSIONAL_SUMMARY_DEF: Dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "suggested_text": {"type": "string", "default": ""},
+        "original_text": {"type": "string", "default": ""},
+        "key_changes": {"type": "array", "items": {"type": "string"}},
+        "html_diff": {
+            "type": "string",
+            "default": "",
+            "description": "HTML-formatted diff: <del>removed</del> <ins>added</ins>",
+        },
+    },
+    "required": ["suggested_text", "original_text", "key_changes", "html_diff"],
+}
+
+_SKILL_SUGGESTION_DEF: Dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "skill": {"type": "string", "minLength": 1},
+        "reasoning": {"type": "string", "minLength": 1},
+    },
+    "required": ["skill", "reasoning"],
+}
+
+AI_SUGGESTIONS_RESPONSE_FORMAT: Dict[str, Any] = {
+    "type": "json_schema",
+    "name": "ai_suggestions_response",
+    "strict": True,
+    "description": (
+        "Job fit analysis and optimization suggestions: skills by category, "
+        "optional summary, work/education item suggestions."
+    ),
+    "schema": {
+        "$defs": {
+            "ItemSuggestion": _ITEM_SUGGESTION_DEF,
+            "ProfessionalSummary": _PROFESSIONAL_SUMMARY_DEF,
+            "SkillSuggestion": _SKILL_SUGGESTION_DEF,
+        },
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            # Job fit fields
+            "title": {
+                "type": ["string", "null"],
+                "description": "Dynamic title e.g. 'Hello Company!'",
+            },
+            "confidence_score": {"type": "integer", "minimum": 1, "maximum": 100},
+            "fit_analysis": {"type": "string", "minLength": 50},
+            "key_matches": {"type": "array", "items": {"type": "string"}},
+            "missing_skills": {"type": "array", "items": {"type": "string"}},
+            "suggested_improvements": {"type": "array", "items": {"type": "string"}},
+            "strengths": {"type": "array", "items": {"type": "string"}},
+            "weaknesses": {"type": "array", "items": {"type": "string"}},
+            # Optimization fields
+            "skills": {
+                "type": "object",
+                "description": "Skill suggestions grouped by dynamic category name",
+                "properties": {},
+                "required": [],
+                "additionalProperties": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/SkillSuggestion"},
+                },
+            },
+            "professional_summary": {
+                "anyOf": [
+                    {"$ref": "#/$defs/ProfessionalSummary"},
+                    {"type": "null"},
+                ],
+                "description": "Include only when professional summary is visible in CV; null if no changes needed",
+            },
+            "work_experience": {
+                "type": "array",
+                "items": {"$ref": "#/$defs/ItemSuggestion"},
+                "description": "One entry per work experience item",
+            },
+            "education": {
+                "type": "array",
+                "items": {"$ref": "#/$defs/ItemSuggestion"},
+                "description": "One entry per education item",
+            },
+        },
+        "required": [
+            "title",
+            "confidence_score",
+            "fit_analysis",
+            "key_matches",
+            "missing_skills",
+            "suggested_improvements",
+            "strengths",
+            "weaknesses",
+            "skills",
+            "professional_summary",
+            "work_experience",
+            "education",
+        ],
+    },
+}

@@ -67,7 +67,6 @@ class WorkExperienceItemSchema(BaseModel):
     end_date: Optional[str] = Field(default=None)
     current: bool = Field(default=False)
     description: str = Field(default="")
-    achievements: List[str] = Field(default_factory=list)
     technologies: List[str] = Field(default_factory=list)
 
 
@@ -82,7 +81,6 @@ class EducationItemSchema(BaseModel):
     end_date: Optional[str] = Field(default=None)
     gpa: Optional[str] = Field(default=None)
     description: str = Field(default="")
-    achievements: List[str] = Field(default_factory=list)
     honors: List[str] = Field(default_factory=list)
 
 

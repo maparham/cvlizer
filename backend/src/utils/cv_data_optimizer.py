@@ -96,7 +96,7 @@ def optimize_cv_data_for_quality_analysis(
     - Removing UI-only metadata (section_config, draft_sections)
     - Replacing UUIDs with short numeric IDs (1, 2, 3...) to save tokens
     - Removing technologies arrays (not used in quality analysis)
-    - Removing empty arrays and unused fields (achievements, honors, URLs, GPA, expiry_date)
+    - Removing unused fields (honors, URLs, GPA, expiry_date)
     - Simplifying personal_info (removing unused URL fields)
     - Removing empty keywords arrays
     - Filtering all empty/null values recursively
@@ -169,18 +169,10 @@ def optimize_cv_data_for_quality_analysis(
             if isinstance(item, dict):
                 item.pop("technologies", None)
 
-    # Remove empty arrays and unused fields
-    if "work_experience" in optimized:
-        for item in optimized["work_experience"]:
-            if isinstance(item, dict):
-                if not item.get("achievements"):
-                    item.pop("achievements", None)
-
+    # Remove unused fields
     if "education" in optimized:
         for item in optimized["education"]:
             if isinstance(item, dict):
-                if not item.get("achievements"):
-                    item.pop("achievements", None)
                 if not item.get("honors"):
                     item.pop("honors", None)
                 item.pop("gpa", None)  # Not analyzed

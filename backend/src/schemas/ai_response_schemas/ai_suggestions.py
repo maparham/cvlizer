@@ -122,6 +122,27 @@ class LowScoreItemSchema(BaseModel):
 ItemDescriptionSuggestionSchema = Union[HighScoreItemSchema, LowScoreItemSchema]
 
 
+class ItemSuggestionSchema(BaseModel):
+    """Flat item suggestion schema matching the OpenAI strict-mode JSON schema.
+
+    OpenAI strict mode cannot represent Union[HighScore, LowScore] (anyOf with
+    two refs). We use a single merged object where low-score-only fields are
+    Optional; downstream code discriminates on item_type.
+    """
+
+    item_type: str = Field(description="'high_score' or 'low_score'")
+    id: str = Field(min_length=1, description="Item ID from CV data")
+    current_content_score: int = Field(ge=0, le=100)
+    original: Optional[str] = Field(default=None)
+    suggested: Optional[str] = Field(default=None)
+    reasoning: Optional[str] = Field(default=None)
+    importance: Optional[str] = Field(default=None)
+    html_diff: Optional[str] = Field(default=None)
+
+    class Config:
+        extra = "ignore"
+
+
 class OptimizationSuggestionsResponseSchema(BaseModel):
     """Schema for optimization suggestions AI response."""
 
@@ -167,5 +188,5 @@ class AISuggestionsResponseSchema(BaseModel):
         default=None,
         description="Only include if professional summary is visible in CV",
     )
-    work_experience: List[ItemDescriptionSuggestionSchema] = Field(default_factory=list)
-    education: List[ItemDescriptionSuggestionSchema] = Field(default_factory=list)
+    work_experience: List[ItemSuggestionSchema] = Field(default_factory=list)
+    education: List[ItemSuggestionSchema] = Field(default_factory=list)

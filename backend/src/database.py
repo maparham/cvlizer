@@ -13,6 +13,7 @@ import os
 
 from dotenv import load_dotenv
 
+from src.models.applied_data_migration import AppliedDataMigration  # noqa: F401, E402
 from src.models.ai_draft import AIDraft  # noqa: F401, E402
 from src.models.ai_enhancement import AIEnhancement  # noqa: F401, E402
 from src.models.ai_section import AISection  # noqa: F401, E402

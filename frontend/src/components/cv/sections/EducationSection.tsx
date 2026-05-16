@@ -47,7 +47,6 @@ interface Education {
   end_date: string;
   gpa?: string;
   description?: string;
-  achievements: string[];
   honors: string[];
 }
 
@@ -94,7 +93,6 @@ const EducationForm: React.FC<{
       { fieldName: 'location' },
       { fieldName: 'start_date' },
       { fieldName: 'end_date' },
-      { fieldName: 'achievements' },
       { fieldName: 'honors' },
     ],
     onApplySingleFieldCorrection!,
@@ -118,27 +116,6 @@ const EducationForm: React.FC<{
     const currentHonors = edu.honors || [];
     const newHonors = currentHonors.filter((_, i) => i !== honorIndex);
     updateEducation("honors", newHonors);
-  };
-
-  const addAchievement = () => {
-    const currentAchievements = edu.achievements || [];
-    const newAchievements = [...currentAchievements, ""];
-    updateEducation("achievements", newAchievements);
-  };
-
-  const updateAchievement = (achievementIndex: number, value: string) => {
-    const currentAchievements = edu.achievements || [];
-    const newAchievements = [...currentAchievements];
-    newAchievements[achievementIndex] = value;
-    updateEducation("achievements", newAchievements);
-  };
-
-  const removeAchievement = (achievementIndex: number) => {
-    const currentAchievements = edu.achievements || [];
-    const newAchievements = currentAchievements.filter(
-      (_, i) => i !== achievementIndex,
-    );
-    updateEducation("achievements", newAchievements);
   };
 
   return (
@@ -244,57 +221,6 @@ const EducationForm: React.FC<{
         onApplyCorrection={onApplyWritingCorrection}
         onDismissCorrection={() => descriptionCorrection && onDismissWritingCorrection?.(descriptionCorrection.correction)}
       />
-
-      <Box>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
-          Achievements
-        </Typography>
-        {(edu.achievements || []).map(
-          (achievement: string, achievementIndex: number) => (
-            <Box
-              key={achievementIndex}
-              sx={{
-                display: "flex",
-                gap: 1,
-                mb: 1,
-                "&:hover .item-action-button": {
-                  opacity: 1,
-                },
-              }}
-            >
-              <TextField
-                fullWidth
-                size="small"
-                value={achievement}
-                onChange={(e) =>
-                  updateAchievement(achievementIndex, e.target.value)
-                }
-                placeholder="Enter academic achievement"
-              />
-              <IconButton
-                size="small"
-                onClick={() => removeAchievement(achievementIndex)}
-                className="item-action-button"
-                sx={{
-                  color: "text.secondary",
-                  opacity: 0.3,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    color: "error.main",
-                    bgcolor: "rgba(255, 235, 238, 0.5)",
-                    opacity: 1,
-                  },
-                }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          ),
-        )}
-        <Button size="small" startIcon={<AddIcon />} onClick={addAchievement}>
-          Add Achievement
-        </Button>
-      </Box>
 
       <Box>
         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
@@ -411,7 +337,6 @@ const EducationDisplay: React.FC<{
       { fieldName: 'location' },
       { fieldName: 'start_date' },
       { fieldName: 'end_date' },
-      { fieldName: 'achievements' },
       { fieldName: 'honors' },
     ],
     (_, parent) => handleApplyWritingCorrection(parent, 0),
@@ -586,32 +511,6 @@ const EducationDisplay: React.FC<{
           )}
         </Box>
       )}
-      {edu.achievements && edu.achievements.length > 0 && (
-        <Box sx={{ mb: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
-            Achievements:
-          </Typography>
-          <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {edu.achievements.map((achievement, idx) => (
-              <li key={idx}>
-                <MarkdownRenderer content={achievement} variant="body2" />
-              </li>
-            ))}
-          </ul>
-        </Box>
-      )}
-      {fieldCorrectionProps.achievements?.correctionImportance !== undefined && fieldCorrectionProps.achievements?.fieldCorrection && (
-        <Box sx={{ mb: 1 }}>
-          <InlineFieldCorrection
-            fieldCorrection={fieldCorrectionProps.achievements.fieldCorrection}
-            importance={fieldCorrectionProps.achievements.correctionImportance!}
-            reasoning={fieldCorrectionProps.achievements.correctionReasoning}
-            onApply={() => fieldCorrectionProps.achievements!.onApplyCorrection(fieldCorrectionProps.achievements!.fieldCorrection!)}
-            onDismiss={fieldCorrectionProps.achievements.onDismissCorrection}
-            suggestionCardId={buildQualitySuggestionId("education", edu.id, `education[${edu.id}].achievements`)}
-          />
-        </Box>
-      )}
       {edu.honors && edu.honors.length > 0 && (
         <Box sx={{ mb: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
@@ -737,7 +636,6 @@ const EducationSection: React.FC<SectionProps & { sectionType?: string }> = ({
     end_date: "",
     gpa: "",
     description: "",
-    achievements: [],
     honors: [],
   });
 

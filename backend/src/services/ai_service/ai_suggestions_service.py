@@ -16,6 +16,7 @@ from src.schemas.ai_response_schemas import AISuggestionsResponseSchema
 from src.utils.cv_data_optimizer import clean_control_characters
 
 from .common import call_openai_with_schema, is_ai_enabled
+from .openai_schema_utils import AI_SUGGESTIONS_RESPONSE_FORMAT
 from .cv_filter import filter_hidden_sections
 from .cv_section_utils import get_summary_custom_section
 
@@ -458,6 +459,7 @@ async def generate_ai_suggestions(
             developer_prompt=AI_SUGGESTIONS_DEVELOPER_PROMPT,
             user_prompt=user_prompt,
             response_schema=AISuggestionsResponseSchema,
+            text_format_schema=AI_SUGGESTIONS_RESPONSE_FORMAT,
             user_id=user_id,
             cv_id=cv_id,
             operation_type="ai_suggestions",

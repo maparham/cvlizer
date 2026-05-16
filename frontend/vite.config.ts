@@ -1,6 +1,7 @@
+import dotenv from 'dotenv'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { isAbsolute, resolve } from 'path'
 import {
   existsSync,
   readFileSync,
@@ -12,6 +13,32 @@ import {
 
 import { cloudflare } from "@cloudflare/vite-plugin";
 
+const repoRoot = resolve(__dirname, '..')
+
+/**
+ * Load production env into `process.env` before Vite resolves `import.meta.env`.
+ *
+ * - Default file: `<repo>/.env.prod`
+ * - Override path: `ENV_FILE` (absolute, or relative to `frontend/` cwd)
+ *
+ * Used only for `vite build` in `production` mode. Dev continues to use `frontend/.env`.
+ */
+function loadProductionEnvFile(command: string, mode: string): void {
+  if (command !== 'build' || mode !== 'production') {
+    return
+  }
+  const raw = process.env.ENV_FILE?.trim()
+  const envPath = raw
+    ? isAbsolute(raw)
+      ? raw
+      : resolve(process.cwd(), raw)
+    : resolve(repoRoot, '.env.prod')
+  if (!existsSync(envPath)) {
+    return
+  }
+  dotenv.config({ path: envPath, override: true })
+}
+
 /**
  * Remove macOS metadata from dist after the public/ copy so Wrangler uploads
  * stay clean (Finder writes .DS_Store and AppleDouble ._* files into public/).
@@ -19,7 +46,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 function stripDarwinMetadataFromDist(): Plugin {
   return {
     name: 'strip-darwin-metadata-from-dist',
-    apply: 'build',
+    apply: 'build' as const,
     closeBundle() {
       const distDir = resolve(process.cwd(), 'dist')
       if (!existsSync(distDir)) {
@@ -61,20 +88,20 @@ function stripDarwinMetadataFromDist(): Plugin {
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || "http://localhost:8000";
 
 /** Build-time replacement for public URL in index.html (og:url) and sitemap.xml. Set VITE_PUBLIC_URL per deployment. When unset, the og:url meta tag and sitemap are omitted. */
-function replacePublicUrl() {
+function replacePublicUrl(): Plugin {
   const publicUrl = process.env.VITE_PUBLIC_URL
   const safeUrl = publicUrl ? publicUrl.replace(/\$/g, '$$') : null
   // Match horizontal whitespace only before/after tag so we don't consume adjacent lines or the next line's indentation
   const ogUrlTagRegex = /[ \t]*<meta property="og:url" content="__PUBLIC_URL__"\s*\/?>[ \t]*\r?\n?/g
   return {
     name: 'replace-public-url',
-    apply: 'build',
+    apply: 'build' as const,
     transformIndexHtml(html: string) {
       if (safeUrl == null) return html.replace(ogUrlTagRegex, '')
       return html.replace(/__PUBLIC_URL__/g, safeUrl);
     },
     writeBundle: {
-      order: 'post',
+      order: 'post' as const,
       handler() {
         const publicSitemap = resolve(process.cwd(), 'public', 'sitemap.xml')
         const distSitemap = resolve(process.cwd(), 'dist', 'sitemap.xml')
@@ -91,38 +118,54 @@ function replacePublicUrl() {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [replacePublicUrl(), react(), cloudflare(), stripDarwinMetadataFromDist()],
-  server: {
-    port: 3000,
-    host: true,
-    allowedHosts: ['demo.maparham.eu', 'tunnel.rahkar.pro'],
-    proxy: {
-      '/api': {
-        target: apiProxyTarget,
-        changeOrigin: true,
-        secure: false,
+export default defineConfig(({ command, mode }) => {
+  loadProductionEnvFile(command, mode)
+
+  const isProdBuild = command === 'build' && mode === 'production'
+
+  return {
+    /**
+     * Production builds read `.env*` from repo root only (after `.env.prod` is applied above).
+     * This avoids merging `frontend/.env` (typically localhost) into the Cloudflare bundle.
+     */
+    ...(isProdBuild ? { envDir: repoRoot } : {}),
+    plugins: [
+      replacePublicUrl(),
+      react(),
+      cloudflare(),
+      stripDarwinMetadataFromDist(),
+    ],
+    server: {
+      port: 3000,
+      host: true,
+      allowedHosts: ['demo.maparham.eu', 'tunnel.rahkar.pro'],
+      proxy: {
+        '/api': {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
-  },
-  build: {
-    target: 'esnext',
-    minify: 'esbuild',
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash][extname]',
+    build: {
+      target: 'esnext',
+      minify: 'esbuild',
+      sourcemap: true,
+      rollupOptions: {
+        output: {
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash][extname]',
+        },
+      },
+      chunkSizeWarningLimit: 1000,
+    },
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, 'src'),
       },
     },
-    chunkSizeWarningLimit: 1000,
-  },
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
+    optimizeDeps: {
+      include: ['react', 'react-dom', '@mui/material', '@mui/icons-material'],
     },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom', '@mui/material', '@mui/icons-material']
   }
 })

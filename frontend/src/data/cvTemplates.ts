@@ -125,11 +125,7 @@ const professionalTemplate: CVTemplate = {
         end_date: "",
         current: true,
         description:
-          "Lead development of key projects and mentor junior team members",
-        achievements: [
-          "Increased team productivity by 25%",
-          "Successfully delivered 3 major projects on time",
-        ],
+          "Lead development of key projects and mentor junior team members.\n\n- Increased team productivity by 25%\n- Successfully delivered 3 major projects on time",
         technologies: ["React", "TypeScript", "AWS", "Docker"],
       },
       {
@@ -140,11 +136,8 @@ const professionalTemplate: CVTemplate = {
         start_date: "2020-06-01",
         end_date: "2021-12-01",
         current: false,
-        description: "Developed and maintained web applications",
-        achievements: [
-          "Improved application performance by 40%",
-          "Collaborated with design team on UX improvements",
-        ],
+        description:
+          "Developed and maintained web applications.\n\n- Improved application performance by 40%\n- Collaborated with design team on UX improvements",
         technologies: ["JavaScript", "Node.js", "PostgreSQL"],
       },
     ],
@@ -208,12 +201,7 @@ const executiveTemplate: CVTemplate = {
         end_date: "",
         current: true,
         description:
-          "Lead technology strategy and digital transformation initiatives across the organization",
-        achievements: [
-          "Led digital transformation resulting in 50% efficiency gains",
-          "Built and scaled engineering team from 20 to 100+ members",
-          "Implemented agile methodologies across all product teams",
-        ],
+          "Lead technology strategy and digital transformation initiatives across the organization.\n\n- Led digital transformation resulting in 50% efficiency gains\n- Built and scaled engineering team from 20 to 100+ members\n- Implemented agile methodologies across all product teams",
         technologies: [
           "Strategic Planning",
           "Team Leadership",
@@ -228,11 +216,8 @@ const executiveTemplate: CVTemplate = {
         start_date: "2018-03-01",
         end_date: "2019-12-01",
         current: false,
-        description: "Oversaw engineering operations and product development",
-        achievements: [
-          "Reduced time-to-market by 30% through process optimization",
-          "Mentored 15+ engineering managers and directors",
-        ],
+        description:
+          "Oversaw engineering operations and product development.\n\n- Reduced time-to-market by 30% through process optimization\n- Mentored 15+ engineering managers and directors",
         technologies: [
           "Engineering Management",
           "Product Strategy",
