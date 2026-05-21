@@ -413,6 +413,10 @@ const Dashboard: React.FC = () => {
             onValidationError={(error) => showError("Invalid file", error)}
             onSharingMutation={() => void fetchCVs()}
           >
+            <CVPlaceholderCard
+              onFileSelected={handlePlaceholderFileSelected}
+              onValidationError={(error) => showError("Invalid file", error)}
+            />
             {cvs.map((cv) => (
               <CVCard
                 key={cv.id}
@@ -426,10 +430,6 @@ const Dashboard: React.FC = () => {
                 onSharingMutation={() => void fetchCVs()}
               />
             ))}
-            <CVPlaceholderCard
-              onFileSelected={handlePlaceholderFileSelected}
-              onValidationError={(error) => showError("Invalid file", error)}
-            />
           </CVsCard>
         )}
 

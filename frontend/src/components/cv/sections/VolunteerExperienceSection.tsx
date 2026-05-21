@@ -6,6 +6,9 @@ import { ValidatedFormField, ValidatedDateField, ValidatedDisplay, useItemValida
 import { generateSectionId } from '../../../utils/idGenerator'
 import MarkdownRenderer from '../../common/MarkdownRenderer'
 import { createTrackedFieldUpdater } from './hooks/createTrackedFieldUpdater'
+import { DateDisplaySettings } from './common/DateDisplaySettings'
+import { formatCVItemDate } from '../../../utils/dateUtils'
+import type { DateDisplayPrecision, DateDisplayFormat } from '../../../utils/dateUtils'
 
 interface VolunteerExperience {
   id: string
@@ -14,6 +17,8 @@ interface VolunteerExperience {
   start_date: string
   end_date?: string
   description: string
+  date_display_precision?: DateDisplayPrecision | null
+  date_display_format?: DateDisplayFormat | null
 }
 
 // Separate component for volunteer experience form to allow using hooks
@@ -53,31 +58,39 @@ const VolunteerExperienceForm: React.FC<{
         onChange={(value) => updateVolunteer('role', value)}
         onSave={onSave}
       />
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <ValidatedDateField
-          section="volunteer_experience"
-          field="start_date"
-          index={index}
-          config={{
-            name: 'start_date',
-            label: 'Start Date',
-            required: true
-          }}
-          value={volunteer.start_date}
-          onChange={(value) => updateVolunteer('start_date', value)}
-          onSave={onSave}
-          sx={{ flex: 1 }}
-        />
-        <DateFieldComponent
-          config={{
-            name: 'end_date',
-            label: 'End Date',
-            minDate: volunteer.start_date || undefined
-          }}
-          value={volunteer.end_date || ''}
-          onChange={(value) => updateVolunteer('end_date', value)}
-          onSave={onSave}
-          sx={{ flex: 1 }}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <ValidatedDateField
+            section="volunteer_experience"
+            field="start_date"
+            index={index}
+            config={{
+              name: 'start_date',
+              label: 'Start Date',
+              required: true
+            }}
+            value={volunteer.start_date}
+            onChange={(value) => updateVolunteer('start_date', value)}
+            onSave={onSave}
+            sx={{ flex: 1 }}
+          />
+          <DateFieldComponent
+            config={{
+              name: 'end_date',
+              label: 'End Date',
+              minDate: volunteer.start_date || undefined
+            }}
+            value={volunteer.end_date || ''}
+            onChange={(value) => updateVolunteer('end_date', value)}
+            onSave={onSave}
+            sx={{ flex: 1 }}
+          />
+        </Box>
+        <DateDisplaySettings
+          precision={volunteer.date_display_precision ?? 'year-month'}
+          format={volunteer.date_display_format ?? 'text'}
+          onChange={(field, value) => updateVolunteer(field as keyof VolunteerExperience, value)}
+          sx={{ mt: -2 }}
         />
       </Box>
       <FormField
@@ -122,8 +135,8 @@ const VolunteerExperienceDisplay: React.FC<{
             iconSize="0.875rem"
             align="flex-end"
           >
-            {volunteer.start_date}
-            {!volunteer.end_date ? ' - PRESENT' : ` - ${volunteer.end_date}`}
+            {formatCVItemDate(volunteer.start_date, volunteer.date_display_precision, volunteer.date_display_format)}
+            {!volunteer.end_date ? ' - PRESENT' : ` - ${formatCVItemDate(volunteer.end_date, volunteer.date_display_precision, volunteer.date_display_format)}`}
           </ValidatedDisplay>
         </Box>
       </Box>

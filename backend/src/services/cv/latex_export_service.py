@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -132,6 +133,119 @@ def _tex_escape(text: str | None) -> str:
             continue
         out.append(latex_replacements.get(ch, ch))
     return "".join(out)
+
+
+_MONTHS_SHORT = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+]
+_MONTHS_LONG = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+]
+
+
+def _format_cv_item_date(
+    date_str: Optional[str],
+    precision: Optional[str],
+    fmt: Optional[str],
+) -> str:
+    """Format a stored CV date string honouring the user's display preferences.
+
+    Mirrors the TypeScript ``formatCVItemDate`` in dateUtils.ts.
+
+    Supported input formats:
+        YYYY-MM-DD  full date
+        YYYY-MM     month + year
+        Mon YYYY    short month name (e.g. "Jun 2025")
+        YYYY        year only (e.g. "2010")
+
+    precision: "year" | "year-month" | "full"  (None → "year-month")
+    fmt:       "text" | "numeric"               (None → "text")
+    """
+    if not date_str:
+        return ""
+
+    p = precision or "year-month"
+    f = fmt or "text"
+
+    # Mon YYYY  (e.g. "Jun 2025")
+    m = re.match(r"^([A-Za-z]{3})\s+(\d{4})$", date_str)
+    if m:
+        month_name = m.group(1).capitalize()
+        try:
+            month_idx = [mo.lower() for mo in _MONTHS_SHORT].index(month_name.lower())
+        except ValueError:
+            return date_str
+        month = month_idx + 1
+        year = int(m.group(2))
+        if p == "year":
+            return str(year)
+        # year-month or full (no day available)
+        return (
+            f"{month:02d}.{year}"
+            if f == "numeric"
+            else f"{_MONTHS_SHORT[month_idx]} {year}"
+        )
+
+    # YYYY only  (e.g. "2010")
+    m = re.match(r"^(\d{4})$", date_str)
+    if m:
+        return m.group(1)
+
+    # YYYY-MM-DD
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", date_str)
+    if m:
+        year, month, day = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if p == "year":
+            return str(year)
+        if p == "year-month":
+            return (
+                f"{month:02d}.{year}"
+                if f == "numeric"
+                else f"{_MONTHS_SHORT[month - 1]} {year}"
+            )
+        # full
+        return (
+            f"{day:02d}.{month:02d}.{year}"
+            if f == "numeric"
+            else f"{_MONTHS_LONG[month - 1]} {day}, {year}"
+        )
+
+    # YYYY-MM
+    m = re.match(r"^(\d{4})-(\d{2})$", date_str)
+    if m:
+        year, month = int(m.group(1)), int(m.group(2))
+        if p == "year":
+            return str(year)
+        # year-month or full (no day available)
+        return (
+            f"{month:02d}.{year}"
+            if f == "numeric"
+            else f"{_MONTHS_SHORT[month - 1]} {year}"
+        )
+
+    return date_str
 
 
 def _run_pdflatex(cmd: list[str], cwd: str) -> subprocess.CompletedProcess[str]:
@@ -321,8 +435,17 @@ def _format_volunteer_experience(volunteer: List[Dict[str, Any]]) -> str:
         role = _tex_escape(vol.get("role", ""))
         org = _tex_escape(vol.get("organization", ""))
         location = _tex_escape(vol.get("location", ""))
-        start_date = _tex_escape(vol.get("start_date", ""))
-        end_date = _tex_escape(vol.get("end_date", ""))
+        precision = vol.get("date_display_precision")
+        fmt = vol.get("date_display_format")
+        start_date = _tex_escape(
+            _format_cv_item_date(vol.get("start_date"), precision, fmt)
+        )
+        end_date_raw = vol.get("end_date")
+        end_date = (
+            _tex_escape(_format_cv_item_date(end_date_raw, precision, fmt))
+            if end_date_raw
+            else ""
+        )
         desc = vol.get("description", "")
 
         # Format title line with organization and location
@@ -607,8 +730,17 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
         position = _tex_escape(job.get("position", ""))
         company = _tex_escape(job.get("company", ""))
         location = _tex_escape(job.get("location", ""))
-        start_date = _tex_escape(job.get("start_date", ""))
-        end_date = _tex_escape(job.get("end_date", ""))
+        precision = job.get("date_display_precision")
+        fmt = job.get("date_display_format")
+        start_date = _tex_escape(
+            _format_cv_item_date(job.get("start_date"), precision, fmt)
+        )
+        end_date_raw = job.get("end_date")
+        end_date = (
+            _tex_escape(_format_cv_item_date(end_date_raw, precision, fmt))
+            if end_date_raw
+            else ""
+        )
 
         # Format title line with company and location, dates right-aligned
         company_line = company
@@ -659,8 +791,17 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
         institution = _tex_escape(edu.get("institution", ""))
         location = _tex_escape(edu.get("location", ""))
         gpa = _tex_escape(edu.get("gpa", ""))
-        start_date = _tex_escape(edu.get("start_date", ""))
-        end_date = _tex_escape(edu.get("end_date", ""))
+        precision = edu.get("date_display_precision")
+        fmt = edu.get("date_display_format")
+        start_date = _tex_escape(
+            _format_cv_item_date(edu.get("start_date"), precision, fmt)
+        )
+        end_date_raw = edu.get("end_date")
+        end_date = (
+            _tex_escape(_format_cv_item_date(end_date_raw, precision, fmt))
+            if end_date_raw
+            else ""
+        )
         desc = _tex_escape(edu.get("description", ""))
         honors = _itemize(edu.get("honors", []) or [])
 

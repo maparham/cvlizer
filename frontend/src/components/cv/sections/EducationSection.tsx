@@ -35,6 +35,9 @@ import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { buildQualitySuggestionId } from "../../../utils/qualitySuggestionIds";
 import { ScoreChip } from "./common/ScoreChip";
 import { DiscardAllDialog } from "./common/DiscardAllDialog";
+import { DateDisplaySettings } from "./common/DateDisplaySettings";
+import { formatCVItemDate } from "../../../utils/dateUtils";
+import type { DateDisplayPrecision, DateDisplayFormat } from "../../../utils/dateUtils";
 
 interface Education {
   id: string;
@@ -48,6 +51,8 @@ interface Education {
   gpa?: string;
   description?: string;
   honors: string[];
+  date_display_precision?: DateDisplayPrecision | null;
+  date_display_format?: DateDisplayFormat | null;
 }
 
 // Separate component for education form to allow using hooks
@@ -162,36 +167,44 @@ const EducationForm: React.FC<{
         placeholder="e.g., Boston, MA"
         {...fieldCorrectionProps.location}
       />
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <ValidatedDateField
-          section="education"
-          field="start_date"
-          index={index}
-          config={{
-            name: "start_date",
-            label: "Start Date",
-            required: true,
-          }}
-          value={edu.start_date}
-          onChange={(value) => updateEducation("start_date", value)}
-          onSave={onSave}
-          sx={{ flex: 1 }}
-          {...fieldCorrectionProps.start_date}
-        />
-        <ValidatedDateField
-          section="education"
-          field="end_date"
-          index={index}
-          config={{
-            name: "end_date",
-            label: "End Date",
-            minDate: edu.start_date || undefined, // End date must be after start date
-          }}
-          value={edu.end_date}
-          onChange={(value) => updateEducation("end_date", value)}
-          onSave={onSave}
-          sx={{ flex: 1 }}
-          {...fieldCorrectionProps.end_date}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <ValidatedDateField
+            section="education"
+            field="start_date"
+            index={index}
+            config={{
+              name: "start_date",
+              label: "Start Date",
+              required: true,
+            }}
+            value={edu.start_date}
+            onChange={(value) => updateEducation("start_date", value)}
+            onSave={onSave}
+            sx={{ flex: 1 }}
+            {...fieldCorrectionProps.start_date}
+          />
+          <ValidatedDateField
+            section="education"
+            field="end_date"
+            index={index}
+            config={{
+              name: "end_date",
+              label: "End Date",
+              minDate: edu.start_date || undefined, // End date must be after start date
+            }}
+            value={edu.end_date}
+            onChange={(value) => updateEducation("end_date", value)}
+            onSave={onSave}
+            sx={{ flex: 1 }}
+            {...fieldCorrectionProps.end_date}
+          />
+        </Box>
+        <DateDisplaySettings
+          precision={edu.date_display_precision ?? 'year-month'}
+          format={edu.date_display_format ?? 'text'}
+          onChange={(field, value) => updateEducation(field as keyof Education, value)}
+          sx={{ mt: -2 }}
         />
       </Box>
       <FormField
@@ -389,8 +402,8 @@ const EducationDisplay: React.FC<{
             iconSize="0.875rem"
             align="flex-end"
           >
-            {edu.start_date || "Start date required"} -{" "}
-            {!edu.end_date ? "PRESENT" : edu.end_date}
+            {edu.start_date ? formatCVItemDate(edu.start_date, edu.date_display_precision, edu.date_display_format) : "Start date required"} -{" "}
+            {!edu.end_date ? "PRESENT" : formatCVItemDate(edu.end_date, edu.date_display_precision, edu.date_display_format)}
           </ValidatedDisplay>
         </Box>
       </Box>

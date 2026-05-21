@@ -520,6 +520,8 @@ class CVDataCleaner {
         "current",
         "description",
         "technologies",
+        "date_display_precision",
+        "date_display_format",
       ],
       education: [
         "id",
@@ -533,6 +535,8 @@ class CVDataCleaner {
         "gpa",
         "description",
         "honors",
+        "date_display_precision",
+        "date_display_format",
       ],
       projects: ["id", "name", "description", "technologies", "url"],
       certifications: [
@@ -553,6 +557,8 @@ class CVDataCleaner {
         "start_date",
         "end_date",
         "description",
+        "date_display_precision",
+        "date_display_format",
       ],
     };
 

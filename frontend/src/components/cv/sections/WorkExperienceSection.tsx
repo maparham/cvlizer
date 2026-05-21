@@ -38,6 +38,9 @@ import { createTrackedFieldUpdater } from "./hooks/createTrackedFieldUpdater";
 import { buildQualitySuggestionId } from "../../../utils/qualitySuggestionIds";
 import { ScoreChip } from "./common/ScoreChip";
 import { DiscardAllDialog } from "./common/DiscardAllDialog";
+import { DateDisplaySettings } from "./common/DateDisplaySettings";
+import { formatCVItemDate } from "../../../utils/dateUtils";
+import type { DateDisplayPrecision, DateDisplayFormat } from "../../../utils/dateUtils";
 
 interface WorkExperience {
   id: string;
@@ -49,6 +52,8 @@ interface WorkExperience {
   current: boolean;
   description: string;
   technologies: string[];
+  date_display_precision?: DateDisplayPrecision | null;
+  date_display_format?: DateDisplayFormat | null;
 }
 
 // Separate component for work experience form to allow using hooks
@@ -130,36 +135,44 @@ const WorkExperienceForm: React.FC<{
         placeholder="e.g., San Francisco, CA"
         {...fieldCorrectionProps.location}
       />
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <ValidatedDateField
-          section="work_experience"
-          field="start_date"
-          index={index}
-          config={{
-            name: "start_date",
-            label: "Start Date",
-            required: true,
-          }}
-          value={exp.start_date}
-          onChange={(value) => updateExperience("start_date", value)}
-          onSave={onSave}
-          sx={{ flex: 1 }}
-          {...fieldCorrectionProps.start_date}
-        />
-        <ValidatedDateField
-          section="work_experience"
-          field="end_date"
-          index={index}
-          config={{
-            name: "end_date",
-            label: "End Date",
-            minDate: exp.start_date || undefined, // End date must be after start date
-          }}
-          value={exp.end_date}
-          onChange={(value) => updateExperience("end_date", value)}
-          onSave={onSave}
-          sx={{ flex: 1 }}
-          {...fieldCorrectionProps.end_date}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <ValidatedDateField
+            section="work_experience"
+            field="start_date"
+            index={index}
+            config={{
+              name: "start_date",
+              label: "Start Date",
+              required: true,
+            }}
+            value={exp.start_date}
+            onChange={(value) => updateExperience("start_date", value)}
+            onSave={onSave}
+            sx={{ flex: 1 }}
+            {...fieldCorrectionProps.start_date}
+          />
+          <ValidatedDateField
+            section="work_experience"
+            field="end_date"
+            index={index}
+            config={{
+              name: "end_date",
+              label: "End Date",
+              minDate: exp.start_date || undefined, // End date must be after start date
+            }}
+            value={exp.end_date}
+            onChange={(value) => updateExperience("end_date", value)}
+            onSave={onSave}
+            sx={{ flex: 1 }}
+            {...fieldCorrectionProps.end_date}
+          />
+        </Box>
+        <DateDisplaySettings
+          precision={exp.date_display_precision ?? 'year-month'}
+          format={exp.date_display_format ?? 'text'}
+          onChange={(field, value) => updateExperience(field as keyof WorkExperience, value)}
+          sx={{ mt: -2 }}
         />
       </Box>
       <FormField
@@ -287,7 +300,7 @@ const WorkExperienceDisplay: React.FC<{
             iconSize="0.875rem"
             align="flex-end"
           >
-            {exp.start_date} - {exp.current || !exp.end_date ? "PRESENT" : exp.end_date}
+            {formatCVItemDate(exp.start_date, exp.date_display_precision, exp.date_display_format)} - {exp.current || !exp.end_date ? "PRESENT" : formatCVItemDate(exp.end_date, exp.date_display_precision, exp.date_display_format)}
           </ValidatedDisplay>
         </Box>
       </Box>

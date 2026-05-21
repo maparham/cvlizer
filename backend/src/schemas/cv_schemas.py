@@ -150,6 +150,12 @@ class WorkExperienceSchema(BaseModel):
     current: bool = Field(default=False, description="Currently working here")
     description: Optional[str] = Field(None, description="Job description")
     technologies: List[str] = Field(default_factory=list, description="Technologies used")
+    date_display_precision: Optional[str] = Field(
+        None, description="Date display precision: year, year-month, full"
+    )
+    date_display_format: Optional[str] = Field(
+        None, description="Date display format: numeric, text"
+    )
 
     class Config:
         extra = "forbid"  # Reject any additional fields
@@ -175,6 +181,12 @@ class EducationSchema(BaseModel):
     gpa: Optional[str] = Field(None, description="GPA or grade")
     description: Optional[str] = Field(None, description="Additional details")
     honors: List[str] = Field(default_factory=list, description="Honors and awards")
+    date_display_precision: Optional[str] = Field(
+        None, description="Date display precision: year, year-month, full"
+    )
+    date_display_format: Optional[str] = Field(
+        None, description="Date display format: numeric, text"
+    )
 
     class Config:
         extra = "forbid"  # Reject any additional fields
@@ -312,6 +324,12 @@ class VolunteerExperienceSchema(BaseModel):
     start_date: str = Field(..., description="Start date in YYYY-MM-DD format")
     end_date: Optional[str] = Field(None, description="End date in YYYY-MM-DD format")
     description: Optional[str] = Field(None, description="Description of volunteer work")
+    date_display_precision: Optional[str] = Field(
+        None, description="Date display precision: year, year-month, full"
+    )
+    date_display_format: Optional[str] = Field(
+        None, description="Date display format: numeric, text"
+    )
 
     class Config:
         extra = "forbid"  # Reject any additional fields

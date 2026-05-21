@@ -130,6 +130,8 @@ export interface WorkExperience {
   description: string;
   technologies: string[];
   responsibilities?: string[];
+  date_display_precision?: 'year' | 'year-month' | 'full' | null;
+  date_display_format?: 'numeric' | 'text' | null;
 }
 
 // Education
@@ -145,6 +147,8 @@ export interface Education {
   gpa?: string;
   honors: string[];
   thesis_title?: string;
+  date_display_precision?: 'year' | 'year-month' | 'full' | null;
+  date_display_format?: 'numeric' | 'text' | null;
 }
 
 // Skills
@@ -201,6 +205,8 @@ export interface VolunteerExperience {
   current: boolean;
   description: string;
   achievements?: string[];
+  date_display_precision?: 'year' | 'year-month' | 'full' | null;
+  date_display_format?: 'numeric' | 'text' | null;
 }
 
 // Section Configuration
