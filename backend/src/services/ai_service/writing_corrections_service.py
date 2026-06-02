@@ -45,45 +45,100 @@ ALLOWED_FIELD_NAMES = {
 }
 
 
-def apply_html_diff(text: str, html_diff: str) -> str:
+_TAG_RE = re.compile(r"(<del>[\s\S]*?</del>|<ins>[\s\S]*?</ins>)", re.DOTALL)
+
+
+def apply_html_diff(original: str, html_diff: str) -> str:
     """
-    Parse html_diff string to extract corrected text.
+    Apply html_diff patches to original text using context-aware find-replace.
 
-    Removes <del> tags and their content, and removes <ins> tags but keeps the content,
-    keeping only the final corrected text.
+    Supports both full-text html_diff (legacy: entire field with markup) and
+    partial html_diff (new: only changed lines/sentences). Each <del>X</del>
+    (optionally followed by <ins>Y</ins>) is applied as a find-replace on the
+    original, using the preceding text in the html_diff as context to
+    disambiguate when X appears more than once.
 
-    Args:
-        text: Original text (not used, but kept for consistency)
-        html_diff: The HTML diff string with <del> and <ins> tags
-
-    Returns:
-        The corrected text with all HTML tags removed
-
-    Example:
-        Input: "Led <del>a team</del><ins>team of 5 engineers</ins> in developing <ins>scalable</ins> web applications"
-        Output: "Led team of 5 engineers in developing scalable web applications"
+    Falls back gracefully: if a patch cannot be located, it is skipped and a
+    warning is logged rather than corrupting the text.
     """
-    if not html_diff or html_diff.strip() == "":
-        return text
+    if not html_diff or not html_diff.strip():
+        return original
 
-    result = html_diff
+    if not re.search(r"<(?:del|ins)>", html_diff):
+        # No markup — shouldn't normally happen; return html_diff directly (legacy).
+        return html_diff
 
-    # Remove <del> tags and their content
-    # Use [\s\S] instead of . to match across newlines (. doesn't match \n by default)
-    result = re.sub(r"<del>[\s\S]*?</del>", "", result)
+    segs = _TAG_RE.split(html_diff)
+    # segs alternates: plain text, tag, plain text, tag, ...
 
-    # Remove <ins> tags but keep the content
-    # Use [\s\S] instead of . to match across newlines (. doesn't match \n by default)
-    result = re.sub(r"<ins>([\s\S]*?)</ins>", r"\1", result)
+    result = original
+    i = 0
+    n = len(segs)
 
-    # Clean up extra horizontal whitespace only (multiple spaces/tabs)
-    # Preserve newlines for bullet formatting - only collapse horizontal whitespace
-    result = re.sub(r"[^\S\n]+", " ", result)
+    while i < n:
+        seg = segs[i]
 
-    # Trim leading and trailing whitespace
-    result = result.strip()
+        del_m = re.match(r"^<del>([\s\S]*?)</del>$", seg, re.DOTALL)
+        if del_m:
+            old_text = del_m.group(1)
+            new_text = ""
+
+            # Look for a paired <ins> immediately after, skipping empty gaps.
+            j = i + 1
+            while j < n and not segs[j].strip():
+                j += 1
+            if j < n:
+                ins_m = re.match(r"^<ins>([\s\S]*?)</ins>$", segs[j], re.DOTALL)
+                if ins_m:
+                    new_text = ins_m.group(1)
+                    segs[j] = ""  # consume so the standalone-ins branch skips it
+
+            pre_ctx = segs[i - 1] if i > 0 else ""
+            result = _apply_patch(result, old_text, new_text, pre_ctx)
+            i += 1
+            continue
+
+        ins_m = re.match(r"^<ins>([\s\S]*?)</ins>$", seg, re.DOTALL)
+        if ins_m and seg:  # seg may be "" if already consumed as part of del+ins
+            # Standalone insertion: insert new_text after the preceding context.
+            new_text = ins_m.group(1)
+            pre_ctx = segs[i - 1] if i > 0 else ""
+            result = _apply_patch(result, "", new_text, pre_ctx)
+
+        i += 1
 
     return result
+
+
+def _apply_patch(text: str, old: str, new: str, pre_ctx: str) -> str:
+    """
+    Replace old with new in text using trailing chars of pre_ctx for disambiguation.
+
+    Tries progressively shorter context lengths until a match is found so that
+    minor whitespace differences between html_diff and original don't block apply.
+    """
+    ctx_lengths = sorted(
+        {
+            len(pre_ctx),
+            min(25, len(pre_ctx)),
+            min(15, len(pre_ctx)),
+            min(7, len(pre_ctx)),
+            0,
+        },
+        reverse=True,
+    )
+    for ctx_len in ctx_lengths:
+        ctx = pre_ctx[-ctx_len:] if ctx_len > 0 else ""
+        search = ctx + old
+        replace = ctx + new
+        if search and search in text:
+            return text.replace(search, replace, 1)
+    logger.warning(
+        "apply_html_diff: patch '%s'→'%s' not found in text",
+        old[:40],
+        new[:40],
+    )
+    return text
 
 
 def apply_field_corrections(

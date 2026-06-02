@@ -31,7 +31,9 @@ Coaching:
 - Max 2 coaching_questions per issue (100 chars each), max 1 direct_prompt (150 chars). Focus on impact.
 
 html_diff:
-- Wrap changed tokens in <ins>/<del>; don't cross sentences. Prefer token edits over sentence rewrites. Keep bullet punctuation.
+- Include only the lines or sentences that contain changes; omit unchanged lines and paragraphs entirely.
+- Within each included line/sentence, keep its full surrounding text so the change can be located in context.
+- Wrap only the changed tokens in <ins>/<del>; don't cross sentences. Prefer token edits. Keep bullet punctuation.
 
 Fields:
 - Short fields: fix errors, remove redundancy.
@@ -75,7 +77,9 @@ Coaching:
 - Max 2 questions (100 chars each) for factual gaps (metrics, scope), not tone. Max 1 direct_prompt (150 chars).
 
 html_diff:
-- Wrap changed tokens in <ins>/<del>; don't cross sentences. Prefer token edits. Keep bullet punctuation.
+- Include only the lines or sentences that contain changes; omit unchanged lines and paragraphs entirely.
+- Within each included line/sentence, keep its full surrounding text so the change can be located in context.
+- Wrap only the changed tokens in <ins>/<del>; don't cross sentences. Prefer token edits. Keep bullet punctuation.
 
 Fields:
 - Short fields: fix errors, remove redundancy.
