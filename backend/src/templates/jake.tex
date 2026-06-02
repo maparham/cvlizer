@@ -6,7 +6,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[left=0.5in,right=0.5in,top=0.5in,bottom=0.5in]{geometry}
 \usepackage{enumitem}
-\usepackage[hidelinks]{hyperref}
+\usepackage{hyperref}
 \usepackage{fontawesome5}
 \usepackage{xcolor}
 \usepackage{parskip}
@@ -18,6 +18,16 @@
 \definecolor{sectiongray}{gray}{0.40}
 \definecolor{companygray}{gray}{0.30}
 \definecolor{boldgray}{gray}{0.25}
+
+% Clickable link styling: blue text (no underline)
+\definecolor{linkblue}{HTML}{0563C1}
+\hypersetup{
+  colorlinks=true,
+  urlcolor=linkblue,
+  linkcolor=linkblue,
+  citecolor=linkblue,
+  breaklinks=true,
+}
 
 % Ensure PDF is machine readable / ATS parsable
 \pdfgentounicode=1

@@ -971,9 +971,13 @@ def _format_personal_info_header(
         return url
 
     def contact_link(url: str, label: str) -> str:
-        """Build \\href with protocol and underlined escaped label (for jake template)."""
+        """Build \\href with protocol and escaped label.
+
+        Link styling (blue + underline) is applied centrally by the template's
+        redefined \\href, so no manual \\underline is added here.
+        """
         u = _href_url_safe(ensure_protocol(url))
-        return f"\\href{{{u}}}{{\\underline{{{_tex_escape(label)}}}}}"
+        return f"\\href{{{u}}}{{{_tex_escape(label)}}}"
 
     email = pi.get("email", "")
     phone = _tex_escape(pi.get("phone", ""))
@@ -1003,7 +1007,7 @@ def _format_personal_info_header(
         if email:
             primary_bits.append(
                 f"{_fa_pi_icon('envelope')}~"
-                f"\\href{{mailto:{_href_url_safe(email)}}}{{\\underline{{{_tex_escape(email)}}}}}"
+                f"\\href{{mailto:{_href_url_safe(email)}}}{{{_tex_escape(email)}}}"
             )
         link_bits: list[str] = []
         if website:
