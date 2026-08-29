@@ -1,25 +1,13 @@
 // Export all stores
-export { useAuthStore } from "./authStore";
 export { useCVStore, cleanupCVStore, DEFAULT_CV_DATA, isTempCVId } from "./cv";
 export { useUIStore } from "./uiStore";
 
 // Import the stores for internal use
-import { useAuthStore } from "./authStore";
 import { useCVStore, cleanupCVStore } from "./cv";
 import { useUIStore } from "./uiStore";
 
-// Re-export types for convenience
-// Note: AuthState is not exported from authStore, so we'll remove this
-
-// Store initialization and cleanup utilities
-export const initializeStores = async () => {
-  // Initialize auth state by verifying token
-  const authStore = useAuthStore.getState();
-  if (localStorage.getItem("access_token")) {
-    await authStore.verifyToken();
-  }
-};
-
+// Store cleanup utilities. Authentication is handled entirely by Clerk; the
+// legacy JWT/localStorage auth store was removed as unreachable dead code.
 export const cleanupStores = () => {
   // Cleanup any intervals or subscriptions
   cleanupCVStore();
@@ -31,7 +19,6 @@ export const cleanupStores = () => {
 
 // Utility function to reset all stores (useful for logout)
 export const resetAllStores = () => {
-  useAuthStore.getState().logout();
   useCVStore.setState({
     cvs: [],
     currentCV: null,

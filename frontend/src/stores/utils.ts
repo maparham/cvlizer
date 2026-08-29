@@ -21,33 +21,6 @@ export interface BaseStoreActions {
 }
 
 /**
- * Token management utilities
- */
-export class TokenManager {
-  static getAccessToken(): string | null {
-    return localStorage.getItem("access_token");
-  }
-
-  static getRefreshToken(): string | null {
-    return localStorage.getItem("refresh_token");
-  }
-
-  static setTokens(accessToken: string, refreshToken: string): void {
-    localStorage.setItem("access_token", accessToken);
-    localStorage.setItem("refresh_token", refreshToken);
-  }
-
-  static clearTokens(): void {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-  }
-
-  static hasValidTokens(): boolean {
-    return !!(this.getAccessToken() && this.getRefreshToken());
-  }
-}
-
-/**
  * Common async action wrapper with error handling
  */
 export function withAsyncErrorHandling<T extends any[], R>(
