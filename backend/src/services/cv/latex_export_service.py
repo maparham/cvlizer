@@ -315,6 +315,37 @@ def _itemize(items: List[str]) -> str:
     return f"\\begin{{itemize}}\n{body}\n\\end{{itemize}}\n"
 
 
+def _entry_block(heading: str, dates_str: str, body: str = "") -> str:
+    """
+    Build a dated CV entry: heading with dates flush right, then the body.
+
+    The body is emitted outside any box so it can break across pages; a
+    \\parbox here would keep the whole entry together and push a tall entry
+    onto the next page, stranding the section heading above it. \\needspace
+    plus \\nopagebreak keep the heading with at least the first body lines.
+
+    Args:
+        heading: Already-escaped LaTeX for the title/organisation line
+        dates_str: Already-escaped LaTeX for the right-aligned date range
+        body: Optional LaTeX (itemize or paragraphs) rendered under the heading
+
+    Returns:
+        str: LaTeX for one entry
+    """
+    block = (
+        f"\\needspace{{4\\baselineskip}}%\n"
+        f"\\noindent\\begin{{minipage}}[t]{{0.72\\textwidth}}\\raggedright "
+        f"{heading}\\end{{minipage}}"
+        f"\\hfill"
+        f"\\begin{{minipage}}[t]{{0.24\\textwidth}}\\raggedleft"
+        f"\\textit{{{dates_str}}}\\end{{minipage}}"
+        f"\\par\\nopagebreak\n"
+    )
+    if body.strip():
+        block += body
+    return block
+
+
 def _format_certifications(certs: List[Dict[str, Any]]) -> str:
     """Format certifications section."""
     if not certs:
@@ -464,24 +495,9 @@ def _format_volunteer_experience(volunteer: List[Dict[str, Any]]) -> str:
         # Build content line with role and organization
         content_line = f"\\textcolor{{boldgray}}{{\\textbf{{{role}}}}} at \\textcolor{{companygray}}{{{org_line}}}"
 
-        # Build left parbox content containing all content
-        left_content = content_line
-        if desc:
-            desc_latex = _markdown_to_latex(desc)
-            # Don't use \\ before itemize environments, just newline
-            if desc_latex.strip().startswith("\\begin{itemize}"):
-                left_content += f"\n{desc_latex}"
-            else:
-                left_content += f"\\\\\n{desc_latex}"
+        body = _markdown_to_latex(desc) if desc else ""
 
-        # Two-column layout: left column for all content, right column for dates
-        block = (
-            f"\\parbox[t]{{0.7\\textwidth}}{{{left_content}}}"
-            f"\\hfill"
-            f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
-        )
-
-        blocks.append(block)
+        blocks.append(_entry_block(content_line, dates_str, body))
     return "\n\n\\vspace{0.5\\baselineskip}\n".join(blocks)
 
 
@@ -758,24 +774,10 @@ def _format_work_experience(wx: List[Dict[str, Any]]) -> str:
         # Description - process description as markdown
         desc = job.get("description", "")
 
-        # Build left parbox content (70% width) containing all content
-        left_content = f"\\textcolor{{boldgray}}{{\\textbf{{{position}}}}}, \\textcolor{{companygray}}{{{company_line}}}"
-        if desc:
-            desc_latex = _markdown_to_latex(desc)
-            # Don't use \\ before itemize environments, just newline
-            if desc_latex.strip().startswith("\\begin{itemize}"):
-                left_content += f"\n{desc_latex}"
-            else:
-                left_content += f"\\\\\n{desc_latex}"
+        heading = f"\\textcolor{{boldgray}}{{\\textbf{{{position}}}}}, \\textcolor{{companygray}}{{{company_line}}}"
+        body = _markdown_to_latex(desc) if desc else ""
 
-        # Two-column layout: left column for all content, right column for dates
-        block = (
-            f"\\parbox[t]{{0.7\\textwidth}}{{{left_content}}}"
-            f"\\hfill"
-            f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
-        )
-
-        blocks.append(block)
+        blocks.append(_entry_block(heading, dates_str, body))
     return "\n\n\\vspace{0.5\\baselineskip}\n".join(blocks)
 
 
@@ -821,8 +823,11 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
         # Build title line with degree and field of study
         # Two-column layout: left column for title, right column for dates
         # Entire title is bold, academic degree shown in parentheses after field of study
+        # Only append the field when the degree doesn't already name it,
+        # otherwise parsed values like "MSc in Computer Science" render as
+        # "MSc in Computer Science in Computer Science".
         degree_part = degree
-        if field_of_study:
+        if field_of_study and field_of_study.lower() not in degree.lower():
             degree_part += f" in {field_of_study}"
 
         # Add academic degree in parentheses at the end if present
@@ -833,30 +838,17 @@ def _format_education(ed: List[Dict[str, Any]]) -> str:
         else:
             title_line_str = f"\\textcolor{{boldgray}}{{\\textbf{{{degree_part}}}}}"
 
-        # Build left parbox content (70% width) containing all content
-        left_content = (
-            f"{title_line_str}, \\textcolor{{companygray}}{{{institution_line}}}"
-        )
+        heading = f"{title_line_str}, \\textcolor{{companygray}}{{{institution_line}}}"
+
+        body = ""
         if gpa:
-            left_content += f"\\\\\n\\textit{{GPA: {gpa}}}"
+            body += f"\\textit{{GPA: {gpa}}}\\par\n"
         if desc:
-            desc_latex = _markdown_to_latex(desc)
-            # Don't use \\ before itemize environments, just newline
-            if desc_latex.strip().startswith("\\begin{itemize}"):
-                left_content += f"\n{desc_latex}"
-            else:
-                left_content += f"\\\\\n{desc_latex}"
+            body += f"{_markdown_to_latex(desc)}\n"
         if honors.strip():
-            left_content += f"\n{honors}"
+            body += honors
 
-        # Two-column layout: left column for all content, right column for dates
-        block = (
-            f"\\parbox[t]{{0.7\\textwidth}}{{{left_content}}}"
-            f"\\hfill"
-            f"\\parbox[t]{{0.25\\textwidth}}{{\\raggedleft\\textit{{{dates_str}}}}}"
-        )
-
-        blocks.append(block)
+        blocks.append(_entry_block(heading, dates_str, body))
     return "\n\n\\vspace{0.5\\baselineskip}\n".join(blocks)
 
 
