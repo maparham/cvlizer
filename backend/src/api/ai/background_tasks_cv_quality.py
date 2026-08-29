@@ -4,7 +4,7 @@ import asyncio
 import logging
 from src.models.base import SessionLocal
 from src.models.cv_quality_analysis import CVQualityAnalysis
-from src.utils.background_tasks import run_task_in_background
+from src.utils.background_tasks import finalize_task_failure, run_task_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -78,26 +78,16 @@ def cv_quality_analysis_sync(
             )
 
     except Exception as e:
-        # Update error state (no stack trace; common.py already logs user-friendly message)
-        try:
-            db.rollback()  # Always rollback first before querying
-            analysis = (
-                db.query(CVQualityAnalysis)
-                .filter(CVQualityAnalysis.id == analysis_id)
-                .first()
-            )
-
-            if analysis:
-                analysis.is_generating = False
-                analysis.generation_error = str(e)
-                db.commit()
-        except Exception as commit_error:
-            # Critical: If we can't update error state, log critical error
-            logger.critical(
-                f"CRITICAL: Unable to update error state - "
-                f"analysis_id={analysis_id} stuck in generating state. "
-                f"Manual intervention required. Error: {str(commit_error)}"
-            )
+        # Update error state (no stack trace; common.py already logs user-friendly message).
+        # finalize_task_failure rolls back first, then persists the failure, and logs
+        # critical if even that fails.
+        finalize_task_failure(
+            db,
+            CVQualityAnalysis,
+            analysis_id,
+            str(e),
+            log_context=f"cv_id={cv_id} user_id={user_id}",
+        )
 
     finally:
         try:

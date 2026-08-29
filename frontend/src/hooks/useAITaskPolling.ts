@@ -90,6 +90,13 @@ export const useAITaskPolling = (
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   // Ref to always access latest activeTasks without stale closure
   const activeTasksRef = useRef<Map<string, AITask>>(activeTasks);
+  // Reentrancy guard: prevents a new tick from starting while the previous
+  // pollTasks() is still awaiting (a slow poll could otherwise cause duplicate
+  // completion callbacks/toasts).
+  const isPollInFlightRef = useRef(false);
+  // Per-task consecutive network-error counter, to cap retries when the backend
+  // is unreachable instead of polling forever.
+  const networkErrorCountsRef = useRef<Map<string, number>>(new Map());
 
   const { updateDraftStatus } = useAIStore();
   const { updateAIEnhancementStatus } = useAISuggestionsStore();
@@ -176,6 +183,9 @@ export const useAITaskPolling = (
           continue; // Skip unknown task types
         }
 
+        // Successful poll - reset consecutive network-error counter for this task
+        networkErrorCountsRef.current.delete(task.id);
+
         if (!updatedTaskData.is_generating) {
           if (task.type === "cv_quality_analysis") {
             clearPersistedCorrectionMode(task.id);
@@ -251,15 +261,39 @@ export const useAITaskPolling = (
           error.message?.includes("Failed to fetch");
 
         if (isNetworkError) {
-          // For network errors, keep task as generating so we can retry when backend comes back
-          // The backend will have cancelled the task on startup, so next successful poll will show the cancellation error
-          newActiveTasks.set(task.id, {
-            ...task,
-            // Keep isGenerating as true so polling continues
-            data: task.data,
-          });
-          anyTaskStillGenerating = true; // Keep polling active
-          // Don't show error notification yet - wait for backend to come back and show the actual cancellation error
+          // Track consecutive network errors so we don't poll forever if the
+          // backend never comes back.
+          const consecutiveErrors =
+            (networkErrorCountsRef.current.get(task.id) ?? 0) + 1;
+
+          if (consecutiveErrors > POLLING_CONFIG.MAX_RETRIES) {
+            // Exceeded the retry ceiling - stop treating this task as generating
+            // and surface a generation error instead of polling indefinitely.
+            networkErrorCountsRef.current.delete(task.id);
+            const errorMessage =
+              "Unable to reach the server. Please check your connection and try again.";
+            const failedTask = {
+              ...task,
+              isGenerating: false,
+              generationError: errorMessage,
+            };
+            newActiveTasks.set(task.id, failedTask);
+            onTaskErrorRef.current?.(failedTask, errorMessage);
+            showErrorRef.current("AI Task Failed", errorMessage);
+          } else {
+            // Within the retry cap: keep task as generating so we can retry when
+            // the backend comes back. The backend will have cancelled the task on
+            // startup, so the next successful poll will show the cancellation error.
+            networkErrorCountsRef.current.set(task.id, consecutiveErrors);
+            newActiveTasks.set(task.id, {
+              ...task,
+              // Keep isGenerating as true so polling continues
+              data: task.data,
+            });
+            anyTaskStillGenerating = true; // Keep polling active
+            // Don't show error notification yet - wait for backend to come back
+            // and show the actual cancellation error.
+          }
         } else {
           // For non-network errors, mark task as failed
           const errorMessage = error.error || error.message || "Unknown error";
@@ -292,11 +326,26 @@ export const useAITaskPolling = (
   ]);
 
   // Update ref whenever pollTasks changes
-  // Initialize immediately and keep it updated
-  pollTasksRef.current = pollTasks;
   useEffect(() => {
     pollTasksRef.current = pollTasks;
   }, [pollTasks]);
+
+  // Guarded invoker: runs the latest pollTasks but skips the call entirely while
+  // a previous poll is still in flight, preventing overlapping polls (and the
+  // duplicate completion callbacks/toasts they would cause).
+  const runPollGuarded = useCallback(() => {
+    if (isPollInFlightRef.current) {
+      return;
+    }
+    const fn = pollTasksRef.current;
+    if (!fn) {
+      return;
+    }
+    isPollInFlightRef.current = true;
+    void Promise.resolve(fn()).finally(() => {
+      isPollInFlightRef.current = false;
+    });
+  }, []);
 
   const startPolling = useCallback(() => {
     // Clear existing interval if it exists (handles pollingInterval changes)
@@ -310,17 +359,14 @@ export const useAITaskPolling = (
     if (!pollTasksRef.current) {
       pollTasksRef.current = pollTasks;
     }
-    // Use ref-based callback so it always calls latest version
+    // Use ref-based, reentrancy-guarded callback so it always calls the latest
+    // version and never overlaps with an in-flight poll.
     pollingIntervalRef.current = setInterval(() => {
-      if (pollTasksRef.current) {
-        pollTasksRef.current();
-      }
+      runPollGuarded();
     }, pollingInterval);
     // Trigger immediate poll to include any tasks that were just added
-    if (pollTasksRef.current) {
-      pollTasksRef.current();
-    }
-  }, [pollingInterval, pollTasks, isAuthenticated]); // Include pollTasks to ensure ref is set
+    runPollGuarded();
+  }, [pollingInterval, pollTasks, isAuthenticated, runPollGuarded]); // Include pollTasks to ensure ref is set
 
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
@@ -377,12 +423,10 @@ export const useAITaskPolling = (
         startPolling();
       } else {
         // Trigger immediate poll to include new task
-        if (pollTasksRef.current) {
-          pollTasksRef.current();
-        }
+        runPollGuarded();
       }
     },
-    [startPolling],
+    [startPolling, runPollGuarded],
   );
 
   const removeTask = useCallback((taskId: string) => {
@@ -426,6 +470,21 @@ export const useAITaskPolling = (
       stopPolling();
     }
   }, [activeTasks, isAuthenticated, startPolling, stopPolling]);
+
+  // Effect 3: Cleanup on unmount only.
+  // A direct consumer unmounting mid-generation would otherwise leak the
+  // setInterval. Kept in a mount-only effect (empty deps) so it does NOT run on
+  // every activeTasks change (which would tear down and recreate the interval
+  // on each poll). Clears the ref directly to avoid a setState on an unmounting
+  // component.
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   return { activeTasks, isPolling, addTask, removeTask, stopPolling };
 };

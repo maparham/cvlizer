@@ -171,19 +171,10 @@ export const useAISuggestionsStore = create<AIStore>((set, get) => ({
       });
 
       // Only set inline error if it's NOT a rate limit error
-      // Rate limit errors are shown as toast notifications only
+      // Rate limit errors are shown as toast notifications only.
+      // Do NOT overwrite allSuggestions here: leave any previously loaded
+      // suggestions in place so an error doesn't wipe the user's current view.
       set({
-        allSuggestions: {
-          skills: {},
-          professional_summary: {
-            suggested_text: "",
-            original_text: "",
-            key_changes: [],
-          },
-          work_experience: [],
-          education: [],
-          why_good_fit: EMPTY_WHY_GOOD_FIT,
-        },
         suggestionsLoading: false,
         suggestionsError: isRateLimitError ? null : errorMessage,
       });

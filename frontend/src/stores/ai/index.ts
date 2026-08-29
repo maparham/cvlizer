@@ -113,10 +113,12 @@ export const useCVJobDescriptions = (cvId: string) =>
   );
 
 export const useVisibleJobDescriptions = () =>
-  useAIStore((state) =>
-    state.jobDescriptions.filter(
-      (jd) => !state.hiddenJobDescriptionIds.includes(jd.id),
-    ),
+  useAIStore(
+    (state) =>
+      state.jobDescriptions.filter(
+        (jd) => !state.hiddenJobDescriptionIds.includes(jd.id),
+      ),
+    shallow,
   );
 
 export const useVisibleCVJobDescriptions = (cvId: string) =>

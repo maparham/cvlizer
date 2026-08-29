@@ -633,7 +633,16 @@ class TestCostSavingsAnalysis:
 # Pytest fixtures
 @pytest.fixture
 def db_session():
-    """Create a test database session using a separate test database."""
+    """Create a test database session using a separate test database.
+
+    ``log_ai_usage`` now writes on its own short-lived session obtained from
+    ``src.services.ai_ops.ai_usage_service.SessionLocal`` (so it never commits
+    the caller's session). We patch that ``SessionLocal`` to a sessionmaker
+    bound to this test engine for the duration of the test, so usage-log rows
+    land in the test database instead of the real one.
+    """
+    from unittest.mock import patch
+
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from src.models.base import Base
@@ -650,7 +659,14 @@ def db_session():
     # Create session
     session = SessionLocal()
 
-    yield session
+    # Point log_ai_usage's own-session factory at the test engine. Use a fresh
+    # sessionmaker (not the shared `session`) so the function can open/close its
+    # own session without stepping on the fixture's session.
+    with patch(
+        "src.services.ai_ops.ai_usage_service.SessionLocal",
+        sessionmaker(bind=test_engine),
+    ):
+        yield session
 
     # Cleanup
     session.rollback()

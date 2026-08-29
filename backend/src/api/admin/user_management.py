@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from src.middleware.clerk_auth import (
@@ -92,11 +92,34 @@ async def get_all_users(
         # Apply pagination and ordering
         users_data = query.order_by(desc(User.created_at)).offset(skip).limit(limit).all()
 
+        # Count CVs and AI sections for the whole page in two grouped queries
+        # (avoids N+1: one COUNT per user for each metric).
+        user_ids = [user.id for user in users_data]
+
+        cv_counts: dict = {}
+        ai_counts: dict = {}
+        if user_ids:
+            cv_count_rows = (
+                db.query(CV.user_id, func.count(CV.id))
+                .filter(CV.user_id.in_(user_ids))
+                .group_by(CV.user_id)
+                .all()
+            )
+            cv_counts = {row[0]: row[1] for row in cv_count_rows}
+
+            ai_count_rows = (
+                db.query(CV.user_id, func.count(AISection.id))
+                .join(AISection, AISection.cv_id == CV.id)
+                .filter(CV.user_id.in_(user_ids))
+                .group_by(CV.user_id)
+                .all()
+            )
+            ai_counts = {row[0]: row[1] for row in ai_count_rows}
+
         users = []
         for user in users_data:
-            # Count CVs and AI sections separately for each user
-            cv_count = db.query(CV).filter(CV.user_id == user.id).count()
-            ai_count = db.query(AISection).join(CV).filter(CV.user_id == user.id).count()
+            cv_count = cv_counts.get(user.id, 0)
+            ai_count = ai_counts.get(user.id, 0)
 
             users.append(
                 UserSummary(

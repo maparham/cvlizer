@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from src.config import AIUsageConfig
 from src.models.ai_usage_log import AIUsageLog
+from src.models.base import SessionLocal
 from src.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -95,8 +96,13 @@ def log_ai_usage(
     """
     Log AI usage to the database.
 
+    The usage-log row is written on its OWN short-lived session so it never
+    commits (or rolls back) the caller-provided ``db`` session. This preserves
+    the caller's transaction atomicity. The ``db`` parameter is accepted for
+    backward compatibility but intentionally unused.
+
     Args:
-        db: Database session
+        db: Database session (kept for backward compatibility; not used)
         user_id: ID of the user making the request
         operation_type: Type of operation (parse_cv, generate_section, etc.)
         model_used: OpenAI model used
@@ -151,15 +157,25 @@ def log_ai_usage(
             error_message=error_message,
         )
 
-        db.add(usage_log)
-        db.commit()
-        db.refresh(usage_log)
-
-        return usage_log
+        # Write on a dedicated short-lived session so we never commit/rollback
+        # the caller's session (which would break their transaction atomicity).
+        log_db = SessionLocal()
+        try:
+            log_db.add(usage_log)
+            log_db.commit()
+            log_db.refresh(usage_log)
+            # Detach so the returned object stays usable after the session closes
+            # (preserves the existing return contract for any caller).
+            log_db.expunge(usage_log)
+            return usage_log
+        except Exception:
+            log_db.rollback()
+            raise
+        finally:
+            log_db.close()
 
     except Exception as e:
         logger.error(f"Failed to log AI usage: {str(e)}")
-        db.rollback()
         # Don't raise - logging failures shouldn't break AI operations
         return None
 

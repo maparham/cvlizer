@@ -104,7 +104,10 @@ export const useJobDescriptionPolling = (
             }
           } catch (error) {
             console.error(`Failed to update job description ${id}:`, error);
-            // Remove from parsing set on error
+            // Transient failure (e.g. network blip): assume still parsing and
+            // keep the id so polling continues. Only drop an id when the server
+            // explicitly reports it finished (the success branch above).
+            stillParsing.add(id);
           }
         }
 

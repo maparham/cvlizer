@@ -14,7 +14,7 @@ from src.config import AIConfig
 from src.models.ai_draft import AIDraft
 from src.models.ai_enhancement import AIEnhancement
 from src.models.base import SessionLocal
-from src.utils.background_tasks import run_task_in_background
+from src.utils.background_tasks import finalize_task_failure, run_task_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -124,19 +124,18 @@ def ai_suggestions_sync(
             db.commit()
 
     except Exception as e:
-        # Persist error on enhancement
-        try:
-            enhancement = (
-                db.query(AIEnhancement).filter(AIEnhancement.id == enhancement_id).first()
-            )
-            if enhancement:
-                enhancement.is_generating = False
-                enhancement.generation_error = str(e)
-                db.commit()
-        except Exception:
-            pass
-        finally:
-            logger.error(f"ai_suggestions_sync failed: {str(e)}")
+        # Persist error on enhancement. finalize_task_failure rolls back first,
+        # so this works even when the failure left the session mid-transaction
+        # (the previous inline version skipped the rollback and silently left the
+        # enhancement stuck in is_generating=True forever).
+        logger.error(f"ai_suggestions_sync failed: {str(e)}")
+        finalize_task_failure(
+            db,
+            AIEnhancement,
+            enhancement_id,
+            str(e),
+            log_context=f"cv_id={cv_id} user_id={user_id}",
+        )
     finally:
         try:
             loop.close()

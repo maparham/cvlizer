@@ -46,9 +46,15 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Guard against out-of-order responses: if the selection changes before
+    // this request resolves, the cleanup sets `ignore` so stale results are
+    // discarded instead of overwriting the current selection's diff.
+    let ignore = false;
+
     const fetchDiff = async () => {
       // Safety check - don't fetch if newVersion is null
       if (!newVersion?.id) {
+        if (ignore) return;
         setLoading(false);
         setError("No version selected");
         return;
@@ -66,16 +72,23 @@ const SimpleCVDiffViewer: React.FC<SimpleCVDiffViewerProps> = ({
           forcePrevious, // force comparison to previous version
         );
 
+        if (ignore) return;
         setChanges(diffResult.changes);
         setSummary(diffResult.summary);
       } catch (err) {
+        if (ignore) return;
+        console.error("Failed to load CV diff", err);
         setError("Failed to load changes");
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
     fetchDiff();
+
+    return () => {
+      ignore = true;
+    };
   }, [oldVersion?.id, newVersion?.id, cvId, forcePrevious]);
 
   const getChangeIcon = (iconType: string) => {

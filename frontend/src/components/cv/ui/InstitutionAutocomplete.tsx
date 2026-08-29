@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
@@ -2306,6 +2306,14 @@ const InstitutionAutocomplete: React.FC<InstitutionAutocompleteProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
+
+  // Resync the displayed input when the `value` prop changes externally
+  // (e.g. an AI correction updates it, or this instance is reused for a
+  // different item via index-key reuse). Without this, the initial seed
+  // from `value` would go stale.
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
 
   // Filter institutions based on input
   const filteredInstitutions = useMemo(() => {

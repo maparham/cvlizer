@@ -44,11 +44,11 @@ export function parseHtmlDiff(htmlDiff: string): string {
 
   let result = htmlDiff;
 
-  // Remove <del> tags and their content
-  result = result.replace(/<del>.*?<\/del>/g, '');
+  // Remove <del> tags and their content (dotAll so newlines inside tags match)
+  result = result.replace(/<del>.*?<\/del>/gs, '');
 
-  // Remove <ins> tags but keep the content
-  result = result.replace(/<ins>(.*?)<\/ins>/g, '$1');
+  // Remove <ins> tags but keep the content (dotAll so newlines inside tags match)
+  result = result.replace(/<ins>(.*?)<\/ins>/gs, '$1');
 
   // Convert <br> tags to newlines
   result = result.replace(/<br\s*\/?>/g, '\n');

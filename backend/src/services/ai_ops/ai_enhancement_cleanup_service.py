@@ -7,6 +7,7 @@ and fix AI enhancements that are stuck in the generating state.
 """
 
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import List, Tuple
 
@@ -18,9 +19,20 @@ from src.models.cv_quality_analysis import CVQualityAnalysis
 
 logger = logging.getLogger(__name__)
 
+# A generation task is only "stuck" once it has been running far longer than any
+# legitimate AI call could take. The worst-case AI budget is roughly
+# API_TIMEOUT (60s) * RETRY_ATTEMPTS (2) + backoff ~= 121s, so the previous 100s
+# cutoff killed tasks that were still legitimately running - the cleanup would
+# mark them failed, the user would re-trigger a second (paid) generation, and the
+# original worker would then overwrite the record with a success. 10 minutes
+# leaves a wide margin (and matches the job-description parsing timeout).
+STUCK_ENHANCEMENT_TIMEOUT_SECONDS = int(
+    os.getenv("STUCK_AI_ENHANCEMENT_TIMEOUT_SECONDS", "600")
+)
+
 
 def find_stuck_ai_enhancements(
-    db: Session, timeout_seconds: int = 100
+    db: Session, timeout_seconds: int = STUCK_ENHANCEMENT_TIMEOUT_SECONDS
 ) -> List[AIEnhancement]:
     """
     Find AI enhancements that are stuck in is_generating=True state.
@@ -89,7 +101,7 @@ def fix_stuck_ai_enhancement(
 
 
 def cleanup_stuck_ai_enhancements(
-    db: Session, timeout_seconds: int = 100
+    db: Session, timeout_seconds: int = STUCK_ENHANCEMENT_TIMEOUT_SECONDS
 ) -> Tuple[int, int]:
     """
     Find and fix all stuck AI enhancements.
