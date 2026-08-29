@@ -39,7 +39,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { cvApi } from "../services/api";
 import { useNotifications, NotificationToast } from "../packages/notifications";
 import { useDefaultTemplate } from "../hooks/useDefaultTemplate";
-import type { CustomSection } from "../types/cv";
+import type { CVData, CustomSection } from "../types/cv";
 
 interface Template {
   name: string;
@@ -55,6 +55,29 @@ interface TemplatePreview {
   jobId?: string;
   error?: string;
 }
+
+/**
+ * True when an export would actually render the AI-generated section.
+ *
+ * Mirrors the backend rule that gates the rahkar.pro credit line: the section
+ * must carry content, and when section_config drives ordering it must also be
+ * visible there. Without a section_config the backend falls back to default
+ * order and always renders the section.
+ */
+export const exportsAISection = (parsedData?: CVData): boolean => {
+  const section = (parsedData?.custom_sections ?? []).find(
+    (item: CustomSection) => item.id === "why_good_fit",
+  );
+  if (!section?.content?.trim()) {
+    return false;
+  }
+  const configured = parsedData?.section_config?.sections;
+  if (!configured?.length) {
+    return true;
+  }
+  const entry = configured.find((item) => item.id === "why_good_fit");
+  return entry ? entry.visible !== false : false;
+};
 
 export const ExportPage: React.FC = () => {
   const { cvId } = useParams<{ cvId: string }>();
@@ -129,12 +152,7 @@ export const ExportPage: React.FC = () => {
         if (!cancelled) {
           setServerExportTemplateName(cv.export_template_name ?? null);
           setShowAIAttribution(cv.show_ai_attribution ?? true);
-          setHasAISection(
-            ((cv.parsed_data?.custom_sections ?? []) as CustomSection[]).some(
-              (section) =>
-                section.id === "why_good_fit" && Boolean(section.content?.trim()),
-            ),
-          );
+          setHasAISection(exportsAISection(cv.parsed_data));
         }
       } catch {
         if (!cancelled) {
