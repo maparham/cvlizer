@@ -31,6 +31,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Brownfield databases got this table from create_tables() and carry no
+    # alembic_version row. Without this guard the first `alembic upgrade head`
+    # on such a database fails here, and since entrypoint.sh runs under `set -e`
+    # that takes the backend container down instead of just skipping a no-op.
+    bind = op.get_bind()
+    if sa.inspect(bind).has_table("applied_data_migrations"):
+        return
+
     op.create_table(
         "applied_data_migrations",
         sa.Column("id", sa.String(), nullable=False),

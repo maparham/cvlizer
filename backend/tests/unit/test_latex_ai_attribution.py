@@ -12,6 +12,7 @@ from src.services.cv.latex_export_service import (
     AI_ATTRIBUTION_TEXT,
     SECTION_ATTRIBUTION_TEXT,
     _format_ai_attribution,
+    _format_model_label,
     generate_cv_latex,
 )
 
@@ -211,3 +212,50 @@ class TestJobTailoredSectionCreditLine:
             _parsed(with_ai_section=True), "My CV", template_name=template
         )
         assert SECTION_ATTRIBUTION_TEXT in tex
+
+
+class TestModelLabel:
+    """The footnote names the model that actually wrote the section."""
+
+    @pytest.mark.parametrize(
+        "stored,expected",
+        [
+            ("gpt-5", "GPT-5"),
+            ("openai/gpt-5", "GPT-5"),
+            ("gpt-4o-mini", "GPT-4o-mini"),
+            ("anthropic/claude-opus-5", "Claude-opus-5"),
+            ("google/gemini-2.5-pro", "Gemini-2.5-pro"),
+            ("openai/gpt-5:free", "GPT-5"),
+            # Unknown ids pass through rather than being guessed at.
+            ("some-new-model-v2", "some-new-model-v2"),
+            ("", ""),
+            (None, ""),
+        ],
+    )
+    def test_label_formatting(self, stored, expected):
+        assert _format_model_label(stored) == expected
+
+    def test_model_appended_to_the_section_footnote(self):
+        parsed = _parsed(with_ai_section=True)
+        parsed["why_good_fit_metadata"] = {"model_used": "openai/gpt-5"}
+        tex = generate_cv_latex(parsed, "My CV", template_name=TEMPLATE)
+        assert f"\\footnotetext{{{SECTION_ATTRIBUTION_TEXT} (GPT-5)}}" in tex
+
+    def test_falls_back_to_the_bare_credit_when_no_model_recorded(self):
+        # CVs tailored before the model was tracked must still export cleanly.
+        tex = generate_cv_latex(
+            _parsed(with_ai_section=True), "My CV", template_name=TEMPLATE
+        )
+        assert f"\\footnotetext{{{SECTION_ATTRIBUTION_TEXT}}}" in tex
+
+    def test_model_name_is_latex_escaped(self):
+        parsed = _parsed(with_ai_section=True)
+        parsed["why_good_fit_metadata"] = {"model_used": "gpt-5_turbo & co"}
+        tex = generate_cv_latex(parsed, "My CV", template_name=TEMPLATE)
+        assert "GPT-5\\_turbo \\& co" in tex
+
+    def test_document_level_line_never_names_a_model(self):
+        parsed = _parsed(with_ai_section=True)
+        parsed["why_good_fit_metadata"] = {"model_used": "openai/gpt-5"}
+        tex = generate_cv_latex(parsed, "My CV", template_name=TEMPLATE)
+        assert f"{AI_ATTRIBUTION_TEXT} (GPT-5)" not in tex
