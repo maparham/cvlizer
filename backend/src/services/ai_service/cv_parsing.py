@@ -58,6 +58,18 @@ async def parse_cv_text_with_openai(
         personal_info, custom_sections, work_experience, education,
         skills, certifications, projects, awards, publications, volunteer_experience
     """
+    from src.services.cv.latex_input import is_latex_source, strip_latex_boilerplate
+
+    if text_content and is_latex_source(text_content):
+        original_len = len(text_content)
+        text_content = strip_latex_boilerplate(text_content)
+        logger.debug(
+            "CV parse LaTeX input stripped cv_id=%s chars=%s->%s",
+            cv_id,
+            original_len,
+            len(text_content),
+        )
+
     # Check if text content is empty or too short
     if not text_content or len(text_content.strip()) < 10:
         logger.debug(
@@ -92,6 +104,7 @@ Parse the document into these sections: personal_info, work_experience, educatio
 
 2. Extraction Rules
 - Extract all explicit content from the CV.
+- The document may be LaTeX or other markup source. Interpret the markup and extract the human-readable content; never include markup commands (e.g., \\textbf{}, \\item, \\cventry) in output fields — "preserve exactly" applies to the rendered text.
 - Preserve all original text exactly as written, without changing spelling, grammar, punctuation, capitalization, or rephrasing any content.
 - Format all long-form descriptions as valid markdown.
 - Remove redundant line breaks (not needed mid-sentence, mid-list item, or mid-paragraph).
