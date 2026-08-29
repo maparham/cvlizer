@@ -148,7 +148,7 @@ const ArrayFormSection = <T extends ArrayItem>({
         <Box>
           {arrayData.map((item: T, index: number) => (
             <ArrayItemContainer
-              key={index}
+              key={item.id}
               index={index}
               title={getSingularTitle(title)}
               onEdit={() => {}} // Handled by the form itself
@@ -174,7 +174,7 @@ const ArrayFormSection = <T extends ArrayItem>({
             <EmptyState message={emptyMessage} />
           ) : (
             arrayData.map((item: T, index: number) => (
-              <Box key={index} sx={{ mb: 0.25 }}>
+              <Box key={item.id} sx={{ mb: 0.25 }}>
                 {renderItemDisplay(item, index)}
               </Box>
             ))

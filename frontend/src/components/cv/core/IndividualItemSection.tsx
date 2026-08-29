@@ -127,6 +127,23 @@ function IndividualItemSection<T>({
     isReordering,
   );
 
+  // Stable per-item identity for drag-and-drop.
+  //
+  // @hello-pangea/dnd wants each Draggable's `draggableId` tied to the ITEM, not
+  // its slot. The previous `item-${index}` keyed identity to the position, so
+  // after a reorder the wrong row would animate/edit. Prefer the item's own
+  // `id` (every item created or edited in-app has one via generateSectionId).
+  // Legacy/AI-parsed items that never received an id keep the index fallback:
+  // it is no worse than before, and — unlike minting a fresh id per render — it
+  // never changes across a parent re-sync, so a row that is mid-edit is never
+  // remounted (which would drop focus/cursor). The generateSectionId prefixes
+  // (work_/edu_/...) can never collide with the `item-N` fallback namespace.
+  const getStableItemId = useCallback(
+    (item: T, index: number): string =>
+      (item as { id?: string } | null)?.id ?? `item-${index}`,
+    [],
+  );
+
   // State for delete confirmation dialog
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     open: boolean;
@@ -591,8 +608,8 @@ function IndividualItemSection<T>({
                   <Box {...provided.droppableProps} ref={provided.innerRef}>
                     {itemsData.map((item, index) => (
                       <Draggable
-                        key={`item-${index}`}
-                        draggableId={`item-${index}`}
+                        key={getStableItemId(item, index)}
+                        draggableId={getStableItemId(item, index)}
                         index={index}
                         isDragDisabled={readOnly || editingItemIndex !== null}
                       >
@@ -600,7 +617,7 @@ function IndividualItemSection<T>({
                           <Box
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            data-item-id={(itemsData[index] as any).id}
+                            data-item-id={getStableItemId(item, index)}
                             className="individual-item-container"
                             sx={{
                               position: "relative",
