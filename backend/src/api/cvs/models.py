@@ -75,9 +75,9 @@ class CreateCVFromTextRequest(BaseModel):
             raise ValueError(
                 "Text must be at least 10 characters after trimming whitespace."
             )
-        if len(s) > 15000:
+        if len(s) > 50000:
             raise ValueError(
-                "Text must be at most 15,000 characters after trimming whitespace."
+                "Text must be at most 50,000 characters after trimming whitespace."
             )
         return s
 

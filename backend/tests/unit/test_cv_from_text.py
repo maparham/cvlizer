@@ -18,9 +18,13 @@ class TestCreateCVFromTextRequest:
         m = CreateCVFromTextRequest(text=" " + "y" * 10 + " ")
         assert len(m.text) == 10
 
-    def test_rejects_over_15000_chars(self):
+    def test_rejects_over_50000_chars(self):
         with pytest.raises(ValidationError):
-            CreateCVFromTextRequest(text="z" * 15001)
+            CreateCVFromTextRequest(text="z" * 50001)
+
+    def test_accepts_text_at_max_length(self):
+        m = CreateCVFromTextRequest(text="z" * 50000)
+        assert len(m.text) == 50000
 
 
 @pytest.mark.asyncio

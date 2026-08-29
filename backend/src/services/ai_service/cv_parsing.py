@@ -81,7 +81,7 @@ async def parse_cv_text_with_openai(
 
     # Check if text content is too long to be a CV
     stripped_len = len(text_content.strip())
-    if stripped_len > 15000:
+    if stripped_len > 50000:
         logger.debug(
             "CV parse OpenAI skipped: text too long cv_id=%s len=%s",
             cv_id,

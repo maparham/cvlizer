@@ -104,15 +104,15 @@ Acme Corp, Engineer"""
         assert "Acme Corp" in result
 
     def test_shrinks_oversized_latex_under_parse_cap(self):
-        # A realistic failure mode: huge preamble pushes source over the 15k cap.
+        # A realistic failure mode: huge preamble pushes source over the 50k cap.
         preamble_bloat = "\n".join(
-            r"\newcommand{\cmd%d}[1]{\textbf{#1}}" % i for i in range(600)
+            r"\newcommand{\cmd%d}[1]{\textbf{#1}}" % i for i in range(2000)
         )
         body = "\\begin{document}\nJane Doe, Engineer at Acme. Led projects.\n\\end{document}"
         text = preamble_bloat + "\n" + body
-        assert len(text) > 15000
+        assert len(text) > 50000
         result = strip_latex_boilerplate(text)
-        assert len(result) < 15000
+        assert len(result) < 50000
         assert "Jane Doe" in result
 
     def test_plain_text_passes_through_unchanged(self):
@@ -135,13 +135,13 @@ class TestParseCvTextWithLatex:
 
         mock_call.return_value = ({"is_valid_cv": True}, {})
         preamble_bloat = "\n".join(
-            r"\newcommand{\cmd%d}[1]{\textbf{#1}}" % i for i in range(600)
+            r"\newcommand{\cmd%d}[1]{\textbf{#1}}" % i for i in range(2000)
         )
         text = (
             preamble_bloat
             + "\n\\begin{document}\nJane Doe, Engineer at Acme. Led projects.\n\\end{document}"
         )
-        assert len(text) > 15000
+        assert len(text) > 50000
 
         result = await parse_cv_text_with_openai(text)
 

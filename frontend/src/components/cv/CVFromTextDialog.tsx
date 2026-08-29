@@ -17,7 +17,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useCVStore } from "../../stores/cv";
 
 const MIN_LEN = 10;
-const MAX_LEN = 15000;
+const MAX_LEN = 50000;
 
 interface CVFromTextDialogProps {
   open: boolean;
