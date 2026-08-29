@@ -125,8 +125,13 @@ export const useVisibleCVJobDescriptions = (cvId: string) =>
   useAIStore(
     (state) =>
       state.jobDescriptions.filter(
+        // Membership is the many-to-many `cv_ids` list (matching
+        // useCVJobDescriptions above), NOT the nullable `cv_id` provenance
+        // field, which only records the CV that originally created the JD and
+        // is SET NULL when that CV is deleted.
         (jd) =>
-          jd.cv_id === cvId && !state.hiddenJobDescriptionIds.includes(jd.id),
+          jd.cv_ids.includes(cvId) &&
+          !state.hiddenJobDescriptionIds.includes(jd.id),
       ),
     shallow,
   );
