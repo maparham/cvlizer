@@ -7,7 +7,10 @@ database models.
 
 Connection Pooling:
 - PostgreSQL/MySQL: Uses QueuePool with configurable size, overflow, timeout, and recycle
-- SQLite: Uses StaticPool for better concurrency in tests and development
+- File-based SQLite: Uses QueuePool (per-thread connections) + WAL mode, so request
+  and background-task threads never share a single connection
+- In-memory SQLite: Uses StaticPool (a shared connection is required so all threads
+  see the same in-memory database)
 
 Pool configuration automatically adjusts based on environment:
 - Test: Sized for parallel Playwright workers (20+10 connections)
@@ -29,7 +32,10 @@ from sqlalchemy.pool import StaticPool
 # Import config after dotenv is loaded
 load_dotenv()
 from src.config import DatabaseConfig
-from src.utils.sqlite_foreign_keys import register_sqlite_pragma_foreign_keys
+from src.utils.sqlite_foreign_keys import (
+    register_sqlite_pragma_foreign_keys,
+    register_sqlite_wal_mode,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -66,26 +72,51 @@ if DatabaseConfig.is_poolable_database():
         f"recycle={DatabaseConfig.POOL_RECYCLE}s, "
         f"pre_ping=True"
     )
+elif ":memory:" in DATABASE_URL:
+    # In-memory SQLite MUST reuse one connection (StaticPool): each new
+    # connection would open a separate, empty in-memory database, so a pool of
+    # distinct connections cannot see each other's tables/rows.
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
+    logger.info(
+        "Database engine created with StaticPool for in-memory SQLite: "
+        f"url={DATABASE_URL} (single shared connection)"
+    )
+    register_sqlite_pragma_foreign_keys(engine)
 else:
-    # SQLite - use StaticPool for connection reuse
-    # This maintains a single persistent connection that's reused across requests
-    # Safe for development and single-threaded SQLite usage
-    # Note: StaticPool is imported at the top of the file
-
+    # File-based SQLite - give every thread its own pooled connection.
+    #
+    # The previous StaticPool config shared a SINGLE DBAPI connection across all
+    # FastAPI request threads AND every background-task thread. A sqlite3
+    # connection is one transaction: a background worker calling db.rollback()
+    # on its own SessionLocal() actually rolled back the ONE shared connection,
+    # discarding a concurrent request handler's uncommitted writes (and produced
+    # the "cannot rollback - no transaction is active" noise get_db() swallows).
+    # QueuePool (SQLAlchemy's default for file SQLite) hands each thread its own
+    # connection; WAL mode (see below) lets readers and one writer run
+    # concurrently instead of serializing on a single connection.
     engine = create_engine(
         DATABASE_URL,
         connect_args={
             "check_same_thread": False,
             "timeout": 30,  # Wait up to 30 seconds for database lock
         },
-        poolclass=StaticPool,  # Reuse single connection across requests
+        pool_size=DatabaseConfig.get_pool_size(),
+        max_overflow=DatabaseConfig.get_max_overflow(),
+        pool_timeout=DatabaseConfig.POOL_TIMEOUT,
         echo=False,
     )
     logger.info(
-        f"Database engine created with StaticPool for SQLite: "
-        f"url={DATABASE_URL}, timeout=30s (single persistent connection)"
+        f"Database engine created with QueuePool for file-based SQLite: "
+        f"url={DATABASE_URL}, size={DatabaseConfig.get_pool_size()}, "
+        f"max_overflow={DatabaseConfig.get_max_overflow()}, timeout=30s"
     )
     register_sqlite_pragma_foreign_keys(engine)
+    register_sqlite_wal_mode(engine)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -219,8 +250,10 @@ def get_pool_status() -> Dict[str, Any]:
             status["error"] = f"Could not retrieve detailed pool stats: {str(e)}"
             status["checked_out"] = pool.checkedout()
     else:
-        # StaticPool has limited statistics
-        status["note"] = "SQLite with StaticPool - limited pool statistics available"
+        # SQLite: file-based uses QueuePool, in-memory uses StaticPool.
+        status[
+            "note"
+        ] = f"SQLite with {status['pool_class']} - limited pool statistics available"
         try:
             status["checked_out"] = engine.pool.checkedout()
         except Exception:
