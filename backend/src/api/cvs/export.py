@@ -17,8 +17,13 @@ from src.models.user import User
 from src.services.cv.cv_export_naming import (
     export_filename_for_cv,
     resolve_export_template,
+    resolve_show_ai_attribution,
 )
-from src.services.cv.cv_service import get_cv_by_id, update_cv_export_template
+from src.services.cv.cv_service import (
+    get_cv_by_id,
+    update_cv_ai_attribution,
+    update_cv_export_template,
+)
 from src.services.platform.file_service import get_profile_picture_settings
 from src.services.cv.latex_export_service import (
     compile_pdf_from_latex,
@@ -41,7 +46,11 @@ from src.services.users.user_activity_service import (
 )
 
 from .common import logger
-from .models import CVExportTemplatePatchRequest, CVResponse
+from .models import (
+    CVAIAttributionPatchRequest,
+    CVExportTemplatePatchRequest,
+    CVResponse,
+)
 from .responses import build_cv_response
 
 router = APIRouter()
@@ -118,6 +127,38 @@ async def patch_cv_export_template(
     return build_cv_response(cv)
 
 
+@router.patch("/{cv_id}/ai-attribution", response_model=CVResponse)
+async def patch_cv_ai_attribution(
+    cv_id: str,
+    body: CVAIAttributionPatchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_effective_user_lightweight),
+):
+    """
+    Keep or remove the rahkar.pro credit line on this CV's exports.
+
+    Applies to authenticated PDF/LaTeX export and the public share PDF; the line
+    only renders when the CV actually shows its AI-generated section.
+    """
+    cv = update_cv_ai_attribution(
+        db, cv_id, str(current_user.id), body.show_ai_attribution
+    )
+    if not cv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
+    safe_log_user_activity(
+        db=db,
+        user=current_user,
+        activity_type="user_action",
+        action="cv_ai_attribution_patch",
+        description="Updated CV AI attribution export setting",
+        details={
+            "cv_id": cv_id,
+            "show_ai_attribution": body.show_ai_attribution,
+        },
+    )
+    return build_cv_response(cv)
+
+
 @router.get("/{cv_id}/export/pdf")
 async def export_cv_pdf(
     cv_id: str,
@@ -157,6 +198,7 @@ async def export_cv_pdf(
     )
 
     use_pdf_service = should_use_pdf_service()
+    show_ai_attribution = resolve_show_ai_attribution(cv.show_ai_attribution)
     profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
         cv.parsed_data
     )
@@ -169,6 +211,7 @@ async def export_cv_pdf(
                 profile_pic_path=profile_pic_path,
                 profile_pic_shape=profile_pic_shape,
                 profile_pic_size=profile_pic_size,
+                show_ai_attribution=show_ai_attribution,
             )
         else:
             if not is_latex_available():
@@ -184,6 +227,7 @@ async def export_cv_pdf(
                 profile_pic_path=profile_pic_path,
                 profile_pic_shape=profile_pic_shape,
                 profile_pic_size=profile_pic_size,
+                show_ai_attribution=show_ai_attribution,
             )
             pdf_bytes = compile_pdf_from_latex(
                 tex_source, profile_pic_path=profile_pic_path
@@ -257,6 +301,7 @@ async def export_cv_latex(
             profile_pic_path=profile_pic_path,
             profile_pic_shape=profile_pic_shape,
             profile_pic_size=profile_pic_size,
+            show_ai_attribution=resolve_show_ai_attribution(cv.show_ai_attribution),
         )
         employer_suffix = _employer_suffix_for_filename(
             db, str(current_user.id), cv_id, job_description_id
@@ -368,6 +413,7 @@ async def export_cv_pdf_public(
     )
 
     use_pdf_service = should_use_pdf_service()
+    show_ai_attribution = resolve_show_ai_attribution(cv.show_ai_attribution)
     profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
         cv.parsed_data
     )
@@ -381,6 +427,7 @@ async def export_cv_pdf_public(
                 profile_pic_path=profile_pic_path,
                 profile_pic_shape=profile_pic_shape,
                 profile_pic_size=profile_pic_size,
+                show_ai_attribution=show_ai_attribution,
             )
         else:
             if not is_latex_available():
@@ -396,6 +443,7 @@ async def export_cv_pdf_public(
                 profile_pic_path=profile_pic_path,
                 profile_pic_shape=profile_pic_shape,
                 profile_pic_size=profile_pic_size,
+                show_ai_attribution=show_ai_attribution,
             )
             pdf_bytes = compile_pdf_from_latex(
                 tex_source, profile_pic_path=profile_pic_path

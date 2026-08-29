@@ -161,6 +161,21 @@ def update_cv_export_template(
     return cv
 
 
+def update_cv_ai_attribution(
+    db: Session, cv_id: str, user_id: str, show_attribution: bool
+) -> Optional[CV]:
+    """
+    Set the per-CV AI attribution credit line preference for exports.
+    """
+    cv = get_cv_by_id(db, cv_id, user_id)
+    if not cv:
+        return None
+    cv.show_ai_attribution = bool(show_attribution)
+    db.commit()
+    db.refresh(cv)
+    return cv
+
+
 def rename_cv(db: Session, cv_id: str, user_id: str, new_title: str) -> Optional[CV]:
     """
     Update a CV's display name (original_filename). Returns the updated CV or None if not found.
@@ -206,8 +221,9 @@ def duplicate_cv_for_user(db: Session, cv_id: str, user_id: str) -> Optional[CV]
         parsed_data=duplicated_parsed_data,
         is_parsed=True,
     )
-    if original.export_template_name:
+    if original.export_template_name or original.show_ai_attribution is not None:
         new_cv.export_template_name = original.export_template_name
+        new_cv.show_ai_attribution = original.show_ai_attribution
         db.commit()
         db.refresh(new_cv)
 

@@ -264,6 +264,14 @@ export const cvApi = {
     return response.data;
   },
 
+  /** Keep or remove the rahkar.pro credit line on this CV's exports. */
+  patchAIAttribution: async (cvId: string, showAttribution: boolean) => {
+    const response = await api.patch(`/cvs/${cvId}/ai-attribution`, {
+      show_ai_attribution: showAttribution,
+    });
+    return response.data;
+  },
+
   // Download CV file
   downloadCV: async (cvId: string, filename: string) => {
     const response = await api.get(`/cvs/${cvId}/download`, {

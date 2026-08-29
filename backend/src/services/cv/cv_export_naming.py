@@ -39,6 +39,16 @@ def resolve_export_template(template: Optional[str]) -> str:
     )
 
 
+def resolve_show_ai_attribution(value: Optional[bool]) -> bool:
+    """
+    Resolve the per-CV AI attribution setting to a concrete flag.
+
+    The column is nullable so the migration needs no backfill: rows predating
+    the feature read as NULL and must behave as opt-in (credit shown).
+    """
+    return True if value is None else bool(value)
+
+
 def cv_title_for_filename(cv: Any) -> str:
     """
     Build a safe filename base from the CV's title (original_filename).

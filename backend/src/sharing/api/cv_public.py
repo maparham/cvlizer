@@ -12,6 +12,7 @@ from src.models.base import get_db
 from src.services.cv.cv_export_naming import (
     export_filename_for_cv,
     resolve_export_template,
+    resolve_show_ai_attribution,
 )
 from src.services.platform.file_service import get_profile_picture_settings
 from src.services.cv.latex_export_service import (
@@ -99,6 +100,7 @@ async def download_public_cv_pdf(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CV not found")
 
     template_name = resolve_export_template(cv.export_template_name)
+    show_ai_attribution = resolve_show_ai_attribution(cv.show_ai_attribution)
     profile_pic_path, profile_pic_shape, profile_pic_size = get_profile_picture_settings(
         cv.parsed_data
     )
@@ -112,6 +114,7 @@ async def download_public_cv_pdf(
                 profile_pic_path=profile_pic_path,
                 profile_pic_shape=profile_pic_shape,
                 profile_pic_size=profile_pic_size,
+                show_ai_attribution=show_ai_attribution,
             )
         else:
             if not is_latex_available():
@@ -126,6 +129,7 @@ async def download_public_cv_pdf(
                 profile_pic_path=profile_pic_path,
                 profile_pic_shape=profile_pic_shape,
                 profile_pic_size=profile_pic_size,
+                show_ai_attribution=show_ai_attribution,
             )
             pdf_bytes = compile_pdf_from_latex(
                 tex_source, profile_pic_path=profile_pic_path

@@ -79,6 +79,7 @@ def _build_pdf_service_request(
     profile_pic_path: Optional[str],
     profile_pic_shape: Optional[str],
     profile_pic_size: Optional[str],
+    show_ai_attribution: bool = True,
 ) -> tuple[str, Dict[str, Any], Dict[str, str]]:
     """Build URL, payload, and auth headers for PDF service calls."""
     if not PDF_SERVICE_URL:
@@ -97,6 +98,7 @@ def _build_pdf_service_request(
         "profile_pic_path": None,
         "profile_pic_shape": profile_pic_shape,
         "profile_pic_size": profile_pic_size,
+        "show_ai_attribution": show_ai_attribution,
     }
     if profile_picture_base64:
         payload["profile_picture_base64"] = profile_picture_base64
@@ -112,6 +114,7 @@ async def generate_pdf_via_service(
     profile_pic_path: Optional[str] = None,
     profile_pic_shape: Optional[str] = None,
     profile_pic_size: Optional[str] = None,
+    show_ai_attribution: bool = True,
 ) -> bytes:
     """
     Call the external PDF service and return generated PDF bytes.
@@ -127,6 +130,7 @@ async def generate_pdf_via_service(
         profile_pic_path=profile_pic_path,
         profile_pic_shape=profile_pic_shape,
         profile_pic_size=profile_pic_size,
+        show_ai_attribution=show_ai_attribution,
     )
 
     last_error: Optional[Exception] = None
@@ -185,6 +189,7 @@ def generate_pdf_via_service_sync(
     profile_pic_path: Optional[str] = None,
     profile_pic_shape: Optional[str] = None,
     profile_pic_size: Optional[str] = None,
+    show_ai_attribution: bool = True,
 ) -> bytes:
     """
     Synchronous PDF service call for thread-worker code paths.
@@ -199,6 +204,7 @@ def generate_pdf_via_service_sync(
         profile_pic_path=profile_pic_path,
         profile_pic_shape=profile_pic_shape,
         profile_pic_size=profile_pic_size,
+        show_ai_attribution=show_ai_attribution,
     )
 
     last_error: Optional[Exception] = None

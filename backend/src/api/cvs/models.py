@@ -29,6 +29,13 @@ class CVResponse(BaseModel):
     export_template_name: Optional[
         str
     ] = None  # Per-CV PDF template; public export uses this when set
+    show_ai_attribution: bool = Field(
+        True,
+        description=(
+            "Show the rahkar.pro credit line on exports that render the "
+            "AI-generated section."
+        ),
+    )
     is_public_shared: bool = Field(
         False,
         description="True when this CV has public sharing enabled (active share token).",
@@ -54,6 +61,17 @@ class CVExportTemplatePatchRequest(BaseModel):
     template_name: Optional[str] = Field(
         None,
         description="LaTeX template name, or null to clear and use server default for export",
+    )
+
+
+class CVAIAttributionPatchRequest(BaseModel):
+    """Body for PATCH /cvs/{cv_id}/ai-attribution."""
+
+    show_ai_attribution: bool = Field(
+        ...,
+        description=(
+            "True to keep the rahkar.pro credit line on exports, false to remove it"
+        ),
     )
 
 

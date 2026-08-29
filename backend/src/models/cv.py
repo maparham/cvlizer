@@ -12,6 +12,8 @@ from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, Str
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+from src.services.cv.cv_export_naming import resolve_show_ai_attribution
+
 from .base import Base
 
 
@@ -35,6 +37,9 @@ class CV(Base):
     public_share_view_mode = Column(String(20), default="shell", nullable=False)
     # LaTeX template name for export; drives public share PDF when set (else server default).
     export_template_name = Column(String(64), nullable=True)
+    # AI attribution credit line in exports. NULL means "not set" and reads as
+    # enabled, so existing CVs need no backfill.
+    show_ai_attribution = Column(Boolean, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -119,6 +124,7 @@ class CV(Base):
             "is_imported": is_imported,
             "has_been_edited": has_been_edited,
             "export_template_name": self.export_template_name,
+            "show_ai_attribution": resolve_show_ai_attribution(self.show_ai_attribution),
             "is_public_shared": bool(self.is_public_shared),
         }
 

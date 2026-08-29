@@ -45,6 +45,9 @@ class PDFGenerationRequest(BaseModel):
     profile_pic_shape: Optional[str] = None
     profile_pic_size: Optional[str] = None
     profile_picture_base64: Optional[str] = None
+    # Defaults to True so an API container predating this field keeps the
+    # opt-out semantics (credit shown unless the caller turns it off).
+    show_ai_attribution: bool = True
 
 
 class PreviewConversionRequest(BaseModel):
@@ -138,6 +141,7 @@ async def generate_pdf(
             profile_pic_path=effective_profile_path,
             profile_pic_shape=payload.profile_pic_shape,
             profile_pic_size=payload.profile_pic_size,
+            show_ai_attribution=payload.show_ai_attribution,
         )
         pdf_bytes = compile_pdf_from_latex(
             tex_source,

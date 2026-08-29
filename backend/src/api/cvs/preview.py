@@ -30,6 +30,7 @@ from src.services.cv.latex_export_service import (
     compile_pdf_from_latex,
     is_latex_available,
 )
+from src.services.cv.cv_export_naming import resolve_show_ai_attribution
 from src.services.cv.latex_export_service import generate_cv_latex
 from src.services.cv.pdf_service_client import (
     PDFServiceError,
@@ -134,6 +135,7 @@ def generate_preview_sync(cv_id: str, template_name: str, user_id: str) -> None:
         ) = get_profile_picture_settings(cv.parsed_data)
 
         use_pdf_service = should_use_pdf_service()
+        show_ai_attribution = resolve_show_ai_attribution(cv.show_ai_attribution)
         if use_pdf_service:
             try:
                 pdf_bytes = generate_pdf_via_service_sync(
@@ -143,6 +145,7 @@ def generate_preview_sync(cv_id: str, template_name: str, user_id: str) -> None:
                     profile_pic_path=profile_pic_path,
                     profile_pic_shape=profile_pic_shape,
                     profile_pic_size=profile_pic_size,
+                    show_ai_attribution=show_ai_attribution,
                 )
             except PDFServiceError as service_error:
                 raise RuntimeError(
@@ -156,6 +159,7 @@ def generate_preview_sync(cv_id: str, template_name: str, user_id: str) -> None:
                 profile_pic_path=profile_pic_path,
                 profile_pic_shape=profile_pic_shape,
                 profile_pic_size=profile_pic_size,
+                show_ai_attribution=show_ai_attribution,
             )
             pdf_bytes = compile_pdf_from_latex(
                 tex_source, profile_pic_path=profile_pic_path
