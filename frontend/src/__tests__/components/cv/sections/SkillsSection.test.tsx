@@ -151,6 +151,44 @@ describe('SkillsSection', () => {
     })
   })
 
+  describe('Per-category skill inputs', () => {
+    test('typing in one category input does not fill other category inputs', () => {
+      const data = {
+        technical: { Programming: ['Python'], Backend: ['FastAPI'] }
+      }
+      render(<SkillsSection {...defaultProps} data={data} isEditing={true} />)
+
+      const inputs = screen
+        .getAllByTestId('skills-autocomplete')
+        .map((el) => el.querySelector('input') as HTMLInputElement)
+      expect(inputs).toHaveLength(2)
+
+      fireEvent.change(inputs[0], { target: { value: 'Rust' } })
+
+      expect(inputs[0].value).toBe('Rust')
+      expect(inputs[1].value).toBe('')
+    })
+
+    test('adding a skill only clears that category input', () => {
+      const data = {
+        technical: { Programming: ['Python'], Backend: ['FastAPI'] }
+      }
+      render(<SkillsSection {...defaultProps} data={data} isEditing={true} />)
+
+      const autocompletes = screen.getAllByTestId('skills-autocomplete')
+      const firstInput = autocompletes[0].querySelector('input') as HTMLInputElement
+      const secondInput = autocompletes[1].querySelector('input') as HTMLInputElement
+
+      fireEvent.change(firstInput, { target: { value: 'Rust' } })
+      fireEvent.change(secondInput, { target: { value: 'Redis' } })
+
+      const addButtons = screen.getAllByText('Add')
+      fireEvent.click(addButtons[0])
+
+      expect(secondInput.value).toBe('Redis')
+    })
+  })
+
   describe('Data Structure', () => {
     test('handles missing technical skills array', () => {
       const data = {}

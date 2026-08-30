@@ -26,10 +26,18 @@ describe("normalizeSkillsTechnical", () => {
       normalizeSkillsTechnical({
         Lang: ["English"],
         Bad: "not-array",
-        Empty: [],
         "": ["x"],
       } as unknown as Record<string, string[]>),
     ).toEqual({ Lang: ["English"] });
+  });
+
+  it("keeps empty categories so newly added categories survive normalization", () => {
+    expect(
+      normalizeSkillsTechnical({
+        Lang: ["English"],
+        Empty: [],
+      }),
+    ).toEqual({ Lang: ["English"], Empty: [] });
   });
 
   it("trims category keys and skill strings", () => {

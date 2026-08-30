@@ -44,9 +44,9 @@ export function normalizeSkillsTechnical(
         cleaned.push(item.trim());
       }
     }
-    if (cleaned.length) {
-      out[rawKey.trim()] = cleaned;
-    }
+    // Keep empty categories: a user-added category starts with no skills, and
+    // dropping it here would make it vanish from the editor immediately.
+    out[rawKey.trim()] = cleaned;
   }
   return out;
 }

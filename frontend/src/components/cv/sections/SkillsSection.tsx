@@ -87,7 +87,7 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
   onDelete,
   readOnly,
 }) => {
-  const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
+  const [newSkillByCategory, setNewSkillByCategory] = useState<Record<string, string>>({});
   const [newCategoryName, setNewCategoryName] = useState("");
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [categoryEditValue, setCategoryEditValue] = useState("");
@@ -435,12 +435,15 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
 
                 <Box sx={{ ml: 1 }}>
                   <SkillsAutocomplete
-                    value={newTechnicalSkill}
-                    onChange={setNewTechnicalSkill}
+                    value={newSkillByCategory[category] || ""}
+                    onChange={(value) =>
+                      setNewSkillByCategory((prev) => ({ ...prev, [category]: value }))
+                    }
                     onAdd={() => {
-                      if (newTechnicalSkill.trim()) {
-                        addSkillToCategory(editData, category, newTechnicalSkill.trim(), wrappedUpdateData);
-                        setNewTechnicalSkill("");
+                      const skill = (newSkillByCategory[category] || "").trim();
+                      if (skill) {
+                        addSkillToCategory(editData, category, skill, wrappedUpdateData);
+                        setNewSkillByCategory((prev) => ({ ...prev, [category]: "" }));
                       }
                     }}
                     onAddDirect={(skill) => {

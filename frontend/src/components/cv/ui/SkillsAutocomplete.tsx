@@ -81,6 +81,10 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    if (onAddDirect) {
+      handleDirectSkillAdd(suggestion);
+      return;
+    }
     setInputValue(suggestion);
     onChange(suggestion);
     setOpen(false);
@@ -116,7 +120,7 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
   };
 
   const renderSuggestions = () => {
-    if (!open && !showCategories) return null;
+    if (!open) return null;
 
     return (
       <Paper
@@ -208,7 +212,7 @@ const SkillsAutocomplete: React.FC<SkillsAutocompleteProps> = ({
       <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
         <Box sx={{ flex: 1, position: "relative" }}>
           <TextField
-            ref={inputRef}
+            inputRef={inputRef}
             size="small"
             fullWidth
             placeholder={placeholder}
